@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionContext;
 import com.evolving.nglm.evolution.Expression.ExpressionDataType;
@@ -28,9 +29,10 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
-
+import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 
@@ -66,6 +68,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -1279,11 +1283,67 @@ public class EvaluationCriterion
     *****************************************/
 
     String esField = criterionField.getESField();
+    
     if (esField == null)
       {
         throw new CriterionException("invalid criterionField " + criterionField);
       }
 
+    //
+    // Handle criterion "loyaltyprogram.name"
+    //
+    
+    if ("loyaltyprogram.name".equals(esField))
+      {
+        QueryBuilder query = null;
+        // ES special case for isNull : (must_not -> exists) does not work when inside a nested query : must_not must be on the toplevel query !
+        switch (criterionOperator)
+        {
+          case IsNullOperator:
+            query = QueryBuilders.boolQuery().mustNot(
+                QueryBuilders.nestedQuery("loyaltyPrograms",
+                    QueryBuilders.existsQuery("loyaltyPrograms.loyaltyProgramName.keyword") , ScoreMode.Total));
+            break;
+            
+          case IsNotNullOperator:
+          default:
+            query = QueryBuilders.boolQuery().filter(
+                QueryBuilders.nestedQuery("loyaltyPrograms",
+                    buildCompareQuery("loyaltyPrograms.loyaltyProgramName.keyword", ExpressionDataType.StringExpression) , ScoreMode.Total));
+            break;
+        }
+        return query;
+      }
+
+    //
+    // Handle dynamic criterion "loyaltyprogram.LP1.xxxxx"
+    //
+    
+    if (esField.startsWith("loyaltyprogram."))
+      {
+        QueryBuilder query = handleLoyaltyProgramDynamicCriterion(esField);
+        return query;
+      }
+
+    //
+    // Handle dynamic criterion "point.POINT001.balance"
+    //
+    
+    if (esField.startsWith("point."))
+      {
+        QueryBuilder query = handlePointDynamicCriterion(esField);
+        return query;
+      }
+
+    //
+    // Handle dynamic criterion "otherXXX"
+    //
+    
+    if (esField.startsWith("specialOther"))
+      {
+        QueryBuilder query = handleSpecialOtherCriterion(esField);
+        return query;
+      }
     /*****************************************
     *
     *  script
@@ -1611,6 +1671,308 @@ public class EvaluationCriterion
     return query;
   }
 
+  static String journeyNameOther = "";
+  static String campaignNameOther = "";
+  static String bulkcampaignNameOther = "";
+  
+  /*****************************************
+  *
+  *  handleSpecialOtherCriterion
+  *
+  *****************************************/
+  
+  public QueryBuilder handleSpecialOtherCriterion(String esField) throws CriterionException
+  {
+    Pattern fieldNamePattern = Pattern.compile("^specialOther([^.]+)$");
+    Matcher fieldNameMatcher = fieldNamePattern.matcher(esField);
+    if (! fieldNameMatcher.find()) throw new CriterionException("invalid other criterion field " + esField);
+    String criterion = fieldNameMatcher.group(1);
+    // TODO : necessary ? To be checked
+    if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
+    String value = "";
+    switch (criterion)
+    {
+      case "Journey":
+        journeyNameOther = (String) (argument.evaluate(null, null));
+        return QueryBuilders.matchAllQuery();
+        
+      case "Campaign":
+        campaignNameOther = (String) (argument.evaluate(null, null));
+        return QueryBuilders.matchAllQuery();
+        
+      case "Bulkcampaign":
+        bulkcampaignNameOther = (String) (argument.evaluate(null, null));
+        return QueryBuilders.matchAllQuery();
+        
+      case "JourneyStatus":
+        value = journeyNameOther;
+        break;
+        
+      case "CampaignStatus":
+        value = campaignNameOther;
+        break;
+        
+      case "BulkcampaignStatus":
+        value = bulkcampaignNameOther;
+        break;
+        
+      default:
+        throw new CriterionException("unknown criteria : " + esField);
+    }
+    QueryBuilder queryID = buildCompareQueryWithValue("subscriberJourneys.journeyID.keyword", ExpressionDataType.StringExpression, value);
+    QueryBuilder queryStatus = buildCompareQuery("subscriberJourneys.status.keyword", ExpressionDataType.StringExpression);
+    QueryBuilder query = QueryBuilders.nestedQuery("subscriberJourneys",
+                                          QueryBuilders.boolQuery()
+                                                           .filter(queryID)
+                                                           .filter(queryStatus), ScoreMode.Total);
+    return query;
+  }
+  
+  /*****************************************
+  *
+  *  handlePointDynamicCriterion
+  *
+  *****************************************/
+  
+  public QueryBuilder handlePointDynamicCriterion(String esField) throws CriterionException
+  {
+    Pattern fieldNamePattern = Pattern.compile("^point\\.([^.]+)\\.(.+)$");
+    Matcher fieldNameMatcher = fieldNamePattern.matcher(esField);
+    if (! fieldNameMatcher.find()) throw new CriterionException("invalid point field " + esField);
+    String pointID = fieldNameMatcher.group(1);
+    String criterionFieldBaseName = fieldNameMatcher.group(2);
+    QueryBuilder queryPointID = QueryBuilders.termQuery("pointBalances.pointID.keyword", pointID);
+    if (!"balance".equals(criterionFieldBaseName))
+      {
+        throw new CriterionException("Internal error, unknown criterion field : " + esField);
+      }
+    if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
+    QueryBuilder queryBalance = buildCompareQuery("pointBalances." + SubscriberProfile.CURRENT_BALANCE, ExpressionDataType.IntegerExpression);
+    QueryBuilder query = QueryBuilders.nestedQuery("pointBalances",
+                                          QueryBuilders.boolQuery()
+                                                          .filter(queryPointID)
+                                                          .filter(queryBalance), ScoreMode.Total);
+    return query;
+  }
+
+  /*****************************************
+  *
+  *  handleLoyaltyProgramDynamicCriterion
+  *
+  *****************************************/
+
+  public QueryBuilder handleLoyaltyProgramDynamicCriterion(String esField) throws CriterionException
+  {
+    Pattern fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+    Matcher fieldNameMatcher = fieldNamePattern.matcher(esField);
+    if (! fieldNameMatcher.find()) throw new CriterionException("invalid loyaltyprogram field " + esField);
+    String loyaltyProgramID = fieldNameMatcher.group(1);
+    String criterionSuffix = fieldNameMatcher.group(2);
+    QueryBuilder queryLPID = QueryBuilders.termQuery("loyaltyPrograms.programID.keyword", loyaltyProgramID);
+    QueryBuilder query = null;
+    switch (criterionSuffix)
+    {
+      case "tier":
+        query = handleLoyaltyProgramField("loyaltyPrograms.tierName.keyword", esField, queryLPID, ExpressionDataType.StringExpression);
+        break;
+
+      case "statuspoint.balance":
+        query = handleLoyaltyProgramField("loyaltyPrograms.statusPointBalance", esField, queryLPID, ExpressionDataType.IntegerExpression);
+        break;
+
+      case "rewardpoint.balance":
+        query = handleLoyaltyProgramField("loyaltyPrograms.rewardPointBalance", esField, queryLPID, ExpressionDataType.IntegerExpression);
+        break;
+
+      default:
+        Pattern pointsPattern = Pattern.compile("^([^.]+)\\.([^.]+)\\.(.+)$"); // "statuspoint.POINT001.earliestexpirydate"
+        Matcher pointsMatcher = pointsPattern.matcher(criterionSuffix);
+        if (! pointsMatcher.find()) throw new CriterionException("invalid criterionFieldBaseName field " + criterionSuffix);
+        String pointKind = pointsMatcher.group(1); // statuspoint , rewardpoint
+        String pointID = pointsMatcher.group(2); // POINT001
+        String whatWeNeed = pointsMatcher.group(3); // earliestexpirydate , earliestexpiryquantity
+        QueryBuilder queryPoint = QueryBuilders.termQuery("loyaltyPrograms."+(pointKind.equals("statuspoint")?"statusPointID":"rewardPointID")+".keyword", pointID);           
+        QueryBuilder queryExpiry = null;
+        switch (whatWeNeed)
+        {
+          case "earliestexpirydate" :
+            queryExpiry = handleEarliestExpiry("pointBalances."+SubscriberProfile.EARLIEST_EXPIRATION_DATE, esField, ExpressionDataType.DateExpression);
+            break;
+
+          case "earliestexpiryquantity" :
+            queryExpiry = handleEarliestExpiry("pointBalances."+SubscriberProfile.EARLIEST_EXPIRATION_QUANTITY, esField, ExpressionDataType.IntegerExpression);
+            break;
+
+          default:
+            throw new CriterionException("Internal error, unknown criterion field : " + esField);
+        }
+        query = QueryBuilders.boolQuery()
+            .filter(QueryBuilders.nestedQuery("loyaltyPrograms",
+                QueryBuilders.boolQuery()
+                .filter(queryLPID)
+                .filter(queryPoint), ScoreMode.Total))
+            .filter(queryExpiry);
+    }
+    return query;
+  }
+  
+  /*****************************************
+  *
+  *  handleEarliestExpiry
+  *
+  *****************************************/
+  
+  private QueryBuilder handleEarliestExpiry(String field, String esField, ExpressionDataType expectedType) throws CriterionException
+  {
+    if (argument.getType() != expectedType) throw new CriterionException(esField+" can only be compared to " + expectedType + " " + esField + ", "+argument.getType());
+    QueryBuilder queryBalance = buildCompareQuery(field, expectedType);
+    QueryBuilder query = QueryBuilders.nestedQuery("pointBalances",
+        QueryBuilders.boolQuery().filter(queryBalance), ScoreMode.Total);
+    return query;
+  }
+
+  /*****************************************
+  *
+  *  buildCompareQuery
+  *
+  *****************************************/
+  
+  private QueryBuilder buildCompareQuery(String field, ExpressionDataType expectedType) throws CriterionException
+  {
+    Object value = evaluateArgumentIfNecessary(expectedType);
+    return buildCompareQueryWithValue(field, expectedType, value);
+  }
+
+  /*****************************************
+  *
+  *  buildCompareQueryWithValue
+  *
+  *****************************************/
+  
+  private QueryBuilder buildCompareQueryWithValue(String field, ExpressionDataType expectedType, Object value) throws CriterionException
+  {
+    QueryBuilder queryCompare = null;
+    switch (criterionOperator)
+    {
+      case EqualOperator:
+      case ContainsOperator:
+        queryCompare = QueryBuilders.termQuery(field, value);
+        break;
+
+      case NotEqualOperator:
+      case DoesNotContainOperator:
+        queryCompare = QueryBuilders.boolQuery().mustNot(QueryBuilders.termQuery(field, value));
+        break;
+
+      case GreaterThanOperator:
+        queryCompare = QueryBuilders.rangeQuery(field).gt(value);
+        break;
+
+      case GreaterThanOrEqualOperator:
+        queryCompare = QueryBuilders.rangeQuery(field).gte(value);
+        break;
+
+      case LessThanOperator:
+        queryCompare = QueryBuilders.rangeQuery(field).lt(value);
+        break;
+
+      case LessThanOrEqualOperator:
+        queryCompare = QueryBuilders.rangeQuery(field).lte(value);
+        break;
+
+      case IsNotNullOperator:
+        queryCompare = QueryBuilders.existsQuery(field);
+        break;
+
+      case IsNullOperator:
+        queryCompare = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery(field));
+        break;
+
+      default:
+        throw new CriterionException("not yet implemented : " + criterionOperator);
+    }
+    return queryCompare;
+  }
+
+  /*****************************************
+  *
+  *  handleLoyaltyProgramField
+  *
+  *****************************************/
+  
+  private QueryBuilder handleLoyaltyProgramField(String field, String esField, QueryBuilder queryLPID, ExpressionDataType expectedType) throws CriterionException
+  {
+    if (argument.getType() != expectedType) throw new CriterionException(esField+" can only be compared to " + expectedType + " " + esField + ", "+argument.getType());
+    QueryBuilder queryTierName = buildCompareQuery(field, expectedType);
+    QueryBuilder query = QueryBuilders.nestedQuery("loyaltyPrograms",
+        QueryBuilders.boolQuery()
+            .filter(queryLPID)
+            .filter(queryTierName), ScoreMode.Total);
+    return query;
+  }
+
+  /****************************************
+  *
+  *  evaluateArgumentIfNecessary
+  *
+  ****************************************/
+
+  private Object evaluateArgumentIfNecessary(ExpressionDataType dataType) throws CriterionException
+  {
+    Object value = null;
+    switch (criterionOperator)
+    {
+      case IsNullOperator:
+      case IsNotNullOperator:
+        break;
+        
+      default:
+        value = evaluateArgument(dataType);
+        break;
+    }
+    return value;
+  }
+
+  /****************************************
+  *
+  *  evaluateArgument : generate a value suitable for an ES query, based on the expected datatype
+  *
+  ****************************************/
+  
+  private Object evaluateArgument(ExpressionDataType expectedType) throws CriterionException
+  {
+    Object value = null;
+    try
+    {
+      switch (expectedType)
+      {
+        case IntegerExpression:
+          value = ((Number) (argument.evaluate(null, null))).toString();
+          break;
+          
+        case StringExpression:
+          value = (String) (argument.evaluate(null, null));
+          break;
+          
+        case DateExpression:
+          value = ((Date) (argument.evaluate(null, null))).getTime();
+          break;
+          
+        case BooleanExpression:
+          value = ((Boolean) (argument.evaluate(null, null))).toString();
+          break;
+          
+        default:
+          throw new CriterionException("datatype not yet implemented : " + expectedType);
+      }
+    }
+    catch (ExpressionParseException|ExpressionTypeCheckException e)
+    {
+      throw new CriterionException("argument " + argument + " must be a constant " + expectedType);
+    }
+    return value;
+  }
+  
   /****************************************
   *
   *  constructDateTruncateESScript

@@ -1,17 +1,25 @@
 package com.evolving.nglm.evolution.datacubes.mapping;
 
-import org.json.simple.JSONObject;
+import java.util.Collection;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints;
+import com.evolving.nglm.evolution.LoyaltyProgramService;
 
-public class LoyaltyProgramsMap extends GUIManagedObjectList<LoyaltyProgramPoints>
+public class LoyaltyProgramsMap extends GUIManagedObjectMap<LoyaltyProgramPoints>
 {
   protected static final Logger log = LoggerFactory.getLogger(LoyaltyProgramsMap.class);
+
+  /*****************************************
+  *
+  *  data
+  *
+  *****************************************/
+  
+  private LoyaltyProgramService service;
   
   /*****************************************
   *
@@ -19,44 +27,19 @@ public class LoyaltyProgramsMap extends GUIManagedObjectList<LoyaltyProgramPoint
   *
   *****************************************/
   
-  public LoyaltyProgramsMap() {
-    super();
+  public LoyaltyProgramsMap(LoyaltyProgramService service) {
+    super(LoyaltyProgramPoints.class);
+    this.service = service;
   }
   
   /*****************************************
   *
-  *  updateFromGUIManager
+  *  getCollection
   *
   *****************************************/
   
-  public void updateFromGUIManager(GUIManagerClient gmClient) {
-    this.reset();
-
-    for (JSONObject item : this.getGUIManagedObjectList(gmClient, "getLoyaltyProgramList", "loyaltyPrograms"))
-      {
-        try
-          {
-            LoyaltyProgramPoints loyaltyProgram = null;
-            switch (LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(item, "loyaltyProgramType", true)))
-            {
-              case POINTS:
-                loyaltyProgram = new LoyaltyProgramPoints(item);
-                break;
-
-              case Unknown:
-                log.warn("Unsupported loyalty program type {}", JSONUtilities.decodeString(item, "loyaltyProgramType", false));
-            }
-            
-            if(loyaltyProgram != null) {
-              guiManagedObjects.put(loyaltyProgram.getGUIManagedObjectID(), loyaltyProgram);
-            }
-          } 
-        catch (GUIManagerException e)
-          {
-            log.warn("Unable to retrieve some offers: {}",e.getMessage());
-          }
-      }
-  }
+  // TODO: for the moment, we also retrieve archived objects
+  protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredLoyaltyPrograms(true); }
   
   /*****************************************
   *

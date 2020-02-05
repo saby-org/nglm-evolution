@@ -1,15 +1,25 @@
 package com.evolving.nglm.evolution.datacubes.mapping;
 
-import org.json.simple.JSONObject;
+import java.util.Collection;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.PaymentMean;
+import com.evolving.nglm.evolution.PaymentMeanService;
 
-public class PaymentMeansMap extends GUIManagedObjectList<PaymentMean>
+public class PaymentMeansMap extends GUIManagedObjectMap<PaymentMean>
 {
   protected static final Logger log = LoggerFactory.getLogger(PaymentMeansMap.class);
+
+  /*****************************************
+  *
+  *  data
+  *
+  *****************************************/
+  
+  private PaymentMeanService service;
   
   /*****************************************
   *
@@ -17,32 +27,19 @@ public class PaymentMeansMap extends GUIManagedObjectList<PaymentMean>
   *
   *****************************************/
   
-  public PaymentMeansMap() {
-    super();
+  public PaymentMeansMap(PaymentMeanService service) {
+    super(PaymentMean.class);
+    this.service = service;
   }
   
   /*****************************************
   *
-  *  updateFromGUIManager
+  *  getCollection
   *
   *****************************************/
   
-  public void updateFromGUIManager(GUIManagerClient gmClient) {
-    this.reset();
-    
-    for (JSONObject item : this.getGUIManagedObjectList(gmClient, "getPaymentMeansList", "paymentMeans"))
-      {
-        try
-          {
-            PaymentMean paymentMean = new PaymentMean(item);
-            guiManagedObjects.put(paymentMean.getGUIManagedObjectID(), paymentMean);
-          } 
-        catch (GUIManagerException e)
-          {
-            log.warn("Unable to retrieve some offers: {}",e.getMessage());
-          }
-      }
-  }
+  // TODO: for the moment, we also retrieve archived objects
+  protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredPaymentMeans(true); }
   
   /*****************************************
   *

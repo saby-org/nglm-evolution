@@ -1,15 +1,25 @@
 package com.evolving.nglm.evolution.datacubes.mapping;
 
-import org.json.simple.JSONObject;
+import java.util.Collection;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.Offer;
+import com.evolving.nglm.evolution.OfferService;
 
-public class OffersMap extends GUIManagedObjectList<Offer>
+public class OffersMap extends GUIManagedObjectMap<Offer>
 {
   protected static final Logger log = LoggerFactory.getLogger(OffersMap.class);
+
+  /*****************************************
+  *
+  *  data
+  *
+  *****************************************/
+  
+  private OfferService service;
   
   /*****************************************
   *
@@ -17,36 +27,17 @@ public class OffersMap extends GUIManagedObjectList<Offer>
   *
   *****************************************/
   
-  public OffersMap() {
-    super();
+  public OffersMap(OfferService service) {
+    super(Offer.class);
+    this.service = service;
   }
   
   /*****************************************
   *
-  *  updateFromGUIManager
+  *  getCollection
   *
   *****************************************/
   
-  public void updateFromGUIManager(GUIManagerClient gmClient) {
-    this.reset();
-
-    for (JSONObject item : this.getGUIManagedObjectList(gmClient, "getOfferList", "offers"))
-      {
-        try
-          {
-            Offer offer = new Offer(item);
-            guiManagedObjects.put(offer.getGUIManagedObjectID(), offer);
-          } 
-        catch (GUIManagerException e)
-          {
-            log.warn("Unable to retrieve some offers: {}",e.getMessage());
-          }
-      }
-  }
-  
-  /*****************************************
-  *
-  *  accessors
-  *
-  *****************************************/  
+  // TODO: for the moment, we also retrieve archived objects
+  protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredOffers(true); }
 }

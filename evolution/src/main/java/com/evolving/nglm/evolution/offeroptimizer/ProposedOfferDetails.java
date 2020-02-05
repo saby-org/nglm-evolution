@@ -69,7 +69,10 @@ public class ProposedOfferDetails implements Comparable<ProposedOfferDetails>
   {
     // Make this method "consistent with equals", so that ordering works
     double res = (o.getOfferScore() - this.getOfferScore());
-    if (res != 0) return (int) (res*1_000_000_000d); // offerScore is [0...1], keep maximum precision
+    if (res > 0.0)
+      return 1;
+    if (res < 0.0)
+      return -1;
     int result = o.getOfferId().compareTo(this.getOfferId());
     if (result != 0) return result;
     result = o.getSalesChannelId().compareTo(this.getSalesChannelId());

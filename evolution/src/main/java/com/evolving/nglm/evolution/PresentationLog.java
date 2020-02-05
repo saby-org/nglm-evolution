@@ -50,7 +50,7 @@ public class PresentationLog implements SubscriberStreamEvent
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("presentation_log");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("msisdn", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Schema.INT64_SCHEMA);
@@ -69,6 +69,8 @@ public class PresentationLog implements SubscriberStreamEvent
     schemaBuilder.field("retailerMsisdn", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("rechargeAmount", Schema.OPTIONAL_FLOAT64_SCHEMA);
     schemaBuilder.field("balance", Schema.OPTIONAL_FLOAT64_SCHEMA);
+    schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -110,7 +112,9 @@ public class PresentationLog implements SubscriberStreamEvent
   private String retailerMsisdn;
   private Double rechargeAmount;
   private Double balance;
-  
+  private String moduleID;
+  private String featureID;
+
   /****************************************
   *
   *  accessors
@@ -135,14 +139,16 @@ public class PresentationLog implements SubscriberStreamEvent
   public String getRetailerMsisdn() { return retailerMsisdn; }
   public Double getRechargeAmount() { return rechargeAmount; }
   public Double getBalance() { return balance; }
-  
+  public String getModuleID() { return moduleID; }
+  public String getFeatureID() { return featureID; }
+
   /*****************************************
   *
   *  constructor
   *
   *****************************************/
 
-  public PresentationLog(String msisdn, String subscriberID, Date eventDate, String callUniqueIdentifier, String channelID, String salesChannelID, String userID, String presentationToken, String presentationStrategyID, Integer transactionDurationMs, List<String> offerIDs, List<Double> offerScores, List<Integer> positions,   String controlGroupState, List<String> scoringStrategyIDs, String retailerMsisdn, Double rechargeAmount, Double balance)
+  public PresentationLog(String msisdn, String subscriberID, Date eventDate, String callUniqueIdentifier, String channelID, String salesChannelID, String userID, String presentationToken, String presentationStrategyID, Integer transactionDurationMs, List<String> offerIDs, List<Double> offerScores, List<Integer> positions,   String controlGroupState, List<String> scoringStrategyIDs, String retailerMsisdn, Double rechargeAmount, Double balance, String moduleID, String featureID)
   {
     this.msisdn = msisdn;
     this.subscriberID = subscriberID;
@@ -162,7 +168,9 @@ public class PresentationLog implements SubscriberStreamEvent
     this.retailerMsisdn = retailerMsisdn;
     this.rechargeAmount = rechargeAmount;
     this.balance = balance;
-  }
+    this.moduleID = moduleID;
+    this.featureID = featureID;
+}
 
   /*****************************************
   *
@@ -194,6 +202,8 @@ public class PresentationLog implements SubscriberStreamEvent
     this.retailerMsisdn = JSONUtilities.decodeString(jsonRoot, "retailerMsisdn", false);
     this.rechargeAmount = JSONUtilities.decodeDouble(jsonRoot, "rechargeAmount", false);
     this.balance = JSONUtilities.decodeDouble(jsonRoot, "balance", false);
+    this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
+    this.featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
   }
 
   /*****************************************
@@ -306,7 +316,9 @@ public class PresentationLog implements SubscriberStreamEvent
     struct.put("retailerMsisdn", presentationLog.getRetailerMsisdn());
     struct.put("rechargeAmount", presentationLog.getRechargeAmount());
     struct.put("balance", presentationLog.getBalance());
-    return struct;
+    struct.put("moduleID", presentationLog.getModuleID());
+    struct.put("featureID", presentationLog.getFeatureID());
+   return struct;
   }
 
   //
@@ -353,12 +365,14 @@ public class PresentationLog implements SubscriberStreamEvent
     List<String> scoringStrategyIDs = (List<String>) valueStruct.get("scoringStrategyIDs");
     String retailerMsisdn = valueStruct.getString("retailerMsisdn");
     Double rechargeAmount = valueStruct.getFloat64("rechargeAmount");
-    Double balance = valueStruct.getFloat64("balance");    
-    
+    Double balance = valueStruct.getFloat64("balance");
+    String moduleID = (schemaVersion >= 2) ? valueStruct.getString("moduleID") : null;
+    String featureID = (schemaVersion >= 2) ? valueStruct.getString("featureID") : null;
+
     //
     //  return
     //
 
-    return new PresentationLog(msisdn, subscriberID, eventDate, callUniqueIdentifier, channelID, salesChannelID, userID, presentationToken, presentationStrategyID, transactionDurationMs, offerIDs, offerScores, positions, controlGroupState, scoringStrategyIDs, retailerMsisdn, rechargeAmount, balance);
+    return new PresentationLog(msisdn, subscriberID, eventDate, callUniqueIdentifier, channelID, salesChannelID, userID, presentationToken, presentationStrategyID, transactionDurationMs, offerIDs, offerScores, positions, controlGroupState, scoringStrategyIDs, retailerMsisdn, rechargeAmount, balance, moduleID, featureID);
   }
 }

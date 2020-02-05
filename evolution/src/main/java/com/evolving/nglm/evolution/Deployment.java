@@ -77,7 +77,7 @@ public class Deployment
   private static String callingChannelTopic;
   private static String salesChannelTopic;
   private static String supplierTopic;
-  private static String partnerTopic;
+  private static String resellerTopic;
   private static String productTopic;
   private static String catalogCharacteristicTopic;
   private static String contactPolicyTopic;
@@ -135,8 +135,8 @@ public class Deployment
   private static String todayODRDatacubePeriodCronEntryString;
   private static String yesterdayLoyaltyDatacubePeriodCronEntryString;
   private static String todayLoyaltyDatacubePeriodCronEntryString;
-  private static String yesterdayTiersDatacubePeriodCronEntryString;
-  private static String todayTiersDatacubePeriodCronEntryString;
+  private static String yesterdaySubscriberDatacubePeriodCronEntryString;
+  private static String todaySubscriberDatacubePeriodCronEntryString;
   private static String journeyTrafficDatacubePeriodCronEntryString;
   private static String subscriberProfileSnapshotPeriodCronEntryString;
   private static PropensityRule propensityRule;
@@ -296,7 +296,7 @@ public class Deployment
   public static String getCallingChannelTopic() { return callingChannelTopic; }
   public static String getSalesChannelTopic() { return salesChannelTopic; }
   public static String getSupplierTopic() { return supplierTopic; }
-  public static String getPartnerTopic() { return partnerTopic; }
+  public static String getResellerTopic() { return resellerTopic; }
   public static String getProductTopic() { return productTopic; }
   public static String getCatalogCharacteristicTopic() { return catalogCharacteristicTopic; }
   public static String getContactPolicyTopic() { return contactPolicyTopic; }
@@ -354,8 +354,8 @@ public class Deployment
   public static String getTodayODRDatacubePeriodCronEntryString() { return todayODRDatacubePeriodCronEntryString; }
   public static String getYesterdayLoyaltyDatacubePeriodCronEntryString() { return yesterdayLoyaltyDatacubePeriodCronEntryString; }
   public static String getTodayLoyaltyDatacubePeriodCronEntryString() { return todayLoyaltyDatacubePeriodCronEntryString; }
-  public static String getYesterdayTiersDatacubePeriodCronEntryString() { return yesterdayTiersDatacubePeriodCronEntryString; }
-  public static String getTodayTiersDatacubePeriodCronEntryString() { return todayTiersDatacubePeriodCronEntryString; }
+  public static String getYesterdaySubscriberDatacubePeriodCronEntryString() { return yesterdaySubscriberDatacubePeriodCronEntryString; }
+  public static String getTodaySubscriberDatacubePeriodCronEntryString() { return todaySubscriberDatacubePeriodCronEntryString; }
   public static String getJourneyTrafficDatacubePeriodCronEntryString() { return journeyTrafficDatacubePeriodCronEntryString; }
   public static String getSubscriberProfileSnapshotPeriodCronEntryString() { return subscriberProfileSnapshotPeriodCronEntryString; }
   public static PropensityRule getPropensityRule() { return propensityRule; }
@@ -1101,12 +1101,12 @@ public class Deployment
       }
 
     //
-    //  partnerTopic
+    //  resellerTopic
     //
 
     try
       {
-        partnerTopic = JSONUtilities.decodeString(jsonRoot, "partnerTopic", true);
+        resellerTopic = JSONUtilities.decodeString(jsonRoot, "resellerTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
@@ -1962,38 +1962,38 @@ public class Deployment
       }
     
     //
+    //  todaySubscriberDatacubePeriodCronEntryString
+    //
+
+    try
+      {
+        todaySubscriberDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todaySubscriberDatacubePeriodCronEntryString", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  yesterdaySubscriberDatacubePeriodCronEntryString
+    //
+
+    try
+      {
+        yesterdaySubscriberDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdaySubscriberDatacubePeriodCronEntryString", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
     //  todayLoyaltyDatacubePeriodCronEntryString
     //
 
     try
       {
         todayLoyaltyDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todayLoyaltyDatacubePeriodCronEntryString", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  yesterdayTierDatacubePeriodCronEntryString
-    //
-
-    try
-      {
-        yesterdayTiersDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdayTiersDatacubePeriodCronEntryString", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  todayTierDatacubePeriodCronEntryString
-    //
-
-    try
-      {
-        todayTiersDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todayTiersDatacubePeriodCronEntryString", true);
       }
     catch (JSONUtilitiesException e)
       {

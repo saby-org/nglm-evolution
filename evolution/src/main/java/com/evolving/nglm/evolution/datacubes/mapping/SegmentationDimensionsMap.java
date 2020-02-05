@@ -1,23 +1,26 @@
 package com.evolving.nglm.evolution.datacubes.mapping;
 
-import org.json.simple.JSONObject;
+import java.util.Collection;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.evolution.Journey;
-import com.evolving.nglm.evolution.JourneyNode;
+import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.Segment;
 import com.evolving.nglm.evolution.SegmentationDimension;
-import com.evolving.nglm.evolution.SegmentationDimensionEligibility;
-import com.evolving.nglm.evolution.SegmentationDimensionFileImport;
-import com.evolving.nglm.evolution.SegmentationDimensionRanges;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
+import com.evolving.nglm.evolution.SegmentationDimensionService;
 
-public class SegmentationDimensionsMap extends GUIManagedObjectList<SegmentationDimension>
+public class SegmentationDimensionsMap extends GUIManagedObjectMap<SegmentationDimension>
 {
   protected static final Logger log = LoggerFactory.getLogger(SegmentationDimensionsMap.class);
+
+  /*****************************************
+  *
+  *  data
+  *
+  *****************************************/
+  
+  private SegmentationDimensionService service;
   
   /*****************************************
   *
@@ -25,52 +28,19 @@ public class SegmentationDimensionsMap extends GUIManagedObjectList<Segmentation
   *
   *****************************************/
   
-  public SegmentationDimensionsMap() {
-    super();
+  public SegmentationDimensionsMap(SegmentationDimensionService service) {
+    super(SegmentationDimension.class);
+    this.service = service;
   }
   
   /*****************************************
   *
-  *  updateFromGUIManager
+  *  getCollection
   *
   *****************************************/
   
-  public void updateFromGUIManager(GUIManagerClient gmClient) {
-    this.reset();
-
-    for (JSONObject item : this.getGUIManagedObjectList(gmClient, "getSegmentationDimensionList", "segmentationDimensions"))
-      {
-        SegmentationDimension segmentationDimension = null;
-        try
-          {
-            switch (SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(item, "targetingType", true)))
-              {
-                case ELIGIBILITY:
-                  segmentationDimension = new SegmentationDimensionEligibility(item);
-                  break;
-    
-                case RANGES:
-                  segmentationDimension = new SegmentationDimensionRanges(item);
-                  break;
-    
-                case FILE:
-                  segmentationDimension = new SegmentationDimensionFileImport(item);
-                  break;
-    
-                case Unknown:
-                  log.warn("Unsupported dimension type {}", JSONUtilities.decodeString(item, "targetingType", false));
-              }
-            
-            if(segmentationDimension != null) {
-              this.guiManagedObjects.put(segmentationDimension.getGUIManagedObjectID(), segmentationDimension);
-            }
-          }
-        catch (GUIManagerException e)
-          {
-            log.warn("Unable to retrieve some segmentationDimensions: {}", e.getMessage());
-          }
-      }
-  }
+  // TODO: for the moment, we also retrieve archived objects
+  protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredSegmentationDimensions(true); }
   
   /*****************************************
   *

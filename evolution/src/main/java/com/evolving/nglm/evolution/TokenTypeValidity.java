@@ -15,6 +15,7 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class TokenTypeValidity 
@@ -25,27 +26,6 @@ public class TokenTypeValidity
   *  configuration
   *
   *****************************************/
-  
-  //
-  //  PeriodType
-  //
-
-  public enum PeriodType
-  {
-    Minutes("minutes"),
-    Hours("hours"),
-    Days("days"),
-    Weeks("weeks"),
-    Months("months"),
-    Quarters("quarters"),
-    Semesters("semesters"),
-    Years("years"),
-    Unknown("(unknown)");
-    private String externalRepresentation;
-    private PeriodType(String externalRepresentation) { this.externalRepresentation = externalRepresentation;}
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public static PeriodType fromExternalRepresentation(String externalRepresentation) { for (PeriodType enumeratedValue : PeriodType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
-  }
   
   /*****************************************
   *
@@ -85,7 +65,7 @@ public class TokenTypeValidity
   *
   *****************************************/
 
-  private PeriodType periodType;
+  private TimeUnit periodType;
   private int periodQuantity;
   private boolean roundDown;
 
@@ -95,7 +75,7 @@ public class TokenTypeValidity
   *
   *****************************************/
 
-  private TokenTypeValidity(PeriodType periodType, int periodQuantity, boolean roundDown)
+  private TokenTypeValidity(TimeUnit periodType, int periodQuantity, boolean roundDown)
   {
     this.periodType = periodType;
     this.periodQuantity = periodQuantity;
@@ -110,7 +90,7 @@ public class TokenTypeValidity
 
   TokenTypeValidity(JSONObject jsonRoot) throws GUIManagerException
   {
-    this.periodType = PeriodType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "periodType", true));
+    this.periodType = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "periodType", true));
     this.periodQuantity = JSONUtilities.decodeInteger(jsonRoot, "periodQuantity", true);
     this.roundDown = JSONUtilities.decodeBoolean(jsonRoot, "roundDown", true);
   }
@@ -121,7 +101,7 @@ public class TokenTypeValidity
   *
   *****************************************/
 
-  public PeriodType getPeriodType() { return periodType; }
+  public TimeUnit getPeriodType() { return periodType; }
   public int getPeriodQuantity() { return periodQuantity; }
   public boolean getRoundDown() { return roundDown; }
 
@@ -173,7 +153,7 @@ public class TokenTypeValidity
     //
 
     Struct valueStruct = (Struct) value;
-    PeriodType periodType = PeriodType.fromExternalRepresentation(valueStruct.getString("periodType"));
+    TimeUnit periodType = TimeUnit.fromExternalRepresentation(valueStruct.getString("periodType"));
     int periodQuantity = valueStruct.getInt32("periodQuantity");
     boolean roundDown = valueStruct.getBoolean("roundDown");
 

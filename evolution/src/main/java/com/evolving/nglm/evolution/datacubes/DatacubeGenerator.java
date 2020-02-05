@@ -82,7 +82,7 @@ public abstract class DatacubeGenerator
   protected abstract List<String> getFilterFields();
   protected abstract List<CompositeValuesSourceBuilder<?>> getFilterComplexSources();
   protected abstract List<AggregationBuilder> getDataAggregations();
-  protected abstract void runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException;
+  protected abstract boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException; // return false if generation must stop here.
   protected abstract void addStaticFilters(Map<String, Object> filters);
   protected abstract void embellishFilters(Map<String, Object> filters);
   protected abstract Map<String, Object> extractData(ParsedBucket compositeBucket, Map<String, Object> contextFilters) throws ClassCastException;
@@ -320,8 +320,13 @@ public abstract class DatacubeGenerator
         //
         // Pre-generation phase (for retrieving some mapping infos)
         //
-        
-        runPreGenerationPhase();
+
+        log.debug("[{}]: running pre-generation phase.", this.datacubeName);
+        boolean success = runPreGenerationPhase();
+        if(!success) {
+          log.info("[{}]: stopped in pre-generation phase.", this.datacubeName);
+          return;
+        }
         
         //
         // Generate Elasticsearch request
@@ -345,14 +350,14 @@ public abstract class DatacubeGenerator
         // Extract datacube rows from JSON response
         //
 
-        log.info("[{}]: extracting data from ES response.", this.datacubeName);
+        log.debug("[{}]: extracting data from ES response.", this.datacubeName);
         List<Map<String,Object>> datacubeRows = extractDatacubeRows(response);
         
         //
         // Push datacube rows in Elasticsearch
         //
 
-        log.info("[{}]: pushing {} datacube rows in ES.", this.datacubeName, datacubeRows.size());
+        log.info("[{}]: pushing {} datacube row(s) in ES index [{}].", this.datacubeName, datacubeRows.size(), this.getDatacubeESIndex());
         pushDatacubeRows(datacubeRows);
       } 
     catch(IOException|RuntimeException e)

@@ -86,24 +86,25 @@ public class LoyaltyProgramPointsESSinkConnector extends SimpleESSinkConnector
       *
       ****************************************/
 
-      try {
-    	LoyaltyProgramPoints loyaltyProgramPoints = new LoyaltyProgramPoints(guiManagedObject.getJSONRepresentation(), guiManagedObject.getEpoch(), guiManagedObject, catalogCharacteristicService);
-        //
-        //  flat fields
-        //
-      
-        documentMap.put("loyaltyProgramID", loyaltyProgramPoints.getLoyaltyProgramID());
-        documentMap.put("loyaltyProgramName", loyaltyProgramPoints.getLoyaltyProgramDisplay());
-        documentMap.put("loyaltyProgramType", loyaltyProgramPoints.getLoyaltyProgramType().name());
-        documentMap.put("rewardPointsID", loyaltyProgramPoints.getRewardPointsID());
-        documentMap.put("statusPointsID", loyaltyProgramPoints.getStatusPointsID());
-        JSONArray jsonTiers = new JSONArray();
-        for(Tier tier : loyaltyProgramPoints.getTiers()){
-    	  JSONObject jsonTier = new JSONObject();
-    	  jsonTier.put("tierName", tier.getTierName());
-    	  jsonTiers.add(jsonTier);
-        }
-        documentMap.put("tiers", jsonTiers);
+      try
+        {
+          LoyaltyProgramPoints loyaltyProgramPoints = new LoyaltyProgramPoints(guiManagedObject.getJSONRepresentation(), guiManagedObject.getEpoch(), guiManagedObject, catalogCharacteristicService);
+          //
+          // flat fields
+          //
+          documentMap.put("loyaltyProgramID", loyaltyProgramPoints.getLoyaltyProgramID());
+          documentMap.put("loyaltyProgramName", loyaltyProgramPoints.getLoyaltyProgramDisplay());
+          documentMap.put("loyaltyProgramType", loyaltyProgramPoints.getLoyaltyProgramType().name());
+          documentMap.put("rewardPointsID", loyaltyProgramPoints.getRewardPointsID());
+          documentMap.put("statusPointsID", loyaltyProgramPoints.getStatusPointsID());
+          JSONArray jsonTiers = new JSONArray();
+          for (Tier tier : loyaltyProgramPoints.getTiers())
+            {
+              JSONObject jsonTier = new JSONObject();
+              jsonTier.put("tierName", tier.getTierName());
+              jsonTiers.add(jsonTier);
+            }
+          documentMap.put("tiers", jsonTiers);
 	  } catch (GUIManagerException e) {
 	  }
       

@@ -247,17 +247,6 @@ public class SegmentationDimensionRanges extends SegmentationDimension
 
   /*****************************************
   *
-  *  constructor -- JSON without context -- for externals read-only (such as datacubes & reports)
-  *
-  *****************************************/
-
-  public SegmentationDimensionRanges(JSONObject jsonRoot) throws GUIManagerException
-  {
-    this(null, jsonRoot, 0, null,false);
-  }
-
-  /*****************************************
-  *
   *  decodeBaseSplit
   *
   *****************************************/

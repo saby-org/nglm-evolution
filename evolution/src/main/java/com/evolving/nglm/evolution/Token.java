@@ -108,7 +108,7 @@ public class Token implements Action
   private String eventID;                   // reference to the TokenManagerEvent that generated this token
   private String subscriberID;
   private String tokenTypeID;
-  private String moduleID;                 // reference to the Token requester
+  private String moduleID;                  // reference to the Token requester
   private Integer featureID;                // reference to the Token requester
 
   /*****************************************

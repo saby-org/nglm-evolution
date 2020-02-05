@@ -175,36 +175,6 @@ public class JourneyStatisticWrapper implements SubscriberStreamOutput
     this.lastRewards = lastRewards;
     this.journeyStatistic = journeyStatistic;
   }
-
-  /*****************************************
-  *
-  *  constructor -- copy
-  *
-  *****************************************/
-
-  public JourneyStatisticWrapper(JourneyStatisticWrapper journeyStatisticWrapper)
-  {
-    //
-    //  deep copy
-    //
-    this.journeyID = new String(journeyStatisticWrapper.getJourneyID());
-    this.subscriberStratum = new ArrayList<String>();
-    for(String segment : journeyStatisticWrapper.getSubscriberStratum())
-      {
-        this.subscriberStratum.add(segment);
-      }
-    this.statusUpdated = journeyStatisticWrapper.isStatusUpdated();
-    this.lastRewards = null;
-    if(journeyStatisticWrapper.getLastRewards() != null)
-      {
-        this.lastRewards = new RewardHistory(journeyStatisticWrapper.getLastRewards());
-      }
-    this.journeyStatistic = null;
-    if(journeyStatisticWrapper.getJourneyStatistic() != null)
-      {
-        this.journeyStatistic = new JourneyStatistic(journeyStatisticWrapper.getJourneyStatistic());
-      }
-  }
   
   /*****************************************
   *

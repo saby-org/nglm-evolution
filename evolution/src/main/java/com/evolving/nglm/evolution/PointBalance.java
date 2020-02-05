@@ -177,11 +177,14 @@ public class PointBalance
   public int getBalance(Date evaluationDate)
   {
     int result = 0;
-    for (Date expirationDate : balances.keySet())
+    if (evaluationDate != null)
       {
-        if (evaluationDate.compareTo(expirationDate) <= 0)
+        for (Date expirationDate : balances.keySet())
           {
-            result += balances.get(expirationDate);
+            if (evaluationDate.compareTo(expirationDate) <= 0)
+              {
+                result += balances.get(expirationDate);
+              }
           }
       }
     return result;

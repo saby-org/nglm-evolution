@@ -232,17 +232,6 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
 
   /*****************************************
   *
-  *  constructor -- JSON without context -- for externals read-only (such as datacubes & reports)
-  *
-  *****************************************/
-
-  public SegmentationDimensionEligibility(JSONObject jsonRoot) throws GUIManagerException
-  {
-    this(null, jsonRoot, 0, null,false);
-  }
-
-  /*****************************************
-  *
   *  decodeSegments
   *
   *****************************************/
@@ -254,12 +243,12 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
       {
         JSONObject segment = (JSONObject) jsonArray.get(i);
         String segmentID = JSONUtilities.decodeString(segment, "id", false);
-        if ( (segmentID == null || resetSegmentIDs) && segmentationDimensionService != null)
+        if (segmentID == null || resetSegmentIDs)
           {
             segmentID = segmentationDimensionService.generateSegmentID();
             segment.put("id", segmentID);
           }
-        result.add(new SegmentEligibility(segment, segmentationDimensionService != null));
+        result.add(new SegmentEligibility(segment));
       }
     return result;
   }

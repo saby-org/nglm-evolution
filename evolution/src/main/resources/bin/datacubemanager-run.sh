@@ -47,4 +47,4 @@ echo deployment complete
 #  run
 #
 
-exec kafka-run-class -name datacubemanager -loggc com.evolving.nglm.evolution.datacubes.DatacubeManager /app/runtime $BROKER_SERVERS $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT $GUIMANAGER_HOST $GUIMANAGER_PORT
+exec kafka-run-class -name datacubemanager -loggc com.evolving.nglm.evolution.datacubes.DatacubeManager /app/runtime $BROKER_SERVERS 001 $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT

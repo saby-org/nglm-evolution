@@ -1120,9 +1120,9 @@ public class EvolutionEngine
           {
             KStream<StringKey, ExternalAPIOutput> rekeyedExternalAPIStream = branchedExternalAPIStreamsByTopic[k].map(EvolutionEngine::rekeyExternalAPIOutputStream);
             // Only send the json part to the output topic 
-            KStream<StringKey, StringValue> externalAPIStreamString = rekeyedExternalAPIStream.map(
-                (key,value) -> new KeyValue<StringKey, StringValue>(new StringKey(value.getTopicID()), new StringValue(value.getJsonString())));
-            externalAPIStreamString.to(externalAPIOutputTopics[k], Produced.with(stringKeySerde, StringValue.serde()));
+            KStream<String, String> externalAPIStreamString = rekeyedExternalAPIStream.map(
+                (key,value) -> new KeyValue<String, String>(value.getTopicID(), value.getJsonString()));
+            externalAPIStreamString.to(externalAPIOutputTopics[k], Produced.with(new Serdes.StringSerde(), new Serdes.StringSerde()));
           }
       }
     
@@ -1315,7 +1315,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    timerService.start(subscriberStateStore, subscriberGroupEpochReader, targetService, journeyService);
+    timerService.start(subscriberStateStore, subscriberGroupEpochReader, targetService, journeyService, exclusionInclusionTargetService);
 
     /*****************************************
     *
@@ -3446,7 +3446,10 @@ public class EvolutionEngine
     if (evolutionEvent instanceof PresentationLog || evolutionEvent instanceof AcceptanceLog)
       {
         String eventTokenCode = null;
-        String eventID = null;
+        String moduleID = null;
+        String userID = null;
+        String featureIDStr = null;
+        int featureID = 0;
         List<Token> subscriberTokens = subscriberProfile.getTokens();
         DNBOToken subscriberStoredToken = null;
         TokenType defaultDNBOTokenType = tokenTypeService.getActiveTokenType("external", SystemTime.getCurrentTime());
@@ -3463,12 +3466,27 @@ public class EvolutionEngine
         if (evolutionEvent instanceof PresentationLog)
           {
             eventTokenCode = ((PresentationLog) evolutionEvent).getPresentationToken();
-            eventID = ((PresentationLog)evolutionEvent).getCallUniqueIdentifier();
+            moduleID = ((PresentationLog)evolutionEvent).getModuleID();
+            featureIDStr = ((PresentationLog)evolutionEvent).getFeatureID();
           }
         else if (evolutionEvent instanceof AcceptanceLog)
           {
             eventTokenCode = ((AcceptanceLog) evolutionEvent).getPresentationToken();
-            eventID = ((AcceptanceLog)evolutionEvent).getCallUniqueIdentifier();
+            moduleID = ((AcceptanceLog)evolutionEvent).getModuleID();
+            featureIDStr = ((AcceptanceLog)evolutionEvent).getFeatureID();
+          }
+
+        try
+        {
+          featureID = Integer.parseInt(featureIDStr);
+        }
+        catch (NumberFormatException e)
+        {
+          log.warn("featureID is not an integer : " + featureIDStr + " using " + featureID);
+        }
+        if (moduleID == null)
+          {
+            moduleID = DeliveryRequest.Module.Unknown.getExternalRepresentation();
           }
 
         //
@@ -3529,7 +3547,9 @@ public class EvolutionEngine
           {
             subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
             subscriberTokens.add(subscriberStoredToken);
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), new Date(), eventID, eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName()));
+            subscriberStoredToken.setFeatureID(featureID);
+            subscriberStoredToken.setModuleID(moduleID);
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), "", eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName(), moduleID, 0));
             subscriberStateUpdated = true;
           }
 
@@ -3552,7 +3572,7 @@ public class EvolutionEngine
                 subscriberStateUpdated = true;
               }
             Date eventDate = presentationLog.getEventDate();
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, presentationLog.getCallUniqueIdentifier(), eventTokenCode, "Allocate", "OK", "PresentationLog"));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, "", eventTokenCode, "Allocate", "OK", "PresentationLog", moduleID, featureID));
             if (subscriberStoredToken.getCreationDate() == null)
               {
                 subscriberStoredToken.setCreationDate(eventDate);
@@ -3595,7 +3615,7 @@ public class EvolutionEngine
                 subscriberStoredToken.setTokenStatus(TokenStatus.Redeemed);
                 subscriberStoredToken.setRedeemedDate(acceptanceLog.getEventDate());
                 subscriberStoredToken.setAcceptedOfferID(acceptanceLog.getOfferID());
-                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), acceptanceLog.getCallUniqueIdentifier(), eventTokenCode, "Redeem", "OK", "AcceptanceLog"));
+                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), "", eventTokenCode, "Redeem", "OK", "AcceptanceLog", moduleID, featureID));
               }
             subscriberStateUpdated = true;
           }
@@ -3956,17 +3976,18 @@ public class EvolutionEngine
                     eligibilityAndTargetting.addAll(journey.getEligibilityCriteria());
                     eligibilityAndTargetting.addAll(journey.getTargetingCriteria());
                     boolean subscriberToBeProvisionned = EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityAndTargetting);
-
+                    context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
+                
                     List<List<EvaluationCriterion>> targetsCriteria = journey.getAllTargetsCriteria(targetService, now);
                     boolean inAnyTarget = targetsCriteria.size() == 0 ? true : false; // if no target is defined into the journey, then this boolean is true otherwise, false by default 
                     List<EvaluationCriterion> targets = new ArrayList<>();
 
-                    for(List<EvaluationCriterion> current : journey.getAllTargetsCriteria(targetService, now))
+                    for(List<EvaluationCriterion> current : targetsCriteria)
                       {
                         if(inAnyTarget == false) { // avoid evaluating target is already true
                           evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
-                          eligibilityAndTargetting.addAll(current);
-                          boolean inThisTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityAndTargetting);
+                          context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
+                          boolean inThisTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, current);
                           if(inThisTarget)
                             {
                               inAnyTarget = true;
@@ -3981,7 +4002,6 @@ public class EvolutionEngine
                           if (!(journey.getAppendInclusionLists() && inclusionList) && ! targeting)
                             {
                               enterJourney = false;
-                              context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
                               context.subscriberTrace("NotEligible: targeting criteria / inclusion list {0}", journey.getJourneyID());
                             }
                           break;
@@ -3991,14 +4011,12 @@ public class EvolutionEngine
                           if (! targeting)
                             {
                               enterJourney = false;
-                              context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
                               context.subscriberTrace("NotEligible: targeting criteria {0}", journey.getJourneyID());
                             }
                           break;
                       }
                   }
               }
-
             /*****************************************
             *
             *  enterJourney
@@ -4562,19 +4580,29 @@ public class EvolutionEngine
                                 case TokenUpdate:
                                   Token token = (Token) action;
                                   subscriberState.getSubscriberProfile().getTokens().add(token);
+                                  int featureID = 0;
+                                  try
+                                  {
+                                    featureID = Integer.parseInt(journey.getJourneyID());
+                                  }
+                                  catch (NumberFormatException e)
+                                  {
+                                    log.warn("journeyID is not an integer : "+journey.getJourneyID()+" using "+featureID);
+                                  }
+                                  token.setFeatureID(featureID);
                                   switch (token.getTokenStatus())
                                   {
                                     case New:
-                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), journey.getJourneyID(), token.getTokenCode(), TokenChange.CREATE,   "OK", "Journey"));
+                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID));
                                       break;
                                     case Bound: // must record the token creation
-                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), journey.getJourneyID(), token.getTokenCode(), TokenChange.CREATE,   "OK", "Journey"));
-                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getBoundDate(),    journey.getJourneyID(), token.getTokenCode(), TokenChange.ALLOCATE, "OK", "Journey"));
+                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID));
+                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID));
                                       break;
                                     case Redeemed: // must record the token creation & allocation
-                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), journey.getJourneyID(), token.getTokenCode(), TokenChange.CREATE,   "OK", "Journey"));
-                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getBoundDate(),    journey.getJourneyID(), token.getTokenCode(), TokenChange.ALLOCATE, "OK", "Journey"));
-                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getRedeemedDate(), journey.getJourneyID(), token.getTokenCode(), TokenChange.REDEEM,   "OK", "Journey"));
+                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID));
+                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID));
+                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getRedeemedDate(), TokenChange.REDEEM, token, featureID));
                                       break;
                                     case Expired :
                                       // TODO
@@ -4587,7 +4615,6 @@ public class EvolutionEngine
 
                                 case TokenChange:
                                   TokenChange tokenChange = (TokenChange) action;
-                                  tokenChange.setEventID(journey.getJourneyID());
                                   tokenChange.setOrigin("Journey");
                                   subscriberState.getTokenChanges().add(tokenChange);
                                   break;
@@ -4880,6 +4907,11 @@ public class EvolutionEngine
     *****************************************/
 
     return subscriberStateUpdated;
+  }
+
+  public static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String action, Token token, int journeyID)
+  {
+    return new TokenChange(subscriberId, eventDateTime, "", token.getTokenCode(), action, "OK", "Journey", Module.Journey_Manager, journeyID);
   }
 
   /****************************************

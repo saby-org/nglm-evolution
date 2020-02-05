@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
@@ -56,6 +57,10 @@ import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
 public abstract class SubscriberProfile implements SubscriberStreamOutput
 {
+  public static final String CURRENT_BALANCE = "currentBalance";
+  public static final String EARLIEST_EXPIRATION_DATE = "earliestExpirationDate";
+  public static final String EARLIEST_EXPIRATION_QUANTITY = "earliestExpirationQuantity";
+
   /*****************************************
   *
   *  configuration
@@ -430,6 +435,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
                       { 
                         if(loyaltyProgramPoints.getRewardPointsID() != null)
                           {
+                            loyalty.put("rewardPointID", loyaltyProgramPoints.getRewardPointsID());
                             loyalty.put("rewardPointName", pointService.getStoredPoint(loyaltyProgramPoints.getRewardPointsID()).getJSONRepresentation().get("display").toString());
                             int balance = 0;
                             if(this.pointBalances.get(loyaltyProgramPoints.getRewardPointsID()) != null){
@@ -439,6 +445,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
                           }
                         if(loyaltyProgramPoints.getStatusPointsID() != null)
                           {
+                            loyalty.put("statusPointID", loyaltyProgramPoints.getStatusPointsID());
                             loyalty.put("statusPointName", pointService.getStoredPoint(loyaltyProgramPoints.getStatusPointsID()).getJSONRepresentation().get("display").toString());
                             int balance = 0;
                             if(this.pointBalances.get(loyaltyProgramPoints.getStatusPointsID()) != null){
@@ -498,15 +505,16 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   *
   ****************************************/
   
-  public JSONObject getPointsBalanceJSON()
+  public JSONArray getPointsBalanceJSON()
   {
-    JSONObject result = new JSONObject();
+    JSONArray array = new JSONArray();
     if(this.pointBalances != null)
       {
-        JSONArray array = new JSONArray();
         for(Entry<String, PointBalance> point : pointBalances.entrySet())
           {
             JSONObject obj = new JSONObject();
+            Date earliestExpirationDate = point.getValue().getFirstExpirationDate(SystemTime.getCurrentTime());
+            int earliestExpirationQuantity = point.getValue().getBalance(earliestExpirationDate);
             JSONArray expirationDates = new JSONArray();
             for (Date expirationDate : point.getValue().getBalances().keySet())
               {
@@ -516,12 +524,37 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
                 expirationDates.add(pointInfo);
               }
             obj.put("expirationDates", JSONUtilities.encodeArray(expirationDates));
+            obj.put(EARLIEST_EXPIRATION_DATE, earliestExpirationDate != null ? earliestExpirationDate.getTime() : null);
+            obj.put(EARLIEST_EXPIRATION_QUANTITY, earliestExpirationQuantity);
+            obj.put(CURRENT_BALANCE, point.getValue().getBalance(SystemTime.getCurrentTime()));
             obj.put("pointID", point.getKey());
             array.add(obj);
           }
-        result.put("pointBalances", array);
       }
-    return result;
+    return array;
+  }
+
+  /****************************************
+  *
+  *  getSubscriberJourneysJSON - SubscriberJourneys
+  *
+  ****************************************/
+  
+  public JSONArray getSubscriberJourneysJSON()
+  {
+    JSONArray array = new JSONArray();
+    if(this.subscriberJourneys != null)
+      {
+        for(Entry<String, SubscriberJourneyStatus> journeyStatus : subscriberJourneys.entrySet())
+          {
+            JSONObject obj = new JSONObject();
+            String status = journeyStatus.getValue().getExternalRepresentation();
+            obj.put("status", status);
+            obj.put("journeyID", journeyStatus.getKey());
+            array.add(obj);
+          }
+      }
+    return array;
   }
   
   /****************************************

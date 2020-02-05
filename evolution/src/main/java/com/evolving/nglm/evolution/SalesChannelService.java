@@ -165,7 +165,7 @@ public class SalesChannelService extends GUIService
   *
   *****************************************/
 
-  public void putSalesChannel(GUIManagedObject salesChannel, CallingChannelService callingChannelService, PartnerService partnerService, boolean newObject, String userID) throws GUIManagerException
+  public void putSalesChannel(GUIManagedObject salesChannel, CallingChannelService callingChannelService, ResellerService resellerService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -177,9 +177,9 @@ public class SalesChannelService extends GUIService
     //  validate
     //
 
-    if (salesChannel instanceof SalesChannel)
+    if (salesChannel instanceof SalesChannel)      
       {
-        ((SalesChannel) salesChannel).validate(callingChannelService, partnerService, now);
+        ((SalesChannel) salesChannel).validate(callingChannelService, resellerService, now);
       }
     
     //
@@ -195,11 +195,11 @@ public class SalesChannelService extends GUIService
   *
   *****************************************/
 
-  public void putSalesChannel(IncompleteObject product, CallingChannelService callingChannelService, PartnerService partnerService, boolean newObject, String userID)
+  public void putSalesChannel(IncompleteObject product, CallingChannelService callingChannelService, ResellerService resellerService, boolean newObject, String userID)
   {
     try
       {
-        putSalesChannel((GUIManagedObject) product, callingChannelService, partnerService, newObject, userID);
+        putSalesChannel((GUIManagedObject) product, callingChannelService, resellerService, newObject, userID);
       }
     catch (GUIManagerException e)
       {

@@ -6,8 +6,12 @@ import org.elasticsearch.client.RestHighLevelClient;
 
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.JourneyService;
+import com.evolving.nglm.evolution.LoyaltyProgramService;
+import com.evolving.nglm.evolution.OfferService;
+import com.evolving.nglm.evolution.PaymentMeanService;
+import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.datacubes.ScheduledJob;
-import com.evolving.nglm.evolution.datacubes.mapping.GUIManagerClient;
 
 public class ODRDatacubeOnTodayJob extends ScheduledJob
 {
@@ -28,14 +32,14 @@ public class ODRDatacubeOnTodayJob extends ScheduledJob
   *
   *****************************************/
   
-  public ODRDatacubeOnTodayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch, GUIManagerClient guiClient) 
+  public ODRDatacubeOnTodayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService) 
   {
     super(schedulingUniqueID, 
-        "Today-ODR", 
+        "ODR(today)", 
         Deployment.getTodayODRDatacubePeriodCronEntryString(), 
         Deployment.getBaseTimeZone(),
         true);
-    this.datacube = new ODRDatacubeGenerator(this.jobName, elasticsearch, guiClient);
+    this.datacube = new ODRDatacubeGenerator(this.jobName, elasticsearch, offerService, salesChannelService, paymentMeanService, loyaltyProgramService, journeyService);
   }
   
   /*****************************************

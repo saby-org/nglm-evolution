@@ -20,9 +20,13 @@ import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSou
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
+import com.evolving.nglm.evolution.JourneyService;
+import com.evolving.nglm.evolution.LoyaltyProgramService;
+import com.evolving.nglm.evolution.OfferService;
+import com.evolving.nglm.evolution.PaymentMeanService;
+import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.DeliverablesMap;
-import com.evolving.nglm.evolution.datacubes.mapping.GUIManagerClient;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.ModulesMap;
@@ -37,7 +41,6 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
   private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_offers-";
   private static final String DATA_TOTAL_AMOUNT = "totalAmount";
 
-  private GUIManagerClient guiClient;
   private List<String> filterFields;
   private List<AggregationBuilder> dataAggregations;
   private OffersMap offersMap;
@@ -50,18 +53,17 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
   
   private String targetDate;
   
-  public ODRDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, GUIManagerClient guiClient)  
+  public ODRDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService)  
   {
     super(datacubeName, elasticsearch);
 
-    this.guiClient = guiClient;
-    this.offersMap = new OffersMap();
+    this.offersMap = new OffersMap(offerService);
     this.modulesMap = new ModulesMap();
-    this.salesChannelsMap = new SalesChannelsMap();
-    this.paymentMeansMap = new PaymentMeansMap();
-    this.loyaltyProgramsMap = new LoyaltyProgramsMap();
+    this.salesChannelsMap = new SalesChannelsMap(salesChannelService);
+    this.paymentMeansMap = new PaymentMeansMap(paymentMeanService);
+    this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
     this.deliverablesMap = new DeliverablesMap();
-    this.journeysMap = new JourneysMap();
+    this.journeysMap = new JourneysMap(journeyService);
     
     //
     // Filter fields
@@ -93,15 +95,17 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
   @Override protected List<AggregationBuilder> getDataAggregations() { return this.dataAggregations; }
     
   @Override
-  protected void runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
+  protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
-    offersMap.updateFromGUIManager(guiClient);
+    offersMap.update();
     modulesMap.updateFromElasticsearch(elasticsearch);
-    salesChannelsMap.updateFromGUIManager(guiClient);
-    paymentMeansMap.updateFromGUIManager(guiClient);
-    loyaltyProgramsMap.updateFromGUIManager(guiClient);
+    salesChannelsMap.update();
+    paymentMeansMap.update();
+    loyaltyProgramsMap.update();
     deliverablesMap.updateFromElasticsearch(elasticsearch);
-    journeysMap.updateFromGUIManager(guiClient);
+    journeysMap.update();
+    
+    return true;
   }
 
   @Override

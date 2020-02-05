@@ -1,4 +1,4 @@
-package com.evolving.nglm.evolution.datacubes.loyalty;
+package com.evolving.nglm.evolution.datacubes.subscriber;
 
 import java.util.Date;
 
@@ -7,36 +7,35 @@ import org.elasticsearch.client.RestHighLevelClient;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.datacubes.ScheduledJob;
-import com.evolving.nglm.evolution.datacubes.mapping.GUIManagerClient;
 
-public class LoyaltyDatacubeOnYesterdayJob extends ScheduledJob
+public class SubscriberProfileDatacubesOnYesterdayJob extends ScheduledJob
 {
   /*****************************************
   *
   *  data
   *
   *****************************************/
-
-  private LoyaltyDatacubeGenerator datacube;
+  
+  private SubscriberProfileDatacubeGenerator subscriberProfileDatacube;
   
   /*****************************************
   *
   *  constructor
   *  
-  *  This LoyaltyProgramsHistory datacube will be generated every day at 1:00 am
-  *  and it will aggregate data from the previous day.
+  *  This will generated a datacube every day at 1:00 am from the subscriberprofile snapshot index of the previous day.
   *
   *****************************************/
   
-  public LoyaltyDatacubeOnYesterdayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch, GUIManagerClient guiClient) 
+  public SubscriberProfileDatacubesOnYesterdayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch, SegmentationDimensionService segmentationDimensionService) 
   {
     super(schedulingUniqueID, 
-        "Yesterday-Loyalty", 
-        Deployment.getYesterdayLoyaltyDatacubePeriodCronEntryString(), 
+        "SubscriberProfile(yesterday)", 
+        Deployment.getYesterdaySubscriberDatacubePeriodCronEntryString(), 
         Deployment.getBaseTimeZone(),
         true);
-    this.datacube = new LoyaltyDatacubeGenerator(this.jobName, elasticsearch, guiClient);
+    this.subscriberProfileDatacube = new SubscriberProfileDatacubeGenerator(this.jobName, elasticsearch, segmentationDimensionService);
   }
   
   /*****************************************
@@ -49,7 +48,7 @@ public class LoyaltyDatacubeOnYesterdayJob extends ScheduledJob
   {
     Date now = SystemTime.getCurrentTime();
     Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
-    this.datacube.run(yesterday);
+    this.subscriberProfileDatacube.run(yesterday, false);
   }
 
 }

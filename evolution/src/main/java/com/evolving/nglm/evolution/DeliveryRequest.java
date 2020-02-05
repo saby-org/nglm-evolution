@@ -686,7 +686,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
           break;
 
         case REST_API:
-          featureName = "REST_API-its temp"; //To DO
+          featureName = getFeatureDisplay(module, featureId, journeyService, offerService, loyaltyProgramService);
           break;
           
         case Customer_Care:
@@ -730,7 +730,22 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
           break;
 
         case REST_API:
-          featureDisplay = "REST_API-its temp"; //To DO
+          try {
+            int featureIdInt = Integer.parseInt(featureId); 
+            for (ThirdPartyManager.API api : ThirdPartyManager.API.values())
+              {
+                if (api.getMethodIndex() == featureIdInt)
+                  {
+                    featureDisplay = api.toString();
+                    break;
+                  }
+              }
+          }
+          catch (NumberFormatException e)
+          {
+            log.warn("cannot convert featureID to int : " + featureId + " " + e.getMessage());
+            featureDisplay = "Unknown";
+          }
           break;
           
         case Customer_Care:

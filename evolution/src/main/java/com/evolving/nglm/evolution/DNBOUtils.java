@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ReferenceDataReader;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
@@ -50,13 +51,22 @@ public class DNBOUtils
   *
   *****************************************/
 
-  private static TokenChange generateTokenChange(EvolutionEventContext evolutionEventContext, String tokenCode, String action, String str)
+  private static TokenChange generateTokenChange(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, String tokenCode, String action, String str)
   {
-    String eventID = ""; // will be filled by EvolutionEngine when processing the Action
-    String origin = ""; // will be filled by EvolutionEngine when processing the Action
+    String eventID = "";
+    String origin = "";
     String subscriberID = evolutionEventContext.getSubscriberState().getSubscriberID();
     Date date = evolutionEventContext.now();
-    return new TokenChange(subscriberID, date, eventID, tokenCode, action, str, origin);
+    int featureID = 0;
+    try
+    {
+      featureID = Integer.parseInt(subscriberEvaluationRequest.getJourneyState().getJourneyID());
+    }
+    catch (NumberFormatException e)
+    {
+      log.warn("journey ID is not an integer : "+subscriberEvaluationRequest.getJourneyState().getJourneyID()+" using "+featureID);
+    }
+    return new TokenChange(subscriberID, date, eventID, tokenCode, action, str, origin, Module.Journey_Manager, featureID);
   }
   
   /*****************************************
@@ -106,7 +116,7 @@ public class DNBOUtils
         {
           String str = "invalid scoring strategy " + scoringStrategyID;
           log.error(str);
-          return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, "", action, str))};
+          return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, "", action, str))};
         }
 
       log.info("ActionManagerDNBO.handleToken() scoringStrategy valid");
@@ -121,7 +131,7 @@ public class DNBOUtils
         {
           String str = "unknown token type " + tokenTypeID; 
           log.error(str);
-          return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, "", action, str))};
+          return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, "", action, str))};
         }
 
       log.info("ActionManagerDNBO.handleToken() tokenType valid");
@@ -148,12 +158,13 @@ public class DNBOUtils
         {
           String str = "After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_TOKEN_CODE + " tries, unable to generate a new token code with pattern " + codeFormat;
           if (log.isTraceEnabled()) log.trace(str);
-          return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, "", action, str))};
+          return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, "", action, str))};
         }
       
       log.info("ActionManagerDNBO.handleToken() token code generated " + tokenCode);
 
       DNBOToken token = new DNBOToken(tokenCode, subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID(), tokenType);
+      token.setModuleID(Module.Journey_Manager.getExternalRepresentation()); // featureID is set by evolution engine (to journeyID)
       token.setScoringStrategyIDs(Collections.<String>singletonList(scoringStrategy.getScoringStrategyID()));
       token.setCreationDate(evolutionEventContext.now());
 
@@ -202,7 +213,7 @@ public class DNBOUtils
         {
           String str = "maxNumberofPlays has been reached " + maxNumberofPlays;
             log.error(str);
-            return generateTokenChange(evolutionEventContext, token.getTokenCode(), action, str);
+            return generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), action, str);
         }
       token.setBoundCount(boundCount+1);
       
@@ -244,7 +255,7 @@ public class DNBOUtils
         {
           String str = "unknown offer while scoring " + e.getLocalizedMessage();
           log.error(str);
-          return generateTokenChange(evolutionEventContext, token.getTokenCode(), action, str);
+          return generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), action, str);
         }
 
       /*****************************************
@@ -264,7 +275,7 @@ public class DNBOUtils
             {
               String str = "invalid offer returned by scoring " + offerId;
               log.error(str);
-              return generateTokenChange(evolutionEventContext, token.getTokenCode(), action, str);
+              return generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), action, str);
             }
           tokenContextUpdate.getParameters().put("action.presented.offer." + (index+1), offer.getDisplay());
           if (++index == MAX_PRESENTED_OFFERS)
@@ -452,7 +463,7 @@ public class DNBOUtils
         {
           String str = "cannot select first offer because list is empty";
           log.error(str);
-          return Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, token.getTokenCode(), TokenChange.REDEEM, str));
+          return Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), TokenChange.REDEEM, str));
         }
 
       //   select 1st offer of the list
@@ -465,7 +476,7 @@ public class DNBOUtils
         {
           String str = "invalid offer returned by scoring " + offerID; 
           log.error(str);
-          return Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, token.getTokenCode(), TokenChange.REDEEM, str));
+          return Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), TokenChange.REDEEM, str));
         }
       tokenUpdate.getParameters().put("action.accepted.offer", offer.getDisplay());
       

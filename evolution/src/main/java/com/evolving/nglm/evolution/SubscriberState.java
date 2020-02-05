@@ -115,6 +115,12 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   private Integer ucgEpoch;
   private Date ucgRefreshDay;
   private Date lastEvaluationDate;
+  private List<UUID> trackingIDs;
+  
+  //
+  // temporary lists for SubscriberStreamOutput extraction (see getEvolutionEngineOutputs)
+  //
+  
   private List<JourneyRequest> journeyRequests;
   private List<JourneyRequest> journeyResponses;
   private List<LoyaltyProgramRequest> loyaltyProgramRequests;
@@ -129,9 +135,8 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   private List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents;
   private SubscriberTrace subscriberTrace;
   private ExternalAPIOutput externalAPIOutput;
-  private List<UUID> trackingIDs;
   private List<TokenChange> tokenChanges;
-
+      
   //
   //  in memory only
   //
@@ -333,23 +338,9 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
         this.ucgEpoch = subscriberState.getUCGEpoch();
         this.ucgRefreshDay = subscriberState.getUCGRefreshDay();
         this.lastEvaluationDate = subscriberState.getLastEvaluationDate();
-        this.journeyRequests = new ArrayList<JourneyRequest>(subscriberState.getJourneyRequests());
-        this.journeyResponses = new ArrayList<JourneyRequest>(subscriberState.getJourneyResponses());
-        this.loyaltyProgramRequests = new ArrayList<LoyaltyProgramRequest>(subscriberState.getLoyaltyProgramRequests());
-        this.loyaltyProgramResponses = new ArrayList<LoyaltyProgramRequest>(subscriberState.getLoyaltyProgramResponses());
-        this.pointFulfillmentResponses= new ArrayList<PointFulfillmentRequest>(subscriberState.getPointFulfillmentResponses());
-        this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberState.getDeliveryRequests());
-        this.journeyMetrics = new ArrayList<JourneyMetric>(subscriberState.getJourneyMetrics());
-        this.propensityOutputs = new ArrayList<PropensityEventOutput>(subscriberState.getPropensityOutputs());
-        this.profileChangeEvents= new ArrayList<ProfileChangeEvent>(subscriberState.getProfileChangeEvents());
-        this.profileSegmentChangeEvents= new ArrayList<ProfileSegmentChangeEvent>(subscriberState.getProfileSegmentChangeEvents());
-        this.profileLoyaltyProgramChangeEvents= new ArrayList<ProfileLoyaltyProgramChangeEvent>(subscriberState.getProfileLoyaltyProgramChangeEvents());
-        this.subscriberTrace = subscriberState.getSubscriberTrace();
-        this.externalAPIOutput = subscriberState.getExternalAPIOutput();
         this.kafkaRepresentation = null;
         this.trackingIDs = subscriberState.getTrackingIDs();
-        this.tokenChanges = subscriberState.getTokenChanges();
-
+        
         //
         //  deep copy of journey states
         //
@@ -359,16 +350,27 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
           {
             this.journeyStates.add(new JourneyState(journeyState));
           }
-        
-        //
-        //  deep copy of journey statistic wrappers
-        //
 
-        this.journeyStatisticWrappers = new ArrayList<JourneyStatisticWrapper>();
-        for(JourneyStatisticWrapper journeyStatisticWrapper : subscriberState.getJourneyStatisticWrappers())
-          {
-            this.journeyStatisticWrappers.add(new JourneyStatisticWrapper(journeyStatisticWrapper));
-          }
+        //
+        // shallow copy of all temporary lists. Elements of those lists are considered immutable.
+        // Observation: a cleaning of those temporary lists is made after the only call to this copy constructor. 
+        //
+        
+        this.journeyRequests = new ArrayList<JourneyRequest>(subscriberState.getJourneyRequests());
+        this.journeyResponses = new ArrayList<JourneyRequest>(subscriberState.getJourneyResponses());
+        this.loyaltyProgramRequests = new ArrayList<LoyaltyProgramRequest>(subscriberState.getLoyaltyProgramRequests());
+        this.loyaltyProgramResponses = new ArrayList<LoyaltyProgramRequest>(subscriberState.getLoyaltyProgramResponses());
+        this.pointFulfillmentResponses= new ArrayList<PointFulfillmentRequest>(subscriberState.getPointFulfillmentResponses());
+        this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberState.getDeliveryRequests());
+        this.journeyStatisticWrappers = new ArrayList<JourneyStatisticWrapper>(subscriberState.getJourneyStatisticWrappers());
+        this.journeyMetrics = new ArrayList<JourneyMetric>(subscriberState.getJourneyMetrics());
+        this.propensityOutputs = new ArrayList<PropensityEventOutput>(subscriberState.getPropensityOutputs());
+        this.profileChangeEvents= new ArrayList<ProfileChangeEvent>(subscriberState.getProfileChangeEvents());
+        this.profileSegmentChangeEvents= new ArrayList<ProfileSegmentChangeEvent>(subscriberState.getProfileSegmentChangeEvents());
+        this.profileLoyaltyProgramChangeEvents= new ArrayList<ProfileLoyaltyProgramChangeEvent>(subscriberState.getProfileLoyaltyProgramChangeEvents());
+        this.subscriberTrace = subscriberState.getSubscriberTrace();
+        this.externalAPIOutput = subscriberState.getExternalAPIOutput();
+        this.tokenChanges = subscriberState.getTokenChanges();
       }
     catch (InvocationTargetException e)
       {

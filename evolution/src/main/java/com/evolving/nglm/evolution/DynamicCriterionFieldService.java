@@ -157,13 +157,14 @@ public class DynamicCriterionFieldService extends GUIService
     //
 
     JSONObject criterionFieldJSON = new JSONObject();
-    criterionFieldJSON.put("id", "loyaltyprogram" + "." + loyaltyProgram.getLoyaltyProgramID() + "." + criterionFieldInternalBaseName);
+    String id = "loyaltyprogram" + "." + loyaltyProgram.getLoyaltyProgramID() + "." + criterionFieldInternalBaseName;
+    criterionFieldJSON.put("id", id);
     criterionFieldJSON.put("display", "Loyalty Program " + loyaltyProgram.getGUIManagedObjectDisplay() + " " + criterionFieldBaseName);
     criterionFieldJSON.put("epoch", loyaltyProgram.getEpoch());
     criterionFieldJSON.put("dataType", criterionDataType.getExternalRepresentation());
     criterionFieldJSON.put("tagFormat", null);
     criterionFieldJSON.put("tagMaxLength", null);
-    criterionFieldJSON.put("esField", null);
+    criterionFieldJSON.put("esField", id);
     criterionFieldJSON.put("retriever", "getLoyaltyProgramCriterionField");
     criterionFieldJSON.put("minValue", null);
     criterionFieldJSON.put("maxValue", null);
@@ -239,13 +240,14 @@ public class DynamicCriterionFieldService extends GUIService
     //
 
     JSONObject criterionFieldJSON = new JSONObject();
-    criterionFieldJSON.put("id", "point" + "." + point.getPointID() + "." + criterionFieldBaseName);
+    String id = "point" + "." + point.getPointID() + "." + criterionFieldBaseName;
+    criterionFieldJSON.put("id", id);
     criterionFieldJSON.put("display", "Point " + point.getGUIManagedObjectDisplay() + " " + criterionFieldBaseName);
     criterionFieldJSON.put("epoch", point.getEpoch());
     criterionFieldJSON.put("dataType", criterionDataType.getExternalRepresentation());
     criterionFieldJSON.put("tagFormat", null);
     criterionFieldJSON.put("tagMaxLength", null);
-    criterionFieldJSON.put("esField", null);
+    criterionFieldJSON.put("esField", id);
     criterionFieldJSON.put("retriever", "getPointCriterionField");
     criterionFieldJSON.put("minValue", null);
     criterionFieldJSON.put("maxValue", null);
