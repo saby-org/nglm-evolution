@@ -4808,26 +4808,35 @@ public class EvolutionEngine
 
             SimpleParameterMap journeyResults = new SimpleParameterMap();
             Journey journey = journeyService.getActiveJourney(journeyState.getJourneyID(), now);
-            for (CriterionField contextVariable : journey.getContextVariables().values())
+            if(journey != null) 
               {
-                switch (contextVariable.getFieldDataType())
+                           
+                log.debug("Gotten Journey for " + journeyState.getJourneyID() + " " + journey);
+                for (CriterionField contextVariable : journey.getContextVariables().values())
                   {
-                    case IntegerCriterion:
-                    case DoubleCriterion:
-                    case StringCriterion:
-                    case BooleanCriterion:
-                    case DateCriterion:
-                      journeyResults.put(Journey.generateJourneyResultID(journey, contextVariable), journeyState.getJourneyParameters().get(contextVariable.getID()));
-                      break;
+                    switch (contextVariable.getFieldDataType())
+                      {
+                        case IntegerCriterion:
+                        case DoubleCriterion:
+                        case StringCriterion:
+                        case BooleanCriterion:
+                        case DateCriterion:
+                          journeyResults.put(Journey.generateJourneyResultID(journey, contextVariable), journeyState.getJourneyParameters().get(contextVariable.getID()));
+                          break;
+                      }
                   }
+                journeyResponse.setJourneyResults(journeyResults);
+  
+                //
+                //  send response
+                //
+                context.getSubscriberState().getJourneyResponses().add(journeyResponse);
+                subscriberStateUpdated = true;
               }
-            journeyResponse.setJourneyResults(journeyResults);
-
-            //
-            //  send response
-            //
-            context.getSubscriberState().getJourneyResponses().add(journeyResponse);
-            subscriberStateUpdated = true;
+            else 
+              {
+                log.info("Null Journey for " + journeyState.getJourneyID());
+              }
           }
       }
 
