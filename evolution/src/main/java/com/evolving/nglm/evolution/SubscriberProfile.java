@@ -53,6 +53,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
+import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
 public abstract class SubscriberProfile implements SubscriberStreamOutput
@@ -351,11 +352,22 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
         SegmentationDimension segmentationDimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionID, evaluationDate);
         if (segmentationDimension != null)
           {
-            int epoch = segments.get(groupID);
-            if (epoch == (subscriberGroupEpochReader.get(dimensionID) != null ? subscriberGroupEpochReader.get(dimensionID).getEpoch() : 0))
+            if(segmentationDimension.getTargetingType().equals(SegmentationDimensionTargetingType.FILE))
               {
+                // In case of File based segmentation, let consider the file is not to be used anymore until the new file 
+                // has been handled. So apply epoc coherency test.
+                int epoch = segments.get(groupID);
+                if (epoch == (subscriberGroupEpochReader.get(dimensionID) != null ? subscriberGroupEpochReader.get(dimensionID).getEpoch() : 0))
+                  {
+                    Segment segment = segmentationDimensionService.getSegment(segmentID);
+                    result.add(GUIManager.normalizeSegmentName(segmentationDimension.getSegmentationDimensionName() + "." + segment.getName()));
+                }
+              }
+            else
+              {
+                // If not file targeting, let try to retrieve the good segment...
                 Segment segment = segmentationDimensionService.getSegment(segmentID);
-                result.add(GUIManager.normalizeSegmentName(segmentationDimension.getSegmentationDimensionName() + "." + segment.getName()));
+                if(segment != null) {result.add(GUIManager.normalizeSegmentName(segmentationDimension.getSegmentationDimensionName() + "." + segment.getName()));}                
               }
           }
       }
