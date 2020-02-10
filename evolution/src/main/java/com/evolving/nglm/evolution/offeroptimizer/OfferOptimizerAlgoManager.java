@@ -203,6 +203,15 @@ public class OfferOptimizerAlgoManager {
     if(result.size() > 0)
       {
         Collections.sort(result);
+        OfferOptimizationAlgorithmParameter reversedParameter = new OfferOptimizationAlgorithmParameter("reversed");
+        String isReversedString = algoParameters.get(reversedParameter);
+        if (isReversedString != null)
+        {
+          if (Boolean.parseBoolean(isReversedString))
+          {
+            Collections.reverse(result);
+          }
+        }
       }
 
     return result;

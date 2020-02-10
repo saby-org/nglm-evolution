@@ -1302,14 +1302,14 @@ public class EvaluationCriterion
           case IsNullOperator:
             query = QueryBuilders.boolQuery().mustNot(
                 QueryBuilders.nestedQuery("loyaltyPrograms",
-                    QueryBuilders.existsQuery("loyaltyPrograms.loyaltyProgramName.keyword") , ScoreMode.Total));
+                    QueryBuilders.existsQuery("loyaltyPrograms.loyaltyProgramName") , ScoreMode.Total));
             break;
             
           case IsNotNullOperator:
           default:
             query = QueryBuilders.boolQuery().filter(
                 QueryBuilders.nestedQuery("loyaltyPrograms",
-                    buildCompareQuery("loyaltyPrograms.loyaltyProgramName.keyword", ExpressionDataType.StringExpression) , ScoreMode.Total));
+                    buildCompareQuery("loyaltyPrograms.loyaltyProgramName", ExpressionDataType.StringExpression) , ScoreMode.Total));
             break;
         }
         return query;
@@ -1719,8 +1719,8 @@ public class EvaluationCriterion
       default:
         throw new CriterionException("unknown criteria : " + esField);
     }
-    QueryBuilder queryID = buildCompareQueryWithValue("subscriberJourneys.journeyID.keyword", ExpressionDataType.StringExpression, value);
-    QueryBuilder queryStatus = buildCompareQuery("subscriberJourneys.status.keyword", ExpressionDataType.StringExpression);
+    QueryBuilder queryID = buildCompareQueryWithValue("subscriberJourneys.journeyID", ExpressionDataType.StringExpression, value);
+    QueryBuilder queryStatus = buildCompareQuery("subscriberJourneys.status", ExpressionDataType.StringExpression);
     QueryBuilder query = QueryBuilders.nestedQuery("subscriberJourneys",
                                           QueryBuilders.boolQuery()
                                                            .filter(queryID)
@@ -1741,7 +1741,7 @@ public class EvaluationCriterion
     if (! fieldNameMatcher.find()) throw new CriterionException("invalid point field " + esField);
     String pointID = fieldNameMatcher.group(1);
     String criterionFieldBaseName = fieldNameMatcher.group(2);
-    QueryBuilder queryPointID = QueryBuilders.termQuery("pointBalances.pointID.keyword", pointID);
+    QueryBuilder queryPointID = QueryBuilders.termQuery("pointBalances.pointID", pointID);
     if (!"balance".equals(criterionFieldBaseName))
       {
         throw new CriterionException("Internal error, unknown criterion field : " + esField);
@@ -1768,12 +1768,12 @@ public class EvaluationCriterion
     if (! fieldNameMatcher.find()) throw new CriterionException("invalid loyaltyprogram field " + esField);
     String loyaltyProgramID = fieldNameMatcher.group(1);
     String criterionSuffix = fieldNameMatcher.group(2);
-    QueryBuilder queryLPID = QueryBuilders.termQuery("loyaltyPrograms.programID.keyword", loyaltyProgramID);
+    QueryBuilder queryLPID = QueryBuilders.termQuery("loyaltyPrograms.programID", loyaltyProgramID);
     QueryBuilder query = null;
     switch (criterionSuffix)
     {
       case "tier":
-        query = handleLoyaltyProgramField("loyaltyPrograms.tierName.keyword", esField, queryLPID, ExpressionDataType.StringExpression);
+        query = handleLoyaltyProgramField("loyaltyPrograms.tierName", esField, queryLPID, ExpressionDataType.StringExpression);
         break;
 
       case "statuspoint.balance":
@@ -1791,7 +1791,7 @@ public class EvaluationCriterion
         String pointKind = pointsMatcher.group(1); // statuspoint , rewardpoint
         String pointID = pointsMatcher.group(2); // POINT001
         String whatWeNeed = pointsMatcher.group(3); // earliestexpirydate , earliestexpiryquantity
-        QueryBuilder queryPoint = QueryBuilders.termQuery("loyaltyPrograms."+(pointKind.equals("statuspoint")?"statusPointID":"rewardPointID")+".keyword", pointID);           
+        QueryBuilder queryPoint = QueryBuilders.termQuery("loyaltyPrograms."+(pointKind.equals("statuspoint")?"statusPointID":"rewardPointID"), pointID);           
         QueryBuilder queryExpiry = null;
         switch (whatWeNeed)
         {

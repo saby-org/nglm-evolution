@@ -7547,6 +7547,7 @@ public class GUIManager
     *
     *****************************************/
 
+    response.put("responseCode", "ok");
     response.put("result", result);
     if (returnQuery && (query != null))
       {
@@ -19493,7 +19494,7 @@ public class GUIManager
         kafkaProducerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
         kafkaProducerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
         KafkaProducer journeyProducer = new KafkaProducer<byte[], byte[]>(kafkaProducerProperties);
-        journeyProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getJourneyRequestTopic(), StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest)));
+        journeyProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getJourneyRequestTopic(), StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest)));
       
         responseCode = "ok";
       }
@@ -22721,7 +22722,7 @@ public class GUIManager
                           case OffersPresentation:
                             HashMap<String,Object> availableValue = new HashMap<String,Object>();
                             availableValue.put("id", tokenType.getTokenTypeID());
-                            availableValue.put("display", tokenType.getTokenTypeName());
+                            availableValue.put("display", tokenType.getTokenTypeDisplay());
                             result.add(JSONUtilities.encodeObject(availableValue));
                             break;
                         }

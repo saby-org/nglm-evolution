@@ -444,17 +444,11 @@ docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-
 docker service logs ev-reportmanager_reportmanager-001 --tail 100 -f
 docker service logs ev-reportscheduler_reportscheduler-001 --tail 100 -f
 
--- putReport
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/report.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putReport
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/report.002.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putReport
-
--- getReportList
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getReportList | jq
-
--- launchReport
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1,"id":"1"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/downloadReport
 curl -X POST -H "Content-Type: application/json" -d '{"id":"001","apiVersion":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/launchReport; echo
-
---  test getReportGlobalConfiguration
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getReportGlobalConfiguration
 
 --

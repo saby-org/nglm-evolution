@@ -107,7 +107,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       *  extract CommodityDeliveryRequest
       *
       *******************************************/
-      log.info("BDRSinkConnector.getDocumentMap: computing map to give to elastic search");
+      log.debug("BDRSinkConnector.getDocumentMap: computing map to give to elastic search");
       Object commodityRequestValue = sinkRecord.value();
       Schema commodityRequestValueSchema = sinkRecord.valueSchema();
       CommodityDeliveryRequest commodityRequest = CommodityDeliveryRequest.unpack(new SchemaAndValue(commodityRequestValueSchema, commodityRequestValue));
@@ -134,7 +134,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
         documentMap.put("returnCodeDetails", commodityRequest.getCommodityDeliveryStatus());
          
       }
-      log.info("BDRSinkConnector.getDocumentMap: map computed, contents are="+documentMap.toString());
+      log.debug("BDRSinkConnector.getDocumentMap: map computed, contents are="+documentMap.toString());
       return documentMap;
     }
     

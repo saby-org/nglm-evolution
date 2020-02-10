@@ -136,22 +136,33 @@ public class ODRSinkConnector extends SimpleESSinkConnector
         documentMap.put("offerID", purchaseManager.getOfferID());
         documentMap.put("offerQty", purchaseManager.getQuantity());
         documentMap.put("salesChannelID", purchaseManager.getSalesChannelID());
-        if(offer != null){
-          if(offer.getOfferSalesChannelsAndPrices() != null){
-            for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
-              if(channel.getSalesChannelIDs() != null) {
-                for(String salesChannelID : channel.getSalesChannelIDs()) {
-                  if(salesChannelID.equals(purchaseManager.getSalesChannelID())) {
-                    PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(channel.getPrice().getPaymentMeanID());
-                    if(paymentMean != null) {
-                      documentMap.put("offerPrice", channel.getPrice().getAmount());
-                      documentMap.put("meanOfPayment", paymentMean.getDisplay());
+          if (offer != null)
+            {
+              if (offer.getOfferSalesChannelsAndPrices() != null)
+                {
+                  for (OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
+                    {
+                      if (channel.getSalesChannelIDs() != null)
+                        {
+                          for (String salesChannelID : channel.getSalesChannelIDs())
+                            {
+                              if (salesChannelID.equals(purchaseManager.getSalesChannelID()))
+                                {
+                                  OfferPrice price = channel.getPrice();
+                                  if (price != null)
+                                    {
+                                      PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(price.getPaymentMeanID());
+                                      if (paymentMean != null)
+                                        {
+                                          documentMap.put("offerPrice", price.getAmount());
+                                          documentMap.put("meanOfPayment", paymentMean.getDisplay());
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
-                  }
                 }
-              }
-            }
-          }
           documentMap.put("offerStock", offer.getStock());
           StringBuilder sb = new StringBuilder();
           if(offer.getOfferProducts() != null) {

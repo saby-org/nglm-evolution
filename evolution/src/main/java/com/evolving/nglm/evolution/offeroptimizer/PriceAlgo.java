@@ -44,14 +44,6 @@ public class PriceAlgo implements IOfferOptimizerAlgorithm {
           + offerPrice + " " + subscriberEvaluationRequest.getSubscriberProfile() + " " + algoDefinition);
       }
     
-    OfferOptimizationAlgorithmParameter reversedParameter = new OfferOptimizationAlgorithmParameter("reversed");
-    String isReversedString = algoParameters.get(reversedParameter);
-    Boolean isReversed = false; // default value
-    if (isReversedString != null)
-    {
-      isReversed = Boolean.parseBoolean(isReversedString);
-    }
-
     double score = 0d; // default value if offer has no price : offer is free
     
     for (OfferSalesChannelsAndPrice oscap : o.getOfferSalesChannelsAndPrices())
@@ -62,10 +54,6 @@ public class PriceAlgo implements IOfferOptimizerAlgorithm {
             if (price != null) // If price is null, take default score (0.0)
               {
                 score = (double) price.getAmount(); // simple cast from long to double is enough
-                if (isReversed)
-                  {
-                    score = -score;
-                  }
               }
             break;
           }

@@ -4918,7 +4918,7 @@ public class EvolutionEngine
     return subscriberStateUpdated;
   }
 
-  public static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String action, Token token, int journeyID)
+  private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String action, Token token, int journeyID)
   {
     return new TokenChange(subscriberId, eventDateTime, "", token.getTokenCode(), action, "OK", "Journey", Module.Journey_Manager, journeyID);
   }
