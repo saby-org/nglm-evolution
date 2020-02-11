@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution.reports;
 
 import java.text.NumberFormat;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,6 +28,7 @@ import org.apache.kafka.streams.processor.TimestampExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.evolution.Deployment;
 
 import kafka.admin.AdminUtils;
@@ -371,11 +373,27 @@ public class ReportUtils {
   public static String format(String s)
   {
     String res = s;
-    // Replace simple quotes by spaces
-    res = res.replaceAll("'", " ");
     // Surround s with double quotes, and escape double quotes inside it
     res = "\""+res.replaceAll("\"", Matcher.quoteReplacement("\\\""))+"\"";
     return res;
   }
 
+  //
+  // formatJSON for Lists
+  //
+  public static String formatJSON(List<Map<String, Object>> json)
+  {
+    String res = JSONUtilities.encodeArray(json).toString();
+    return res;
+  }
+
+  //
+  // formatJSON for Maps
+  //
+  public static String formatJSON(Map<String, Object> json)
+  {
+    String res = JSONUtilities.encodeObject(json).toString();
+    return res;
+  }
+  
 }

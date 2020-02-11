@@ -709,53 +709,55 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //
       //  presentation
       //
-
-      thirdPartyPresentationMap.put(OFFERID, getOfferID());
-      thirdPartyPresentationMap.put(OFFERNAME, offer.getJSONRepresentation().get("name"));
-      thirdPartyPresentationMap.put(OFFERDISPLAY, offer.getJSONRepresentation().get("display"));
-      thirdPartyPresentationMap.put(OFFERQTY, getQuantity());
-      thirdPartyPresentationMap.put(OFFERSTOCK, offer.getStock());
-      if(offer.getOfferSalesChannelsAndPrices() != null){
-        for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
-          if(channel.getSalesChannelIDs() != null) {
-            for(String salesChannelID : channel.getSalesChannelIDs()) {
-              if(salesChannelID.equals(getSalesChannelID())) {
-                if(channel.getPrice() != null) {
-                  PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(channel.getPrice().getPaymentMeanID());
-                  if(paymentMean != null) {
-                    thirdPartyPresentationMap.put(OFFERPRICE, channel.getPrice().getAmount());
-                    thirdPartyPresentationMap.put(MEANOFPAYMENT, paymentMean.getDisplay());
-                    thirdPartyPresentationMap.put(PAYMENTPROVIDERID, paymentMean.getFulfillmentProviderID());
+      if(offer != null)
+        {
+          thirdPartyPresentationMap.put(OFFERID, getOfferID());
+          thirdPartyPresentationMap.put(OFFERNAME, offer.getJSONRepresentation().get("name"));
+          thirdPartyPresentationMap.put(OFFERDISPLAY, offer.getJSONRepresentation().get("display"));
+          thirdPartyPresentationMap.put(OFFERQTY, getQuantity());
+          thirdPartyPresentationMap.put(OFFERSTOCK, offer.getStock());
+          if(offer.getOfferSalesChannelsAndPrices() != null){
+            for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
+              if(channel.getSalesChannelIDs() != null) {
+                for(String salesChannelID : channel.getSalesChannelIDs()) {
+                  if(salesChannelID.equals(getSalesChannelID())) {
+                    if(channel.getPrice() != null) {
+                      PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(channel.getPrice().getPaymentMeanID());
+                      if(paymentMean != null) {
+                        thirdPartyPresentationMap.put(OFFERPRICE, channel.getPrice().getAmount());
+                        thirdPartyPresentationMap.put(MEANOFPAYMENT, paymentMean.getDisplay());
+                        thirdPartyPresentationMap.put(PAYMENTPROVIDERID, paymentMean.getFulfillmentProviderID());
+                      }
+                    }
                   }
                 }
               }
             }
           }
+
+          StringBuilder sb = new StringBuilder();
+          if(offer.getOfferProducts() != null) {
+            for(OfferProduct offerProduct : offer.getOfferProducts()) {
+              Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
+              sb.append(product!=null?product.getDisplay():offerProduct.getProductID()).append(";").append(offerProduct.getQuantity()).append(",");
+            }
+          }
+          String offerContent = sb.toString().substring(0, sb.toString().length()-1);
+          thirdPartyPresentationMap.put(OFFERCONTENT, offerContent);
+
+          thirdPartyPresentationMap.put(SALESCHANNELID, getSalesChannelID());
+          thirdPartyPresentationMap.put(SALESCHANNEL, (salesChannel != null) ? salesChannel.getSalesChannelName() : null);
+          thirdPartyPresentationMap.put(MODULEID, getModuleID());
+          thirdPartyPresentationMap.put(MODULENAME, module.toString());
+          thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
+          thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+          thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+          thirdPartyPresentationMap.put(ORIGIN, getOrigin());
+          thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
+          thirdPartyPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
+          thirdPartyPresentationMap.put(VOUCHERCODE, "");
+          thirdPartyPresentationMap.put(VOUCHERPARTNERID, "");
         }
-      }
-      
-      StringBuilder sb = new StringBuilder();
-      if(offer.getOfferProducts() != null) {
-        for(OfferProduct offerProduct : offer.getOfferProducts()) {
-          Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
-          sb.append(product!=null?product.getDisplay():offerProduct.getProductID()).append(";").append(offerProduct.getQuantity()).append(",");
-        }
-      }
-      String offerContent = sb.toString().substring(0, sb.toString().length()-1);
-      thirdPartyPresentationMap.put(OFFERCONTENT, offerContent);
-      
-      thirdPartyPresentationMap.put(SALESCHANNELID, getSalesChannelID());
-      thirdPartyPresentationMap.put(SALESCHANNEL, (salesChannel != null) ? salesChannel.getSalesChannelName() : null);
-      thirdPartyPresentationMap.put(MODULEID, getModuleID());
-      thirdPartyPresentationMap.put(MODULENAME, module.toString());
-      thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
-      thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-      thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-      thirdPartyPresentationMap.put(ORIGIN, getOrigin());
-      thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
-      thirdPartyPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
-      thirdPartyPresentationMap.put(VOUCHERCODE, "");
-      thirdPartyPresentationMap.put(VOUCHERPARTNERID, "");
     }
   }
 

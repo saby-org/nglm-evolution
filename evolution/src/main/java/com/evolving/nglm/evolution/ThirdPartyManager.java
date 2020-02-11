@@ -4008,7 +4008,7 @@ public class ThirdPartyManager
           return JSONUtilities.encodeObject(response);          
         }
       
-      String featureID = "purchaseOffer";
+      String featureID = API.purchaseOffer.getMethodIndex()+"";
       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
       deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, kafkaProducer);
       
