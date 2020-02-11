@@ -137,7 +137,7 @@ public abstract class DatacubeGenerator
     
     List<CompositeValuesSourceBuilder<?>> sources = new ArrayList<>();
     for(String datacubeFilter: datacubeFilterFields) {
-      TermsValuesSourceBuilder sourceTerms = new TermsValuesSourceBuilder(datacubeFilter).field(datacubeFilter);
+      TermsValuesSourceBuilder sourceTerms = new TermsValuesSourceBuilder(datacubeFilter).field(datacubeFilter).missingBucket(true);
       sources.add(sourceTerms);
     }
     for(CompositeValuesSourceBuilder<?> complexSources: datacubeFilterComplexSources) {
