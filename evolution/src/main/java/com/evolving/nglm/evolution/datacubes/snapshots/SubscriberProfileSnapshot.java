@@ -45,7 +45,7 @@ public class SubscriberProfileSnapshot extends ScheduledJob
   protected void run()
   {
     Date now = SystemTime.getCurrentTime();
-    // This snapshot is done the day after the "saved" day (usually at midnight in the morning)
+    // This snapshot is done the day after the "saved" day (after midnight, in the morning usually)
     Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
     this.snapshot.run(yesterday);
   }

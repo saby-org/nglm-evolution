@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -15,6 +16,7 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
@@ -23,7 +25,12 @@ import com.evolving.nglm.evolution.datacubes.mapping.SegmentationDimensionsMap;
 
 public class JourneyTrafficDatacubeGenerator extends DatacubeGenerator
 {
-  private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+  private static final DateFormat DATE_FORMAT;
+  static
+  {
+    DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+  }
   private static final String DATACUBE_ES_INDEX_PREFIX = "datacube_journeytraffic-";
   private static final String DATA_ES_INDEX_PREFIX = "journeystatistic-";
   private static final String FILTER_STRATUM_PREFIX = "subscriberStratum.";

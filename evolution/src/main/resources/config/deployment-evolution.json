@@ -126,14 +126,14 @@
   --  datacubes
   --
 
-  "yesterdayODRDatacubePeriodCronEntryString"            : "0 2 * * *",
+  "yesterdayODRDatacubePeriodCronEntryString"            : "0 1 * * *",
   "todayODRDatacubePeriodCronEntryString"                : "0 * * * *",
-  "yesterdayLoyaltyDatacubePeriodCronEntryString"        : "0 2 * * *",
+  "yesterdayLoyaltyDatacubePeriodCronEntryString"        : "0 1 * * *",
   "todayLoyaltyDatacubePeriodCronEntryString"            : "0 * * * *",
-  "yesterdaySubscriberDatacubePeriodCronEntryString"     : "0 2 * * *",
+  "yesterdaySubscriberDatacubePeriodCronEntryString"     : "0 1 * * *",
   "todaySubscriberDatacubePeriodCronEntryString"         : "0 * * * *",
   "journeyTrafficDatacubePeriodCronEntryString"          : "0 * * * *",
-  "subscriberProfileSnapshotPeriodCronEntryString"       : "0 1 * * *",
+  "subscriberProfileSnapshotPeriodCronEntryString"       : "5 0 * * *",
 
   -- 
   --  supportedDataTypes

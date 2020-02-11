@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -20,6 +21,7 @@ import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSou
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.OfferService;
@@ -36,7 +38,12 @@ import com.evolving.nglm.evolution.datacubes.mapping.SalesChannelsMap;
 
 public class ODRDatacubeGenerator extends DatacubeGenerator
 {
-  private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+  private static final DateFormat DATE_FORMAT;
+  static
+  {
+    DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+  }
   private static final String DATACUBE_ES_INDEX = "datacube_odr";
   private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_offers-";
   private static final String DATA_TOTAL_AMOUNT = "totalAmount";

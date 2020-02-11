@@ -6,6 +6,7 @@ import java.io.StringWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.bulk.BulkItemResponse.Failure;
@@ -15,6 +16,8 @@ import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.ReindexRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.core.Deployment;
 
 public class SnapshotTask
 {
@@ -33,8 +36,13 @@ public class SnapshotTask
   //
   //  others
   //
-
-  protected static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+  
+  protected static final DateFormat DATE_FORMAT;
+  static
+  {
+    DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+  }
   
   /*****************************************
   *

@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,7 +30,12 @@ import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
 
 public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
 {
-  private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+  private static final DateFormat DATE_FORMAT;
+  static
+  {
+    DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+  }
   private static final String DATACUBE_ES_INDEX = "datacube_loyaltyprogramschanges";
   private static final String DATA_ES_INDEX = "subscriberprofile";
   private static final String FILTER_ALL = "filters";
