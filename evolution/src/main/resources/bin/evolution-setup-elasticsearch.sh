@@ -1459,3 +1459,31 @@
         }
     }'
   echo
+
+  #
+  #  manually create campaigninfo index
+  #
+  
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/campaigninfo -H'Content-Type: application/json' -d'
+    {
+      "settings" :
+        {
+          "index" :
+            {
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_LARGE'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
+	      "refresh_interval" : "30s"
+            }
+        },
+      "mappings" :
+        {
+              "properties" :
+                {
+                  "campaignName" : { "type" : "keyword" },
+                  "campaignID" : { "type" : "keyword" },
+                  "startDate" : { "type" : "date" },
+                  "endDate" : { "type" : "date" }
+                }
+        }
+    }'
+  echo
