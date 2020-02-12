@@ -366,18 +366,116 @@ public class ReportUtils {
 		return Deployment.getReportManagerCsvSeparator();
 	}
 
-  
   //
-  // format
+  // format regular field
   //
-  public static String format(String s)
+  public static void format(StringBuilder sb, String s)
   {
-    String res = s;
     // Surround s with double quotes, and escape double quotes inside it
-    res = "\""+res.replaceAll("\"", Matcher.quoteReplacement("\\\""))+"\"";
-    return res;
+    sb.append("\"").append(s.replaceAll("\"", Matcher.quoteReplacement("\\\""))).append("\"");
   }
 
+  //
+  // format empty field
+  //
+  public static void format(StringBuilder sb)
+  {
+    sb.append("\"\"");
+  }
+
+  //
+  //
+  //
+  public static String formatResult(Map<String, Object> result)
+  {
+    boolean first = true;
+    StringBuilder line = new StringBuilder();
+    for (String field : result.keySet())
+      {
+        if (first)
+          {
+            first = false;
+          }
+        else
+          {
+            line.append(getSeparator());
+          }
+        if (result.get(field) != null)
+          {
+            format(line, result.get(field).toString());
+          }
+        else
+          {
+            format(line);
+          }
+      }
+    return line.toString();
+  }
+
+  //
+  //
+  //
+  public static String formatResult(List<String> headerFieldsOrder, Map<String, Object> info, Map<String, Object> subscriberFields)
+  {
+    boolean first = true;
+    StringBuilder line = new StringBuilder();
+    for (String field : headerFieldsOrder)
+      {
+        if (first)
+          {
+            first = false;
+          }
+        else 
+          {
+            line.append(getSeparator());
+          }
+        if (info.get(field) != null)
+          {
+            format(line, info.get(field).toString());
+          }
+        else if (subscriberFields.get(field) != null)
+          {
+            format(line, subscriberFields.get(field).toString());
+          }
+        else 
+          {
+            format(line);
+            line.append(getSeparator());
+          }
+      }
+    return line.toString();
+  }
+
+  //
+  //
+  //
+  public static String formatResult(List<String> headerFieldsOrder, Map<String, Object> info)
+  {
+    boolean first = true;
+    StringBuilder line = new StringBuilder();
+    for (String field : headerFieldsOrder)
+      {
+        if (first)
+          {
+            first = false;
+          }
+        else 
+          {
+            line.append(getSeparator());
+          }
+        if (info.get(field) != null)
+          {
+            format(line, info.get(field).toString());
+          }
+        else 
+          {
+            format(line);
+            line.append(getSeparator());
+          }
+      }
+    return line.toString();
+  }
+  
   //
   // formatJSON for Lists
   //
