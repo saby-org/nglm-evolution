@@ -208,7 +208,7 @@
             </configuration>
           </execution>
           <execution>
-            <id>generate-evolution-scripts</id>
+            <id>copy-evolution-log4j</id>
             <phase>prepare-package</phase>
             <goals>
               <goal>run</goal>
@@ -216,10 +216,9 @@
             <configuration>
               <exportAntProperties>true</exportAntProperties>
               <target>
-                <concat destfile="${project.build.directory}/assembled-resources/config/log4j-evol.properties" force="yes">
-                  <fileset dir="${project.build.directory}/nglm-core-resources/config" includes="log4j-core.properties"/>
-                  <fileset dir="${project.basedir}/src/main/resources/config" includes="log4j-evolution.properties"/>
-                </concat>
+                <copy todir="${project.build.directory}/assembled-resources/config/logger" force="yes">
+                  <fileset dir="${project.basedir}/src/main/resources/config/logger" includes="log4j-*.properties"/>
+                </copy>
               </target>
             </configuration>
           </execution>
