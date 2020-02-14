@@ -2,8 +2,10 @@ package com.evolving.nglm.evolution.datacubes.subscriber;
 
 import java.io.IOException;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -12,11 +14,16 @@ import java.util.TimeZone;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
+import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
-import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.SegmentationDimensionsMap;
@@ -33,6 +40,7 @@ public class SubscriberProfileDatacubeGenerator extends DatacubeGenerator
   private static final String DATA_ES_INDEX = "subscriberprofile";
   private static final String DATA_ES_INDEX_SNAPSHOT_PREFIX = "subscriberprofile_snapshot-";
   private static final String FILTER_STRATUM_PREFIX = "stratum.";
+  private static final String DATA_METRIC_PREFIX = "metric_";
 
   private List<String> filterFields;
   private SegmentationDimensionsMap segmentationDimensionList;
@@ -106,11 +114,30 @@ public class SubscriberProfileDatacubeGenerator extends DatacubeGenerator
   protected List<AggregationBuilder> getDataAggregations()
   {
     List<AggregationBuilder> dataAggregations = new ArrayList<AggregationBuilder>();
+    String requestedDate = generationDate;
+    String oneDayAfter;
     
-    //
-    // TODO
-    //
+    try
+      {
+        oneDayAfter = DATE_FORMAT.format(RLMDateUtils.addDays(DATE_FORMAT.parse(generationDate), 1, Deployment.getBaseTimeZone()));
+      } 
+    catch (ParseException e)
+      {
+        log.error("Unable to build some part of the ES request due to date formatting error.");
+        return dataAggregations;
+      }
     
+    Map<String, SubscriberProfileDatacubeMetric> metrics = Deployment.getSubscriberProfileDatacubeMetrics();
+    for(String metricID: metrics.keySet()) {
+      SubscriberProfileDatacubeMetric metric = metrics.get(metricID);
+      AggregationBuilder metricAgg = AggregationBuilders.sum(DATA_METRIC_PREFIX+metricID)
+          .script(new Script(ScriptType.INLINE, "painless", "def left = 0;"
+          + " if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ oneDayAfter +"') { left = params._source['"+ metric.getYesterdayESField() +"']; }"
+          + " else if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ requestedDate +"') { left = params._source['"+ metric.getTodayESField() +"']; }"
+          + " return left;", Collections.emptyMap()));
+      dataAggregations.add(metricAgg);
+    }
+        
     return dataAggregations;
   }
 
@@ -119,9 +146,22 @@ public class SubscriberProfileDatacubeGenerator extends DatacubeGenerator
   {    
     HashMap<String, Object> data = new HashMap<String,Object>();
     
-    //
-    // TODO
-    //
+    if (compositeBucket.getAggregations() == null) {
+      log.error("Unable to extract data, aggregation is missing.");
+      return data;
+    }
+
+    Map<String, SubscriberProfileDatacubeMetric> metrics = Deployment.getSubscriberProfileDatacubeMetrics();
+    for(String metricID: metrics.keySet()) {
+      SubscriberProfileDatacubeMetric metric = metrics.get(metricID);
+      
+      ParsedSum dataPointEarnedBucket = compositeBucket.getAggregations().get(DATA_METRIC_PREFIX+metricID);
+      if (dataPointEarnedBucket == null) {
+        log.error("Unable to extract "+metricID+" metric data, aggregation is missing.");
+        return data;
+      }
+      data.put(metric.getDisplay(), (int) dataPointEarnedBucket.getValue());
+    }
     
     return data;
   }
