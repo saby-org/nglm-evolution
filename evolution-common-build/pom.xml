@@ -9,20 +9,6 @@
   <repositories> 
 
     <repository>
-      <id>evolving-internal</id>
-      <name>Evolving Internal Repository</name>
-      <url>http://maven.sixthsensemedia.com:8090/repository/internal</url>
-      <layout>default</layout>
-    </repository>
-
-    <repository>
-      <id>evolving-snapshots</id>
-      <name>Evolving Snapshots Repository</name>
-      <url>http://maven.sixthsensemedia.com:8090/repository/snapshots</url>
-      <layout>default</layout>
-    </repository>
-
-    <repository>
       <id>confluent</id>
       <name>Confluent Repository</name>
       <url>http://packages.confluent.io/maven/</url>
@@ -31,7 +17,7 @@
     <repository>
       <id>artifactory</id>
       <name>artifactory</name>
-      <url>http://artifactory.lumata.int/artifactory/repo</url>
+      <url>http://10.100.0.6:8090/artifactory/repo</url>
     </repository>
 
   </repositories>  
@@ -39,14 +25,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.8.1-build200212-SNAPSHOT</version>
+    <version>4.8.1-build200217-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.8.1-build200212-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.8.1-build200217-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
@@ -1754,13 +1740,13 @@
     <repository>
       <id>evolving-internal</id>
       <name>Evolving Internal Repository</name>
-      <url>http://maven.sixthsensemedia.com:8090/repository/internal</url>
+      <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
     </repository>
     
     <snapshotRepository>
       <id>evolving-snapshots</id>
       <name>Evolving Snapshots Repository</name>
-      <url>http://maven.sixthsensemedia.com:8090/repository/snapshots</url>
+      <url>http://10.100.0.6:8090/artifactory/evolving-snapshots</url>
     </snapshotRepository>
  
   </distributionManagement>

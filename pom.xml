@@ -5,7 +5,7 @@
   <packaging>pom</packaging>
   <version>gitversion</version>
   <name>evolution-root</name>
-  <url>http://maven.sixthsensemedia.com:8090/repository/snapshots</url>
+  <url>http://10.100.0.6:8090/artifactory/repo</url>
   <description>NGLM evolution</description>
  
   <modules>
@@ -18,13 +18,13 @@
     <repository>
       <id>evolving-internal</id>
       <name>Evolving Internal Repository</name>
-      <url>http://maven.sixthsensemedia.com:8090/repository/internal</url>
+      <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
     </repository>
     
     <snapshotRepository>
       <id>evolving-snapshots</id>
       <name>Evolving Snapshots Repository</name>
-      <url>http://maven.sixthsensemedia.com:8090/repository/snapshots</url>
+      <url>http://10.100.0.6:8090/artifactory/evolving-snapshots</url>
     </snapshotRepository>
  
   </distributionManagement>
