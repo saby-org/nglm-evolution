@@ -236,7 +236,6 @@ public class JourneyService extends GUIService
         status = (status == JourneyStatus.Unknown && guiManagedObject.getEffectiveEndDate().before(now)) ? JourneyStatus.Complete : status;
         status = (status == JourneyStatus.Unknown && guiManagedObject.getActive() && guiManagedObject.getEffectiveStartDate().after(now)) ? JourneyStatus.Started : status;
         status = (status == JourneyStatus.Unknown && ! guiManagedObject.getActive() && guiManagedObject.getEffectiveStartDate().before(now)) ? JourneyStatus.Suspended : status;
-        status = (status == JourneyStatus.Unknown) ? JourneyStatus.Pending : status;
       }
     if (!Deployment.getAutoApproveGuiObjects() && status == JourneyStatus.Unknown)
       {
@@ -249,6 +248,7 @@ public class JourneyService extends GUIService
         status = (status == JourneyStatus.Unknown && guiManagedObject.getActive() && guiManagedObject.getEffectiveStartDate().after(now)) ? JourneyStatus.StartedApproved : status;
         status = (status == JourneyStatus.Unknown && ! guiManagedObject.getActive() && guiManagedObject.getEffectiveStartDate().before(now)) ? JourneyStatus.Suspended : status;
       }
+    status = (status == JourneyStatus.Unknown) ? JourneyStatus.Pending : status;
     return status;
   }
 
