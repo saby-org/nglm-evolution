@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Collectors;
 
 public class JourneyService extends GUIService
 {
@@ -155,7 +156,12 @@ public class JourneyService extends GUIService
   public Collection<GUIManagedObject> getStoredJourneys(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveJourney(GUIManagedObject journeyUnchecked, Date date) { return isActiveGUIManagedObject(journeyUnchecked, date); }
   public Journey getActiveJourney(String journeyID, Date date) { return (Journey) getActiveGUIManagedObject(journeyID, date); }
-  public Collection<Journey> getActiveJourneys(Date date) { return (Collection<Journey>) getActiveGUIManagedObjects(date); }
+  public Collection<Journey> getActiveJourneys(Date date) 
+  { 
+    Collection<Journey> activeJourney = (Collection<Journey>) getActiveGUIManagedObjects(date);
+    if (!Deployment.getAutoApproveGuiObjects()) activeJourney = activeJourney.stream().filter(journey -> JourneyStatus.StartedApproved == journey.getApproval()).collect(Collectors.toList());
+    return activeJourney;
+  }
 
   /*****************************************
   *
@@ -224,11 +230,25 @@ public class JourneyService extends GUIService
     Date now = SystemTime.getCurrentTime();
     JourneyStatus status = JourneyStatus.Unknown;
     status = (status == JourneyStatus.Unknown && !guiManagedObject.getAccepted()) ? JourneyStatus.NotValid : status;
-    status = (status == JourneyStatus.Unknown && isActiveGUIManagedObject(guiManagedObject, now)) ? JourneyStatus.Running : status;
-    status = (status == JourneyStatus.Unknown && guiManagedObject.getEffectiveEndDate().before(now)) ? JourneyStatus.Complete : status;
-    status = (status == JourneyStatus.Unknown && guiManagedObject.getActive() && guiManagedObject.getEffectiveStartDate().after(now)) ? JourneyStatus.Started : status;
-    status = (status == JourneyStatus.Unknown && ! guiManagedObject.getActive() && guiManagedObject.getEffectiveStartDate().before(now)) ? JourneyStatus.Suspended : status;
-    status = (status == JourneyStatus.Unknown) ? JourneyStatus.Pending : status;
+    if (Deployment.getAutoApproveGuiObjects())
+      {
+        status = (status == JourneyStatus.Unknown && isActiveGUIManagedObject(guiManagedObject, now)) ? JourneyStatus.Running : status;
+        status = (status == JourneyStatus.Unknown && guiManagedObject.getEffectiveEndDate().before(now)) ? JourneyStatus.Complete : status;
+        status = (status == JourneyStatus.Unknown && guiManagedObject.getActive() && guiManagedObject.getEffectiveStartDate().after(now)) ? JourneyStatus.Started : status;
+        status = (status == JourneyStatus.Unknown && ! guiManagedObject.getActive() && guiManagedObject.getEffectiveStartDate().before(now)) ? JourneyStatus.Suspended : status;
+        status = (status == JourneyStatus.Unknown) ? JourneyStatus.Pending : status;
+      }
+    if (!Deployment.getAutoApproveGuiObjects() && status == JourneyStatus.Unknown)
+      {
+        Journey journey = (Journey) guiManagedObject;
+        status = (status == JourneyStatus.Unknown && journey.getApproval() == JourneyStatus.Pending) ? JourneyStatus.Pending : status;
+        status = (status == JourneyStatus.Unknown && journey.getApproval() == JourneyStatus.PendingNotApproved) ? JourneyStatus.PendingNotApproved : status;
+        status = (status == JourneyStatus.Unknown && journey.getApproval() == JourneyStatus.WaitingForApproval) ? JourneyStatus.WaitingForApproval : status;
+        status = (status == JourneyStatus.Unknown && isActiveGUIManagedObject(guiManagedObject, now)) ? JourneyStatus.Running : status;
+        status = (status == JourneyStatus.Unknown && guiManagedObject.getEffectiveEndDate().before(now)) ? JourneyStatus.Complete : status;
+        status = (status == JourneyStatus.Unknown && guiManagedObject.getActive() && guiManagedObject.getEffectiveStartDate().after(now)) ? JourneyStatus.StartedApproved : status;
+        status = (status == JourneyStatus.Unknown && ! guiManagedObject.getActive() && guiManagedObject.getEffectiveStartDate().before(now)) ? JourneyStatus.Suspended : status;
+      }
     return status;
   }
 

@@ -231,6 +231,8 @@ public class Deployment
   private static String elasticSearchDateFormat;
   private static int elasticSearchScrollSize;
   private static String criterionFieldAvailableValuesTopic;
+  private static String sourceAddressTopic;
+  private static boolean autoApproveGuiObjects;
 
   /*****************************************
   *
@@ -452,6 +454,8 @@ public class Deployment
   public static String getElasticSearchDateFormat() { return elasticSearchDateFormat; }
   public static int getElasticSearchScrollSize() {return elasticSearchScrollSize; }
   public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
+  public static String getSourceAddressTopic() { return sourceAddressTopic; }
+  public static boolean getAutoApproveGuiObjects() { return autoApproveGuiObjects; } 
 
   //
   // addProfileCriterionField
@@ -2135,7 +2139,20 @@ public class Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
+    
+    //
+    //  sourceAddressTopic
+    //
 
+    try
+      {
+        sourceAddressTopic = JSONUtilities.decodeString(jsonRoot, "sourceAddressTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
     //
     //  baseLanguageID
     //
@@ -3058,6 +3075,19 @@ public class Deployment
     catch(JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment",e);
+      }
+    
+    //
+    //  autoApproveGuiObjects
+    //
+
+    try
+      {
+    	autoApproveGuiObjects = JSONUtilities.decodeBoolean(jsonRoot, "autoApproveGuiObjects", Boolean.TRUE);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
       }
   }
 

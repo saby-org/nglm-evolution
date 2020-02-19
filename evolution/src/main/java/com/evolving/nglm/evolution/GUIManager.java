@@ -18,6 +18,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.invoke.SwitchPoint;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
@@ -135,6 +136,7 @@ import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.Journey.BulkType;
 import com.evolving.nglm.evolution.Journey.GUINode;
+import com.evolving.nglm.evolution.Journey.JourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
@@ -476,6 +478,12 @@ public class GUIManager
     configAdaptorDefaultNoftificationDailyWindows("configAdaptorDefaultNoftificationDailyWindows"),
     configAdaptorDeliverable("configAdaptorDeliverable"),
     
+    getSourceAddressList("getSourceAddressList"),
+    getSourceAddressSummaryList("getSourceAddressSummaryList"),
+    getSourceAddress("getSourceAddress"),
+    putSourceAddress("putSourceAddress"),
+    removeSourceAddress("removeSourceAddress"),
+    
     //
     //  structor
     //
@@ -537,6 +545,7 @@ public class GUIManager
   private DNBOMatrixService dnboMatrixService;
   private CallingChannelService callingChannelService;
   private SalesChannelService salesChannelService;
+  private SourceAddressService sourceAddressService;
   private SupplierService supplierService;
   private ProductService productService;
   private CatalogCharacteristicService catalogCharacteristicService;
@@ -638,6 +647,7 @@ public class GUIManager
     String scoringStrategyTopic = Deployment.getScoringStrategyTopic();
     String callingChannelTopic = Deployment.getCallingChannelTopic();
     String salesChannelTopic = Deployment.getSalesChannelTopic();
+    String sourceAddresTopic = Deployment.getSourceAddressTopic();
     String supplierTopic = Deployment.getSupplierTopic();
     String productTopic = Deployment.getProductTopic();
     String catalogCharacteristicTopic = Deployment.getCatalogCharacteristicTopic();
@@ -816,6 +826,7 @@ public class GUIManager
     dnboMatrixService = new DNBOMatrixService(bootstrapServers, "guimanager-dnbomatrixservice-" + apiProcessKey, dnboMatrixTopic, true);
     callingChannelService = new CallingChannelService(bootstrapServers, "guimanager-callingchannelservice-" + apiProcessKey, callingChannelTopic, true);
     salesChannelService = new SalesChannelService(bootstrapServers, "guimanager-saleschannelservice-" + apiProcessKey, salesChannelTopic, true);
+    sourceAddressService = new SourceAddressService(bootstrapServers, "guimanager-sourceaddressservice-" + apiProcessKey, sourceAddresTopic, true);
     supplierService = new SupplierService(bootstrapServers, "guimanager-supplierservice-" + apiProcessKey, supplierTopic, true);
     productService = new ProductService(bootstrapServers, "guimanager-productservice-" + apiProcessKey, productTopic, true);
     catalogCharacteristicService = new CatalogCharacteristicService(bootstrapServers, "guimanager-catalogcharacteristicservice-" + apiProcessKey, catalogCharacteristicTopic, true);
@@ -1571,6 +1582,7 @@ public class GUIManager
     dnboMatrixService.start();
     callingChannelService.start();
     salesChannelService.start();
+    sourceAddressService.start();
     supplierService.start();
     productService.start();
     catalogCharacteristicService.start();
@@ -1906,6 +1918,12 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/acceptOffer", new APISimpleHandler(API.acceptOffer));
         restServer.createContext("/nglm-guimanager/getTokenEventDetails", new APISimpleHandler(API.getTokenEventDetails));
         
+        restServer.createContext("/nglm-guimanager/getSourceAddressList", new APISimpleHandler(API.getSourceAddressList));
+        restServer.createContext("/nglm-guimanager/getSourceAddressSummaryList", new APISimpleHandler(API.getSourceAddressSummaryList));
+        restServer.createContext("/nglm-guimanager/getSourceAddress", new APISimpleHandler(API.getSourceAddress));
+        restServer.createContext("/nglm-guimanager/putSourceAddress", new APISimpleHandler(API.putSourceAddress));
+        restServer.createContext("/nglm-guimanager/removeSourceAddress", new APISimpleHandler(API.removeSourceAddress));
+        
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -1920,7 +1938,7 @@ public class GUIManager
     *
     *****************************************/
 
-    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService);
+    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService);
 
     /*****************************************
     *
@@ -1928,7 +1946,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService));
 
     /*****************************************
     *
@@ -1964,6 +1982,7 @@ public class GUIManager
     private PresentationStrategyService presentationStrategyService;
     private CallingChannelService callingChannelService;
     private SalesChannelService salesChannelService;
+    private SourceAddressService sourceAddressService;
     private SupplierService supplierService;
     private ProductService productService;
     private CatalogCharacteristicService catalogCharacteristicService;
@@ -1997,7 +2016,7 @@ public class GUIManager
     //  constructor
     //
     
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -2011,6 +2030,7 @@ public class GUIManager
       this.presentationStrategyService = presentationStrategyService;
       this.callingChannelService = callingChannelService;
       this.salesChannelService = salesChannelService;
+      this.sourceAddressService = sourceAddressService;
       this.supplierService = supplierService;
       this.productService = productService;
       this.catalogCharacteristicService = catalogCharacteristicService;
@@ -2069,6 +2089,7 @@ public class GUIManager
       if (presentationStrategyService != null) presentationStrategyService.stop();
       if (callingChannelService != null) callingChannelService.stop();
       if (salesChannelService != null) salesChannelService.stop();
+      if (sourceAddressService != null) sourceAddressService.stop();
       if (supplierService != null) supplierService.stop();
       if (productService != null) productService.stop();
       if (catalogCharacteristicService != null) catalogCharacteristicService.stop();
@@ -3408,6 +3429,26 @@ public class GUIManager
                   
                 case getTokenEventDetails:
                   jsonResponse = processGetTokenEventDetails(userID, jsonRoot);
+                  break;
+                  
+                case getSourceAddressList:
+                  jsonResponse = processGetSourceAddressList(userID, jsonRoot, true, includeArchived);
+                  break;
+
+                case getSourceAddressSummaryList:
+                  jsonResponse = processGetSourceAddressList(userID, jsonRoot, false, includeArchived);
+                  break;
+
+                case getSourceAddress:
+                  jsonResponse = processGetSourceAddress(userID, jsonRoot, includeArchived);
+                  break;
+
+                case putSourceAddress:
+                  jsonResponse = processPutSourceAddress(userID, jsonRoot);
+                  break;
+
+                case removeSourceAddress:
+                  jsonResponse = processRemoveSourceAddress(userID, jsonRoot);
                   break;
               }
           }
@@ -5320,6 +5361,12 @@ public class GUIManager
         journeyID = journeyService.generateJourneyID();
         jsonRoot.put("id", journeyID);
       }
+    
+    //
+    // initial approval
+    //
+    
+    JourneyStatus approval = JourneyStatus.Pending;
 
     /*****************************************
     *
@@ -5355,13 +5402,22 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
+        //
+        // change approval if existingJourney
+        //
+        
+        if (existingJourney != null && existingJourney.getAccepted())
+          {
+            approval = ((Journey) existingJourney).getApproval();
+          }
+        
         /****************************************
         *
         *  instantiate journey
         *
         ****************************************/
 
-        Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
+        Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService, approval);
 
         /*****************************************
         *
@@ -5645,6 +5701,8 @@ public class GUIManager
     ****************************************/
 
     String elementID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    String approvalStatusString = JSONUtilities.decodeString(jsonRoot, "status", false);
+    JourneyStatus approval = JourneyStatus.fromExternalRepresentation(approvalStatusString);
 
     /*****************************************
     *
@@ -5704,13 +5762,23 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
-        /****************************************
-        *
-        *  set active
-        *
-        ****************************************/
-
-        elementRoot.put("active", active);
+        
+        switch (approval)
+          {
+            case Unknown:
+            case StartedApproved:
+              elementRoot.put("active", active);
+              approval = JourneyStatus.StartedApproved;
+              break;
+              
+            case WaitingForApproval:
+            case PendingNotApproved:
+              elementRoot.put("active", false);
+              break;
+              
+            default:
+              throw new ServerRuntimeException("invalid approvalStatus " + approval);
+        }
 
         /****************************************
         *
@@ -5718,7 +5786,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey element = new Journey(elementRoot, type, epoch, existingElement, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
+        Journey element = new Journey(elementRoot, type, epoch, existingElement, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService, approval);
 
         /*****************************************
         *
@@ -14963,6 +15031,7 @@ public class GUIManager
     response.put("dnboMatrixCount", dnboMatrixService.getStoredDNBOMatrixes(includeArchived).size());
     response.put("callingChannelCount", callingChannelService.getStoredCallingChannels(includeArchived).size());
     response.put("salesChannelCount", salesChannelService.getStoredSalesChannels(includeArchived).size());
+    response.put("sourceAddressCount", sourceAddressService.getStoredSourceAddresses(includeArchived).size());
     response.put("supplierCount", supplierService.getStoredSuppliers(includeArchived).size());
     response.put("productCount", productService.getStoredProducts(includeArchived).size());
     response.put("voucherTypeCount", voucherTypeService.getStoredVoucherTypes(includeArchived).size());
@@ -21433,6 +21502,290 @@ public class GUIManager
     *****************************************/
    return JSONUtilities.encodeObject(response);
  }
+ 
+  /*****************************************
+   *
+   * processGetSourceAddressList
+   *
+   *****************************************/
+
+  private JSONObject processGetSourceAddressList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived) throws GUIManagerException
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    List<JSONObject> sourceAddresses = new ArrayList<JSONObject>(); 
+    HashMap<String,Object> response = new HashMap<String,Object>(); 
+    
+    /*****************************************
+    *
+    *  retrieve
+    *
+    *****************************************/
+    Date now = SystemTime.getCurrentTime();
+    
+    for (GUIManagedObject sourceAddress : sourceAddressService.getStoredSourceAddresses(includeArchived))
+      {
+        JSONObject sourceAddressJSON = sourceAddressService.generateResponseJSON(sourceAddress, fullDetails, now); 
+        sourceAddresses.add(sourceAddressJSON);
+      }
+
+    /*****************************************
+    *
+    * decorate and response
+    *
+    *****************************************/
+    
+    response.put("responseCode", "ok" );    
+    response.put("sourceAddresses", JSONUtilities.encodeArray(sourceAddresses));  
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processGetSourceAddress
+  *
+  *****************************************/
+
+  private JSONObject processGetSourceAddress(String userID, JSONObject jsonRoot, boolean includeArchived)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String sourceAddressID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID, includeArchived);
+    JSONObject sourceAddressJSON = sourceAddressService.generateResponseJSON(sourceAddress, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (sourceAddress != null) ? "ok" : "sourceAddressNotFound");
+    if (sourceAddress != null) response.put("sourceAddress", sourceAddressJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processPutSourceAddress
+  *
+  *****************************************/
+
+  private JSONObject processPutSourceAddress(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  sourceAddressID
+    *
+    *****************************************/
+
+    String sourceAddressID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (sourceAddressID == null)
+      {
+        sourceAddressID = sourceAddressService.generateSourceAddressID();
+        jsonRoot.put("id", sourceAddressID);
+      }
+
+    /*****************************************
+    *
+    *  existing sourceAddress
+    *
+    *****************************************/
+
+    GUIManagedObject existingSourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingSourceAddress != null && existingSourceAddress.getReadOnly())
+      {
+        response.put("id", existingSourceAddress.getGUIManagedObjectID());
+        response.put("accepted", existingSourceAddress.getAccepted());
+        response.put("valid", existingSourceAddress.getAccepted());
+        response.put("processing", sourceAddressService.isActiveSourceAddress(existingSourceAddress, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process sourceAddress
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        //
+        //  isDefault
+        //
+        
+        boolean isDefault = JSONUtilities.decodeBoolean(jsonRoot, "default", Boolean.FALSE);
+        if (!isDefault) jsonRoot.put("default", isDefault);
+        
+        /****************************************
+        *
+        *  instantiate sourceAddress
+        *
+        ****************************************/
+        
+        SourceAddress sourceAddress = new SourceAddress(jsonRoot, epoch, existingSourceAddress);
+        
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+        
+        sourceAddressService.putSourceAddress(sourceAddress, communicationChannelService, (existingSourceAddress == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", sourceAddress.getSourceAddressId());
+        response.put("accepted", sourceAddress.getAccepted());
+        response.put("valid", sourceAddress.getAccepted());
+        response.put("processing", sourceAddressService.isActiveSourceAddress(sourceAddress, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        sourceAddressService.putSourceAddress(incompleteObject, communicationChannelService, (existingSourceAddress == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "sourceAddressNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processRemoveSourceAddress
+  *
+  *****************************************/
+
+  private JSONObject processRemoveSourceAddress(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String sourceAddressID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID);
+    if (sourceAddress != null && (force || !sourceAddress.getReadOnly())) sourceAddressService.removeSourceAddress(sourceAddressID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (sourceAddress != null && (force || !sourceAddress.getReadOnly()))
+      responseCode = "ok";
+    else if (sourceAddress != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "sourceAddressNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
   
   private static final Class<?> PURCHASE_FULFILLMENT_REQUEST_CLASS = com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest.class;
 
@@ -24561,6 +24914,7 @@ public class GUIManager
     private PresentationStrategyService presentationStrategyService;
     private CallingChannelService callingChannelService;
     private SalesChannelService salesChannelService;
+    private SourceAddressService sourceAddressService;
     private SupplierService supplierService;
     private ProductService productService;
     private CatalogCharacteristicService catalogCharacteristicService;
@@ -24603,6 +24957,7 @@ public class GUIManager
     public PresentationStrategyService getPresentationStrategyService() { return presentationStrategyService; }
     public CallingChannelService getCallingChannelService() { return callingChannelService; }
     public SalesChannelService getSalesChannelService() { return salesChannelService; }
+    public SourceAddressService getSourceAddressService() { return sourceAddressService; }
     public SupplierService getSupplierService() { return supplierService; }
     public ProductService getProductService() { return productService; }
     public CatalogCharacteristicService getCatalogCharacteristicService() { return catalogCharacteristicService; }
@@ -24636,7 +24991,7 @@ public class GUIManager
     *
     *****************************************/
 
-    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
+    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
     {
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
@@ -24648,6 +25003,7 @@ public class GUIManager
       this.presentationStrategyService = presentationStrategyService;
       this.callingChannelService = callingChannelService;
       this.salesChannelService = salesChannelService;
+      this.sourceAddressService = sourceAddressService;
       this.supplierService = supplierService;
       this.productService = productService;
       this.catalogCharacteristicService = catalogCharacteristicService;

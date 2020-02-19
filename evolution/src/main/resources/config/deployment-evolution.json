@@ -108,6 +108,7 @@
   "dynamicCriterionFieldTopic"                           : "${topic.dynamiccriterionfield}",
   "segmentContactPolicyTopic"                            : "${topic.segmentcontactpolicy}",
   "criterionFieldAvailableValuesTopic"                   : "${topic.criterionfieldavailablevalues}",
+  "sourceAddressTopic"                   				 : "${topic.sourceaddress}",
   
   --
   --  registry "topics" -- fake topic names used to register Avro schemas when objects are serialized/deserialized to non-Kafka places (e.g., Redis)

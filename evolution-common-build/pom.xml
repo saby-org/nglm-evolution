@@ -180,6 +180,7 @@
     <topic.exclusioninclusiontarget>exclusioninclusiontarget</topic.exclusioninclusiontarget>
     <topic.segmentcontactpolicy>segmentcontactpolicy</topic.segmentcontactpolicy>
     <topic.criterionfieldavailablevalues>criterionfieldavailablevalues</topic.criterionfieldavailablevalues>
+    <topic.sourceaddress>sourceaddress</topic.sourceaddress>
 
     <!-- registry subjects -->
     <registrysubject.subscriberprofile>subscriberprofile</registrysubject.subscriberprofile>
