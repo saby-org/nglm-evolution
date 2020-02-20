@@ -174,12 +174,13 @@ public class Journey extends GUIManagedObject
   //  schema
   //
 
+  private static int currentSchemaVersion = 5;
   private static Schema schema = null;
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),4));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), currentSchemaVersion));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("effectiveEntryPeriodEndDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("templateParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, CriterionField.schema()).name("journey_template_parameters").defaultValue(new HashMap<String,CriterionField>()).schema());
@@ -706,7 +707,7 @@ public class Journey extends GUIManagedObject
     ParameterMap boundParameters = (schemaVersion >= 2) ? ParameterMap.unpack(new SchemaAndValue(schema.field("boundParameters").schema(), valueStruct.get("boundParameters"))) : new ParameterMap();
     boolean appendInclusionLists = (schemaVersion >= 3) ? valueStruct.getBoolean("appendInclusionLists") : false;
     boolean appendExclusionLists = (schemaVersion >= 3) ? valueStruct.getBoolean("appendExclusionLists") : false;
-    JourneyStatus approval = valueStruct.getString("approval") == null || valueStruct.getString("approval").trim().isEmpty() ? JourneyStatus.Pending : JourneyStatus.fromExternalRepresentation(valueStruct.getString("approval"));
+    JourneyStatus approval = (schemaVersion >= 5) ? JourneyStatus.fromExternalRepresentation(valueStruct.getString("approval")) : JourneyStatus.Pending;
 
     /*****************************************
     *

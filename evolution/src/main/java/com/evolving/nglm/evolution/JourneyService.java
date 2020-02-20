@@ -155,7 +155,18 @@ public class JourneyService extends GUIService
   public Collection<GUIManagedObject> getStoredJourneys() { return getStoredGUIManagedObjects(); }
   public Collection<GUIManagedObject> getStoredJourneys(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveJourney(GUIManagedObject journeyUnchecked, Date date) { return isActiveGUIManagedObject(journeyUnchecked, date); }
-  public Journey getActiveJourney(String journeyID, Date date) { return (Journey) getActiveGUIManagedObject(journeyID, date); }
+  public Journey getActiveJourney(String journeyID, Date date) 
+  { 
+    Journey activeJourney = (Journey) getActiveGUIManagedObject(journeyID, date);
+    if (!Deployment.getAutoApproveGuiObjects() && activeJourney != null)
+      {
+        return JourneyStatus.StartedApproved == activeJourney.getApproval() ? activeJourney : null; 
+      }
+    else
+      {
+        return activeJourney; 
+      }
+  }
   public Collection<Journey> getActiveJourneys(Date date) 
   { 
     Collection<Journey> activeJourney = (Collection<Journey>) getActiveGUIManagedObjects(date);
