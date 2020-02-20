@@ -349,6 +349,8 @@ curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/s
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSourceAddress; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSourceAddress; echo
 
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTenantList; echo
+
 --
 --  configAdaptor
 -- 
@@ -410,14 +412,14 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginN
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerLoyaltyPrograms; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000", "loyaltyProgramID" : "1" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerLoyaltyPrograms; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "loginName" : "Administrator", "password" : "password", "customerID":"19195551000"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerPoints; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "loginName" : "Administrator", "password" : "password", "customerID":"19195551000", "bonusName" : "BluePoints"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerPoints; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "loginName" : "Administrator", "password" : "password", "customerID":"19195551000", "bonusName" : "BluePoints", "quantity" : 9, "origin" : "from rest method"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/creditBonus; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "loginName" : "Administrator", "password" : "password", "customerID":"19195551000", "bonusName" : "BluePoints", "quantity" : 2, "origin" : "from rest method"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/debitBonus; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerPoints; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000", "bonusName" : "BluePoints"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerPoints; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000", "bonusName" : "BluePoints", "quantity" : 9, "origin" : "from rest method"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/creditBonus; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000", "bonusName" : "BluePoints", "quantity" : 2, "origin" : "from rest method"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/debitBonus; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "customerID" : "121", "tokenStatus":"Bounded" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getTokensCodesList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "customerID" : "121","tokenCode" : "JM3MJ"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerNBOs; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "customerID" : "121","tokenCode" : "JM3MJ", "offerID":"200102","origin":"whatever"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/acceptOffer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "121", "tokenStatus":"Bounded" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getTokensCodesList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "121", "tokenCode" : "JM3MJ"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerNBOs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "121", "tokenCode" : "JM3MJ", "offerID":"200102"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/acceptOffer; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000", "loyaltyProgram" : "LP001" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/loyaltyProgramOptIn; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000", "loyaltyProgram" : "LP001" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/loyaltyProgramOptOut; echo

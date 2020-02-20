@@ -28,9 +28,11 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -447,11 +449,11 @@ public class GUIManager
     putCriterionFieldAvailableValues("putCriterionFieldAvailableValues"),
     removeCriterionFieldAvailableValues("removeCriterionFieldAvailableValues"),
     getEffectiveSystemTime("getEffectiveSystemTime"),
-
     getCustomerNBOs("getCustomerNBOs"),
     getTokensCodesList("getTokensCodesList"),
     acceptOffer("acceptOffer"),
     getTokenEventDetails("getTokenEventDetails"),
+    getTenantList("getTenantList"),
 
     //
     //  configAdaptor APIs
@@ -1917,6 +1919,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getTokensCodesList", new APISimpleHandler(API.getTokensCodesList));
         restServer.createContext("/nglm-guimanager/acceptOffer", new APISimpleHandler(API.acceptOffer));
         restServer.createContext("/nglm-guimanager/getTokenEventDetails", new APISimpleHandler(API.getTokenEventDetails));
+        restServer.createContext("/nglm-guimanager/getTenantList", new APISimpleHandler(API.getTenantList));
         
         restServer.createContext("/nglm-guimanager/getSourceAddressList", new APISimpleHandler(API.getSourceAddressList));
         restServer.createContext("/nglm-guimanager/getSourceAddressSummaryList", new APISimpleHandler(API.getSourceAddressSummaryList));
@@ -3450,6 +3453,11 @@ public class GUIManager
                 case removeSourceAddress:
                   jsonResponse = processRemoveSourceAddress(userID, jsonRoot);
                   break;
+
+                case getTenantList:
+                  jsonResponse = processGetTenantList(userID, jsonRoot, true, includeArchived);
+                  break;
+
               }
           }
         else
@@ -4432,8 +4440,19 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> profileCriterionFields = processCriterionFields(profileContext.getCriterionFields(), false);
+    Map<String,List<JSONObject>> currentGroups = new HashMap<>();
+    List<JSONObject> profileCriterionFields = processCriterionFields(profileContext.getCriterionFields(), false, currentGroups);
 
+    List<JSONObject> groups = new ArrayList<>();
+    for (String id : currentGroups.keySet())
+      {
+        List<JSONObject> group = currentGroups.get(id);
+        HashMap<String,Object> groupJSON = new HashMap<String,Object>();
+        groupJSON.put("id", id);
+        groupJSON.put("value", JSONUtilities.encodeArray(group));
+        groups.add(JSONUtilities.encodeObject(groupJSON));
+      }
+    
     /*****************************************
     *
     *  response
@@ -4443,6 +4462,7 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("profileCriterionFields", JSONUtilities.encodeArray(profileCriterionFields));
+    response.put("groups", JSONUtilities.encodeArray(groups));
     return JSONUtilities.encodeObject(response);
   } 
 
@@ -4574,8 +4594,19 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.getCriterionFields(), false);
-
+    Map<String,List<JSONObject>> currentGroups = new HashMap<>();
+    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.getCriterionFields(), false, currentGroups);
+    
+    List<JSONObject> groups = new ArrayList<>();
+    for (String id : currentGroups.keySet())
+      {
+        List<JSONObject> group = currentGroups.get(id);
+        HashMap<String,Object> groupJSON = new HashMap<String,Object>();
+        groupJSON.put("id", id);
+        groupJSON.put("value", JSONUtilities.encodeArray(group));
+        groups.add(JSONUtilities.encodeObject(groupJSON));
+      }
+    
     /*****************************************
     *
     *  response
@@ -4585,6 +4616,7 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("presentationCriterionFields", JSONUtilities.encodeArray(presentationCriterionFields));
+    response.put("groups", JSONUtilities.encodeArray(groups));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -4730,12 +4762,22 @@ public class GUIManager
     *****************************************/
 
     List<JSONObject> journeyCriterionFields = Collections.<JSONObject>emptyList();
+    List<JSONObject> groups = new ArrayList<>();
     if (journeyNodeType != null)
       {
         CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, selectedJourney);
-        journeyCriterionFields = processCriterionFields(criterionContext.getCriterionFields(), tagsOnly);
+        Map<String,List<JSONObject>> currentGroups = new HashMap<>();
+        journeyCriterionFields = processCriterionFields(criterionContext.getCriterionFields(), tagsOnly, currentGroups);
+        for (String id : currentGroups.keySet())
+          {
+            List<JSONObject> group = currentGroups.get(id);
+            HashMap<String,Object> groupJSON = new HashMap<String,Object>();
+            groupJSON.put("id", id);
+            groupJSON.put("value", JSONUtilities.encodeArray(group));
+            groups.add(JSONUtilities.encodeObject(groupJSON));
+          }
       }
-
+    
     /*****************************************
     *
     *  response
@@ -4747,6 +4789,7 @@ public class GUIManager
       {
         response.put("responseCode", "ok");
         response.put("journeyCriterionFields", JSONUtilities.encodeArray(journeyCriterionFields));
+        response.put("groups", JSONUtilities.encodeArray(groups));
       }
     else
       {
@@ -12549,6 +12592,59 @@ public class GUIManager
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }  
+  
+  /*********************************************
+  *
+  *  processGetTenantList
+  *
+  *********************************************/
+
+  private JSONObject processGetTenantList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert Tenants
+    *
+    *****************************************/
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> tenantList = new ArrayList<JSONObject>();
+
+    // TODO move this to be a regular GUIManagedObject
+    {
+      JSONObject result = new JSONObject();
+      result.put("id", "0");
+      result.put("name", "global");
+      result.put("description", "Global");
+      result.put("display", "Global");
+      result.put("isDefault", false);
+      result.put("language", "1");
+      result.put("active", true);
+      result.put("readOnly", true);
+      tenantList.add(result);
+    }
+    {
+      JSONObject result = new JSONObject();
+      result.put("id", "1");
+      result.put("name", "default");
+      result.put("description", "Default");
+      result.put("display", "Default");
+      result.put("isDefault", true);
+      result.put("language", "1");
+      result.put("active", true);
+      result.put("readOnly", true);
+      tenantList.add(result);
+    }
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("tenants", JSONUtilities.encodeArray(tenantList));
+    return JSONUtilities.encodeObject(response);
+  }
 
   /*****************************************
   *
@@ -22200,8 +22296,12 @@ public class GUIManager
   *  processCriterionFields
   *
   *****************************************/
-
   private List<JSONObject> processCriterionFields(Map<String,CriterionField> baseCriterionFields, boolean tagsOnly)
+  {
+    return processCriterionFields(baseCriterionFields, tagsOnly, null);
+  }
+
+  private List<JSONObject> processCriterionFields(Map<String,CriterionField> baseCriterionFields, boolean tagsOnly, Map<String, List<JSONObject>> currentGroups)
   {
     /*****************************************
     *
@@ -22272,6 +22372,8 @@ public class GUIManager
     *
     ****************************************/
 
+    int nextGroupID = 1;
+    
     List<JSONObject> result = new ArrayList<JSONObject>();
     for (CriterionField criterionField : criterionFields.values())
       {
@@ -22300,7 +22402,34 @@ public class GUIManager
             //
 
             List<CriterionField> defaultComparableFields = defaultFieldsForResolvedType.get(resolvedFieldTypes.get(criterionField.getID()));
-            criterionFieldJSON.put("singletonComparableFields", evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, true));
+            List<JSONObject> singleton = evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, true);
+
+            // TODO next line to be removed later when GUI handles the new "singletonComparableFieldsGroup" field
+            criterionFieldJSON.put("singletonComparableFields", singleton);
+            
+            if (currentGroups != null)
+              {
+                // known group ?
+                String groupID = null;
+                for (String existingGroupID : currentGroups.keySet())
+                  {
+                    List<JSONObject> group = currentGroups.get(existingGroupID);
+                    // is group the same list as singleton ?
+                    if (singleton.size() != group.size()) continue; // cannot be the same
+                    // TODO should be able to optimize next line
+                    if (!singleton.containsAll(group)) continue;
+                    groupID = existingGroupID;
+                    break;
+                  }
+                if (groupID == null)
+                  {
+                    groupID = ""+nextGroupID;
+                    log.trace("Found new group : "+groupID+" with "+singleton.size()+" elements");
+                    currentGroups.put(groupID, singleton);
+                    nextGroupID++;
+                  }
+                criterionFieldJSON.put("singletonComparableFieldsGroup", groupID);
+              }
             criterionFieldJSON.put("setValuedComparableFields", evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, false));
             criterionFieldJSON.remove("includedComparableFields");
             criterionFieldJSON.remove("excludedComparableFields");
@@ -22542,7 +22671,10 @@ public class GUIManager
     for (String comparableFieldID : includedComparableFieldIDs)
       {
         CriterionField criterionField = comparableFields.get(comparableFieldID);
-        if ((! excludedComparableFieldIDs.contains(comparableFieldID)) && (singleton == criterionField.getFieldDataType().getSingletonType()) && (! comparableFieldID.equals(criterionFieldID)))
+        if (     (! excludedComparableFieldIDs.contains(comparableFieldID))
+              && (singleton == criterionField.getFieldDataType().getSingletonType())
+//            && (! comparableFieldID.equals(criterionFieldID))
+           )
           {
             HashMap<String,Object> comparableFieldJSON = new HashMap<String,Object>();
             comparableFieldJSON.put("id", criterionField.getID());
@@ -22550,6 +22682,18 @@ public class GUIManager
             result.add(JSONUtilities.encodeObject(comparableFieldJSON));
           }
       }
+
+//    // order list by ID
+//    Collections.sort(result, new Comparator<JSONObject>()
+//    {
+//      @Override
+//      public int compare(JSONObject o1, JSONObject o2)
+//      {
+//        String id1 = (String) o1.get("id");
+//        String id2 = (String) o2.get("id");
+//        return id1.compareTo(id2);
+//      }
+//    });
 
     //
     //  return
