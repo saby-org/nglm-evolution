@@ -259,7 +259,7 @@ public class PointBalance
               //  logs
               //
               
-              log.info(Thread.currentThread().getId()+" - PointBalance.update(...) : expired amount > 0 => NEED to update expired history and generate a BDR");
+              if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PointBalance.update(...) : expired amount > 0 => NEED to update expired history and generate a BDR");
 
               //
               //  
@@ -541,8 +541,8 @@ public class PointBalance
 
     commodityDeliveryRequestData.put("commodityDeliveryStatusCode", CommodityDeliveryStatus.SUCCESS.getReturnCode());
 
-    log.info(Thread.currentThread().getId()+" - PointBalance.update(...) : generating fake response DONE");
-    log.info(Thread.currentThread().getId()+" - PointBalance.update(...) : sending fake response ...");
+    if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PointBalance.update(...) : generating fake response DONE");
+    if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PointBalance.update(...) : sending fake response ...");
 
     CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(JSONUtilities.encodeObject(commodityDeliveryRequestData), commodityDeliveryManagerDeclaration);
     commodityDeliveryRequest.setCommodityDeliveryStatus(CommodityDeliveryStatus.SUCCESS);

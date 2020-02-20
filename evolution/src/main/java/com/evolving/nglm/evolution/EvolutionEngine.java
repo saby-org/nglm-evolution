@@ -3077,7 +3077,7 @@ public class EvolutionEngine
                     //  update loyalty program state
                     //
 
-                    log.info("new loyaltyProgramRequest : for subscriber '"+subscriberProfile.getSubscriberID()+"' : loyaltyProgramState.update("+loyaltyProgram.getEpoch()+", "+loyaltyProgramRequest.getOperation()+", "+loyaltyProgram.getLoyaltyProgramName()+", "+newTierName+", "+now+", "+loyaltyProgramRequest.getDeliveryRequestID()+")");
+                    if(log.isDebugEnabled()) log.debug("new loyaltyProgramRequest : for subscriber '"+subscriberProfile.getSubscriberID()+"' : loyaltyProgramState.update("+loyaltyProgram.getEpoch()+", "+loyaltyProgramRequest.getOperation()+", "+loyaltyProgram.getLoyaltyProgramName()+", "+newTierName+", "+now+", "+loyaltyProgramRequest.getDeliveryRequestID()+")");
                     ((LoyaltyProgramPointsState)currentLoyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), newTierName, now, loyaltyProgramRequest.getDeliveryRequestID());
 
                     //
@@ -3167,7 +3167,7 @@ public class EvolutionEngine
                 //  update loyalty program state
                 //
 
-                log.info("new loyaltyProgramRequest : for subscriber '"+subscriberProfile.getSubscriberID()+"' : loyaltyProgramState.update("+loyaltyProgram.getEpoch()+", "+loyaltyProgramRequest.getOperation()+", "+loyaltyProgram.getLoyaltyProgramName()+", "+tierName+", "+now+", "+loyaltyProgramRequest.getDeliveryRequestID()+")");
+                if(log.isDebugEnabled()) log.debug("new loyaltyProgramRequest : for subscriber '"+subscriberProfile.getSubscriberID()+"' : loyaltyProgramState.update("+loyaltyProgram.getEpoch()+", "+loyaltyProgramRequest.getOperation()+", "+loyaltyProgram.getLoyaltyProgramName()+", "+tierName+", "+now+", "+loyaltyProgramRequest.getDeliveryRequestID()+")");
                 ((LoyaltyProgramPointsState)loyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), tierName, now, loyaltyProgramRequest.getDeliveryRequestID());
 
                 //
@@ -3298,7 +3298,7 @@ public class EvolutionEngine
                   //
 
                   EvolutionEngineEventDeclaration statusEventDeclaration = Deployment.getEvolutionEngineEvents().get(subscriberCurrentTierDefinition.getStatusEventName()) ;
-                  if (statusEventDeclaration != null && statusEventDeclaration.getEventClassName().equals(evolutionEvent.getClass().getName()) && evolutionEvent instanceof LoyaltyProgramPointsEvent)
+                  if (statusEventDeclaration != null && statusEventDeclaration.getEventClassName().equals(evolutionEvent.getClass().getName()) && evolutionEvent instanceof LoyaltyProgramPointsEvent && ((LoyaltyProgramPointsEvent)evolutionEvent).getUnit()!=0)
                     {
 
                       //
@@ -3308,8 +3308,8 @@ public class EvolutionEngine
                       Point point = pointService.getActivePoint(loyaltyProgramPoints.getStatusPointsID(), now);
                       if(point != null)
                         {
-                          
-                          log.info("update loyalty program STATUS => adding "+((LoyaltyProgramPointsEvent)evolutionEvent).getUnit()+" x "+subscriberCurrentTierDefinition.getNumberOfStatusPointsPerUnit()+" of point "+point.getPointName());
+
+                          if(log.isDebugEnabled()) log.debug("update loyalty program STATUS => adding "+((LoyaltyProgramPointsEvent)evolutionEvent).getUnit()+" x "+subscriberCurrentTierDefinition.getNumberOfStatusPointsPerUnit()+" of point "+point.getPointName());
                           int amount = ((LoyaltyProgramPointsEvent)evolutionEvent).getUnit() * subscriberCurrentTierDefinition.getNumberOfStatusPointsPerUnit();
                           updatePointBalance(context, null, statusEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true);
                           subscriberProfileUpdated = true;
@@ -3348,7 +3348,7 @@ public class EvolutionEngine
                   //
 
                   EvolutionEngineEventDeclaration rewardEventDeclaration = Deployment.getEvolutionEngineEvents().get(subscriberCurrentTierDefinition.getRewardEventName()) ;
-                  if(rewardEventDeclaration != null && rewardEventDeclaration.getEventClassName().equals(evolutionEvent.getClass().getName()) && evolutionEvent instanceof LoyaltyProgramPointsEvent)
+                  if(rewardEventDeclaration != null && rewardEventDeclaration.getEventClassName().equals(evolutionEvent.getClass().getName()) && evolutionEvent instanceof LoyaltyProgramPointsEvent && ((LoyaltyProgramPointsEvent)evolutionEvent).getUnit()!=0)
                     {
 
                       //  update reward points
@@ -3356,8 +3356,8 @@ public class EvolutionEngine
                       Point point = pointService.getActivePoint(loyaltyProgramPoints.getRewardPointsID(), now);
                       if(point != null)
                         {
-                          
-                          log.info("update loyalty program REWARD => adding "+((LoyaltyProgramPointsEvent)evolutionEvent).getUnit()+" x "+subscriberCurrentTierDefinition.getNumberOfRewardPointsPerUnit()+" of point with ID "+loyaltyProgramPoints.getRewardPointsID());
+
+                          if(log.isDebugEnabled()) log.debug("update loyalty program REWARD => adding "+((LoyaltyProgramPointsEvent)evolutionEvent).getUnit()+" x "+subscriberCurrentTierDefinition.getNumberOfRewardPointsPerUnit()+" of point with ID "+loyaltyProgramPoints.getRewardPointsID());
                           int amount = ((LoyaltyProgramPointsEvent)evolutionEvent).getUnit() * subscriberCurrentTierDefinition.getNumberOfRewardPointsPerUnit();
                           updatePointBalance(context, null, rewardEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true);
                           subscriberProfileUpdated = true;
