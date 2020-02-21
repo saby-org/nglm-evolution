@@ -346,35 +346,20 @@ public class JourneyHistory
   public RewardHistory addRewardInformation(DeliveryRequest deliveryRequest) 
   {
     RewardHistory history = null;
-    if(deliveryRequest instanceof CommodityDeliveryRequest)
-      {
-        CommodityDeliveryRequest request = (CommodityDeliveryRequest) deliveryRequest;
-        history = new RewardHistory(request.getCommodityID(), request.getAmount(), request.getDeliveryDate());
-      }
-    else if(deliveryRequest instanceof EmptyFulfillmentRequest) 
-      {
-        EmptyFulfillmentRequest request = (EmptyFulfillmentRequest) deliveryRequest;
-        history = new RewardHistory(request.getCommodityID(), request.getAmount(), request.getDeliveryDate());
-      }
-    else if(deliveryRequest instanceof INFulfillmentRequest) 
-      {
-        INFulfillmentRequest request = (INFulfillmentRequest) deliveryRequest;
-        history = new RewardHistory(request.getProviderID(), request.getAmount(), request.getDeliveryDate());
-      }
-    else if(deliveryRequest instanceof PointFulfillmentRequest) 
-      {
-        PointFulfillmentRequest request = (PointFulfillmentRequest) deliveryRequest;
-        history = new RewardHistory(request.getPointID(), request.getAmount(), request.getDeliveryDate());
-      }
-    else if(deliveryRequest instanceof PurchaseFulfillmentRequest) 
-      {
-        PurchaseFulfillmentRequest request = (PurchaseFulfillmentRequest) deliveryRequest;
-        history = new RewardHistory(request.getOfferID(), request.getQuantity(), request.getDeliveryDate());
-      }
-    if(history != null) 
-      {
-        this.rewardHistory.add(history);
-      }
+    if(deliveryRequest instanceof CommodityDeliveryRequest) {
+      CommodityDeliveryRequest request = (CommodityDeliveryRequest) deliveryRequest;
+      history = new RewardHistory(request.getProviderName(), request.getCommodityID(), request.getAmount(), request.getDeliveryDate());
+    } 
+    // Special case for offers. 
+    // PurchaseFulfillmentRequest are not managed by the CommodityManager (which is a proxy for a lot of requests)
+    else if(deliveryRequest instanceof PurchaseFulfillmentRequest) {
+      PurchaseFulfillmentRequest request = (PurchaseFulfillmentRequest) deliveryRequest;
+      history = new RewardHistory(request.getDeliveryType(), "offer-"+request.getOfferDisplay(), request.getQuantity(), request.getDeliveryDate());
+    }
+    
+    if(history != null) {
+      this.rewardHistory.add(history);
+    }
     
     return history;
   }
@@ -552,8 +537,8 @@ public class JourneyHistory
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("reward_history");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-      schemaBuilder.field("rewardID", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+      schemaBuilder.field("rewardName", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("amount", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("rewardDate",  Timestamp.builder().optional().schema());
       schema = schemaBuilder.build();
@@ -577,8 +562,7 @@ public class JourneyHistory
     *  data
     *
     *****************************************/
-
-    private String rewardID;
+    private String rewardName;
     private int amount;
     private Date rewardDate;
     
@@ -587,8 +571,7 @@ public class JourneyHistory
     *  accessors
     *
     *****************************************/
-    
-    public String getRewardID() { return rewardID; }
+    public String getRewardName() { return rewardName; }
     public int getAmount() { return amount; }
     public Date getRewardDate() { return rewardDate; }
     
@@ -597,12 +580,11 @@ public class JourneyHistory
     *  pack
     *
     *****************************************/
-
     public static Object pack(Object value)
     {
       RewardHistory rewardHistory = (RewardHistory) value;
       Struct struct = new Struct(schema);
-      struct.put("rewardID", rewardHistory.getRewardID());
+      struct.put("rewardName", rewardHistory.getRewardName());
       struct.put("amount", rewardHistory.getAmount());
       struct.put("rewardDate", rewardHistory.getRewardDate());
       return struct;
@@ -613,10 +595,9 @@ public class JourneyHistory
     *  constructor -- copy
     *
     *****************************************/
-
     public RewardHistory(RewardHistory rewardHistory)
     {
-      this.rewardID = new String(rewardHistory.getRewardID());
+      this.rewardName = new String(rewardHistory.getRewardName());
       this.amount = rewardHistory.getAmount();
       this.rewardDate = new Date(rewardHistory.getRewardDate().getTime());
     }
@@ -626,10 +607,9 @@ public class JourneyHistory
     *  constructor -- unpack
     *
     *****************************************/
-
-    public RewardHistory(String rewardID, int amount, Date rewardDate)
+    private RewardHistory(String rewardName, int amount, Date rewardDate)
     {
-      this.rewardID = rewardID;
+      this.rewardName = rewardName;
       this.amount = amount;
       this.rewardDate = rewardDate;
     }
@@ -639,7 +619,6 @@ public class JourneyHistory
     *  unpack
     *
     *****************************************/
-
     public static RewardHistory unpack(SchemaAndValue schemaAndValue)
     {
       //
@@ -655,7 +634,8 @@ public class JourneyHistory
       //
 
       Struct valueStruct = (Struct) value;
-      String rewardID = valueStruct.getString("rewardID");
+      // In version <= 1, there were a attribute "rewardID".
+      String rewardName = (schemaVersion >= 2) ? valueStruct.getString("rewardName") : valueStruct.getString("rewardID");
       int amount = valueStruct.getInt32("amount");
       Date rewardDate = (Date) valueStruct.get("rewardDate");
       
@@ -663,7 +643,7 @@ public class JourneyHistory
       //  return
       //
 
-      return new RewardHistory(rewardID, amount, rewardDate);
+      return new RewardHistory(rewardName, amount, rewardDate);
     }
     
     /*****************************************
@@ -671,13 +651,23 @@ public class JourneyHistory
     *  toString -- used for elasticsearch
     *
     *****************************************/
-    
     @Override
     public String toString()
     {
-      return rewardID + ";" + amount + ";" + rewardDate.getTime();
-    }
+      return rewardName + ";" + amount + ";" + rewardDate.getTime();
+    }    
     
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+    public RewardHistory(String deliverableType, String deliverableName, int amount, Date rewardDate)
+    {
+      this.rewardName = deliverableName + '(' + deliverableType + ')';
+      this.amount = amount;
+      this.rewardDate = rewardDate;
+    }
   }
   
   public static class NodeHistory

@@ -402,6 +402,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
     public String getExternalSubscriberID() { return externalSubscriberID; }
     public String getProviderID() { return providerID; }
+    public String getProviderName() { return Deployment.getFulfillmentProviders().get(getProviderID()).getProviderName(); }
     public String getCommodityID() { return commodityID; }
     public String getCommodityName() { return commodityName; }
     public CommodityDeliveryOperation getOperation() { return operation; }

@@ -686,7 +686,7 @@ public class JourneyTrafficEngine
     else if (event.getLastRewards() != null && event.getLastRewards().getAmount() > 0)
       {
         RewardHistory rewards = event.getLastRewards();
-        history.getCurrentData().getGlobal().addRewards(rewards.getRewardID(), rewards.getAmount());
+        history.getCurrentData().getGlobal().addRewards(rewards.getRewardName(), rewards.getAmount());
         SubscriberTraffic stratumTraffic = history.getCurrentData().getByStratum().get(event.getSubscriberStratum());
         if(stratumTraffic == null)
           {
@@ -694,7 +694,7 @@ public class JourneyTrafficEngine
             stratumTraffic.setEmptyRewardsMap();
             history.getCurrentData().getByStratum().put(event.getSubscriberStratum(), stratumTraffic);
           }
-        stratumTraffic.addRewards(rewards.getRewardID(), rewards.getAmount());
+        stratumTraffic.addRewards(rewards.getRewardName(), rewards.getAmount());
       }
 
     //
