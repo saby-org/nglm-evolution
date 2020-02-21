@@ -25,14 +25,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.8.1-build200217-SNAPSHOT</version>
+    <version>4.8.1-bld200126_evpro_49-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.8.1-build200217-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.8.1-bld200126_evpro_49-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
@@ -368,7 +368,7 @@
             </goals>
             <configuration>
               <outputDirectory>${project.build.directory}/partially-assembled-resources</outputDirectory>
-              <resources>          
+              <resources>     
                 <resource>
                   <directory>${project.build.directory}/nglm-evolution-resources</directory>
                   <includes>
@@ -377,6 +377,7 @@
                     <include>docker/*.yml</include>
                     <include>docker/connect/*</include>
                     <include>docker/setup/*</include>
+                    <include>docker/analyse-upgrade/*</include>
                     <include>support/*</include>
                   </includes>
                   <excludes>
@@ -384,8 +385,8 @@
                   </excludes>
                   <filtering>true</filtering>
                 </resource>
-              </resources>              
-            </configuration>            
+              </resources>     
+            </configuration>     
           </execution>
 
           <execution>

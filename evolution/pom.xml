@@ -27,14 +27,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.8.1-build200217-SNAPSHOT</version>
+    <version>4.8.1-bld200126_evpro_49-SNAPSHOT</version>
     <relativePath/>
   </parent>
 
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>4.8.1-build200217-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.8.1-bld200126_evpro_49-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.0.53</gui-fwk.version>
@@ -62,6 +62,7 @@
     <!-- core-common-build -->
     <common.build.phase.proguard>package</common.build.phase.proguard>
     <common.build.phase.generate-setup-stack>none</common.build.phase.generate-setup-stack>
+    <common.build.phase.generate-analyse-upgrade-stack>none</common.build.phase.generate-analyse-upgrade-stack>
     <common.build.phase.generate-connect-stack>none</common.build.phase.generate-connect-stack>
     <common.build.phase.generate-simpletransform-stack>none</common.build.phase.generate-simpletransform-stack>
     <common.build.phase.generate-grafana-stack>none</common.build.phase.generate-grafana-stack>
@@ -70,6 +71,7 @@
     <common.build.phase.generate-deployment-json>none</common.build.phase.generate-deployment-json>
     <common.build.phase.generate-nglm-scripts>none</common.build.phase.generate-nglm-scripts>
     <common.build.skip.docker-setup>true</common.build.skip.docker-setup>
+    <common.build.skip.docker-analyse-upgrade>true</common.build.skip.docker-analyse-upgrade>
     <common.build.skip.docker-connect>true</common.build.skip.docker-connect>
     <common.build.skip.docker-simpletransform>true</common.build.skip.docker-simpletransform>
     <common.build.skip.docker-grafana>true</common.build.skip.docker-grafana>
@@ -324,6 +326,7 @@
                     <include>docker/upgrade-postamble.yml</include>
                     <include>docker/connect/*</include>
                     <include>docker/setup/*</include>
+                    <include>docker/analyse-upgrade/*</include>
                     <include>support/*</include>
                   </includes>
                   <filtering>false</filtering>
