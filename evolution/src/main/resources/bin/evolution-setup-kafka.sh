@@ -10,6 +10,7 @@
 
 cat > /app/setup/topics-evolution
 
+
 #
 #  create topics -- log
 #
@@ -84,6 +85,7 @@ echo create_topic ${topic.loyaltyprogram}                                       
 echo create_topic ${topic.exclusioninclusiontarget}                                 $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
 echo create_topic ${topic.segmentcontactpolicy}                                     $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
 echo create_topic ${topic.criterionfieldavailablevalues}                            $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
+echo create_topic ${topic.sourceaddress}                                            $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
 echo create_topic ${topic.fulfillment.purchasefulfillment.request}                  $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 echo create_topic ${topic.fulfillment.purchasefulfillment.response}                 $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 echo create_topic ${topic.fulfillment.purchasefulfillment.internal}                 $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_CHANGELOG_50MB"  >> /app/setup/topics-evolution

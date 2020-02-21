@@ -5,24 +5,10 @@
   <packaging>jar</packaging>
   <version>gitversion</version>
   <name>evolution</name>
-  <url>http://maven.sixthsensemedia.com:8090/repository/internal</url>
+  <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
 
   <repositories>
-
-    <repository>
-      <id>evolving-internal</id>
-      <name>Evolving Internal Repository</name>
-      <url>http://maven.sixthsensemedia.com:8090/repository/internal</url>
-      <layout>default</layout>
-    </repository>
-
-    <repository>
-      <id>evolving-snapshots</id>
-      <name>Evolving Snapshots Repository</name>
-      <url>http://maven.sixthsensemedia.com:8090/repository/snapshots</url>
-      <layout>default</layout>
-    </repository>
 
     <repository>
       <id>confluent</id>
@@ -33,7 +19,7 @@
     <repository>
       <id>artifactory</id>
       <name>artifactory</name>
-      <url>http://artifactory.lumata.int/artifactory/repo</url>
+      <url>http://10.100.0.6:8090/artifactory/repo</url>
     </repository>
 
   </repositories>
@@ -54,7 +40,7 @@
     <gui-fwk.version>1.0.53</gui-fwk.version>
     <gui-csr.version>1.0.42</gui-csr.version>
     <gui-itm.version>1.0.20</gui-itm.version>
-    <gui-jmr.version>1.0.69</gui-jmr.version>
+    <gui-jmr.version>1.0.70</gui-jmr.version>
     <gui-opc.version>1.2.37</gui-opc.version>
     <gui-iar.version>1.0.40</gui-iar.version>
     <gui-opr.version>1.0.39</gui-opr.version>
@@ -210,7 +196,7 @@
             </configuration>
           </execution>
           <execution>
-            <id>generate-evolution-scripts</id>
+            <id>copy-evolution-log4j</id>
             <phase>prepare-package</phase>
             <goals>
               <goal>run</goal>
@@ -218,10 +204,9 @@
             <configuration>
               <exportAntProperties>true</exportAntProperties>
               <target>
-                <concat destfile="${project.build.directory}/assembled-resources/config/log4j-evol.properties" force="yes">
-                  <fileset dir="${project.build.directory}/nglm-core-resources/config" includes="log4j-core.properties"/>
-                  <fileset dir="${project.basedir}/src/main/resources/config" includes="log4j-evolution.properties"/>
-                </concat>
+                <copy todir="${project.build.directory}/assembled-resources/config/logger" force="yes">
+                  <fileset dir="${project.basedir}/src/main/resources/config/logger" includes="log4j-*.properties"/>
+                </copy>
               </target>
             </configuration>
           </execution>
@@ -571,13 +556,13 @@
     <repository>
       <id>evolving-internal</id>
       <name>Evolving Internal Repository</name>
-      <url>http://maven.sixthsensemedia.com:8090/repository/internal</url>
+      <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
     </repository>
-
+    
     <snapshotRepository>
       <id>evolving-snapshots</id>
       <name>Evolving Snapshots Repository</name>
-      <url>http://maven.sixthsensemedia.com:8090/repository/snapshots</url>
+      <url>http://10.100.0.6:8090/artifactory/evolving-snapshots</url>
     </snapshotRepository>
 
   </distributionManagement>

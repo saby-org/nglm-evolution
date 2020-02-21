@@ -4106,7 +4106,7 @@ public class ThirdPartyManager
       Serializer<StringKey> keySerializer = StringKey.serde().serializer();
       Serializer<LoyaltyProgramRequest> valueSerializer = LoyaltyProgramRequest.serde().serializer();
       
-      String deliveryRequestSource = "0" ; // TODO is JourneyID when in a journey, what to put here ?
+      String featureID = ( optIn ? API.loyaltyProgramOptIn : API.loyaltyProgramOptOut ).getMethodIndex() + "";
       String operation = optIn ? "opt-in" : "opt-out";
       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
       loyaltyProgramRequestID = zuks.getStringKey();
@@ -4131,7 +4131,7 @@ public class ThirdPartyManager
       request.put("subscriberID", subscriberID);
       request.put("eventID", "0"); // No event here
       request.put("moduleID", moduleID);
-      request.put("featureID", deliveryRequestSource);
+      request.put("featureID", featureID);
       request.put("deliveryType", "loyaltyProgramFulfillment");
       
       JSONObject valueRes = JSONUtilities.encodeObject(request);

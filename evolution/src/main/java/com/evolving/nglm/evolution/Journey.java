@@ -64,6 +64,9 @@ public class Journey extends GUIManagedObject
     Running("Running"),
     Suspended("Suspended"),
     Complete("Complete"),
+    PendingNotApproved("PendingNotApproved"),
+    WaitingForApproval("WaitingForApproval"),
+    StartedApproved("StartedApproved"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private JourneyStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -171,12 +174,13 @@ public class Journey extends GUIManagedObject
   //  schema
   //
 
+  private static int currentSchemaVersion = 5;
   private static Schema schema = null;
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),4));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), currentSchemaVersion));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("effectiveEntryPeriodEndDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("templateParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, CriterionField.schema()).name("journey_template_parameters").defaultValue(new HashMap<String,CriterionField>()).schema());
@@ -194,6 +198,7 @@ public class Journey extends GUIManagedObject
     schemaBuilder.field("boundParameters", ParameterMap.schema());
     schemaBuilder.field("appendInclusionLists", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("appendExclusionLists", SchemaBuilder.bool().defaultValue(false).schema());
+    schemaBuilder.field("approval", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -232,6 +237,7 @@ public class Journey extends GUIManagedObject
   private ParameterMap boundParameters;
   private boolean appendInclusionLists;
   private boolean appendExclusionLists;
+  private JourneyStatus approval;
 
   /****************************************
   *
@@ -262,6 +268,7 @@ public class Journey extends GUIManagedObject
   public ParameterMap getBoundParameters() { return boundParameters; }
   public boolean getAppendInclusionLists() { return appendInclusionLists; }
   public boolean getAppendExclusionLists() { return appendExclusionLists; }
+  public JourneyStatus getApproval() {return JourneyStatus.Unknown == approval ? JourneyStatus.Pending : approval; }
 
   //
   //  package protected
@@ -508,7 +515,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists)
+  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, JourneyStatus approval)
   {
     super(schemaAndValue);
     this.effectiveEntryPeriodEndDate = effectiveEntryPeriodEndDate;
@@ -527,6 +534,7 @@ public class Journey extends GUIManagedObject
     this.boundParameters = boundParameters;
     this.appendInclusionLists = appendInclusionLists;
     this.appendExclusionLists = appendExclusionLists;
+    this.approval = approval;
   }
 
   /*****************************************
@@ -556,6 +564,7 @@ public class Journey extends GUIManagedObject
     struct.put("boundParameters", ParameterMap.pack(journey.getBoundParameters()));
     struct.put("appendInclusionLists", journey.getAppendInclusionLists());
     struct.put("appendExclusionLists", journey.getAppendExclusionLists());
+    struct.put("approval", journey.getApproval().getExternalRepresentation());
     return struct;
   }
 
@@ -698,6 +707,7 @@ public class Journey extends GUIManagedObject
     ParameterMap boundParameters = (schemaVersion >= 2) ? ParameterMap.unpack(new SchemaAndValue(schema.field("boundParameters").schema(), valueStruct.get("boundParameters"))) : new ParameterMap();
     boolean appendInclusionLists = (schemaVersion >= 3) ? valueStruct.getBoolean("appendInclusionLists") : false;
     boolean appendExclusionLists = (schemaVersion >= 3) ? valueStruct.getBoolean("appendExclusionLists") : false;
+    JourneyStatus approval = (schemaVersion >= 5) ? JourneyStatus.fromExternalRepresentation(valueStruct.getString("approval")) : JourneyStatus.Pending;
 
     /*****************************************
     *
@@ -759,7 +769,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists);
+    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, approval);
   }
   
   /*****************************************
@@ -928,11 +938,22 @@ public class Journey extends GUIManagedObject
 
   /*****************************************
   *
-  *  constructor -- JSON
+  *  constructor -- JSON and Approval
   *
   *****************************************/
-
+  
   public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, JourneyService journeyService, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, CommunicationChannelService communicationChannelService) throws GUIManagerException
+  {
+	  this(jsonRoot, journeyType, epoch, existingJourneyUnchecked, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService, JourneyStatus.Pending);
+  }
+  
+  /*****************************************
+  *
+  *  constructor -- JSON and Approval
+  *
+  *****************************************/
+  
+  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, JourneyService journeyService, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, CommunicationChannelService communicationChannelService, JourneyStatus approval) throws GUIManagerException
   {
     /*****************************************
     *
@@ -988,6 +1009,7 @@ public class Journey extends GUIManagedObject
     this.appendExclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendExclusionLists", Boolean.FALSE);
     Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.templateParameters, Collections.<String,CriterionField>emptyMap(), true, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
+    this.approval = approval;
 
     /*****************************************
     *
@@ -3175,6 +3197,7 @@ public class Journey extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(boundParameters, existingJourney.getBoundParameters());
         epochChanged = epochChanged || ! Objects.equals(appendInclusionLists, existingJourney.getAppendInclusionLists());
         epochChanged = epochChanged || ! Objects.equals(appendExclusionLists, existingJourney.getAppendExclusionLists());
+        epochChanged = epochChanged || ! Objects.equals(approval, existingJourney.getApproval());
         return epochChanged;
       }
     else

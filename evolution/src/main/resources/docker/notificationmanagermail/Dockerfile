@@ -15,14 +15,6 @@ RUN chmod 0777 /var/lib/kafka /var/lib/zookeeper
 COPY lib/ /app/jars
 
 #
-#  log4j
-#
-
-COPY config/log4j-evol.properties /etc/kafka
-RUN chmod 0666 /etc/kafka/log4j-evol.properties
-ENV KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:/etc/kafka/log4j-evol-final.properties"
-
-#
 #  volume(s)
 #
 

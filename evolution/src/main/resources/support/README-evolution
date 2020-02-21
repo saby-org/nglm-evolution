@@ -343,6 +343,12 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "custom
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "customerID" : "121","tokenCode" : "JM3MJ"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerNBOs; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "customerID" : "121","tokenCode" : "JM3MJ", "offerID":"200102","origin":"whatever"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/acceptOffer; echo
 
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSourceAddressList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSourceAddressSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/source-address.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSourceAddress; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSourceAddress; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSourceAddress; echo
+
 --
 --  configAdaptor
 -- 

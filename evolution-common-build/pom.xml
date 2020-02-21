@@ -9,20 +9,6 @@
   <repositories> 
 
     <repository>
-      <id>evolving-internal</id>
-      <name>Evolving Internal Repository</name>
-      <url>http://maven.sixthsensemedia.com:8090/repository/internal</url>
-      <layout>default</layout>
-    </repository>
-
-    <repository>
-      <id>evolving-snapshots</id>
-      <name>Evolving Snapshots Repository</name>
-      <url>http://maven.sixthsensemedia.com:8090/repository/snapshots</url>
-      <layout>default</layout>
-    </repository>
-
-    <repository>
       <id>confluent</id>
       <name>Confluent Repository</name>
       <url>http://packages.confluent.io/maven/</url>
@@ -31,7 +17,7 @@
     <repository>
       <id>artifactory</id>
       <name>artifactory</name>
-      <url>http://artifactory.lumata.int/artifactory/repo</url>
+      <url>http://10.100.0.6:8090/artifactory/repo</url>
     </repository>
 
   </repositories>  
@@ -194,6 +180,7 @@
     <topic.exclusioninclusiontarget>exclusioninclusiontarget</topic.exclusioninclusiontarget>
     <topic.segmentcontactpolicy>segmentcontactpolicy</topic.segmentcontactpolicy>
     <topic.criterionfieldavailablevalues>criterionfieldavailablevalues</topic.criterionfieldavailablevalues>
+    <topic.sourceaddress>sourceaddress</topic.sourceaddress>
 
     <!-- registry subjects -->
     <registrysubject.subscriberprofile>subscriberprofile</registrysubject.subscriberprofile>
@@ -1755,13 +1742,13 @@
     <repository>
       <id>evolving-internal</id>
       <name>Evolving Internal Repository</name>
-      <url>http://maven.sixthsensemedia.com:8090/repository/internal</url>
+      <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
     </repository>
     
     <snapshotRepository>
       <id>evolving-snapshots</id>
       <name>Evolving Snapshots Repository</name>
-      <url>http://maven.sixthsensemedia.com:8090/repository/snapshots</url>
+      <url>http://10.100.0.6:8090/artifactory/evolving-snapshots</url>
     </snapshotRepository>
  
   </distributionManagement>

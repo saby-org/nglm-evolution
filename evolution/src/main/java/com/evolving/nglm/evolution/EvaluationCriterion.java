@@ -1336,12 +1336,12 @@ public class EvaluationCriterion
       }
 
     //
-    // Handle dynamic criterion "otherXXX"
+    // Handle dynamic criterion "campaign.name, journey.customer.name..."
     //
     
-    if (esField.startsWith("specialOther"))
+    if (esField.startsWith("specialCriterion"))
       {
-        QueryBuilder query = handleSpecialOtherCriterion(esField);
+        QueryBuilder query = handleSpecialCriterion(esField);
         return query;
       }
     /*****************************************
@@ -1671,9 +1671,9 @@ public class EvaluationCriterion
     return query;
   }
 
-  static String journeyNameOther = "";
-  static String campaignNameOther = "";
-  static String bulkcampaignNameOther = "";
+  static String journeyName = "";
+  static String campaignName = "";
+  static String bulkcampaignName = "";
   
   /*****************************************
   *
@@ -1681,11 +1681,11 @@ public class EvaluationCriterion
   *
   *****************************************/
   
-  public QueryBuilder handleSpecialOtherCriterion(String esField) throws CriterionException
+  public QueryBuilder handleSpecialCriterion(String esField) throws CriterionException
   {
-    Pattern fieldNamePattern = Pattern.compile("^specialOther([^.]+)$");
+    Pattern fieldNamePattern = Pattern.compile("^specialCriterion([^.]+)$");
     Matcher fieldNameMatcher = fieldNamePattern.matcher(esField);
-    if (! fieldNameMatcher.find()) throw new CriterionException("invalid other criterion field " + esField);
+    if (! fieldNameMatcher.find()) throw new CriterionException("invalid special criterion field " + esField);
     String criterion = fieldNameMatcher.group(1);
     // TODO : necessary ? To be checked
     if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
@@ -1693,27 +1693,27 @@ public class EvaluationCriterion
     switch (criterion)
     {
       case "Journey":
-        journeyNameOther = (String) (argument.evaluate(null, null));
+        journeyName = (String) (argument.evaluate(null, null));
         return QueryBuilders.matchAllQuery();
         
       case "Campaign":
-        campaignNameOther = (String) (argument.evaluate(null, null));
+        campaignName = (String) (argument.evaluate(null, null));
         return QueryBuilders.matchAllQuery();
         
       case "Bulkcampaign":
-        bulkcampaignNameOther = (String) (argument.evaluate(null, null));
+        bulkcampaignName = (String) (argument.evaluate(null, null));
         return QueryBuilders.matchAllQuery();
         
       case "JourneyStatus":
-        value = journeyNameOther;
+        value = journeyName;
         break;
         
       case "CampaignStatus":
-        value = campaignNameOther;
+        value = campaignName;
         break;
         
       case "BulkcampaignStatus":
-        value = bulkcampaignNameOther;
+        value = bulkcampaignName;
         break;
         
       default:

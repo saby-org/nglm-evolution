@@ -14,14 +14,19 @@ notificationmail-<_KEY_>:
     CUB_REGISTRY_MIN_NODES: <_REGISTRY_MIN_NODES_>
     CUB_SCHEMA_REGISTRY_TIMEOUT: <_STARTUP_DEPENDENCY_TIMEOUT_>
     ZOOKEEPER_SERVERS: <_ZOOKEEPER_SERVERS_>
-    TRACE_LEVEL: <_TRACE_LEVEL_>
     KEY: "<_KEY_>"
     PLUGIN_NAME: "<_PLUGIN_NAME_>"
     PLUGIN_CONFIGURATION: "<_PLUGIN_CONFIGURATION_>"
     KAFKA_DEBUG: <_NOTIFICATIONMANAGER_MAIL_DEBUG_>
     JAVA_DEBUG_OPTS: -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=<_DEBUG_PORT_>,suspend=n
     KAFKA_HEAP_OPTS: <_NOTIFICATIONMANAGER_MAIL_HEAP_OPTS_>
-    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_MONITORING_PORT_>:/app/config/notificationmanagermail_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_>
+    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_MONITORING_PORT_>:/app/config/notificationmanagermail_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> 
+    KAFKA_LOG4J_OPTS: -Dlog4j.configuration=file:/app/config/log4j-mail.properties
+  volumes:
+    - <_NGLM_CONFIG_LOGS_>/log4j-mail-<_KEY_>.properties:/app/config/log4j-mail.properties
+    - type: bind
+      source: <_NGLM_LOGS_>
+      target: /app/logs
   deploy: 
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
