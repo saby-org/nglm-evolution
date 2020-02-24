@@ -132,6 +132,7 @@ public class ThirdPartyManager
   private OfferObjectiveService offerObjectiveService;
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private SalesChannelService salesChannelService;
+  private ResellerService resellerService;
   private SubscriberIDService subscriberIDService;
   private ProductService productService;
   private DeliverableService deliverableService;
@@ -381,6 +382,9 @@ public class ThirdPartyManager
     salesChannelService = new SalesChannelService(bootstrapServers, "thirdpartymanager-salesChannelService-" + apiProcessKey, Deployment.getSalesChannelTopic(), false);
     salesChannelService.start();
     
+    resellerService = new ResellerService(bootstrapServers, "thirdpartymanager-resellerService-" + apiProcessKey, Deployment.getResellerTopic(), false);
+    resellerService.start();
+    
     tokenTypeService = new TokenTypeService(bootstrapServers, "thirdpartymanager-tokentypeservice-" + apiProcessKey, Deployment.getTokenTypeTopic(), false);
     tokenTypeService.start();
     
@@ -461,7 +465,7 @@ public class ThirdPartyManager
      *
      *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, pointService, paymentMeanService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, pointService, paymentMeanService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, resellerService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService));
 
     /*****************************************
      *
@@ -498,6 +502,7 @@ public class ThirdPartyManager
     private OfferObjectiveService offerObjectiveService;
     private SubscriberMessageTemplateService subscriberMessageTemplateService;
     private SalesChannelService salesChannelService;
+    private ResellerService resellerService;
     private SubscriberIDService subscriberIDService;
     private ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader;
     private ProductService productService;
@@ -508,7 +513,7 @@ public class ThirdPartyManager
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, PointService pointService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, PointService pointService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, ResellerService resellerService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -524,6 +529,7 @@ public class ThirdPartyManager
       this.offerObjectiveService = offerObjectiveService;
       this.subscriberMessageTemplateService = subscriberMessageTemplateService;
       this.salesChannelService = salesChannelService;
+      this.resellerService = resellerService;
       this.subscriberIDService = subscriberIDService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
       this.productService = productService;
@@ -558,6 +564,7 @@ public class ThirdPartyManager
       if (offerObjectiveService != null ) offerObjectiveService.stop();
       if (subscriberMessageTemplateService != null) subscriberMessageTemplateService.stop();
       if (salesChannelService != null) salesChannelService.stop();
+      if (resellerService != null) resellerService.stop();
       if (subscriberIDService != null) subscriberIDService.stop();
       if (productService != null) productService.stop();
       if (deliverableService != null) deliverableService.stop();
@@ -2841,13 +2848,32 @@ public class ThirdPartyManager
     String startDateString = readString(jsonRoot, "startDate", true);
     String endDateString = readString(jsonRoot, "endDate", true);
     String offerObjectiveName = readString(jsonRoot, "objectiveName", true);
+    String userID = readString(jsonRoot, "loginName", true);
 
     Date offerStartDate = prepareStartDate(getDateFromString(startDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
     Date offerEndDate = prepareEndDate(getDateFromString(endDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
+    
+    Map<String, List<String>> activeResellerAndSalesChannelIDs = activeResellerAndSalesChannelIDs(userID);   
 
     try
     {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+      
+      if ((activeResellerAndSalesChannelIDs.containsKey("activeReseller")) && (activeResellerAndSalesChannelIDs.get("activeReseller")).size() == 0) {
+        response.put(GENERIC_RESPONSE_CODE,
+            RESTAPIGenericReturnCodes.INACTIVE_RESELLER.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG,
+            RESTAPIGenericReturnCodes.INACTIVE_RESELLER.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);
+      }
+      
+      if (activeResellerAndSalesChannelIDs.containsKey("salesChannelIDsList") && (activeResellerAndSalesChannelIDs.get("salesChannelIDsList")).size() == 0) {
+        response.put(GENERIC_RESPONSE_CODE,
+            RESTAPIGenericReturnCodes.RESELLER_WITHOUT_SALESCHANNEL.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG,
+            RESTAPIGenericReturnCodes.RESELLER_WITHOUT_SALESCHANNEL.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);
+      }
       if (subscriberProfile == null)
         {
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
@@ -2936,6 +2962,19 @@ public class ThirdPartyManager
                 offers = offers.stream().filter(offer -> (offer.getOfferObjectives() != null && (offer.getOfferObjectives().stream().filter(obj -> obj.getOfferObjectiveID().equals(exactOfferObjectives.getOfferObjectiveID())).count() > 0L))).collect(Collectors.toList());
 
             }
+          if (activeResellerAndSalesChannelIDs.containsKey("salesChannelIDsList") && (activeResellerAndSalesChannelIDs.get("salesChannelIDsList")).size() != 0)
+            {
+              List salesChannelIDList = activeResellerAndSalesChannelIDs.get("salesChannelIDsList");
+              offers = offers.stream()
+                  .filter(offer -> (offer.getOfferSalesChannelsAndPrices() != null && (offer
+                      .getOfferSalesChannelsAndPrices().stream()
+                      .filter(object -> (object.getSalesChannelIDs() != null
+                          && (object.getSalesChannelIDs().stream().filter(obj -> salesChannelIDList.contains(obj)))
+                              .count() > 0L))
+                      .count() > 0L)))
+                  .collect(Collectors.toList());
+
+            } 
 
           /*****************************************
            *
@@ -3735,6 +3774,7 @@ public class ThirdPartyManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     Date now = SystemTime.getCurrentTime();
+    String resellerID = "";
 
     /****************************************
      *
@@ -3850,7 +3890,7 @@ public class ThirdPartyManager
       String featureID = API.acceptOffer.getMethodIndex()+"";
       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation(); 
       Offer offer = offerService.getActiveOffer(offerID, now);
-      deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, kafkaProducer);
+      deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer);
       
       // Redeem the token : Send an AcceptanceLog to EvolutionEngine
 
@@ -3956,6 +3996,13 @@ public class ThirdPartyManager
     String salesChannel = JSONUtilities.decodeString(jsonRoot, "salesChannel", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+    String userID = JSONUtilities.decodeString(jsonRoot, "loginName", true); 
+    Map<String, List<String>> activeResellerAndSalesChannelIDs = activeResellerAndSalesChannelIDs(userID);
+    String resellerID = "";
+    
+    if ((activeResellerAndSalesChannelIDs.containsKey("activeReseller")) && (activeResellerAndSalesChannelIDs.get("activeReseller")).size() != 0) {
+      resellerID = (activeResellerAndSalesChannelIDs.get("activeReseller")).get(0);
+    }
 
     /*****************************************
      *
@@ -3966,6 +4013,21 @@ public class ThirdPartyManager
     try
     {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      
+      if ((activeResellerAndSalesChannelIDs.containsKey("activeReseller")) && (activeResellerAndSalesChannelIDs.get("activeReseller")).size() == 0) {
+        response.put(GENERIC_RESPONSE_CODE,
+            RESTAPIGenericReturnCodes.INACTIVE_RESELLER.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG,
+            RESTAPIGenericReturnCodes.INACTIVE_RESELLER.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);
+      }
+      if ((activeResellerAndSalesChannelIDs.containsKey("salesChannelIDsList")) && (activeResellerAndSalesChannelIDs.get("salesChannelIDsList")).size() == 0) {
+        response.put(GENERIC_RESPONSE_CODE,
+            RESTAPIGenericReturnCodes.RESELLER_WITHOUT_SALESCHANNEL.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG,
+            RESTAPIGenericReturnCodes.RESELLER_WITHOUT_SALESCHANNEL.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);
+      }
       if (subscriberProfile == null)
         {
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
@@ -4010,7 +4072,30 @@ public class ThirdPartyManager
       
       String featureID = API.purchaseOffer.getMethodIndex()+"";
       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
-      deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, kafkaProducer);
+      if (activeResellerAndSalesChannelIDs.containsKey("salesChannelIDsList") && (activeResellerAndSalesChannelIDs.get("salesChannelIDsList")).size() != 0)
+        {
+          List salesChannelIDList = activeResellerAndSalesChannelIDs.get("salesChannelIDsList");
+          if (salesChannelIDList.contains(salesChannelID))
+            {
+              deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, quantity, moduleID, featureID,
+                  origin, resellerID, kafkaProducer);
+
+            }
+          else
+            {            
+              response.put(GENERIC_RESPONSE_CODE,
+                  RESTAPIGenericReturnCodes.SALSCHANNEL_RESELLER_MISMATCH.getGenericResponseCode());
+              response.put(GENERIC_RESPONSE_MSG,
+                  RESTAPIGenericReturnCodes.SALSCHANNEL_RESELLER_MISMATCH.getGenericResponseMessage());
+              return JSONUtilities.encodeObject(response);
+            }
+        }
+        else
+          {
+
+            deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, quantity, moduleID, featureID,
+                origin, resellerID, kafkaProducer);
+          }
       
       //
       // TODO how do we deal with the offline errors ? 
@@ -4948,6 +5033,77 @@ public class ThirdPartyManager
     }
     return result;
   }
+  
+  /*****************************************
+  *
+  *  activeReseller and the SalesChannel List based on the userID
+  *
+  *****************************************/
+  
+ public Map<String, List<String>> activeResellerAndSalesChannelIDs (String userID) {
+    
+    List<String> activeResellerID = new ArrayList<>();
+    List<String> salesChannelIDList = new ArrayList<>();      
+    HashMap<String,List<String>> response = new HashMap<String,List<String>>();
+    Date now = SystemTime.getCurrentTime();
+    
+    
+    for (GUIManagedObject storedResellerObject : resellerService.getStoredResellers())
+      {
+        if (storedResellerObject instanceof Reseller)
+          {
+            Reseller storedReseller = (Reseller)storedResellerObject;
+          
+            if (storedReseller.getUserIDs() != null
+                && !((storedReseller.getUserIDs()).isEmpty()))
+              {
+
+                if ((storedReseller.getUserIDs()).contains(userID))
+                  {
+                    if (resellerService.isActiveReseller(storedReseller, now))
+                      {
+                        activeResellerID.add(storedReseller.getResellerID());
+                        response.put("activeReseller", activeResellerID);
+                        break;
+                        
+                      }
+                    else
+                      {    
+                        response.put("activeReseller", activeResellerID);
+                        log.warn("The reseller is inactive" + storedReseller.getResellerID());
+                        break;                                                  
+                      }
+                  }
+              }
+
+          }
+      }
+     
+    if (activeResellerID.size() != 0)
+      {
+        for (GUIManagedObject storedSalesChannelObject : salesChannelService.getStoredSalesChannels())
+          {
+            
+            if (storedSalesChannelObject instanceof SalesChannel)
+              {
+                SalesChannel storedSalesChannel = (SalesChannel)storedSalesChannelObject;
+                if (storedSalesChannel.getResellerIDs() != null
+                    && !((storedSalesChannel.getResellerIDs()).isEmpty()))
+                  {
+
+                    if ((((SalesChannel) storedSalesChannel).getResellerIDs()).contains(activeResellerID.get(0)))
+
+                      {
+                        salesChannelIDList.add(storedSalesChannel.getSalesChannelID());
+                      }
+                  }
+              }
+          }
+        response.put("salesChannelIDsList", salesChannelIDList);
+      }
+     return response;
+       
+      }
 
   /*****************************************
    *
@@ -4956,7 +5112,7 @@ public class ThirdPartyManager
    *****************************************/
   
   public String purchaseOffer(String subscriberID, String offerID, String salesChannelID, int quantity, 
-      String moduleID, String featureID, String origin, KafkaProducer<byte[],byte[]> kafkaProducer) throws ThirdPartyManagerException
+      String moduleID, String featureID, String origin, String resellerID, KafkaProducer<byte[],byte[]> kafkaProducer) throws ThirdPartyManagerException
   {
     DeliveryManagerDeclaration deliveryManagerDeclaration = null;
     for (DeliveryManagerDeclaration dmd : Deployment.getDeliveryManagers().values())
@@ -4996,6 +5152,7 @@ public class ThirdPartyManager
     request.put("moduleID", moduleID);
     request.put("featureID", featureID);
     request.put("origin", origin);
+    request.put("resellerID", resellerID);
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     

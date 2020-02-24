@@ -18881,6 +18881,9 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    List<String>existingResellersUserIDs = new ArrayList<>();    
+   
+     
 
     /*****************************************
     *
@@ -18894,10 +18897,40 @@ public class GUIManager
         resellerID = resellerService.generateResellerID();
         jsonRoot.put("id", resellerID);
       }
-
+    
+  
     /*****************************************
     *
-    *  existing Partner
+    *  To check if the user is already in another reseller users list
+    *
+    *****************************************/
+   for (GUIManagedObject storedResellerObject : resellerService.getStoredResellers())
+      {
+       if (storedResellerObject instanceof Reseller ) {
+         Reseller storedReseller = (Reseller)storedResellerObject;
+         for (String userid: storedReseller.getUserIDs()) {
+           existingResellersUserIDs.add(userid);
+         }
+       }
+      } 
+  
+    List<String> userIDs = JSONUtilities.decodeJSONArray(jsonRoot, "userIDs", false);
+ 
+    if (userIDs.size() != 0) {
+      for(String userId : userIDs) {
+        if (existingResellersUserIDs.contains(userId))
+          {
+            response.put("responseCode", "USER ERROR");
+            response.put("responseMessage", "The user already exist in another reseller");
+            return JSONUtilities.encodeObject(response);           
+          }    
+      }
+    }  
+    
+    
+    /*****************************************
+    *
+    *  existing Reseller
     *
     *****************************************/
 
@@ -18913,7 +18946,7 @@ public class GUIManager
       {
         response.put("id", existingReseller.getGUIManagedObjectID());
         response.put("accepted", existingReseller.getAccepted());
-        response.put("valid", existingReseller.getAccepted());
+        response.put("valid", existingReseller.getAccepted());        
         response.put("processing", resellerService.isActiveReseller(existingReseller, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
@@ -18935,13 +18968,14 @@ public class GUIManager
         ****************************************/
 
         Reseller reseller = new Reseller(jsonRoot, epoch, existingReseller);
-
+        
+     
         /*****************************************
         *
         *  store
         *
         *****************************************/
-
+        
         resellerService.putReseller(reseller, (existingReseller == null), userID);
 
         /*****************************************
@@ -18953,7 +18987,7 @@ public class GUIManager
         response.put("id", reseller.getGUIManagedObjectID());
         response.put("accepted", reseller.getAccepted());
         response.put("valid", reseller.getAccepted());
-        response.put("processing", resellerService.isActiveReseller(reseller, now));
+        response.put("processing", resellerService.isActiveReseller(reseller, now));        
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
       }

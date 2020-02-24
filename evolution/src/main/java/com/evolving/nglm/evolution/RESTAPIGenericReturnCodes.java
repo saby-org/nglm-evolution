@@ -62,6 +62,9 @@ public enum RESTAPIGenericReturnCodes
   VOUCHER_NON_REDEEMABLE(418, "VOUCHER_NON_REDEEMABLE", "Voucher non redeemable"),
   EVENT_NAME_UNKNOWN(419, "EVENT_NAME_UNKNOWN", "Event Name Unknown"),
   BAD_3RD_PARTY_EVENT_CLASS_DEFINITION(420, "BAD_3RD_PARTY_EVENT_CLASS_DEFINiTION", "3rd Party event class does follow standard"),
+  INACTIVE_RESELLER(421, "INACTIVE_RESELLER", "The reseller is inactive"),
+  RESELLER_WITHOUT_SALESCHANNEL(422, "RESELLER_WITHOUT_SALESCHANNEL", "Reseller is not in any saleschannel"),
+  SALSCHANNEL_RESELLER_MISMATCH(423, "SALSCHANNEL_RESELLER_MISMATCH", "product sales channel and the reseller sales channel are not same"),
   INVALID_TOKEN_CODE(500, "INVALID_TOKEN_CODE", "The token-code is not valid"),
   MSISDN_TOKEN_CODE_NOT_COMPATIBLE(501, "MSISDN_TOKEN_CODE_NOT_COMPATIBLE", "The token-code is not associated to the current MSISDN"),
   CONCURRENT_ALLOCATION(502, "CONCURRENT_ALLOCATION", "The pair <MSISDN, token-code> is already in allocation phase"),
@@ -84,7 +87,7 @@ public enum RESTAPIGenericReturnCodes
   NO_CUSTOMER_CHANNEL(702, "NO_CUSTOMER_CHANNEL", "Missing customer communication channel for this message"),
   UNDELIVERABLE(703, "UNDELIVERABLE", "Undeliverable message"),
   INVALID(704, "INVALID", "Invalid message"),
-  QUEUE_FULL(705, "QUEUE_FULL", "Message queue full"),
+  QUEUE_FULL(705, "QUEUE_FULL", "Message queue full"),  
   UNKNOWN(-1, "UNKNOWN", "UNKNOWN");
   
   private int genericResponseCode;

@@ -91,6 +91,8 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   public static final String FEATUREDISPLAY = "featureDisplay";
   public static final String ORIGIN = "origin";
   
+
+  
   //
   // ODRs
   //
@@ -110,6 +112,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   public static final String PAYMENTPROVIDERID = "paymentProviderID";
   public static final String VOUCHERCODE = "voucherCode";
   public static final String VOUCHERPARTNERID = "voucherPartnerId";
+  public static final String RESELLERID = "resellerID";
   
   //
   // Messages
