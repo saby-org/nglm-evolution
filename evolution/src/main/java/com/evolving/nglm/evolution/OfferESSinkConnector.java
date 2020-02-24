@@ -16,9 +16,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 
 import com.evolving.nglm.core.ChangeLogESSinkTask;
 import com.evolving.nglm.core.SimpleESSinkConnector;
-import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.UniqueKeyServer;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class OfferESSinkConnector extends SimpleESSinkConnector
@@ -42,7 +40,8 @@ public class OfferESSinkConnector extends SimpleESSinkConnector
   
   public static class OfferESSinkTask extends ChangeLogESSinkTask
   {
-	private CatalogCharacteristicService catalogCharacteristicService = new CatalogCharacteristicService(Deployment.getBrokerServers(), "offeressinkconnector-catalogcharacteristicservice-" + getTaskNumber(), Deployment.getCatalogCharacteristicTopic(), true);
+	private CatalogCharacteristicService catalogCharacteristicService = new CatalogCharacteristicService(Deployment.getBrokerServers(), "offeressinkconnector-catalogcharacteristicservice-" + getTaskNumber(), Deployment.getCatalogCharacteristicTopic(), false);
+	private DynamicCriterionFieldService dynamicCriterionFieldService;
 
 	@Override
 	public String getDocumentID(SinkRecord sinkRecord) {
@@ -68,6 +67,16 @@ public class OfferESSinkConnector extends SimpleESSinkConnector
       *  extract Offer
       *
       ****************************************/
+
+      //lazy instantiation quick fix (new Offer need the context init, even if there not really needed, prefer modifying here)
+      if(dynamicCriterionFieldService==null){
+        synchronized (this){
+      	  if(dynamicCriterionFieldService==null){
+            dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "offeressinkconnector-dynamiccriterionfieldservice-" + getTaskNumber(), Deployment.getDynamicCriterionFieldTopic(), false);
+            CriterionContext.initialize(dynamicCriterionFieldService);
+      	  }
+        }
+      }
 
       Object guiManagedObjectValue = sinkRecord.value();
       Schema guiManagedObjectValueSchema = sinkRecord.valueSchema();
