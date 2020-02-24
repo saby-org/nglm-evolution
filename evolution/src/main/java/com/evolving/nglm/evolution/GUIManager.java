@@ -1226,7 +1226,7 @@ public class GUIManager
             throw new ServerRuntimeException("deployment", e);
           }
       }
-
+    
     //
     //  suppliers
     //
@@ -1285,6 +1285,27 @@ public class GUIManager
     catch (JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  Source Addresses not before communicationChannels
+    //
+    
+    if (sourceAddressService.getStoredSourceAddresss().size() == 0)
+      {
+        try
+          {
+            JSONArray initialSourceAddressesJSONArray = Deployment.getInitialSourceAddressesJSONArray();
+            for (int i=0; i<initialSourceAddressesJSONArray.size(); i++)
+              {
+                JSONObject  sourceAddresslJSON = (JSONObject) initialSourceAddressesJSONArray.get(i);
+                processPutSourceAddress("0", sourceAddresslJSON);
+              }
+          }
+        catch (JSONUtilitiesException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
       }
 
     //
@@ -23478,13 +23499,30 @@ public class GUIManager
             }
           break;
 
-        case "supportedEmailAddresses":
-          for (SupportedEmailAddress supportedEmailAddress : Deployment.getSupportedEmailAddresses().values())
+        case "sourceAddressesEmail":
+          
+          //
+          //  communicationChannelesEmail
+          //
+          
+          Collection<CommunicationChannel> communicationChannelesEmail = communicationChannelService.getActiveCommunicationChanneles(now).stream().filter(communicationChannel -> "email".equalsIgnoreCase(communicationChannel.getGUIManagedObjectName())).collect(Collectors.toList());
+          if (communicationChannelesEmail.size() > 0)
             {
-              HashMap<String,Object> availableValue = new HashMap<String,Object>();
-              availableValue.put("id", supportedEmailAddress.getID());
-              availableValue.put("display", supportedEmailAddress.getDisplay());
-              result.add(JSONUtilities.encodeObject(availableValue));
+              CommunicationChannel communicationChannelEmail = communicationChannelesEmail.iterator().next();
+              for (GUIManagedObject sourceAddressUnchecked : sourceAddressService.getStoredGUIManagedObjects())
+                {
+                  if (sourceAddressUnchecked.getAccepted())
+                    {
+                      SourceAddress sourceAddress = (SourceAddress) sourceAddressUnchecked;
+                      if (sourceAddress.getCommunicationChannelId().equals(communicationChannelEmail.getGUIManagedObjectID()))
+                        {
+                          HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                          availableValue.put("id", sourceAddress.getSourceAddressId());
+                          availableValue.put("display", sourceAddress.getSourceAddressDisplay());
+                          result.add(JSONUtilities.encodeObject(availableValue));
+                        }
+                    }
+                }
             }
           break;
 
@@ -23498,13 +23536,30 @@ public class GUIManager
             }
           break;
           
-        case "supportedShortCodes":
-          for (SupportedShortCode supportedShortCode : Deployment.getSupportedShortCodes().values())
+        case "sourceAddressesSMS":
+          
+          //
+          //  communicationChannelesSMS
+          //
+          
+          Collection<CommunicationChannel> communicationChannelesSMS = communicationChannelService.getActiveCommunicationChanneles(now).stream().filter(communicationChannel -> "SMS".equalsIgnoreCase(communicationChannel.getGUIManagedObjectName())).collect(Collectors.toList());
+          if (communicationChannelesSMS.size() > 0)
             {
-              HashMap<String,Object> availableValue = new HashMap<String,Object>();
-              availableValue.put("id", supportedShortCode.getID());
-              availableValue.put("display", supportedShortCode.getDisplay());
-              result.add(JSONUtilities.encodeObject(availableValue));
+              CommunicationChannel communicationChannelSMS = communicationChannelesSMS.iterator().next();
+              for (GUIManagedObject sourceAddressUnchecked : sourceAddressService.getStoredGUIManagedObjects())
+                {
+                  if (sourceAddressUnchecked.getAccepted())
+                    {
+                      SourceAddress sourceAddress = (SourceAddress) sourceAddressUnchecked;
+                      if (sourceAddress.getCommunicationChannelId().equals(communicationChannelSMS.getGUIManagedObjectID()))
+                        {
+                          HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                          availableValue.put("id", sourceAddress.getSourceAddressId());
+                          availableValue.put("display", sourceAddress.getSourceAddressDisplay());
+                          result.add(JSONUtilities.encodeObject(availableValue));
+                        }
+                    }
+                }
             }
           break;
 

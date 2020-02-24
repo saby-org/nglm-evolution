@@ -91,7 +91,7 @@ public class CommunicationChannelService extends GUIService
 
   /*****************************************
   *
-  *  getContactPolicies
+  *  getCommunicationChanneles
   *
   *****************************************/
 
@@ -102,7 +102,7 @@ public class CommunicationChannelService extends GUIService
   public Collection<GUIManagedObject> getStoredCommunicationChannels(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveCommunicationChannel(GUIManagedObject communicationChannelUnchecked, Date date) { return isActiveGUIManagedObject(communicationChannelUnchecked, date); }
   public CommunicationChannel getActiveCommunicationChannel(String communicationChannelID, Date date) { return (CommunicationChannel) getActiveGUIManagedObject(communicationChannelID, date); }
-  public Collection<CommunicationChannel> getActiveContactPolicies(Date date) { return (Collection<CommunicationChannel>) getActiveGUIManagedObjects(date); }
+  public Collection<CommunicationChannel> getActiveCommunicationChanneles(Date date) { return (Collection<CommunicationChannel>) getActiveGUIManagedObjects(date); }
 
   /*****************************************
   *

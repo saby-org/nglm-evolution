@@ -149,8 +149,6 @@ public class Deployment
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
   private static Map<String,SupportedTokenCodesFormat> supportedTokenCodesFormats = new LinkedHashMap<String,SupportedTokenCodesFormat>();
   private static Map<String,ServiceType> serviceTypes = new LinkedHashMap<String,ServiceType>();
-  private static Map<String,SupportedShortCode> supportedShortCodes = new LinkedHashMap<String,SupportedShortCode>();
-  private static Map<String,SupportedEmailAddress> supportedEmailAddresses = new LinkedHashMap<String,SupportedEmailAddress>();
   private static Map<String,SupportedRelationship> supportedRelationships = new LinkedHashMap<String,SupportedRelationship>();
   private static Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
   private static Map<String,CatalogCharacteristicUnit> catalogCharacteristicUnits = new LinkedHashMap<String,CatalogCharacteristicUnit>();
@@ -158,6 +156,7 @@ public class Deployment
   private static Map<String,BillingMode> billingModes = new LinkedHashMap<String,BillingMode>();
   private static JSONArray initialCallingChannelsJSONArray = null;
   private static JSONArray initialSalesChannelsJSONArray = null;
+  private static JSONArray initialSourceAddressesJSONArray = null;
   private static JSONArray initialSuppliersJSONArray = null;
   private static JSONArray initialPartnersJSONArray = null;
   private static JSONArray initialProductsJSONArray = null;
@@ -371,13 +370,12 @@ public class Deployment
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
   public static Map<String,SupportedTokenCodesFormat> getSupportedTokenCodesFormats() { return supportedTokenCodesFormats; }
   public static Map<String,ServiceType> getServiceTypes() { return serviceTypes; }
-  public static Map<String,SupportedShortCode> getSupportedShortCodes() { return supportedShortCodes; }
-  public static Map<String,SupportedEmailAddress> getSupportedEmailAddresses() { return supportedEmailAddresses; }
   public static Map<String,SupportedRelationship> getSupportedRelationships() { return supportedRelationships; }
   public static Map<String,CallingChannelProperty> getCallingChannelProperties() { return callingChannelProperties; }
   public static Map<String,CatalogCharacteristicUnit> getCatalogCharacteristicUnits() { return catalogCharacteristicUnits; }
   public static JSONArray getInitialCallingChannelsJSONArray() { return initialCallingChannelsJSONArray; }
   public static JSONArray getInitialSalesChannelsJSONArray() { return initialSalesChannelsJSONArray; }
+  public static JSONArray getInitialSourceAddressesJSONArray() { return initialSourceAddressesJSONArray; }
   public static JSONArray getInitialSuppliersJSONArray() { return initialSuppliersJSONArray; }
   public static JSONArray getInitialPartnersJSONArray() { return initialPartnersJSONArray; }
   public static JSONArray getInitialProductsJSONArray() { return initialProductsJSONArray; }
@@ -2236,44 +2234,6 @@ public class Deployment
       }
     
     //
-    //  supportedShortCodes
-    //
-
-    try
-      {
-        JSONArray supportedShortCodeValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedShortCodes", new JSONArray());
-        for (int i=0; i<supportedShortCodeValues.size(); i++)
-          {
-            JSONObject supportedShortCodeJSON = (JSONObject) supportedShortCodeValues.get(i);
-            SupportedShortCode supportedShortCode = new SupportedShortCode(supportedShortCodeJSON);
-            supportedShortCodes.put(supportedShortCode.getID(), supportedShortCode);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  supportedEmailAddresses
-    //
-
-    try
-      {
-        JSONArray supportedEmailAddressValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedEmailAddresses", new JSONArray());
-        for (int i=0; i<supportedEmailAddressValues.size(); i++)
-          {
-            JSONObject supportedEmailAddressJSON = (JSONObject) supportedEmailAddressValues.get(i);
-            SupportedEmailAddress supportedEmailAddress = new SupportedEmailAddress(supportedEmailAddressJSON);
-            supportedEmailAddresses.put(supportedEmailAddress.getID(), supportedEmailAddress);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
     //  supportedRelationships
     //
 
@@ -2341,6 +2301,12 @@ public class Deployment
     //
 
     initialSalesChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSalesChannels", new JSONArray());
+    
+    //
+    //  initialSourceAddresses
+    //
+    
+    initialSourceAddressesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSourceAddresses", new JSONArray());
 
     //
     //  initialSuppliersJSONArray
