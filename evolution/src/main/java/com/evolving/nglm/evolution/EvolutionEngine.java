@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
@@ -45,6 +46,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.metrics.Sensor;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -70,6 +73,7 @@ import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 import org.apache.kafka.streams.state.Stores;
 import org.apache.kafka.streams.state.StreamsMetadata;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
@@ -95,6 +99,7 @@ import com.evolving.nglm.core.SubscriberTrace;
 import com.evolving.nglm.core.SubscriberTraceControl;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
+import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
@@ -174,6 +179,7 @@ public class EvolutionEngine
   //  static data (for the singleton instance)
   //
 
+  private static KafkaProducer<byte[], byte[]> kafkaProducer;
   private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static ReferenceDataReader<String,UCGState> ucgStateReader;
   private static DynamicCriterionFieldService dynamicCriterionFieldService; 
@@ -319,6 +325,19 @@ public class EvolutionEngine
 
     log.info("main START: {} {} {} {} {}", stateDirectory, bootstrapServers, kafkaStreamsStandbyReplicas, numberOfStreamThreads, kafkaReplicationFactor);
 
+    
+    //
+    // kafka producer
+    //    
+
+   Properties producerProperties = new Properties();
+   producerProperties.put("bootstrap.servers", bootstrapServers);
+   producerProperties.put("acks", "all");
+   producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+   producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+   kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
+    
+    
     //
     //  dynamicCriterionFieldsService
     //
@@ -4618,7 +4637,13 @@ public class EvolutionEngine
                                   tokenChange.setOrigin("Journey");
                                   subscriberState.getTokenChanges().add(tokenChange);
                                   break;
-
+                                  
+                                case TriggerEvent:
+                                  JourneyTriggerEventAction triggerEventAction = (JourneyTriggerEventAction) action;
+                                  EvolutionEngineEventDeclaration eventDeclaration =  triggerEventAction.getEventDeclaration();
+                                  kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventDeclaration.getEventTopic(), StringKey.serde().serializer().serialize(eventDeclaration.getEventTopic(), new StringKey(subscriberState.getSubscriberProfile().getSubscriberID())), eventDeclaration.getEventSerde().serializer().serialize(eventDeclaration.getEventTopic(), triggerEventAction.getEventToTrigger())));
+                                  break;
+                                  
                                 default:
                                   log.error("unsupported action {} on actionManager.executeOnExit", action.getActionType());
                                   break;
@@ -6928,6 +6953,144 @@ public class EvolutionEngine
       *****************************************/
 
       return Collections.<Action>singletonList(request);
+    }
+  }
+  
+  /*****************************************
+  *
+  *  class TriggerEventAction
+  *
+  *****************************************/
+
+  public static class TriggerEventAction extends ActionManager
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    private EvolutionEngineEventDeclaration eventDeclaration;
+    private HashMap<String, String> eventFieldMappings = new HashMap<>();
+    private Constructor<? extends EvolutionEngineEvent> eventConstructor = null; 
+
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public TriggerEventAction(JSONObject configuration) throws GUIManagerException
+    {
+      super(configuration);
+      String eventName = JSONUtilities.decodeString(configuration, "eventName", true);
+      JSONArray fieldMappingsArray = JSONUtilities.decodeJSONArray(configuration, "fieldMappings");
+      if(fieldMappingsArray != null) {
+        for(int i = 0; i < fieldMappingsArray.size(); i++) {
+          JSONObject currentMapping = (JSONObject) fieldMappingsArray.get(i);
+          String eventFieldName = (String)currentMapping.get("eventFieldName");
+          String eventFieldValue = (String)currentMapping.get("eventFieldValue");
+          this.eventFieldMappings.put(eventFieldName, eventFieldValue);
+          log.info("TriggerEventAction Event Name " + eventName + " field " + eventFieldName + " mapped to " + eventFieldValue);
+        }
+      }
+      
+      //
+      // let retrieve the constructor (String subscriberID, Date eventDate, JSONObject jsonRoot) or throw an Exception
+      //
+      
+      eventDeclaration = Deployment.getEvolutionEngineEvents().get(eventName);
+      if(eventDeclaration== null) {
+        throw new GUIManagerException("TriggerEventAction Can't retrieve EvolutionEngineEventDeclaration with name ", eventName);
+      }
+      
+      try
+      {
+        Class eventClass = (Class<? extends EvolutionEngineEvent>) Class.forName(eventDeclaration.getEventClassName());
+        eventConstructor = eventClass.getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class });
+      }
+    catch (Exception e)
+      {
+        log.error("TriggerEventAction Exception " + e.getClass().getName() + " while getting Constructor(String subscriberID, Date eventDate, JSONObject jsonRoot) of " + eventDeclaration.getEventClassName() + " for eventDeclaration eventName");
+        throw new GUIManagerException(e);
+      }
+    }
+
+    /*****************************************
+    *
+    *  execute
+    *
+    *****************************************/
+
+    @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    {
+      
+      String subscriberID = subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID();
+      
+      /*****************************************
+      *
+      *  List of values for each fields
+      *
+      *****************************************/
+      JSONObject eventJSON = new JSONObject();
+      for(String eventFieldName : eventFieldMappings.keySet()) {
+        String eventFieldValueJourney = eventFieldMappings.get(eventFieldName);
+        Object value = CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest, eventFieldValueJourney);
+        if(value != null) {
+          eventJSON.put(eventFieldName, value);
+        }
+      }
+      
+      try 
+        {
+          EvolutionEngineEvent event = eventConstructor.newInstance(subscriberID, SystemTime.getCurrentTime(), eventJSON);
+          JourneyTriggerEventAction action = new JourneyTriggerEventAction();
+          action.setEventDeclaration(eventDeclaration);
+          action.setEventToTrigger(event);
+          
+          return Collections.<Action>singletonList(action);
+          
+
+        }
+      catch(Exception e)
+        {
+          log.error("TriggerEventAction.executeOnEntry Can't instanciate event class " + eventConstructor.getDeclaringClass().getName(), e);          
+        }     
+      
+      // result empty list as action already done...
+      return new ArrayList<Action>();
+    }
+  }
+  
+  public static class JourneyTriggerEventAction implements Action {
+
+    private EvolutionEngineEventDeclaration eventDeclaration;
+    private EvolutionEngineEvent eventToTrigger;
+    
+    @Override
+    public ActionType getActionType()
+    {
+      return ActionType.TriggerEvent;
+    }
+    
+    public EvolutionEngineEventDeclaration getEventDeclaration()
+    {
+      return eventDeclaration;
+    }
+
+    public void setEventDeclaration(EvolutionEngineEventDeclaration eventDeclaration)
+    {
+      this.eventDeclaration = eventDeclaration;
+    }
+
+    public EvolutionEngineEvent getEventToTrigger()
+    {
+      return eventToTrigger;
+    }
+
+    public void setEventToTrigger(EvolutionEngineEvent eventToTrigger)
+    {
+      this.eventToTrigger = eventToTrigger;
     }
   }
 }

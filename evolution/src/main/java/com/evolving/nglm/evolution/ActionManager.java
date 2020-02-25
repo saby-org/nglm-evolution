@@ -34,7 +34,8 @@ public abstract class ActionManager
     JourneyContextUpdate,
     ActionManagerContextUpdate,
     TokenUpdate,
-    TokenChange;
+    TokenChange,
+    TriggerEvent;
   }
 
   /*****************************************
