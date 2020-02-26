@@ -241,6 +241,13 @@ public abstract class DeliveryManager
   public int getAcknowledgementTimeoutSeconds() { return acknowledgementTimeoutSeconds; }
   public int getCorrelatorUpdateTimeoutSeconds() { return correlatorUpdateTimeoutSeconds; }
 
+  /*****************************************
+   *
+   *  filterRequest
+   *
+   *****************************************/
+  protected abstract boolean filterRequest(DeliveryRequest request);
+
   //
   //  derived
   //
@@ -301,6 +308,10 @@ public abstract class DeliveryManager
         try
           {
             result = submitRequestQueue.take();
+            if(this.filterRequest(result))
+              {
+                result = null;
+              }
           }
         catch (InterruptedException e)
           {

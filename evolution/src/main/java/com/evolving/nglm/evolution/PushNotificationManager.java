@@ -101,6 +101,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private CommunicationChannelService communicationChannelService;
   private CommunicationChannelBlackoutService blackoutService;
+  private ContactPolicyProcessor contactPolicyProcessor;
 
   //
   //  logger
@@ -152,6 +153,11 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
         
     blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "pushnotificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
     blackoutService.start();
+
+    //
+    //  contact policy processor
+    //
+    contactPolicyProcessor = new ContactPolicyProcessor("pushnotificationmanager-communicationchannel",deliveryManagerKey);
 
     //
     //  manager
@@ -762,6 +768,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
           request = new PushNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getPushTemplateID(), tags);
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
+          request.setNotificationStatus(evolutionEventContext.getSubscriberState().getNotificationStatus());
         }
       else
         {
@@ -889,6 +896,18 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
         pushRequest.setDeliveryDate(SystemTime.getCurrentTime());
         completeRequest(pushRequest);
       }
+  }
+
+  /*****************************************
+   *
+   *  filterRequest
+   *  verify contact policy rules
+   *
+   *****************************************/
+
+  @Override public boolean filterRequest(DeliveryRequest request)
+  {
+    return contactPolicyProcessor.ensureContactPolicy(request,this,log);
   }
 
   /*****************************************

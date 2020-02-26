@@ -110,6 +110,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private CommunicationChannelService communicationChannelService;
   private CommunicationChannelBlackoutService blackoutService;
+  private ContactPolicyProcessor contactPolicyProcessor;
 
   //
   //  logger
@@ -170,6 +171,11 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
         
     blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "smsnotificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
     blackoutService.start();
+
+    //
+    //  contact policy processor
+    //
+    contactPolicyProcessor = new ContactPolicyProcessor("smsnotificationmanager-communicationchannel",deliveryManagerKey);
 
     //
     //  manager
@@ -333,7 +339,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     public String getMessageDeliveryReturnCodeDetails() { return getReturnCodeDetails(); }
     public String getMessageDeliveryOrigin() { return ""; }
     public String getMessageDeliveryMessageId() { return getEventID(); }
-    
+
     /*****************************************
     *
     *  getText
@@ -698,6 +704,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
           request.setRestricted(restricted);
           request.setFlashSMS(flashSMS);
           request.setDeliveryPriority(contactType.getDeliveryPriority());
+          request.setNotificationStatus(evolutionEventContext.getSubscriberState().getNotificationStatus());
         }
       else if (template != null)
         {
@@ -800,7 +807,18 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     log.debug("SMSNotificationManager.submitCorrelatorUpdateDeliveryRequest(correlator="+correlator+", correlatorUpdate="+correlatorUpdate.toJSONString()+")");
     submitCorrelatorUpdate(correlator, correlatorUpdate);
   }
-  
+
+  /*****************************************
+   *
+   *  validate contact policy
+   *
+   *****************************************/
+
+  @Override protected boolean filterRequest(DeliveryRequest request)
+  {
+    return contactPolicyProcessor.ensureContactPolicy(request,this,log);
+  }
+
   /*****************************************
   *
   *  processCorrelatorUpdate

@@ -29,6 +29,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
@@ -198,11 +199,20 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   //
 
   private static Schema commonSchema = null;
+  private static Schema notificationSchema = null;
+
   static
   {
+    SchemaBuilder notificationSchemaBuilder = SchemaBuilder.struct();
+    notificationSchemaBuilder.name("notification_status");
+    notificationSchemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    notificationSchemaBuilder.field("channelID",Schema.STRING_SCHEMA);
+    notificationSchemaBuilder.field("metricHistory",MetricHistory.schema());
+    notificationSchema = notificationSchemaBuilder.build();
+
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("delivery_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(4));
     schemaBuilder.field("deliveryRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequestSource", Schema.STRING_SCHEMA);
     schemaBuilder.field("originatingDeliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
@@ -223,6 +233,8 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     schemaBuilder.field("deliveryStatus", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryDate", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("diplomaticBriefcase", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).name("deliveryrequest_diplomaticBriefcase").schema());
+    schemaBuilder.field("notificationStatus",MetricHistory.schema());
+
     commonSchema = schemaBuilder.build();
   };
 
@@ -284,6 +296,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   private Date deliveryDate;
   private Map<String, String> diplomaticBriefcase;
   private Date rescheduledDate;
+  private MetricHistory notificationStatus;
 
   /*****************************************
   *
@@ -315,6 +328,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   public ActionType getActionType() { return ActionType.DeliveryRequest; }
   public boolean isPending() { return deliveryStatus == DeliveryStatus.Pending; }
   public Date getRescheduledDate() { return rescheduledDate; }
+  public MetricHistory getNotificationStatus(){ return notificationStatus; }
 
   //
   //  setters
@@ -334,7 +348,8 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   public void setModuleID(String moduleID) { this.moduleID = moduleID; }
   public void setDiplomaticBriefcase(Map<String, String> diplomaticBriefcase) { this.diplomaticBriefcase = (diplomaticBriefcase != null) ? diplomaticBriefcase : new HashMap<String,String>(); }
   public void setRescheduledDate(Date rescheduledDate) { this.rescheduledDate = rescheduledDate; }
-  
+  public void setNotificationStatus(MetricHistory notificationStatus){ this.notificationStatus = notificationStatus; };
+
   /*****************************************
   *
   *  abstract
@@ -407,6 +422,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.deliveryDate = null;
     this.diplomaticBriefcase = new HashMap<String, String>();
     this.rescheduledDate = null;
+    this.notificationStatus = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
   }
   
   /*******************************************
@@ -444,6 +460,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.deliveryDate = null;
     this.diplomaticBriefcase = new HashMap<String, String>();
     this.rescheduledDate = null;
+    this.notificationStatus = null;
   }
 
   /*****************************************
@@ -475,6 +492,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.deliveryDate = deliveryRequest.getDeliveryDate();
     this.diplomaticBriefcase = deliveryRequest.getDiplomaticBriefcase();
     this.rescheduledDate = deliveryRequest.getRescheduledDate();
+    this.notificationStatus = deliveryRequest.getNotificationStatus();
   }
 
   /*****************************************
@@ -542,6 +560,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     struct.put("deliveryStatus", deliveryRequest.getDeliveryStatus().getExternalRepresentation());
     struct.put("deliveryDate", deliveryRequest.getDeliveryDate() != null ? deliveryRequest.getDeliveryDate().getTime() : null);
     struct.put("diplomaticBriefcase", (deliveryRequest.getDiplomaticBriefcase() == null ? new HashMap<String, String>() : deliveryRequest.getDiplomaticBriefcase()));
+    struct.put("notificationStatus",MetricHistory.pack(deliveryRequest.getNotificationStatus()));
   }
 
   /*****************************************
@@ -585,6 +604,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     DeliveryStatus deliveryStatus = DeliveryStatus.fromExternalRepresentation(valueStruct.getString("deliveryStatus"));
     Date deliveryDate = (schemaVersion >= 3) ? (valueStruct.get("deliveryDate") != null ? new Date(valueStruct.getInt64("deliveryDate")) : null) : (Date) valueStruct.get("deliveryDate");
     Map<String, String> diplomaticBriefcase = (Map<String, String>) valueStruct.get("diplomaticBriefcase");
+    MetricHistory notificationStatus = schemaVersion >= 4 ?  MetricHistory.unpack(new SchemaAndValue(schema.field("notificationStatus").schema(),valueStruct.get("notificationStatus"))) : null;
 
     //
     //  return
@@ -611,6 +631,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.deliveryDate = deliveryDate;
     this.diplomaticBriefcase = diplomaticBriefcase;
     this.rescheduledDate = null;
+    this.notificationStatus = notificationStatus;
   }
 
   /****************************************
@@ -852,4 +873,25 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
       }
     return result;
   }
+
+  /*****************************************
+   *
+   *  setNotificationStatus
+   *  will set right metric history from list of metrics
+   *
+   *****************************************/
+
+  protected void setNotificationStatus(List<Pair<String,MetricHistory>> metricHistoryList)
+  {
+    MetricHistory returnMetric = null;
+    for(Pair<String,MetricHistory> item : metricHistoryList)
+      {
+        if (item.getFirstElement().equals(Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryType)))
+          {
+            this.notificationStatus = item.getSecondElement();
+            break;
+          }
+      }
+  }
+
 }

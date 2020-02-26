@@ -642,7 +642,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
     log.info("EmptyFulfillmentManager.debit("+emptyFulfillmentRequest+") : called ... return succes ...");
     return EmptyFulfillmentStatus.SUCCESS;
   }
-  
+
   /*****************************************
   *
   *  processCorrelatorUpdate
@@ -664,6 +664,18 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
       }
   
     log.debug("EmptyFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : DONE");
+  }
+
+  /*****************************************
+   *
+   *  pfilter request
+   *  not needed for this class return false
+   *
+   *****************************************/
+  @Override
+  public boolean filterRequest(DeliveryRequest request)
+  {
+    return false;
   }
 
   

@@ -36,6 +36,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -2747,7 +2748,25 @@ public class EvolutionEngine
               break;
           }
       }
-    
+
+    /*****************************************
+     *
+     *  increment metric history for delivered message in notificatioStatus
+     *
+     *****************************************/
+    if(evolutionEvent instanceof MessageDelivery)
+    {
+      MessageDelivery messageDelivery = (MessageDelivery)evolutionEvent;
+      if(messageDelivery.getMessageDeliveryDeliveryStatus() == DeliveryStatus.Delivered)
+        {
+          MetricHistory channelMetricHistory = context.getSubscriberState().getNotificationStatus().stream().filter(p -> p.getFirstElement().equals(Deployment.getDeliveryTypeCommunicationChannelIDMap().get(((DeliveryRequest)messageDelivery).getDeliveryType()))).collect(Collectors.toList()).get(0).getSecondElement();
+          Date messageDeliveryDate = RLMDateUtils.truncate(messageDelivery.getMessageDeliveryEventDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+          //long messageCount = channelMetricHistory.getValue(messageDeliveryDate, messageDeliveryDate).longValue() + 1;
+          //this update should be called increment for metric history.
+          channelMetricHistory.update(messageDeliveryDate,1);
+        }
+    }
+
     /*****************************************
     *
     *  ucg evaluation

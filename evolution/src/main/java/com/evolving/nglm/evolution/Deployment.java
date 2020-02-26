@@ -1,8 +1,8 @@
 /*****************************************************************************
-*
-*  Deployment.java
-*
-*****************************************************************************/
+ *
+ *  Deployment.java
+ *
+ *****************************************************************************/
 
 package com.evolving.nglm.evolution;
 
@@ -35,10 +35,10 @@ import org.slf4j.LoggerFactory;
 public class Deployment
 {
   /*****************************************
-  *
-  *  data
-  *
-  *****************************************/
+   *
+   *  data
+   *
+   *****************************************/
 
   //
   //  log
@@ -166,7 +166,7 @@ public class Deployment
   private static JSONArray initialJourneyTemplatesJSONArray = null;
   private static JSONArray initialJourneyObjectivesJSONArray = null;
   private static JSONArray initialOfferObjectivesJSONArray = null;
-  private static JSONArray initialProductTypesJSONArray = null;  
+  private static JSONArray initialProductTypesJSONArray = null;
   private static JSONArray initialTokenTypesJSONArray = null;
   private static JSONArray initialVoucherCodeFormatsJSONArray = null;
   private static JSONArray initialScoringTypesJSONArray = null;
@@ -232,17 +232,18 @@ public class Deployment
   private static String criterionFieldAvailableValuesTopic;
   private static String sourceAddressTopic;
   private static boolean autoApproveGuiObjects;
+  private static Map<String,String> deliveryTypeCommunicationChannelIDMap = new LinkedHashMap<>();
 
   /*****************************************
-  *
-  *  accessors
-  *
-  *****************************************/
+   *
+   *  accessors
+   *
+   *****************************************/
 
   //
   //  core accessors
   //
-  
+
   public static String getZookeeperRoot() { return com.evolving.nglm.core.Deployment.getZookeeperRoot(); }
   public static String getZookeeperConnect() { return com.evolving.nglm.core.Deployment.getZookeeperConnect(); }
   public static String getBrokerServers() { return com.evolving.nglm.core.Deployment.getBrokerServers(); }
@@ -267,7 +268,7 @@ public class Deployment
   public static String getSuspenseAuditTopic() { return com.evolving.nglm.core.Deployment.getSuspenseAuditTopic(); }
   public static Map<String,SuspenseProcessEventConfiguration> getSuspenseProcessEventConfiguration() { return com.evolving.nglm.core.Deployment.getSuspenseProcessEventConfiguration(); }
   public static Map<String, AlternateID> getAlternateIDs() { return com.evolving.nglm.core.Deployment.getAlternateIDs(); }
-  
+
   //
   //  evolution accessors
   //
@@ -437,8 +438,8 @@ public class Deployment
   public static String getTargetTopic() { return targetTopic; }
   public static Map<String,NotificationDailyWindows> getNotificationDailyWindows() { return notificationTimeWindowsMap; }
   public static String getCommunicationChannelTopic() { return communicationChannelTopic; }
-  public static String getCommunicationChannelBlackoutTopic() { return communicationChannelBlackoutTopic; } 
-  public static String getLoyaltyProgramTopic() { return loyaltyProgramTopic; } 
+  public static String getCommunicationChannelBlackoutTopic() { return communicationChannelBlackoutTopic; }
+  public static String getLoyaltyProgramTopic() { return loyaltyProgramTopic; }
   public static int getUcgEngineESConnectTimeout() { return ucgEngineESConnectTimeout; }
   public static int getUcgEngineESSocketTimeout(){ return ucgEngineESSocketTimeout; }
   public static int getUcgEngineESMasRetryTimeout() { return ucgEngineESMasRetryTimeout; }
@@ -453,18 +454,19 @@ public class Deployment
   public static int getElasticSearchScrollSize() {return elasticSearchScrollSize; }
   public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
   public static String getSourceAddressTopic() { return sourceAddressTopic; }
-  public static boolean getAutoApproveGuiObjects() { return autoApproveGuiObjects; } 
+  public static boolean getAutoApproveGuiObjects() { return autoApproveGuiObjects; }
+  public static Map<String,String> getDeliveryTypeCommunicationChannelIDMap(){ return deliveryTypeCommunicationChannelIDMap; };
 
   //
   // addProfileCriterionField
   //
   public static void addProfileCriterionField(String key, CriterionField criterion) { profileCriterionFields.put(key, criterion); }
-  
+
   /*****************************************
-  *
-  *  getCriterionFieldRetrieverClass
-  *
-  *****************************************/
+   *
+   *  getCriterionFieldRetrieverClass
+   *
+   *****************************************/
 
   public static Class<? extends CriterionFieldRetriever> getCriterionFieldRetrieverClass()
   {
@@ -478,12 +480,12 @@ public class Deployment
         throw new RuntimeException(e);
       }
   }
-  
+
   /*****************************************
-  *
-  *  getEvolutionEngineExtensionClass
-  *
-  *****************************************/
+   *
+   *  getEvolutionEngineExtensionClass
+   *
+   *****************************************/
 
   public static Class<? extends EvolutionEngineExtension> getEvolutionEngineExtensionClass()
   {
@@ -499,10 +501,10 @@ public class Deployment
   }
 
   /*****************************************
-  *
-  *  getGUIManagerExtensionClass
-  *
-  *****************************************/
+   *
+   *  getGUIManagerExtensionClass
+   *
+   *****************************************/
 
   public static Class<? extends GUIManagerExtension> getGUIManagerExtensionClass()
   {
@@ -518,10 +520,10 @@ public class Deployment
   }
 
   /*****************************************
-  *
-  *  getSubscriberProfileClass
-  *
-  *****************************************/
+   *
+   *  getSubscriberProfileClass
+   *
+   *****************************************/
 
   public static Class<SubscriberProfile> getSubscriberProfileClass()
   {
@@ -535,13 +537,13 @@ public class Deployment
         throw new ServerRuntimeException(e);
       }
   }
-  
+
   /*****************************************
-  *
-  *  generateProfileChangeCriterionFields
-  *
-  *****************************************/
-  
+   *
+   *  generateProfileChangeCriterionFields
+   *
+   *****************************************/
+
   public static Map<String, CriterionField> generateProfileChangeCriterionFields(CriterionField originalCriterionField) throws GUIManagerException
   {
     HashMap<String, CriterionField> result = new HashMap<>();
@@ -553,10 +555,10 @@ public class Deployment
     criterionFieldJSON.put("mandatory", Boolean.FALSE);
     criterionFieldJSON.put("esField", null);
     criterionFieldJSON.put("expressionValuedParameter", Boolean.FALSE);
-    criterionFieldJSON.put("profileChangeEvent", Boolean.FALSE);    
+    criterionFieldJSON.put("profileChangeEvent", Boolean.FALSE);
     CriterionField field = new CriterionField(criterionFieldJSON);
     result.put(field.getID(), field);
-    
+
     criterionFieldJSON = new JSONObject();
     criterionFieldJSON.putAll(originalCriterionField.getJSONRepresentation());
     criterionFieldJSON.put("id", ProfileChangeEvent.CRITERION_FIELD_NAME_NEW_PREFIX + originalCriterionField.getID());
@@ -568,7 +570,7 @@ public class Deployment
     criterionFieldJSON.put("profileChangeEvent", Boolean.FALSE);
     field = new CriterionField(criterionFieldJSON);
     result.put(field.getID(), field);
-    
+
     criterionFieldJSON = new JSONObject();
     criterionFieldJSON.put("id", ProfileChangeEvent.CRITERION_FIELD_NAME_IS_UPDATED_PREFIX +  originalCriterionField.getID());
     criterionFieldJSON.put("display", "Is " + originalCriterionField.getID() + " updated");
@@ -577,13 +579,13 @@ public class Deployment
     field = new CriterionField(criterionFieldJSON);
     result.put(field.getID(), field);
     return result;
-  } 
+  }
 
   /*****************************************
-  *
-  *  getExtendedSubscriberProfileClass
-  *
-  *****************************************/
+   *
+   *  getExtendedSubscriberProfileClass
+   *
+   *****************************************/
 
   public static Class<ExtendedSubscriberProfile> getExtendedSubscriberProfileClass()
   {
@@ -599,10 +601,10 @@ public class Deployment
   }
 
   /*****************************************
-  *
-  *  getEvolutionEngineExternalAPIClass
-  *
-  *****************************************/
+   *
+   *  getEvolutionEngineExternalAPIClass
+   *
+   *****************************************/
 
   public static Class<ExternalAPI> getEvolutionEngineExternalAPIClass()
   {
@@ -618,10 +620,10 @@ public class Deployment
   }
 
   /*****************************************
-  *
-  *  getEvolutionEngineExternalAPITopicID
-  *
-  *****************************************/
+   *
+   *  getEvolutionEngineExternalAPITopicID
+   *
+   *****************************************/
 
   public static String getEvolutionEngineExternalAPITopicID(String topic)
   {
@@ -636,12 +638,12 @@ public class Deployment
       }
     return evolutionEngineExternalAPITopicID;
   }
-  
+
   /*****************************************
-  *
-  *  getSupportedLanguageID
-  *
-  *****************************************/
+   *
+   *  getSupportedLanguageID
+   *
+   *****************************************/
 
   public static String getSupportedLanguageID(String language)
   {
@@ -656,1791 +658,1791 @@ public class Deployment
       }
     return supportedLanguageID;
   }
-  
+
   /*****************************************
-  *
-  *  static initialization
-  *
-  *****************************************/
-  
+   *
+   *  static initialization
+   *
+   *****************************************/
+
   static
-  {
-    /*****************************************
-    *
-    *  super class
-    *
-    *****************************************/
-
-    JSONObject jsonRoot = com.evolving.nglm.core.Deployment.getJSONRoot();
-    
-    /*****************************************
-    *
-    *  configuration
-    *
-    *****************************************/
-    
-    //
-    //  subscriberGroupLoaderAlternateID
-    //
-
-    try
-      {
-        subscriberGroupLoaderAlternateID = JSONUtilities.decodeString(jsonRoot, "subscriberGroupLoaderAlternateID", false);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  getCustomerAlternateID
-    //
-
-    try
-      {
-        getCustomerAlternateID = JSONUtilities.decodeString(jsonRoot, "getCustomerAlternateID", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    
-    //
-    //  subscriberGroupLoaderAutoProvision
-    //
-
-    try
-      {
-        subscriberGroupLoaderAutoProvision = JSONUtilities.decodeBoolean(jsonRoot, "subscriberGroupLoaderAutoProvision", Boolean.FALSE);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  criterionFieldRetrieverClassName
-    //
-
-    try
-      {
-        criterionFieldRetrieverClassName = JSONUtilities.decodeString(jsonRoot, "criterionFieldRetrieverClass", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  evolutionEngineExtensionClassName
-    //
-
-    try
-      {
-        evolutionEngineExtensionClassName = JSONUtilities.decodeString(jsonRoot, "evolutionEngineExtensionClass", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  guiManagerExtensionClassName
-    //
-
-    try
-      {
-        guiManagerExtensionClassName = JSONUtilities.decodeString(jsonRoot, "guiManagerExtensionClass", false);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  subscriberProfileClassName
-    //
-
-    try
-      {
-        subscriberProfileClassName = JSONUtilities.decodeString(jsonRoot, "subscriberProfileClass", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  extendedSubscriberProfileClassName
-    //
-
-    try
-      {
-        extendedSubscriberProfileClassName = JSONUtilities.decodeString(jsonRoot, "extendedSubscriberProfileClass", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  evolutionEngineExternalAPIClassName
-    //
-
-    try
-      {
-        evolutionEngineExternalAPIClassName = JSONUtilities.decodeString(jsonRoot, "externalAPIClass", false);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  enableProfileSegmentChange
-    //
-
-    try
-      {
-        enableProfileSegmentChange = JSONUtilities.decodeBoolean(jsonRoot, "enableProfileSegmentChange", Boolean.FALSE);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  tokenRedeemedTopic
-    //
-
-    try
-      {
-        tokenRedeemedTopic = JSONUtilities.decodeString(jsonRoot, "tokenRedeemedTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  evolutionEngineEvents
-    //
-
-    try
-      {
-        //
-        //  deployment-level events
-        //
-
-        JSONArray evolutionEngineEventValues = JSONUtilities.decodeJSONArray(jsonRoot, "evolutionEngineEvents", true);
-        for (int i=0; i<evolutionEngineEventValues.size(); i++)
-          {
-            JSONObject evolutionEngineEventJSON = (JSONObject) evolutionEngineEventValues.get(i);
-            EvolutionEngineEventDeclaration evolutionEngineEventDeclaration = new EvolutionEngineEventDeclaration(evolutionEngineEventJSON);
-            evolutionEngineEvents.put(evolutionEngineEventDeclaration.getName(), evolutionEngineEventDeclaration);
-          }
-        
-        //
-        // core-level events
-        //
-
-        JSONArray evolutionEngineCoreEventValues = JSONUtilities.decodeJSONArray(jsonRoot, "evolutionEngineCoreEvents", true);
-        for (int i=0; i<evolutionEngineCoreEventValues.size(); i++)
-          {
-            JSONObject evolutionEngineEventJSON = (JSONObject) evolutionEngineCoreEventValues.get(i);
-            EvolutionEngineEventDeclaration evolutionEngineEventDeclaration = new EvolutionEngineEventDeclaration(evolutionEngineEventJSON);
-            evolutionEngineEvents.put(evolutionEngineEventDeclaration.getName(), evolutionEngineEventDeclaration);
-          }
-      }
-    catch (GUIManagerException | JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  notificationDailyWindows
-    //
-
-    try
-      {
-        NotificationDailyWindows notificationDailyWindows = new NotificationDailyWindows(JSONUtilities.decodeJSONObject(jsonRoot, "notificationDailyWindows", true));
-        notificationTimeWindowsMap.put("0", notificationDailyWindows);
-      }
-    catch (GUIManagerException | JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  emptyTopic
-    //
-
-    try
-      {
-        emptyTopic = JSONUtilities.decodeString(jsonRoot, "emptyTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  journeyTopic
-    //
-
-    try
-      {
-        journeyTopic = JSONUtilities.decodeString(jsonRoot, "journeyTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  journeyTemplateTopic
-    //
-
-    try
-      {
-        journeyTemplateTopic = JSONUtilities.decodeString(jsonRoot, "journeyTemplateTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  segmentationDimensionTopic
-    //
-
-    try
-      {
-    	segmentationDimensionTopic = JSONUtilities.decodeString(jsonRoot, "segmentationDimensionTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  pointTopic
-    //
-
-    try
-      {
-        pointTopic = JSONUtilities.decodeString(jsonRoot, "pointTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  pointFulfillmentRequestTopic
-    //
-
-    try
-      {
-        pointFulfillmentRequestTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentRequestTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  pointFulfillmentResponseTopic
-    //
-
-    try
-      {
-        pointFulfillmentResponseTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentResponseTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  elasticSearchDateFormat
-    //
-
-    try
-      {
-        elasticSearchDateFormat = JSONUtilities.decodeString(jsonRoot, "elasticSearchDateFormat", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  elasticSearchScrollSize
-    //
-
-    try
-      {
-        elasticSearchScrollSize = JSONUtilities.decodeInteger(jsonRoot, "elasticSearchScrollSize", 0);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  pointFulfillmentRekeyedTopic
-    //
-
-    try
-      {
-        pointFulfillmentRekeyedTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentRekeyedTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  offerTopic
-    //
-
-    try
-      {
-        offerTopic = JSONUtilities.decodeString(jsonRoot, "offerTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  reportTopic
-    //
-
-    try
-      {
-        reportTopic = JSONUtilities.decodeString(jsonRoot, "reportTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  paymentMeanTopic
-    //
-
-    try
-      {
-        paymentMeanTopic = JSONUtilities.decodeString(jsonRoot, "paymentMeanTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  presentationStrategyTopic
-    //
-
-    try
-      {
-        presentationStrategyTopic = JSONUtilities.decodeString(jsonRoot, "presentationStrategyTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  scoringStrategyTopic
-    //
-
-    try
-      {
-        scoringStrategyTopic = JSONUtilities.decodeString(jsonRoot, "scoringStrategyTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  callingChannelTopic
-    //
-
-    try
-      {
-        callingChannelTopic = JSONUtilities.decodeString(jsonRoot, "callingChannelTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  salesChannelTopic
-    //
-
-    try
-      {
-        salesChannelTopic = JSONUtilities.decodeString(jsonRoot, "salesChannelTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  supplierTopic
-    //
-
-    try
-      {
-        supplierTopic = JSONUtilities.decodeString(jsonRoot, "supplierTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  resellerTopic
-    //
-
-    try
-      {
-        resellerTopic = JSONUtilities.decodeString(jsonRoot, "resellerTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  productTopic
-    //
-
-    try
-      {
-        productTopic = JSONUtilities.decodeString(jsonRoot, "productTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  catalogCharacteristicTopic
-    //
-
-    try
-      {
-        catalogCharacteristicTopic = JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  contactPolicyTopic
-    //
-
-    try
-      {
-        contactPolicyTopic = JSONUtilities.decodeString(jsonRoot, "contactPolicyTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  journeyObjectiveTopic
-    //
-
-    try
-      {
-        journeyObjectiveTopic = JSONUtilities.decodeString(jsonRoot, "journeyObjectiveTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  offerObjectiveTopic
-    //
-
-    try
-      {
-        offerObjectiveTopic = JSONUtilities.decodeString(jsonRoot, "offerObjectiveTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  productTypeTopic
-    //
-
-    try
-      {
-        productTypeTopic = JSONUtilities.decodeString(jsonRoot, "productTypeTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  ucgRuleTopic
-    //
-
-    try
-      {
-        ucgRuleTopic = JSONUtilities.decodeString(jsonRoot, "ucgRuleTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  deliverable
-    //
-
-    try
-      {
-        deliverableTopic = JSONUtilities.decodeString(jsonRoot, "deliverableTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  tokenType
-    //
-
-    try
-      {
-        tokenTypeTopic = JSONUtilities.decodeString(jsonRoot, "tokenTypeTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  voucherType
-    //
-
-    try
-      {
-        voucherTypeTopic = JSONUtilities.decodeString(jsonRoot, "voucherTypeTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  voucher
-    //
-    
-    try
     {
-      voucherTopic = JSONUtilities.decodeString(jsonRoot, "voucherTopic", true);
-    }
-  catch (JSONUtilitiesException e)
-    {
-      throw new ServerRuntimeException("deployment", e);
-    }
-    
-    //
-    //  subscriberMessageTemplateTopic
-    //
-
-    try
-      {
-        subscriberMessageTemplateTopic = JSONUtilities.decodeString(jsonRoot, "subscriberMessageTemplateTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  guiAuditTopic
-    //
-
-    try
-      {
-        guiAuditTopic = JSONUtilities.decodeString(jsonRoot, "guiAuditTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  subscriberGroupTopic
-    //
-
-    try
-      {
-        subscriberGroupTopic = JSONUtilities.decodeString(jsonRoot, "subscriberGroupTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  subscriberGroupAssignSubscriberIDTopic
-    //
-
-    try
-      {
-        subscriberGroupAssignSubscriberIDTopic = JSONUtilities.decodeString(jsonRoot, "subscriberGroupAssignSubscriberIDTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  subscriberGroupEpochTopic
-    //
-
-    try
-      {
-        subscriberGroupEpochTopic = JSONUtilities.decodeString(jsonRoot, "subscriberGroupEpochTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  ucgStateTopic
-    //
-
-    try
-      {
-        ucgStateTopic = JSONUtilities.decodeString(jsonRoot, "ucgStateTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  renamedProfileCriterionFieldTopic
-    //
-
-    try
-      {
-        renamedProfileCriterionFieldTopic = JSONUtilities.decodeString(jsonRoot, "renamedProfileCriterionFieldTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  uploadFileTopic
-    //
-
-    try
-      {
-        uploadedFileTopic = JSONUtilities.decodeString(jsonRoot, "uploadedFileTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  targetTopic
-    //
-
-    try
-      {
-        targetTopic = JSONUtilities.decodeString(jsonRoot, "targetTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  exclusionInclusionTargetTopic
-    //
-
-    try
-      {
-        exclusionInclusionTargetTopic = JSONUtilities.decodeString(jsonRoot, "exclusionInclusionTargetTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  dnboMatrixTopic
-    //
-
-    try
-      {
-        dnboMatrixTopic = JSONUtilities.decodeString(jsonRoot, "dnboMatrixTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    
-    //
-    //  dynamicEventDeclarationsTopic
-    //
-
-    try
-      {
-        dynamicEventDeclarationsTopic = JSONUtilities.decodeString(jsonRoot, "dynamicEventDeclarationsTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  dynamicCriterionFieldsTopic
-    //
-
-    try
-      {
-        dynamicCriterionFieldsTopic = JSONUtilities.decodeString(jsonRoot, "dynamicCriterionFieldTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  communicationChannelBlackoutTopic
-    //
-
-    try
-      {
-        communicationChannelBlackoutTopic = JSONUtilities.decodeString(jsonRoot, "communicationChannelBlackoutTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  communicationChannelTopic
-    //
-
-    try
-      {
-        communicationChannelTopic = JSONUtilities.decodeString(jsonRoot, "communicationChannelTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  loyaltyProgramTopic
-    //
-
-    try
-      {
-        loyaltyProgramTopic = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  timedEvaluationTopic
-    //
-
-    try
-      {
-        timedEvaluationTopic = JSONUtilities.decodeString(jsonRoot, "timedEvaluationTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  evaluateTargetsTopic
-    //
-
-    try
-      {
-        evaluateTargetsTopic = JSONUtilities.decodeString(jsonRoot, "evaluateTargetsTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  subscriberProfileForceUpdateTopic
-    //
-
-    try
-      {
-        subscriberProfileForceUpdateTopic = JSONUtilities.decodeString(jsonRoot, "subscriberProfileForceUpdateTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  subscriberStateChangeLog
-    //
-
-    try
-      {
-        subscriberStateChangeLog = JSONUtilities.decodeString(jsonRoot, "subscriberStateChangeLog", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  subscriberStateChangeLogTopic
-    //
-
-    try
-      {
-        subscriberStateChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "subscriberStateChangeLogTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  extendedSubscriberProfileChangeLog
-    //
-
-    try
-      {
-        extendedSubscriberProfileChangeLog = JSONUtilities.decodeString(jsonRoot, "extendedSubscriberProfileChangeLog", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  extendedSubscriberProfileChangeLogTopic
-    //
-
-    try
-      {
-        extendedSubscriberProfileChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "extendedSubscriberProfileChangeLogTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  subscriberHistoryChangeLog
-    //
-
-    try
-      {
-        subscriberHistoryChangeLog = JSONUtilities.decodeString(jsonRoot, "subscriberHistoryChangeLog", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  subscriberHistoryChangeLogTopic
-    //
-
-    try
-      {
-        subscriberHistoryChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "subscriberHistoryChangeLogTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  journeyRequestTopic
-    //
-
-    try
-      {
-        journeyRequestTopic = JSONUtilities.decodeString(jsonRoot, "journeyRequestTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  journeyResponseTopic
-    //
-
-    try
-      {
-        journeyResponseTopic = JSONUtilities.decodeString(jsonRoot, "journeyResponseTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  loyaltyProgramRequestTopic
-    //
-
-    try
-      {
-        loyaltyProgramRequestTopic = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramRequestTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  loyaltyProgramResponseTopic
-    //
-
-    try
-      {
-        loyaltyProgramResponseTopic = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramResponseTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  journeyStatisticTopic
-    //
-
-    try
-      {
-        journeyStatisticTopic = JSONUtilities.decodeString(jsonRoot, "journeyStatisticTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  journeyMetricTopic
-    //
-
-    try
-      {
-        journeyMetricTopic = JSONUtilities.decodeString(jsonRoot, "journeyMetricTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  deliverableSourceTopic
-    //
-
-    try
-      {
-        deliverableSourceTopic = JSONUtilities.decodeString(jsonRoot, "deliverableSourceTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  presentationLogTopic
-    //
-
-    try
-      {
-        presentationLogTopic = JSONUtilities.decodeString(jsonRoot, "presentationLogTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  acceptanceLogTopic
-    //
-
-    try
-      {
-        acceptanceLogTopic = JSONUtilities.decodeString(jsonRoot, "acceptanceLogTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  propensityLogTopic
-    //
-
-    try
-      {
-        propensityLogTopic = JSONUtilities.decodeString(jsonRoot, "propensityLogTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  propensityStateChangeLog
-    //
-
-    try
-      {
-        propensityStateChangeLog = JSONUtilities.decodeString(jsonRoot, "propensityStateChangeLog", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  propensityStateChangeLogTopic
-    //
-
-    try
-      {
-        propensityStateChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "propensityStateChangeLogTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  propensityOutputTopic
-    //
-
-    try
-      {
-        propensityOutputTopic = JSONUtilities.decodeString(jsonRoot, "propensityOutputTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  segmentContactPolicyTopic
-    //
-
-    try
-      {
-        segmentContactPolicyTopic = JSONUtilities.decodeString(jsonRoot, "segmentContactPolicyTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-	  
-    //
-    //  profileChangeEventTopic
-    //
-
-    try
-      {
-        profileChangeEventTopic = JSONUtilities.decodeString(jsonRoot, "profileChangeEventTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //
-    //  profileSegmentChangeEventTopic
-    //
-
-    try
-      {
-        profileSegmentChangeEventTopic = JSONUtilities.decodeString(jsonRoot, "profileSegmentChangeEventTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-
-    //
-    //  profileLoyaltyProgramChangeEventTopic
-    //
-
-    try
-      {
-        profileLoyaltyProgramChangeEventTopic = JSONUtilities.decodeString(jsonRoot, "profileLoyaltyProgramChangeEventTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  propensityInitialisationPresentationThreshold
-    //
-
-    try
-      {
-        propensityInitialisationPresentationThreshold = JSONUtilities.decodeInteger(jsonRoot, "propensityInitialisationPresentationThreshold", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  propensityInitialisationDurationInDaysThreshold
-    //
-
-    try
-      {
-        propensityInitialisationDurationInDaysThreshold = JSONUtilities.decodeInteger(jsonRoot, "propensityInitialisationDurationInDaysThreshold", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  journeyTrafficChangeLog
-    //
-
-    try
-      {
-        journeyTrafficChangeLog = JSONUtilities.decodeString(jsonRoot, "journeyTrafficChangeLog", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  journeyTrafficChangeLogTopic
-    //
-
-    try
-      {
-        journeyTrafficChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "journeyTrafficChangeLogTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  journeyTrafficTopic
-    //
-
-    try
-      {
-        journeyTrafficTopic = JSONUtilities.decodeString(jsonRoot, "journeyTrafficTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  tokenChangeTopic
-    //
-
-    try
-      {
-        tokenChangeTopic = JSONUtilities.decodeString(jsonRoot, "tokenChangeTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  subscriberProfileRegistrySubject
-    //
-
-    try
-      {
-        subscriberProfileRegistrySubject = JSONUtilities.decodeString(jsonRoot, "subscriberProfileRegistrySubject", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  journeyTrafficArchivePeriodInSeconds
-    //
-
-    try
-      {
-        journeyTrafficArchivePeriodInSeconds = JSONUtilities.decodeInteger(jsonRoot, "journeyTrafficArchivePeriodInSeconds", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  journeyTrafficArchiveMaxNumberOfPeriods
-    //
-
-    try
-      {
-        journeyTrafficArchiveMaxNumberOfPeriods = JSONUtilities.decodeInteger(jsonRoot, "journeyTrafficArchiveMaxNumberOfPeriods", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  yesterdayODRDatacubePeriodCronEntryString
-    //
-
-    try
-      {
-        yesterdayODRDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdayODRDatacubePeriodCronEntryString", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  todayODRDatacubePeriodCronEntryString
-    //
-
-    try
-      {
-        todayODRDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todayODRDatacubePeriodCronEntryString", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  yesterdayLoyaltyDatacubePeriodCronEntryString
-    //
-
-    try
-      {
-        yesterdayLoyaltyDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdayLoyaltyDatacubePeriodCronEntryString", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  todaySubscriberDatacubePeriodCronEntryString
-    //
-
-    try
-      {
-        todaySubscriberDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todaySubscriberDatacubePeriodCronEntryString", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  yesterdaySubscriberDatacubePeriodCronEntryString
-    //
-
-    try
-      {
-        yesterdaySubscriberDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdaySubscriberDatacubePeriodCronEntryString", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  todayLoyaltyDatacubePeriodCronEntryString
-    //
-
-    try
-      {
-        todayLoyaltyDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todayLoyaltyDatacubePeriodCronEntryString", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  journeyTrafficDatacubePeriodCronEntryString
-    //
-
-    try
-      {
-        journeyTrafficDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "journeyTrafficDatacubePeriodCronEntryString", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  subscriberProfileSnapshotPeriodCronEntryString
-    //
-
-    try
-      {
-        subscriberProfileSnapshotPeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "subscriberProfileSnapshotPeriodCronEntryString", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  propensityRule
-    //
-    
-    try
-      {
-        JSONObject propensityRuleJSON = (JSONObject) jsonRoot.get("propensityRule");
-        propensityRule = new PropensityRule(propensityRuleJSON);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  externalAPITopics
-    //
-
-    try
-      {
-        JSONArray externalAPITopicValues = JSONUtilities.decodeJSONArray(jsonRoot, "externalAPITopics", false);
-        if (externalAPITopicValues != null)
-          {
-            for (int i=0; i<externalAPITopicValues.size(); i++)
-              {
-                JSONObject externalAPITopicJSON = (JSONObject) externalAPITopicValues.get(i);
-                ExternalAPITopic externalAPITopic = new ExternalAPITopic(externalAPITopicJSON);
-                externalAPITopics.put(externalAPITopic.getID(), externalAPITopic);
-              }
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  supportedLanguages
-    //
-
-    try
-      {
-        JSONArray supportedLanguageValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedLanguages", true);
-        for (int i=0; i<supportedLanguageValues.size(); i++)
-          {
-            JSONObject supportedLanguageJSON = (JSONObject) supportedLanguageValues.get(i);
-            SupportedLanguage supportedLanguage = new SupportedLanguage(supportedLanguageJSON);
-            supportedLanguages.put(supportedLanguage.getID(), supportedLanguage);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  partnerTypes
-    //
-
-    try
-      {
-        JSONArray partnerTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "partnerTypes", true);
-        for (int i=0; i<partnerTypeValues.size(); i++)
-          {
-            JSONObject partnerTypesJSON = (JSONObject) partnerTypeValues.get(i);
-            PartnerType partnerType = new PartnerType(partnerTypesJSON);
-            partnerTypes.put(partnerType.getID(), partnerType);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  billingModes
-    //
-
-    try
-      {
-        JSONArray billingModeValues = JSONUtilities.decodeJSONArray(jsonRoot, "billingModes", true);
-        for (int i=0; i<billingModeValues.size(); i++)
-          {
-            JSONObject billingModesJSON = (JSONObject) billingModeValues.get(i);
-            BillingMode billingMode = new BillingMode(billingModesJSON);
-            billingModes.put(billingMode.getID(), billingMode);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  criterionFieldAvailableValuesTopic
-    //
-
-    try
-      {
-        criterionFieldAvailableValuesTopic = JSONUtilities.decodeString(jsonRoot, "criterionFieldAvailableValuesTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  sourceAddressTopic
-    //
-
-    try
-      {
-        sourceAddressTopic = JSONUtilities.decodeString(jsonRoot, "sourceAddressTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  baseLanguageID
-    //
-
-    baseLanguageID = getSupportedLanguageID(Deployment.getBaseLanguage());
-
-    //
-    //  supportedCurrencies
-    //
-
-    try
-      {
-        JSONArray supportedCurrencyValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedCurrencies", true);
-        for (int i=0; i<supportedCurrencyValues.size(); i++)
-          {
-            JSONObject supportedCurrencyJSON = (JSONObject) supportedCurrencyValues.get(i);
-            SupportedCurrency supportedCurrency = new SupportedCurrency(supportedCurrencyJSON);
-            supportedCurrencies.put(supportedCurrency.getID(), supportedCurrency);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  supportedTimeUnits
-    //
-
-    try
-      {
-        JSONArray supportedTimeUnitValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedTimeUnits", true);
-        for (int i=0; i<supportedTimeUnitValues.size(); i++)
-          {
-            JSONObject supportedTimeUnitJSON = (JSONObject) supportedTimeUnitValues.get(i);
-            SupportedTimeUnit supportedTimeUnit = new SupportedTimeUnit(supportedTimeUnitJSON);
-            supportedTimeUnits.put(supportedTimeUnit.getID(), supportedTimeUnit);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  supportedTokenCodesFormats
-    //
-
-    try
-      {
-        JSONArray supportedTokenCodesFormatsValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedTokenCodesFormats", new JSONArray());
-        for (int i=0; i<supportedTokenCodesFormatsValues.size(); i++)
-          {
-            JSONObject supportedTokenCodesFormatJSON = (JSONObject) supportedTokenCodesFormatsValues.get(i);
-            SupportedTokenCodesFormat supportedTokenCodesFormat = new SupportedTokenCodesFormat(supportedTokenCodesFormatJSON);
-            supportedTokenCodesFormats.put(supportedTokenCodesFormat.getID(), supportedTokenCodesFormat);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  serviceTypes
-    //
-
-    try
-      {
-        JSONArray serviceTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "serviceTypes", true);
-        for (int i=0; i<serviceTypeValues.size(); i++)
-          {
-            JSONObject serviceTypeJSON = (JSONObject) serviceTypeValues.get(i);
-            ServiceType serviceType = new ServiceType(serviceTypeJSON);
-            serviceTypes.put(serviceType.getID(), serviceType);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  supportedRelationships
-    //
-
-    try
-      {
-        JSONArray supportedRelationshipValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedRelationships", new JSONArray());
-        for (int i=0; i<supportedRelationshipValues.size(); i++)
-          {
-            JSONObject supportedRelationshipJSON = (JSONObject) supportedRelationshipValues.get(i);
-            SupportedRelationship supportedRelationship = new SupportedRelationship(supportedRelationshipJSON);
-            supportedRelationships.put(supportedRelationship.getID(), supportedRelationship);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  callingChannelProperties
-    //
-
-    try
-      {
-        JSONArray callingChannelPropertyValues = JSONUtilities.decodeJSONArray(jsonRoot, "callingChannelProperties", true);
-        for (int i=0; i<callingChannelPropertyValues.size(); i++)
-          {
-            JSONObject callingChannelPropertyJSON = (JSONObject) callingChannelPropertyValues.get(i);
-            CallingChannelProperty callingChannelProperty = new CallingChannelProperty(callingChannelPropertyJSON);
-            callingChannelProperties.put(callingChannelProperty.getID(), callingChannelProperty);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  catalogCharacteristicUnits
-    //
-
-    try
-      {
-        JSONArray catalogCharacteristicUnitValues = JSONUtilities.decodeJSONArray(jsonRoot, "catalogCharacteristicUnits", new JSONArray());
-        for (int i=0; i<catalogCharacteristicUnitValues.size(); i++)
-          {
-            JSONObject catalogCharacteristicUnitJSON = (JSONObject) catalogCharacteristicUnitValues.get(i);
-            CatalogCharacteristicUnit catalogCharacteristicUnit = new CatalogCharacteristicUnit(catalogCharacteristicUnitJSON);
-            catalogCharacteristicUnits.put(catalogCharacteristicUnit.getID(), catalogCharacteristicUnit);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  initialCallingChannelsJSONArray
-    //
-
-    initialCallingChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialCallingChannels", new JSONArray());
-
-    //
-    //  initialSalesChannelsJSONArray
-    //
-
-    initialSalesChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSalesChannels", new JSONArray());
-    
-    //
-    //  initialSourceAddresses
-    //
-    
-    initialSourceAddressesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSourceAddresses", new JSONArray());
-
-    //
-    //  initialSuppliersJSONArray
-    //
-
-    initialSuppliersJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSuppliers", new JSONArray());
-
-    //
-    //  initialPartnersJSONArray
-    //
-
-    initialPartnersJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialPartners", new JSONArray());
-
-    //
-    //  initialProductsJSONArray
-    //
-
-    initialProductsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialProducts", new JSONArray());
-
-    //
-    //  initialReportsJSONArray
-    //
-
-    initialReportsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialReports", new JSONArray());
-    
-    //
-    //  initialCatalogCharacteristicsJSONArray
-    //
-
-    initialCatalogCharacteristicsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialCatalogCharacteristics", new JSONArray());
-
-    //
-    //  initialContactPoliciesJSONArray
-    //
-
-    initialContactPoliciesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialContactPolicies", new JSONArray());
-
-    //
-    //  initialJourneyTemplatesJSONArray
-    //
-    
-    initialJourneyTemplatesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialJourneyTemplates", new JSONArray());
-
-    //
-    //  initialJourneyObjectivesJSONArray
-    //
-
-    initialJourneyObjectivesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialJourneyObjectives", new JSONArray());
-
-    //
-    //  initialOfferObjectivesJSONArray
-    //
-
-    initialOfferObjectivesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialOfferObjectives", new JSONArray());
-    
-    //
-    //  initialProductTypesJSONArray
-    //
-
-    initialProductTypesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialProductTypes", new JSONArray());
-    
-    //
-    //  initialTokenTypesJSONArray
-    //
-
-    initialTokenTypesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialTokenTypes", new JSONArray());
-    
-    //
-    //  initialVoucherCodeFormatsJSONArray
-    //
-
-    initialVoucherCodeFormatsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialVoucherCodeFormats", new JSONArray());
-    
-    //
-    //  initialSegmentationDimensionsJSONArray
-    //
-
-    initialSegmentationDimensionsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSegmentationDimensions", new JSONArray());
-    
-    //
-    // initialCommunicationChannelsJSONArray
-    // 
-    initialCommunicationChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "communicationChannels", new JSONArray());
-
-    //
-    //  generateSimpleProfileDimensions
-    //
-
-    try
-      {
-        generateSimpleProfileDimensions = JSONUtilities.decodeBoolean(jsonRoot, "generateSimpleProfileDimensions", Boolean.TRUE);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  supportedDataTypes
-    //
-
-    try
-      {
-        JSONArray supportedDataTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedDataTypes", new JSONArray());
-        for (int i=0; i<supportedDataTypeValues.size(); i++)
-          {
-            JSONObject supportedDataTypeJSON = (JSONObject) supportedDataTypeValues.get(i);
-            SupportedDataType supportedDataType = new SupportedDataType(supportedDataTypeJSON);
-            supportedDataTypes.put(supportedDataType.getID(), supportedDataType);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  journeyMetricDeclarations
-    //
-
-    try
-      {
-        JSONArray journeyMetricDeclarationValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyMetrics", new JSONArray());
-        for (int i=0; i<journeyMetricDeclarationValues.size(); i++)
-          {
-            JSONObject journeyMetricDeclarationJSON = (JSONObject) journeyMetricDeclarationValues.get(i);
-            JourneyMetricDeclaration journeyMetricDeclaration = new JourneyMetricDeclaration(journeyMetricDeclarationJSON);
-            journeyMetricDeclarations.put(journeyMetricDeclaration.getID(), journeyMetricDeclaration);
-          }
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
+      /*****************************************
+       *
+       *  super class
+       *
+       *****************************************/
+
+      JSONObject jsonRoot = com.evolving.nglm.core.Deployment.getJSONRoot();
+
+      /*****************************************
+       *
+       *  configuration
+       *
+       *****************************************/
+
+      //
+      //  subscriberGroupLoaderAlternateID
+      //
+
+      try
+        {
+          subscriberGroupLoaderAlternateID = JSONUtilities.decodeString(jsonRoot, "subscriberGroupLoaderAlternateID", false);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  getCustomerAlternateID
+      //
+
+      try
+        {
+          getCustomerAlternateID = JSONUtilities.decodeString(jsonRoot, "getCustomerAlternateID", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+
+      //
+      //  subscriberGroupLoaderAutoProvision
+      //
+
+      try
+        {
+          subscriberGroupLoaderAutoProvision = JSONUtilities.decodeBoolean(jsonRoot, "subscriberGroupLoaderAutoProvision", Boolean.FALSE);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  criterionFieldRetrieverClassName
+      //
+
+      try
+        {
+          criterionFieldRetrieverClassName = JSONUtilities.decodeString(jsonRoot, "criterionFieldRetrieverClass", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  evolutionEngineExtensionClassName
+      //
+
+      try
+        {
+          evolutionEngineExtensionClassName = JSONUtilities.decodeString(jsonRoot, "evolutionEngineExtensionClass", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  guiManagerExtensionClassName
+      //
+
+      try
+        {
+          guiManagerExtensionClassName = JSONUtilities.decodeString(jsonRoot, "guiManagerExtensionClass", false);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  subscriberProfileClassName
+      //
+
+      try
+        {
+          subscriberProfileClassName = JSONUtilities.decodeString(jsonRoot, "subscriberProfileClass", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  extendedSubscriberProfileClassName
+      //
+
+      try
+        {
+          extendedSubscriberProfileClassName = JSONUtilities.decodeString(jsonRoot, "extendedSubscriberProfileClass", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  evolutionEngineExternalAPIClassName
+      //
+
+      try
+        {
+          evolutionEngineExternalAPIClassName = JSONUtilities.decodeString(jsonRoot, "externalAPIClass", false);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  enableProfileSegmentChange
+      //
+
+      try
+        {
+          enableProfileSegmentChange = JSONUtilities.decodeBoolean(jsonRoot, "enableProfileSegmentChange", Boolean.FALSE);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  tokenRedeemedTopic
+      //
+
+      try
+        {
+          tokenRedeemedTopic = JSONUtilities.decodeString(jsonRoot, "tokenRedeemedTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  evolutionEngineEvents
+      //
+
+      try
+        {
+          //
+          //  deployment-level events
+          //
+
+          JSONArray evolutionEngineEventValues = JSONUtilities.decodeJSONArray(jsonRoot, "evolutionEngineEvents", true);
+          for (int i=0; i<evolutionEngineEventValues.size(); i++)
+            {
+              JSONObject evolutionEngineEventJSON = (JSONObject) evolutionEngineEventValues.get(i);
+              EvolutionEngineEventDeclaration evolutionEngineEventDeclaration = new EvolutionEngineEventDeclaration(evolutionEngineEventJSON);
+              evolutionEngineEvents.put(evolutionEngineEventDeclaration.getName(), evolutionEngineEventDeclaration);
+            }
+
+          //
+          // core-level events
+          //
+
+          JSONArray evolutionEngineCoreEventValues = JSONUtilities.decodeJSONArray(jsonRoot, "evolutionEngineCoreEvents", true);
+          for (int i=0; i<evolutionEngineCoreEventValues.size(); i++)
+            {
+              JSONObject evolutionEngineEventJSON = (JSONObject) evolutionEngineCoreEventValues.get(i);
+              EvolutionEngineEventDeclaration evolutionEngineEventDeclaration = new EvolutionEngineEventDeclaration(evolutionEngineEventJSON);
+              evolutionEngineEvents.put(evolutionEngineEventDeclaration.getName(), evolutionEngineEventDeclaration);
+            }
+        }
+      catch (GUIManagerException | JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  notificationDailyWindows
+      //
+
+      try
+        {
+          NotificationDailyWindows notificationDailyWindows = new NotificationDailyWindows(JSONUtilities.decodeJSONObject(jsonRoot, "notificationDailyWindows", true));
+          notificationTimeWindowsMap.put("0", notificationDailyWindows);
+        }
+      catch (GUIManagerException | JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  emptyTopic
+      //
+
+      try
+        {
+          emptyTopic = JSONUtilities.decodeString(jsonRoot, "emptyTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyTopic
+      //
+
+      try
+        {
+          journeyTopic = JSONUtilities.decodeString(jsonRoot, "journeyTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyTemplateTopic
+      //
+
+      try
+        {
+          journeyTemplateTopic = JSONUtilities.decodeString(jsonRoot, "journeyTemplateTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  segmentationDimensionTopic
+      //
+
+      try
+        {
+          segmentationDimensionTopic = JSONUtilities.decodeString(jsonRoot, "segmentationDimensionTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  pointTopic
+      //
+
+      try
+        {
+          pointTopic = JSONUtilities.decodeString(jsonRoot, "pointTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  pointFulfillmentRequestTopic
+      //
+
+      try
+        {
+          pointFulfillmentRequestTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentRequestTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  pointFulfillmentResponseTopic
+      //
+
+      try
+        {
+          pointFulfillmentResponseTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentResponseTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  elasticSearchDateFormat
+      //
+
+      try
+        {
+          elasticSearchDateFormat = JSONUtilities.decodeString(jsonRoot, "elasticSearchDateFormat", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  elasticSearchScrollSize
+      //
+
+      try
+        {
+          elasticSearchScrollSize = JSONUtilities.decodeInteger(jsonRoot, "elasticSearchScrollSize", 0);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  pointFulfillmentRekeyedTopic
+      //
+
+      try
+        {
+          pointFulfillmentRekeyedTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentRekeyedTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  offerTopic
+      //
+
+      try
+        {
+          offerTopic = JSONUtilities.decodeString(jsonRoot, "offerTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  reportTopic
+      //
+
+      try
+        {
+          reportTopic = JSONUtilities.decodeString(jsonRoot, "reportTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  paymentMeanTopic
+      //
+
+      try
+        {
+          paymentMeanTopic = JSONUtilities.decodeString(jsonRoot, "paymentMeanTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  presentationStrategyTopic
+      //
+
+      try
+        {
+          presentationStrategyTopic = JSONUtilities.decodeString(jsonRoot, "presentationStrategyTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  scoringStrategyTopic
+      //
+
+      try
+        {
+          scoringStrategyTopic = JSONUtilities.decodeString(jsonRoot, "scoringStrategyTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  callingChannelTopic
+      //
+
+      try
+        {
+          callingChannelTopic = JSONUtilities.decodeString(jsonRoot, "callingChannelTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  salesChannelTopic
+      //
+
+      try
+        {
+          salesChannelTopic = JSONUtilities.decodeString(jsonRoot, "salesChannelTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  supplierTopic
+      //
+
+      try
+        {
+          supplierTopic = JSONUtilities.decodeString(jsonRoot, "supplierTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  resellerTopic
+      //
+
+      try
+        {
+          resellerTopic = JSONUtilities.decodeString(jsonRoot, "resellerTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  productTopic
+      //
+
+      try
+        {
+          productTopic = JSONUtilities.decodeString(jsonRoot, "productTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  catalogCharacteristicTopic
+      //
+
+      try
+        {
+          catalogCharacteristicTopic = JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  contactPolicyTopic
+      //
+
+      try
+        {
+          contactPolicyTopic = JSONUtilities.decodeString(jsonRoot, "contactPolicyTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyObjectiveTopic
+      //
+
+      try
+        {
+          journeyObjectiveTopic = JSONUtilities.decodeString(jsonRoot, "journeyObjectiveTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  offerObjectiveTopic
+      //
+
+      try
+        {
+          offerObjectiveTopic = JSONUtilities.decodeString(jsonRoot, "offerObjectiveTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  productTypeTopic
+      //
+
+      try
+        {
+          productTypeTopic = JSONUtilities.decodeString(jsonRoot, "productTypeTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  ucgRuleTopic
+      //
+
+      try
+        {
+          ucgRuleTopic = JSONUtilities.decodeString(jsonRoot, "ucgRuleTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  deliverable
+      //
+
+      try
+        {
+          deliverableTopic = JSONUtilities.decodeString(jsonRoot, "deliverableTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  tokenType
+      //
+
+      try
+        {
+          tokenTypeTopic = JSONUtilities.decodeString(jsonRoot, "tokenTypeTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  voucherType
+      //
+
+      try
+        {
+          voucherTypeTopic = JSONUtilities.decodeString(jsonRoot, "voucherTypeTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  voucher
+      //
+
+      try
+        {
+          voucherTopic = JSONUtilities.decodeString(jsonRoot, "voucherTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  subscriberMessageTemplateTopic
+      //
+
+      try
+        {
+          subscriberMessageTemplateTopic = JSONUtilities.decodeString(jsonRoot, "subscriberMessageTemplateTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  guiAuditTopic
+      //
+
+      try
+        {
+          guiAuditTopic = JSONUtilities.decodeString(jsonRoot, "guiAuditTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  subscriberGroupTopic
+      //
+
+      try
+        {
+          subscriberGroupTopic = JSONUtilities.decodeString(jsonRoot, "subscriberGroupTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  subscriberGroupAssignSubscriberIDTopic
+      //
+
+      try
+        {
+          subscriberGroupAssignSubscriberIDTopic = JSONUtilities.decodeString(jsonRoot, "subscriberGroupAssignSubscriberIDTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  subscriberGroupEpochTopic
+      //
+
+      try
+        {
+          subscriberGroupEpochTopic = JSONUtilities.decodeString(jsonRoot, "subscriberGroupEpochTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  ucgStateTopic
+      //
+
+      try
+        {
+          ucgStateTopic = JSONUtilities.decodeString(jsonRoot, "ucgStateTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  renamedProfileCriterionFieldTopic
+      //
+
+      try
+        {
+          renamedProfileCriterionFieldTopic = JSONUtilities.decodeString(jsonRoot, "renamedProfileCriterionFieldTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  uploadFileTopic
+      //
+
+      try
+        {
+          uploadedFileTopic = JSONUtilities.decodeString(jsonRoot, "uploadedFileTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  targetTopic
+      //
+
+      try
+        {
+          targetTopic = JSONUtilities.decodeString(jsonRoot, "targetTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  exclusionInclusionTargetTopic
+      //
+
+      try
+        {
+          exclusionInclusionTargetTopic = JSONUtilities.decodeString(jsonRoot, "exclusionInclusionTargetTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  dnboMatrixTopic
+      //
+
+      try
+        {
+          dnboMatrixTopic = JSONUtilities.decodeString(jsonRoot, "dnboMatrixTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+
+      //
+      //  dynamicEventDeclarationsTopic
+      //
+
+      try
+        {
+          dynamicEventDeclarationsTopic = JSONUtilities.decodeString(jsonRoot, "dynamicEventDeclarationsTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  dynamicCriterionFieldsTopic
+      //
+
+      try
+        {
+          dynamicCriterionFieldsTopic = JSONUtilities.decodeString(jsonRoot, "dynamicCriterionFieldTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  communicationChannelBlackoutTopic
+      //
+
+      try
+        {
+          communicationChannelBlackoutTopic = JSONUtilities.decodeString(jsonRoot, "communicationChannelBlackoutTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  communicationChannelTopic
+      //
+
+      try
+        {
+          communicationChannelTopic = JSONUtilities.decodeString(jsonRoot, "communicationChannelTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  loyaltyProgramTopic
+      //
+
+      try
+        {
+          loyaltyProgramTopic = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  timedEvaluationTopic
+      //
+
+      try
+        {
+          timedEvaluationTopic = JSONUtilities.decodeString(jsonRoot, "timedEvaluationTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  evaluateTargetsTopic
+      //
+
+      try
+        {
+          evaluateTargetsTopic = JSONUtilities.decodeString(jsonRoot, "evaluateTargetsTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  subscriberProfileForceUpdateTopic
+      //
+
+      try
+        {
+          subscriberProfileForceUpdateTopic = JSONUtilities.decodeString(jsonRoot, "subscriberProfileForceUpdateTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  subscriberStateChangeLog
+      //
+
+      try
+        {
+          subscriberStateChangeLog = JSONUtilities.decodeString(jsonRoot, "subscriberStateChangeLog", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  subscriberStateChangeLogTopic
+      //
+
+      try
+        {
+          subscriberStateChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "subscriberStateChangeLogTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  extendedSubscriberProfileChangeLog
+      //
+
+      try
+        {
+          extendedSubscriberProfileChangeLog = JSONUtilities.decodeString(jsonRoot, "extendedSubscriberProfileChangeLog", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  extendedSubscriberProfileChangeLogTopic
+      //
+
+      try
+        {
+          extendedSubscriberProfileChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "extendedSubscriberProfileChangeLogTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  subscriberHistoryChangeLog
+      //
+
+      try
+        {
+          subscriberHistoryChangeLog = JSONUtilities.decodeString(jsonRoot, "subscriberHistoryChangeLog", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  subscriberHistoryChangeLogTopic
+      //
+
+      try
+        {
+          subscriberHistoryChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "subscriberHistoryChangeLogTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyRequestTopic
+      //
+
+      try
+        {
+          journeyRequestTopic = JSONUtilities.decodeString(jsonRoot, "journeyRequestTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyResponseTopic
+      //
+
+      try
+        {
+          journeyResponseTopic = JSONUtilities.decodeString(jsonRoot, "journeyResponseTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  loyaltyProgramRequestTopic
+      //
+
+      try
+        {
+          loyaltyProgramRequestTopic = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramRequestTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  loyaltyProgramResponseTopic
+      //
+
+      try
+        {
+          loyaltyProgramResponseTopic = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramResponseTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyStatisticTopic
+      //
+
+      try
+        {
+          journeyStatisticTopic = JSONUtilities.decodeString(jsonRoot, "journeyStatisticTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyMetricTopic
+      //
+
+      try
+        {
+          journeyMetricTopic = JSONUtilities.decodeString(jsonRoot, "journeyMetricTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  deliverableSourceTopic
+      //
+
+      try
+        {
+          deliverableSourceTopic = JSONUtilities.decodeString(jsonRoot, "deliverableSourceTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  presentationLogTopic
+      //
+
+      try
+        {
+          presentationLogTopic = JSONUtilities.decodeString(jsonRoot, "presentationLogTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  acceptanceLogTopic
+      //
+
+      try
+        {
+          acceptanceLogTopic = JSONUtilities.decodeString(jsonRoot, "acceptanceLogTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  propensityLogTopic
+      //
+
+      try
+        {
+          propensityLogTopic = JSONUtilities.decodeString(jsonRoot, "propensityLogTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  propensityStateChangeLog
+      //
+
+      try
+        {
+          propensityStateChangeLog = JSONUtilities.decodeString(jsonRoot, "propensityStateChangeLog", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  propensityStateChangeLogTopic
+      //
+
+      try
+        {
+          propensityStateChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "propensityStateChangeLogTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  propensityOutputTopic
+      //
+
+      try
+        {
+          propensityOutputTopic = JSONUtilities.decodeString(jsonRoot, "propensityOutputTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  segmentContactPolicyTopic
+      //
+
+      try
+        {
+          segmentContactPolicyTopic = JSONUtilities.decodeString(jsonRoot, "segmentContactPolicyTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  profileChangeEventTopic
+      //
+
+      try
+        {
+          profileChangeEventTopic = JSONUtilities.decodeString(jsonRoot, "profileChangeEventTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //
+      //  profileSegmentChangeEventTopic
+      //
+
+      try
+        {
+          profileSegmentChangeEventTopic = JSONUtilities.decodeString(jsonRoot, "profileSegmentChangeEventTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+
+      //
+      //  profileLoyaltyProgramChangeEventTopic
+      //
+
+      try
+        {
+          profileLoyaltyProgramChangeEventTopic = JSONUtilities.decodeString(jsonRoot, "profileLoyaltyProgramChangeEventTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  propensityInitialisationPresentationThreshold
+      //
+
+      try
+        {
+          propensityInitialisationPresentationThreshold = JSONUtilities.decodeInteger(jsonRoot, "propensityInitialisationPresentationThreshold", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  propensityInitialisationDurationInDaysThreshold
+      //
+
+      try
+        {
+          propensityInitialisationDurationInDaysThreshold = JSONUtilities.decodeInteger(jsonRoot, "propensityInitialisationDurationInDaysThreshold", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyTrafficChangeLog
+      //
+
+      try
+        {
+          journeyTrafficChangeLog = JSONUtilities.decodeString(jsonRoot, "journeyTrafficChangeLog", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyTrafficChangeLogTopic
+      //
+
+      try
+        {
+          journeyTrafficChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "journeyTrafficChangeLogTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyTrafficTopic
+      //
+
+      try
+        {
+          journeyTrafficTopic = JSONUtilities.decodeString(jsonRoot, "journeyTrafficTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  tokenChangeTopic
+      //
+
+      try
+        {
+          tokenChangeTopic = JSONUtilities.decodeString(jsonRoot, "tokenChangeTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  subscriberProfileRegistrySubject
+      //
+
+      try
+        {
+          subscriberProfileRegistrySubject = JSONUtilities.decodeString(jsonRoot, "subscriberProfileRegistrySubject", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyTrafficArchivePeriodInSeconds
+      //
+
+      try
+        {
+          journeyTrafficArchivePeriodInSeconds = JSONUtilities.decodeInteger(jsonRoot, "journeyTrafficArchivePeriodInSeconds", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyTrafficArchiveMaxNumberOfPeriods
+      //
+
+      try
+        {
+          journeyTrafficArchiveMaxNumberOfPeriods = JSONUtilities.decodeInteger(jsonRoot, "journeyTrafficArchiveMaxNumberOfPeriods", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  yesterdayODRDatacubePeriodCronEntryString
+      //
+
+      try
+        {
+          yesterdayODRDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdayODRDatacubePeriodCronEntryString", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  todayODRDatacubePeriodCronEntryString
+      //
+
+      try
+        {
+          todayODRDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todayODRDatacubePeriodCronEntryString", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  yesterdayLoyaltyDatacubePeriodCronEntryString
+      //
+
+      try
+        {
+          yesterdayLoyaltyDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdayLoyaltyDatacubePeriodCronEntryString", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  todaySubscriberDatacubePeriodCronEntryString
+      //
+
+      try
+        {
+          todaySubscriberDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todaySubscriberDatacubePeriodCronEntryString", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  yesterdaySubscriberDatacubePeriodCronEntryString
+      //
+
+      try
+        {
+          yesterdaySubscriberDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdaySubscriberDatacubePeriodCronEntryString", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  todayLoyaltyDatacubePeriodCronEntryString
+      //
+
+      try
+        {
+          todayLoyaltyDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todayLoyaltyDatacubePeriodCronEntryString", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyTrafficDatacubePeriodCronEntryString
+      //
+
+      try
+        {
+          journeyTrafficDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "journeyTrafficDatacubePeriodCronEntryString", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  subscriberProfileSnapshotPeriodCronEntryString
+      //
+
+      try
+        {
+          subscriberProfileSnapshotPeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "subscriberProfileSnapshotPeriodCronEntryString", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  propensityRule
+      //
+
+      try
+        {
+          JSONObject propensityRuleJSON = (JSONObject) jsonRoot.get("propensityRule");
+          propensityRule = new PropensityRule(propensityRuleJSON);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  externalAPITopics
+      //
+
+      try
+        {
+          JSONArray externalAPITopicValues = JSONUtilities.decodeJSONArray(jsonRoot, "externalAPITopics", false);
+          if (externalAPITopicValues != null)
+            {
+              for (int i=0; i<externalAPITopicValues.size(); i++)
+                {
+                  JSONObject externalAPITopicJSON = (JSONObject) externalAPITopicValues.get(i);
+                  ExternalAPITopic externalAPITopic = new ExternalAPITopic(externalAPITopicJSON);
+                  externalAPITopics.put(externalAPITopic.getID(), externalAPITopic);
+                }
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  supportedLanguages
+      //
+
+      try
+        {
+          JSONArray supportedLanguageValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedLanguages", true);
+          for (int i=0; i<supportedLanguageValues.size(); i++)
+            {
+              JSONObject supportedLanguageJSON = (JSONObject) supportedLanguageValues.get(i);
+              SupportedLanguage supportedLanguage = new SupportedLanguage(supportedLanguageJSON);
+              supportedLanguages.put(supportedLanguage.getID(), supportedLanguage);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  partnerTypes
+      //
+
+      try
+        {
+          JSONArray partnerTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "partnerTypes", true);
+          for (int i=0; i<partnerTypeValues.size(); i++)
+            {
+              JSONObject partnerTypesJSON = (JSONObject) partnerTypeValues.get(i);
+              PartnerType partnerType = new PartnerType(partnerTypesJSON);
+              partnerTypes.put(partnerType.getID(), partnerType);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  billingModes
+      //
+
+      try
+        {
+          JSONArray billingModeValues = JSONUtilities.decodeJSONArray(jsonRoot, "billingModes", true);
+          for (int i=0; i<billingModeValues.size(); i++)
+            {
+              JSONObject billingModesJSON = (JSONObject) billingModeValues.get(i);
+              BillingMode billingMode = new BillingMode(billingModesJSON);
+              billingModes.put(billingMode.getID(), billingMode);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  criterionFieldAvailableValuesTopic
+      //
+
+      try
+        {
+          criterionFieldAvailableValuesTopic = JSONUtilities.decodeString(jsonRoot, "criterionFieldAvailableValuesTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  sourceAddressTopic
+      //
+
+      try
+        {
+          sourceAddressTopic = JSONUtilities.decodeString(jsonRoot, "sourceAddressTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  baseLanguageID
+      //
+
+      baseLanguageID = getSupportedLanguageID(Deployment.getBaseLanguage());
+
+      //
+      //  supportedCurrencies
+      //
+
+      try
+        {
+          JSONArray supportedCurrencyValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedCurrencies", true);
+          for (int i=0; i<supportedCurrencyValues.size(); i++)
+            {
+              JSONObject supportedCurrencyJSON = (JSONObject) supportedCurrencyValues.get(i);
+              SupportedCurrency supportedCurrency = new SupportedCurrency(supportedCurrencyJSON);
+              supportedCurrencies.put(supportedCurrency.getID(), supportedCurrency);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  supportedTimeUnits
+      //
+
+      try
+        {
+          JSONArray supportedTimeUnitValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedTimeUnits", true);
+          for (int i=0; i<supportedTimeUnitValues.size(); i++)
+            {
+              JSONObject supportedTimeUnitJSON = (JSONObject) supportedTimeUnitValues.get(i);
+              SupportedTimeUnit supportedTimeUnit = new SupportedTimeUnit(supportedTimeUnitJSON);
+              supportedTimeUnits.put(supportedTimeUnit.getID(), supportedTimeUnit);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  supportedTokenCodesFormats
+      //
+
+      try
+        {
+          JSONArray supportedTokenCodesFormatsValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedTokenCodesFormats", new JSONArray());
+          for (int i=0; i<supportedTokenCodesFormatsValues.size(); i++)
+            {
+              JSONObject supportedTokenCodesFormatJSON = (JSONObject) supportedTokenCodesFormatsValues.get(i);
+              SupportedTokenCodesFormat supportedTokenCodesFormat = new SupportedTokenCodesFormat(supportedTokenCodesFormatJSON);
+              supportedTokenCodesFormats.put(supportedTokenCodesFormat.getID(), supportedTokenCodesFormat);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  serviceTypes
+      //
+
+      try
+        {
+          JSONArray serviceTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "serviceTypes", true);
+          for (int i=0; i<serviceTypeValues.size(); i++)
+            {
+              JSONObject serviceTypeJSON = (JSONObject) serviceTypeValues.get(i);
+              ServiceType serviceType = new ServiceType(serviceTypeJSON);
+              serviceTypes.put(serviceType.getID(), serviceType);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  supportedRelationships
+      //
+
+      try
+        {
+          JSONArray supportedRelationshipValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedRelationships", new JSONArray());
+          for (int i=0; i<supportedRelationshipValues.size(); i++)
+            {
+              JSONObject supportedRelationshipJSON = (JSONObject) supportedRelationshipValues.get(i);
+              SupportedRelationship supportedRelationship = new SupportedRelationship(supportedRelationshipJSON);
+              supportedRelationships.put(supportedRelationship.getID(), supportedRelationship);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  callingChannelProperties
+      //
+
+      try
+        {
+          JSONArray callingChannelPropertyValues = JSONUtilities.decodeJSONArray(jsonRoot, "callingChannelProperties", true);
+          for (int i=0; i<callingChannelPropertyValues.size(); i++)
+            {
+              JSONObject callingChannelPropertyJSON = (JSONObject) callingChannelPropertyValues.get(i);
+              CallingChannelProperty callingChannelProperty = new CallingChannelProperty(callingChannelPropertyJSON);
+              callingChannelProperties.put(callingChannelProperty.getID(), callingChannelProperty);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  catalogCharacteristicUnits
+      //
+
+      try
+        {
+          JSONArray catalogCharacteristicUnitValues = JSONUtilities.decodeJSONArray(jsonRoot, "catalogCharacteristicUnits", new JSONArray());
+          for (int i=0; i<catalogCharacteristicUnitValues.size(); i++)
+            {
+              JSONObject catalogCharacteristicUnitJSON = (JSONObject) catalogCharacteristicUnitValues.get(i);
+              CatalogCharacteristicUnit catalogCharacteristicUnit = new CatalogCharacteristicUnit(catalogCharacteristicUnitJSON);
+              catalogCharacteristicUnits.put(catalogCharacteristicUnit.getID(), catalogCharacteristicUnit);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  initialCallingChannelsJSONArray
+      //
+
+      initialCallingChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialCallingChannels", new JSONArray());
+
+      //
+      //  initialSalesChannelsJSONArray
+      //
+
+      initialSalesChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSalesChannels", new JSONArray());
+
+      //
+      //  initialSourceAddresses
+      //
+
+      initialSourceAddressesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSourceAddresses", new JSONArray());
+
+      //
+      //  initialSuppliersJSONArray
+      //
+
+      initialSuppliersJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSuppliers", new JSONArray());
+
+      //
+      //  initialPartnersJSONArray
+      //
+
+      initialPartnersJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialPartners", new JSONArray());
+
+      //
+      //  initialProductsJSONArray
+      //
+
+      initialProductsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialProducts", new JSONArray());
+
+      //
+      //  initialReportsJSONArray
+      //
+
+      initialReportsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialReports", new JSONArray());
+
+      //
+      //  initialCatalogCharacteristicsJSONArray
+      //
+
+      initialCatalogCharacteristicsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialCatalogCharacteristics", new JSONArray());
+
+      //
+      //  initialContactPoliciesJSONArray
+      //
+
+      initialContactPoliciesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialContactPolicies", new JSONArray());
+
+      //
+      //  initialJourneyTemplatesJSONArray
+      //
+
+      initialJourneyTemplatesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialJourneyTemplates", new JSONArray());
+
+      //
+      //  initialJourneyObjectivesJSONArray
+      //
+
+      initialJourneyObjectivesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialJourneyObjectives", new JSONArray());
+
+      //
+      //  initialOfferObjectivesJSONArray
+      //
+
+      initialOfferObjectivesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialOfferObjectives", new JSONArray());
+
+      //
+      //  initialProductTypesJSONArray
+      //
+
+      initialProductTypesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialProductTypes", new JSONArray());
+
+      //
+      //  initialTokenTypesJSONArray
+      //
+
+      initialTokenTypesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialTokenTypes", new JSONArray());
+
+      //
+      //  initialVoucherCodeFormatsJSONArray
+      //
+
+      initialVoucherCodeFormatsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialVoucherCodeFormats", new JSONArray());
+
+      //
+      //  initialSegmentationDimensionsJSONArray
+      //
+
+      initialSegmentationDimensionsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSegmentationDimensions", new JSONArray());
+
+      //
+      // initialCommunicationChannelsJSONArray
+      //
+      initialCommunicationChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "communicationChannels", new JSONArray());
+
+      //
+      //  generateSimpleProfileDimensions
+      //
+
+      try
+        {
+          generateSimpleProfileDimensions = JSONUtilities.decodeBoolean(jsonRoot, "generateSimpleProfileDimensions", Boolean.TRUE);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  supportedDataTypes
+      //
+
+      try
+        {
+          JSONArray supportedDataTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedDataTypes", new JSONArray());
+          for (int i=0; i<supportedDataTypeValues.size(); i++)
+            {
+              JSONObject supportedDataTypeJSON = (JSONObject) supportedDataTypeValues.get(i);
+              SupportedDataType supportedDataType = new SupportedDataType(supportedDataTypeJSON);
+              supportedDataTypes.put(supportedDataType.getID(), supportedDataType);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyMetricDeclarations
+      //
+
+      try
+        {
+          JSONArray journeyMetricDeclarationValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyMetrics", new JSONArray());
+          for (int i=0; i<journeyMetricDeclarationValues.size(); i++)
+            {
+              JSONObject journeyMetricDeclarationJSON = (JSONObject) journeyMetricDeclarationValues.get(i);
+              JourneyMetricDeclaration journeyMetricDeclaration = new JourneyMetricDeclaration(journeyMetricDeclarationJSON);
+              journeyMetricDeclarations.put(journeyMetricDeclaration.getID(), journeyMetricDeclaration);
+            }
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
 
       //
       //  subscriberProfileDatacubeMetrics
@@ -2461,607 +2463,635 @@ public class Deployment
           throw new ServerRuntimeException("deployment", e);
         }
 
-    //
-    //  profileCriterionFields
-    //
+      //
+      //  profileCriterionFields
+      //
 
-    try
-      {
-        //
-        //  profileCriterionFields (evolution)
-        //
+      try
+        {
+          //
+          //  profileCriterionFields (evolution)
+          //
 
-        JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "evolutionProfileCriterionFields", new JSONArray());
-        for (int i=0; i<criterionFieldValues.size(); i++)
-          {
-            JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
-            CriterionField criterionField = new CriterionField(criterionFieldJSON);
-            profileCriterionFields.put(criterionField.getID(), criterionField);
-            if(criterionField.getProfileChangeEvent()) {
-              profileChangeDetectionCriterionFields.put(criterionField.getID(), criterionField);
-              
-              //
-              // generation of CriterionFields related to oldValue, newValue and changedField 
-              //
-              
-              profileChangeGeneratedCriterionFields.putAll(generateProfileChangeCriterionFields(criterionField));
-            }
-          }
+          JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "evolutionProfileCriterionFields", new JSONArray());
+          for (int i=0; i<criterionFieldValues.size(); i++)
+            {
+              JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
+              CriterionField criterionField = new CriterionField(criterionFieldJSON);
+              profileCriterionFields.put(criterionField.getID(), criterionField);
+              if(criterionField.getProfileChangeEvent()) {
+                profileChangeDetectionCriterionFields.put(criterionField.getID(), criterionField);
 
-        //
-        //  profileCriterionFields (deployment)
-        //
+                //
+                // generation of CriterionFields related to oldValue, newValue and changedField
+                //
 
-        criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriterionFields", new JSONArray());
-        for (int i=0; i<criterionFieldValues.size(); i++)
-          {
-            JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
-            CriterionField criterionField = new CriterionField(criterionFieldJSON);
-            profileCriterionFields.put(criterionField.getID(), criterionField);
-            if(criterionField.getProfileChangeEvent()) {
-              profileChangeDetectionCriterionFields.put(criterionField.getID(), criterionField);
-              
-              //
-              // generation of CriterionFields related to oldValue, newValue and changedField 
-              //
-              
-              profileChangeGeneratedCriterionFields.putAll(generateProfileChangeCriterionFields(criterionField));
-            }
-          }
-        
-        
-        //
-        //  profileChangeEvent
-        //
-
-        EvolutionEngineEventDeclaration profileChangeEvent = new EvolutionEngineEventDeclaration("profile update", ProfileChangeEvent.class.getName(), getProfileChangeEventTopic(), EventRule.Standard, getProfileChangeGeneratedCriterionFields());
-        evolutionEngineEvents.put(profileChangeEvent.getName(), profileChangeEvent);
-
-      }
-    catch (GUIManagerException | JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  extendedProfileCriterionFields
-    //
-
-    try
-      {
-        JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "extendedProfileCriterionFields", new JSONArray());
-        for (int i=0; i<criterionFieldValues.size(); i++)
-          {
-            JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
-            CriterionField criterionField = new CriterionField(criterionFieldJSON);
-            extendedProfileCriterionFields.put(criterionField.getID(), criterionField);
-          }
-      }
-    catch (GUIManagerException | JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  presentationCriterionFields
-    //
-
-    try
-      {
-        JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "presentationCriterionFields", new JSONArray());
-        for (int i=0; i<criterionFieldValues.size(); i++)
-          {
-            JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
-            CriterionField criterionField = new CriterionField(criterionFieldJSON);
-            presentationCriterionFields.put(criterionField.getID(), criterionField);
-          }
-      }
-    catch (GUIManagerException | JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  universalControlGroupCriteria
-    //
-
-    try
-      {
-        JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "universalControlGroupCriteria", new JSONArray());
-        for (int i=0; i<evaluationCriterionValues.size(); i++)
-          {
-            JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
-            EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile);
-            universalControlGroupCriteria.add(evaluationCriterion);
-          }
-      }
-    catch (GUIManagerException | JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  controlGroupCriteria
-    //
-
-    try
-      {
-        JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "controlGroupCriteria", new JSONArray());
-        for (int i=0; i<evaluationCriterionValues.size(); i++)
-          {
-            JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
-            EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile);
-            controlGroupCriteria.add(evaluationCriterion);
-          }
-      }
-    catch (GUIManagerException | JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  offerCategories
-    //
-
-    try
-      {
-        JSONArray offerCategoryValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerCategories", new JSONArray());
-        for (int i=0; i<offerCategoryValues.size(); i++)
-          {
-            JSONObject offerCategoryJSON = (JSONObject) offerCategoryValues.get(i);
-            OfferCategory offerCategory = new OfferCategory(offerCategoryJSON);
-            offerCategories.put(offerCategory.getID(), offerCategory);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  offerProperties
-    //
-
-    try
-      {
-        JSONArray offerPropertyValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerProperties", new JSONArray());
-        for (int i=0; i<offerPropertyValues.size(); i++)
-          {
-            JSONObject offerPropertyJSON = (JSONObject) offerPropertyValues.get(i);
-            OfferProperty offerProperty = new OfferProperty(offerPropertyJSON);
-            offerProperties.put(offerProperty.getID(), offerProperty);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  scoringEngines
-    //
-
-    try
-      {
-        JSONArray scoringEngineValues = JSONUtilities.decodeJSONArray(jsonRoot, "scoringEngines", new JSONArray());
-        for (int i=0; i<scoringEngineValues.size(); i++)
-          {
-            JSONObject scoringEngineJSON = (JSONObject) scoringEngineValues.get(i);
-            ScoringEngine scoringEngine = new ScoringEngine(scoringEngineJSON);
-            scoringEngines.put(scoringEngine.getID(), scoringEngine);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  offerOptimizationAlgorithms
-    //
-
-    try
-      {
-        JSONArray offerOptimizationAlgorithmValuesCommon = JSONUtilities.decodeJSONArray(jsonRoot, "offerOptimizationAlgorithmsCommon", new JSONArray());
-        JSONArray offerOptimizationAlgorithmValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerOptimizationAlgorithms", new JSONArray());
-        offerOptimizationAlgorithmValues.addAll(offerOptimizationAlgorithmValuesCommon);
-        for (int i=0; i<offerOptimizationAlgorithmValues.size(); i++)
-          {
-            JSONObject offerOptimizationAlgorithmJSON = (JSONObject) offerOptimizationAlgorithmValues.get(i);
-            OfferOptimizationAlgorithm offerOptimizationAlgorithm = new OfferOptimizationAlgorithm(offerOptimizationAlgorithmJSON);
-            offerOptimizationAlgorithms.put(offerOptimizationAlgorithm.getID(), offerOptimizationAlgorithm);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-
-    //
-    //  scoringTypes
-    //
-
-    try
-      {
-        JSONArray scoringTypesValues = JSONUtilities.decodeJSONArray(jsonRoot, "scoringTypes", new JSONArray());
-        for (int i=0; i<scoringTypesValues.size(); i++)
-          {
-            JSONObject scoringTypeJSON = (JSONObject) scoringTypesValues.get(i);
-            ScoringType scoringType = new ScoringType(scoringTypeJSON);
-            scoringTypes.put(scoringType.getID(), scoringType);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    
-
-    //
-    //  dnboMatrixVariable
-    //
-
-    try
-      {
-        JSONArray dnboMatrixVariableValues = JSONUtilities.decodeJSONArray(jsonRoot, "dnboMatrixVariables", new JSONArray());
-        for (int i=0; i<dnboMatrixVariableValues.size(); i++)
-          {
-            JSONObject dnboMatrixJSON = (JSONObject) dnboMatrixVariableValues.get(i);
-            DNBOMatrixVariable dnboMatrixvariable = new DNBOMatrixVariable(dnboMatrixJSON);
-            dnboMatrixVariables.put(dnboMatrixvariable.getID(), dnboMatrixvariable);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    
-    //
-    //  deliveryManagers/fulfillmentProviders
-    //
-
-    try
-      {
-        JSONArray deliveryManagerValues = JSONUtilities.decodeJSONArray(jsonRoot, "deliveryManagers", new JSONArray());
-        for (int i=0; i<deliveryManagerValues.size(); i++)
-          {
-            JSONObject deliveryManagerJSON = (JSONObject) deliveryManagerValues.get(i);
-            DeliveryManagerDeclaration deliveryManagerDeclaration = new DeliveryManagerDeclaration(deliveryManagerJSON);
-            deliveryManagers.put(deliveryManagerDeclaration.getDeliveryType(), deliveryManagerDeclaration);
-            if (deliveryManagerDeclaration.getProviderID() != null)
-              {
-                fulfillmentProviders.put(deliveryManagerDeclaration.getProviderID(), deliveryManagerDeclaration);
+                profileChangeGeneratedCriterionFields.putAll(generateProfileChangeCriterionFields(criterionField));
               }
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  deliveryManagerAccounts
-    //
-
-    try
-      {
-        JSONArray deliveryManagerAccountValues = JSONUtilities.decodeJSONArray(jsonRoot, "deliveryManagerAccounts", new JSONArray());
-        for (int i=0; i<deliveryManagerAccountValues.size(); i++)
-          {
-            JSONObject deliveryManagerAccountJSON = (JSONObject) deliveryManagerAccountValues.get(i);
-            DeliveryManagerAccount deliveryManagerAccount = new DeliveryManagerAccount(deliveryManagerAccountJSON);
-            if(deliveryManagerAccount != null ){
-              deliveryManagerAccounts.put(deliveryManagerAccount.getProviderID(), deliveryManagerAccount);
             }
-          }
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  journeyDefaultTargetingWindowDuration
-    //
 
-    journeyDefaultTargetingWindowDuration = JSONUtilities.decodeInteger(jsonRoot, "journeyDefaultTargetingWindowDuration", 3);
+          //
+          //  profileCriterionFields (deployment)
+          //
 
-    //
-    //  journeyDefaultTargetingWindowUnit
-    //
+          criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriterionFields", new JSONArray());
+          for (int i=0; i<criterionFieldValues.size(); i++)
+            {
+              JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
+              CriterionField criterionField = new CriterionField(criterionFieldJSON);
+              profileCriterionFields.put(criterionField.getID(), criterionField);
+              if(criterionField.getProfileChangeEvent()) {
+                profileChangeDetectionCriterionFields.put(criterionField.getID(), criterionField);
 
-    journeyDefaultTargetingWindowUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "journeyDefaultTargetingWindowUnit", "month"));
+                //
+                // generation of CriterionFields related to oldValue, newValue and changedField
+                //
 
-    //
-    //  journeyDefaultTargetingWindowRoundUp
-    //
+                profileChangeGeneratedCriterionFields.putAll(generateProfileChangeCriterionFields(criterionField));
+              }
+            }
 
-    journeyDefaultTargetingWindowRoundUp = JSONUtilities.decodeBoolean(jsonRoot, "journeyDefaultTargetingWindowRoundUp", Boolean.FALSE);
-    
-    //
-    //  journeyUniversalEligibilityCriteria
-    //
 
-    try
-      {
-        JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyUniversalEligibilityCriteria", new JSONArray());
-        for (int i=0; i<evaluationCriterionValues.size(); i++)
-          {
-            JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
-            EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile);
-            journeyUniversalEligibilityCriteria.add(evaluationCriterion);
-          }
-      }
-    catch (GUIManagerException | JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
+          //
+          //  profileChangeEvent
+          //
 
-    //
-    //  nodeTypes
-    //
+          EvolutionEngineEventDeclaration profileChangeEvent = new EvolutionEngineEventDeclaration("profile update", ProfileChangeEvent.class.getName(), getProfileChangeEventTopic(), EventRule.Standard, getProfileChangeGeneratedCriterionFields());
+          evolutionEngineEvents.put(profileChangeEvent.getName(), profileChangeEvent);
 
-    try
-      {
-        JSONArray nodeTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "nodeTypes", new JSONArray());
-        for (int i=0; i<nodeTypeValues.size(); i++)
-          {
-            JSONObject nodeTypeJSON = (JSONObject) nodeTypeValues.get(i);
-            NodeType nodeType = new NodeType(nodeTypeJSON);
-            nodeTypes.put(nodeType.getID(), nodeType);
-          }
-      }
-    catch (GUIManagerException | JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  journeyToolboxSections
-    //
-
-    try
-      {
-        JSONArray journeyToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyToolbox", new JSONArray());
-        for (int i=0; i<journeyToolboxSectionValues.size(); i++)
-          {
-            JSONObject journeyToolboxSectionValueJSON = (JSONObject) journeyToolboxSectionValues.get(i);
-            ToolboxSection journeyToolboxSection = new ToolboxSection(journeyToolboxSectionValueJSON);
-            journeyToolbox.put(journeyToolboxSection.getID(), journeyToolboxSection);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  campaignToolboxSections
-    //
-
-    try
-      {
-        JSONArray campaignToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "campaignToolbox", new JSONArray());
-        for (int i=0; i<campaignToolboxSectionValues.size(); i++)
-          {
-            JSONObject campaignToolboxSectionValueJSON = (JSONObject) campaignToolboxSectionValues.get(i);
-            ToolboxSection campaignToolboxSection = new ToolboxSection(campaignToolboxSectionValueJSON);
-            campaignToolbox.put(campaignToolboxSection.getID(), campaignToolboxSection);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  workflowToolboxSections
-    //
-
-    try
-      {
-        JSONArray workflowToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "workflowToolbox", new JSONArray());
-        for (int i=0; i<workflowToolboxSectionValues.size(); i++)
-          {
-            JSONObject workflowToolboxSectionValueJSON = (JSONObject) workflowToolboxSectionValues.get(i);
-            ToolboxSection workflowToolboxSection = new ToolboxSection(workflowToolboxSectionValueJSON);
-            workflowToolbox.put(workflowToolboxSection.getID(), workflowToolboxSection);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  thirdPartyMethodPermissions
-    //
-
-    try
-      {
-        JSONArray thirdPartyMethodPermissions = JSONUtilities.decodeJSONArray(jsonRoot, "thirdPartyMethodPermissions", new JSONArray());
-        for (int i=0; i<thirdPartyMethodPermissions.size(); i++)
-          {
-            JSONObject thirdPartyMethodPermissionsJSON = (JSONObject) thirdPartyMethodPermissions.get(i);
-            String methodName = JSONUtilities.decodeString(thirdPartyMethodPermissionsJSON, "methodName", Boolean.TRUE);
-            ThirdPartyMethodAccessLevel thirdPartyMethodAccessLevel = new ThirdPartyMethodAccessLevel(thirdPartyMethodPermissionsJSON);
-            thirdPartyMethodPermissionsMap.put(methodName, thirdPartyMethodAccessLevel);
-          }
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  authResponseCacheLifetimeInMinutes
-    //
-
-    try
-      {
-        authResponseCacheLifetimeInMinutes = JSONUtilities.decodeInteger(jsonRoot, "authResponseCacheLifetimeInMinutes", false);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  stockRefreshPeriod
-    //
-
-    stockRefreshPeriod = JSONUtilities.decodeInteger(jsonRoot, "stockRefreshPeriod", 30);
-    
-    //
-    //  periodicEvaluationCronEntry
-    //
-
-    periodicEvaluationCronEntry = JSONUtilities.decodeString(jsonRoot, "periodicEvaluationCronEntry", false);
-
-    //
-    //  ucgEvaluationCronEntry
-    //
-
-    ucgEvaluationCronEntry = JSONUtilities.decodeString(jsonRoot, "ucgEvaluationCronEntry", false);
-
-    //
-    //  Reports
-    //
-
-    try
-      {
-        JSONObject reportManager = JSONUtilities.decodeJSONObject(jsonRoot, "reportManager", false);
-        if (reportManager != null)
-          {
-            reportManagerZookeeperDir = JSONUtilities.decodeString(reportManager, "reportManagerZookeeperDir", true);
-            reportManagerOutputPath = JSONUtilities.decodeString(reportManager, "reportManagerOutputPath", false);
-            reportManagerDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerDateFormat", false);
-            reportManagerFileExtension = JSONUtilities.decodeString(reportManager, "reportManagerFileExtension", false);
-            reportManagerCsvSeparator = JSONUtilities.decodeString(reportManager, "reportManagerCsvSeparator", false);
-            reportManagerStreamsTempDir = JSONUtilities.decodeString(reportManager, "reportManagerStreamsTempDir", false);
-          }
-        else
-          {
-            reportManagerZookeeperDir = Deployment.getZookeeperRoot() + File.separator + "reports";
-            reportManagerOutputPath = "/app/reports";
-            reportManagerDateFormat = "yyyy-MM-dd_HH-mm-ss_SSSS";
-            reportManagerFileExtension = "csv";
-            reportManagerCsvSeparator = ";";
-            reportManagerStreamsTempDir = System.getProperty("java.io.tmpdir");
-          }
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment : reportManager", e);
-      }
-    
-    //
-    //  customerMetaData
-    //
-
-    try
-      {
-        customerMetaData = new CustomerMetaData(JSONUtilities.decodeJSONObject(jsonRoot, "customerMetaData", true));
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  uploadedFileSeparator
-    //
-
-    try
-      {
-        uploadedFileSeparator = JSONUtilities.decodeString(jsonRoot, "uploadedFileSeparator", false);
-        if(uploadedFileSeparator == null) {
-          uploadedFileSeparator = ";";
         }
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
+      catch (GUIManagerException | JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
 
-    //
-    //  APIresponseDateFormat
-    //
+      //
+      //  extendedProfileCriterionFields
+      //
 
-    try
-      {
-        APIresponseDateFormat = JSONUtilities.decodeString(jsonRoot, "APIresponseDateFormat", false);
-	if (null == APIresponseDateFormat) APIresponseDateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZ" ; 
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
+      try
+        {
+          JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "extendedProfileCriterionFields", new JSONArray());
+          for (int i=0; i<criterionFieldValues.size(); i++)
+            {
+              JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
+              CriterionField criterionField = new CriterionField(criterionFieldJSON);
+              extendedProfileCriterionFields.put(criterionField.getID(), criterionField);
+            }
+        }
+      catch (GUIManagerException | JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
 
-    //
-    //  ucgEngineESConnectTimeout
-    //
+      //
+      //  presentationCriterionFields
+      //
 
-    try
-      {
-        Integer ucgEngineESConnectTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESConnectTimeout",false);
-        ucgEngineESConnectTimeout = ucgEngineESConnectTimeoutJSON == null ? 30000:ucgEngineESConnectTimeoutJSON;
-      }
-    catch(JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment",e);
-      }
+      try
+        {
+          JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "presentationCriterionFields", new JSONArray());
+          for (int i=0; i<criterionFieldValues.size(); i++)
+            {
+              JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
+              CriterionField criterionField = new CriterionField(criterionFieldJSON);
+              presentationCriterionFields.put(criterionField.getID(), criterionField);
+            }
+        }
+      catch (GUIManagerException | JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
 
-    //
-    //  ucgEngineESSocketTimeout
-    //
+      //
+      //  universalControlGroupCriteria
+      //
 
-    try
-      {
-        Integer ucgEngineESSocketTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESSocketTimeout",false);
-        ucgEngineESSocketTimeout = ucgEngineESSocketTimeoutJSON == null ? 60000:ucgEngineESSocketTimeoutJSON;
-      }
-    catch(JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment",e);
-      }
+      try
+        {
+          JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "universalControlGroupCriteria", new JSONArray());
+          for (int i=0; i<evaluationCriterionValues.size(); i++)
+            {
+              JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
+              EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile);
+              universalControlGroupCriteria.add(evaluationCriterion);
+            }
+        }
+      catch (GUIManagerException | JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
 
-    //
-    //  ucgEngineESMasRetryTimeout
-    //
+      //
+      //  controlGroupCriteria
+      //
 
-    try
-      {
-        Integer ucgEngineESMasRetryTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESMasRetryTimeout",false);
-        ucgEngineESMasRetryTimeout = ucgEngineESMasRetryTimeoutJSON == null ? 60000:ucgEngineESMasRetryTimeoutJSON;
-      }
-    catch(JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment",e);
-      }
-    
-    //
-    //  autoApproveGuiObjects
-    //
+      try
+        {
+          JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "controlGroupCriteria", new JSONArray());
+          for (int i=0; i<evaluationCriterionValues.size(); i++)
+            {
+              JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
+              EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile);
+              controlGroupCriteria.add(evaluationCriterion);
+            }
+        }
+      catch (GUIManagerException | JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
 
-    try
-      {
-    	autoApproveGuiObjects = JSONUtilities.decodeBoolean(jsonRoot, "autoApproveGuiObjects", Boolean.TRUE);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-  }
+      //
+      //  offerCategories
+      //
+
+      try
+        {
+          JSONArray offerCategoryValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerCategories", new JSONArray());
+          for (int i=0; i<offerCategoryValues.size(); i++)
+            {
+              JSONObject offerCategoryJSON = (JSONObject) offerCategoryValues.get(i);
+              OfferCategory offerCategory = new OfferCategory(offerCategoryJSON);
+              offerCategories.put(offerCategory.getID(), offerCategory);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  offerProperties
+      //
+
+      try
+        {
+          JSONArray offerPropertyValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerProperties", new JSONArray());
+          for (int i=0; i<offerPropertyValues.size(); i++)
+            {
+              JSONObject offerPropertyJSON = (JSONObject) offerPropertyValues.get(i);
+              OfferProperty offerProperty = new OfferProperty(offerPropertyJSON);
+              offerProperties.put(offerProperty.getID(), offerProperty);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  scoringEngines
+      //
+
+      try
+        {
+          JSONArray scoringEngineValues = JSONUtilities.decodeJSONArray(jsonRoot, "scoringEngines", new JSONArray());
+          for (int i=0; i<scoringEngineValues.size(); i++)
+            {
+              JSONObject scoringEngineJSON = (JSONObject) scoringEngineValues.get(i);
+              ScoringEngine scoringEngine = new ScoringEngine(scoringEngineJSON);
+              scoringEngines.put(scoringEngine.getID(), scoringEngine);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  offerOptimizationAlgorithms
+      //
+
+      try
+        {
+          JSONArray offerOptimizationAlgorithmValuesCommon = JSONUtilities.decodeJSONArray(jsonRoot, "offerOptimizationAlgorithmsCommon", new JSONArray());
+          JSONArray offerOptimizationAlgorithmValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerOptimizationAlgorithms", new JSONArray());
+          offerOptimizationAlgorithmValues.addAll(offerOptimizationAlgorithmValuesCommon);
+          for (int i=0; i<offerOptimizationAlgorithmValues.size(); i++)
+            {
+              JSONObject offerOptimizationAlgorithmJSON = (JSONObject) offerOptimizationAlgorithmValues.get(i);
+              OfferOptimizationAlgorithm offerOptimizationAlgorithm = new OfferOptimizationAlgorithm(offerOptimizationAlgorithmJSON);
+              offerOptimizationAlgorithms.put(offerOptimizationAlgorithm.getID(), offerOptimizationAlgorithm);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+
+      //
+      //  scoringTypes
+      //
+
+      try
+        {
+          JSONArray scoringTypesValues = JSONUtilities.decodeJSONArray(jsonRoot, "scoringTypes", new JSONArray());
+          for (int i=0; i<scoringTypesValues.size(); i++)
+            {
+              JSONObject scoringTypeJSON = (JSONObject) scoringTypesValues.get(i);
+              ScoringType scoringType = new ScoringType(scoringTypeJSON);
+              scoringTypes.put(scoringType.getID(), scoringType);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+
+
+      //
+      //  dnboMatrixVariable
+      //
+
+      try
+        {
+          JSONArray dnboMatrixVariableValues = JSONUtilities.decodeJSONArray(jsonRoot, "dnboMatrixVariables", new JSONArray());
+          for (int i=0; i<dnboMatrixVariableValues.size(); i++)
+            {
+              JSONObject dnboMatrixJSON = (JSONObject) dnboMatrixVariableValues.get(i);
+              DNBOMatrixVariable dnboMatrixvariable = new DNBOMatrixVariable(dnboMatrixJSON);
+              dnboMatrixVariables.put(dnboMatrixvariable.getID(), dnboMatrixvariable);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+
+      //
+      //  deliveryManagers/fulfillmentProviders
+      //
+
+      try
+        {
+          JSONArray deliveryManagerValues = JSONUtilities.decodeJSONArray(jsonRoot, "deliveryManagers", new JSONArray());
+          for (int i=0; i<deliveryManagerValues.size(); i++)
+            {
+              JSONObject deliveryManagerJSON = (JSONObject) deliveryManagerValues.get(i);
+              DeliveryManagerDeclaration deliveryManagerDeclaration = new DeliveryManagerDeclaration(deliveryManagerJSON);
+              deliveryManagers.put(deliveryManagerDeclaration.getDeliveryType(), deliveryManagerDeclaration);
+              if (deliveryManagerDeclaration.getProviderID() != null)
+                {
+                  fulfillmentProviders.put(deliveryManagerDeclaration.getProviderID(), deliveryManagerDeclaration);
+                }
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  deliveryManagerAccounts
+      //
+
+      try
+        {
+          JSONArray deliveryManagerAccountValues = JSONUtilities.decodeJSONArray(jsonRoot, "deliveryManagerAccounts", new JSONArray());
+          for (int i=0; i<deliveryManagerAccountValues.size(); i++)
+            {
+              JSONObject deliveryManagerAccountJSON = (JSONObject) deliveryManagerAccountValues.get(i);
+              DeliveryManagerAccount deliveryManagerAccount = new DeliveryManagerAccount(deliveryManagerAccountJSON);
+              if(deliveryManagerAccount != null ){
+                deliveryManagerAccounts.put(deliveryManagerAccount.getProviderID(), deliveryManagerAccount);
+              }
+            }
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyDefaultTargetingWindowDuration
+      //
+
+      journeyDefaultTargetingWindowDuration = JSONUtilities.decodeInteger(jsonRoot, "journeyDefaultTargetingWindowDuration", 3);
+
+      //
+      //  journeyDefaultTargetingWindowUnit
+      //
+
+      journeyDefaultTargetingWindowUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "journeyDefaultTargetingWindowUnit", "month"));
+
+      //
+      //  journeyDefaultTargetingWindowRoundUp
+      //
+
+      journeyDefaultTargetingWindowRoundUp = JSONUtilities.decodeBoolean(jsonRoot, "journeyDefaultTargetingWindowRoundUp", Boolean.FALSE);
+
+      //
+      //  journeyUniversalEligibilityCriteria
+      //
+
+      try
+        {
+          JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyUniversalEligibilityCriteria", new JSONArray());
+          for (int i=0; i<evaluationCriterionValues.size(); i++)
+            {
+              JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
+              EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile);
+              journeyUniversalEligibilityCriteria.add(evaluationCriterion);
+            }
+        }
+      catch (GUIManagerException | JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  nodeTypes
+      //
+
+      try
+        {
+          JSONArray nodeTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "nodeTypes", new JSONArray());
+          for (int i=0; i<nodeTypeValues.size(); i++)
+            {
+              JSONObject nodeTypeJSON = (JSONObject) nodeTypeValues.get(i);
+              NodeType nodeType = new NodeType(nodeTypeJSON);
+              nodeTypes.put(nodeType.getID(), nodeType);
+            }
+        }
+      catch (GUIManagerException | JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyToolboxSections
+      //
+
+      try
+        {
+          JSONArray journeyToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyToolbox", new JSONArray());
+          for (int i=0; i<journeyToolboxSectionValues.size(); i++)
+            {
+              JSONObject journeyToolboxSectionValueJSON = (JSONObject) journeyToolboxSectionValues.get(i);
+              ToolboxSection journeyToolboxSection = new ToolboxSection(journeyToolboxSectionValueJSON);
+              journeyToolbox.put(journeyToolboxSection.getID(), journeyToolboxSection);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  campaignToolboxSections
+      //
+
+      try
+        {
+          JSONArray campaignToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "campaignToolbox", new JSONArray());
+          for (int i=0; i<campaignToolboxSectionValues.size(); i++)
+            {
+              JSONObject campaignToolboxSectionValueJSON = (JSONObject) campaignToolboxSectionValues.get(i);
+              ToolboxSection campaignToolboxSection = new ToolboxSection(campaignToolboxSectionValueJSON);
+              campaignToolbox.put(campaignToolboxSection.getID(), campaignToolboxSection);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  workflowToolboxSections
+      //
+
+      try
+        {
+          JSONArray workflowToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "workflowToolbox", new JSONArray());
+          for (int i=0; i<workflowToolboxSectionValues.size(); i++)
+            {
+              JSONObject workflowToolboxSectionValueJSON = (JSONObject) workflowToolboxSectionValues.get(i);
+              ToolboxSection workflowToolboxSection = new ToolboxSection(workflowToolboxSectionValueJSON);
+              workflowToolbox.put(workflowToolboxSection.getID(), workflowToolboxSection);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  thirdPartyMethodPermissions
+      //
+
+      try
+        {
+          JSONArray thirdPartyMethodPermissions = JSONUtilities.decodeJSONArray(jsonRoot, "thirdPartyMethodPermissions", new JSONArray());
+          for (int i=0; i<thirdPartyMethodPermissions.size(); i++)
+            {
+              JSONObject thirdPartyMethodPermissionsJSON = (JSONObject) thirdPartyMethodPermissions.get(i);
+              String methodName = JSONUtilities.decodeString(thirdPartyMethodPermissionsJSON, "methodName", Boolean.TRUE);
+              ThirdPartyMethodAccessLevel thirdPartyMethodAccessLevel = new ThirdPartyMethodAccessLevel(thirdPartyMethodPermissionsJSON);
+              thirdPartyMethodPermissionsMap.put(methodName, thirdPartyMethodAccessLevel);
+            }
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  authResponseCacheLifetimeInMinutes
+      //
+
+      try
+        {
+          authResponseCacheLifetimeInMinutes = JSONUtilities.decodeInteger(jsonRoot, "authResponseCacheLifetimeInMinutes", false);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  stockRefreshPeriod
+      //
+
+      stockRefreshPeriod = JSONUtilities.decodeInteger(jsonRoot, "stockRefreshPeriod", 30);
+
+      //
+      //  periodicEvaluationCronEntry
+      //
+
+      periodicEvaluationCronEntry = JSONUtilities.decodeString(jsonRoot, "periodicEvaluationCronEntry", false);
+
+      //
+      //  ucgEvaluationCronEntry
+      //
+
+      ucgEvaluationCronEntry = JSONUtilities.decodeString(jsonRoot, "ucgEvaluationCronEntry", false);
+
+      //
+      //  Reports
+      //
+
+      try
+        {
+          JSONObject reportManager = JSONUtilities.decodeJSONObject(jsonRoot, "reportManager", false);
+          if (reportManager != null)
+            {
+              reportManagerZookeeperDir = JSONUtilities.decodeString(reportManager, "reportManagerZookeeperDir", true);
+              reportManagerOutputPath = JSONUtilities.decodeString(reportManager, "reportManagerOutputPath", false);
+              reportManagerDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerDateFormat", false);
+              reportManagerFileExtension = JSONUtilities.decodeString(reportManager, "reportManagerFileExtension", false);
+              reportManagerCsvSeparator = JSONUtilities.decodeString(reportManager, "reportManagerCsvSeparator", false);
+              reportManagerStreamsTempDir = JSONUtilities.decodeString(reportManager, "reportManagerStreamsTempDir", false);
+            }
+          else
+            {
+              reportManagerZookeeperDir = Deployment.getZookeeperRoot() + File.separator + "reports";
+              reportManagerOutputPath = "/app/reports";
+              reportManagerDateFormat = "yyyy-MM-dd_HH-mm-ss_SSSS";
+              reportManagerFileExtension = "csv";
+              reportManagerCsvSeparator = ";";
+              reportManagerStreamsTempDir = System.getProperty("java.io.tmpdir");
+            }
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment : reportManager", e);
+        }
+
+      //
+      //  customerMetaData
+      //
+
+      try
+        {
+          customerMetaData = new CustomerMetaData(JSONUtilities.decodeJSONObject(jsonRoot, "customerMetaData", true));
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  uploadedFileSeparator
+      //
+
+      try
+        {
+          uploadedFileSeparator = JSONUtilities.decodeString(jsonRoot, "uploadedFileSeparator", false);
+          if(uploadedFileSeparator == null) {
+            uploadedFileSeparator = ";";
+          }
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  APIresponseDateFormat
+      //
+
+      try
+        {
+          APIresponseDateFormat = JSONUtilities.decodeString(jsonRoot, "APIresponseDateFormat", false);
+          if (null == APIresponseDateFormat) APIresponseDateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZ" ;
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  ucgEngineESConnectTimeout
+      //
+
+      try
+        {
+          Integer ucgEngineESConnectTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESConnectTimeout",false);
+          ucgEngineESConnectTimeout = ucgEngineESConnectTimeoutJSON == null ? 30000:ucgEngineESConnectTimeoutJSON;
+        }
+      catch(JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment",e);
+        }
+
+      //
+      //  ucgEngineESSocketTimeout
+      //
+
+      try
+        {
+          Integer ucgEngineESSocketTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESSocketTimeout",false);
+          ucgEngineESSocketTimeout = ucgEngineESSocketTimeoutJSON == null ? 60000:ucgEngineESSocketTimeoutJSON;
+        }
+      catch(JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment",e);
+        }
+
+      //
+      //  ucgEngineESMasRetryTimeout
+      //
+
+      try
+        {
+          Integer ucgEngineESMasRetryTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESMasRetryTimeout",false);
+          ucgEngineESMasRetryTimeout = ucgEngineESMasRetryTimeoutJSON == null ? 60000:ucgEngineESMasRetryTimeoutJSON;
+        }
+      catch(JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment",e);
+        }
+
+      //
+      //  autoApproveGuiObjects
+      //
+
+      try
+        {
+          autoApproveGuiObjects = JSONUtilities.decodeBoolean(jsonRoot, "autoApproveGuiObjects", Boolean.TRUE);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  deliveryTypeCommunicationChannelMap
+      //
+
+      try
+        {
+          JSONArray deliveryTypes = JSONUtilities.decodeJSONArray(jsonRoot, "deliveryManagers", new JSONArray());
+          for (int i = 0; i < deliveryTypes.size(); i++)
+            {
+              JSONObject deliveryTypeJOSN = (JSONObject) deliveryTypes.get(i);
+              String deliveryType = JSONUtilities.decodeString(deliveryTypeJOSN, "deliveryType", true);
+              JSONArray communicationChannels = JSONUtilities.decodeJSONArray(jsonRoot, "communicationChannels", new JSONArray());
+              for (int k = 0; k < communicationChannels.size(); k++)
+                {
+                  JSONObject communicationChannelJSON = (JSONObject) communicationChannels.get(k);
+                  String channelDeliveryType = JSONUtilities.decodeString(communicationChannelJSON, "deliveryType", true);
+                  if (deliveryType.equals(channelDeliveryType))
+                    {
+                      deliveryTypeCommunicationChannelIDMap.put(deliveryType, JSONUtilities.decodeString(communicationChannelJSON, "id", true));
+                    }
+                }
+            }
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+    }
 
   /*****************************************
-  *
-  *  main (for validation)
-  *
-  *****************************************/
+   *
+   *  main (for validation)
+   *
+   *****************************************/
 
   public static void main(String[] args)
   {
