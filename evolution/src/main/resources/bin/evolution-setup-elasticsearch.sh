@@ -848,6 +848,23 @@
         },
       "mappings" :
         {
+          "dynamic_templates": [
+            {
+              "strings_as_keywords": {
+                "match_mapping_type": "string",
+                "mapping": {
+                  "type": "keyword"
+                }
+              }
+            },
+            {
+              "numerics_as_integers": {
+                "match_mapping_type": "long",
+                "mapping": {
+                  "type": "integer"
+                }
+              }
+            }],
               "properties" :
                 {
                   "computationDate" : { "type" : "long" },
@@ -857,9 +874,9 @@
                   "filter.tierName" : { "type" : "keyword" },
                   "filter.evolutionSubscriberStatus.id" : { "type" : "keyword" },
                   "filter.evolutionSubscriberStatus.display" : { "type" : "keyword" },
+                  "filter.redeemer" : { "type" : "boolean" },
                   "count" : { "type" : "integer" },
                   "data.rewardPointRedeemed" : { "type" : "integer" },
-                  "data.redeemerCount" : { "type" : "integer" },
                   "data.rewardPointEarned" : { "type" : "integer" },
                   "data.rewardPointExpired": { "type" : "integer" }
                 }

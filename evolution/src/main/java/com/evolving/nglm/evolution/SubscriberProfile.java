@@ -419,7 +419,8 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
       {
         for(Entry<String, LoyaltyProgramState> program : loyaltyPrograms.entrySet())
           {
-            LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramService.getStoredLoyaltyProgram(program.getKey());
+            // Add archives for datacubes & reports on terminated loyalty programs.
+            LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramService.getStoredLoyaltyProgram(program.getKey(), true);
             Map<String, Object> loyalty = new HashMap<String, Object>();
             
             if(loyaltyProgram != null)

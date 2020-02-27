@@ -155,12 +155,12 @@ public class SubscriberProfileDatacubeGenerator extends DatacubeGenerator
     for(String metricID: metrics.keySet()) {
       SubscriberProfileDatacubeMetric metric = metrics.get(metricID);
       
-      ParsedSum dataPointEarnedBucket = compositeBucket.getAggregations().get(DATA_METRIC_PREFIX+metricID);
-      if (dataPointEarnedBucket == null) {
+      ParsedSum metricBucket = compositeBucket.getAggregations().get(DATA_METRIC_PREFIX+metricID);
+      if (metricBucket == null) {
         log.error("Unable to extract "+metricID+" metric data, aggregation is missing.");
         return data;
       }
-      data.put(metric.getDisplay(), (int) dataPointEarnedBucket.getValue());
+      data.put(metric.getDisplay(), (int) metricBucket.getValue());
     }
     
     return data;

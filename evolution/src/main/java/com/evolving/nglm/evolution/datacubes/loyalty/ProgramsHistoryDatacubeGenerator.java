@@ -31,6 +31,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SubscriberStatusMap;
+import com.evolving.nglm.evolution.datacubes.subscriber.SubscriberProfileDatacubeMetric;
 
 public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
 {
@@ -46,15 +47,15 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   private static final String DATA_POINT_EARNED = "_Earned";
   private static final String DATA_POINT_REDEEMED = "_Redeemed";
   private static final String DATA_POINT_EXPIRED = "_Expired";
-  private static final String DATA_POINT_REDEEMER_COUNT = "_RedeemerCount";
-  private static final Pattern LOYALTY_TIER_PATTERN = Pattern.compile("\\[(.*), (.*)\\]");
+  private static final String DATA_METRIC_PREFIX = "metric_";
+  private static final Pattern LOYALTY_TIER_PATTERN = Pattern.compile("\\[(.*), (.*), (.*)\\]");
 
   private List<String> filterFields;
-  private List<CompositeValuesSourceBuilder<?>> filterComplexSources;
   private LoyaltyProgramsMap loyaltyProgramsMap;
   private SubscriberStatusMap subscriberStatusDisplayMapping;
   
   private String generationDate;
+  private String oneDayAfter; // Temporary variable for request generation
   
   public ProgramsHistoryDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, LoyaltyProgramService loyaltyProgramService)
   {
@@ -69,29 +70,75 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     
     this.filterFields = new ArrayList<String>();
     this.filterFields.add("evolutionSubscriberStatus");
-    
-    //
-    // Filter Complex Sources
-    // - LoyaltyProgram x Tier ...
-    //
-    
-    this.filterComplexSources = new ArrayList<CompositeValuesSourceBuilder<?>>();
-
-    TermsValuesSourceBuilder loyaltyProgramTier = new TermsValuesSourceBuilder(FILTER_LOYALTY_PROGRAM_TIER)
-        .script(new Script(ScriptType.INLINE, "painless", "def left = []; for (int i = 0; i < params._source['loyaltyPrograms'].length; i++) { def pair = [0,0]; pair[0] = params._source['loyaltyPrograms'][i]['programID']; pair[1] = params._source['loyaltyPrograms'][i]['tierName']?.toString();  left.add(pair); } return left;", Collections.emptyMap()));
-    this.filterComplexSources.add(loyaltyProgramTier);
   }
 
   @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX; }
   @Override protected String getDataESIndex() { return DATA_ES_INDEX; }
   @Override protected List<String> getFilterFields() { return filterFields; }
-  @Override protected List<CompositeValuesSourceBuilder<?>> getFilterComplexSources() { return this.filterComplexSources; }
+  
+  @Override 
+  protected List<CompositeValuesSourceBuilder<?>> getFilterComplexSources() {
+    List<CompositeValuesSourceBuilder<?>> result = new ArrayList<CompositeValuesSourceBuilder<?>>();
+    
+    String painlessProgramsMap = "[";
+    String painlessRewardsMap = "[";
+    
+    // Warning, if programID or rewardID contain special characters (', ", \) it will break the script !
+    boolean first = true;
+    for(String programID : loyaltyProgramsMap.keySet()) 
+      {
+        if(!first) {
+          painlessProgramsMap += ", ";
+          painlessRewardsMap += ", ";
+        }
+        painlessProgramsMap += "'"+ programID +"'";
+        painlessRewardsMap += "'"+ loyaltyProgramsMap.getRewardPointsID(programID, "painlessRewardsMap") +"'";
+        first = false;
+      }
+    painlessProgramsMap += "]";
+    painlessRewardsMap += "]";
+        
+    TermsValuesSourceBuilder loyaltyProgramTier = new TermsValuesSourceBuilder(FILTER_LOYALTY_PROGRAM_TIER)
+        .script(new Script(ScriptType.INLINE, "painless", "def left = [];"
+            + " def programs_map = "+ painlessProgramsMap +";"
+            + " def rewards_map = "+ painlessRewardsMap +";"
+            + " for (int i = 0; i < params._source['loyaltyPrograms'].length; i++) {"
+              + " def tuple = [0,0,0];"
+              + " tuple[0] = params._source['loyaltyPrograms'][i]['programID'];"
+              + " tuple[1] = params._source['loyaltyPrograms'][i]['tierName']?.toString();"
+              + " tuple[2] = false;"
+              + " if(tuple[0] == null){ continue; }"
+              + " def pointID = '';"
+              + " for (int j = 0; j < programs_map.length; j++) {"
+                + " if(programs_map[j] == tuple[0]){ pointID = rewards_map[j]; break; }"
+              + " }"
+              + " if(params._source['pointFluctuations'][pointID]?.toString() != null){"
+                + " if( (doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ oneDayAfter +"' && params._source['pointFluctuations'][pointID]['yesterday']['redeemed'] > 0 ) "
+                + "   || (doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ generationDate +"' && params._source['pointFluctuations'][pointID]['today']['redeemed'] > 0) ) {"
+                + "   tuple[2] = true;"
+                + " }"
+              + " }"
+              + " left.add(tuple);"
+            + " }"
+            + " return left;", Collections.emptyMap()));
+    result.add(loyaltyProgramTier);
+    
+    return result;
+  }
 
   @Override
   protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
     loyaltyProgramsMap.update();
     subscriberStatusDisplayMapping.updateFromElasticsearch(elasticsearch);
+    
+    try {
+      oneDayAfter = DATE_FORMAT.format(RLMDateUtils.addDays(DATE_FORMAT.parse(generationDate), 1, Deployment.getBaseTimeZone()));
+    } 
+    catch (ParseException e) {
+      log.error("Unable to build some part of the ES request due to date formatting error.");
+      return false;
+    }
     
     return true;
   }
@@ -112,11 +159,13 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     String loyaltyTier = (String) filters.remove(FILTER_LOYALTY_PROGRAM_TIER);
     String loyaltyProgramID = "undefined";
     String tierName = "undefined";
+    String redeemer = "false";
     Matcher m = LOYALTY_TIER_PATTERN.matcher(loyaltyTier);
     if(m.matches()) 
       {
         loyaltyProgramID = m.group(1);
         tierName = m.group(2);
+        redeemer = m.group(3);
         if(tierName.equals("null")) 
           {
             // rename
@@ -129,6 +178,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
       }
     
     filters.put("tierName", tierName);
+    filters.put("redeemer", Boolean.parseBoolean(redeemer));
     
     filters.put("loyaltyProgram.id", loyaltyProgramID);
     filters.put("loyaltyProgram.display", loyaltyProgramsMap.getDisplay(loyaltyProgramID, "loyaltyProgram"));
@@ -139,18 +189,6 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   {
     // Those aggregations need to be recomputed with the requested date !
     List<AggregationBuilder> dataAggregations = new ArrayList<AggregationBuilder>();
-    String requestedDate = generationDate;
-    String oneDayAfter;
-    
-    try
-      {
-        oneDayAfter = DATE_FORMAT.format(RLMDateUtils.addDays(DATE_FORMAT.parse(generationDate), 1, Deployment.getBaseTimeZone()));
-      } 
-    catch (ParseException e)
-      {
-        log.error("Unable to build some part of the ES request due to date formatting error.");
-        return dataAggregations;
-      }
     
     List<String> pointIDs = new ArrayList<String>();
     
@@ -175,21 +213,28 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     for(String pointID: pointIDs) 
       {
         AggregationBuilder pointEarned = AggregationBuilders.sum(pointID + DATA_POINT_EARNED)
-            .script(new Script(ScriptType.INLINE, "painless", "def left = 0; if(params._source['pointFluctuations']['"+pointID+"']?.toString() != null){ if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ oneDayAfter +"'){ left = params._source['pointFluctuations']['"+pointID+"']['yesterday']['earned']; } else if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ requestedDate +"') {left = params._source['pointFluctuations']['"+pointID+"']['today']['earned']; } } return left;", Collections.emptyMap()));
+            .script(new Script(ScriptType.INLINE, "painless", "def left = 0; if(params._source['pointFluctuations']['"+pointID+"']?.toString() != null){ if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ oneDayAfter +"'){ left = params._source['pointFluctuations']['"+pointID+"']['yesterday']['earned']; } else if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ generationDate +"') {left = params._source['pointFluctuations']['"+pointID+"']['today']['earned']; } } return left;", Collections.emptyMap()));
         dataAggregations.add(pointEarned);
         
         AggregationBuilder pointRedeemed = AggregationBuilders.sum(pointID + DATA_POINT_REDEEMED)
-            .script(new Script(ScriptType.INLINE, "painless", "def left = 0; if(params._source['pointFluctuations']['"+pointID+"']?.toString() != null){ if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ oneDayAfter +"'){ left = params._source['pointFluctuations']['"+pointID+"']['yesterday']['redeemed']; } else if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ requestedDate +"') {left = params._source['pointFluctuations']['"+pointID+"']['today']['redeemed']; } } return left;", Collections.emptyMap()));
+            .script(new Script(ScriptType.INLINE, "painless", "def left = 0; if(params._source['pointFluctuations']['"+pointID+"']?.toString() != null){ if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ oneDayAfter +"'){ left = params._source['pointFluctuations']['"+pointID+"']['yesterday']['redeemed']; } else if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ generationDate +"') {left = params._source['pointFluctuations']['"+pointID+"']['today']['redeemed']; } } return left;", Collections.emptyMap()));
         dataAggregations.add(pointRedeemed);
         
         AggregationBuilder pointExpired = AggregationBuilders.sum(pointID + DATA_POINT_EXPIRED)
-            .script(new Script(ScriptType.INLINE, "painless", "def left = 0; if(params._source['pointFluctuations']['"+pointID+"']?.toString() != null){ if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ oneDayAfter +"'){ left = params._source['pointFluctuations']['"+pointID+"']['yesterday']['expired']; } else if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ requestedDate +"') {left = params._source['pointFluctuations']['"+pointID+"']['today']['expired']; } } return left;", Collections.emptyMap()));
+            .script(new Script(ScriptType.INLINE, "painless", "def left = 0; if(params._source['pointFluctuations']['"+pointID+"']?.toString() != null){ if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ oneDayAfter +"'){ left = params._source['pointFluctuations']['"+pointID+"']['yesterday']['expired']; } else if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ generationDate +"') {left = params._source['pointFluctuations']['"+pointID+"']['today']['expired']; } } return left;", Collections.emptyMap()));
         dataAggregations.add(pointExpired);
-        
-        AggregationBuilder redeemerCount = AggregationBuilders.sum(pointID + DATA_POINT_REDEEMER_COUNT)
-            .script(new Script(ScriptType.INLINE, "painless", "def left = 0; if(params._source['pointFluctuations']['"+pointID+"']?.toString() != null){ if( (doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ oneDayAfter +"' && params._source['pointFluctuations']['"+pointID+"']['yesterday']['redeemed'] > 0 ) || (doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ requestedDate +"' && params._source['pointFluctuations']['"+pointID+"']['today']['redeemed'] > 0) ) {left = 1;} } return left;", Collections.emptyMap()));
-        dataAggregations.add(redeemerCount);
       }
+    
+    Map<String, SubscriberProfileDatacubeMetric> metrics = Deployment.getSubscriberProfileDatacubeMetrics();
+    for(String metricID: metrics.keySet()) {
+      SubscriberProfileDatacubeMetric metric = metrics.get(metricID);
+      AggregationBuilder metricAgg = AggregationBuilders.sum(DATA_METRIC_PREFIX+metricID)
+          .script(new Script(ScriptType.INLINE, "painless", "def left = 0;"
+          + " if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ oneDayAfter +"') { left = params._source['"+ metric.getYesterdayESField() +"']; }"
+          + " else if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ generationDate +"') { left = params._source['"+ metric.getTodayESField() +"']; }"
+          + " return left;", Collections.emptyMap()));
+      dataAggregations.add(metricAgg);
+    }
     
     return dataAggregations;
   }
@@ -231,12 +276,17 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     }
     data.put("rewardPointExpired", (int) dataPointExpiredBucket.getValue());
     
-    ParsedSum dataPointRedeemerCountBucket = compositeBucket.getAggregations().get(pointID+DATA_POINT_REDEEMER_COUNT);
-    if (dataPointRedeemerCountBucket == null) {
-      log.error("Unable to extract "+pointID+" redeemer count data, aggregation is missing.");
-      return data;
+    Map<String, SubscriberProfileDatacubeMetric> metrics = Deployment.getSubscriberProfileDatacubeMetrics();
+    for(String metricID: metrics.keySet()) {
+      SubscriberProfileDatacubeMetric metric = metrics.get(metricID);
+      
+      ParsedSum metricBucket = compositeBucket.getAggregations().get(DATA_METRIC_PREFIX+metricID);
+      if (metricBucket == null) {
+        log.error("Unable to extract "+metricID+" metric data, aggregation is missing.");
+        return data;
+      }
+      data.put(metric.getDisplay(), (int) metricBucket.getValue());
     }
-    data.put("redeemerCount", (int) dataPointRedeemerCountBucket.getValue());
     
     return data;
   }
