@@ -27,11 +27,7 @@ import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
 public class Offer extends GUIManagedObject implements StockableItem
 {
@@ -50,7 +46,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("offer");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("initialPropensity", Schema.FLOAT64_SCHEMA);
     schemaBuilder.field("stock", Schema.OPTIONAL_INT32_SCHEMA);
@@ -58,7 +54,8 @@ public class Offer extends GUIManagedObject implements StockableItem
     schemaBuilder.field("profileCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schemaBuilder.field("offerOfferObjectives", SchemaBuilder.array(OfferObjectiveInstance.schema()).schema());
     schemaBuilder.field("offerSalesChannelsAndPrices", SchemaBuilder.array(OfferSalesChannelsAndPrice.schema()).schema());
-    schemaBuilder.field("offerProducts", SchemaBuilder.array(OfferProduct.schema()).schema());
+    schemaBuilder.field("offerProducts", SchemaBuilder.array(OfferProduct.schema()).optional().schema());
+    schemaBuilder.field("offerVouchers", SchemaBuilder.array(OfferVoucher.schema()).optional().schema());
     schemaBuilder.field("offerTranslations", SchemaBuilder.array(OfferTranslation.schema()).schema());
     schemaBuilder.field("offerCharacteristics", OfferCharacteristics.schema());
     schema = schemaBuilder.build();
@@ -90,6 +87,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   private Set<OfferObjectiveInstance> offerOfferObjectives; 
   private Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices;
   private Set<OfferProduct> offerProducts;
+  private Set<OfferVoucher> offerVouchers;
   private Set<OfferTranslation> offerTranslations;
   private OfferCharacteristics offerCharacteristics;
   private String description;
@@ -119,6 +117,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   public Set<OfferObjectiveInstance> getOfferObjectives() { return offerOfferObjectives;  }
   public Set<OfferSalesChannelsAndPrice> getOfferSalesChannelsAndPrices() { return offerSalesChannelsAndPrices;  }
   public Set<OfferProduct> getOfferProducts() { return offerProducts; }
+  public Set<OfferVoucher> getOfferVouchers() { return offerVouchers; }
   public Set<OfferTranslation> getOfferTranslations() { return offerTranslations; }
   public OfferCharacteristics getOfferCharacteristics() { return offerCharacteristics; }
   public String getStockableItemID() { return stockableItemID; }
@@ -141,7 +140,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations)
+  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations)
   {
     super(schemaAndValue);
     this.initialPropensity = initialPropensity;
@@ -151,6 +150,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.offerOfferObjectives = offerObjectives;
     this.offerSalesChannelsAndPrices = offerSalesChannelsAndPrices;
     this.offerProducts = offerProducts;
+    this.offerVouchers = offerVouchers;
     this.offerTranslations = offerTranslations;
     this.stockableItemID = "offer-" + getOfferID();
     this.offerCharacteristics = offerCharacteristics;
@@ -173,7 +173,8 @@ public class Offer extends GUIManagedObject implements StockableItem
     struct.put("profileCriteria", packProfileCriteria(offer.getProfileCriteria()));
     struct.put("offerOfferObjectives", packOfferObjectives(offer.getOfferObjectives()));
     struct.put("offerSalesChannelsAndPrices", packOfferSalesChannelsAndPrices(offer.getOfferSalesChannelsAndPrices()));
-    struct.put("offerProducts", packOfferProducts(offer.getOfferProducts()));
+    if(offer.getOfferProducts()!=null) struct.put("offerProducts", packOfferProducts(offer.getOfferProducts()));
+    if(offer.getOfferVouchers()!=null) struct.put("offerVouchers", packOfferVouchers(offer.getOfferVouchers()));
     struct.put("offerTranslations", packOfferTranslations(offer.getOfferTranslations()));
     struct.put("offerCharacteristics", OfferCharacteristics.pack(offer.getOfferCharacteristics()));
     return struct;
@@ -244,6 +245,22 @@ public class Offer extends GUIManagedObject implements StockableItem
   }
 
   /****************************************
+   *
+   *  packOfferVouchers
+   *
+   ****************************************/
+
+  private static List<Object> packOfferVouchers(Set<OfferVoucher> offerVouchers)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (OfferVoucher offerVoucher : offerVouchers)
+    {
+      result.add(OfferVoucher.pack(offerVoucher));
+    }
+    return result;
+  }
+
+  /****************************************
   *
   *  packOfferTranslations
   *
@@ -287,6 +304,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     Set<OfferObjectiveInstance> offerObjectives = unpackOfferObjectives(schema.field("offerOfferObjectives").schema(), valueStruct.get("offerOfferObjectives"));
     Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices = unpackOfferSalesChannelsAndPrices(schema.field("offerSalesChannelsAndPrices").schema(), valueStruct.get("offerSalesChannelsAndPrices"));
     Set<OfferProduct> offerProducts = unpackOfferProducts(schema.field("offerProducts").schema(), valueStruct.get("offerProducts"));
+    Set<OfferVoucher> offerVouchers = schemaVersion>1?unpackOfferVouchers(schema.field("offerVouchers").schema(), valueStruct.get("offerVouchers")):null;
     Set<OfferTranslation> offerTranslations = unpackOfferTranslations(schema.field("offerTranslations").schema(), valueStruct.get("offerTranslations"));
     OfferCharacteristics offerCharacteristics = OfferCharacteristics.unpack(new SchemaAndValue(schema.field("offerCharacteristics").schema(), valueStruct.get("offerCharacteristics")));
     
@@ -294,7 +312,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     //  return
     //
 
-    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerCharacteristics, offerTranslations);
+    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerVouchers, offerCharacteristics, offerTranslations);
   }
   
   /*****************************************
@@ -401,6 +419,9 @@ public class Offer extends GUIManagedObject implements StockableItem
 
   private static Set<OfferProduct> unpackOfferProducts(Schema schema, Object value)
   {
+
+    if ( value == null ) return null;
+
     //
     //  get schema for OfferProduct
     //
@@ -417,6 +438,41 @@ public class Offer extends GUIManagedObject implements StockableItem
       {
         result.add(OfferProduct.unpack(new SchemaAndValue(offerProductSchema, offerProduct)));
       }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /*****************************************
+   *
+   *  unpackOfferVouchers
+   *
+   *****************************************/
+
+  private static Set<OfferVoucher> unpackOfferVouchers(Schema schema, Object value)
+  {
+
+    if ( value == null ) return null;
+
+    //
+    //  get schema for OfferVoucher
+    //
+
+    Schema offerVoucherSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    Set<OfferVoucher> result = new HashSet<OfferVoucher>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object offerVoucher : valueArray)
+    {
+      result.add(OfferVoucher.unpack(new SchemaAndValue(offerVoucherSchema, offerVoucher)));
+    }
 
     //
     //  return
@@ -494,6 +550,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.offerOfferObjectives = decodeOfferObjectives(JSONUtilities.decodeJSONArray(jsonRoot, "offerObjectives", true), catalogCharacteristicService);
     this.offerSalesChannelsAndPrices = decodeOfferSalesChannelsAndPrices(JSONUtilities.decodeJSONArray(jsonRoot, "salesChannelsAndPrices", true));
     this.offerProducts = decodeOfferProducts(JSONUtilities.decodeJSONArray(jsonRoot, "products", false));
+    this.offerVouchers = decodeOfferVouchers(JSONUtilities.decodeJSONArray(jsonRoot, "vouchers", false));
     this.offerTranslations = decodeOfferTranslations(JSONUtilities.decodeJSONArray(jsonRoot, "offerTranslations", false));
     this.stockableItemID = "offer-" + getOfferID();
     this.offerCharacteristics = new OfferCharacteristics(JSONUtilities.decodeJSONObject(jsonRoot, "offerCharacteristics", false), catalogCharacteristicService);
@@ -508,6 +565,39 @@ public class Offer extends GUIManagedObject implements StockableItem
       {
         this.setEpoch(epoch);
       }
+  }
+
+  /*****************************************
+  *
+  *  constructor -- JSON without context -- for externals read-only (such as datacubes & reports)
+  *
+  *****************************************/
+
+  public Offer(JSONObject jsonRoot) throws GUIManagerException
+  {
+    /*****************************************
+    *
+    *  super
+    *
+    *****************************************/
+
+    super(jsonRoot, 0);
+
+    /*****************************************
+    *
+    *  attributes
+    *
+    *****************************************/
+
+    this.initialPropensity = JSONUtilities.decodeDouble(jsonRoot, "initialPropensity", true);
+    this.stock = JSONUtilities.decodeInteger(jsonRoot, "presentationStock", false);
+    this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
+    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true));
+    this.offerSalesChannelsAndPrices = decodeOfferSalesChannelsAndPrices(JSONUtilities.decodeJSONArray(jsonRoot, "salesChannelsAndPrices", true));
+    this.offerProducts = decodeOfferProducts(JSONUtilities.decodeJSONArray(jsonRoot, "products", false));
+    this.offerVouchers = decodeOfferVouchers(JSONUtilities.decodeJSONArray(jsonRoot, "vouchers", false));
+    this.offerTranslations = decodeOfferTranslations(JSONUtilities.decodeJSONArray(jsonRoot, "offerTranslations", false));
+    this.stockableItemID = "offer-" + getOfferID();
   }
 
   /*****************************************
@@ -572,6 +662,7 @@ public class Offer extends GUIManagedObject implements StockableItem
 
   private Set<OfferProduct> decodeOfferProducts(JSONArray jsonArray) throws GUIManagerException
   {
+    if(jsonArray==null) return null;
     Set<OfferProduct> result = new HashSet<OfferProduct>();
     if (jsonArray != null)
       {
@@ -582,7 +673,27 @@ public class Offer extends GUIManagedObject implements StockableItem
       }
     return result;
   }
-  
+
+  /*****************************************
+   *
+   *  decodeOfferVouchers
+   *
+   *****************************************/
+
+  private Set<OfferVoucher> decodeOfferVouchers(JSONArray jsonArray) throws GUIManagerException
+  {
+    if(jsonArray==null) return null;
+    Set<OfferVoucher> result = new HashSet<OfferVoucher>();
+    if (jsonArray != null)
+    {
+      for (int i=0; i<jsonArray.size(); i++)
+      {
+        result.add(new OfferVoucher((JSONObject) jsonArray.get(i)));
+      }
+    }
+    return result;
+  }
+
   /*****************************************
   *
   *  decodeOfferTranslations
@@ -621,6 +732,7 @@ public class Offer extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! Objects.equals(offerOfferObjectives, existingOffer.getOfferObjectives());
         epochChanged = epochChanged || ! Objects.equals(offerSalesChannelsAndPrices, existingOffer.getOfferSalesChannelsAndPrices());
         epochChanged = epochChanged || ! Objects.equals(offerProducts, existingOffer.getOfferProducts());
+        epochChanged = epochChanged || ! Objects.equals(offerVouchers, existingOffer.getOfferVouchers());
         epochChanged = epochChanged || ! Objects.equals(offerTranslations, existingOffer.getOfferTranslations());
         epochChanged = epochChanged || ! Objects.equals(offerCharacteristics, existingOffer.getOfferCharacteristics());
         return epochChanged;
@@ -637,7 +749,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public void validate(CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, Date date) throws GUIManagerException
+  public void validate(CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, Date date) throws GUIManagerException
   {
     // TODO validate offerCharacteristics
     
@@ -692,27 +804,61 @@ public class Offer extends GUIManagedObject implements StockableItem
     *  ensure valid/active products
     *
     ****************************************/
-    
-    for (OfferProduct offerProduct : offerProducts)
+
+    if ( offerProducts != null && !offerProducts.isEmpty() )
       {
-        //
-        //  retrieve product
-        //
+        for (OfferProduct offerProduct : offerProducts)
+        {
+            //
+          //  retrieve product
+          //
 
-        GUIManagedObject product = productService.getStoredProduct(offerProduct.getProductID());
+          GUIManagedObject product = productService.getStoredProduct(offerProduct.getProductID());
 
-        //
-        //  validate the product exists
-        //
+          //
+          //  validate the product exists
+          //
 
-        if (product == null) throw new GUIManagerException("unknown product", offerProduct.getProductID());
+          if (product == null) throw new GUIManagerException("unknown product", offerProduct.getProductID());
 
-        //
-        //  validate the product start/end dates include the entire offer active period
-        //
+          //
+          //  validate the product start/end dates include the entire offer active period
+          //
 
-        if (! productService.isActiveProductThroughInterval(product, this.getEffectiveStartDate(), this.getEffectiveEndDate())) throw new GUIManagerException("invalid product (start/end dates)", offerProduct.getProductID());
+          if (! productService.isActiveProductThroughInterval(product, this.getEffectiveStartDate(), this.getEffectiveEndDate())) throw new GUIManagerException("invalid product (start/end dates)", offerProduct.getProductID());
+        }
       }
+
+    /****************************************
+     *
+     *  ensure valid/active vouchers
+     *
+     ****************************************/
+
+    if ( offerVouchers != null && !offerVouchers.isEmpty() )
+      {
+        for (OfferVoucher offerVoucher : offerVouchers)
+        {
+          //
+          //  retrieve voucher
+          //
+
+          GUIManagedObject voucher = voucherService.getStoredVoucher(offerVoucher.getVoucherID());
+
+          //
+          //  validate the voucher exists
+          //
+
+          if (voucher == null) throw new GUIManagerException("unknown voucher", offerVoucher.getVoucherID());
+
+          //
+          //  validate the voucher start/end dates include the entire offer active period
+          //
+
+          if (! voucherService.isActiveThroughInterval(voucher, this.getEffectiveStartDate(), this.getEffectiveEndDate())) throw new GUIManagerException("invalid voucher (start/end dates)", offerVoucher.getVoucherID());
+        }
+      }
+
   }
   
   /*****************************************

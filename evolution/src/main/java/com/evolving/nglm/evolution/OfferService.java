@@ -126,7 +126,7 @@ public class OfferService extends GUIService
   *
   *****************************************/
 
-  public void putOffer(GUIManagedObject offer, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, boolean newObject, String userID) throws GUIManagerException
+  public void putOffer(GUIManagedObject offer, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -140,7 +140,7 @@ public class OfferService extends GUIService
 
     if (offer instanceof Offer)
       {
-        ((Offer) offer).validate(callingChannelService, salesChannelService, productService, now);
+        ((Offer) offer).validate(callingChannelService, salesChannelService, productService, voucherService, now);
       }
 
     //
@@ -156,11 +156,11 @@ public class OfferService extends GUIService
   *
   *****************************************/
 
-  public void putOffer(IncompleteObject offer, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, boolean newObject, String userID)
+  public void putOffer(IncompleteObject offer, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService, boolean newObject, String userID)
   {
     try
       {
-        putOffer((GUIManagedObject) offer, callingChannelService, salesChannelService, productService, newObject, userID);
+        putOffer((GUIManagedObject) offer, callingChannelService, salesChannelService, productService, voucherService, newObject, userID);
       }
     catch (GUIManagerException e)
       {

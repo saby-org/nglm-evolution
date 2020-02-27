@@ -105,5 +105,13 @@ public enum RESTAPIGenericReturnCodes
       } 
     return UNKNOWN; 
   }
+  public static RESTAPIGenericReturnCodes fromGenericResponseMessage(String genericResponseMessage)
+  {
+    for (RESTAPIGenericReturnCodes enumeratedValue : RESTAPIGenericReturnCodes.values())
+    {
+      if (enumeratedValue.getGenericResponseMessage().equals(genericResponseMessage)) return enumeratedValue;
+    }
+    return UNKNOWN;
+  }
 
 }

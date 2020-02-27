@@ -1,11 +1,6 @@
-/*****************************************************************************
-*
-*  Voucher.java
-*
-*****************************************************************************/
-
 package com.evolving.nglm.evolution;
 
+import java.util.Date;
 import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
@@ -15,126 +10,44 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONObject;
 
-import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-public class Voucher extends GUIManagedObject
-{
-  /*****************************************
-  *
-  *  schema
-  *
-  *****************************************/
+public abstract class Voucher extends GUIManagedObject {
 
-  //
-  //  schema
-  //
-
-  private static Schema schema = null;
-  static
-  {
+  private static Schema commonSchema = null;
+  static {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("voucher");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
-    for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(GUIManagedObject.commonSchema().version(),1));
+    for (Field field : GUIManagedObject.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("supplierID", Schema.STRING_SCHEMA);
     schemaBuilder.field("voucherTypeId", Schema.STRING_SCHEMA);
     schemaBuilder.field("unitaryCost", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("recommendedPrice", Schema.OPTIONAL_INT32_SCHEMA);
-    schema = schemaBuilder.build();
-  };
+    commonSchema = schemaBuilder.build();
+  }
 
-  //
-  //  serde
-  //
+  public static Schema commonSchema() { return commonSchema; }
 
-  private static ConnectSerde<Voucher> serde = new ConnectSerde<Voucher>(schema, false, Voucher.class, Voucher::pack, Voucher::unpack);
-
-  //
-  //  accessor
-  //
-
-  public static Schema schema() { return schema; }
-  public static ConnectSerde<Voucher> serde() { return serde; }
-
- /*****************************************
-  *
-  *  data
-  *
-  *****************************************/
 
   private String supplierID;
   private String voucherTypeId;
   private Integer unitaryCost;
   private Integer recommendedPrice;
 
-  /*****************************************
-  *
-  *  accessors
-  *
-  *****************************************/
-
   public String getVoucherID() { return getGUIManagedObjectID(); }
   public String getVoucherName() { return getGUIManagedObjectName(); }
+  public String getVoucherDisplay() { return getGUIManagedObjectDisplay(); }
   public String getSupplierID() { return supplierID; }
   public String getVoucherTypeId() { return voucherTypeId; }
   public Integer getUnitaryCost() { return unitaryCost; }
   public Integer getRecommendedPrice() { return recommendedPrice; }
 
-  /*****************************************
-  *
-  *  constructor -- unpack
-  *
-  *****************************************/
 
-  public Voucher(SchemaAndValue schemaAndValue, String supplierID, String voucherTypeId, Integer unitaryCost, Integer recommendedPrice)
-  {
-    super(schemaAndValue);
-    this.supplierID = supplierID;
-    this.voucherTypeId = voucherTypeId;
-    this.unitaryCost = unitaryCost;
-    this.recommendedPrice = recommendedPrice;
-  }
-
-  /*****************************************
-  *
-  *  constructor -- copy
-  *
-  *****************************************/
-
-  private Voucher(Voucher voucher)
-  {
-    super(voucher.getJSONRepresentation(), voucher.getEpoch());
-    this.supplierID = voucher.getSupplierID();
-    this.voucherTypeId = voucher.getVoucherTypeId();
-    this.unitaryCost = voucher.getUnitaryCost();
-    this.recommendedPrice = voucher.getRecommendedPrice();
-  }
-
-  /*****************************************
-  *
-  *  copy
-  *
-  *****************************************/
-
-  public Voucher copy()
-  {
-    return new Voucher(this);
-  }
-
-  /*****************************************
-  *
-  *  pack
-  *
-  *****************************************/
-
-  public static Object pack(Object value)
-  {
-    Voucher voucher = (Voucher) value;
-    Struct struct = new Struct(schema);
-    packCommon(struct, voucher);
+  public static Object packCommon(Struct struct, Voucher voucher) {
+    GUIManagedObject.packCommon(struct, voucher);
     struct.put("supplierID", voucher.getSupplierID());
     struct.put("voucherTypeId", voucher.getVoucherTypeId());
     struct.put("unitaryCost", voucher.getUnitaryCost());
@@ -142,108 +55,56 @@ public class Voucher extends GUIManagedObject
     return struct;
   }
 
-  /*****************************************
-  *
-  *  unpack
-  *
-  *****************************************/
-
-  public static Voucher unpack(SchemaAndValue schemaAndValue)
-  {
-    //
-    //  data
-    //
-
-    Schema schema = schemaAndValue.schema();
+  public Voucher(SchemaAndValue schemaAndValue) {
+    super(schemaAndValue);
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
-
-    //
-    //  unpack
-    //
-
     Struct valueStruct = (Struct) value;
-    String supplierID = valueStruct.getString("supplierID");
-    String voucherTypeId = valueStruct.getString("voucherTypeId");
-    Integer unitaryCost = valueStruct.getInt32("unitaryCost");
-    Integer recommendedPrice = valueStruct.getInt32("recommendedPrice");
-
-    //
-    //  return
-    //
-
-    return new Voucher(schemaAndValue, supplierID, voucherTypeId, unitaryCost, recommendedPrice);
+    this.supplierID = valueStruct.getString("supplierID");
+    this.voucherTypeId = valueStruct.getString("voucherTypeId");
+    this.unitaryCost = valueStruct.getInt32("unitaryCost");
+    this.recommendedPrice = valueStruct.getInt32("recommendedPrice");
   }
 
-  /*****************************************
-  *
-  *  constructor -- JSON
-  *
-  *****************************************/
-
-  public Voucher(JSONObject jsonRoot, long epoch, GUIManagedObject existingVoucherUnchecked) throws GUIManagerException
-  {
-    /*****************************************
-    *
-    *  super
-    *
-    *****************************************/
+  public Voucher(JSONObject jsonRoot, long epoch, GUIManagedObject existingVoucherUnchecked) throws GUIManagerException {
 
     super(jsonRoot, (existingVoucherUnchecked != null) ? existingVoucherUnchecked.getEpoch() : epoch);
 
-    /*****************************************
-    *
-    *  existingVoucher
-    *
-    *****************************************/
-
     Voucher existingVoucher = (existingVoucherUnchecked != null && existingVoucherUnchecked instanceof Voucher) ? (Voucher) existingVoucherUnchecked : null;
-
-    /*****************************************
-    *
-    *  attributes
-    *
-    *****************************************/
 
     this.supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
     this.voucherTypeId = JSONUtilities.decodeString(jsonRoot, "voucherTypeId", true);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", false);
     this.recommendedPrice = JSONUtilities.decodeInteger(jsonRoot, "recommendedPrice", false);
 
-    /*****************************************
-    *
-    *  epoch
-    *
-    *****************************************/
-
-    if (epochChanged(existingVoucher))
-      {
-        this.setEpoch(epoch);
-      }
+    if (epochChanged(existingVoucher)) {
+      this.setEpoch(epoch);
+    }
   }
 
-  /*****************************************
-  *
-  *  epochChanged
-  *
-  *****************************************/
+  private boolean epochChanged(Voucher existingVoucher) {
+    if (existingVoucher != null && existingVoucher.getAccepted()) {
+      boolean epochChanged = false;
+      epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingVoucher.getGUIManagedObjectID());
+      epochChanged = epochChanged || ! Objects.equals(supplierID, existingVoucher.getSupplierID());
+      epochChanged = epochChanged || ! Objects.equals(voucherTypeId, existingVoucher.getVoucherTypeId());
+      epochChanged = epochChanged || ! Objects.equals(unitaryCost, existingVoucher.getUnitaryCost());
+      epochChanged = epochChanged || ! Objects.equals(recommendedPrice, existingVoucher.getRecommendedPrice());
+      return epochChanged;
+    }else{
+      return true;
+    }
+  }
 
-  private boolean epochChanged(Voucher existingVoucher)
-  {
-    if (existingVoucher != null && existingVoucher.getAccepted())
-      {
-        boolean epochChanged = false;
-        epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingVoucher.getGUIManagedObjectID());
-        epochChanged = epochChanged || ! Objects.equals(supplierID, existingVoucher.getSupplierID());
-        epochChanged = epochChanged || ! Objects.equals(voucherTypeId, existingVoucher.getVoucherTypeId());
-        epochChanged = epochChanged || ! Objects.equals(unitaryCost, existingVoucher.getUnitaryCost());
-        epochChanged = epochChanged || ! Objects.equals(recommendedPrice, existingVoucher.getRecommendedPrice());
-        return epochChanged;
-      }
-    else
-      {
-        return true;
-      }
+  // trying to enforce commonValidate usage in subclasses, no perfect way Im aware of...
+  abstract void validate(VoucherTypeService voucherService, UploadedFileService uploadedFileService, Date now) throws GUIManagerException;
+  public void commonValidate(VoucherTypeService voucherTypeService, Date date) throws GUIManagerException {
+    VoucherType voucherType = voucherTypeService.getActiveVoucherType(getVoucherTypeId(), date);
+    if(voucherType==null || voucherType.getCodeType().equals(VoucherType.CodeType.Unknown)) throw new GUIManagerException("unknown voucherType", getVoucherTypeId());
+  }
+
+  @Override
+  public String toString() {
+    return "supplierID:"+getSupplierID()+", voucherTypeId:"+getVoucherTypeId()+", unitaryCost:"+getUnitaryCost()+", recommendedPrice:"+getRecommendedPrice();
   }
 
 }

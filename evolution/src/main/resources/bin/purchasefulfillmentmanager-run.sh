@@ -37,4 +37,4 @@ echo deployment complete
 #  run
 #
 
-exec kafka-run-class -name purchaseFulfillmentManager -loggc com.evolving.nglm.evolution.PurchaseFulfillmentManager $KEY 
+exec kafka-run-class -name purchaseFulfillmentManager -loggc com.evolving.nglm.evolution.PurchaseFulfillmentManager $KEY $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT

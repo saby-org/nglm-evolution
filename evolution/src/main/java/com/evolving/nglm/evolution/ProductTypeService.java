@@ -164,7 +164,7 @@ public class ProductTypeService extends GUIService
 
     ProductTypeListener productTypeListener = new ProductTypeListener()
     {
-      @Override public void productTypeActivated(ProductType productType) { System.out.println("productType activated: " + productType.getProductTypeID()); }
+      @Override public void productTypeActivated(ProductType productType) { System.out.println("productType activated: " + productType.getID()); }
       @Override public void productTypeDeactivated(String guiManagedObjectID) { System.out.println("productType deactivated: " + guiManagedObjectID); }
     };
 

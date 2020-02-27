@@ -133,6 +133,8 @@ public class DNBOProxy
   private OfferService offerService;
   private ProductService productService;
   private ProductTypeService productTypeService;
+  private VoucherService voucherService;
+  private VoucherTypeService voucherTypeService;
   private CatalogCharacteristicService catalogCharacteristicService;
   private ScoringStrategyService scoringStrategyService;
   private SalesChannelService salesChannelService;
@@ -199,6 +201,8 @@ public class DNBOProxy
     offerService = new OfferService(Deployment.getBrokerServers(), "dnboproxy-offerservice-" + apiProcessKey, Deployment.getOfferTopic(), false);
     productService = new ProductService(Deployment.getBrokerServers(), "dnboproxy-productservice-" + apiProcessKey, Deployment.getProductTopic(), false);
     productTypeService = new ProductTypeService(Deployment.getBrokerServers(), "dnboproxy-producttypeservice-" + apiProcessKey, Deployment.getProductTypeTopic(), false);
+    voucherService = new VoucherService(Deployment.getBrokerServers(), "dnboproxy-voucherservice-" + apiProcessKey, Deployment.getVoucherTopic());
+    voucherTypeService = new VoucherTypeService(Deployment.getBrokerServers(), "dnboproxy-vouchertypeservice-" + apiProcessKey, Deployment.getVoucherTypeTopic(), false);
     catalogCharacteristicService = new CatalogCharacteristicService(Deployment.getBrokerServers(), "dnboproxy-catalogcharacteristicservice-" + apiProcessKey, Deployment.getCatalogCharacteristicTopic(), false);
     scoringStrategyService = new ScoringStrategyService(Deployment.getBrokerServers(), "dnboproxy-scoringstrategyservice-" + apiProcessKey, Deployment.getScoringStrategyTopic(), false);
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "dnboproxy-saleschannelservice-" + apiProcessKey, Deployment.getSalesChannelTopic(), false);
@@ -218,6 +222,8 @@ public class DNBOProxy
     offerService.start();
     productService.start();
     productTypeService.start();
+    voucherService.start();
+    voucherTypeService.start();
     catalogCharacteristicService.start();
     scoringStrategyService.start();
     salesChannelService.start();
@@ -290,7 +296,7 @@ public class DNBOProxy
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(this, restServer, offerService, productService, productTypeService, catalogCharacteristicService, scoringStrategyService, salesChannelService, subscriberProfileService, segmentationDimensionService, dnboMatrixService, subscriberIDService, kafkaProducer, kafkaConsumer, subscriberManagerTopicReaderThread));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(this, restServer, offerService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, scoringStrategyService, salesChannelService, subscriberProfileService, segmentationDimensionService, dnboMatrixService, subscriberIDService, kafkaProducer, kafkaConsumer, subscriberManagerTopicReaderThread));
 
     /*****************************************
     *
@@ -318,6 +324,8 @@ public class DNBOProxy
     private OfferService offerService;
     private ProductService productService;   
     private ProductTypeService productTypeService;
+    private VoucherService voucherService;
+    private VoucherTypeService voucherTypeService;
     private CatalogCharacteristicService catalogCharacteristicService;
     private ScoringStrategyService scoringStrategyService;
     private SalesChannelService salesChannelService;
@@ -333,13 +341,15 @@ public class DNBOProxy
     //  constructor
     //
 
-    private ShutdownHook(DNBOProxy dnboProxy, HttpServer restServer, OfferService offerService, ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService, ScoringStrategyService scoringStrategyService, SalesChannelService salesChannelService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, DNBOMatrixService dnboMatrixService, SubscriberIDService subscriberIDService, KafkaProducer<byte[], byte[]> kafkaProducer, KafkaConsumer<byte[], byte[]> kafkaConsumer, Thread subscriberManagerTopicReaderThread)
+    private ShutdownHook(DNBOProxy dnboProxy, HttpServer restServer, OfferService offerService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, ScoringStrategyService scoringStrategyService, SalesChannelService salesChannelService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, DNBOMatrixService dnboMatrixService, SubscriberIDService subscriberIDService, KafkaProducer<byte[], byte[]> kafkaProducer, KafkaConsumer<byte[], byte[]> kafkaConsumer, Thread subscriberManagerTopicReaderThread)
     {
       this.dnboProxy = dnboProxy;
       this.restServer = restServer;
       this.offerService = offerService;
       this.productService = productService;
       this.productTypeService = productTypeService;
+      this.voucherService = voucherService;
+      this.voucherTypeService = voucherTypeService;
       this.catalogCharacteristicService = catalogCharacteristicService;
       this.scoringStrategyService = scoringStrategyService;
       this.salesChannelService = salesChannelService;
@@ -377,6 +387,8 @@ public class DNBOProxy
       if (offerService != null) offerService.stop();
       if (productService != null) productService.stop();
       if (productTypeService != null) productTypeService.stop();
+      if (voucherService != null) voucherService.stop();
+      if (voucherTypeService != null) voucherTypeService.stop();
       if (catalogCharacteristicService != null) catalogCharacteristicService.stop();
       if (scoringStrategyService != null) scoringStrategyService.stop();
       if (salesChannelService != null) salesChannelService.stop();
@@ -625,8 +637,8 @@ public class DNBOProxy
           {
             case getSubscriberOffers:
               jsonResponse = processGetSubscriberOffers(userID, jsonRoot,
-                  productService, productTypeService, catalogCharacteristicService,
-                  propensityDataReader, subscriberGroupEpochReader,
+                  productService, productTypeService, voucherService, voucherTypeService,
+                  catalogCharacteristicService, propensityDataReader, subscriberGroupEpochReader,
                   segmentationDimensionService, offerService);
               break;
               
@@ -708,7 +720,8 @@ public class DNBOProxy
   *****************************************/
 
   private JSONObject processGetSubscriberOffers(String userID, JSONObject jsonRoot,
-      ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService,
+      ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService,
+      CatalogCharacteristicService catalogCharacteristicService,
       ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
       SegmentationDimensionService segmentationDimensionService, OfferService offerService) throws DNBOProxyException, SubscriberProfileServiceException
   {
@@ -797,8 +810,8 @@ public class DNBOProxy
         try
         {
           JSONObject valueRes = getOffers(now, subscriberID, scoringStrategyID, salesChannelID, subscriberProfile, scoringStrategy,
-              productService, productTypeService, catalogCharacteristicService,
-              propensityDataReader, subscriberGroupEpochReader,
+              productService, productTypeService, voucherService, voucherTypeService,
+              catalogCharacteristicService, propensityDataReader, subscriberGroupEpochReader,
               segmentationDimensionService, offerService,rangeValue.doubleValue());
           resArray.add(valueRes);
           allScoringStrategiesBad = false;
@@ -871,7 +884,9 @@ public class DNBOProxy
 
   private JSONObject getOffers(Date now, String subscriberID, String scoringStrategyID, String salesChannelID,
       SubscriberProfile subscriberProfile, ScoringStrategy scoringStrategy,
-      ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService,
+      ProductService productService, ProductTypeService productTypeService,
+      VoucherService voucherService, VoucherTypeService voucherTypeService,
+      CatalogCharacteristicService catalogCharacteristicService,
       ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
       SegmentationDimensionService segmentationDimensionService, OfferService offerService, double rangeValue)
       throws DNBOProxyException
@@ -897,8 +912,8 @@ public class DNBOProxy
 
       DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
       Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo = TokenUtils.getOffers(now, salesChannelID,
-          subscriberProfile, scoringStrategy, productService, productTypeService, catalogCharacteristicService,
-          propensityDataReader, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog,
+          subscriberProfile, scoringStrategy, productService, productTypeService, voucherService, voucherTypeService,
+          catalogCharacteristicService, propensityDataReader, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog,
           msisdn);
       
       if (offerAvailabilityFromPropensityAlgo == null)

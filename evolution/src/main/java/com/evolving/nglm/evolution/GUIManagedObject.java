@@ -172,7 +172,8 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(Deliverable.serde());
     guiManagedObjectSerdes.add(TokenType.serde());
     guiManagedObjectSerdes.add(VoucherType.serde());
-    guiManagedObjectSerdes.add(Voucher.serde());
+    guiManagedObjectSerdes.add(VoucherShared.serde());
+    guiManagedObjectSerdes.add(VoucherPersonal.serde());
     guiManagedObjectSerdes.add(IncompleteObject.serde());
     guiManagedObjectSerdes.add(Report.serde());
     guiManagedObjectSerdes.add(MailTemplate.serde());

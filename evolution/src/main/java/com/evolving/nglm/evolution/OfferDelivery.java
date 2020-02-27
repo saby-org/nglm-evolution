@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 
 import java.util.Date;
+import java.util.List;
 
 public interface OfferDelivery
 {
@@ -36,6 +37,7 @@ public interface OfferDelivery
   public long getOfferDeliveryOfferPrice();
   public String getOfferDeliveryMeanOfPayment();
   public String getOfferDeliveryOfferContent();
+  public List<VoucherDelivery> getVoucherDeliveries();
   public String getOfferDeliveryVoucherCode();
   public String getOfferDeliveryVoucherPartnerId();
   

@@ -185,7 +185,14 @@ public class GUIService
     //  subscribe to topic
     //
 
-    guiManagedObjectsConsumer.subscribe(Arrays.asList(guiManagedObjectTopic), new GuiManagedObjectsConsumerRebalanceListener(serviceName, groupID));
+    // we do want assign() here instead of subscribe()
+    // it does not care about "consumer group id", which is a what we do want, + this speed up consumers initialization
+    //guiManagedObjectsConsumer.subscribe(Arrays.asList(guiManagedObjectTopic), new GuiManagedObjectsConsumerRebalanceListener(serviceName, groupID));
+    Set<TopicPartition> partitions = new HashSet<>();
+    for (org.apache.kafka.common.PartitionInfo partitionInfo : guiManagedObjectsConsumer.partitionsFor(guiManagedObjectTopic)) {
+      partitions.add(new TopicPartition(guiManagedObjectTopic, partitionInfo.partition()));
+    }
+    guiManagedObjectsConsumer.assign(partitions);
     
     //
     //  read initial guiManagedObjects

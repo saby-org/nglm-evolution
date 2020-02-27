@@ -726,6 +726,19 @@ public class GUIManager
  
     zuks = new ZookeeperUniqueKeyServer("commoditydelivery");
 
+    //
+    // RestHighLevelClient
+    //
+
+    try
+    {
+      elasticsearch = new RestHighLevelClient(RestClient.builder(new HttpHost(elasticsearchServerHost, elasticsearchServerPort, "http")));
+    }
+    catch (ElasticsearchException e)
+    {
+      throw new ServerRuntimeException("could not initialize elasticsearch client", e);
+    }
+
     /*****************************************
     *
     *  kafka producer for the segmentationDimensionListener
@@ -840,7 +853,6 @@ public class GUIManager
     deliverableService = new DeliverableService(bootstrapServers, "guimanager-deliverableservice-" + apiProcessKey, deliverableTopic, true);
     tokenTypeService = new TokenTypeService(bootstrapServers, "guimanager-tokentypeservice-" + apiProcessKey, tokenTypeTopic, true);
     voucherTypeService = new VoucherTypeService(bootstrapServers, "guimanager-vouchertypeservice-" + apiProcessKey, voucherTypeTopic, true);
-    voucherService = new VoucherService(bootstrapServers, "guimanager-voucherservice-" + apiProcessKey, voucherTopic, true);
     subscriberMessageTemplateService = new SubscriberMessageTemplateService(bootstrapServers, "guimanager-subscribermessagetemplateservice-" + apiProcessKey, subscriberMessageTemplateTopic, true);
     subscriberProfileService = new EngineSubscriberProfileService(subscriberProfileEndpoints);
     subscriberIDService = new SubscriberIDService(redisServer, "guimanager-" + apiProcessKey);
@@ -851,6 +863,7 @@ public class GUIManager
     deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice-" + apiProcessKey, deliverableSourceTopic);
     uploadedFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
     targetService = new TargetService(bootstrapServers, "guimanager-targetservice-" + apiProcessKey, targetTopic, true);
+    voucherService = new VoucherService(bootstrapServers, "guimanager-voucherservice-" + apiProcessKey, voucherTopic, true,elasticsearch,uploadedFileService);
     communicationChannelService = new CommunicationChannelService(bootstrapServers, "guimanager-communicationchannelservice-" + apiProcessKey, communicationChannelTopic, true);
     communicationChannelBlackoutService = new CommunicationChannelBlackoutService(bootstrapServers, "guimanager-blackoutservice-" + apiProcessKey, communicationChannelBlackoutTopic, true);
     loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, "guimanager-loyaltyprogramservice-"+apiProcessKey, loyaltyProgramTopic, true);
@@ -896,21 +909,6 @@ public class GUIManager
       }      
     };
     loyaltyProgramService.registerListener(dynamicEventDeclarationsListener);
-
-    /*****************************************
-    *
-    *  elasticsearch -- client
-    *
-    *****************************************/
-
-    try
-      {
-        elasticsearch = new RestHighLevelClient(RestClient.builder(new HttpHost(elasticsearchServerHost, elasticsearchServerPort, "http")));
-      }
-    catch (ElasticsearchException e)
-      {
-        throw new ServerRuntimeException("could not initialize elasticsearch client", e);
-      }
 
     /*****************************************
     *
@@ -1617,12 +1615,12 @@ public class GUIManager
     deliverableService.start();
     tokenTypeService.start();
     voucherTypeService.start();
-    voucherService.start();
     subscriberMessageTemplateService.start();
     subscriberProfileService.start();
     deliverableSourceService.start();
     uploadedFileService.start();
     targetService.start();
+    voucherService.start();
     communicationChannelService.start();
     communicationChannelBlackoutService.start();
     loyaltyProgramService.start();
@@ -8298,7 +8296,7 @@ public class GUIManager
         *
         *****************************************/
 
-        offerService.putOffer(offer, callingChannelService, salesChannelService, productService, (existingOffer == null), userID);
+        offerService.putOffer(offer, callingChannelService, salesChannelService, productService, voucherService, (existingOffer == null), userID);
 
         /*****************************************
         *
@@ -8325,7 +8323,7 @@ public class GUIManager
         //  store
         //
 
-        offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService, (existingOffer == null), userID);
+        offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService, voucherService, (existingOffer == null), userID);
 
         //
         //  log
@@ -10440,6 +10438,7 @@ public class GUIManager
         *****************************************/
 
         revalidateProducts(now);
+        revalidateVouchers(now);
 
         /*****************************************
         *
@@ -10473,6 +10472,7 @@ public class GUIManager
         //
 
         revalidateProducts(now);
+        revalidateVouchers(now);
 
         //
         //  log
@@ -10543,6 +10543,14 @@ public class GUIManager
     *****************************************/
 
     revalidateProducts(now);
+
+    /*****************************************
+    *
+    *  revalidateVouchers
+    *
+    *****************************************/
+
+    revalidateVouchers(now);
 
     /*****************************************
     *
@@ -11026,6 +11034,9 @@ public class GUIManager
         revalidateOfferObjectives(now);
         revalidateProductTypes(now);
         revalidateProducts(now);
+        // right now voucher has no characteristics, the way I'm implementing however I think should logically have
+        revalidateVoucherTypes(now);
+        revalidateVouchers(now);
 
         /*****************************************
         *
@@ -11063,6 +11074,8 @@ public class GUIManager
         revalidateOfferObjectives(now);
         revalidateProductTypes(now);
         revalidateProducts(now);
+        revalidateVoucherTypes(now);
+        revalidateVouchers(now);
 
         //
         //  log
@@ -11137,6 +11150,8 @@ public class GUIManager
     revalidateOfferObjectives(now);
     revalidateProductTypes(now);
     revalidateProducts(now);
+    revalidateVoucherTypes(now);
+    revalidateVouchers(now);
 
     /*****************************************
     *
@@ -12212,7 +12227,7 @@ public class GUIManager
         *
         *****************************************/
 
-        response.put("id", productType.getProductTypeID());
+        response.put("id", productType.getID());
         response.put("accepted", productType.getAccepted());
         response.put("valid", productType.getAccepted());
         response.put("processing", productTypeService.isActiveProductType(productType, now));
@@ -13482,13 +13497,15 @@ public class GUIManager
 
         voucherTypeService.putVoucherType(voucherType, (existingVoucherType == null), userID);
 
+        revalidateVouchers(now);
+
         /*****************************************
         *
         *  response
         *
         *****************************************/
 
-        response.put("id", voucherType.getVoucherTypeID());
+        response.put("id", voucherType.getID());
         response.put("accepted", voucherType.getAccepted());
         response.put("valid", voucherType.getAccepted());
         response.put("processing", voucherTypeService.isActiveVoucherType(voucherType, now));
@@ -13573,11 +13590,11 @@ public class GUIManager
 
     /*****************************************
     *
-    *  revalidateProducts
+    *  revalidateVouchers
     *
     *****************************************/
 
-    revalidateProducts(now);
+    revalidateVouchers(now);
 
     /*****************************************
     *
@@ -13694,7 +13711,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID, includeArchived);
+    GUIManagedObject voucher = voucherService.getStoredVoucherWithCurrentStocks(voucherID, includeArchived);
     JSONObject voucherJSON = voucherService.generateResponseJSON(voucher, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -13740,7 +13757,7 @@ public class GUIManager
 
     /*****************************************
     *
-    *  existing voucherType
+    *  existing voucher
     *
     *****************************************/
 
@@ -13764,20 +13781,36 @@ public class GUIManager
 
     /*****************************************
     *
-    *  process voucherType
+    *  process voucher
     *
     *****************************************/
 
     long epoch = epochServer.getKey();
     try
       {
-        /****************************************
-        *
-        *  instantiate voucherType
-        *
-        ****************************************/
 
-        Voucher voucher = new Voucher(jsonRoot, epoch, existingVoucher);
+        // get the voucher type to instantiate
+        VoucherType voucherType = voucherTypeService.getActiveVoucherType(JSONUtilities.decodeString(jsonRoot,"voucherTypeId",true),now);
+        if(log.isDebugEnabled()) log.debug("will use voucherType "+voucherType);
+
+        // voucherType issue
+        if(voucherType==null || voucherType.getCodeType()==VoucherType.CodeType.Unknown){
+          response.put("responseCode","voucherTypeNotFound");
+          return JSONUtilities.encodeObject(response);
+        }
+
+        Voucher voucher=null;
+        if(voucherType.getCodeType()==VoucherType.CodeType.Shared){
+          voucher = new VoucherShared(jsonRoot, epoch, existingVoucher);
+          if(log.isDebugEnabled()) log.debug("will put shared voucher "+voucher);
+        }
+        if(voucher==null && voucherType.getCodeType()==VoucherType.CodeType.Personal){
+          voucher = new VoucherPersonal(jsonRoot, epoch, existingVoucher,voucherType);
+          if(log.isDebugEnabled()) log.debug("will put personal voucher "+voucher);
+        }
+
+        voucher.validate(voucherTypeService,uploadedFileService,now);
+
 
         /*****************************************
         *
@@ -13786,6 +13819,7 @@ public class GUIManager
         *****************************************/
 
         voucherService.putVoucher(voucher, (existingVoucher == null), userID);
+        revalidateOffers(now);
 
         /*****************************************
         *
@@ -13812,6 +13846,7 @@ public class GUIManager
         //
 
         voucherService.putVoucher(incompleteObject, (existingVoucher == null), userID);
+        revalidateOffers(now);
 
         //
         //  log
@@ -13873,15 +13908,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID);
-    if (voucher != null && (force || !voucher.getReadOnly())) voucherService.removeVoucher(voucherID, userID);
-
-    /*****************************************
-    *
-    *  revalidateProducts
-    *
-    *****************************************/
-
-    revalidateProducts(now);
+    if (voucher != null && (force || !voucher.getReadOnly())) voucherService.removeVoucher(voucherID, userID, uploadedFileService);
 
     /*****************************************
     *
@@ -15224,7 +15251,7 @@ public class GUIManager
               }
             else
               {
-                response = baseSubscriberProfile.getProfileMapForGUIPresentation(loyaltyProgramService, segmentationDimensionService, targetService, pointService, exclusionInclusionTargetService, subscriberGroupEpochReader);
+                response = baseSubscriberProfile.getProfileMapForGUIPresentation(loyaltyProgramService, segmentationDimensionService, targetService, pointService, voucherService, voucherTypeService, exclusionInclusionTargetService, subscriberGroupEpochReader);
                 response.put("responseCode", "ok");
               }
           }
@@ -15394,7 +15421,7 @@ public class GUIManager
                     // prepare json
                     //
 
-                    deliveryRequestsJson = result.stream().map(deliveryRequest -> JSONUtilities.encodeObject(deliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, deliverableService, paymentMeanService))).collect(Collectors.toList());
+                    deliveryRequestsJson = result.stream().map(deliveryRequest -> JSONUtilities.encodeObject(deliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService))).collect(Collectors.toList());
                   }
 
                 //
@@ -15576,7 +15603,7 @@ public class GUIManager
                       {
                         if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, deliverableService, paymentMeanService);
+                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService);
                             BDRsJson.add(JSONUtilities.encodeObject(bdrMap));
                           }
                       }
@@ -15789,7 +15816,7 @@ public class GUIManager
                       {
                         if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, deliverableService, paymentMeanService);
+                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService);
                             ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
                           }
                       }
@@ -15928,7 +15955,7 @@ public class GUIManager
                       {
                         if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> messageMap = message.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, deliverableService, paymentMeanService);
+                            Map<String, Object> messageMap = message.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService);
                             messagesJson.add(JSONUtilities.encodeObject(messageMap));
                           }
                       }
@@ -21272,8 +21299,9 @@ public class GUIManager
               // Here we have no saleschannel (we pass null), this means only the first salesChannelsAndPrices of the offer will be used and returned.  
               Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(
                   now, null,
-                  subscriberProfile, scoringStrategy, productService,
-                  productTypeService, catalogCharacteristicService,
+                  subscriberProfile, scoringStrategy,
+                  productService, productTypeService, voucherService, voucherTypeService,
+                  catalogCharacteristicService,
                   propensityDataReader,
                   subscriberGroupEpochReader,
                   segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
@@ -23393,13 +23421,48 @@ public class GUIManager
                     {
                       ProductType productType = (ProductType) productTypeUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", productType.getProductTypeID());
+                      availableValue.put("id", productType.getID());
                       availableValue.put("display", productType.getDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
             }
           break;
+
+        case "vouchers":
+          if (includeDynamic)
+          {
+            for (GUIManagedObject voucherUnchecked : voucherService.getStoredVouchers())
+            {
+              if (voucherUnchecked.getAccepted())
+              {
+                Voucher voucher = (Voucher) voucherUnchecked;
+                HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                availableValue.put("id", voucher.getVoucherID());
+                availableValue.put("display", voucher.getVoucherDisplay());
+                result.add(JSONUtilities.encodeObject(availableValue));
+              }
+            }
+          }
+          break;
+
+        case "voucherTypes":
+          if (includeDynamic)
+          {
+            for (GUIManagedObject voucherTypeUnchecked : voucherTypeService.getStoredVoucherTypes())
+            {
+              if (voucherTypeUnchecked.getAccepted())
+              {
+                VoucherType voucherType = (VoucherType) voucherTypeUnchecked;
+                HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                availableValue.put("id", voucherType.getID());
+                availableValue.put("display", voucherType.getDisplay());
+                result.add(JSONUtilities.encodeObject(availableValue));
+              }
+            }
+          }
+          break;
+
 
         case "providerIds":
           if (includeDynamic)
@@ -24029,7 +24092,7 @@ public class GUIManager
         try
           {
             Offer offer = new Offer(existingOffer.getJSONRepresentation(), epoch, existingOffer, catalogCharacteristicService);
-            offer.validate(callingChannelService, salesChannelService, productService, date);
+            offer.validate(callingChannelService, salesChannelService, productService, voucherService, date);
             modifiedOffer = offer;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -24124,6 +24187,80 @@ public class GUIManager
   }
 
   /*****************************************
+   *
+   *  revalidateVouchers
+   *
+   *****************************************/
+
+  private void revalidateVouchers(Date date)
+  {
+    /****************************************
+     *
+     *  identify
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    Set<GUIManagedObject> modifiedVouchers = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingVoucher : voucherService.getStoredVouchers())
+    {
+      //
+      //  modifiedVoucher
+      //
+
+      long epoch = epochServer.getKey();
+      GUIManagedObject modifiedVoucher;
+      try
+      {
+        Voucher voucher=null;
+        if (existingVoucher instanceof VoucherShared) {
+          voucher = new VoucherShared(existingVoucher.getJSONRepresentation(), epoch, existingVoucher);
+          voucher.validate(voucherTypeService,uploadedFileService,date);
+        }
+        if (voucher == null && existingVoucher instanceof VoucherPersonal) {
+          VoucherType voucherType = voucherTypeService.getActiveVoucherType(voucher.getVoucherTypeId(),now);
+          voucher = new VoucherPersonal(existingVoucher.getJSONRepresentation(), epoch, existingVoucher,voucherType);
+          voucher.validate(voucherTypeService,uploadedFileService,date);
+        }
+        modifiedVoucher = voucher;
+      }
+      catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        modifiedVoucher = new IncompleteObject(existingVoucher.getJSONRepresentation(), epoch);
+      }
+
+      //
+      //  changed?
+      //
+
+      if (existingVoucher.getAccepted() != modifiedVoucher.getAccepted())
+      {
+        modifiedVouchers.add(modifiedVoucher);
+      }
+    }
+
+    /****************************************
+     *
+     *  update
+     *
+     ****************************************/
+
+    for (GUIManagedObject modifiedVoucher : modifiedVouchers)
+    {
+      voucherService.putGUIManagedObject(modifiedVoucher, date, false, null);
+    }
+
+    /****************************************
+     *
+     *  revalidate offers
+     *
+     ****************************************/
+
+    revalidateOffers(date);
+  }
+
+  /*****************************************
   *
   *  revalidateCatalogCharacteristics
   *
@@ -24188,6 +24325,8 @@ public class GUIManager
     revalidateOfferObjectives(date);
     revalidateProductTypes(date);
     revalidateProducts(date);
+    revalidateVoucherTypes(date);
+    revalidateVouchers(date);
   }
 
   /*****************************************
@@ -24449,6 +24588,70 @@ public class GUIManager
     ****************************************/
 
     revalidateProducts(date);
+  }
+
+  /*****************************************
+   *
+   *  revalidateVoucherTypes
+   *
+   *****************************************/
+
+  private void revalidateVoucherTypes(Date date)
+  {
+    /****************************************
+     *
+     *  identify
+     *
+     ****************************************/
+
+    Set<GUIManagedObject> modifiedVoucherTypes = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingVoucherType : voucherTypeService.getStoredVoucherTypes())
+    {
+      //
+      //  modifiedVoucherType
+      //
+
+      long epoch = epochServer.getKey();
+      GUIManagedObject modifiedVoucherType;
+      try
+      {
+        VoucherType voucherType = new VoucherType(existingVoucherType.getJSONRepresentation(), epoch, existingVoucherType);
+        voucherType.validate(catalogCharacteristicService, date);
+        modifiedVoucherType = voucherType;
+      }
+      catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        modifiedVoucherType = new IncompleteObject(existingVoucherType.getJSONRepresentation(), epoch);
+      }
+
+      //
+      //  changed?
+      //
+
+      if (existingVoucherType.getAccepted() != modifiedVoucherType.getAccepted())
+      {
+        modifiedVoucherTypes.add(modifiedVoucherType);
+      }
+    }
+
+    /****************************************
+     *
+     *  update
+     *
+     ****************************************/
+
+    for (GUIManagedObject modifiedVoucherType : modifiedVoucherTypes)
+    {
+      voucherTypeService.putGUIManagedObject(modifiedVoucherType, date, false, null);
+    }
+
+    /****************************************
+     *
+     *  revalidate dependent objects
+     *
+     ****************************************/
+
+    revalidateVouchers(date);
   }
 
   /*****************************************

@@ -41,6 +41,8 @@ public class ThirdPartyAccessStatistics implements ThirdPartyAccessStatisticsMBe
   int getLoyaltyProgramListCount;
   int getActiveOfferCount;
   int getActiveOffersCount;
+  int validateVoucherCount;
+  int redeemVoucherCount;
   int successfulAPIRequestCount;
   int failedAPIRequestCount;
   int totalAPIRequestCount;
@@ -55,6 +57,8 @@ public class ThirdPartyAccessStatistics implements ThirdPartyAccessStatisticsMBe
   public int getGetLoyaltyProgramListCount() { return getLoyaltyProgramListCount; }
   public int getGetActiveOfferCount() { return getActiveOfferCount; }
   public int getGetActiveOffersCount() { return getActiveOffersCount; }
+  public int getValidateVoucherCount() { return validateVoucherCount; }
+  public int getRedeemVoucherCount() { return redeemVoucherCount; }
   public int getSuccessfulAPIRequestCount() { return successfulAPIRequestCount; }
   public int getFailedAPIRequestCount() { return failedAPIRequestCount; }
   public int getTotalAPIRequestCount() { return totalAPIRequestCount; }
@@ -83,6 +87,8 @@ public class ThirdPartyAccessStatistics implements ThirdPartyAccessStatisticsMBe
     this.getLoyaltyProgramListCount = 0;
     this.getActiveOfferCount = 0;
     this.getActiveOffersCount = 0;
+    this.validateVoucherCount = 0;
+    this.redeemVoucherCount = 0;
     this.successfulAPIRequestCount = 0;
     this.failedAPIRequestCount = 0;
     this.totalAPIRequestCount = 0;
@@ -112,6 +118,8 @@ public class ThirdPartyAccessStatistics implements ThirdPartyAccessStatisticsMBe
   public void updateGetLoyaltyProgramListCount(int count) { getLoyaltyProgramListCount = getLoyaltyProgramListCount + count; }
   public void updateGetActiveOfferCount(int count) { getActiveOfferCount = getActiveOfferCount + count; }
   public void updateGetActiveOffersCount(int count) { getActiveOffersCount = getActiveOffersCount + count; }
+  public void updateValidateVoucherCount(int count) { validateVoucherCount = validateVoucherCount + count; }
+  public void updateRedeemVoucherCount(int count) { redeemVoucherCount = redeemVoucherCount + count; }
   public void updateSuccessfulAPIRequestCount(int count) { successfulAPIRequestCount = successfulAPIRequestCount + count; }
   public void updateFailedAPIRequestCount(int count) { failedAPIRequestCount = failedAPIRequestCount + count; }
   public void updateTotalAPIRequestCount(int count) { totalAPIRequestCount = totalAPIRequestCount + count; }

@@ -14,7 +14,6 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.OfferService.OfferListener;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
 
@@ -23,6 +22,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
   
   private static OfferService offerService;
   private static ProductService productService;
+  private static VoucherService voucherService;
   private static PaymentMeanService paymentMeanService;
   private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
   private static DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
@@ -77,7 +77,10 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       
       productService = new ProductService(Deployment.getBrokerServers(), "ordsinkconnector-productservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getProductTopic(), false);
       productService.start();
-      
+
+      voucherService = new VoucherService(Deployment.getBrokerServers(), "ordsinkconnector-voucherservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getVoucherTopic());
+      voucherService.start();
+
       paymentMeanService = new PaymentMeanService(Deployment.getBrokerServers(), "ordsinkconnector-paymentmeanservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getPaymentMeanTopic(), false);
       paymentMeanService.start();
     }
@@ -94,7 +97,10 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       //  services
       //
 
-      
+      offerService.stop();
+      productService.stop();
+      voucherService.stop();
+      paymentMeanService.stop();
       
       //
       //  super
@@ -136,6 +142,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
         documentMap.put("offerID", purchaseManager.getOfferID());
         documentMap.put("offerQty", purchaseManager.getQuantity());
         documentMap.put("salesChannelID", purchaseManager.getSalesChannelID());
+        String voucherCodes = "";
           if (offer != null)
             {
               if (offer.getOfferSalesChannelsAndPrices() != null)
@@ -168,10 +175,21 @@ public class ODRSinkConnector extends SimpleESSinkConnector
           if(offer.getOfferProducts() != null) {
             for(OfferProduct offerProduct : offer.getOfferProducts()) {
               Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
-              sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():offerProduct.getProductID()).append(",");
+              sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():"product"+offerProduct.getProductID()).append(",");
             }
           }
-          String offerContent = sb.toString().substring(0, sb.toString().length()-1);
+          if(purchaseManager.getVoucherDeliveries()!=null){
+            StringBuilder voucherCodeSb=new StringBuilder("");//ready for several vouchers in 1 purchase, though might only just allow one for simplicity
+            for(VoucherDelivery voucherDelivery:purchaseManager.getVoucherDeliveries()){
+              Voucher voucher = (Voucher) voucherService.getStoredVoucher(voucherDelivery.getVoucherID());
+              sb.append("1 ").append(voucher!=null?voucher.getVoucherDisplay():"voucher"+voucherDelivery.getVoucherID()).append(",");
+              if(voucherDelivery.getVoucherCode()!=null&&!voucherDelivery.getVoucherCode().isEmpty()){
+                voucherCodeSb.append(voucherDelivery.getVoucherCode()).append(",");
+              }
+            }
+            voucherCodes = voucherCodeSb.length()>0?voucherCodeSb.toString().substring(0,voucherCodeSb.toString().length()-1):"";
+          }
+          String offerContent = sb.length()>0?sb.toString().substring(0, sb.toString().length()-1):"";
           documentMap.put("offerContent", offerContent);
         }
 
@@ -188,7 +206,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
         documentMap.put("returnCode", purchaseManager.getReturnCode());
         documentMap.put("deliveryStatus", purchaseManager.getDeliveryStatus());
         documentMap.put("returnCodeDetails", PurchaseFulfillmentStatus.fromReturnCode(purchaseManager.getReturnCode()));
-        documentMap.put("voucherCode", "");
+        documentMap.put("voucherCode", voucherCodes);
         documentMap.put("voucherPartnerID", "");
       }
       

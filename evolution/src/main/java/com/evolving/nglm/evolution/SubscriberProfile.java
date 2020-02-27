@@ -150,7 +150,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(4));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(5));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -165,6 +165,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     schemaBuilder.field("universalControlGroup", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("tokens", SchemaBuilder.array(Token.commonSerde().schema()).defaultValue(Collections.<Token>emptyList()).schema());
     schemaBuilder.field("pointBalances", SchemaBuilder.map(Schema.STRING_SCHEMA, PointBalance.schema()).name("subscriber_profile_balances").schema());
+    schemaBuilder.field("vouchers", SchemaBuilder.array(VoucherProfileStored.voucherProfileStoredSchema()).name("subscriber_profile_vouchers").optional().schema());
     schemaBuilder.field("language", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("extendedSubscriberProfile", ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().optionalSchema());
     schemaBuilder.field("subscriberHistory", SubscriberHistory.serde().optionalSchema());
@@ -237,6 +238,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   private boolean universalControlGroup;
   private List<Token> tokens;
   private Map<String,PointBalance> pointBalances;
+  private List<VoucherProfileStored> vouchers;
   private String languageID;
   private ExtendedSubscriberProfile extendedSubscriberProfile;
   private SubscriberHistory subscriberHistory;
@@ -261,6 +263,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public boolean getUniversalControlGroup() { return universalControlGroup; }
   public List<Token> getTokens(){ return tokens; }
   public Map<String,PointBalance> getPointBalances() { return pointBalances; }
+  public List<VoucherProfileStored> getVouchers() { return vouchers; }
   public String getLanguageID() { return languageID; }
   public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
   public SubscriberHistory getSubscriberHistory() { return subscriberHistory; }
@@ -569,6 +572,32 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
       }
     return array;
   }
+
+  /****************************************
+   *
+   *  getVouchersJSON - vouchers
+   *
+   ****************************************/
+
+  public JSONObject getVouchersJSON()
+  {
+    JSONObject result = new JSONObject();
+    if(this.vouchers != null)
+    {
+      JSONArray array = new JSONArray();
+      for(VoucherProfileStored voucher : vouchers)
+      {
+        JSONObject obj = new JSONObject();
+        obj.put("voucherID",voucher.getVoucherID());
+        obj.put("voucherCode",voucher.getVoucherCode());
+        obj.put("voucherStatus",voucher.getVoucherStatus().getExternalRepresentation());
+        obj.put("voucherExpiryDate",voucher.getVoucherExpiryDate().getTime());
+        array.add(obj);
+      }
+      result.put("vouchers", array);
+    }
+    return result;
+  }
   
   /****************************************
   *
@@ -689,7 +718,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   //  getProfileMapForGUIPresentation
   //
 
-  public Map<String, Object> getProfileMapForGUIPresentation(LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String, Object> getProfileMapForGUIPresentation(LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     //
     //  now
@@ -715,7 +744,48 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
             pointsPresentation.add(JSONUtilities.encodeObject(pointPresentation));
           }
       }
-    
+
+    //
+    //  prepare vouchers
+    //
+
+    ArrayList<JSONObject> vouchersPresentation = new ArrayList<JSONObject>();
+    for (VoucherProfileStored storedVoucher : vouchers)
+    {
+      Voucher voucher = voucherService.getActiveVoucher(storedVoucher.getVoucherID(),now);
+      if (voucher != null)
+      {
+        VoucherType voucherType = voucherTypeService.getActiveVoucherType(voucher.getVoucherTypeId(),now);
+        if (voucherType != null)
+        {
+          HashMap<String, Object> voucherPresentation = new HashMap<String,Object>();
+          voucherPresentation.put("voucher", voucher.getVoucherDisplay());
+          voucherPresentation.put("type", voucherType.getCodeType().getExternalRepresentation());
+          String codeFormat="";
+          if(voucherType.getCodeType()==VoucherType.CodeType.Shared){
+            codeFormat=((VoucherShared)voucher).getCodeFormatId();
+          }else if(voucherType.getCodeType()==VoucherType.CodeType.Personal){
+            VoucherPersonal voucherPersonal = (VoucherPersonal) voucher;
+            for(VoucherFile voucherFile:voucherPersonal.getVoucherFiles()){
+              if(voucherFile.getFileId().equals(storedVoucher.getFileID())){
+                codeFormat=voucherFile.getCodeFormatId();
+                break;
+              }
+            }
+          }
+          voucherPresentation.put("format", codeFormat);
+          voucherPresentation.put("code", storedVoucher.getVoucherCode());
+          voucherPresentation.put("expiration", storedVoucher.getVoucherExpiryDate());
+          // can be not updated yet
+          if(storedVoucher.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Expired && storedVoucher.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Redeemed && storedVoucher.getVoucherExpiryDate().before(now)){
+            storedVoucher.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
+          }
+          voucherPresentation.put("status",storedVoucher.getVoucherStatus().getExternalRepresentation());
+          vouchersPresentation.add(JSONUtilities.encodeObject(voucherPresentation));
+        }
+      }
+    }
+
     //
     // prepare hierarchy
     //
@@ -850,6 +920,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     generalDetailsPresentation.put("targets", JSONUtilities.encodeArray(new ArrayList<String>(getTargetNames(targetService, subscriberGroupEpochReader))));
     generalDetailsPresentation.put("relations", JSONUtilities.encodeArray(hierarchyRelations));
     generalDetailsPresentation.put("points", JSONUtilities.encodeArray(pointsPresentation));
+    generalDetailsPresentation.put("vouchers", JSONUtilities.encodeArray(vouchersPresentation));
     generalDetailsPresentation.put("language", getLanguage());
     generalDetailsPresentation.put("subscriberID", getSubscriberID());
     generalDetailsPresentation.put("exclusionInclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionInclusionTargetNames(exclusionInclusionTargetService, subscriberGroupEpochReader))));
@@ -1242,6 +1313,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.universalControlGroup = false;
     this.tokens = new ArrayList<Token>();
     this.pointBalances = new HashMap<String,PointBalance>();
+    this.vouchers = new ArrayList<VoucherProfileStored>();
     this.languageID = null;
     this.extendedSubscriberProfile = null;
     this.subscriberHistory = null;
@@ -1281,6 +1353,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     boolean universalControlGroup = valueStruct.getBoolean("universalControlGroup");
     List<Token> tokens = (schemaVersion >= 2) ? unpackTokens(schema.field("tokens").schema(), valueStruct.get("tokens")) : Collections.<Token>emptyList();
     Map<String,PointBalance> pointBalances = (schemaVersion >= 2) ? unpackPointBalances(schema.field("pointBalances").schema(), (Map<String,Object>) valueStruct.get("pointBalances")): Collections.<String,PointBalance>emptyMap();
+    List<VoucherProfileStored> vouchers = (schemaVersion >= 5) ? unpackVouchers(schema.field("vouchers").schema(), valueStruct.get("vouchers")) : Collections.<VoucherProfileStored>emptyList();
     String languageID = valueStruct.getString("language");
     ExtendedSubscriberProfile extendedSubscriberProfile = (schemaVersion >= 2) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpackOptional(new SchemaAndValue(schema.field("extendedSubscriberProfile").schema(), valueStruct.get("extendedSubscriberProfile"))) : null;
     SubscriberHistory subscriberHistory  = valueStruct.get("subscriberHistory") != null ? SubscriberHistory.unpack(new SchemaAndValue(schema.field("subscriberHistory").schema(), valueStruct.get("subscriberHistory"))) : null;
@@ -1304,6 +1377,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.universalControlGroup = universalControlGroup;
     this.tokens = tokens;
     this.pointBalances = pointBalances;
+    this.vouchers = vouchers;
     this.languageID = languageID;
     this.extendedSubscriberProfile = extendedSubscriberProfile;
     this.subscriberHistory = subscriberHistory;
@@ -1512,6 +1586,38 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   }
 
   /*****************************************
+   *
+   *  unpackVouchers
+   *
+   *****************************************/
+
+  private static List<VoucherProfileStored> unpackVouchers(Schema schema, Object value)
+  {
+    //
+    //  get schema for voucher
+    //
+
+    Schema voucherProfileStoredSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    List<VoucherProfileStored> result = new ArrayList<VoucherProfileStored>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object voucherProfileStored : valueArray)
+    {
+      result.add(VoucherProfileStored.unpack(new SchemaAndValue(voucherProfileStoredSchema, voucherProfileStored)));
+    }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /*****************************************
   *
   *  constructor (copy)
   *
@@ -1532,6 +1638,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.universalControlGroup = subscriberProfile.getUniversalControlGroup();
     this.tokens = new ArrayList<Token>(subscriberProfile.getTokens());
     this.pointBalances = new HashMap<String,PointBalance>(subscriberProfile.getPointBalances()); // WARNING:  NOT a deep copy, PointBalance must be copied before update
+    this.vouchers = new ArrayList<VoucherProfileStored>(subscriberProfile.getVouchers());
     this.languageID = subscriberProfile.getLanguageID();
     this.extendedSubscriberProfile = subscriberProfile.getExtendedSubscriberProfile() != null ? ExtendedSubscriberProfile.copy(subscriberProfile.getExtendedSubscriberProfile()) : null;
     this.subscriberHistory = subscriberProfile.getSubscriberHistory() != null ? new SubscriberHistory(subscriberProfile.getSubscriberHistory()) : null;
@@ -1559,6 +1666,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     struct.put("universalControlGroup", subscriberProfile.getUniversalControlGroup());
     struct.put("tokens", packTokens(subscriberProfile.getTokens()));
     struct.put("pointBalances", packPointBalances(subscriberProfile.getPointBalances()));
+    struct.put("vouchers", packVouchers(subscriberProfile.getVouchers()));
     struct.put("language", subscriberProfile.getLanguageID());
     struct.put("extendedSubscriberProfile", (subscriberProfile.getExtendedSubscriberProfile() != null) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().packOptional(subscriberProfile.getExtendedSubscriberProfile()) : null);
     struct.put("subscriberHistory", (subscriberProfile.getSubscriberHistory() != null) ? SubscriberHistory.serde().packOptional(subscriberProfile.getSubscriberHistory()) : null);
@@ -1682,6 +1790,22 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
       {
         result.put(pointID, PointBalance.pack(pointBalances.get(pointID)));
       }
+    return result;
+  }
+
+  /****************************************
+   *
+   *  packVouchers
+   *
+   ****************************************/
+
+  private static Object packVouchers(List<VoucherProfileStored> vouchers)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (VoucherProfileStored voucher : vouchers)
+    {
+      result.add(VoucherProfileStored.pack(voucher));
+    }
     return result;
   }
   

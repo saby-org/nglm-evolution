@@ -77,8 +77,8 @@ public class UploadedFile extends GUIManagedObject
   private String destinationFilename;
   private String fileType;
   private String fileEncoding;
-  private int fileSize;
-  private int numberOfLines;
+  private Integer fileSize;
+  private Integer numberOfLines;
   private Date uploadDate;
   private Map<String, JSONObject> metaData;
   
@@ -96,8 +96,8 @@ public class UploadedFile extends GUIManagedObject
   public String getDestinationFilename() { return destinationFilename; }
   public String getFileType() { return fileType; }
   public String getFileEncoding() { return fileEncoding; }
-  public int getFileSize() { return fileSize; }
-  public int getNumberOfLines() { return numberOfLines; }
+  public Integer getFileSize() { return fileSize; }
+  public Integer getNumberOfLines() { return numberOfLines; }
   public Date getUploadDate() { return uploadDate; }
   public Map<String, JSONObject> getMetaData() { return metaData; }
   
@@ -106,6 +106,7 @@ public class UploadedFile extends GUIManagedObject
   //
 
   public void setMetaData(Map<String, JSONObject> metaData) { this.metaData = (metaData != null) ? metaData : new HashMap<String,JSONObject>(); }
+  public void setApplicationID(String applicationID){ this.applicationID = applicationID; }
   
   /*****************************************
   *
@@ -143,7 +144,7 @@ public class UploadedFile extends GUIManagedObject
   *
   *****************************************/
 
-  public UploadedFile(SchemaAndValue schemaAndValue, String applicationID, String customerAlternateID, String sourceFilename, String destinationFilename, String fileType, String fileEncoding, int fileSize, int numberOfLines, Date uploadDate, Map<String, JSONObject> metaData)
+  public UploadedFile(SchemaAndValue schemaAndValue, String applicationID, String customerAlternateID, String sourceFilename, String destinationFilename, String fileType, String fileEncoding, Integer fileSize, Integer numberOfLines, Date uploadDate, Map<String, JSONObject> metaData)
   {
     super(schemaAndValue);
     this.applicationID = applicationID;
@@ -229,8 +230,8 @@ public class UploadedFile extends GUIManagedObject
     String destinationFilename = valueStruct.getString("destinationFilename");
     String fileType = valueStruct.getString("fileType");
     String fileEncoding = valueStruct.getString("fileEncoding");
-    int fileSize = valueStruct.getInt32("fileSize");
-    int numberOfLines = valueStruct.getInt32("numberOfLines");
+    Integer fileSize = valueStruct.getInt32("fileSize");
+    Integer numberOfLines = valueStruct.getInt32("numberOfLines");
     Date uploadDate = (Date) valueStruct.get("uploadDate");  
     Map<String, JSONObject> metaData = (schemaVersion >= 2) ? unpackMetaData(schema.field("metaData").schema(), (Map<String,String>) valueStruct.get("metaData")) : new HashMap<String, JSONObject>();
     

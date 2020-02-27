@@ -28,6 +28,8 @@ public interface IOfferOptimizerAlgorithm
 		OfferOptimizationAlgorithm algoDefinition,
 		ProductService productService,
 	    ProductTypeService productTypeService,
+	    VoucherService voucherService,
+	    VoucherTypeService voucherTypeService,
 	    CatalogCharacteristicService catalogCharacteristicService,
         DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters);
 }

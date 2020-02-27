@@ -233,6 +233,26 @@ public class Deployment
   private static String sourceAddressTopic;
   private static boolean autoApproveGuiObjects;
   private static Map<String,String> deliveryTypeCommunicationChannelIDMap = new LinkedHashMap<>();
+  private static String voucherChangeRequestTopic;
+  private static String voucherChangeResponseTopic;
+
+  // conf for voucher
+  // we won't deliver a voucher that expiry in lest than X hours from now :
+  private static int minExpiryDelayForVoucherDeliveryInHours=4;
+  // the number of day after we clean up Expired voucher, in ES and SubscriberProfile
+  private static int cleanUpExpiredVoucherDelayInDays=31;
+  // the bulk size when importing voucher file into ES
+  private static int importVoucherFileBulkSize=5000;
+  // the cache cleaner frequency in seconds for caching voucher with 0 stock from ES, and shrinking back "auto adjust concurrency number"
+  private static int voucherESCacheCleanerFrequencyInSec=300;
+  // an approximation of number of total concurrent process tyring to allocate Voucher in // to ES, but should not need to configure, algo should auto-adjust this
+  private static int numberConcurrentVoucherAllocationToES=10;
+  // the cron entry when the voucher cleaner run
+  private static String cleanExpiredVoucherCronEntry="0 3 * * *";
+  // the default number of replicas for voucher ES indices (might be quite customer dependent)
+  private static int liveVoucherIndexNumberOfReplicas=1;
+  // the default number of shards for voucher ES indices (might be quite customer dependent)
+  private static int liveVoucherIndexNumberOfShards=12;
 
   /*****************************************
    *
@@ -456,6 +476,16 @@ public class Deployment
   public static String getSourceAddressTopic() { return sourceAddressTopic; }
   public static boolean getAutoApproveGuiObjects() { return autoApproveGuiObjects; }
   public static Map<String,String> getDeliveryTypeCommunicationChannelIDMap(){ return deliveryTypeCommunicationChannelIDMap; };
+  public static String getVoucherChangeRequestTopic() { return voucherChangeRequestTopic; }
+  public static String getVoucherChangeResponseTopic() { return voucherChangeResponseTopic; }
+  public static int getMinExpiryDelayForVoucherDeliveryInHours() { return minExpiryDelayForVoucherDeliveryInHours; }
+  public static int getCleanUpExpiredVoucherDelayInDays() {return cleanUpExpiredVoucherDelayInDays; }
+  public static int getImportVoucherFileBulkSize() { return importVoucherFileBulkSize; }
+  public static int getNumberConcurrentVoucherAllocationToES() { return numberConcurrentVoucherAllocationToES; }
+  public static int getVoucherESCacheCleanerFrequencyInSec() { return voucherESCacheCleanerFrequencyInSec; }
+  public static String getCleanExpiredVoucherCronEntry() {return cleanExpiredVoucherCronEntry; }
+  public static int getLiveVoucherIndexNumberOfReplicas() { return liveVoucherIndexNumberOfReplicas; }
+  public static int getLiveVoucherIndexNumberOfShards() { return liveVoucherIndexNumberOfShards; }
 
   //
   // addProfileCriterionField
@@ -2152,6 +2182,20 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
+
+      //
+      //  voucherChangeRequestTopicTopic
+      //
+
+      try
+      {
+        voucherChangeRequestTopic = JSONUtilities.decodeString(jsonRoot, "voucherChangeRequestTopic", true);
+        voucherChangeResponseTopic = JSONUtilities.decodeString(jsonRoot, "voucherChangeResponseTopic", true);
+      }
+      catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
 
       //
       //  baseLanguageID

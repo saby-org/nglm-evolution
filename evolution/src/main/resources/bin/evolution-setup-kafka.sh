@@ -113,6 +113,8 @@ echo create_topic ${topic.propensityoutput}                             $KAFKA_R
 echo create_topic ${topic.externaldeliveryrequest_fileconnector}                    $KAFKA_REPLICATION_FACTOR               $FILECONNECTOR_PARTITIONS_LARGE         "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 echo create_topic ${topic.presentationlog_fileconnector}                            $KAFKA_REPLICATION_FACTOR               $FILECONNECTOR_PARTITIONS_LARGE         "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 echo create_topic ${topic.acceptancelog_fileconnector}                              $KAFKA_REPLICATION_FACTOR               $FILECONNECTOR_PARTITIONS_LARGE         "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
+echo create_topic ${topic.voucherchange.request}                                    $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
+echo create_topic ${topic.voucherchange.response}                                   $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 
 #
 #  regression topics  

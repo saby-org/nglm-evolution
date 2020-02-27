@@ -205,6 +205,8 @@ public class StoreConfiguration
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getPresentationStrategyList", "presentationStrategies", "putPresentationStrategy"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getReportList", "reports", "putReport"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getDNBOMatrixList", "dnboMatrixes", "putDNBOMatrix"));
+    records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getVoucherTypeList", "voucherTypes", "putVoucherType"));
+    records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getVoucherList", "vouchers", "putVoucher"));
 
     /*****************************************
     *

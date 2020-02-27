@@ -225,6 +225,8 @@ public class DNBOUtils
       OfferService offerService = evolutionEventContext.getOfferService();
       ProductService productService = evolutionEventContext.getProductService();
       ProductTypeService productTypeService = evolutionEventContext.getProductTypeService();
+      VoucherService voucherService = evolutionEventContext.getVoucherService();
+      VoucherTypeService voucherTypeService = evolutionEventContext.getVoucherTypeService();
       CatalogCharacteristicService catalogCharacteristicService = evolutionEventContext.getCatalogCharacteristicService();
       DNBOMatrixService dnboMatrixService = evolutionEventContext.getDnboMatrixService();
       SegmentationDimensionService segmentationDimensionService = evolutionEventContext.getSegmentationDimensionService();
@@ -249,7 +251,7 @@ public class DNBOUtils
       Collection<ProposedOfferDetails> presentedOffers;
       try
         {
-          presentedOffers = TokenUtils.getOffers(now, salesChannelID, subscriberProfile, scoringStrategy, productService, productTypeService, catalogCharacteristicService, propensityDataReader, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID);
+          presentedOffers = TokenUtils.getOffers(now, salesChannelID, subscriberProfile, scoringStrategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, propensityDataReader, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID);
         }
       catch (GetOfferException e)
         {

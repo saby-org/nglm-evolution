@@ -37,4 +37,4 @@ echo deployment complete
 #  run
 #
 
-exec kafka-run-class -name thirdPartyManager -loggc com.evolving.nglm.evolution.ThirdPartyManager $KEY $BROKER_SERVERS $API_PORT $GUI_FWK_API_SERVER $THREADPOOL_SIZE
+exec kafka-run-class -name thirdPartyManager -loggc com.evolving.nglm.evolution.ThirdPartyManager $KEY $BROKER_SERVERS $API_PORT $GUI_FWK_API_SERVER $THREADPOOL_SIZE $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT

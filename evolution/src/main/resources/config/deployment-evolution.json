@@ -109,7 +109,10 @@
   "segmentContactPolicyTopic"                            : "${topic.segmentcontactpolicy}",
   "criterionFieldAvailableValuesTopic"                   : "${topic.criterionfieldavailablevalues}",
   "sourceAddressTopic"                   				 : "${topic.sourceaddress}",
-  
+  "voucherChangeRequestTopic"                           : "${topic.voucherchange.request}",
+  "voucherChangeResponseTopic"                          : "${topic.voucherchange.response}",
+
+
   --
   --  registry "topics" -- fake topic names used to register Avro schemas when objects are serialized/deserialized to non-Kafka places (e.g., Redis)
   --

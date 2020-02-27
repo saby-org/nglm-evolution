@@ -6,18 +6,18 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import com.evolving.nglm.core.*;
+import org.apache.http.HttpHost;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -25,11 +25,6 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.ReferenceDataReader;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -135,11 +130,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *****************************************/
 
   private ArrayList<Thread> threads = new ArrayList<Thread>();
-  
+
+  private RestHighLevelClient elasticsearch;
   private SubscriberProfileService subscriberProfileService;
   private DynamicCriterionFieldService dynamicCriterionFieldService;
   private OfferService offerService;
   private ProductService productService;
+  private VoucherService voucherService;
+  private VoucherTypeService voucherTypeService;
   private SalesChannelService salesChannelService;
   private StockMonitor stockService;
   private DeliverableService deliverableService;
@@ -154,7 +152,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *
   *****************************************/
 
-  public PurchaseFulfillmentManager(String deliveryManagerKey)
+  public PurchaseFulfillmentManager(String deliveryManagerKey, RestHighLevelClient elasticsearch)
   {
     //
     //  superclass
@@ -177,7 +175,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
     //  plugin instanciation
     //
-    
+
+    this.elasticsearch = elasticsearch;
+
     subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
     subscriberProfileService.start();
     
@@ -190,17 +190,23 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     productService = new ProductService(Deployment.getBrokerServers(), "PurchaseMgr-productservice-"+deliveryManagerKey, Deployment.getProductTopic(), false);
     productService.start();
-    
+
+    voucherService = new VoucherService(Deployment.getBrokerServers(), "PurchaseMgr-voucherservice-"+deliveryManagerKey, Deployment.getVoucherTopic(), elasticsearch);
+    voucherService.start();
+
+    voucherTypeService = new VoucherTypeService(Deployment.getBrokerServers(), "PurchaseMgr-voucherservice-"+deliveryManagerKey, Deployment.getVoucherTypeTopic(), false);
+    voucherTypeService.start();
+
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "PurchaseMgr-salesChannelservice-"+deliveryManagerKey, Deployment.getSalesChannelTopic(), false);
     salesChannelService.start();
 
-    stockService = new StockMonitor("PurchaseMgr-stockService-"+deliveryManagerKey, offerService, productService);
+    stockService = new StockMonitor("PurchaseMgr-stockService-"+deliveryManagerKey, offerService, productService, voucherService);
     stockService.start();
 
     deliverableService = new DeliverableService(Deployment.getBrokerServers(), "PurchaseMgr-deliverableservice-"+deliveryManagerKey, Deployment.getDeliverableTopic(), false);
     deliverableService.start();
 
-    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("example", "PurchaseMgr-subscriberGroupReader-"+deliveryManagerKey, Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
+    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("PurchaseMgr-subscribergroupepoch", "PurchaseMgr-subscriberGroupReader-"+deliveryManagerKey, Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
 
     //
     // define as commodityDelivery response consumer
@@ -259,7 +265,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_purchasefulfillment_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),4));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),5));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("offerID", Schema.STRING_SCHEMA);
       schemaBuilder.field("offerDisplay", Schema.OPTIONAL_STRING_SCHEMA);
@@ -271,8 +277,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       schemaBuilder.field("offerPrice", Schema.INT64_SCHEMA);
       schemaBuilder.field("origin", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("resellerID", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("voucherDeliveries", SchemaBuilder.array(VoucherDelivery.schema()).optional());
       schema = schemaBuilder.build();
-    };
+    }
 
     //
     //  serde
@@ -306,6 +313,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     private long offerPrice;
     private String origin;
     private String resellerID;
+    private List<VoucherDelivery> voucherDeliveries;
     
     //
     //  accessors
@@ -322,6 +330,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public long getOfferPrice() { return offerPrice; }
     public String getOrigin() { return origin; }
     public String getResellerID() { return resellerID; }
+    public List<VoucherDelivery> getVoucherDeliveries() { return voucherDeliveries; }
     
     //
     //  setters
@@ -334,6 +343,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public void setOfferContent(String offerContent) { this.offerContent = offerContent; }
     public void setMeanOfPayment(String meanOfPayment) { this.meanOfPayment = meanOfPayment; }
     public void setOfferPrice(Long offerPrice) { this.offerPrice = offerPrice; }
+    public void addVoucherDelivery(VoucherDelivery voucherDelivery) {if(getVoucherDeliveries()==null){ this.voucherDeliveries = new ArrayList<>();} this.voucherDeliveries.add(voucherDelivery); }
 
     //
     //  offer delivery accessors
@@ -348,8 +358,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getOfferDeliverySalesChannelId() { return getSalesChannelID(); }
     public long getOfferDeliveryOfferPrice() { return getOfferPrice(); }
     public String getOfferDeliveryMeanOfPayment() { return getMeanOfPayment(); }
-    public String getOfferDeliveryVoucherCode() { return ""; }
-    public String getOfferDeliveryVoucherPartnerId() { return ""; }
+    public String getOfferDeliveryVoucherCode() { return getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getVoucherCode(); }
+    public String getOfferDeliveryVoucherPartnerId() { return ""; }//TODO
     public String getOfferDeliveryOfferContent() { return getOfferContent(); }
     public String getOfferDeliveryResellerID() { return getResellerID(); }
     
@@ -397,17 +407,37 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       boolean firstTime = true;
       if (offer != null)
         {
-          for (OfferProduct offerProduct : offer.getOfferProducts())
+          if (offer.getOfferProducts()!=null)
             {
-              if (firstTime)
+              for (OfferProduct offerProduct : offer.getOfferProducts())
                 {
-                  firstTime = false;
+                  if (firstTime)
+                  {
+                    firstTime = false;
+                  }
+                  else
+                  {
+                    offerContent += ", ";
+                  }
+                  if (log.isDebugEnabled()) log.debug("adding (productID_" + offerProduct.getJSONRepresentation().get("productID") + ") to offer content (" + offerContent + ")");
+                  offerContent += offerProduct.getQuantity() + " productID_" + offerProduct.getJSONRepresentation().get("productID");
                 }
-              else
+            }
+          if (offer.getOfferVouchers()!=null)
+            {
+              for (OfferVoucher offerVoucher : offer.getOfferVouchers())
                 {
-                  offerContent += ", ";
+                  if (firstTime)
+                  {
+                    firstTime = false;
+                  }
+                  else
+                  {
+                    offerContent += ", ";
+                  }
+                  if (log.isDebugEnabled()) log.debug("adding (voucherID_" + offerVoucher.getJSONRepresentationForPurchaseTransaction().get("voucherID") + ") to offer content (" + offerContent + ")");
+                  offerContent += offerVoucher.getQuantity() + " " + offerVoucher.getJSONRepresentationForPurchaseTransaction().get("voucherID");
                 }
-              offerContent += offerProduct.getQuantity() + " " + offerProduct.getJSONRepresentation().get("display");
             }
         }
         this.offerContent = offerContent;
@@ -473,7 +503,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice, String origin, String resellerID)
+    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice, String origin, String resellerID, List<VoucherDelivery> voucherDeliveries)
     {
       super(schemaAndValue);
       this.offerID = offerID;
@@ -487,6 +517,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.offerPrice = offerPrice;
       this.origin = origin;
       this.resellerID = resellerID;
+      this.voucherDeliveries = voucherDeliveries;
     }
 
     /*****************************************
@@ -509,6 +540,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.offerPrice = purchaseFulfillmentRequest.getOfferPrice();
       this.origin = purchaseFulfillmentRequest.getOrigin();
       this.resellerID = purchaseFulfillmentRequest.getResellerID();
+      this.voucherDeliveries = purchaseFulfillmentRequest.getVoucherDeliveries();
     }
 
     /*****************************************
@@ -543,7 +575,16 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       struct.put("offerPrice", purchaseFulfillmentRequest.getOfferPrice());
       struct.put("origin", purchaseFulfillmentRequest.getOrigin());
       struct.put("resellerID", purchaseFulfillmentRequest.getResellerID());
+      if(purchaseFulfillmentRequest.getVoucherDeliveries()!=null) struct.put("voucherDeliveries", packVoucherDeliveries(purchaseFulfillmentRequest.getVoucherDeliveries()));
       return struct;
+    }
+
+    private static List<Object> packVoucherDeliveries(List<VoucherDelivery> voucherDeliveries){
+      List<Object> result = new ArrayList<>();
+      for(VoucherDelivery voucherDelivery:voucherDeliveries){
+        result.add(VoucherDelivery.pack(voucherDelivery));
+      }
+      return result;
     }
 
     //
@@ -583,12 +624,25 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       long offerPrice = (schemaVersion >= 2) ? valueStruct.getInt64("offerPrice") : 0;
       String origin = (schemaVersion >= 3) ? valueStruct.getString("origin") : "";
       String resellerID = (schemaVersion >= 4) ? valueStruct.getString("resellerID") : "";
+      List<VoucherDelivery> voucherDeliveries = (schemaVersion >= 5) ? unpackVoucherDeliveries(schema.field("voucherDeliveries").schema(), valueStruct.get("voucherDeliveries")) : null;
+
 
       //
       //  return
       //
 
-      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice, origin, resellerID);
+      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice, origin, resellerID, voucherDeliveries);
+    }
+
+    private static List<VoucherDelivery> unpackVoucherDeliveries(Schema schema, Object value){
+      if(value==null) return null;
+      Schema voucherDeliverySchema = schema.valueSchema();
+      List<VoucherDelivery> result = new ArrayList<>();
+      List<Object> valueArray = (List<Object>) value;
+      for(Object voucherDelivery:valueArray){
+        result.add(VoucherDelivery.unpack(new SchemaAndValue(voucherDeliverySchema,voucherDelivery)));
+      }
+      return result;
     }
 
     /*****************************************
@@ -614,6 +668,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       b.append("," + offerPrice);
       b.append("," + origin);
       b.append("," + resellerID);
+      b.append(",{");
+      if(voucherDeliveries!=null) b.append(Arrays.toString(voucherDeliveries.toArray()));
+      b.append("}");
       b.append("}");
       return b.toString();
     }
@@ -626,7 +683,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     ****************************************/
     
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
     {
       Module module = Module.fromExternalRepresentation(getModuleID());
       //
@@ -676,7 +733,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           if(offer.getOfferProducts() != null) {
             for(OfferProduct offerProduct : offer.getOfferProducts()) {
               Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
-              sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():offerProduct.getProductID()).append(",");
+              sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():"product"+offerProduct.getProductID()).append(",");
+            }
+          }
+          if(offer.getOfferVouchers() != null) {
+            for(OfferVoucher offerVoucher : offer.getOfferVouchers()) {
+              Voucher voucher = (Voucher) voucherService.getStoredVoucher(offerVoucher.getVoucherID());
+              sb.append(offerVoucher.getQuantity()+" ").append(voucher!=null?voucher.getVoucherDisplay():"voucher"+offerVoucher.getVoucherID()).append(",");
             }
           }
           String offerContent = null;
@@ -696,12 +759,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           guiPresentationMap.put(RESELLERID, getResellerID());
           guiPresentationMap.put(RETURNCODE, getReturnCode());
           guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
-          guiPresentationMap.put(VOUCHERCODE, "");
-          guiPresentationMap.put(VOUCHERPARTNERID, "");
+          guiPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
+          guiPresentationMap.put(VOUCHERPARTNERID, getOfferDeliveryVoucherPartnerId());
         }
     }
     
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
     {
       
       Module module = Module.fromExternalRepresentation(getModuleID());
@@ -751,10 +814,16 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           if(offer.getOfferProducts() != null) {
             for(OfferProduct offerProduct : offer.getOfferProducts()) {
               Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
-              sb.append(product!=null?product.getDisplay():offerProduct.getProductID()).append(";").append(offerProduct.getQuantity()).append(",");
+              sb.append(product!=null?product.getDisplay():"product"+offerProduct.getProductID()).append(";").append(offerProduct.getQuantity()).append(",");
             }
           }
-          String offerContent = sb.toString().substring(0, sb.toString().length()-1);
+          if(offer.getOfferVouchers() != null) {
+            for(OfferVoucher offerVoucher : offer.getOfferVouchers()) {
+              Voucher voucher = (Voucher) voucherService.getStoredVoucher(offerVoucher.getVoucherID());
+              sb.append(voucher!=null?voucher.getVoucherDisplay():"voucher"+offerVoucher.getVoucherID()).append(";").append(offerVoucher.getQuantity()).append(",");
+            }
+          }
+          String offerContent = sb.length()>0?sb.toString().substring(0, sb.toString().length()-1):"";
           thirdPartyPresentationMap.put(OFFERCONTENT, offerContent);
 
           thirdPartyPresentationMap.put(SALESCHANNELID, getSalesChannelID());
@@ -768,8 +837,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(RESELLERID, getResellerID());
           thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
           thirdPartyPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
-          thirdPartyPresentationMap.put(VOUCHERCODE, "");
-          thirdPartyPresentationMap.put(VOUCHERPARTNERID, "");
+          thirdPartyPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
+          thirdPartyPresentationMap.put(VOUCHERPARTNERID, getOfferDeliveryVoucherPartnerId());
         }
     }
   }
@@ -783,6 +852,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   @Override
   public void run()
   {
+    mainLoop://labeled loop to "continue" from nested ones
     while (isProcessing())
       {
         /*****************************************
@@ -826,7 +896,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(quantity < 1){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for quantity");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_FIELD_VALUE, "bad field value for quantity");
-          continue;
+          continue mainLoop;
         }
         
         //
@@ -836,7 +906,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(subscriberID == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for subscriberID");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (subscriberID)");
-          continue;
+          continue mainLoop;
         }
         SubscriberProfile subscriberProfile = null;
         try{
@@ -844,14 +914,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           if(subscriberProfile == null){
             log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : subscriber " + subscriberID + " not found");
             submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_NOT_FOUND, "customer " + subscriberID + " not found");
-            continue;
+            continue mainLoop;
           }else{
             log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : subscriber " + subscriberID + " found ("+subscriberProfile+")");
           }
         }catch (SubscriberProfileServiceException e) {
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : subscriberService not available");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "subscriberService not available");
-          continue;
+          continue mainLoop;
         }
 
         //
@@ -861,13 +931,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(offerID == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for offerID");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (offerID)");
-          continue;
+          continue mainLoop;
         }
         Offer offer = offerService.getActiveOffer(offerID, now);
         if(offer == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " not found");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_FOUND, "offer " + offerID + " not found or not active (date = "+now+")");
-          continue;
+          continue mainLoop;
         }else{
           if (log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " found ("+offer+")");
         }
@@ -880,7 +950,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(salesChannel == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " not found");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CHANNEL_DEACTIVATED, "salesChannel " + salesChannelID + " not activated");
-          continue;
+          continue mainLoop;
         }else{
           if (log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " found ("+salesChannel+")");
         }
@@ -906,7 +976,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(!priceFound){ //need this boolean since price can be null (if offer is free)
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer price for sales channel " + salesChannelID + " not found");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRICE_NOT_APPLICABLE, "offer price for sales channel " + salesChannelID + " not found");
-          continue;
+          continue mainLoop;
         }
         purchaseStatus.addPaymentToBeDebited(offerPrice);
 
@@ -923,26 +993,52 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(!offerService.isActiveOffer(offer, now)){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : offer " + offer.getOfferID() + " not active (date = "+now+")");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_OFFER_STATUS, "offer " + offer.getOfferID() + " not active (date = "+now+")");
-          continue;
+          continue mainLoop;
         }
         purchaseStatus.addOfferStockToBeDebited(offer.getOfferID());
 
         //
         // check offer content
         //
-        
-        for(OfferProduct offerProduct : offer.getOfferProducts()){
-          Product product = productService.getActiveProduct(offerProduct.getProductID(), now);
-          if(product == null){
-            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : product with ID " + offerProduct.getProductID() + " not found or not active (date = "+now+")");
-            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "product with ID " + offerProduct.getProductID() + " not found or not active (date = "+now+")");
-            continue;
-          }else{
-            purchaseStatus.addProductStockToBeDebited(offerProduct);
-            purchaseStatus.addProductToBeCredited(offerProduct);
+
+        if(offer.getOfferProducts()!=null){
+          for(OfferProduct offerProduct : offer.getOfferProducts()){
+            Product product = productService.getActiveProduct(offerProduct.getProductID(), now);
+            if(product == null){
+              log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : product with ID " + offerProduct.getProductID() + " not found or not active (date = "+now+")");
+              submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "product with ID " + offerProduct.getProductID() + " not found or not active (date = "+now+")");
+              continue mainLoop;
+            }else{
+              purchaseStatus.addProductStockToBeDebited(offerProduct);
+              purchaseStatus.addProductToBeCredited(offerProduct);
+            }
           }
         }
-        
+
+        if(offer.getOfferVouchers()!=null){
+          for(OfferVoucher offerVoucher : offer.getOfferVouchers()){
+            Voucher voucher = voucherService.getActiveVoucher(offerVoucher.getVoucherID(), now);
+            if(voucher==null){
+              log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : voucher with ID " + offerVoucher.getVoucherID() + "not found or not active (date = "+now+")");
+              submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "voucher with ID " + offerVoucher.getVoucherID() + " not found or not active (date = "+now+")");
+              continue mainLoop;
+            }else{
+              // more than 1 will ever be allowed ? trying to code like yes, but sure not really tested! (biggest problem I see, how do we "send" all codes)
+              int voucherQuantity = offerVoucher.getQuantity() * purchaseStatus.getQuantity();
+              offerVoucher.setQuantity(voucherQuantity);
+              if(voucher instanceof VoucherShared){
+                purchaseStatus.addVoucherSharedToBeAllocated(offerVoucher);
+              }else if (voucher instanceof VoucherPersonal){
+                purchaseStatus.addVoucherPersonalToBeAllocated(offerVoucher);
+              }else{
+                log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : voucher with ID " + offerVoucher.getVoucherID() + " voucher type not recognized (date = "+now+")");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "voucher with ID " + offerVoucher.getVoucherID() + " voucher type not recognized (date = "+now+")");
+                continue mainLoop;
+              }
+            }
+          }
+        }
+
         //
         // check offer criteria (for the specific subscriber)
         //
@@ -951,7 +1047,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(!offer.evaluateProfileCriteria(evaluationRequest)){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_APPLICABLE, "criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
-          continue;
+          continue mainLoop;
         }
         
         //TODO : still to be done :
@@ -993,10 +1089,27 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     log.info("PurchaseFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : called ...");
 
     PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlatorUpdate);
-    ((PurchaseFulfillmentRequest)deliveryRequest).setReturnCode(purchaseStatus.getDeliveryStatusCode());
-    ((PurchaseFulfillmentRequest)deliveryRequest).setStatus(purchaseStatus.getPurchaseFulfillmentStatus());
-    deliveryRequest.setDeliveryStatus(purchaseStatus.getDeliveryStatus());
-    deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
+    PurchaseFulfillmentRequest purchaseFulfillmentRequest = (PurchaseFulfillmentRequest) deliveryRequest;
+    if(purchaseStatus.getVoucherSharedAllocated()!=null && !purchaseStatus.getVoucherSharedAllocated().isEmpty()){
+      for(OfferVoucher offerVoucher:purchaseStatus.getVoucherSharedAllocated()){
+        for(int i=0;i<offerVoucher.getQuantity();i++){
+          VoucherDelivery voucherDelivery = new VoucherDelivery(offerVoucher.getVoucherID(),offerVoucher.getFileID(),offerVoucher.getVoucherCode(), VoucherDelivery.VoucherStatus.Delivered, offerVoucher.getVoucherExpiryDate());
+          log.info("PurchaseFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") adding voucherDelivery "+voucherDelivery);
+          purchaseFulfillmentRequest.addVoucherDelivery(voucherDelivery);
+        }
+      }
+    }
+    if(purchaseStatus.getVoucherPersonalAllocated()!=null && !purchaseStatus.getVoucherPersonalAllocated().isEmpty()){
+      for(OfferVoucher offerVoucher:purchaseStatus.getVoucherPersonalAllocated()){
+        VoucherDelivery voucherDelivery = new VoucherDelivery(offerVoucher.getVoucherID(),offerVoucher.getFileID(),offerVoucher.getVoucherCode(), VoucherDelivery.VoucherStatus.Delivered, offerVoucher.getVoucherExpiryDate());
+        log.info("PurchaseFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") adding voucherDelivery "+voucherDelivery);
+        purchaseFulfillmentRequest.addVoucherDelivery(voucherDelivery);
+      }
+    }
+    purchaseFulfillmentRequest.setReturnCode(purchaseStatus.getDeliveryStatusCode());
+    purchaseFulfillmentRequest.setStatus(purchaseStatus.getPurchaseFulfillmentStatus());
+    purchaseFulfillmentRequest.setDeliveryStatus(purchaseStatus.getDeliveryStatus());
+    purchaseFulfillmentRequest.setDeliveryDate(SystemTime.getCurrentTime());
     completeRequest(deliveryRequest);
     odrStats.updatePurchasesCount(1, deliveryRequest.getDeliveryStatus());
 
@@ -1048,6 +1161,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
 
     String deliveryManagerKey = args[0];
+    String elasticsearchServerHost = args[1];
+    int elasticsearchServerPort = Integer.parseInt(args[2]);
+
 
     //
     //  instance  
@@ -1055,8 +1171,18 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     log.info("PurchaseFulfillmentManager: Configuration " + Deployment.getDeliveryManagers());
 
-    
-    PurchaseFulfillmentManager manager = new PurchaseFulfillmentManager(deliveryManagerKey);
+    RestHighLevelClient elasticsearch;
+    try
+    {
+      elasticsearch = new RestHighLevelClient(RestClient.builder(new HttpHost(elasticsearchServerHost, elasticsearchServerPort, "http")));
+    }
+    catch (ElasticsearchException e)
+    {
+      throw new ServerRuntimeException("could not initialize elasticsearch client", e);
+    }
+
+
+    PurchaseFulfillmentManager manager = new PurchaseFulfillmentManager(deliveryManagerKey,elasticsearch);
 
     //
     //  run
@@ -1082,6 +1208,30 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       boolean debitOK = debitProductStock(purchaseStatus);
       if(!debitOK){
         proceedRollback(purchaseStatus, PurchaseFulfillmentStatus.INSUFFICIENT_STOCK, "proceedPurchase : could not debit stock of product "+purchaseStatus.getProductStockDebitFailed().getProductID());
+        return;
+      }
+    }
+
+    //
+    // reserve all shared vouchers (manage stock)
+    //
+
+    if(purchaseStatus.getVoucherSharedToBeAllocated() != null && !purchaseStatus.getVoucherSharedToBeAllocated().isEmpty()){
+      boolean allocatedOK = allocateVoucherShared(purchaseStatus);
+      if(!allocatedOK){
+        proceedRollback(purchaseStatus, PurchaseFulfillmentStatus.INSUFFICIENT_STOCK, "proceedPurchase : could not debit stock of voucher "+purchaseStatus.getVoucherAllocateFailed().getVoucherID());
+        return;
+      }
+    }
+
+    //
+    // reserve all personal vouchers
+    //
+
+    if(purchaseStatus.getVoucherPersonalToBeAllocated() != null && !purchaseStatus.getVoucherPersonalToBeAllocated().isEmpty()){
+      boolean allocatedOK = allocateVoucherPersonal(purchaseStatus);
+      if(!allocatedOK){
+        proceedRollback(purchaseStatus, PurchaseFulfillmentStatus.INSUFFICIENT_STOCK, "proceedPurchase : could not debit stock of voucher "+purchaseStatus.getVoucherAllocateFailed().getVoucherID());
         return;
       }
     }
@@ -1125,7 +1275,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     }
 
     //
-    // confirm products and offers reservations
+    // confirm products, shared voucher and offers reservations
     //
     
     if(purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty()){
@@ -1136,6 +1286,22 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         }else{
           int quantity = offerProduct.getQuantity() * purchaseStatus.getQuantity();
           stockService.confirmReservation(product, quantity);
+        }
+      }
+    }
+    if(purchaseStatus.getVoucherSharedAllocated() != null && !purchaseStatus.getVoucherSharedAllocated().isEmpty()){
+      for(OfferVoucher offerVoucher : purchaseStatus.getVoucherSharedAllocated()){
+        VoucherShared voucher = null;
+        try{
+          voucher = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), SystemTime.getCurrentTime());
+        }catch(ClassCastException ex){
+          log.warn("PurchaseFulfillmentManager.proceedPurchase(offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of bad voucher type "+offerVoucher.getVoucherID());
+        }
+        if(voucher == null){
+          log.warn("PurchaseFulfillmentManager.proceedPurchase(offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of voucher "+offerVoucher.getVoucherID());
+        }else{
+          offerVoucher.setVoucherCode(voucher.getSharedCode());
+          stockService.confirmReservation(voucher, offerVoucher.getQuantity());
         }
       }
     }
@@ -1169,7 +1335,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *****************************************/
 
   private boolean debitProductStock(PurchaseRequestStatus purchaseStatus){
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
+    if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     boolean allGood = true;
     if(purchaseStatus.getProductStockToBeDebited() != null && !purchaseStatus.getProductStockToBeDebited().isEmpty()){
       while(!purchaseStatus.getProductStockToBeDebited().isEmpty() && allGood){
@@ -1181,24 +1347,109 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           purchaseStatus.setProductStockBeingDebited(null);
           allGood = false;
         }else{
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", productID "+product.getProductID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
+          if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", productID "+product.getProductID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
           int quantity = offerProduct.getQuantity() * purchaseStatus.getQuantity();
           boolean approved = stockService.reserve(product, quantity);
           if(approved){
             purchaseStatus.addProductStockDebited(purchaseStatus.getProductStockBeingDebited());
             purchaseStatus.setProductStockBeingDebited(null);
-            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock : product with ID " + product.getProductID() + " reserved");
+            if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock : product with ID " + product.getProductID() + " reserved " + quantity);
           }else{
             purchaseStatus.setProductStockDebitFailed(purchaseStatus.getProductStockBeingDebited());
             purchaseStatus.setProductStockBeingDebited(null);
             allGood = false;
-            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock : product with ID " + product.getProductID() + " reservation FAILED");
+            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock : product with ID " + product.getProductID() + " reservation of " + quantity + " FAILED");
           }
         }
       }
     }
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
+    if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
     return allGood;
+  }
+
+  private boolean allocateVoucherShared(PurchaseRequestStatus purchaseStatus){
+    if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
+    if(purchaseStatus.getVoucherSharedToBeAllocated() != null && !purchaseStatus.getVoucherSharedToBeAllocated().isEmpty()){
+      Date now = SystemTime.getCurrentTime();
+      while(!purchaseStatus.getVoucherSharedToBeAllocated().isEmpty()){
+        OfferVoucher offerVoucher = purchaseStatus.getVoucherSharedToBeAllocated().remove(0);
+        VoucherShared voucherShared = null;
+        try{
+          voucherShared = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), now);
+        }catch(ClassCastException ex){
+          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared : voucher with ID " + offerVoucher.getVoucherID() + " bad voucher type " + ex.getMessage());
+          purchaseStatus.setVoucherAllocateFailed(offerVoucher);
+          return false;
+        }
+        if(voucherShared == null){
+          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared : voucher with ID " + offerVoucher.getVoucherID() + " voucher does not exist");
+          purchaseStatus.setVoucherAllocateFailed(offerVoucher);
+          return false;
+        }else{
+          if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared (offerID "+purchaseStatus.getOfferID()+", voucherID "+voucherShared.getVoucherID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
+          boolean approved = stockService.reserve(voucherShared, offerVoucher.getQuantity());
+          if(approved){
+            VoucherType voucherType = voucherTypeService.getActiveVoucherType(voucherShared.getVoucherTypeId(),now);
+            if(voucherType == null){
+              log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal : voucher type for voucher ID " + offerVoucher.getVoucherID() + " does not exist");
+              purchaseStatus.setVoucherAllocateFailed(offerVoucher);
+              return false;
+            }
+            purchaseStatus.addVoucherSharedAllocated(offerVoucher);
+            if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared : voucher with ID " + voucherShared.getVoucherID() + " reserved " + offerVoucher.getQuantity());
+          }else{
+            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared : voucher with ID " + voucherShared.getVoucherID() + " reservation of "+offerVoucher.getQuantity()+" FAILED");
+            purchaseStatus.setVoucherAllocateFailed(offerVoucher);
+            return false;
+          }
+        }
+      }
+    }
+    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
+    return true;
+  }
+
+  private boolean allocateVoucherPersonal(PurchaseRequestStatus purchaseStatus){
+    if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
+    if(purchaseStatus.getVoucherPersonalToBeAllocated() != null && !purchaseStatus.getVoucherPersonalToBeAllocated().isEmpty()){
+      Date now = SystemTime.getCurrentTime();
+      while(!purchaseStatus.getVoucherPersonalToBeAllocated().isEmpty()){
+        OfferVoucher offerVoucher = purchaseStatus.getVoucherPersonalToBeAllocated().remove(0);
+        VoucherPersonal voucherPersonal = null;
+        try{
+          voucherPersonal = (VoucherPersonal) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), now);
+        }catch(ClassCastException ex){
+          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal : voucher with ID " + offerVoucher.getVoucherID() + " bad voucher type " + ex.getMessage());
+          purchaseStatus.setVoucherAllocateFailed(offerVoucher);
+          return false;
+        }
+        if(voucherPersonal == null){
+          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal : voucher with ID " + offerVoucher.getVoucherID() + " voucher does not exist");
+          purchaseStatus.setVoucherAllocateFailed(offerVoucher);
+          return false;
+        }else{
+          for(int i=0;i<offerVoucher.getQuantity();i++){
+            if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal (offerID "+purchaseStatus.getOfferID()+", voucherID "+voucherPersonal.getVoucherID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
+            VoucherPersonalES esVoucher = voucherService.getVoucherPersonalESService().allocatePendingVoucher(voucherPersonal.getSupplierID(),voucherPersonal.getVoucherID(),purchaseStatus.getSubscriberID());
+            if(esVoucher!=null && esVoucher.getSubscriberId()!=null && esVoucher.getVoucherCode()!=null && esVoucher.getFileId()!=null){
+              OfferVoucher allocatedVoucher = new OfferVoucher(offerVoucher);
+              allocatedVoucher.setQuantity(1);
+              allocatedVoucher.setVoucherCode(esVoucher.getVoucherCode());
+              allocatedVoucher.setVoucherExpiryDate(esVoucher.getExpiryDate());
+              allocatedVoucher.setFileID(esVoucher.getFileId());
+              purchaseStatus.addVoucherPersonalAllocated(allocatedVoucher);
+              if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal : voucher with ID " + voucherPersonal.getVoucherID() + " reserved " + allocatedVoucher.getQuantity()+ ", "+allocatedVoucher.getVoucherCode()+", "+allocatedVoucher.getVoucherExpiryDate());
+            }else{
+              log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal : voucher with ID " + voucherPersonal.getVoucherID() + " reservation of "+offerVoucher.getQuantity()+" FAILED");
+              purchaseStatus.setVoucherAllocateFailed(offerVoucher);
+              return false;
+            }
+          }
+        }
+      }
+    }
+    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
+    return true;
   }
 
   private boolean debitOfferStock(PurchaseRequestStatus purchaseStatus){
@@ -1265,7 +1516,61 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           int quantity = offerProduct.getQuantity() * purchaseStatus.getQuantity();
           stockService.voidReservation(product, quantity);
           purchaseStatus.addProductStockRollbacked(offerProduct);
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback : reservation product " + product.getProductID() + " canceled");
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback : reservation product " + product.getProductID() + " canceled " + quantity);
+        }
+      }
+    }
+
+    //
+    // cancel all shared voucher stocks
+    //
+
+    if(purchaseStatus.getVoucherSharedAllocated() != null && !purchaseStatus.getVoucherSharedAllocated().isEmpty()){
+      while(purchaseStatus.getVoucherSharedAllocated() != null && !purchaseStatus.getVoucherSharedAllocated().isEmpty()){
+        OfferVoucher offerVoucher = purchaseStatus.getVoucherSharedAllocated().remove(0);
+        VoucherShared voucherShared = null;
+        try{
+          voucherShared = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), SystemTime.getCurrentTime());
+        }catch(ClassCastException ex){
+          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of bad type shared voucher "+offerVoucher.getVoucherID());
+          purchaseStatus.addVoucherSharedRollBackFailed(offerVoucher);
+        }
+        if(voucherShared == null){
+          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of shared voucher "+offerVoucher.getVoucherID());
+          purchaseStatus.addVoucherSharedRollBackFailed(offerVoucher);
+        }else{
+          stockService.voidReservation(voucherShared, offerVoucher.getQuantity());
+          purchaseStatus.addVoucherSharedRollBacked(offerVoucher);
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback : reservation shared voucher " + voucherShared.getVoucherID() + " canceled " + offerVoucher.getQuantity());
+        }
+      }
+    }
+
+    //
+    // cancel all personal vouchers allocated
+    //
+
+    if(purchaseStatus.getVoucherPersonalAllocated() != null && !purchaseStatus.getVoucherPersonalAllocated().isEmpty()){
+      while(purchaseStatus.getVoucherPersonalAllocated() != null && !purchaseStatus.getVoucherPersonalAllocated().isEmpty()){
+        OfferVoucher offerVoucher = purchaseStatus.getVoucherPersonalAllocated().remove(0);
+        VoucherPersonal voucherPersonal = null;
+        try{
+          voucherPersonal = (VoucherPersonal) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), SystemTime.getCurrentTime());
+        }catch(ClassCastException ex){
+          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of bad type Personal voucher "+offerVoucher.getVoucherID());
+          purchaseStatus.addVoucherPersonalRollBackFailed(offerVoucher);
+        }
+        if(voucherPersonal == null){
+          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of Personal voucher "+offerVoucher.getVoucherID());
+          purchaseStatus.addVoucherPersonalRollBackFailed(offerVoucher);
+        }else{
+          if(voucherService.getVoucherPersonalESService().voidReservation(voucherPersonal.getSupplierID(),offerVoucher.getVoucherCode())){
+            purchaseStatus.addVoucherPersonalRollBacked(offerVoucher);
+            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback : reservation Personal voucher " + voucherPersonal.getVoucherID() + " canceled " + offerVoucher.getVoucherCode());
+          }else{
+            log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation in ES for Personal voucher "+offerVoucher.getVoucherID());
+            purchaseStatus.addVoucherPersonalRollBackFailed(offerVoucher);
+          }
         }
       }
     }
@@ -1623,7 +1928,17 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     private OfferProduct productBeingRollbacked = null;
     private List<OfferProduct> productRollbacked = null;
     private List<OfferProduct> productRollbackFailed = null;
-        
+
+    private List<OfferVoucher> voucherSharedToBeAllocated = null;
+    private List<OfferVoucher> voucherSharedAllocated = null;
+    private List<OfferVoucher> voucherSharedRollBacked = null;
+    private List<OfferVoucher> voucherSharedRollBackFailed = null;
+    private List<OfferVoucher> voucherPersonalToBeAllocated = null;
+    private List<OfferVoucher> voucherPersonalAllocated = null;
+    private List<OfferVoucher> voucherPersonalRollBacked = null;
+    private List<OfferVoucher> voucherPersonalRollBackFailed = null;
+    private OfferVoucher voucherAllocateFailed = null;
+
     private List<String> providerToBeNotifyed = null;
     private List<String> providerNotifyed = null;
     
@@ -1688,7 +2003,17 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public OfferProduct getProductBeingRollbacked(){return productBeingRollbacked;}
     public List<OfferProduct> getProductRollbacked(){return productRollbacked;}
     public List<OfferProduct> getProductRollbackFailed(){return productRollbackFailed;}
-    
+
+    public List<OfferVoucher> getVoucherSharedToBeAllocated() {return voucherSharedToBeAllocated;}
+    public List<OfferVoucher> getVoucherSharedAllocated() {return voucherSharedAllocated;}
+    public List<OfferVoucher> getVoucherSharedRollBacked() {return voucherSharedRollBacked;}
+    public List<OfferVoucher> getVoucherSharedRollBackFailed() {return voucherSharedRollBackFailed;}
+    public List<OfferVoucher> getVoucherPersonalToBeAllocated() {return voucherPersonalToBeAllocated;}
+    public List<OfferVoucher> getVoucherPersonalAllocated() {return voucherPersonalAllocated;}
+    public List<OfferVoucher> getVoucherPersonalRollBacked() {return voucherPersonalRollBacked;}
+    public List<OfferVoucher> getVoucherPersonalRollBackFailed() {return voucherPersonalRollBackFailed;}
+    public OfferVoucher getVoucherAllocateFailed() {return voucherAllocateFailed;}
+
     public List<String> getProviderToBeNotifyed(){return providerToBeNotifyed;}
     public List<String> getProviderNotifyed(){return providerNotifyed;}
  
@@ -1738,7 +2063,17 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public void setProductBeingRollbacked(OfferProduct product){this.productBeingRollbacked = product;}
     public void addProductRollbacked(OfferProduct product){if(productRollbacked == null){productRollbacked = new ArrayList<OfferProduct>();} productRollbacked.add(product);}
     public void addProductRollbackFailed(OfferProduct product){if(productRollbackFailed == null){productRollbackFailed = new ArrayList<OfferProduct>();} productRollbackFailed.add(product);}
-    
+
+    public void addVoucherSharedToBeAllocated(OfferVoucher voucher){if(voucherSharedToBeAllocated == null){voucherSharedToBeAllocated = new ArrayList<OfferVoucher>();} voucherSharedToBeAllocated.add(voucher);}
+    public void addVoucherSharedAllocated(OfferVoucher voucher){if(voucherSharedAllocated == null){voucherSharedAllocated = new ArrayList<OfferVoucher>();} voucherSharedAllocated.add(voucher);}
+    public void addVoucherSharedRollBacked(OfferVoucher voucher){if(voucherSharedRollBacked == null){voucherSharedRollBacked = new ArrayList<OfferVoucher>();} voucherSharedRollBacked.add(voucher);}
+    public void addVoucherSharedRollBackFailed(OfferVoucher voucher){if(voucherSharedRollBackFailed == null){voucherSharedRollBackFailed = new ArrayList<OfferVoucher>();} voucherSharedRollBackFailed.add(voucher);}
+    public void addVoucherPersonalToBeAllocated(OfferVoucher voucher){if(voucherPersonalToBeAllocated == null){voucherPersonalToBeAllocated = new ArrayList<OfferVoucher>();} voucherPersonalToBeAllocated.add(voucher);}
+    public void addVoucherPersonalAllocated(OfferVoucher voucher){if(voucherPersonalAllocated == null){voucherPersonalAllocated = new ArrayList<OfferVoucher>();} voucherPersonalAllocated.add(voucher);}
+    public void addVoucherPersonalRollBacked(OfferVoucher voucher){if(voucherPersonalRollBacked == null){voucherPersonalRollBacked = new ArrayList<OfferVoucher>();} voucherPersonalRollBacked.add(voucher);}
+    public void addVoucherPersonalRollBackFailed(OfferVoucher voucher){if(voucherPersonalRollBackFailed == null){voucherPersonalRollBackFailed = new ArrayList<OfferVoucher>();} voucherPersonalRollBackFailed.add(voucher);}
+    public void setVoucherAllocateFailed(OfferVoucher voucher){this.voucherAllocateFailed = voucher;}
+
     /*****************************************
     *
     *  Constructors
@@ -1763,7 +2098,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *****************************************/
 
     public PurchaseRequestStatus(JSONObject jsonRoot)
-    {  
+    {
+
+      if(log.isDebugEnabled()) log.debug("PurchaseRequestStatus() : "+jsonRoot.toJSONString());
+
       this.newRequestCounter = JSONUtilities.decodeInteger(jsonRoot, "newRequestCounter", true);
       
       this.correlator = JSONUtilities.decodeString(jsonRoot, "correlator", true);
@@ -1960,6 +2298,78 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         this.productRollbackFailed = productRollbackFailedList;
       }
 
+      //
+      // voucher
+      //
+
+      JSONArray voucherSharedToBeAllocatedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "voucherSharedToBeAllocated", false);
+      if (voucherSharedToBeAllocatedJSON != null){
+        List<OfferVoucher> voucherSharedToBeAllocatedList = new ArrayList<OfferVoucher>();
+        for (int i=0; i<voucherSharedToBeAllocatedJSON.size(); i++){
+          voucherSharedToBeAllocatedList.add(new OfferVoucher((JSONObject) voucherSharedToBeAllocatedJSON.get(i)));
+        }
+        this.voucherSharedToBeAllocated = voucherSharedToBeAllocatedList;
+      }
+      JSONArray voucherSharedAllocatedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "voucherSharedAllocated", false);
+      if (voucherSharedAllocatedJSON != null){
+        List<OfferVoucher> voucherSharedAllocatedList = new ArrayList<OfferVoucher>();
+        for (int i=0; i<voucherSharedAllocatedJSON.size(); i++){
+          voucherSharedAllocatedList.add(new OfferVoucher((JSONObject) voucherSharedAllocatedJSON.get(i)));
+        }
+        this.voucherSharedAllocated = voucherSharedAllocatedList;
+      }
+      JSONArray voucherSharedRollBackedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "voucherSharedRollBacked", false);
+      if (voucherSharedRollBackedJSON != null){
+        List<OfferVoucher> voucherSharedRollBackedList = new ArrayList<OfferVoucher>();
+        for (int i=0; i<voucherSharedRollBackedJSON.size(); i++){
+          voucherSharedRollBackedList.add(new OfferVoucher((JSONObject) voucherSharedRollBackedJSON.get(i)));
+        }
+        this.voucherSharedRollBacked = voucherSharedRollBackedList;
+      }
+      JSONArray voucherSharedRollBackFailedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "voucherSharedRollBackFailed", false);
+      if (voucherSharedRollBackFailedJSON != null){
+        List<OfferVoucher> voucherSharedRollBackFailedList = new ArrayList<OfferVoucher>();
+        for (int i=0; i<voucherSharedRollBackFailedJSON.size(); i++){
+          voucherSharedRollBackFailedList.add(new OfferVoucher((JSONObject) voucherSharedRollBackFailedJSON.get(i)));
+        }
+        this.voucherSharedRollBackFailed = voucherSharedRollBackFailedList;
+      }
+      JSONArray voucherPersonalToBeAllocatedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "voucherPersonalToBeAllocated", false);
+      if (voucherPersonalToBeAllocatedJSON != null){
+        List<OfferVoucher> voucherPersonalToBeAllocatedList = new ArrayList<OfferVoucher>();
+        for (int i=0; i<voucherPersonalToBeAllocatedJSON.size(); i++){
+          voucherPersonalToBeAllocatedList.add(new OfferVoucher((JSONObject) voucherPersonalToBeAllocatedJSON.get(i)));//FAILLING ???
+        }
+        this.voucherPersonalToBeAllocated = voucherPersonalToBeAllocatedList;
+      }
+      JSONArray voucherPersonalAllocatedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "voucherPersonalAllocated", false);
+      if (voucherPersonalAllocatedJSON != null){
+        List<OfferVoucher> voucherPersonalAllocatedList = new ArrayList<OfferVoucher>();
+        for (int i=0; i<voucherPersonalAllocatedJSON.size(); i++){
+          voucherPersonalAllocatedList.add(new OfferVoucher((JSONObject) voucherPersonalAllocatedJSON.get(i)));
+        }
+        this.voucherPersonalAllocated = voucherPersonalAllocatedList;
+      }
+      JSONArray voucherPersonalRollBackedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "voucherPersonalRollBacked", false);
+      if (voucherPersonalRollBackedJSON != null){
+        List<OfferVoucher> voucherPersonalRollBackedList = new ArrayList<OfferVoucher>();
+        for (int i=0; i<voucherPersonalRollBackedJSON.size(); i++){
+          voucherPersonalRollBackedList.add(new OfferVoucher((JSONObject) voucherPersonalRollBackedJSON.get(i)));
+        }
+        this.voucherPersonalRollBacked = voucherPersonalRollBackedList;
+      }
+      JSONArray voucherPersonalRollBackFailedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "voucherPersonalRollBackFailed", false);
+      if (voucherPersonalRollBackFailedJSON != null){
+        List<OfferVoucher> voucherPersonalRollBackFailedList = new ArrayList<OfferVoucher>();
+        for (int i=0; i<voucherPersonalRollBackFailedJSON.size(); i++){
+          voucherPersonalRollBackFailedList.add(new OfferVoucher((JSONObject) voucherPersonalRollBackFailedJSON.get(i)));
+        }
+        this.voucherPersonalRollBackFailed = voucherPersonalRollBackFailedList;
+      }
+      if(JSONUtilities.decodeJSONObject(jsonRoot, "voucherAllocateFailed", false) != null){
+        this.voucherAllocateFailed = new OfferVoucher(JSONUtilities.decodeJSONObject(jsonRoot, "voucherAllocateFailed", false));
+      }
+
     }
     
     /*****************************************
@@ -2129,10 +2539,76 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         }
         data.put("productRollbackFailed", productRollbackFailedList);
       }
-      
+
+      //
+      // voucher
+      //
+
+      if(this.getVoucherSharedToBeAllocated() != null){
+        List<JSONObject> voucherSharedToBeAllocatedList = new ArrayList<JSONObject>();
+        for(OfferVoucher voucher : this.getVoucherSharedToBeAllocated()){
+          voucherSharedToBeAllocatedList.add(voucher.getJSONRepresentationForPurchaseTransaction());
+        }
+        data.put("voucherSharedToBeAllocated", voucherSharedToBeAllocatedList);
+      }
+      if(this.getVoucherSharedAllocated() != null){
+        List<JSONObject> voucherSharedAllocatedList = new ArrayList<JSONObject>();
+        for(OfferVoucher voucher : this.getVoucherSharedAllocated()){
+          voucherSharedAllocatedList.add(voucher.getJSONRepresentationForPurchaseTransaction());
+        }
+        data.put("voucherSharedAllocated", voucherSharedAllocatedList);
+      }
+      if(this.getVoucherSharedRollBacked() != null){
+        List<JSONObject> voucherSharedRollBackedList = new ArrayList<JSONObject>();
+        for(OfferVoucher voucher : this.getVoucherSharedRollBacked()){
+          voucherSharedRollBackedList.add(voucher.getJSONRepresentationForPurchaseTransaction());
+        }
+        data.put("voucherSharedRollBacked", voucherSharedRollBackedList);
+      }
+      if(this.getVoucherSharedRollBackFailed() != null){
+        List<JSONObject> voucherSharedRollBackFailedList = new ArrayList<JSONObject>();
+        for(OfferVoucher voucher : this.getVoucherSharedRollBackFailed()){
+          voucherSharedRollBackFailedList.add(voucher.getJSONRepresentationForPurchaseTransaction());
+        }
+        data.put("voucherSharedRollBackFailed", voucherSharedRollBackFailedList);
+      }
+      if(this.getVoucherPersonalToBeAllocated() != null){
+        List<JSONObject> voucherPersonalToBeAllocatedList = new ArrayList<JSONObject>();
+        for(OfferVoucher voucher : this.getVoucherPersonalToBeAllocated()){
+          voucherPersonalToBeAllocatedList.add(voucher.getJSONRepresentationForPurchaseTransaction());
+        }
+        data.put("voucherPersonalToBeAllocated", voucherPersonalToBeAllocatedList);
+      }
+      if(this.getVoucherPersonalAllocated() != null){
+        List<JSONObject> voucherPersonalAllocatedList = new ArrayList<JSONObject>();
+        for(OfferVoucher voucher : this.getVoucherPersonalAllocated()){
+          voucherPersonalAllocatedList.add(voucher.getJSONRepresentationForPurchaseTransaction());
+        }
+        data.put("voucherPersonalAllocated", voucherPersonalAllocatedList);
+      }
+      if(this.getVoucherPersonalRollBacked() != null){
+        List<JSONObject> voucherPersonalRollBackedList = new ArrayList<JSONObject>();
+        for(OfferVoucher voucher : this.getVoucherPersonalRollBacked()){
+          voucherPersonalRollBackedList.add(voucher.getJSONRepresentationForPurchaseTransaction());
+        }
+        data.put("voucherPersonalRollBacked", voucherPersonalRollBackedList);
+      }
+      if(this.getVoucherPersonalRollBackFailed() != null){
+        List<JSONObject> voucherPersonalRollBackFailedList = new ArrayList<JSONObject>();
+        for(OfferVoucher voucher : this.getVoucherPersonalRollBackFailed()){
+          voucherPersonalRollBackFailedList.add(voucher.getJSONRepresentationForPurchaseTransaction());
+        }
+        data.put("voucherPersonalRollBackFailed", voucherPersonalRollBackFailedList);
+      }
+      if(this.getVoucherAllocateFailed() != null){
+        data.put("voucherAllocateFailed", this.getVoucherAllocateFailed().getJSONRepresentationForPurchaseTransaction());
+      }
+
       //
       // return 
       //
+
+      if(log.isDebugEnabled()) log.debug("PurchaseRequestStatus.getJSONRepresentation() : " + JSONUtilities.encodeObject(data).toJSONString());
 
       return JSONUtilities.encodeObject(data);
     }

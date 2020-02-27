@@ -122,6 +122,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -195,6 +196,8 @@ public class EvolutionEngine
   private static SalesChannelService salesChannelService;
   private static ProductService productService;
   private static ProductTypeService productTypeService;
+  private static VoucherService voucherService;
+  private static VoucherTypeService voucherTypeService;
   private static CatalogCharacteristicService catalogCharacteristicService;
   private static DNBOMatrixService dnboMatrixService;
   private static ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader; 
@@ -288,7 +291,8 @@ public class EvolutionEngine
     String catalogCharacteristicServiceTopic = Deployment.getCatalogCharacteristicTopic();
     String dnboMatrixServiceTopic = Deployment.getDNBOMatrixTopic();
     String pointFulfillmentRekeyedTopic = Deployment.getPointFulfillmentRekeyedTopic();
-    
+    String voucherChangeRequestTopic = Deployment.getVoucherChangeRequestTopic();
+
     //
     //  sink topics
     //
@@ -299,6 +303,7 @@ public class EvolutionEngine
     String loyaltyProgramResponseTopic = Deployment.getLoyaltyProgramResponseTopic();
     String journeyTrafficTopic = Deployment.getJourneyTrafficTopic();
     String tokenChangeTopic = Deployment.getTokenChangeTopic();
+    String voucherChangeResponseTopic = Deployment.getVoucherChangeResponseTopic();
 
     //
     //  changelogs
@@ -429,6 +434,20 @@ public class EvolutionEngine
 
     productTypeService = new ProductTypeService(bootstrapServers, "evolutionengine-producttype-" + evolutionEngineKey, Deployment.getProductTypeTopic(), false);
     productTypeService.start();
+
+    //
+    //  voucherService
+    //
+
+    voucherService = new VoucherService(bootstrapServers, "evolutionengine-voucher-" + evolutionEngineKey, Deployment.getVoucherTopic());
+    voucherService.start();
+
+    //
+    //  voucherTypeService
+    //
+
+    voucherTypeService = new VoucherTypeService(bootstrapServers, "evolutionengine-vouchertype-" + evolutionEngineKey, Deployment.getVoucherTypeTopic(), false);
+    voucherTypeService.start();
 
     //
     //  catalogCharacteristicService
@@ -672,6 +691,7 @@ public class EvolutionEngine
     final Serde<SubscriberTrace> subscriberTraceSerde = SubscriberTrace.serde();
     final Serde<ExternalAPIOutput> externalAPISerde = ExternalAPIOutput.serde();
     final Serde<TokenChange> tokenChangeSerde = TokenChange.serde();
+    final ConnectSerde<VoucherChange> voucherChangeSerde = VoucherChange.serde();
 
     //
     //  special serdes
@@ -738,6 +758,7 @@ public class EvolutionEngine
     KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventStream = builder.stream(profileSegmentChangeEventTopic, Consumed.with(stringKeySerde, profileSegmentChangeEventSerde));
     KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventStream = builder.stream(profileLoyaltyProgramChangeEventTopic, Consumed.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
     KStream<StringKey, PointFulfillmentRequest> rekeyedPointFulfillmentRequestSourceStream = builder.stream(pointFulfillmentRekeyedTopic, Consumed.with(stringKeySerde, pointFulfillmentRequestSerde));
+    KStream<StringKey, VoucherChange> voucherChangeRequestSourceStream = builder.stream(voucherChangeRequestTopic, Consumed.with(stringKeySerde, voucherChangeSerde));
 
     //
     //  timedEvaluationStreams
@@ -859,6 +880,7 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileSegmentChangeEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileLoyaltyProgramChangeEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) rekeyedPointFulfillmentRequestSourceStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) voucherChangeRequestSourceStream);
     evolutionEventStreams.addAll(standardEvolutionEngineEventStreams);
     evolutionEventStreams.addAll(deliveryManagerResponseStreams);
     KStream evolutionEventCompositeStream = null;
@@ -905,10 +927,11 @@ public class EvolutionEngine
         (key,value) -> (value instanceof SubscriberTrace),
         (key,value) -> (value instanceof PropensityEventOutput),
         (key,value) -> (value instanceof ExternalAPIOutput),
-	      (key,value) -> (value instanceof ProfileChangeEvent),
+	    (key,value) -> (value instanceof ProfileChangeEvent),
         (key,value) -> (value instanceof ProfileSegmentChangeEvent),
         (key,value) -> (value instanceof ProfileLoyaltyProgramChangeEvent),
-        (key,value) -> (value instanceof TokenChange));
+        (key,value) -> (value instanceof TokenChange),
+        (key,value) -> (value instanceof VoucherChange));
     KStream<StringKey, JourneyRequest> journeyResponseStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[0];
     KStream<StringKey, JourneyRequest> journeyRequestStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[1];
     KStream<StringKey, LoyaltyProgramRequest> loyaltyProgramResponseStream = (KStream<StringKey, LoyaltyProgramRequest>) branchedEvolutionEngineOutputs[2];
@@ -926,7 +949,8 @@ public class EvolutionEngine
     KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventsStream = (KStream<StringKey, ProfileSegmentChangeEvent>) branchedEvolutionEngineOutputs[13];
     KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventsStream = (KStream<StringKey, ProfileLoyaltyProgramChangeEvent>) branchedEvolutionEngineOutputs[14];
     KStream<StringKey, TokenChange> tokenChangeStream = (KStream<StringKey, TokenChange>) branchedEvolutionEngineOutputs[15];
- 
+    KStream<StringKey, VoucherChange> voucherChangeStream = (KStream<StringKey, VoucherChange>) branchedEvolutionEngineOutputs[16];
+
 
     //
     //  build predicates for delivery requests
@@ -1064,7 +1088,8 @@ public class EvolutionEngine
     rekeyedJourneyStatisticStream.to(journeyTrafficTopic, Produced.with(stringKeySerde, journeyStatisticWrapperSerde));
     rekeyedPropensityStream.to(propensityOutputTopic, Produced.with(propensityKeySerde, propensityEventOutputSerde));
     tokenChangeStream.to(tokenChangeTopic, Produced.with(stringKeySerde, tokenChangeSerde));
-    
+    voucherChangeStream.to(voucherChangeResponseTopic, Produced.with(stringKeySerde, voucherChangeSerde));
+
     //
     //  sink - delivery request streams
     //
@@ -1327,7 +1352,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, propensityDataReader,subscriberProfileServer, internalServer));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, propensityDataReader,subscriberProfileServer, internalServer));
 
     /*****************************************
     *
@@ -1542,6 +1567,8 @@ public class EvolutionEngine
     private SalesChannelService salesChannelService;
     private ProductService productService;
     private ProductTypeService productTypeService;
+    private VoucherService voucherService;
+    private VoucherTypeService voucherTypeService;
     private CatalogCharacteristicService catalogCharacteristicService;
     private DNBOMatrixService dnboMatrixService;
     private ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader; 
@@ -1560,7 +1587,7 @@ public class EvolutionEngine
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, HttpServer subscriberProfileServer, HttpServer internalServer)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, HttpServer subscriberProfileServer, HttpServer internalServer)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
@@ -1584,6 +1611,8 @@ public class EvolutionEngine
       this.exclusionInclusionTargetService = exclusionInclusionTargetService;
       this.productService = productService;
       this.productTypeService = productTypeService;
+      this.voucherService = voucherService;
+      this.voucherTypeService = voucherTypeService;
       this.catalogCharacteristicService = catalogCharacteristicService;
       this.dnboMatrixService = dnboMatrixService;
       this.paymentMeanService = paymentMeanService;
@@ -1628,6 +1657,8 @@ public class EvolutionEngine
       salesChannelService.stop();
       productService.stop();
       productTypeService.stop();
+      voucherService.stop();
+      voucherTypeService.stop();
       catalogCharacteristicService.stop();
       dnboMatrixService.stop();
       paymentMeanService.stop();
@@ -1688,7 +1719,7 @@ public class EvolutionEngine
     SubscriberState subscriberState = (currentSubscriberState != null) ? new SubscriberState(currentSubscriberState) : new SubscriberState(evolutionEvent.getSubscriberID());
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
-    EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, subscriberMessageTemplateService, communicationChannelService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, propensityDataReader, uniqueKeyServer, SystemTime.getCurrentTime());
+    EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, subscriberMessageTemplateService, communicationChannelService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, propensityDataReader, uniqueKeyServer, SystemTime.getCurrentTime());
     boolean subscriberStateUpdated = (currentSubscriberState != null) ? false : true;
 
     /*****************************************
@@ -1781,6 +1812,14 @@ public class EvolutionEngine
     *****************************************/
 
     subscriberStateUpdated = updateTokens(context, evolutionEvent) || subscriberStateUpdated;
+
+    /*****************************************
+     *
+     *  update Vouchers
+     *
+     *****************************************/
+
+    subscriberStateUpdated = updateVouchers(context, evolutionEvent) || subscriberStateUpdated;
 
     /*****************************************
     *
@@ -2059,7 +2098,17 @@ public class EvolutionEngine
         subscriberStateUpdated = true;
       }
     
-    
+    //
+    //  voucherChange cleaning
+    //
+
+    if (subscriberState.getVoucherChanges() != null)
+    {
+      subscriberState.getVoucherChanges().clear();
+      subscriberStateUpdated = true;
+    }
+
+
     //
     //  profileSegmentChangeEvents cleaning
     //
@@ -2165,6 +2214,195 @@ public class EvolutionEngine
             updatePointBalance(context, null, "checkBonusExpiration", Module.Unknown.getExternalRepresentation(), "checkBonusExpiration", subscriberState.getSubscriberProfile(), point, CommodityDeliveryOperation.Expire, 0, now, true);
           }
       }
+  }
+
+  /*****************************************
+   *
+   *  updateVouchers
+   *
+   *****************************************/
+
+  private static boolean updateVouchers(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
+  {
+
+    SubscriberState subscriberState = context.getSubscriberState();
+    SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
+    Date now = SystemTime.getCurrentTime();
+    boolean subscriberUpdated = false;
+
+    // first process the new ones coming with purchase response event
+    if (evolutionEvent instanceof PurchaseFulfillmentRequest){
+
+      PurchaseFulfillmentRequest purchaseFulfillmentRequest=(PurchaseFulfillmentRequest)evolutionEvent;
+      if(log.isDebugEnabled()) log.debug("will process purchase request for vouchers : "+purchaseFulfillmentRequest);
+
+      // check if there is vouchers delivery in this purchase request :
+      if(purchaseFulfillmentRequest.getVoucherDeliveries()!=null && !purchaseFulfillmentRequest.getVoucherDeliveries().isEmpty()){
+        if(log.isDebugEnabled()) log.debug("purchase request contains voucher deliveries to process");
+
+        for(VoucherDelivery voucherDelivery:purchaseFulfillmentRequest.getVoucherDeliveries()){
+          Voucher voucher = voucherService.getActiveVoucher(voucherDelivery.getVoucherID(),now);
+          VoucherType voucherType = voucherTypeService.getActiveVoucherType(voucher.getVoucherTypeId(),now);
+          if(voucherType==null){
+            log.warn("no more voucher type for voucherId "+voucherDelivery.getVoucherID()+", skipping "+voucherDelivery.getVoucherCode()+" for "+context.getSubscriberState().getSubscriberID());
+          }else{
+            Date expiryDate=null;
+            // compute expiry date here for relative expiry vouchers
+            if(voucherType.getCodeType()==VoucherType.CodeType.Shared){
+              expiryDate = EvolutionUtilities.addTime(now,voucherType.getValidity().getPeriodQuantity(),voucherType.getValidity().getPeriodType(),Deployment.getBaseTimeZone(),voucherType.getValidity().getRoundDown()? EvolutionUtilities.RoundingSelection.RoundDown: EvolutionUtilities.RoundingSelection.NoRound);
+            }else if(voucherType.getCodeType()==VoucherType.CodeType.Personal){
+              VoucherPersonal voucherPersonal = (VoucherPersonal) voucher;
+              for(VoucherFile voucherFile:voucherPersonal.getVoucherFiles()){
+                if(voucherFile.getFileId().equals(voucherDelivery.getFileID())){
+                  if(voucherFile.getExpiryDate()==null){
+                    expiryDate = EvolutionUtilities.addTime(now,voucherType.getValidity().getPeriodQuantity(),voucherType.getValidity().getPeriodType(),Deployment.getBaseTimeZone(),voucherType.getValidity().getRoundDown()? EvolutionUtilities.RoundingSelection.RoundDown: EvolutionUtilities.RoundingSelection.NoRound);
+                  }
+                  break;
+                }
+              }
+            }
+            // or the absolute one from ES
+            if(expiryDate==null){
+              expiryDate=voucherDelivery.getVoucherExpiryDate();
+            }
+            if(expiryDate==null){
+              log.error("voucher "+voucherDelivery.getVoucherCode()+" for "+subscriberProfile.getSubscriberID()+" could not compute an expiryDate !! "+voucher.getVoucherID());
+            }else{
+              voucherDelivery.setVoucherStatus(VoucherDelivery.VoucherStatus.Delivered);
+            }
+
+            // storing the voucher
+            VoucherProfileStored voucherToStore = new VoucherProfileStored(
+              voucherDelivery.getVoucherID(),
+              voucherDelivery.getFileID(),
+              voucherDelivery.getVoucherCode(),
+              voucherDelivery.getVoucherStatus(),
+              expiryDate,
+              purchaseFulfillmentRequest.getCreationDate(),
+              null,
+              purchaseFulfillmentRequest.getOfferID(),
+              purchaseFulfillmentRequest.getEventID(),
+              purchaseFulfillmentRequest.getModuleID(),
+              purchaseFulfillmentRequest.getFeatureID(),
+              purchaseFulfillmentRequest.getOrigin()
+            );
+            subscriberProfile.getVouchers().add(voucherToStore);
+            subscriberUpdated = true;
+          }
+        }
+      }else{
+        if(log.isDebugEnabled()) log.debug("no voucher delivered in purchaseFulfillmentRequest");
+      }
+    }
+
+    // no we check all, if some expired, to clean, expired to generate event ???
+    if(subscriberProfile.getVouchers()!=null && !subscriberProfile.getVouchers().isEmpty()){
+      Date cleanBeforeThisDate = EvolutionUtilities.addTime(now,-1*Deployment.getCleanUpExpiredVoucherDelayInDays(),TimeUnit.Day,Deployment.getBaseTimeZone());
+      // safety check
+      if(now.before(cleanBeforeThisDate)){
+        log.warn("check me!! clean up date is in the future !!");
+      }else{
+        Iterator<VoucherProfileStored> iterator=subscriberProfile.getVouchers().iterator();
+        while(iterator.hasNext()){
+          VoucherProfileStored voucherStored = iterator.next();
+          if(voucherStored.getVoucherExpiryDate()==null){
+            log.warn("voucher expiration date is null ???");
+            continue;
+          }
+          // clean up old ones
+          if(voucherStored.getVoucherExpiryDate().before(cleanBeforeThisDate)){
+            if(log.isDebugEnabled()) log.debug("removed expired voucher "+voucherStored+" from "+subscriberProfile.getSubscriberID()+" profile");
+            iterator.remove();//just remove it from subscriber profile
+            subscriberUpdated=true;
+          }
+          // change status to expired
+          if(voucherStored.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Expired
+                  && voucherStored.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Redeemed
+                  && voucherStored.getVoucherExpiryDate().before(now)){
+            voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
+            subscriberUpdated=true;
+          }
+
+        }
+      }
+    }else{
+      if(log.isDebugEnabled()) log.debug("no vouchers stored in profile for "+subscriberProfile.getSubscriberID());
+    }
+
+    // check if we have update request
+    if (evolutionEvent instanceof VoucherChange){
+      VoucherChange voucherChange = (VoucherChange)evolutionEvent;
+      if(log.isDebugEnabled()) log.debug("voucher change to process : "+voucherChange);
+      // basics checks for not OK
+      if(voucherChange.getAction()==VoucherChange.VoucherChangeAction.Unknown){
+        voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+      }else{
+        if(subscriberProfile.getVouchers()!=null && !subscriberProfile.getVouchers().isEmpty()){
+          boolean voucherFound=false;
+          for(VoucherProfileStored voucherStored:subscriberProfile.getVouchers()){
+            if(voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID())){
+              voucherFound=true;
+              if(log.isDebugEnabled()) log.debug("need to apply to stored voucher "+voucherStored);
+
+              // redeem
+              if(voucherChange.getAction()==VoucherChange.VoucherChangeAction.Redeem){
+                if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
+                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
+                }
+                if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired){
+                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
+                }
+                // redeem voucher OK
+                if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Delivered){
+                  voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Redeemed);
+                  voucherStored.setVoucherRedeemDate(now);
+                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+                  break;//NOTE WE DO NOT ORDER VOUCHER PER EXPIRY DATE OR, WE TAKE THE FISRT ONE OK
+                }
+                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NON_REDEEMABLE);
+              }
+
+              // extend
+              if(voucherChange.getAction()==VoucherChange.VoucherChangeAction.Extend){
+                if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
+                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
+                }
+                // extend voucher OK
+                voucherStored.setVoucherExpiryDate(voucherChange.getNewVoucherExpiryDate());
+                if(voucherStored.getVoucherExpiryDate().after(now)) voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Delivered);
+                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+                break;//NOTE WE DO NOT ORDER VOUCHER PER EXPIRY DATE OR, WE TAKE THE FISRT ONE OK
+              }
+
+              // delete (expire it)
+              if(voucherChange.getAction()==VoucherChange.VoucherChangeAction.Expire){
+                if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
+                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
+                }
+                if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired){
+                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
+                }
+                // expire voucher OK
+                voucherStored.setVoucherExpiryDate(now);
+                if(voucherStored.getVoucherExpiryDate().after(now)) voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
+                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+                break;//NOTE WE DO NOT ORDER VOUCHER PER EXPIRY DATE OR, WE TAKE THE FISRT ONE OK
+              }
+
+            }
+          }
+          if(!voucherFound) voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
+        }else{
+          if(log.isDebugEnabled()) log.debug("no vouchers stored in profile for "+subscriberProfile.getSubscriberID());
+          voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
+        }
+      }
+      //need to respond
+      subscriberState.getVoucherChanges().add(voucherChange);
+      subscriberUpdated=true;
+    }
+
+    return subscriberUpdated;
   }
 
   /*****************************************
@@ -5487,6 +5725,7 @@ public class EvolutionEngine
         result.addAll((subscriberState.getExternalAPIOutput() != null) ? Collections.<ExternalAPIOutput>singletonList(subscriberState.getExternalAPIOutput()) : Collections.<ExternalAPIOutput>emptyList());
         result.addAll(subscriberState.getProfileChangeEvents());
         result.addAll(subscriberState.getTokenChanges());
+        result.addAll(subscriberState.getVoucherChanges());
         result.addAll(subscriberState.getProfileSegmentChangeEvents());
         result.addAll(subscriberState.getProfileLoyaltyProgramChangeEvents());
       }
@@ -5916,6 +6155,8 @@ public class EvolutionEngine
     
     private ProductService productService;
     private ProductTypeService productTypeService;
+    private VoucherService voucherService;
+    private VoucherTypeService voucherTypeService;
     private CatalogCharacteristicService catalogCharacteristicService;
     private DNBOMatrixService dnboMatrixService;
     private ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader; 
@@ -5933,7 +6174,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    public EvolutionEventContext(SubscriberState subscriberState, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberMessageTemplateService subscriberMessageTemplateService, CommunicationChannelService communicationChannelService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
+    public EvolutionEventContext(SubscriberState subscriberState, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberMessageTemplateService subscriberMessageTemplateService, CommunicationChannelService communicationChannelService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
     {
       this.subscriberState = subscriberState;
       this.extendedSubscriberProfile = extendedSubscriberProfile;
@@ -5950,6 +6191,8 @@ public class EvolutionEngine
       this.segmentContactPolicyService = segmentContactPolicyService;
       this.productService = productService;
       this.productTypeService = productTypeService;
+      this.voucherService = voucherService;
+      this.voucherTypeService = voucherTypeService;
       this.catalogCharacteristicService = catalogCharacteristicService;
       this.dnboMatrixService = dnboMatrixService;
       this.paymentMeanService = paymentMeanService;
@@ -5978,6 +6221,8 @@ public class EvolutionEngine
     public SalesChannelService getSalesChannelService() { return salesChannelService; }
     public ProductService getProductService() { return productService; }
     public ProductTypeService getProductTypeService() { return productTypeService; }
+    public VoucherService getVoucherService() { return voucherService; }
+    public VoucherTypeService getVoucherTypeService() { return voucherTypeService; }
     public CatalogCharacteristicService getCatalogCharacteristicService() { return catalogCharacteristicService; }
     public DNBOMatrixService getDnboMatrixService() { return dnboMatrixService; }
     public ReferenceDataReader<PropensityKey, PropensityState> getPropensityDataReader() { return propensityDataReader; }

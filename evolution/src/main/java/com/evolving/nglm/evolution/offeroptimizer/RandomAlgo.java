@@ -4,15 +4,10 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Random;
 
+import com.evolving.nglm.evolution.*;
 import org.apache.log4j.Logger;
 
-import com.evolving.nglm.evolution.CatalogCharacteristicService;
-import com.evolving.nglm.evolution.Offer;
-import com.evolving.nglm.evolution.OfferOptimizationAlgorithm;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
-import com.evolving.nglm.evolution.ProductService;
-import com.evolving.nglm.evolution.ProductTypeService;
-import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
 
 public class RandomAlgo implements IOfferOptimizerAlgorithm {
 
@@ -28,6 +23,8 @@ public class RandomAlgo implements IOfferOptimizerAlgorithm {
       OfferOptimizationAlgorithm algoDefinition,
       ProductService productService, 
       ProductTypeService productTypeService,
+      VoucherService voucherService,
+      VoucherTypeService voucherTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
       DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameterser)
   {

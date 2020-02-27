@@ -67,7 +67,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
 
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("subscriber_state");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(6));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(7));
       schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
       schemaBuilder.field("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().schema());
       schemaBuilder.field("journeyStates", SchemaBuilder.array(JourneyState.schema()).schema());
@@ -94,6 +94,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
       schemaBuilder.field("trackingID", Schema.OPTIONAL_BYTES_SCHEMA);
       schemaBuilder.field("tokenChanges", SchemaBuilder.array(TokenChange.schema()));
       schemaBuilder.field("notificationStatus",SchemaBuilder.array(notificationSchema));
+      schemaBuilder.field("voucherChanges", SchemaBuilder.array(VoucherChange.schema()).optional());
       schema = schemaBuilder.build();
     };
 
@@ -149,6 +150,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   private ExternalAPIOutput externalAPIOutput;
   private List<TokenChange> tokenChanges;
   private List<Pair<String,MetricHistory>> notificationStatus;
+  private List<VoucherChange> voucherChanges;
   //
   //  in memory only
   //
@@ -187,6 +189,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   public List<UUID> getTrackingIDs() { return trackingIDs; }
   public List<TokenChange> getTokenChanges() { return tokenChanges; }
   public List<Pair<String,MetricHistory>> getNotificationStatus() { return notificationStatus; }
+  public List<VoucherChange> getVoucherChanges() { return voucherChanges; }
 
   //
   //  kafkaRepresentation
@@ -284,6 +287,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
         this.notificationStatus = new ArrayList<Pair<String, MetricHistory>>();
         //put all commuication channels available. This is made in constructor to avoid verifying when delivery request is processed
         Deployment.getDeliveryTypeCommunicationChannelIDMap().forEach((deliveryType,communicationChannelId) -> notificationStatus.add(new Pair<String,MetricHistory>(communicationChannelId, new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS))));
+        this.voucherChanges = new ArrayList<VoucherChange>();
       }
     catch (InvocationTargetException e)
       {
@@ -301,7 +305,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
    *
    *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput, List<UUID> trackingIDs, List<TokenChange> tokenChanges,List<Pair<String,MetricHistory>> notificationStatus)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput, List<UUID> trackingIDs, List<TokenChange> tokenChanges,List<Pair<String,MetricHistory>> notificationStatus, List<VoucherChange> voucherChanges)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
@@ -331,6 +335,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     this.trackingIDs = trackingIDs;
     this.tokenChanges = tokenChanges;
     this.notificationStatus = notificationStatus;
+    this.voucherChanges = voucherChanges;
   }
 
   /*****************************************
@@ -389,6 +394,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
         this.externalAPIOutput = subscriberState.getExternalAPIOutput();
         this.tokenChanges = subscriberState.getTokenChanges();
         this.notificationStatus = subscriberState.getNotificationStatus();
+        this.voucherChanges = subscriberState.getVoucherChanges();
       }
     catch (InvocationTargetException e)
       {
@@ -436,6 +442,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     struct.put("trackingID", EvolutionUtilities.getBytesFromUUIDs(subscriberState.getTrackingIDs()));
     struct.put("tokenChanges", packTokenChanges(subscriberState.getTokenChanges()));
     struct.put("notificationStatus",packNotificationStatus(subscriberState.getNotificationStatus()));
+    struct.put("voucherChanges", packVoucherChanges(subscriberState.getVoucherChanges()));
     return struct;
   }
 
@@ -682,6 +689,22 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
 
   /*****************************************
    *
+   *  packVouchersChanges
+   *
+   *****************************************/
+
+  private static List<Object> packVoucherChanges(List<VoucherChange> voucherChanges)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (VoucherChange voucherChange : voucherChanges)
+    {
+      result.add(VoucherChange.pack(voucherChange));
+    }
+    return result;
+  }
+
+  /*****************************************
+   *
    *  unpack
    *
    *****************************************/
@@ -727,12 +750,13 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     List<UUID> trackingIDs = schemaVersion >= 4 ? EvolutionUtilities.getUUIDsFromBytes(valueStruct.getBytes("trackingID")) : null;
     List<TokenChange> tokenChanges = schemaVersion >= 5 ? unpackTokenChanges(schema.field("tokenChanges").schema(), valueStruct.get("tokenChanges")) : new ArrayList<TokenChange>();
     List<Pair<String,MetricHistory>> notificationStatus = schemaVersion >= 6 ? unpackNotificationStatus(valueStruct.get("notificationStatus")) : new ArrayList<Pair<String,MetricHistory>>();
+    List<VoucherChange> voucherChanges = schemaVersion >= 7 ? unpackVoucherChanges(schema.field("voucherChanges").schema(), valueStruct.get("voucherChanges")) : new ArrayList<VoucherChange>();
 
     //
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, journeyStatisticWrappers, journeyMetrics, propensityOutputs, profileChangeEvents, profileSegmentChangeEvents, profileLoyaltyProgramChangeEvents, subscriberTrace, externalAPIOutput, trackingIDs, tokenChanges,notificationStatus);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, journeyStatisticWrappers, journeyMetrics, propensityOutputs, profileChangeEvents, profileSegmentChangeEvents, profileLoyaltyProgramChangeEvents, subscriberTrace, externalAPIOutput, trackingIDs, tokenChanges,notificationStatus, voucherChanges);
   }
 
   /*****************************************
@@ -1185,6 +1209,39 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
             result.add(new Pair<>(channelID,metricHistory));
           }
       }
+    return result;
+  }
+
+  /*****************************************
+   *
+   *  unpackVoucherChanges
+   *
+   *****************************************/
+
+  private static List<VoucherChange> unpackVoucherChanges(Schema schema, Object value)
+  {
+    //
+    //  get schema for VoucherChange
+    //
+
+    Schema voucherChangeSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    List<VoucherChange> result = new ArrayList<>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object output : valueArray)
+    {
+      VoucherChange voucherChange = VoucherChange.unpack(new SchemaAndValue(voucherChangeSchema, output));
+      result.add(voucherChange);
+    }
+
+    //
+    //  return
+    //
+
     return result;
   }
 

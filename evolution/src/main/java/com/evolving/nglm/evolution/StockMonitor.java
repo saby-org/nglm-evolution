@@ -20,7 +20,6 @@ import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.data.Stat;
 
 import com.rii.utilities.JSONUtilities;
-import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -116,7 +115,10 @@ public class StockMonitor implements Runnable
       {
         GUIManagedObjectListener listener = new GUIManagedObjectListener()
         {
-          @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { monitorStockableItem((StockableItem) guiManagedObject); }
+          @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) {
+            //a bit hacky, but services might not have only StockableItem (ie VoucherService got VoucherPersonal which are not, but VoucherShared are)
+            if (guiManagedObject instanceof StockableItem) monitorStockableItem((StockableItem) guiManagedObject);
+          }
           @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { }
         };
         guiService.registerListener(listener);
@@ -131,7 +133,8 @@ public class StockMonitor implements Runnable
       {
         for (GUIManagedObject guiManagedObject : guiService.getActiveGUIManagedObjects(now))
           {
-            monitorStockableItem((StockableItem) guiManagedObject);
+            //a bit hacky, but services might not have only StockableItem (ie VoucherService got VoucherPersonal which are not, but VoucherShared are)
+            if (guiManagedObject instanceof StockableItem) monitorStockableItem((StockableItem) guiManagedObject);
           }
       }
   }

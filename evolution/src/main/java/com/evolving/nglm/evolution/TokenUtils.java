@@ -245,8 +245,10 @@ public class TokenUtils
 
   
   public static Collection<ProposedOfferDetails> getOffers(Date now, String salesChannelID,
-      SubscriberProfile subscriberProfile, ScoringStrategy scoringStrategy, ProductService productService,
-      ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService,
+      SubscriberProfile subscriberProfile, ScoringStrategy scoringStrategy,
+      ProductService productService, ProductTypeService productTypeService,
+      VoucherService voucherService, VoucherTypeService voucherTypeService,
+      CatalogCharacteristicService catalogCharacteristicService,
       ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader,
       ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
       SegmentationDimensionService segmentationDimensionService, DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters, OfferService offerService, StringBuffer returnedLog,
@@ -293,7 +295,7 @@ public class TokenUtils
     Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo =
         OfferOptimizerAlgoManager.getInstance().applyScoreAndSort(
             algo, algoParameters, offersForAlgo, subscriberProfile, threshold, salesChannelID,
-            productService, productTypeService, catalogCharacteristicService,
+            productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService,
             propensityDataReader, subscriberGroupEpochReader,
             segmentationDimensionService, dnboMatrixAlgorithmParameters, returnedLog);
 

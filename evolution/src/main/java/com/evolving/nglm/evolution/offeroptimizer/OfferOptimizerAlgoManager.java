@@ -47,7 +47,7 @@ public class OfferOptimizerAlgoManager {
 
   public Collection<ProposedOfferDetails> applyScoreAndSort(OfferOptimizationAlgorithm algoDefinitions,
       Map<OfferOptimizationAlgorithmParameter, String> algoParameters, Set<Offer> offers, SubscriberProfile subscriberProfile, double minScoreThreshold,
-      String requestedSalesChannelId, ProductService productService, ProductTypeService productTypeService,
+      String requestedSalesChannelId, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
       ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader,
       ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader,
@@ -121,18 +121,20 @@ public class OfferOptimizerAlgoManager {
             logger.warn("OfferOptimizerAlgoManager.applyScoreAndSort Could not retrieve propensity for offer "
                 + o.getOfferID());
           }
-        logger.trace("OfferOptimizerAlgoManager.applyScoreAndSort Propensity for offer "
+        if(logger.isDebugEnabled()) logger.debug("OfferOptimizerAlgoManager.applyScoreAndSort Propensity for offer "
             + o.getOfferID()+ " = " + currentPropensity);
 
-        // TODO TRACE TO REMOVE
-        for (OfferSalesChannelsAndPrice salesChannelAndPrice : o.getOfferSalesChannelsAndPrices()) 
+        if(logger.isDebugEnabled())
           {
-            for (String salesChannelID : salesChannelAndPrice.getSalesChannelIDs()) 
+            for (OfferSalesChannelsAndPrice salesChannelAndPrice : o.getOfferSalesChannelsAndPrices())
               {
-                logger.trace("--> salesChannelID : "+salesChannelID);
+                for (String salesChannelID : salesChannelAndPrice.getSalesChannelIDs())
+                  {
+                    logger.debug("--> salesChannelID : "+salesChannelID);
+                  }
               }
           }
-        // TODO END TRACE TO REMOVE
+
 
         boolean skipRemaining = false;
         for (OfferSalesChannelsAndPrice salesChannelAndPrice : o.getOfferSalesChannelsAndPrices()) 
@@ -146,7 +148,7 @@ public class OfferOptimizerAlgoManager {
                         salesChannelID,
                         currentPropensity, salesChannelAndPrice.getPrice() != null
                         ? salesChannelAndPrice.getPrice().getAmount() : 0,
-                            subscriberEvaluationRequest, algoDefinitions, productService, productTypeService, catalogCharacteristicService,dnboMatrixAlgorithmParameters);
+                            subscriberEvaluationRequest, algoDefinitions, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService,dnboMatrixAlgorithmParameters);
 
                     if (logger.isDebugEnabled()) 
                       {
