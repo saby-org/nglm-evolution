@@ -6,62 +6,27 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
-import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.ServerRuntimeException;
-
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
-
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptType;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringReader;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
-import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
+
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Expression.ExpressionFunction;
 
 /*****************************************
 *
@@ -118,6 +83,7 @@ public abstract class Expression
     MINUS,
     MULTIPLY,
     DIVIDE,
+    MODULO,
 
     //
     //  syntax
@@ -161,6 +127,7 @@ public abstract class Expression
     MinusOperator(Token.MINUS),
     MultiplyOperator(Token.MULTIPLY),
     DivideOperator(Token.DIVIDE),
+    ModuloOperator(Token.MODULO),
     UnknownOperator(Token.INVALID_CHAR);
     private Token operatorName;
     private ExpressionOperator(Token operatorName) { this.operatorName = operatorName; }
@@ -176,6 +143,11 @@ public abstract class Expression
   {
     DateConstantFunction("dateConstant"),
     DateAddFunction("dateAdd"),
+    RoundFunction("round"),
+    RoundUpFunction("roundUp"),
+    RoundDownFunction("roundDown"),
+    DaysUntilFunction("daysUntil"),
+    MonthsUntilFunction("monthsUntil"),
     UnknownFunction("(unknown)");
     private String functionName;
     private ExpressionFunction(String functionName) { this.functionName = functionName; }
@@ -715,6 +687,18 @@ public abstract class Expression
                     }
                   break;
 
+                case ModuloOperator:
+                  if (leftArgument.getType() != ExpressionDataType.IntegerExpression) throw new ExpressionTypeCheckException("type exception");
+                  switch (rightArgument.getType())
+                    {
+                      case IntegerExpression:
+                        setType(ExpressionDataType.IntegerExpression);
+                        break;
+                      default:
+                        throw new ExpressionTypeCheckException("type exception");
+                    }
+                  break;
+
                 default:
                   throw new ExpressionTypeCheckException("type exception");
               }
@@ -858,6 +842,10 @@ public abstract class Expression
 
                 case DivideOperator:
                   result = new Double(leftValueNumber.doubleValue() / rightValueNumber.doubleValue());
+                  break;
+
+                case ModuloOperator:
+                  result = new Long(leftValueNumber.longValue() % rightValueNumber.longValue());
                   break;
               }
             break;
@@ -1200,9 +1188,20 @@ public abstract class Expression
           case DateConstantFunction:
             typeCheckDateConstantFunction(baseTimeUnit);
             break;
-            
+
           case DateAddFunction:
             typeCheckDateAddFunction(baseTimeUnit);
+            break;
+            
+          case RoundFunction:
+          case RoundUpFunction:
+          case RoundDownFunction:
+            typeCheckRoundFunction(function);
+            break;
+
+          case DaysUntilFunction:
+          case MonthsUntilFunction:
+            typeCheckUntilFunction(function);
             break;
             
           default:
@@ -1287,6 +1286,157 @@ public abstract class Expression
 
     /*****************************************
     *
+    *  typeCheckUntilFunction
+    *
+    *****************************************/
+
+    private void typeCheckUntilFunction(ExpressionFunction function)
+    {
+      /****************************************
+      *
+      *  arguments
+      *
+      ****************************************/
+      
+      //
+      //  validate number of arguments
+      //
+      
+      if (arguments.size() != 1) throw new ExpressionTypeCheckException("type exception");
+
+      //
+      //  arguments
+      //
+      
+      Expression arg1 = (arguments.size() > 0) ? arguments.get(0) : null;
+
+      //
+      //  validate arg1
+      //
+      
+      switch (arg1.getType())
+        {
+          case DateExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+      
+      /****************************************
+      *
+      *  constant evaluation
+      *
+      ****************************************/
+      if (arg1.isConstant())
+        {
+          Date arg1_value = (Date) arg1.evaluate(null, TimeUnit.Unknown);
+          try
+          {
+            switch (function)
+            {
+              case DaysUntilFunction:
+              case MonthsUntilFunction:
+                preevaluatedResult = evaluateUntilFunction(arg1_value, function);
+                break;
+              default:
+                throw new ExpressionTypeCheckException("type exception");
+            }
+
+          }
+          catch (ExpressionEvaluationException e)
+          {
+            throw new ExpressionTypeCheckException("type exception");
+          }
+        }
+
+      /****************************************
+      *
+      *  type
+      *
+      ****************************************/
+      
+      setType(ExpressionDataType.IntegerExpression);
+
+      /*****************************************
+      *
+      *  tagFormat/tagMaxLength
+      *
+      *****************************************/
+
+      setTagFormat(arg1.getTagFormat());
+      setTagMaxLength(arg1.getTagMaxLength());
+    }
+
+    /*****************************************
+    *
+    *  typeCheckRoundFunction
+    *
+    *****************************************/
+
+    private void typeCheckRoundFunction(ExpressionFunction function)
+    {
+      /****************************************
+      *
+      *  arguments
+      *
+      ****************************************/
+      
+      //
+      //  validate number of arguments
+      //
+      
+      if (arguments.size() != 1) throw new ExpressionTypeCheckException("type exception");
+
+      //
+      //  arguments
+      //
+      
+      Expression arg1 = (arguments.size() > 0) ? arguments.get(0) : null;
+
+      //
+      //  validate arg1
+      //
+      
+      switch (arg1.getType())
+        {
+          case DoubleExpression:
+          case IntegerExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+
+      /****************************************
+      *
+      *  evaluation
+      *
+      ****************************************/
+      if (arg1.isConstant())
+        {
+          try
+          {
+            Double arg1_value = (Double) arg1.evaluate(null, TimeUnit.Unknown);
+            preevaluatedResult = evaluateRoundFunction(arg1_value, function);
+          }
+          catch (ExpressionEvaluationException | ClassCastException e)
+          {
+            throw new ExpressionTypeCheckException("type exception");
+          }
+        }
+      
+      /****************************************
+      *
+      *  type
+      *
+      ****************************************/
+      
+      setType(ExpressionDataType.IntegerExpression);
+    }
+
+    /*****************************************
+    *
     *  typeCheckDateAddFunction
     *
     *****************************************/
@@ -1367,7 +1517,7 @@ public abstract class Expression
       *  constant evaluation
       *
       ****************************************/
-      
+
       if (arg3.isConstant())
         {
           String arg3Value = (String) arg3.evaluate(null, TimeUnit.Unknown);
@@ -1443,11 +1593,19 @@ public abstract class Expression
           case DateConstantFunction:
             result = preevaluatedResult;
             break;
-            
           case DateAddFunction:
-            result = evaluateDateAddFunction((Date) arg1Value, (Number) arg2Value, TimeUnit.fromExternalRepresentation((String) arg3Value), baseTimeUnit);
+            // TODO : don't do roundDown for now, not sure why we could need this
+            result = evaluateDateAddFunction((Date) arg1Value, (Number) arg2Value, TimeUnit.fromExternalRepresentation((String) arg3Value), baseTimeUnit, false);
             break;
-            
+          case RoundFunction:
+          case RoundUpFunction:
+          case RoundDownFunction:
+            result = evaluateRoundFunction((Double) arg1Value, function);
+            break;
+          case DaysUntilFunction:
+          case MonthsUntilFunction:
+            result = evaluateUntilFunction((Date) arg1Value, function);
+            break;
           default:
             throw new ExpressionEvaluationException();
         }
@@ -1459,6 +1617,48 @@ public abstract class Expression
       *****************************************/
 
       return result;
+    }
+
+    /*****************************************
+    *
+    *  evaluateRoundFunction
+    *
+    *****************************************/
+
+    private int evaluateRoundFunction(Double arg, ExpressionFunction function)
+    {
+      /*****************************************
+      *
+      *  parse argument
+      *
+      *****************************************/
+
+      int res;
+      switch (function)
+      {
+        case RoundFunction:
+          res = (int) Math.round(arg);
+          break;
+          
+        case RoundUpFunction:
+          res = (int) Math.ceil(arg);
+          break;
+          
+        case RoundDownFunction:
+          res = (int) Math.floor(arg);
+          break;
+          
+        default:
+          throw new ExpressionEvaluationException();
+            
+      }
+      /*****************************************
+      *
+      *  return
+      *
+      *****************************************/
+
+      return res;
     }
 
     /*****************************************
@@ -1529,34 +1729,37 @@ public abstract class Expression
     *
     *****************************************/
 
-    private Date evaluateDateAddFunction(Date date, Number number, TimeUnit timeUnit, TimeUnit baseTimeUnit)
+    private Date evaluateDateAddFunction(Date date, Number number, TimeUnit timeUnit, TimeUnit baseTimeUnit, boolean roundDown)
     {
       //
       //  truncate
       //
 
-      switch (baseTimeUnit)
+      if (roundDown)
         {
-          case Instant:
-            break;
-          case Minute:
-            date = RLMDateUtils.truncate(date, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-            break;
-          case Hour:
-            date = RLMDateUtils.truncate(date, Calendar.HOUR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-            break;
-          case Day:
-            date = RLMDateUtils.truncate(date, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-            break;
-          case Week:
-            date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-            break;
-          case Month:
-            date = RLMDateUtils.truncate(date, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-            break;
-          case Year:
-            date = RLMDateUtils.truncate(date, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-            break;
+          switch (baseTimeUnit)
+          {
+            case Instant:
+              break;
+            case Minute:
+              date = RLMDateUtils.truncate(date, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              break;
+            case Hour:
+              date = RLMDateUtils.truncate(date, Calendar.HOUR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              break;
+            case Day:
+              date = RLMDateUtils.truncate(date, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              break;
+            case Week:
+              date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              break;
+            case Month:
+              date = RLMDateUtils.truncate(date, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              break;
+            case Year:
+              date = RLMDateUtils.truncate(date, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              break;
+          }
         }
       
       //
@@ -1588,29 +1791,31 @@ public abstract class Expression
       //
       //  truncate (after adding)
       //
-
-      switch (baseTimeUnit)
+      if (roundDown)
         {
-          case Instant:
-            break;
-          case Minute:
-            date = RLMDateUtils.truncate(date, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-            break;
-          case Hour:
-            date = RLMDateUtils.truncate(date, Calendar.HOUR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-            break;
-          case Day:
-            date = RLMDateUtils.truncate(date, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-            break;
-          case Week:
-            date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-            break;
-          case Month:
-            date = RLMDateUtils.truncate(date, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-            break;
-          case Year:
-            date = RLMDateUtils.truncate(date, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-            break;
+          switch (baseTimeUnit)
+          {
+            case Instant:
+              break;
+            case Minute:
+              date = RLMDateUtils.truncate(date, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              break;
+            case Hour:
+              date = RLMDateUtils.truncate(date, Calendar.HOUR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              break;
+            case Day:
+              date = RLMDateUtils.truncate(date, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              break;
+            case Week:
+              date = RLMDateUtils.truncate(date, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              break;
+            case Month:
+              date = RLMDateUtils.truncate(date, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              break;
+            case Year:
+              date = RLMDateUtils.truncate(date, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+              break;
+          }
         }
 
       //
@@ -1618,6 +1823,29 @@ public abstract class Expression
       //
       
       return date;
+    }
+
+    /*****************************************
+    *
+    *  evaluateUntilFunction
+    *
+    *****************************************/
+
+    private long evaluateUntilFunction(Date date, ExpressionFunction function)
+    {
+      long res;
+      switch (function)
+      {
+        case DaysUntilFunction:
+          res = RLMDateUtils.daysBetween(SystemTime.getCurrentTime(), date, Deployment.getBaseTimeZone());
+          break;
+        case MonthsUntilFunction:
+          res = RLMDateUtils.monthsBetween(SystemTime.getCurrentTime(), date, Deployment.getBaseTimeZone());
+          break;
+        default:
+          throw new ExpressionEvaluationException();
+      }
+      return res;
     }
 
     /*****************************************
@@ -2045,6 +2273,7 @@ public abstract class Expression
           else if (ch == '+') result = Token.PLUS;
           else if (ch == '*') result = Token.MULTIPLY;
           else if (ch == '/') result = Token.DIVIDE;
+          else if (ch == '%') result = Token.MODULO;
           else if (ch == '(') result = Token.LEFT_PAREN;
           else if (ch == ')') result = Token.RIGHT_PAREN;
           else if (ch == '[') result = Token.LEFT_BRACKET;
@@ -2065,7 +2294,6 @@ public abstract class Expression
                   case '{':
                   case '}':
                   case '?':
-                  case '%':
                   case '.':
                     result = Token.INVALID_CHAR;
                     break;
@@ -2408,6 +2636,7 @@ public abstract class Expression
             {
               case MULTIPLY:
               case DIVIDE:
+              case MODULO:
                 token = nextToken();
                 ExpressionOperator operator = ExpressionOperator.fromOperatorName(token);
                 Expression right = parsePrimary();

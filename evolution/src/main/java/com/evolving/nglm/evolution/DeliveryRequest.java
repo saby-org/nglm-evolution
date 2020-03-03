@@ -233,8 +233,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     schemaBuilder.field("deliveryStatus", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryDate", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("diplomaticBriefcase", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).name("deliveryrequest_diplomaticBriefcase").schema());
-    schemaBuilder.field("notificationStatus",MetricHistory.schema());
-
+    schemaBuilder.field("notificationStatus", MetricHistory.schema());
     commonSchema = schemaBuilder.build();
   };
 
@@ -460,7 +459,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.deliveryDate = null;
     this.diplomaticBriefcase = new HashMap<String, String>();
     this.rescheduledDate = null;
-    this.notificationStatus = null;
+    this.notificationStatus = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
   }
 
   /*****************************************
@@ -530,6 +529,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.deliveryDate = null;
     this.diplomaticBriefcase = (Map<String, String>) jsonRoot.get("diplomaticBriefcase");
     this.rescheduledDate = JSONUtilities.decodeDate(jsonRoot, "rescheduledDate", false);
+    this.notificationStatus = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
   }
 
   /*****************************************
@@ -560,7 +560,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     struct.put("deliveryStatus", deliveryRequest.getDeliveryStatus().getExternalRepresentation());
     struct.put("deliveryDate", deliveryRequest.getDeliveryDate() != null ? deliveryRequest.getDeliveryDate().getTime() : null);
     struct.put("diplomaticBriefcase", (deliveryRequest.getDiplomaticBriefcase() == null ? new HashMap<String, String>() : deliveryRequest.getDiplomaticBriefcase()));
-    struct.put("notificationStatus",MetricHistory.pack(deliveryRequest.getNotificationStatus()));
+    struct.put("notificationStatus", MetricHistory.pack((deliveryRequest.getNotificationStatus() == null) ? new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS) : deliveryRequest.getNotificationStatus()));
   }
 
   /*****************************************
