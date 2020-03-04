@@ -639,6 +639,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
 
     private String deliveryType;
     private String moduleID;
+    private boolean isFlashSMS;
 
     /*****************************************
     *
@@ -651,6 +652,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       super(configuration);
       this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
       this.deliveryType = JSONUtilities.decodeString(configuration, "deliveryType", true);
+      this.isFlashSMS = JSONUtilities.decodeBoolean(configuration, "isFlashSMS", false);
     }
 
     /*****************************************
@@ -672,7 +674,12 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       String source = (CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.source") != null) ? (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.source") : "TBD";
       boolean confirmationExpected = (Boolean) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.confirmationexpected");
       boolean restricted = contactType.getRestricted();
-      boolean flashSMS = (Boolean) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.flashsms");
+      boolean flashSMS = false;     
+
+      if (this.isFlashSMS == true) {
+        flashSMS = true;
+     }
+      
 
       /*****************************************
       *
