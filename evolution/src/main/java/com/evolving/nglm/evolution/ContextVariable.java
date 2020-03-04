@@ -53,6 +53,8 @@ public class ContextVariable
     RoundDown("=roundDown()"),
     DaysUntil("=daysUntil()"),
     MonthsUntil("=monthsUntil()"),
+    DaysSince("=daysSince()"),
+    MonthsSince("=monthsSince()"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private Assignment(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -412,6 +414,8 @@ public class ContextVariable
                   case RoundDown:
                   case DaysUntil:
                   case MonthsUntil:
+                  case DaysSince:
+                  case MonthsSince:
                     String str = assignment.getExternalRepresentation(); // =roundX()
                     expressionString = str.substring(1, str.length()-1) + expressionString + ")"; // roundX(aaa)
                     break;

@@ -148,6 +148,8 @@ public abstract class Expression
     RoundDownFunction("roundDown"),
     DaysUntilFunction("daysUntil"),
     MonthsUntilFunction("monthsUntil"),
+    DaysSinceFunction("daysSince"),
+    MonthsSinceFunction("monthsSince"),
     UnknownFunction("(unknown)");
     private String functionName;
     private ExpressionFunction(String functionName) { this.functionName = functionName; }
@@ -1201,6 +1203,8 @@ public abstract class Expression
 
           case DaysUntilFunction:
           case MonthsUntilFunction:
+          case DaysSinceFunction:
+          case MonthsSinceFunction:
             typeCheckUntilFunction(function);
             break;
             
@@ -1337,6 +1341,8 @@ public abstract class Expression
             {
               case DaysUntilFunction:
               case MonthsUntilFunction:
+              case DaysSinceFunction:
+              case MonthsSinceFunction:
                 preevaluatedResult = evaluateUntilFunction(arg1_value, function);
                 break;
               default:
@@ -1604,6 +1610,8 @@ public abstract class Expression
             break;
           case DaysUntilFunction:
           case MonthsUntilFunction:
+          case DaysSinceFunction:
+          case MonthsSinceFunction:
             result = evaluateUntilFunction((Date) arg1Value, function);
             break;
           default:
@@ -1834,13 +1842,33 @@ public abstract class Expression
     private long evaluateUntilFunction(Date date, ExpressionFunction function)
     {
       long res;
+      Date now = SystemTime.getCurrentTime();
       switch (function)
       {
         case DaysUntilFunction:
-          res = RLMDateUtils.daysBetween(SystemTime.getCurrentTime(), date, Deployment.getBaseTimeZone());
+          // RLMDateUtils.daysBetween() is always >=0
+          if (now.before(date))
+            res = RLMDateUtils.daysBetween(now, date, Deployment.getBaseTimeZone());
+          else
+            res = -RLMDateUtils.daysBetween(date, now, Deployment.getBaseTimeZone());
           break;
         case MonthsUntilFunction:
-          res = RLMDateUtils.monthsBetween(SystemTime.getCurrentTime(), date, Deployment.getBaseTimeZone());
+          if (now.before(date))
+            res = RLMDateUtils.monthsBetween(now, date, Deployment.getBaseTimeZone());
+          else
+            res = -RLMDateUtils.monthsBetween(date, now, Deployment.getBaseTimeZone());
+          break;
+        case DaysSinceFunction:
+          if (date.before(now))
+            res = RLMDateUtils.daysBetween(date, now, Deployment.getBaseTimeZone());
+          else
+            res = -RLMDateUtils.daysBetween(now, date, Deployment.getBaseTimeZone());
+          break;
+        case MonthsSinceFunction:
+          if (date.before(now))
+            res = RLMDateUtils.monthsBetween(date, now, Deployment.getBaseTimeZone());
+          else
+            res = -RLMDateUtils.monthsBetween(now, date, Deployment.getBaseTimeZone());
           break;
         default:
           throw new ExpressionEvaluationException();
