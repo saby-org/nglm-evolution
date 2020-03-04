@@ -1,5 +1,5 @@
 # Import E4O flyway image as it is
-FROM ${env.DOCKER_REGISTRY}ev-e4o-flyway:${flyway.version} as original
+FROM evolving/ev-e4o-flyway:${flyway.version} as original
 
 # Import GUI flyway image as it is
 FROM evolving/ev-gui.sqlscripts:${flyway.gui.version} as guioriginal
