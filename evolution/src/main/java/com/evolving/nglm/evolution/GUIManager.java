@@ -23490,6 +23490,13 @@ public class GUIManager
               filterPushTemplates("4", result, now);  //Note : "4" is the id of the communication channel (defined in deployment.json)
             }
           break;
+          
+        case "pushTemplates_FlashSMS":
+          if (includeDynamic)
+            {
+              filterPushTemplates("5", result, now);  //Note : "5" is the id of the communication channel (defined in deployment.json)
+            }
+          break;  
 
         case "scoringStrategies":
           if (includeDynamic)
@@ -23609,6 +23616,33 @@ public class GUIManager
           if (communicationChannelesSMS.size() > 0)
             {
               CommunicationChannel communicationChannelSMS = communicationChannelesSMS.iterator().next();
+              for (GUIManagedObject sourceAddressUnchecked : sourceAddressService.getStoredGUIManagedObjects())
+                {
+                  if (sourceAddressUnchecked.getAccepted())
+                    {
+                      SourceAddress sourceAddress = (SourceAddress) sourceAddressUnchecked;
+                      if (sourceAddress.getCommunicationChannelId().equals(communicationChannelSMS.getGUIManagedObjectID()))
+                        {
+                          HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                          availableValue.put("id", sourceAddress.getSourceAddressId());
+                          availableValue.put("display", sourceAddress.getSourceAddressDisplay());
+                          result.add(JSONUtilities.encodeObject(availableValue));
+                        }
+                    }
+                }
+            }
+          break;
+          
+       case "sourceAddressesFlashSMS":
+          
+          //
+          //  communicationChannelesFlashSMS
+          //
+          
+          Collection<CommunicationChannel> communicationChannelesFlashSMS = communicationChannelService.getActiveCommunicationChanneles(now).stream().filter(communicationChannel -> "flashsms".equalsIgnoreCase(communicationChannel.getGUIManagedObjectName())).collect(Collectors.toList());
+          if (communicationChannelesFlashSMS.size() > 0)
+            {
+              CommunicationChannel communicationChannelSMS = communicationChannelesFlashSMS.iterator().next();
               for (GUIManagedObject sourceAddressUnchecked : sourceAddressService.getStoredGUIManagedObjects())
                 {
                   if (sourceAddressUnchecked.getAccepted())
