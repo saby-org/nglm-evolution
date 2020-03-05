@@ -31,6 +31,7 @@ import com.evolving.nglm.evolution.DeliveryManager;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.SMSNotificationManager.SMSMessageStatus;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.SMSMessage;
 import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
@@ -621,6 +622,13 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
 
       return deliveryDate;
     }
+    @Override
+    public void resetDeliveryRequestAfterReSchedule()
+    {
+      this.setReturnCode(SMSMessageStatus.PENDING.getReturnCode());
+      this.setMessageStatus(SMSMessageStatus.PENDING);
+      
+    }
   }
   
   /*****************************************
@@ -744,19 +752,26 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
         DeliveryRequest deliveryRequest = nextRequest();
         Date now = SystemTime.getCurrentTime();
         
-        log.debug("SMSNotificationManagerRequest run deliveryRequest;" + deliveryRequest);
+        log.debug("SMSNotificationManagerRequest run deliveryRequest:" + deliveryRequest);
 
         SMSNotificationManagerRequest smsRequest = (SMSNotificationManagerRequest)deliveryRequest;
         if(smsRequest.getRestricted()) 
           {
-            Date effectiveDeliveryTime = smsRequest.getEffectiveDeliveryTime(this, now);
-            if(effectiveDeliveryTime.equals(now))
+            Date effectiveDeliveryTime = now;
+            CommunicationChannel channel = (CommunicationChannel) communicationChannelService.getActiveCommunicationChannel("sms", now);
+            if(channel != null) 
               {
+                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(communicationChannelService, blackoutService, now);
+              }
+
+            if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))
+              {
+                log.debug("SMSNotificationManagerRequest SEND Immediately restricted " + smsRequest);
                 smsNotification.send(smsRequest);
               }
             else
               {
-                log.debug("SMSNotificationManagerRequest reschedule deliveryRequest;" + effectiveDeliveryTime);
+                log.debug("SMSNotificationManagerRequest RESCHEDULE to " + effectiveDeliveryTime + " restricted " + smsRequest);
                 smsRequest.setRescheduledDate(effectiveDeliveryTime);
                 smsRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
                 smsRequest.setReturnCode(SMSMessageStatus.RESCHEDULE.getReturnCode());
@@ -766,6 +781,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
           }
         else
           {
+            log.debug("SMSNotificationManagerRequest SEND Immediately NON restricted " + smsRequest);
             smsNotification.send(smsRequest);
           }
       }

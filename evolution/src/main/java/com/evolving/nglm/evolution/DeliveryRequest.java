@@ -234,6 +234,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     schemaBuilder.field("deliveryDate", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("diplomaticBriefcase", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).name("deliveryrequest_diplomaticBriefcase").schema());
     schemaBuilder.field("notificationStatus", MetricHistory.schema());
+    schemaBuilder.field("rescheduledDate", Schema.OPTIONAL_INT64_SCHEMA);
     commonSchema = schemaBuilder.build();
   };
 
@@ -360,6 +361,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   public abstract Object subscriberStreamEventPack(Object value);
   public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService);
   public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService);
+  public abstract void resetDeliveryRequestAfterReSchedule();
   public ActivityType getActivityType() { return ActivityType.Other; }
 
   /*****************************************
@@ -561,6 +563,8 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     struct.put("deliveryDate", deliveryRequest.getDeliveryDate() != null ? deliveryRequest.getDeliveryDate().getTime() : null);
     struct.put("diplomaticBriefcase", (deliveryRequest.getDiplomaticBriefcase() == null ? new HashMap<String, String>() : deliveryRequest.getDiplomaticBriefcase()));
     struct.put("notificationStatus", MetricHistory.pack((deliveryRequest.getNotificationStatus() == null) ? new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS) : deliveryRequest.getNotificationStatus()));
+    struct.put("rescheduledDate", deliveryRequest.getRescheduledDate() != null ? deliveryRequest.getRescheduledDate().getTime() : null);
+
   }
 
   /*****************************************
@@ -605,6 +609,8 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     Date deliveryDate = (schemaVersion >= 3) ? (valueStruct.get("deliveryDate") != null ? new Date(valueStruct.getInt64("deliveryDate")) : null) : (Date) valueStruct.get("deliveryDate");
     Map<String, String> diplomaticBriefcase = (Map<String, String>) valueStruct.get("diplomaticBriefcase");
     MetricHistory notificationStatus = schemaVersion >= 4 ?  MetricHistory.unpack(new SchemaAndValue(schema.field("notificationStatus").schema(),valueStruct.get("notificationStatus"))) : null;
+    Date rescheduledDate = (schemaVersion >= 4) ? (valueStruct.get("rescheduledDate") != null ? new Date(valueStruct.getInt64("rescheduledDate")) : null) : (Date) valueStruct.get("rescheduledDate");
+
 
     //
     //  return
@@ -630,7 +636,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.deliveryStatus = deliveryStatus;
     this.deliveryDate = deliveryDate;
     this.diplomaticBriefcase = diplomaticBriefcase;
-    this.rescheduledDate = null;
+    this.rescheduledDate = rescheduledDate;
     this.notificationStatus = notificationStatus;
   }
 

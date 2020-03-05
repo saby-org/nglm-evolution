@@ -626,6 +626,13 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
       //
 
       return deliveryDate;
+    }
+    @Override
+    public void resetDeliveryRequestAfterReSchedule()
+    {
+      this.setReturnCode(PushMessageStatus.PENDING.getReturnCode());
+      this.setMessageStatus(PushMessageStatus.PENDING);
+      
     }   
   }
 

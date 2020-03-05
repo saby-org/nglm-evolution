@@ -199,7 +199,45 @@ public class CommunicationChannel extends GUIManagedObject
         }
       return result;
     }
+    
+    /*****************************************
+    *
+    *  getEffectiveDeliveryTime
+    *
+    *****************************************/
 
+    public Date getEffectiveDeliveryTime(CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutServiceBlackout, Date now)
+    {
+      //
+      //  retrieve delivery time configuration
+      //
+
+      CommunicationChannelBlackoutPeriod blackoutPeriod = communicationChannelBlackoutServiceBlackout.getActiveCommunicationChannelBlackout("blackoutPeriod", now);
+
+      //
+      //  iterate until a valid date is found (give up after 7 days and reschedule even if not legal)
+      //
+
+      Date maximumDeliveryDate = RLMDateUtils.addDays(now, 7, Deployment.getBaseTimeZone());
+      Date deliveryDate = now;
+      while (deliveryDate.before(maximumDeliveryDate))
+        {
+          Date nextDailyWindowDeliveryDate = communicationChannelService.getEffectiveDeliveryTime(this.getGUIManagedObjectID(), deliveryDate);
+          Date nextBlackoutWindowDeliveryDate = (blackoutPeriod != null) ? communicationChannelBlackoutServiceBlackout.getEffectiveDeliveryTime(blackoutPeriod.getGUIManagedObjectID(), deliveryDate) : deliveryDate;
+          Date nextDeliveryDate = nextBlackoutWindowDeliveryDate.after(nextDailyWindowDeliveryDate) ? nextBlackoutWindowDeliveryDate : nextDailyWindowDeliveryDate;
+          if (nextDeliveryDate.after(deliveryDate))
+            deliveryDate = nextDeliveryDate;
+          else
+            break;
+        }
+
+      //
+      //  resolve
+      //
+
+      return deliveryDate;
+    }
+    
     /*****************************************
     *
     *  constructor

@@ -33,6 +33,7 @@ import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.PushNotificationManager.PushMessageStatus;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSMessageStatus;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
@@ -653,6 +654,12 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       //
 
       return deliveryDate;
+    }
+    @Override
+    public void resetDeliveryRequestAfterReSchedule()
+    {
+      this.setReturnCode(MAILMessageStatus.PENDING.getReturnCode());
+      this.setMessageStatus(MAILMessageStatus.PENDING);
     }   
   }
 
