@@ -1,7 +1,7 @@
 {
   --
   --  nodeTypes
-  -- 
+  --
 
   "nodeTypes" :
     [
@@ -551,7 +551,7 @@
           [ 
             { "name" : "credited",  "display" : "Credited",  "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
             { "name" : "failed",    "display" : "Failed",    "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
-            { "name" : "timeout",   "display" : "Timeout",   "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] } 
+            { "name" : "timeout",   "display" : "Timeout",   "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'day')" } } ] }
           ],
         "parameters" :
           [
@@ -611,80 +611,6 @@
       },
 
       --
-      --  134 bonus.in.credit
-      --
-
-      {
-        "id"                     : "134",
-        "name"                   : "bonus.in.credit",
-        "display"                : "Bonus IN-Credit",
-        "icon"                   : "jmr_components/styles/images/objects/in-credit.png",
-        "height"                 : 70,
-        "width"                  : 70,
-        "outputType"             : "static",
-        "outputConnectors"       : 
-          [ 
-            { "name" : "credited",  "display" : "Credited",  "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
-            { "name" : "failed",    "display" : "Failed",    "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
-            { "name" : "timeout",   "display" : "Timeout",   "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] } 
-          ],
-        "parameters" :
-          [
-            { 
-              "id" : "node.parameter.commodityid",
-              "display" : "Account", 
-              "dataType" : "string", 
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : [ "#inFulfillmentFakeADeliverables#" ],
-              "defaultValue" : null
-            },
-            { 
-              "id" : "node.parameter.amount",
-              "display" : "Credit Amount", 
-              "dataType" : "integer", 
-              "multiple" : false,
-              "mandatory" : true,
-              "expressionValuedParameter" : true,
-              "availableValues" : null,
-              "defaultValue" : null
-            },
-            { 
-              "id" : "node.parameter.validity.period.quantity",
-              "display" : "Period quantity", 
-              "dataType" : "integer", 
-              "multiple" : false,
-              "mandatory" : false,
-              "availableValues" : null,
-              "defaultValue" : null
-            },
-            { 
-              "id" : "node.parameter.validity.period.type",
-              "display" : "Period type", 
-              "dataType" : "string", 
-              "multiple" : false,
-              "mandatory" : false,
-              "availableValues" : [
-                  { "id" : "minute", "display" : "Minutes" },
-                  { "id" : "hour",   "display" : "Hours" },
-                  { "id" : "day",    "display" : "Days" },
-                  { "id" : "week",   "display" : "Weeks" },
-                  { "id" : "month",  "display" : "Months" },
-                  { "id" : "year",  "display" : "Years" }
-              ], 
-              "defaultValue" : null
-            }
-          ],
-        "action" : 
-          {
-            "actionManagerClass" : "com.evolving.nglm.evolution.CommodityDeliveryManager$ActionManager",
-            "deliveryType" : "inFulfillmentFakeA",
-            "moduleID" : "1",
-            "operation" : "credit"
-          }
-      },
-
-      --
       --  135 bonus.activation (Loyalty Opt-in)
       -- 
       
@@ -700,7 +626,7 @@
           [ 
             { "name" : "registered",  "display" : "Registered",  "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
             { "name" : "failed",      "display" : "Failed",      "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
-            { "name" : "timeout",     "display" : "Timeout",     "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] } 
+            { "name" : "timeout",     "display" : "Timeout",     "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'day')" } } ] }
           ],
         "parameters" :
           [
@@ -738,7 +664,7 @@
           [ 
             { "name" : "credited",  "display" : "Credited",  "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
             { "name" : "failed",    "display" : "Failed",    "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
-            { "name" : "timeout",   "display" : "Timeout",   "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] } 
+            { "name" : "timeout",   "display" : "Timeout",   "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'day')" } } ] }
           ],
         "parameters" :
           [
@@ -928,247 +854,6 @@
             "actionManagerClass" : "com.evolving.nglm.evolution.Journey$SetStatusAction"
           } 
       },
-
-      --
-      --  141 sms
-      --
-
-      {
-        "id"                     : "141",
-        "name"                   : "sms",
-        "display"                : "SMS",
-        "icon"                   : "jmr_components/styles/images/objects/sms.png",
-        "height"                 : 70,
-        "width"                  : 70,
-        "outputType"             : "static",
-        "outputConnectors"       : 
-          [ 
-            { "name" : "delivered", "display" : "Delivered/Sent","transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered', 'acknowledged' ]" } } ] },
-            { "name" : "failed",    "display" : "Failed",        "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
-            { "name" : "timeout",   "display" : "Timeout",       "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 2, 'day')" } } ] },
-            { "name" : "unknown",   "display" : "UnknownMSISDN", "transitionCriteria" : [ { "criterionField" : "subscriber.msisdn", "criterionOperator" : "is null" } ] }
-          ],
-        "parameters" :
-          [
-            { 
-              "id" : "node.parameter.contacttype",
-              "display" : "Contact Type",
-              "dataType" : "string",
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : 
-                [ 
-                  { "id" : "callToAction",  "display" : "Advertising" },
-                  { "id" : "response", "display" : "Bonus Message" },
-                  { "id" : "reminder", "display" : "Reminder" },
-                  { "id" : "announcement", "display" : "Announcement" },
-                  { "id" : "actionNotification", "display" : "Action Notification" }
-                ],
-              "defaultValue" : null
-            },
-            { 
-              "id" : "node.parameter.message",
-              "display" : "Message Text",
-              "dataType" : "smsMessage",
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : null,
-              "defaultValue" : null
-            },
-            { 
-              "id" : "node.parameter.source",
-              "display" : "Short Code",
-              "dataType" : "string",
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : [ "#sourceAddressesSMS#" ],
-              "defaultValue" : null
-            },
-            {
-              "id" : "node.parameter.confirmationexpected",
-              "display" : "Delivery Confirmation Expected",
-              "dataType" : "boolean",
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : [true, false],
-              "defaultValue" : false
-            },
-            {
-              "id" : "node.parameter.flashsms",
-              "display" : "FlashSMS",
-              "dataType" : "boolean",
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : [true, false],
-              "defaultValue" : false
-            }
-          ],
-        "action" : 
-          {
-            "actionManagerClass" : "com.evolving.nglm.evolution.SMSNotificationManager$ActionManager",
-            "deliveryType" : "notificationmanagersms",
-            "moduleID" : "1"    
-          } 
-       },
-
-      --
-      --  142 email
-      --
-
-      {
-        "id"                     : "142",
-        "name"                   : "email",
-        "display"                : "Email",
-        "icon"                   : "jmr_components/styles/images/objects/4-2-email.png",
-        "height"                 : 70,
-        "width"                  : 70,
-        "outputType"             : "static",
-        "outputConnectors"       : 
-          [ 
-            { "name" : "delivered", "display" : "Delivered/Sent","transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered', 'acknowledged' ]" } } ] },
-            { "name" : "failed",    "display" : "Failed",        "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
-            { "name" : "timeout",   "display" : "Timeout",       "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] },
-            { "name" : "unknown",   "display" : "UnknownEmail",  "transitionCriteria" : [ { "criterionField" : "subscriber.email", "criterionOperator" : "is null" } ] }
-          ],
-        "parameters" :
-          [
-            { 
-              "id" : "node.parameter.contacttype",
-              "display" : "Contact Type",
-              "dataType" : "string",
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : 
-                [ 
-                  { "id" : "callToAction",  "display" : "Call To Action" },
-                  { "id" : "response", "display" : "Response" },
-                  { "id" : "reminder", "display" : "Reminder" },
-                  { "id" : "announcement", "display" : "Announcement" },
-                  { "id" : "actionNotification", "display" : "Action Notification" }
-                ],
-              "defaultValue" : null
-            },
-            { 
-              "id" : "node.parameter.message",
-              "display" : "Email",
-              "dataType" : "emailMessage",
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : null,
-              "defaultValue" : null
-            },
-            { 
-              "id" : "node.parameter.fromaddress",
-              "display" : "From Address",
-              "dataType" : "string",
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : [ "#sourceAddressesEmail#" ],
-              "defaultValue" : null
-            },
-            
-            {
-              "id" : "node.parameter.confirmationexpected",
-              "display" : "Delivery Confirmation Expected",
-              "dataType" : "boolean",
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : [true, false],
-              "defaultValue" : false
-              }
-          ],
-        "action" : 
-          {
-            "actionManagerClass" : "com.evolving.nglm.evolution.MailNotificationManager$ActionManager",
-            "deliveryType" : "notificationmanagermail",
-            "moduleID" : "1"    
-          } 
-       },
-
-      ------------------------------------------
-      --
-      --  demo-only node types
-      --
-      ------------------------------------------
-
-
-      --
-      --  143 app-push
-      --
-
-      {
-        "id"                     : "143",
-        "name"                   : "appPush",
-        "display"                : "App Push",
-        "icon"                   : "jmr_components/styles/images/objects/app-push.png",
-        "height"                 : 70,
-        "width"                  : 70,
-        "outputType"             : "static",
-        "outputConnectors"       : 
-          [ 
-            { "name" : "delivered", "display" : "Delivered/Sent","transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered', 'acknowledged' ]" } } ] },
-            { "name" : "failed",    "display" : "Failed",        "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
-            { "name" : "timeout",   "display" : "Timeout",       "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] },
-            { "name" : "unknown",   "display" : "UnknownAppID",  "transitionCriteria" : [ { "criterionField" : "subscriber.appID", "criterionOperator" : "is null" } ] }
-          ],
-        "parameters" :
-          [
-            { 
-              "id" : "node.parameter.message",
-              "display" : "Message",
-              "dataType" : "string",
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : [ "#pushTemplates_app#" ],
-              "defaultValue" : null
-            }
-          ],
-        "action" : 
-          {
-            "actionManagerClass" : "com.evolving.nglm.evolution.PushNotificationManager$ActionManager",
-            "deliveryType" : "notificationmanagerpush",
-            "moduleID" : "1"
-          }
-       },
-
-      --
-      --  144 ussd-push
-      --
-
-      {
-        "id"                     : "144",
-        "name"                   : "USSDPush",
-        "display"                : "USSD Push",
-        "icon"                   : "jmr_components/styles/images/objects/ussd-push.png",
-        "height"                 : 70,
-        "width"                  : 70,
-        "outputType"             : "static",
-        "outputConnectors"       : 
-          [ 
-            { "name" : "delivered", "display" : "Delivered/Sent","transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered', 'acknowledged' ]" } } ] },
-            { "name" : "failed",    "display" : "Failed",        "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
-            { "name" : "timeout",   "display" : "Timeout",       "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] },
-            { "name" : "unknown",   "display" : "UnknownAppID",  "transitionCriteria" : [ { "criterionField" : "subscriber.appID", "criterionOperator" : "is null" } ] }
-          ],
-        "parameters" :
-          [
-            { 
-              "id" : "node.parameter.message",
-              "display" : "Message",
-              "dataType" : "string",
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : [ "#pushTemplates_USSD#" ],
-              "defaultValue" : null
-            }
-          ],
-        "action" : 
-          {
-            "actionManagerClass" : "com.evolving.nglm.evolution.PushNotificationManager$ActionManager",
-            "deliveryType" : "notificationmanagerpush",
-            "moduleID" : "1"
-          }
-       },
 
       --
       --  150 next.best.offer (Token)
@@ -1414,59 +1099,8 @@
 	       { "id" : "action.accepted.offer",    "display" : "Accepted Offer",    "dataType" : "string", "retriever" : "getActionAttribute" }
 	     ]
          }
-      },
-      
-      --  This is an example of client specific configuration to display a box able to generate an event 
-      --  Recharge event in this example
-      --  1000 trigger event recharge
-      --
-
-      {
-        "id"               : "1000",
-        "name"             : "trigger.thirdpartyeventdemo",
-        "display"          : "Trigger Third Party Event Demo",
-        "icon"             : "jmr_components/styles/images/objects/control-group.png",
-        "height"           : 70,
-        "width"            : 70,
-        "outputType"       : "static",
-        "outputConnectors" : 
-          [ 
-            { "name" : "eventTriggered", "display" : "Event Triggered",  "evaluationPriority" : "normal", "transitionCriteria" : [] }
-          ],
-        "parameters"       :
-          [
-            { 
-              "id" : "trigger.recharge.field1", 
-              "display" : "ThirdPartyEventDemo field1", 
-              "dataType" : "double", 
-              "width" : "50%", 
-              "multiple" : false, 
-              "mandatory" : true,
-              "availableValues" : null,
-              "defaultValue" : null
-            },
-            { 
-              "id" : "trigger.recharge.field2", 
-              "display" : "ThirdPartyEventDemo field2", 
-              "dataType" : "string", 
-              "width" : "50%", 
-              "multiple" : false, 
-              "mandatory" : true,
-              "availableValues" : null,
-              "defaultValue" : null
-            }
-          ],
-        "action" : 
-          {
-            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$TriggerEventAction",
-            "eventName" : "ThirdPartyEventDemo",
-            "fieldMappings" : 
-              [ 
-                {"eventFieldName" : "field1", "eventFieldValue" : "trigger.recharge.field1" },
-                {"eventFieldName" : "field2", "eventFieldValue" : "trigger.recharge.field2" } 
-              ]
-          } 
       }
+
     ],
         
   --
@@ -1520,8 +1154,7 @@
             { "id" : "132", "name" : "subjourney" },
             { "id" : "301", "name" : "workflow" },
             { "id" : "135", "name" : "loyalty.opt-in" },
-            { "id" : "139", "name" : "loyalty.opt-out" },
-            { "id" : "1000", "name" : "trigger.thirdpartyeventdemo" }
+            { "id" : "139", "name" : "loyalty.opt-out" }
           ]
        }
     ],
@@ -1576,14 +1209,12 @@
           [
             { "id" : "133", "name" : "bonus.point.credit" },
             { "id" : "138", "name" : "bonus.point.debit" },
-            { "id" : "134", "name" : "bonus.in.credit" },
             { "id" : "135", "name" : "loyalty.opt-in" },
             { "id" : "139", "name" : "loyalty.opt-out" },
             { "id" : "136", "name" : "purchase.offer" },
             { "id" : "201", "name" : "earn.badge" },
             { "id" : "301", "name" : "workflow" },
-            { "id" : "137", "name" : "journey.status" },
-            { "id" : "1000", "name" : "trigger.thirdpartyeventdemo" }
+            { "id" : "137", "name" : "journey.status" }
           ]
       },
 
@@ -1593,10 +1224,6 @@
         "color" : "#A2A18D",
         "items" :
           [
-            { "id" : "141", "name" : "sms" },
-            { "id" : "142", "name" : "email" },
-            { "id" : "143", "name" : "appPush" },
-            { "id" : "144", "name" : "USSDPush" }
           ]
       },
 
@@ -1668,13 +1295,11 @@
           [
             { "id" : "133", "name" : "bonus.point.credit" },
             { "id" : "138", "name" : "bonus.point.debit" },
-            { "id" : "134", "name" : "bonus.in.credit" },
             { "id" : "135", "name" : "loyalty.opt-in" },
             { "id" : "139", "name" : "loyalty.opt-out" },
             { "id" : "136", "name" : "purchase.offer" },
             { "id" : "201", "name" : "earn.badge" },
-            { "id" : "137", "name" : "journey.status" },
-            { "id" : "1000", "name" : "trigger.thirdpartyeventdemo" }
+            { "id" : "137", "name" : "journey.status" }
           ]
       },
 
@@ -1684,10 +1309,6 @@
         "color" : "#A2A18D",
         "items" :
           [
-            { "id" : "141", "name" : "sms" },
-            { "id" : "142", "name" : "email" },
-            { "id" : "143", "name" : "appPush" },
-            { "id" : "144", "name" : "USSDPush" }
           ]
       },
 
@@ -1703,9 +1324,6 @@
           ]
       }
 
-      -- 
-      --  (reserve color:  "" -- "#9F6A73" -- "brownish")
-      -- 
-      
     ]
+
 }
