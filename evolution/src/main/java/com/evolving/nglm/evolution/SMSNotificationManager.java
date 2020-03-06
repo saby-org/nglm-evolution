@@ -11,7 +11,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -27,13 +26,8 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
-import com.evolving.nglm.evolution.DeliveryManager;
-import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
-import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-import com.evolving.nglm.evolution.SMSMessage;
-import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 
@@ -704,7 +698,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
           request.setRestricted(restricted);
           request.setFlashSMS(flashSMS);
           request.setDeliveryPriority(contactType.getDeliveryPriority());
-          request.setNotificationStatus(evolutionEventContext.getSubscriberState().getNotificationStatus());
+          request.setNotificationHistory(evolutionEventContext.getSubscriberState().getNotificationHistory());
         }
       else if (template != null)
         {
