@@ -1,22 +1,34 @@
 {
-  --
-  --  basic configuration
-  -- 
+  "baseTimeZone"                             : "<_DEPLOYMENT_TIMEZONE_>",
+  "baseLanguage"                             : "<_DEPLOYMENT_LOCALE_LANGUAGE_>",
+  "baseCountry"                              : "<_DEPLOYMENT_LOCALE_COUNTRY_>",
+  "generateNumericIDs"                       : true,
+  "APIresponseDateFormat"                    : "yyyy-MM-dd'T'HH:mm:ssZZZZ",
 
-  "baseTimeZone"       : "<_DEPLOYMENT_TIMEZONE_>",
-  "baseLanguage"       : "<_DEPLOYMENT_LOCALE_LANGUAGE_>",
-  "baseCountry"        : "<_DEPLOYMENT_LOCALE_COUNTRY_>",
-  "generateNumericIDs" : true,
+  "journeyTrafficArchivePeriodInSeconds"     : 3600,
+  "journeyTrafficArchiveMaxNumberOfPeriods"  : 168,
 
-  --
-  --  APIresponseDateFormat
-  --
+  "yesterdayODRDatacubePeriodCronEntryString"            : "0 1 * * *",
+  "todayODRDatacubePeriodCronEntryString"                : "0 * * * *",
+  "yesterdayLoyaltyDatacubePeriodCronEntryString"        : "0 1 * * *",
+  "todayLoyaltyDatacubePeriodCronEntryString"            : "0 * * * *",
+  "yesterdaySubscriberDatacubePeriodCronEntryString"     : "0 1 * * *",
+  "todaySubscriberDatacubePeriodCronEntryString"         : "0 * * * *",
+  "journeyTrafficDatacubePeriodCronEntryString"          : "0 * * * *",
+  "subscriberProfileSnapshotPeriodCronEntryString"       : "5 0 * * *",
 
-  "APIresponseDateFormat" : "yyyy-MM-dd'T'HH:mm:ssZZZZ",
-
-  --
-  --  topics -- evolution
-  --
+  "elasticSearchScrollSize" : 1000,
+  "subscriberESIndexes" :
+  [
+    "subscriberprofile",
+    "detailedrecords_bonuses-*",
+    "detailedrecords_offers-*",
+    "detailedrecords_messages-*",
+    "detailedrecords_tokens-*",
+    "journeystatistic*",
+    "journeymetric",
+    "regr_criteria"
+  ],
 
   "emptyTopic"                                           : "${topic.empty}",
   "journeyTopic"                                         : "${topic.journey}",
@@ -30,7 +42,7 @@
   "callingChannelTopic"                                  : "${topic.callingchannel}",
   "salesChannelTopic"                                    : "${topic.saleschannel}",
   "supplierTopic"                                        : "${topic.supplier}",
-  "resellerTopic"                                         : "${topic.reseller}",
+  "resellerTopic"                                        : "${topic.reseller}",
   "productTopic"                                         : "${topic.product}",
   "catalogCharacteristicTopic"                           : "${topic.catalogcharacteristic}",
   "contactPolicyTopic"                                   : "${topic.contactpolicy}",
@@ -109,41 +121,8 @@
   "segmentContactPolicyTopic"                            : "${topic.segmentcontactpolicy}",
   "criterionFieldAvailableValuesTopic"                   : "${topic.criterionfieldavailablevalues}",
   "sourceAddressTopic"                   				 : "${topic.sourceaddress}",
-  "voucherChangeRequestTopic"                           : "${topic.voucherchange.request}",
-  "voucherChangeResponseTopic"                          : "${topic.voucherchange.response}",
-
-
-  --
-  --  registry "topics" -- fake topic names used to register Avro schemas when objects are serialized/deserialized to non-Kafka places (e.g., Redis)
-  --
-
-  "subscriberProfileRegistrySubject"                     : "${registrysubject.subscriberprofile}",
-
-  --
-  --  journeyTrafficArchive default values
-  --
-
-  "journeyTrafficArchivePeriodInSeconds"                 : 3600,
-  "journeyTrafficArchiveMaxNumberOfPeriods"              : 168,
-  
-  --
-  --  datacubes
-  --
-
-  "yesterdayODRDatacubePeriodCronEntryString"            : "0 1 * * *",
-  "todayODRDatacubePeriodCronEntryString"                : "0 * * * *",
-  "yesterdayLoyaltyDatacubePeriodCronEntryString"        : "0 1 * * *",
-  "todayLoyaltyDatacubePeriodCronEntryString"            : "0 * * * *",
-  "yesterdaySubscriberDatacubePeriodCronEntryString"     : "0 1 * * *",
-  "todaySubscriberDatacubePeriodCronEntryString"         : "0 * * * *",
-  "journeyTrafficDatacubePeriodCronEntryString"          : "0 * * * *",
-  "subscriberProfileSnapshotPeriodCronEntryString"       : "5 0 * * *",
-
-  -- 
-  --  supportedDataTypes
-  --
-  --   http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedDataTypes
-  --
+  "voucherChangeRequestTopic"                            : "${topic.voucherchange.request}",
+  "voucherChangeResponseTopic"                           : "${topic.voucherchange.response}",
 
   "supportedDataTypes" :
     [
@@ -255,12 +234,6 @@
       }
     ],
 
-  -- 
-  -- supported time units
-  -- 
-  --   http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedTimeUnits
-  -- 
-  
   "supportedTimeUnits" :
     [ 
       { "id" : "instant", "display" : "Instant" },
@@ -270,35 +243,7 @@
       { "id" : "month",   "display" : "Month" },
       { "id" : "year",    "display" : "Year" }
     ],
-    
-    --
-    -- elasticSearchScrollSize
-    --
-    
-    "elasticSearchScrollSize" : 1000,
 
-    --
-    --  elasticSearch subscriber indexes
-    --
-
-    "subscriberESIndexes" :
-      [
-        "subscriberprofile",
-        "detailedrecords_bonuses-*",
-        "detailedrecords_offers-*",
-        "detailedrecords_messages-*",
-        "detailedrecords_tokens-*",
-        "journeystatistic*",
-        "journeymetric",
-        "regr_criteria"
-      ],
-
-    -- 
-    -- supported Token Codes Formats
-    -- 
-    --   http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTokenCodesFormats
-    -- 
-          
     "supportedTokenCodesFormats" :
       [ 
           { "id" : "c1-5", "display" : "[ACDEFGHJKMNPQRTWXY34679]{5}" },
@@ -308,10 +253,6 @@
           { "id" : "c2-6", "display" : "[0123456789abcdef]{6}" }
      ],
         
-    --
-    --  evolutionEngineCoreEvents
-    -- 
-
     "evolutionEngineCoreEvents" :
       [
         { 
@@ -395,11 +336,7 @@
            ]
         }
     ],
-    
-  --
-  -- evolutionProfileCriterionFields
-  --
-    
+
   "evolutionProfileCriterionFields" :
     [
       { "id" : "loyaltyprogram.name",          "display" : "Loyalty Program",              "dataType" : "stringSet", "tagFormat" : null, "tagMaxLength" : 100,  "esField" : "loyaltyprogram.name",                "retriever" : "getLoyaltyPrograms",         "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#loyaltyPrograms#" ] },
@@ -410,10 +347,6 @@
       { "id" : "campaign.customer.status",     "display" : "Campaign Customer Status",     "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionCampaignStatus",     "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] },
       { "id" : "bulkcampaign.customer.status", "display" : "BulkCampaign Customer Status", "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionBulkcampaignStatus", "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] }
     ],
-     
-  --
-  --  offerOptimizationAlgorithmsCommon
-  --
 
   "offerOptimizationAlgorithmsCommon": 
     [
@@ -466,5 +399,9 @@
           ],
         "javaClass": "com.evolving.nglm.evolution.offeroptimizer.PriceAlgo"
       }
-    ]
+    ],
+
+  "subscriberProfileRegistrySubjectComment"              : "todo, remove totally this hack from the conf",
+  "subscriberProfileRegistrySubject"                     : "subscriberprofile"
+
 }
