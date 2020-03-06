@@ -840,6 +840,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
           thirdPartyPresentationMap.put(VOUCHERPARTNERID, getOfferDeliveryVoucherPartnerId());
         }
+    }
     @Override
     public void resetDeliveryRequestAfterReSchedule()
     {
