@@ -6,6 +6,22 @@
 
 #########################################
 #
+# Create logs and logs config repository
+#
+#########################################
+
+for SWARM_HOST in $SWARM_HOSTS
+do
+   ssh $SWARM_HOST "
+      mkdir -p $NGLM_LOGS
+   "   
+   ssh $SWARM_HOST "
+      mkdir -p $NGLM_CONFIG_LOGS
+   "   
+done
+
+#########################################
+#
 #  construct resources
 #
 #########################################
@@ -75,6 +91,10 @@ cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-guimanager
 
 cat $DEPLOY_ROOT/docker/guimanager.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-guimanager.yml
 echo >> $DEPLOY_ROOT/stack/stack-guimanager.yml
+
+cat $DEPLOY_ROOT/config/logger/log4j-guimanager.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-guimanager-001.properties
+scp $DEPLOY_ROOT/config/logger/log4j-guimanager-001.properties $HOST:$NGLM_CONFIG_LOGS/log4j-guimanager.properties
+rm -f $DEPLOY_ROOT/config/logger/log4j-guimanager-001.properties
 
 #
 #  postamble

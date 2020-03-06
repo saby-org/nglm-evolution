@@ -4,8 +4,6 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import org.slf4j.Logger;
 
-import java.time.Duration;
-import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -71,7 +69,7 @@ public class ContactPolicyProcessor
     try
       {
         String channelId = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(request.getDeliveryType());
-        MetricHistory requestMetricHistory = request.getNotificationStatus();
+        MetricHistory requestMetricHistory = request.getNotificationHistory();
         //validate segment contact policy
         if(request.getSegmentContactPolicyID() != null && isBlockedByContactPolicy(request.getSegmentContactPolicyID(),channelId,now,requestMetricHistory))
         {
@@ -88,7 +86,7 @@ public class ContactPolicyProcessor
             {
               returnValue = true;
               request.setDeliveryStatus(DeliveryManager.DeliveryStatus.Failed);
-              deliveryManager.completeRequest(request);
+              //deliveryManager.completeRequest(request);
               break;
             }
           }
@@ -96,8 +94,12 @@ public class ContactPolicyProcessor
     catch (Exception ex)
       {
         request.setDeliveryStatus(DeliveryManager.DeliveryStatus.Failed);
-        deliveryManager.completeRequest(request);
+        //deliveryManager.completeRequest(request);
         log.warn("Exception processing contact policy campaignID="+request.getFeatureID()+" subscriberID="+request.getSubscriberID(),ex);
+      }
+    finally
+      {
+        deliveryManager.completeRequest(request);
       }
     return returnValue;
   }

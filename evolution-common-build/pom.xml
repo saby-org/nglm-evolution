@@ -25,14 +25,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.8.1-evpro_130-SNAPSHOT</version>
+    <version>4.8.1-build200306-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.8.1-evpro_130-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.8.1-build200306-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
@@ -184,9 +184,6 @@
     <topic.voucherchange.request>voucherchange-request</topic.voucherchange.request>
     <topic.voucherchange.response>voucherchange-response</topic.voucherchange.response>
 
-    <!-- registry subjects -->
-    <registrysubject.subscriberprofile>subscriberprofile</registrysubject.subscriberprofile>
-    
     <!-- evolutionengine -->
     <changelog.evolutionengine.subscriberstate>subscriberstate</changelog.evolutionengine.subscriberstate>
     <changelog.evolutionengine.subscriberstate.topic>streams-evolutionengine-${changelog.evolutionengine.subscriberstate}-changelog</changelog.evolutionengine.subscriberstate.topic>

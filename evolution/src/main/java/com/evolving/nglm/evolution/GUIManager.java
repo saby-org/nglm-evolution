@@ -1689,6 +1689,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/stopCampaign", new APISimpleHandler(API.stopCampaign));
         restServer.createContext("/nglm-guimanager/getWorkflowToolbox", new APISimpleHandler(API.getWorkflowToolbox));
         restServer.createContext("/nglm-guimanager/getWorkflowList", new APISimpleHandler(API.getWorkflowList));
+        restServer.createContext("/nglm-guimanager/getFullWorkflowList", new APISimpleHandler(API.getFullWorkflowList));
         restServer.createContext("/nglm-guimanager/getWorkflowSummaryList", new APISimpleHandler(API.getWorkflowSummaryList));
         restServer.createContext("/nglm-guimanager/getWorkflow", new APISimpleHandler(API.getWorkflow));
         restServer.createContext("/nglm-guimanager/putWorkflow", new APISimpleHandler(API.putWorkflow));
@@ -1835,6 +1836,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putSMSTemplate", new APISimpleHandler(API.putSMSTemplate));
         restServer.createContext("/nglm-guimanager/removeSMSTemplate", new APISimpleHandler(API.removeSMSTemplate));
         restServer.createContext("/nglm-guimanager/getPushTemplateList", new APISimpleHandler(API.getPushTemplateList));
+        restServer.createContext("/nglm-guimanager/getFullPushTemplateList", new APISimpleHandler(API.getFullPushTemplateList));
         restServer.createContext("/nglm-guimanager/getPushTemplateSummaryList", new APISimpleHandler(API.getPushTemplateSummaryList));
         restServer.createContext("/nglm-guimanager/getPushTemplate", new APISimpleHandler(API.getPushTemplate));
         restServer.createContext("/nglm-guimanager/putPushTemplate", new APISimpleHandler(API.putPushTemplate));
@@ -10012,7 +10014,7 @@ public class GUIManager
     *****************************************/
     
     
-    response.put("ResponseCode", "ok" );    
+    response.put("responseCode", "ok" );
     response.put("salesChannels", JSONUtilities.encodeArray(salesChannels));    
     return JSONUtilities.encodeObject(response);
   }

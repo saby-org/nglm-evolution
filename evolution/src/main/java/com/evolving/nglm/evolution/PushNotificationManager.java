@@ -768,7 +768,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
           request = new PushNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getPushTemplateID(), tags);
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
-          request.setNotificationStatus(evolutionEventContext.getSubscriberState().getNotificationStatus());
+          request.setNotificationHistory(evolutionEventContext.getSubscriberState().getNotificationHistory());
         }
       else
         {
