@@ -32,7 +32,7 @@
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.8.1-build200305-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.8.1-build200306-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
