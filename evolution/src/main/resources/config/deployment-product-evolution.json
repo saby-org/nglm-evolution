@@ -401,6 +401,386 @@
       }
     ],
 
+
+
+
+
+
+
+  "allThoseFollowingAreComingFromNGLMQA": "this is not yet OK, just a first try",
+
+  "autoApproveGuiObjects" : true,
+  "periodicEvaluationCronEntry" : "0 2 * * *",
+  "ucgEvaluationCronEntry" : "0 4 * * *",
+  "ucgEngineESConnectTimeout" : 30000,
+  "ucgEngineESSocketTimeout" : 60000,
+  "ucgEngineESMasRetryTimeout" : 60000,
+  "elasticSearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
+
+  "initialVoucherCodeFormats" :
+  [
+    { "id" : "QR_code",      "name"  : "QR Code"},
+    { "id" : "bar_code",     "name"  : "Bar Code"},
+    { "id" : "alphanumeric", "name"  : "Alphanumeric"}
+  ],
+
+  "universalControlGroupCriteria" :
+  [
+    { "id" : "1", "criterionField" : "subscriber.universalControlGroup", "criterionOperator" : "==", "argument" : { "valueType" : "simple",  "value" : "true",  "expression" : "true" } }
+  ],
+  "controlGroupCriteria" :
+  [
+    { "id" : "1", "criterionField" : "subscriber.segments", "criterionOperator" : "contains", "argument" : { "valueType" : "simple",  "value" : "controlGroup",  "expression" : "'controlGroup'" } }
+  ],
+
+  "notificationDailyWindows" :
+  {
+    "monday"    : [ { "id":"1", "from":"09:00", "until":"20:59" }],
+    "tuesday"   : [ { "id":"1", "from":"09:00", "until":"20:59" }],
+    "wednesday" : [ { "id":"1", "from":"09:00", "until":"20:59" }],
+    "thursday"  : [ { "id":"1", "from":"09:00", "until":"20:59" }],
+    "friday"    : [ { "id":"1", "from":"09:00", "until":"20:59" }],
+    "saturday"  : [ { "id":"1", "from":"09:00", "until":"20:59" }],
+    "sunday"    : [ { "id":"1", "from":"09:00", "until":"20:59" }]
+  },
+
+  "supportedLanguages" :
+  [
+    { "id" : "1", "name" : "en",    "display" : "English",    "mandatory" : true,  "defaultLanguage" : true },
+    { "id" : "2", "name" : "fr",    "display" : "French",     "mandatory" : false },
+    { "id" : "3", "name" : "ar-sa", "display" : "Arabic",     "mandatory" : false },
+    { "id" : "4", "name" : "pt",    "display" : "Portuguese", "mandatory" : false },
+    { "id" : "5", "name" : "ru",    "display" : "Russian",    "mandatory" : false },
+    { "id" : "6", "name" : "kk",    "display" : "Kazakh",     "mandatory" : false },
+    { "id" : "7", "name" : "ar-dz", "display" : "Algerian",   "mandatory" : false }
+  ],
+
+  "customerMetaData" :
+  {
+    "generalDetailsMetaData" :
+    [
+      { "id" : "1",   "textProperty" : true,  "display" : "Evolution Subscriber Status",             "editable" : true,  "alternateID" : false, "topLevel": true,      "dataType" : "string",      "name" : "evolutionSubscriberStatus",                 "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : ["active", "inactive", "(unknown)"] },
+      { "id" : "2",   "textProperty" : true,  "display" : "Evolution Subscriber Status Change Date", "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "date",        "name" : "evolutionSubscriberStatusChangeDate",       "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null },
+      { "id" : "3",   "textProperty" : true,  "display" : "Previous Evolution Subscriber Status",    "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "string",      "name" : "previousEvolutionSubscriberStatus",         "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : ["active", "inactive", "(unknown)"] },
+      { "id" : "4",   "textProperty" : true,  "display" : "Subscriber Language",                     "editable" : true,  "alternateID" : false, "topLevel": false,     "dataType" : "string",      "name" : "language",                                  "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null },
+      { "id" : "5",   "textProperty" : true,  "display" : "Subscriber Segments",                     "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "stringSet",   "name" : "segments",                                  "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null },
+      { "id" : "6",   "textProperty" : true,  "display" : "Subscriber ID",                           "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "string",      "name" : "subscriberID",                              "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null }
+    ]
+  },
+
+  "deliveryManagers":
+  [
+    {
+      "deliveryType"              : "pointFulfillment",
+      "requestClass"              : "com.evolving.nglm.evolution.PointFulfillmentRequest",
+      "requestTopic"              : "${topic.pointfulfillment.request}",
+      "responseTopic"             : "${topic.pointfulfillment.response}",
+      "providerID"                : "provider_Point",
+      "providerName"              : "Points provider"
+    },
+    {
+      "deliveryType"              : "journeyFulfillment",
+      "requestClass"              : "com.evolving.nglm.evolution.JourneyRequest",
+      "requestTopic"              : "${topic.journeyrequest}",
+      "responseTopic"             : "${topic.journeyresponse}",
+      "providerID"                : "provider_Journey",
+      "providerName"              : "Journeys provider"
+    },
+    {
+      "deliveryType"              : "loyaltyProgramFulfillment",
+      "requestClass"              : "com.evolving.nglm.evolution.LoyaltyProgramRequest",
+      "requestTopic"              : "${topic.loyaltyprogramrequest}",
+      "responseTopic"             : "${topic.loyaltyprogramresponse}",
+      "providerID"                : "provider_Loyalty_Program",
+      "providerName"              : "Loyalty Programs provider"
+    },
+    {
+      "deliveryType"              : "purchaseFulfillment",
+      "requestClass"              : "com.evolving.nglm.evolution.PurchaseFulfillmentManager$PurchaseFulfillmentRequest",
+      "requestTopic"              : "${topic.fulfillment.purchasefulfillment.request}",
+      "responseTopic"             : "${topic.fulfillment.purchasefulfillment.response}",
+      "internalTopic"             : "${topic.fulfillment.purchasefulfillment.internal}",
+      "routingTopic"              : "${topic.fulfillment.purchasefulfillment.routing}",
+      "deliveryGuarantee"         : "atLeastOnce"
+    },
+    {
+      "deliveryType"              : "commodityDelivery",
+      "requestClass"              : "com.evolving.nglm.evolution.CommodityDeliveryManager$CommodityDeliveryRequest",
+      "requestTopic"              : "${topic.commoditydelivery.request}",
+      "responseTopic"             : "${topic.commoditydelivery.response}",
+      "internalTopic"             : "${topic.commoditydelivery.internal}",
+      "routingTopic"              : "${topic.commoditydelivery.routing}",
+      "deliveryGuarantee"         : "atLeastOnce"
+    }
+  ],
+
+  "authResponseCacheLifetimeInMinutes" : 60,
+  "thirdPartyMethodPermissions" :
+  [
+    {
+      "id"           : "ping",
+      "methodName"   : "ping",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "],
+      "byPassAuth"   : true
+    },
+    {
+      "id"           : "getCustomer",
+      "methodName"   : "getCustomer",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerBDRs",
+      "methodName"   : "getCustomerBDRs",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerODRs",
+      "methodName"   : "getCustomerODRs",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerPoints",
+      "methodName"   : "getCustomerPoints",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "creditBonus",
+      "methodName"   : "creditBonus",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "debitBonus",
+      "methodName"   : "debitBonus",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerMessages",
+      "methodName"   : "getCustomerMessages",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getOffersList",
+      "methodName"   : "getOffersList",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getActiveOffer",
+      "methodName"   : "getActiveOffer",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getActiveOffers",
+      "methodName"   : "getActiveOffers",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerJourneys",
+      "methodName"   : "getCustomerJourneys",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerCampaigns",
+      "methodName"   : "getCustomerCampaigns",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerAvailableCampaigns",
+      "methodName"   : "getCustomerAvailableCampaigns",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getLoyaltyProgram",
+      "methodName"   : "getLoyaltyProgram",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getLoyaltyProgramList",
+      "methodName"   : "getLoyaltyProgramList",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerLoyaltyPrograms",
+      "methodName"   : "getCustomerLoyaltyPrograms",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "updateCustomer",
+      "methodName"   : "updateCustomer",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerNBOs",
+      "methodName"   : "getCustomerNBOs",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getTokensCodesList",
+      "methodName"   : "getTokensCodesList",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "acceptOffer",
+      "methodName"   : "acceptOffer",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "purchaseOffer",
+      "methodName"   : "purchaseOffer",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "triggerEvent",
+      "methodName"   : "triggerEvent",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    }
+  ],
+
+  "uploadedFileSeparator" : ";",
+  "reportManager" :
+  {
+    "reportManagerZookeeperDir"   : "${zookeeper.root}/reports",
+    "reportManagerOutputPath"     : "/app/reports",
+    "reportManagerDateFormat"     : "yyyy-MM-dd_HH-mm-ss",
+    "reportManagerFileExtension"  : "csv",
+    "reportManagerCsvSeparator"   : ";",
+    "reportManagerStreamsTempDir" : "/tmp"
+  },
+  "initialReports" :
+  [
+    {
+      "name"                : "journeyCustomerStatesReport",
+      "display"             : "Journey Customer States Report",
+      "description"         : "Description of the Journey Customer States Report",
+      "class"               : "com.evolving.nglm.carrierqa.reports.journeycustomerstates.JourneyCustomerStatesReportDriver",
+      "availableScheduling" : [ "hourly", "daily", "weekly", "monthly" ]
+    },
+    {
+      "name"                : "subscriberReport",
+      "display"             : "Subscriber Report",
+      "description"         : "Description of the Subscriber Report",
+      "class"               : "com.evolving.nglm.carrierqa.reports.subscriber.SubscriberReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "BDRReport",
+      "display"             : "BDR Report",
+      "description"         : "Description of the BDR Report",
+      "class"               : "com.evolving.nglm.carrierqa.reports.bdr.BDRReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "ODRReport",
+      "display"             : "ODR Report",
+      "description"         : "Description of the ODR Report",
+      "class"               : "com.evolving.nglm.carrierqa.reports.odr.ODRReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ],
+      "defaultReportPeriodQuantity" : 6,
+      "defaultReportPeriodUnit"     : "MONTHS"
+    },
+    {
+      "name"                : "notificationReport",
+      "display"             : "Notification Report",
+      "description"         : "Description of the Notification Report",
+      "class"               : "com.evolving.nglm.carrierqa.reports.notification.NotificationReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "journeysReport",
+      "display"             : "Journeys Report",
+      "description"         : "Description of the Journeys Report",
+      "class"               : "com.evolving.nglm.carrierqa.reports.journeys.JourneysReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "productReport",
+      "display"             : "Product Report",
+      "description"         : "Description of the Product Report",
+      "class"               : "com.evolving.nglm.carrierqa.reports.product.ProductReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "offerReport",
+      "display"             : "Offer Report",
+      "description"         : "Description of the Offer Report",
+      "class"               : "com.evolving.nglm.carrierqa.reports.offer.OfferReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "journeyImpactReport",
+      "display"             : "Journey Impact Report",
+      "description"         : "Description of the Journey Impact Report",
+      "class"               : "com.evolving.nglm.carrierqa.reports.journeyimpact.JourneyImpactReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "journeyCustomerStatisticsReport",
+      "display"             : "Journey Customer Statistics Report",
+      "description"         : "Description of the Journey Customer Statistics Report",
+      "class"               : "com.evolving.nglm.carrierqa.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "contactPolicyConfiguration",
+      "display"             : "Contact Policy Configuration",
+      "description"         : "Description of the Contact Policy Configuration Report",
+      "class"               : "com.evolving.nglm.carrierqa.reports.contactpolicyconfig.ContactPolicyConfigurationReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "loyaltyProgramCustomerStates",
+      "display"             : "Loyalty Program Customer States",
+      "description"         : "Description of the Loyalty Program Customer States Report",
+      "class"               : "com.evolving.nglm.carrierqa.reports.loyaltyprogramcustomerstate.LoyaltyProgramCustomerStatesDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "customerPointsDetails",
+      "display"             : "Customer Points Details",
+      "description"         : "Description of the Customer Points Details Report",
+      "class"               : "com.evolving.nglm.carrierqa.reports.customerpointdetails.CustomerPointDetailsDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "tokenReport",
+      "display"             : "Token Report",
+      "description"         : "Description of the characteristics of the token",
+      "class"               : "com.evolving.nglm.carrierqa.reports.token.TokenReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "offersAllocatedToTokens",
+      "display"             : "Token Offer Report",
+      "description"         : "Description offer details of the tokens",
+      "class"               : "com.evolving.nglm.carrierqa.reports.tokenOffer.TokenOfferReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    }
+  ],
+
+
+
   "subscriberProfileRegistrySubjectComment"              : "todo, remove totally this hack from the conf",
   "subscriberProfileRegistrySubject"                     : "subscriberprofile"
 
