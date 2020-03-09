@@ -80,6 +80,7 @@ public class OfferObjective extends GUIManagedObject
 
   public String getOfferObjectiveID() { return getGUIManagedObjectID(); }
   public String getOfferObjectiveName() { return getGUIManagedObjectName(); }
+  public String getOfferObjectiveDisplay() { return getGUIManagedObjectDisplay(); }
   public String getDisplay() { return getGUIManagedObjectDisplay(); }
   public List<String> getCatalogCharacteristics() { return catalogCharacteristics; }
   
