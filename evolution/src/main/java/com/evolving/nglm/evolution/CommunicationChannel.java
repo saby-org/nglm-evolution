@@ -222,7 +222,7 @@ public class CommunicationChannel extends GUIManagedObject
       Date deliveryDate = now;
       while (deliveryDate.before(maximumDeliveryDate))
         {
-          Date nextDailyWindowDeliveryDate = communicationChannelService.getEffectiveDeliveryTime(this.getGUIManagedObjectID(), deliveryDate);
+          Date nextDailyWindowDeliveryDate = communicationChannelService.getEffectiveDeliveryTime(this, deliveryDate);
           Date nextBlackoutWindowDeliveryDate = (blackoutPeriod != null) ? communicationChannelBlackoutServiceBlackout.getEffectiveDeliveryTime(blackoutPeriod.getGUIManagedObjectID(), deliveryDate) : deliveryDate;
           Date nextDeliveryDate = nextBlackoutWindowDeliveryDate.after(nextDailyWindowDeliveryDate) ? nextBlackoutWindowDeliveryDate : nextDailyWindowDeliveryDate;
           if (nextDeliveryDate.after(deliveryDate))

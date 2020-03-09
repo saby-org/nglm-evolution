@@ -617,44 +617,6 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
     
-    /****************************************
-    *
-    *  getEffectiveDeliveryTime
-    *
-    ****************************************/
-
-    public Date getEffectiveDeliveryTime(MailNotificationManager mailNotificationManager, Date now)
-    {
-      //
-      //  retrieve delivery time configuration
-      //
-
-      CommunicationChannel channel = (CommunicationChannel) mailNotificationManager.getCommunicationChannelService().getActiveCommunicationChannel("email", now);
-      CommunicationChannelBlackoutPeriod blackoutPeriod = mailNotificationManager.getBlackoutService().getActiveCommunicationChannelBlackout("blackoutPeriod", now);
-
-      //
-      //  iterate until a valid date is found (give up after 7 days and reschedule even if not legal)
-      //
-
-      Date maximumDeliveryDate = RLMDateUtils.addDays(now, 7, Deployment.getBaseTimeZone());
-      Date deliveryDate = now;
-      while (deliveryDate.before(maximumDeliveryDate))
-        {
-          Date nextDailyWindowDeliveryDate = (channel != null) ? mailNotificationManager.getCommunicationChannelService().getEffectiveDeliveryTime(channel.getGUIManagedObjectID(), deliveryDate) : deliveryDate;
-          Date nextBlackoutWindowDeliveryDate = (blackoutPeriod != null) ? mailNotificationManager.getBlackoutService().getEffectiveDeliveryTime(blackoutPeriod.getGUIManagedObjectID(), deliveryDate) : deliveryDate;
-          Date nextDeliveryDate = nextBlackoutWindowDeliveryDate.after(nextDailyWindowDeliveryDate) ? nextBlackoutWindowDeliveryDate : nextDailyWindowDeliveryDate;
-          if (nextDeliveryDate.after(deliveryDate))
-            deliveryDate = nextDeliveryDate;
-          else
-            break;
-        }
-
-      //
-      //  resolve
-      //
-
-      return deliveryDate;
-    }
     @Override
     public void resetDeliveryRequestAfterReSchedule()
     {
@@ -800,18 +762,35 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
         log.info("MailNotificationManagerRequest run deliveryRequest;" + deliveryRequest);
 
         MailNotificationManagerRequest mailRequest = (MailNotificationManagerRequest)deliveryRequest;
-        Date effectiveDeliveryTime = mailRequest.getEffectiveDeliveryTime(this, now);
-        if(effectiveDeliveryTime.equals(now))
+        
+        if(mailRequest.getRestricted()) 
           {
-            mailNotification.send(mailRequest);
+            Date effectiveDeliveryTime = now;
+            CommunicationChannel channel = (CommunicationChannel) communicationChannelService.getActiveCommunicationChannel("mail", now);
+            if(channel != null) 
+              {
+                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(communicationChannelService, blackoutService, now);
+              }
+            
+            if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))
+              {
+                log.debug("MailNotificationManagerRequest SEND Immediately restricted " + mailRequest);
+                mailNotification.send(mailRequest);
+              }
+            else
+              {
+                log.debug("MailNotificationManagerRequest RESCHEDULE to " + effectiveDeliveryTime + " restricted " + mailRequest);
+                mailRequest.setRescheduledDate(effectiveDeliveryTime);
+                mailRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
+                mailRequest.setReturnCode(SMSMessageStatus.RESCHEDULE.getReturnCode());
+                mailRequest.setMessageStatus(MAILMessageStatus.RESCHEDULE);
+                completeDeliveryRequest(mailRequest);
+              }
           }
-        else
+        else 
           {
-            mailRequest.setRescheduledDate(effectiveDeliveryTime);
-            mailRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
-            mailRequest.setReturnCode(SMSMessageStatus.RESCHEDULE.getReturnCode());
-            mailRequest.setMessageStatus(MAILMessageStatus.RESCHEDULE);
-            completeDeliveryRequest(mailRequest);
+            log.debug("MailNotificationManagerRequest SEND Immediately NON restricted " + mailRequest);
+            mailNotification.send(mailRequest);
           }
       }
   }

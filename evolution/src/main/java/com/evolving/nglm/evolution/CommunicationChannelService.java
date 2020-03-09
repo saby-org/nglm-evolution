@@ -152,10 +152,9 @@ public class CommunicationChannelService extends GUIService
   *
   *****************************************/
   
-  public Date getEffectiveDeliveryTime(String channelID, Date now)
+  public Date getEffectiveDeliveryTime(CommunicationChannel communicationChannel, Date now)
   {
     Date effectiveDeliveryDate = now;
-    CommunicationChannel communicationChannel = (CommunicationChannel) getActiveCommunicationChannel(channelID, now);
     if (communicationChannel != null && communicationChannel.getNotificationDailyWindows() != null)
       {
         effectiveDeliveryDate = NGLMRuntime.END_OF_TIME;
