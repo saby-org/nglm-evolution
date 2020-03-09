@@ -60,6 +60,7 @@
     <common.build.phase.generate-notificationmanagersms-image>none</common.build.phase.generate-notificationmanagersms-image>
     <common.build.phase.generate-notificationmanagermail-image>none</common.build.phase.generate-notificationmanagermail-image>
     <common.build.phase.generate-notificationmanagerpush-image>none</common.build.phase.generate-notificationmanagerpush-image>
+    <common.build.phase.generate-notificationmanager-image>none</common.build.phase.generate-notificationmanager-image>
     <common.build.phase.generate-reportmanager-image>none</common.build.phase.generate-reportmanager-image>
     <common.build.phase.generate-reportscheduler-image>none</common.build.phase.generate-reportscheduler-image>
     <common.build.phase.generate-datacubemanager-image>none</common.build.phase.generate-datacubemanager-image>
@@ -81,6 +82,7 @@
     <common.build.skip.docker-notificationmanagersms-image>true</common.build.skip.docker-notificationmanagersms-image>
     <common.build.skip.docker-notificationmanagermail-image>true</common.build.skip.docker-notificationmanagermail-image>
     <common.build.skip.docker-notificationmanagerpush-image>true</common.build.skip.docker-notificationmanagerpush-image>
+    <common.build.skip.docker-notificationmanager-image>true</common.build.skip.docker-notificationmanager-image>
     <common.build.skip.docker-reportmanager-image>true</common.build.skip.docker-reportmanager-image>
     <common.build.skip.docker-reportscheduler-image>true</common.build.skip.docker-reportscheduler-image>
     <common.build.skip.docker-datacubemanager-image>true</common.build.skip.docker-datacubemanager-image>
@@ -174,6 +176,12 @@
     <topic.notificationmanagerpush.response>notificationmanagerpush-response</topic.notificationmanagerpush.response>
     <topic.notificationmanagerpush.internal>notificationmanagerpush-internal</topic.notificationmanagerpush.internal>
     <topic.notificationmanagerpush.routing>notificationmanagerpush-routing</topic.notificationmanagerpush.routing>
+
+    <topic.notificationmanager.request>notificationmanager-request</topic.notificationmanager.request>
+    <topic.notificationmanager.response>notificationmanager-response</topic.notificationmanager.response>
+    <topic.notificationmanager.internal>notificationmanager-internal</topic.notificationmanager.internal>
+    <topic.notificationmanager.routing>notificationmanager-routing</topic.notificationmanager.routing>
+
     <topic.communicationchannel>communicationchannel</topic.communicationchannel>
     <topic.blackoutperiod>blackoutperiod</topic.blackoutperiod>
     <topic.loyaltyprogram>loyaltyprogram</topic.loyaltyprogram>
@@ -1211,6 +1219,57 @@
           </execution>
 
           <execution>
+            <id>generate-notificationmanager-docker-stack</id>
+            <phase>${common.build.phase.generate-notificationmanager-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/notificationmanager</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/notificationmanager</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/notificationmanager-run.sh</include>
+                    <include>config/notificationmanager_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/log4j-evol.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
+
+          <execution>
             <id>generate-reportmanager-docker-stack</id>
             <phase>${common.build.phase.generate-reportmanager-image}</phase>
             <goals>
@@ -1671,6 +1730,22 @@
               <tag>${project.name}-${project.version}</tag>
             </configuration>
           </execution>
+
+          <execution>
+            <id>docker-notificationmanager</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-notificationmanager-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/notificationmanager</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-notificationmanager</repository>
+              <classifier>docker-info-notificationmanager</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+
 
           <execution>
             <id>docker-reportmanager</id>
