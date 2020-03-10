@@ -5313,7 +5313,7 @@ public class GUIManager
               {
                 subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberCount();
               }
-            journeyInfo.put("journeySubscriberCount", subscriberCount);
+            journeyInfo.put("subscriberCount", subscriberCount);
             journeys.add(journeyInfo);
           }
       }
