@@ -24038,8 +24038,8 @@ public class GUIManager
                         {
                           DialogTemplate dialogTemplate = (DialogTemplate) messageTemplate;
                           String[] referenceSplit = reference.split("_");
-                          String communicationChannel = referenceSplit[2];
-                          if (dialogTemplate.getCommunicationChannelID().equals(communicationChannel))
+                          String communicationChannelID = referenceSplit[(referenceSplit.length)-1];
+                          if (dialogTemplate.getCommunicationChannelID().equals(communicationChannelID))
                             {
                               HashMap<String,Object> availableValue = new HashMap<String,Object>();
                               availableValue.put("id", messageTemplate.getSubscriberMessageTemplateID());                              
