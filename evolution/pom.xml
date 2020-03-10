@@ -27,14 +27,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.8.1-build200306-SNAPSHOT</version>
+    <version>4.8.1-build200310-SNAPSHOT</version>
     <relativePath/>
   </parent>
 
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>4.8.1-build200306-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.8.1-build200310-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.0.53</gui-fwk.version>
