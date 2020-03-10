@@ -43,7 +43,11 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -150,6 +154,8 @@ import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.ThirdPartyManager.API;
+import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyManagerException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
@@ -452,8 +458,10 @@ public class GUIManager
     getCustomerNBOs("getCustomerNBOs"),
     getTokensCodesList("getTokensCodesList"),
     acceptOffer("acceptOffer"),
+    purchaseOffer("purchaseOffer"),
     getTokenEventDetails("getTokenEventDetails"),
     getTenantList("getTenantList"),
+    getOffersList("getOffersList"),
 
     //
     //  configAdaptor APIs
@@ -583,10 +591,12 @@ public class GUIManager
   private static Method externalAPIMethodJourneyActivated;
   private static Method externalAPIMethodJourneyDeactivated;
   private ZookeeperUniqueKeyServer zuks;
+  private KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
 
   private static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   private static final String FILE_REQUEST = "file"; 
   private static final String FILE_UPLOAD_META_DATA= "fileUploadMetaData"; 
+  private int httpTimeout = 5000;
 
   //
   //  context
@@ -872,6 +882,10 @@ public class GUIManager
     segmentContactPolicyService = new SegmentContactPolicyService(bootstrapServers, "guimanager-segmentcontactpolicyservice-"+apiProcessKey, segmentContactPolicyTopic, true);
     subscriberGroupSharedIDService = new SharedIDService(segmentationDimensionService, targetService, exclusionInclusionTargetService);
     criterionFieldAvailableValuesService = new CriterionFieldAvailableValuesService(bootstrapServers, "guimanager-criterionfieldavailablevaluesservice-"+apiProcessKey, criterionFieldAvailableValuesTopic, true);
+    
+    DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
+    purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(),StringKey.serde(),PurchaseFulfillmentRequest.serde());
+    purchaseResponseListenerService.start();
 
     /*****************************************
     *
@@ -1689,6 +1703,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/stopCampaign", new APISimpleHandler(API.stopCampaign));
         restServer.createContext("/nglm-guimanager/getWorkflowToolbox", new APISimpleHandler(API.getWorkflowToolbox));
         restServer.createContext("/nglm-guimanager/getWorkflowList", new APISimpleHandler(API.getWorkflowList));
+        restServer.createContext("/nglm-guimanager/getFullWorkflowList", new APISimpleHandler(API.getFullWorkflowList));
         restServer.createContext("/nglm-guimanager/getWorkflowSummaryList", new APISimpleHandler(API.getWorkflowSummaryList));
         restServer.createContext("/nglm-guimanager/getWorkflow", new APISimpleHandler(API.getWorkflow));
         restServer.createContext("/nglm-guimanager/putWorkflow", new APISimpleHandler(API.putWorkflow));
@@ -1835,6 +1850,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putSMSTemplate", new APISimpleHandler(API.putSMSTemplate));
         restServer.createContext("/nglm-guimanager/removeSMSTemplate", new APISimpleHandler(API.removeSMSTemplate));
         restServer.createContext("/nglm-guimanager/getPushTemplateList", new APISimpleHandler(API.getPushTemplateList));
+        restServer.createContext("/nglm-guimanager/getFullPushTemplateList", new APISimpleHandler(API.getFullPushTemplateList));
         restServer.createContext("/nglm-guimanager/getPushTemplateSummaryList", new APISimpleHandler(API.getPushTemplateSummaryList));
         restServer.createContext("/nglm-guimanager/getPushTemplate", new APISimpleHandler(API.getPushTemplate));
         restServer.createContext("/nglm-guimanager/putPushTemplate", new APISimpleHandler(API.putPushTemplate));
@@ -1937,6 +1953,9 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCustomerNBOs", new APISimpleHandler(API.getCustomerNBOs));
         restServer.createContext("/nglm-guimanager/getTokensCodesList", new APISimpleHandler(API.getTokensCodesList));
         restServer.createContext("/nglm-guimanager/acceptOffer", new APISimpleHandler(API.acceptOffer));
+        restServer.createContext("/nglm-guimanager/purchaseOffer", new APISimpleHandler(API.purchaseOffer));
+        restServer.createContext("/nglm-guimanager/getOffersList", new APISimpleHandler(API.getOffersList));
+
         restServer.createContext("/nglm-guimanager/getTokenEventDetails", new APISimpleHandler(API.getTokenEventDetails));
         restServer.createContext("/nglm-guimanager/getTenantList", new APISimpleHandler(API.getTenantList));
         
@@ -3448,7 +3467,15 @@ public class GUIManager
                 case acceptOffer:
                   jsonResponse = processAcceptOffer(userID, jsonRoot);
                   break;
-                  
+
+                case purchaseOffer:
+                  jsonResponse = processPurchaseOffer(userID, jsonRoot);
+                  break;
+
+                case getOffersList:
+                  jsonResponse = processGetOffersList(userID, jsonRoot);
+                  break;
+
                 case getTokenEventDetails:
                   jsonResponse = processGetTokenEventDetails(userID, jsonRoot);
                   break;
@@ -10012,7 +10039,7 @@ public class GUIManager
     *****************************************/
     
     
-    response.put("ResponseCode", "ok" );    
+    response.put("responseCode", "ok" );
     response.put("salesChannels", JSONUtilities.encodeArray(salesChannels));    
     return JSONUtilities.encodeObject(response);
   }
@@ -21534,9 +21561,10 @@ public class GUIManager
             }
           String salesChannelID = subscriberStoredToken.getPresentedOffersSalesChannel();
           String featureID = (userID != null) ? userID : "1"; // for PTT tests, never happens when called by browser
-          String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation(); 
+          String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation();
+          String resellerID = "";
           Offer offer = offerService.getActiveOffer(offerID, now);
-          deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, kafkaProducer);
+          deliveryRequestID = purchaseOffer(true, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
 
           // Redeem the token : Send an AcceptanceLog to EvolutionEngine
 
@@ -21607,6 +21635,298 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
+  /*****************************************
+  *
+  *  processPurchaseOffer
+  *
+  *****************************************/
+
+ private JSONObject processPurchaseOffer(String userID, JSONObject jsonRoot) throws GUIManagerException
+ {
+   
+   boolean sync = true; // always sync today
+   /****************************************
+   *
+   *  response
+   *
+   ****************************************/
+
+   HashMap<String,Object> response = new HashMap<String,Object>();
+   Date now = SystemTime.getCurrentTime();
+
+   String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+
+   /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+   String subscriberID = resolveSubscriberID(customerID);
+   if (subscriberID == null)
+     {
+       log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+       response.put("responseCode", "CustomerNotFound");
+       return JSONUtilities.encodeObject(response);
+     }
+ 
+   String offerName = JSONUtilities.decodeString(jsonRoot, "offerName", true);
+   String salesChannel = JSONUtilities.decodeString(jsonRoot, "salesChannel", true);
+   Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+   String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+
+   /*****************************************
+    *
+    * getSubscriberProfile - no history
+    *
+    *****************************************/
+   PurchaseFulfillmentRequest purchaseResponse=null;
+
+  /*****************************************
+   *
+   *  getSubscriberProfile
+   *
+   *****************************************/
+  String deliveryRequestID = "";
+
+  try
+  {
+    SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+    if (subscriberProfile == null)
+      {
+        response.put("responseCode", "CustomerNotFound");
+      } 
+    else
+      {
+        String offerID = null;
+        for (Offer offer : offerService.getActiveOffers(now))
+          {
+            if (offer.getDisplay().equals(offerName))
+              {
+                offerID = offer.getGUIManagedObjectID();
+                break;
+              }
+          }
+        if (offerID == null)
+          {
+            String str = "Invalid Offer";
+            log.error(str);
+            response.put("responseCode", str);
+            return JSONUtilities.encodeObject(response);
+          }
+        String salesChannelID = null;
+        for (SalesChannel sc : salesChannelService.getActiveSalesChannels(now))
+          {
+            if (sc.getGUIManagedObjectName().equals(salesChannel))
+              {
+                salesChannelID = sc.getGUIManagedObjectID();
+                break;
+              }
+          }
+        if (salesChannelID == null)
+          {
+            String str = "Invalid SalesChannel";
+            log.error(str);
+            response.put("responseCode", str);
+            return JSONUtilities.encodeObject(response);
+          }
+
+        String featureID = (userID != null) ? userID : "1"; // for PTT tests, never happens when called by browser
+        String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation(); 
+        String resellerID = "";
+        if(!sync)
+          {
+            purchaseResponse = purchaseOffer(false,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer);
+          }
+        else
+          {
+            purchaseResponse = purchaseOffer(true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer);
+            response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService));
+          }
+      }
+   }
+   catch (SubscriberProfileServiceException e) 
+   {
+     String str = "unable to process request purchaseOffer " + e.getLocalizedMessage();
+     log.error(str);
+     response.put("responseCode", str);
+     return JSONUtilities.encodeObject(response);
+   } 
+
+   /*****************************************
+    *
+    *  decorate and response
+    *
+    *****************************************/
+   response.put("deliveryRequestID", purchaseResponse.getDeliveryRequestID());
+   if(purchaseResponse==null){
+     String str = "System error";
+     log.error(str);
+     response.put("responseCode", str);
+     return JSONUtilities.encodeObject(response);
+   }else{
+     response.put("responseCode", "ok");
+   }
+   return JSONUtilities.encodeObject(response);
+ }
+
+ /*****************************************
+ *
+ *  processGetOffersList
+ *
+ *****************************************/
+
+private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) throws GUIManagerException
+{
+
+  /****************************************
+   *
+   *  response
+   *
+   ****************************************/
+
+  Map<String,Object> response = new HashMap<String,Object>();
+
+  /****************************************
+   *
+   *  argument
+   *
+   ****************************************/
+  String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+
+  /*****************************************
+   *
+   *  resolve subscriberID
+   *
+   *****************************************/
+
+  String subscriberID = resolveSubscriberID(customerID);
+  if (subscriberID == null)
+    {
+      log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+      response.put("responseCode", "CustomerNotFound");
+      return JSONUtilities.encodeObject(response);
+    }
+
+  String offerState = JSONUtilities.decodeString(jsonRoot, "state", false);
+  String startDateString = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+  String endDateString = JSONUtilities.decodeString(jsonRoot, "endDate", false);
+  String offerObjective = JSONUtilities.decodeString(jsonRoot, "objective", false);
+
+  Date offerStartDate = prepareStartDate(getDateFromString(startDateString, ThirdPartyManager.REQUEST_DATE_FORMAT, ThirdPartyManager.REQUEST_DATE_PATTERN));
+  Date offerEndDate = prepareEndDate(getDateFromString(endDateString, ThirdPartyManager.REQUEST_DATE_FORMAT, ThirdPartyManager.REQUEST_DATE_PATTERN));
+
+  try
+  {
+    SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+    if (subscriberProfile == null)
+      {
+        response.put("responseCode", "CustomerNotFound");
+      } 
+    else if (offerState != null && !offerState.isEmpty() && !offerState.equalsIgnoreCase("ACTIVE"))
+      {
+        response.put("responseCode", "Bad Field Value " + offerState);
+      }
+    else
+      {
+        Collection<Offer> offers = new ArrayList<>();
+        if (offerState == null || offerState.isEmpty())
+          {
+            //
+            // retrieve stored offers
+            //
+
+            for (GUIManagedObject ofr : offerService.getStoredOffers())
+              {
+                if (ofr instanceof Offer) offers.add( (Offer) ofr);
+              }
+          }
+        else
+          {
+            //
+            // retrieve active offers
+            //
+
+            offers = offerService.getActiveOffers(SystemTime.getCurrentTime());
+          }
+
+        //
+        // filter using subscriberID
+        //
+
+        if (subscriberID != null)
+          {
+            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
+            offers = offers.stream().filter(offer -> offer.evaluateProfileCriteria(evaluationRequest)).collect(Collectors.toList());
+          }
+
+        //
+        // filter using startDate
+        //
+
+        if (offerStartDate != null)
+          {
+            offers = offers.stream().filter(offer -> (offer.getEffectiveStartDate() == null || offer.getEffectiveStartDate().compareTo(offerStartDate) >= 0)).collect(Collectors.toList()); 
+          }
+
+        //
+        // filter using endDate
+        //
+
+        if (offerEndDate != null)
+          {
+            offers = offers.stream().filter(campaign -> (campaign.getEffectiveEndDate() == null || campaign.getEffectiveEndDate().compareTo(offerEndDate) <= 0)).collect(Collectors.toList());
+          }
+
+
+        if (offerObjective != null && !offerObjective.isEmpty())
+          {
+
+            //
+            //  read objective
+            //
+
+            Collection<OfferObjective> activeOfferObjectives = offerObjectiveService.getActiveOfferObjectives(SystemTime.getCurrentTime());
+
+            //
+            //  filter activejourneyObjective by name
+            //
+
+            List<OfferObjective> offerObjectives = activeOfferObjectives.stream().filter(offerObj -> offerObj.getOfferObjectiveDisplay().equals(offerObjective)).collect(Collectors.toList());
+            OfferObjective exactOfferObjectives = offerObjectives.size() > 0 ? offerObjectives.get(0) : null;
+
+            //
+            //  filter
+            //
+
+            if (exactOfferObjectives == null)
+              offers = new ArrayList<Offer>();
+            else
+              offers = offers.stream().filter(offer -> (offer.getOfferObjectives() != null && (offer.getOfferObjectives().stream().filter(obj -> obj.getOfferObjectiveID().equals(exactOfferObjectives.getOfferObjectiveID())).count() > 0L))).collect(Collectors.toList());
+
+          }
+
+        /*****************************************
+         *
+         *  decorate offers response
+         *
+         *****************************************/
+
+        List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService)).collect(Collectors.toList());
+        response.put("offers", JSONUtilities.encodeArray(offersJson));
+        response.put("responseCode", "ok");
+      }
+  }
+  catch(SubscriberProfileServiceException spe)
+  {
+    String str = "unable to process request getOffersList " + spe.getLocalizedMessage();
+    log.error(str);
+    response.put("responseCode", str);
+    return JSONUtilities.encodeObject(response);
+  }
+  return JSONUtilities.encodeObject(response);
+}
+
   /*****************************************
   *
   *  processGetTokenEventDetails
@@ -21974,8 +22294,7 @@ public class GUIManager
    *
    *****************************************/
   
-  private String purchaseOffer(String subscriberID, String offerID, String salesChannelID, int quantity, 
-      String moduleID, String featureID, String origin, KafkaProducer<byte[],byte[]> kafkaProducer) throws GUIManagerException
+  private PurchaseFulfillmentRequest purchaseOffer(boolean sync, String subscriberID, String offerID, String salesChannelID, int quantity, String moduleID, String featureID, String origin, String resellerID, KafkaProducer<byte[],byte[]> kafkaProducer) throws GUIManagerException
   {
     DeliveryManagerDeclaration deliveryManagerDeclaration = null;
     for (DeliveryManagerDeclaration dmd : Deployment.getDeliveryManagers().values())
@@ -22016,18 +22335,43 @@ public class GUIManager
     request.put("moduleID", moduleID);
     request.put("featureID", featureID);
     request.put("origin", origin);
+    request.put("resellerID", resellerID);
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
-    PurchaseFulfillmentRequest pfr = new PurchaseFulfillmentRequest(valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, SystemTime.getCurrentTime());
+    PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, SystemTime.getCurrentTime());
 
-    // Write it to the right topic
+    Future<PurchaseFulfillmentRequest> waitingResponse=null;
+    if(sync){
+      waitingResponse = purchaseResponseListenerService.addWithOnValueFilter(purchaseResponse->!purchaseResponse.isPending()&&purchaseResponse.getDeliveryRequestID().equals(deliveryRequestID));
+    }
+
     kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
         topic,
         keySerializer.serialize(topic, new StringKey(deliveryRequestID)),
-        valueSerializer.serialize(topic, pfr)
+        valueSerializer.serialize(topic, purchaseRequest)
         ));
-    return deliveryRequestID;
+
+    if (sync) {
+      return handleWaitingResponse(waitingResponse);
+    }
+    return purchaseRequest;
+  }
+
+  private <T> T handleWaitingResponse(Future<T> waitingResponse) throws GUIManagerException {
+    try {
+      T response = waitingResponse.get(httpTimeout, TimeUnit.MILLISECONDS);
+      if(log.isDebugEnabled()) log.debug("response processed : "+response);
+      return response;
+    } catch (InterruptedException|ExecutionException e) {
+      String str = "Error waiting purchase response"; 
+      log.warn(str);
+      throw new GUIManagerException("Internal error", str);
+    } catch (TimeoutException e) {
+      String str = "Timeout waiting purchase response";
+      log.info(str);
+      throw new GUIManagerException("Internal error", str);
+    }
   }
 
   /*****************************************
@@ -24764,6 +25108,36 @@ public class GUIManager
       }
     return result;
   }
+  
+
+  /*****************************************
+   *
+   *  getDateFromString
+   *
+   *****************************************/
+
+  private Date getDateFromString(String dateString, String dateFormat, String pattern) throws GUIManagerException
+  {
+    Date result = null;
+    if (dateString != null)
+      {
+        if (pattern != null && !dateString.matches(pattern))
+          {
+            throw new GUIManagerException("Bad Field Value", "(invalid date/format expected in "+dateFormat+" and found "+dateString+")");
+          }
+        try 
+          {
+            result = RLMDateUtils.parseDate(dateString, dateFormat, Deployment.getBaseTimeZone(), false);
+          }
+        catch(Exception ex)
+          {
+            throw new GUIManagerException("Bad Field Value", "(invalid date/format expected in "+dateFormat+" and found "+dateString+")");
+          }
+        
+      }
+    return result;
+  }
+
   
   /*****************************************
   *

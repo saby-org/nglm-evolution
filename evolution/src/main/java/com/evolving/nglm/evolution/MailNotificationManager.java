@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Random;
 import java.util.HashMap;
 
 import org.apache.kafka.connect.data.Field;
@@ -27,10 +26,6 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
-import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
-import com.evolving.nglm.evolution.DeliveryManager;
-import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
-import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.PushNotificationManager.PushMessageStatus;
@@ -723,7 +718,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
           request.setConfirmationExpected(confirmationExpected);
           request.setRestricted(restricted);
           request.setDeliveryPriority(contactType.getDeliveryPriority());
-          request.setNotificationStatus(evolutionEventContext.getSubscriberState().getNotificationStatus());
+          request.setNotificationHistory(evolutionEventContext.getSubscriberState().getNotificationHistory());
         }
       else
         {

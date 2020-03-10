@@ -153,11 +153,11 @@ public class ThirdPartyManager
   private static final String GENERIC_RESPONSE_CODE = "responseCode";
   private static final String GENERIC_RESPONSE_MSG = "responseMessage";
   private String getCustomerAlternateID;
-  private static final String REQUEST_DATE_PATTERN = "\\d{4}-\\d{2}-\\d{2}"; //Represents exact yyyy-MM-dd
-  private static final String REQUEST_DATE_FORMAT= "yyyy-MM-dd";
+  public static final String REQUEST_DATE_PATTERN = "\\d{4}-\\d{2}-\\d{2}"; //Represents exact yyyy-MM-dd
+  public static final String REQUEST_DATE_FORMAT= "yyyy-MM-dd";
   // all this conf which should not makes no sense at then end :
   //private static final Class<?> PURCHASE_FULFILLMENT_REQUEST_CLASS = com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest.class;
-  private static final String PURCHASE_FULFILLMENT_MANAGER_TYPE = "purchaseFulfillment";
+  public static final String PURCHASE_FULFILLMENT_MANAGER_TYPE = "purchaseFulfillment";
 
 
   /*****************************************
@@ -2828,10 +2828,10 @@ public class ThirdPartyManager
 
     String subscriberID = resolveSubscriberID(jsonRoot);
 
-    String offerState = readString(jsonRoot, "state", true);
-    String startDateString = readString(jsonRoot, "startDate", true);
-    String endDateString = readString(jsonRoot, "endDate", true);
-    String offerObjectiveName = readString(jsonRoot, "objectiveName", true);
+    String offerState = readString(jsonRoot, "state", false);
+    String startDateString = readString(jsonRoot, "startDate", false);
+    String endDateString = readString(jsonRoot, "endDate", false);
+    String offerObjective = readString(jsonRoot, "objective", false);
     String userID = readString(jsonRoot, "loginName", true);
 
     Date offerStartDate = prepareStartDate(getDateFromString(startDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
@@ -2920,7 +2920,7 @@ public class ThirdPartyManager
             }
 
 
-          if (offerObjectiveName != null && !offerObjectiveName.isEmpty())
+          if (offerObjective != null && !offerObjective.isEmpty())
             {
 
               //
@@ -2933,7 +2933,7 @@ public class ThirdPartyManager
               //  filter activejourneyObjective by name
               //
 
-              List<OfferObjective> offerObjectives = activeOfferObjectives.stream().filter(offerObj -> offerObj.getOfferObjectiveName().equals(offerObjectiveName)).collect(Collectors.toList());
+              List<OfferObjective> offerObjectives = activeOfferObjectives.stream().filter(offerObj -> offerObj.getOfferObjectiveDisplay().equals(offerObjective)).collect(Collectors.toList());
               OfferObjective exactOfferObjectives = offerObjectives.size() > 0 ? offerObjectives.get(0) : null;
 
               //
@@ -4764,7 +4764,7 @@ public class ThirdPartyManager
   *
   *****************************************/
 
-  private Date prepareEndDate(Date endDate)
+  public static Date prepareEndDate(Date endDate)
   {
     Date result = null;
     if (endDate != null)
@@ -4786,7 +4786,7 @@ public class ThirdPartyManager
   *
   *****************************************/
 
-  private Date prepareStartDate(Date startDate)
+  public static Date prepareStartDate(Date startDate)
   {
     Date result = null;
     if (startDate != null)
