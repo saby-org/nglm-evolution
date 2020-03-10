@@ -597,6 +597,7 @@
                 "markConverted" : { "type" : "boolean" },
                 "statusNotified" : { "type" : "boolean" },
                 "statusConverted" : { "type" : "boolean" },
+                "statusTargetGroup" : { "type" : "boolean" },
                 "statusControlGroup" : { "type" : "boolean" },
                 "statusUniversalControlGroup" : { "type" : "boolean" },
                 "journeyComplete" : { "type" : "boolean" }

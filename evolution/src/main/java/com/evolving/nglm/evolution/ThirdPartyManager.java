@@ -2064,37 +2064,16 @@ public class ThirdPartyManager
 
                   boolean statusNotified = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusNotified()).count() > 0L ;
                   boolean statusConverted = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusConverted()).count() > 0L ;
-                  boolean statusControlGroup = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusControlGroup()).count() > 0L ;
-                  boolean statusUniversalControlGroup = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusUniversalControlGroup()).count() > 0L ;
+                  Boolean statusTargetGroup = subsLatestStatistic.getTargetGroupStatus();
+                  Boolean statusControlGroup = subsLatestStatistic.getControlGroupStatus();
+                  Boolean statusUniversalControlGroup = subsLatestStatistic.getUniversalControlGroupStatus();
                   boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
+                  SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
 
                   if (customerStatus != null)
                     {
-                      SubscriberJourneyStatus customerStatusInJourney = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
-                      boolean criteriaSatisfied = false;
-                      switch (customerStatusInJourney)
-                      {
-                        case Entered:
-                          criteriaSatisfied = ! statusControlGroup && ! statusNotified && ! statusConverted;
-                          break;
-                        case ConvertedNotNotified:
-                          criteriaSatisfied = ! statusControlGroup && ! statusNotified && statusConverted;
-                          break;
-                        case Notified:
-                          criteriaSatisfied = ! statusControlGroup && statusNotified && ! statusConverted;
-                          break;
-                        case ConvertedNotified:
-                          criteriaSatisfied = ! statusControlGroup && statusNotified && statusConverted;
-                          break;
-                        case ControlGroupEntered:
-                          criteriaSatisfied = statusControlGroup && ! statusConverted;
-                          break;
-                        case ControlGroupConverted:
-                          criteriaSatisfied = statusControlGroup && statusConverted;
-                          break;
-                        case Unknown:
-                          break;
-                      }
+                      SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
+                      boolean criteriaSatisfied = customerStatusInReq == customerStatusInJourney;
                       if (!criteriaSatisfied) continue;
                     }
 
@@ -2168,7 +2147,7 @@ public class ThirdPartyManager
                       nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                     }
 
-                  journeyResponseMap.put("customerStatus", Journey.getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusControlGroup).getExternalRepresentation());
+                  journeyResponseMap.put("customerStatus", customerStatusInJourney.getExternalRepresentation());
                   journeyResponseMap.put("journeyComplete", journeyComplete);
                   journeyResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
                   journeyResponseMap.put("currentState", currentStateJson);
@@ -2373,39 +2352,19 @@ public class ThirdPartyManager
                   //
                   // filter on customerStatus
                   //
+                  
                   boolean statusNotified = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> campaignStat.getStatusNotified()).count() > 0L ;
                   boolean statusConverted = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> campaignStat.getStatusConverted()).count() > 0L ;
-                  boolean statusControlGroup = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> campaignStat.getStatusControlGroup()).count() > 0L ;
-                  boolean statusUniversalControlGroup = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> campaignStat.getStatusUniversalControlGroup()).count() > 0L ;
+                  Boolean statusTargetGroup = subsLatestStatistic.getTargetGroupStatus();
+                  Boolean statusControlGroup = subsLatestStatistic.getControlGroupStatus();
+                  Boolean statusUniversalControlGroup = subsLatestStatistic.getUniversalControlGroupStatus();
                   boolean campaignComplete = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> campaignStat.getJourneyComplete()).count() > 0L ;
+                  SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(campaignComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
 
                   if (customerStatus != null)
                     {
-                      SubscriberJourneyStatus customerStatusInJourney = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
-                      boolean criteriaSatisfied = false;
-                      switch (customerStatusInJourney)
-                      {
-                        case Entered:
-                          criteriaSatisfied = ! statusControlGroup && ! statusNotified && ! statusConverted;
-                          break;
-                        case ConvertedNotNotified:
-                          criteriaSatisfied = ! statusControlGroup && ! statusNotified && statusConverted;
-                          break;
-                        case Notified:
-                          criteriaSatisfied = ! statusControlGroup && statusNotified && ! statusConverted;
-                          break;
-                        case ConvertedNotified:
-                          criteriaSatisfied = ! statusControlGroup && statusNotified && statusConverted;
-                          break;
-                        case ControlGroupEntered:
-                          criteriaSatisfied = statusControlGroup && ! statusConverted;
-                          break;
-                        case ControlGroupConverted:
-                          criteriaSatisfied = statusControlGroup && statusConverted;
-                          break;
-                        case Unknown:
-                          break;
-                      }
+                      SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
+                      boolean criteriaSatisfied = customerStatusInReq == customerStatusInJourney;
                       if (!criteriaSatisfied) continue;
                     }
 
@@ -2477,7 +2436,7 @@ public class ThirdPartyManager
                       nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                       nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                     }
-                  campaignResponseMap.put("customerStatus", Journey.getSubscriberJourneyStatus(campaignComplete, statusConverted, statusNotified, statusControlGroup).getExternalRepresentation());
+                  campaignResponseMap.put("customerStatus", customerStatusInJourney.getExternalRepresentation());
                   campaignResponseMap.put("campaignComplete", campaignComplete);
                   campaignResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
                   campaignResponseMap.put("currentState", currentStateJson);
