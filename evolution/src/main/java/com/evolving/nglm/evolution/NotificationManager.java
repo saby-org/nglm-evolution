@@ -157,29 +157,35 @@ public class NotificationManager extends DeliveryManager implements Runnable
     //  manager
     //
 
-    this.pluginName = pluginName;
     
-    String pluginClassName = JSONUtilities.decodeString(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "notificationPluginClass", true);
-    log.info("NotificationManager: plugin instanciation : pluginClassName = "+pluginClassName);
+    //
+    // TODO get the channel configuration and instanciate all plugins to be called by the working thread on incoming request
+    //
 
-    JSONObject pluginConfiguration = JSONUtilities.decodeJSONObject(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "notificationPluginConfiguration", true);
-    log.info("NotificationManager: plugin instanciation : pluginConfiguration = "+pluginConfiguration);
-
-    try
-      {
-        notification = (NotificationInterface) (Class.forName(pluginClassName).newInstance());
-        notification.init(this, pluginConfiguration, pluginName);
-      }
-    catch (InstantiationException | IllegalAccessException | IllegalArgumentException e)
-      {
-        log.error("NotificationManager: could not create new instance of class " + pluginClassName, e);
-        throw new RuntimeException("NotificationManager: could not create new instance of class " + pluginClassName, e);
-      }
-    catch (ClassNotFoundException e)
-      {
-        log.error("NotificationManager: could not find class " + pluginClassName, e);
-        throw new RuntimeException("NotificationManager: could not find class " + pluginClassName, e);
-      }
+    
+//    this.pluginName = pluginName;
+//    
+//    String pluginClassName = JSONUtilities.decodeString(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "notificationPluginClass", true);
+//    log.info("NotificationManager: plugin instanciation : pluginClassName = "+pluginClassName);
+//
+//    JSONObject pluginConfiguration = JSONUtilities.decodeJSONObject(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "notificationPluginConfiguration", true);
+//    log.info("NotificationManager: plugin instanciation : pluginConfiguration = "+pluginConfiguration);
+//
+//    try
+//      {
+//        notification = (NotificationInterface) (Class.forName(pluginClassName).newInstance());
+//        notification.init(this, pluginConfiguration, pluginName);
+//      }
+//    catch (InstantiationException | IllegalAccessException | IllegalArgumentException e)
+//      {
+//        log.error("NotificationManager: could not create new instance of class " + pluginClassName, e);
+//        throw new RuntimeException("NotificationManager: could not create new instance of class " + pluginClassName, e);
+//      }
+//    catch (ClassNotFoundException e)
+//      {
+//        log.error("NotificationManager: could not find class " + pluginClassName, e);
+//        throw new RuntimeException("NotificationManager: could not find class " + pluginClassName, e);
+//      }
 
     //
     // statistics
@@ -241,6 +247,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       schemaBuilder.field("restricted", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
       schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("channelID", Schema.STRING_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -273,6 +280,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
     private MessageStatus status;
     private int returnCode;
     private String returnCodeDetails;
+    private String channelID;
 
     //
     //  accessors
@@ -287,6 +295,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
     public MessageStatus getMessageStatus() { return status; }
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
+    public String getChannelID() { return channelID; }
 
     //
     //  abstract
@@ -303,6 +312,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
     public void setMessageStatus(MessageStatus status) { this.status = status; }
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
+    public void setChannelID(String channelID) { this.channelID = channelID; }
     
     //
     //  message delivery accessors
@@ -333,7 +343,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public NotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags)
+    public NotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags, String channelID)
     {
       super(context, deliveryType, deliveryRequestSource);
       this.destination = destination;
@@ -343,25 +353,27 @@ public class NotificationManager extends DeliveryManager implements Runnable
       this.status = MessageStatus.PENDING;
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = null;
+      this.channelID = channelID;
     }
 
-    /*****************************************
-    *
-    *  constructor -- external
-    *
-    *****************************************/
-    
-    public NotificationManagerRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
-    {
-      super(jsonRoot);
-      this.destination = JSONUtilities.decodeString(jsonRoot, "destination", true);
-      this.language = JSONUtilities.decodeString(jsonRoot, "language", true);
-      this.templateID = JSONUtilities.decodeString(jsonRoot, "templateID", true);
-      this.tags = decodeTags(JSONUtilities.decodeJSONArray(jsonRoot, "tags", new JSONArray()));
-      this.status = MessageStatus.PENDING;
-      this.returnCode = MessageStatus.PENDING.getReturnCode();
-      this.returnCodeDetails = null;
-    }
+//    /*****************************************
+//    *
+//    *  constructor -- external
+//    *
+//    *****************************************/
+//    
+//    public NotificationManagerRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+//    {
+//      super(jsonRoot);
+//      this.destination = JSONUtilities.decodeString(jsonRoot, "destination", true);
+//      this.language = JSONUtilities.decodeString(jsonRoot, "language", true);
+//      this.templateID = JSONUtilities.decodeString(jsonRoot, "templateID", true);
+//      this.tags = decodeTags(JSONUtilities.decodeJSONArray(jsonRoot, "tags", new JSONArray()));
+//      this.status = MessageStatus.PENDING;
+//      this.returnCode = MessageStatus.PENDING.getReturnCode();
+//      this.returnCodeDetails = null;
+//      this.channelID = JSONUtilities.decodeString(jsonRoot, "channelID", true);
+//    }
 
     /*****************************************
     *
@@ -393,7 +405,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private NotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails)
+    private NotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails, String channelID)
     {
       super(schemaAndValue);
       this.destination = destination;
@@ -405,6 +417,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       this.status = status;
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = returnCodeDetails;
+      this.channelID = channelID;
     }
 
     /*****************************************
@@ -425,6 +438,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       this.status = NotificationManagerRequest.getMessageStatus();
       this.returnCode = NotificationManagerRequest.getReturnCode();
       this.returnCodeDetails = NotificationManagerRequest.getReturnCodeDetails();
+      this.channelID = NotificationManagerRequest.getChannelID();
     }
 
     /*****************************************
@@ -457,6 +471,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       struct.put("restricted", notificationRequest.getRestricted());
       struct.put("returnCode", notificationRequest.getReturnCode());
       struct.put("returnCodeDetails", notificationRequest.getReturnCodeDetails());
+      struct.put("channelID", notificationRequest.getChannelID());
       return struct;
     }
     
@@ -495,13 +510,14 @@ public class NotificationManager extends DeliveryManager implements Runnable
       boolean restricted = valueStruct.getBoolean("restricted");
       Integer returnCode = valueStruct.getInt32("returnCode");
       String returnCodeDetails = valueStruct.getString("returnCodeDetails");
+      String channelID = valueStruct.getString("channelID");
       MessageStatus status = MessageStatus.fromReturnCode(returnCode);
       
       //
       //  return
       //
 
-      return new NotificationManagerRequest(schemaAndValue, destination, language, templateID, tags, confirmationExpected, restricted, status, returnCodeDetails);
+      return new NotificationManagerRequest(schemaAndValue, destination, language, templateID, tags, confirmationExpected, restricted, status, returnCodeDetails, channelID);
     }
     
 //    /*****************************************
@@ -559,7 +575,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
-      guiPresentationMap.put(NOTIFICATION_CHANNEL, getDeliveryType());  // TODO METTRE  LE CHANNEL NAME OU ID ???
+      guiPresentationMap.put(NOTIFICATION_CHANNEL, getChannelID());
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
     
@@ -579,7 +595,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
-      thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, getDeliveryType());  // TODO METTRE  LE CHANNEL NAME OU ID ???
+      thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, getChannelID());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
     
@@ -620,7 +636,15 @@ public class NotificationManager extends DeliveryManager implements Runnable
       //
 
       return deliveryDate;
-    }   
+    }
+    @Override
+    public String toString()
+    {
+      return "NotificationManagerRequest [destination=" + destination + ", language=" + language + ", templateID=" + templateID + ", tags=" + tags + ", confirmationExpected=" + confirmationExpected + ", restricted=" + restricted + ", status=" + status + ", returnCode=" + returnCode + ", returnCodeDetails=" + returnCodeDetails + ", channelID=" + channelID + "]";
+    } 
+    
+
+
   }
 
   /*****************************************
@@ -639,6 +663,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
 
     private String deliveryType;
     private String moduleID;
+    private String channelID;
 
     /*****************************************
     *
@@ -649,8 +674,9 @@ public class NotificationManager extends DeliveryManager implements Runnable
     public ActionManager(JSONObject configuration) throws GUIManagerException
     {
       super(configuration);
-      this.deliveryType = JSONUtilities.decodeString(configuration, "deliveryType", true);
+      this.deliveryType = "notificationmanager";
       this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
+      this.channelID = JSONUtilities.decodeString(configuration, "channelID", true);
     }
 
     /*****************************************
@@ -676,7 +702,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       *
       *****************************************/
 
-      String templateID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.template");
+      String templateID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.dialog_template");
 
       /*****************************************
       *
@@ -759,7 +785,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       NotificationManagerRequest request = null;
       if (destAddress != null)
         {
-          request = new NotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags);
+          request = new NotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID);
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
           request.setNotificationStatus(evolutionEventContext.getSubscriberState().getNotificationStatus());
@@ -801,38 +827,38 @@ public class NotificationManager extends DeliveryManager implements Runnable
         log.info("NotificationManagerRequest run deliveryRequest" + deliveryRequest);
 
         NotificationManagerRequest dialogRequest = (NotificationManagerRequest)deliveryRequest;
-        DialogTemplate DialogTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
-        
-        if (DialogTemplate != null) 
-          {
-            Date effectiveDeliveryTime = dialogRequest.getEffectiveDeliveryTime(this, DialogTemplate.getCommunicationChannelID(), now); 
-            if(effectiveDeliveryTime.equals(now))
-              {
-                log.info("NotificationManagerRequest run deliveryRequest : sending notification now");
-                notification.send(dialogRequest);
-              }
-            else
-              {
-                log.info("NotificationManagerRequest run deliveryRequest : notification rescheduled ("+effectiveDeliveryTime+")");
-                dialogRequest.setRescheduledDate(effectiveDeliveryTime);
-                dialogRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
-                dialogRequest.setReturnCode(MessageStatus.RESCHEDULE.getReturnCode());
-                dialogRequest.setMessageStatus(MessageStatus.RESCHEDULE);
-                completeDeliveryRequest(dialogRequest);
-              }
-          }
-        else
-          {
-            log.info("NotificationManagerRequest run deliveryRequest : ERROR : template with id '"+dialogRequest.getTemplateID()+"' not found");
-            log.info("subscriberMessageTemplateService contains :");
-            for(GUIManagedObject obj : subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now)){
-              log.info("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
-            }
-            dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
-            dialogRequest.setReturnCode(MessageStatus.UNKNOWN.getReturnCode());
-            dialogRequest.setMessageStatus(MessageStatus.UNKNOWN);
-            completeDeliveryRequest(dialogRequest);
-          }
+//        DialogTemplate DialogTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
+//        
+//        if (DialogTemplate != null) 
+//          {
+//            Date effectiveDeliveryTime = dialogRequest.getEffectiveDeliveryTime(this, DialogTemplate.getCommunicationChannelID(), now); 
+//            if(effectiveDeliveryTime.equals(now))
+//              {
+//                log.info("NotificationManagerRequest run deliveryRequest : sending notification now");
+//                notification.send(dialogRequest);
+//              }
+//            else
+//              {
+//                log.info("NotificationManagerRequest run deliveryRequest : notification rescheduled ("+effectiveDeliveryTime+")");
+//                dialogRequest.setRescheduledDate(effectiveDeliveryTime);
+//                dialogRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
+//                dialogRequest.setReturnCode(MessageStatus.RESCHEDULE.getReturnCode());
+//                dialogRequest.setMessageStatus(MessageStatus.RESCHEDULE);
+//                completeDeliveryRequest(dialogRequest);
+//              }
+//          }
+//        else
+//          {
+//            log.info("NotificationManagerRequest run deliveryRequest : ERROR : template with id '"+dialogRequest.getTemplateID()+"' not found");
+//            log.info("subscriberMessageTemplateService contains :");
+//            for(GUIManagedObject obj : subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now)){
+//              log.info("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
+//            }
+//            dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
+//            dialogRequest.setReturnCode(MessageStatus.UNKNOWN.getReturnCode());
+//            dialogRequest.setMessageStatus(MessageStatus.UNKNOWN);
+//            completeDeliveryRequest(dialogRequest);
+//          }
       }
   }
 
@@ -952,3 +978,4 @@ public class NotificationManager extends DeliveryManager implements Runnable
     
   }
 }
+  
