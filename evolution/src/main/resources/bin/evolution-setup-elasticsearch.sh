@@ -57,6 +57,7 @@
                   "universalControlGroup" : { "type" : "boolean" },
                   "language" : { "type" : "keyword" },
                   "segments" : { "type" : "keyword" },
+                  "targets" :  { "type" : "keyword" },
                   "loyaltyPrograms" : { "type" : "nested"},
                   "pointFluctuations" : { "type" : "object"},
                   "subscriberJourneys" : { "type" : "nested"},
