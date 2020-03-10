@@ -24029,6 +24029,30 @@ public class GUIManager
           if(reference.startsWith("dialog_template_")) {
             // retrieve templates for the template id dialog_template_<template_id>
             // TODO EVPRO-146
+              for (SubscriberMessageTemplate messageTemplate : subscriberMessageTemplateService
+                  .getActiveSubscriberMessageTemplates(now))
+                {
+                  if (messageTemplate.getAccepted() && !messageTemplate.getInternalOnly())
+                    {
+                      if (messageTemplate instanceof DialogTemplate)
+                        {
+                          DialogTemplate dialogTemplate = (DialogTemplate) messageTemplate;
+                          String[] referenceSplit = reference.split("_");
+                          String communicationChannel = referenceSplit[2];
+                          if (dialogTemplate.getCommunicationChannelID().equals(communicationChannel))
+                            {
+                              HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                              availableValue.put("id", messageTemplate.getSubscriberMessageTemplateID());                              
+                              availableValue.put("display", ((messageTemplate.getSubscriberMessageTemplateDisplay() != null && !messageTemplate.getSubscriberMessageTemplateDisplay().isEmpty()) ? messageTemplate.getSubscriberMessageTemplateDisplay() : messageTemplate.getSubscriberMessageTemplateName()));
+                              result.add(JSONUtilities.encodeObject(availableValue));
+                            }
+
+                        }
+                    }
+                }
+           
+            
+            
           }
           if(reference.startsWith("dialog_source_address_")) {
             // TODO EVPRO-146
