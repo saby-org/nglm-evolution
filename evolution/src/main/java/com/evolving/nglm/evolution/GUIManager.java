@@ -24049,9 +24049,7 @@ public class GUIManager
 
                         }
                     }
-                }
-           
-            
+                }       
             
           }
           if(reference.startsWith("dialog_source_address_")) {
