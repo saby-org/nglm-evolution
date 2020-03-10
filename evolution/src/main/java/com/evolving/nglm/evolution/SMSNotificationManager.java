@@ -726,7 +726,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
               {
                 effectiveDeliveryTime = channel.getEffectiveDeliveryTime(communicationChannelService, blackoutService, now);
               }
-
+            
             if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))
               {
                 log.debug("SMSNotificationManagerRequest SEND Immediately restricted " + smsRequest);
