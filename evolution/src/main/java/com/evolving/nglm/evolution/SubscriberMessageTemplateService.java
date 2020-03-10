@@ -236,6 +236,30 @@ public class SubscriberMessageTemplateService extends GUIService
       }
     return result;
   }
+  
+  /*****************************************
+  *
+  *  getStoredDialogTemplates
+  *
+  *****************************************/
+
+  public Collection<GUIManagedObject> getStoredDialogTemplates(boolean externalOnly, boolean includeArchived)
+  {
+    Set<GUIManagedObject> result = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject template : getStoredSubscriberMessageTemplates(includeArchived))
+      {
+        switch (template.getGUIManagedObjectType())
+          {
+            case DialogTemplate:
+              if (! externalOnly || ! template.getInternalOnly())
+                {
+                  result.add(template);
+                }
+              break;
+          }
+      }
+    return result;
+  }
 
   /*****************************************
   *

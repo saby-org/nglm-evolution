@@ -244,6 +244,7 @@
                     <include>bin/notificationmanagersms-run.sh</include>
                     <include>bin/notificationmanagermail-run.sh</include>
                     <include>bin/notificationmanagerpush-run.sh</include>
+                    <include>bin/notificationmanager-run.sh</include>
                     <include>bin/reportmanager-run.sh</include>
                     <include>bin/reportscheduler-run.sh</include>
                     <include>bin/datacubemanager-run.sh</include>
@@ -274,6 +275,7 @@
                     <include>config/notificationmanagersms_jmx.yml</include>
                     <include>config/notificationmanagermail_jmx.yml</include>
                     <include>config/notificationmanagerpush_jmx.yml</include>
+                    <include>config/notificationmanager_jmx.yml</include>
                     <include>config/reportmanager_jmx.yml</include>
                     <include>config/reportscheduler_jmx.yml</include>
                     <include>config/datacubemanager_jmx.yml</include>
@@ -313,6 +315,8 @@
                     <include>docker/notificationmanagermail.yml</include>
                     <include>docker/notificationmanagerpush/*</include>
                     <include>docker/notificationmanagerpush.yml</include>
+                    <include>docker/notificationmanager/*</include>
+                    <include>docker/notificationmanager.yml</include>
                     <include>docker/reportmanager/*</include>
                     <include>docker/reportmanager.yml</include>
                     <include>docker/reportscheduler/*</include>
@@ -354,6 +358,7 @@
                     <exclude>docker/notificationmanagersms.yml</exclude>
                     <exclude>docker/notificationmanagermail.yml</exclude>
                     <exclude>docker/notificationmanagerpush.yml</exclude>
+                    <exclude>docker/notificationmanager.yml</exclude>
                     <exclude>docker/reportmanager.yml</exclude>
                     <exclude>docker/reportscheduler.yml</exclude>
                     <exclude>docker/datacubemanager.yml</exclude>

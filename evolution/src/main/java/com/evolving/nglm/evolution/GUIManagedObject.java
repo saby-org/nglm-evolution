@@ -56,6 +56,7 @@ public abstract class GUIManagedObject
     SMSMessageTemplate("smsMessageTemplate"),
     MailMessageTemplate("mailMessageTemplate"),
     PushMessageTemplate("pushMessageTemplate"),
+    DialogTemplate("dialogTemplate"),
     Other("other"),
     Unknown("(unknown)");
     private String externalRepresentation;
@@ -179,6 +180,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(MailTemplate.serde());
     guiManagedObjectSerdes.add(SMSTemplate.serde());
     guiManagedObjectSerdes.add(PushTemplate.serde());
+    guiManagedObjectSerdes.add(DialogTemplate.serde());
     guiManagedObjectSerdes.add(UploadedFile.serde());
     guiManagedObjectSerdes.add(Target.serde());
     guiManagedObjectSerdes.add(CommunicationChannel.serde());
