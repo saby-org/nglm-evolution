@@ -530,6 +530,45 @@
     }
   ],
 
+  "initialSuppliers" :
+  [
+    { "id" : "evolution_supplier", "name" : "Evolution", "fulfillmentProviderID" : "provider_Point", "display" : "Evolution", "description" : "Evolution", "active" : true, "readOnly" : false, "email" : "", "phone" : "", "website" : "" }
+  ],
+
+  "deliveryManagerAccounts" :
+  [
+    {
+      "id"              : "1",
+      "providerID"      : "provider_Point",
+      "accounts"        : [ {"id" : "1", "name" :"Evolution Point", "externalAccountID" : "Evolution Point", "creditable" : true, "debitable" : true} ]
+    }
+  ],
+
+  "initialJourneyObjectives" : [],
+
+  "initialOfferObjectives" :
+  [
+    {
+      "id" : "1",
+      "name" : "default",
+      "display" : "Default",
+      "active" : true,
+      "readOnly" : false,
+      "catalogCharacteristics" : [ ]
+    }
+  ],
+
+  "offerProperties" :
+  [
+    { "id": "1", "name": "offerID", "display": "Offer ID" },
+    { "id": "2", "name": "offerName", "display": "Offer Name" },
+    { "id": "3", "name": "offerDescription", "display": "Offer Description" },
+    { "id": "4", "name": "offerScore", "display": "Offer Score" },
+    { "id": "5", "name": "offerRank", "display": "Offer Rank" },
+    { "id": "6", "name": "imageURL", "display": "Image URL" },
+    { "id": "7", "name": "price", "display": "Price" }
+  ],
+
   "authResponseCacheLifetimeInMinutes" : 60,
   "thirdPartyMethodPermissions" :
   [
@@ -838,6 +877,50 @@
     }
   ],
 
+  "licenseManagement" :
+  {
+    "timeLimit" :
+    [
+      { "id" : "1", "alarmLevel" : 1, "raise" : "-1 day" },
+      { "id" : "2", "alarmLevel" : 2, "raise" : "-5 minute" },
+      { "id" : "3", "alarmLevel" : 3, "raise" : "+1 minute" },
+      { "id" : "4", "alarmLevel" : 4, "raise" : "+5 minute" }
+    ],
+    "nodeLimit" :
+    {
+      "defaultAlarmLevel" : 4,
+      "configuredAlarmLevels" : [ ]
+    },
+    "componentLimit" :
+    {
+      "defaultAlarmLevel" : 3,
+      "configuredAlarmLevels" :
+      [
+        { "id" : "1", "name" : "JourneyManager", "alarmLevel" : 4 },
+        { "id" : "2", "name" : "OfferManager", "alarmLevel" : 4 },
+        { "id" : "3", "name" : "Analytics", "alarmLevel" : 1 }
+      ]
+    },
+    "capacityLimit" :
+    [
+      {
+        "metric" : "ConcurrentUsers",
+        "alarmInstructions" :
+        [
+          { "id" : "1", "tier" : "1", "bound" : "0%", "escalation" : { "startLevel" : 3, "endLevel" : 3, "escalationTimeUnit" : "hour" }}
+        ]
+      },
+      {
+        "metric" : "SubscriberCount",
+        "alarmInstructions" :
+        [
+          { "id" : "1", "tier" : "1", "bound" : "10%",    "escalation" : { "startLevel" : 1, "endLevel" : 2, "escalationTimeUnit" : "day" }},
+          { "id" : "2", "tier" : "2", "bound" : "25%",    "escalation" : { "startLevel" : 1, "endLevel" : 3, "escalationTimeUnit" : "day" }},
+          { "id" : "3", "tier" : "3", "bound" : "excess", "escalation" : { "startLevel" : 2, "endLevel" : 4, "escalationTimeUnit" : "day" }}
+        ]
+      }
+    ]
+  },
 
 
   "subscriberProfileRegistrySubjectComment"              : "todo, remove totally this hack from the conf",
