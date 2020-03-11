@@ -893,7 +893,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
 
   @Override public boolean filterRequest(DeliveryRequest request)
   {
-    return contactPolicyProcessor.ensureContactPolicy(request,this,log);
+    return false; //contactPolicyProcessor.ensureContactPolicy(request,this,log);
   }
 
   /*****************************************

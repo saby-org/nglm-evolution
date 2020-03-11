@@ -789,7 +789,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
 
   @Override protected boolean filterRequest(DeliveryRequest request)
   {
-    return contactPolicyProcessor.ensureContactPolicy(request,this,log);
+    return false; //contactPolicyProcessor.ensureContactPolicy(request,this,log);
   }
 
   /*****************************************

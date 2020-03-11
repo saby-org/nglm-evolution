@@ -835,7 +835,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
    * @param request*/
   @Override public boolean filterRequest(DeliveryRequest request)
   {
-    return contactPolicyProcessor.ensureContactPolicy(request,this,log);
+    return false; //contactPolicyProcessor.ensureContactPolicy(request,this,log);
   }
 
   /*****************************************
