@@ -25,14 +25,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.8.1-build200310a-SNAPSHOT</version>
+    <version>4.8.1-build200311-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.8.1-build200310a-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.8.1-build200311-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
