@@ -655,7 +655,50 @@
       "methodName"   : "triggerEvent",
       "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
       "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "updateCustomerParent",
+      "methodName"   : "updateCustomerParent",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "removeCustomerParent",
+      "methodName"   : "removeCustomerParent",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "enterCampaign",
+      "methodName"   : "enterCampaign",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "loyaltyProgramOptIn",
+      "methodName"   : "loyaltyProgramOptIn",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "loyaltyProgramOptOut",
+      "methodName"   : "loyaltyProgramOptOut",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "validateVoucher",
+      "methodName"   : "validateVoucher",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "redeemVoucher",
+      "methodName"   : "redeemVoucher",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
     }
+
   ],
 
   "uploadedFileSeparator" : ";",
