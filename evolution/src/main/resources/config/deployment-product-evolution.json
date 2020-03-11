@@ -449,6 +449,11 @@
     { "id" : "1", "criterionField" : "subscriber.segments", "criterionOperator" : "contains", "argument" : { "valueType" : "simple",  "value" : "controlGroup",  "expression" : "'controlGroup'" } }
   ],
 
+  "partnerTypes" : [],
+  "billingModes" : [],
+  "serviceTypes" : [],
+  "callingChannelProperties" : [],
+
   "notificationDailyWindows" :
   {
     "monday"    : [ { "id":"1", "from":"09:00", "until":"20:59" }],
