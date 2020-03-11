@@ -98,11 +98,14 @@ public class Journey extends GUIManagedObject
   {
     NotEligible("notEligible", "Not Eligible"),
     Entered("entered", "Entered"),
+    Targeted("targeted", "Targeted"),
     Notified("notified", "Notified"),
     ConvertedNotNotified("unnotified_converted", "Not-Notified/Converted"),
     ConvertedNotified("notified_converted", "Notified/Converted"),
-    ControlGroupEntered("controlGroup_entered", "Entered (control)"),
-    ControlGroupConverted("controlGroup_converted", "Converted (control)"),
+    ControlGroup("controlGroup", "Entered (control)"),
+    UniversalControlGroup("UniversalControlGroup", "Entered (UniversalControlGroup)"),
+    ControlGroupConverted("controlGroup_converted", "Control Group Converted"),
+    UniversalControlGroupConverted("UniversalControlGroup_converted", "Universal Control Group Converted"),
     Unknown("(unknown)", "(unknown)");
     private String externalRepresentation;
     private String display;
@@ -120,6 +123,7 @@ public class Journey extends GUIManagedObject
   {
     StatusNotified("statusNotified", "journey.status.notified"),
     StatusConverted("statusConverted", "journey.status.converted"),
+    StatusTargetGroup("statusTargetGroup", "journey.status.statustargetgroup"),
     StatusControlGroup("statusControlGroup", "journey.status.controlgroup"),
     StatusUniversalControlGroup("statusUniversalControlGroup", "journey.status.universalcontrolgroup"),
     Unknown("(unknown)", "(unknown)");
@@ -428,20 +432,32 @@ public class Journey extends GUIManagedObject
   //  base
   //
 
-  public static SubscriberJourneyStatus getSubscriberJourneyStatus(boolean journeyComplete, boolean statusConverted, boolean statusNotified, boolean statusControlGroup)
+  public static SubscriberJourneyStatus getSubscriberJourneyStatus(boolean journeyComplete, boolean statusConverted, boolean statusNotified, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup)
   {
-    if (! statusControlGroup && ! statusNotified && ! statusConverted)
+    boolean controlGroupNodeExited = statusTargetGroup == Boolean.TRUE || statusControlGroup == Boolean.TRUE || statusUniversalControlGroup == Boolean.TRUE;
+    
+    if (! controlGroupNodeExited && ! statusNotified && ! statusConverted)
       return SubscriberJourneyStatus.Entered;
-    else if (! statusControlGroup && ! statusNotified && statusConverted)
+    else if (! controlGroupNodeExited && ! statusNotified && statusConverted)
       return SubscriberJourneyStatus.ConvertedNotNotified;
-    else if (! statusControlGroup && statusNotified && ! statusConverted)
+    else if (! controlGroupNodeExited && statusNotified && ! statusConverted)
       return SubscriberJourneyStatus.Notified;
-    else if (! statusControlGroup && statusNotified && statusConverted)
+    else if (! controlGroupNodeExited && statusNotified && statusConverted)
       return SubscriberJourneyStatus.ConvertedNotified;
-    else if (statusControlGroup && ! statusConverted)
-      return SubscriberJourneyStatus.ControlGroupEntered;
-    else if (statusControlGroup && statusConverted)
+    else if (controlGroupNodeExited && statusTargetGroup == Boolean.TRUE && statusNotified && ! statusConverted)
+      return SubscriberJourneyStatus.Notified;
+    else if (controlGroupNodeExited && statusTargetGroup == Boolean.TRUE && statusNotified && statusConverted)
+      return SubscriberJourneyStatus.ConvertedNotified;
+    else if (controlGroupNodeExited && statusTargetGroup == Boolean.TRUE)
+      return SubscriberJourneyStatus.Targeted;
+    else if (controlGroupNodeExited && statusControlGroup == Boolean.TRUE && ! statusConverted)
+      return SubscriberJourneyStatus.ControlGroup;
+    else if (controlGroupNodeExited && statusUniversalControlGroup == Boolean.TRUE && ! statusConverted)
+      return SubscriberJourneyStatus.UniversalControlGroup;
+    else if (controlGroupNodeExited && statusControlGroup == Boolean.TRUE && statusConverted)
       return SubscriberJourneyStatus.ControlGroupConverted;
+    else if (controlGroupNodeExited && statusUniversalControlGroup == Boolean.TRUE && statusConverted)
+      return SubscriberJourneyStatus.UniversalControlGroupConverted;
     else
       return SubscriberJourneyStatus.Unknown;
   }
@@ -452,7 +468,7 @@ public class Journey extends GUIManagedObject
 
   public static SubscriberJourneyStatus getSubscriberJourneyStatus(JourneyStatistic journeyStatistic)
   {
-    return getSubscriberJourneyStatus(journeyStatistic.getJourneyComplete(), journeyStatistic.getStatusConverted(), journeyStatistic.getStatusNotified(), journeyStatistic.getStatusControlGroup());
+    return getSubscriberJourneyStatus(journeyStatistic.getJourneyComplete(), journeyStatistic.getStatusConverted(), journeyStatistic.getStatusNotified(), journeyStatistic.getStatusTargetGroup(), journeyStatistic.getStatusControlGroup(), journeyStatistic.getStatusUniversalControlGroup());
   }
 
   //
@@ -464,8 +480,19 @@ public class Journey extends GUIManagedObject
     boolean journeyComplete = journeyState.getJourneyExitDate() != null;
     boolean statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
     boolean statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
-    boolean statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : Boolean.FALSE;
-    return getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusControlGroup);
+    Boolean statusTargetGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
+    Boolean statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
+    Boolean statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
+    
+    //
+    // re-check
+    //
+    
+    if (statusTargetGroup == Boolean.TRUE) statusControlGroup = statusUniversalControlGroup = !statusTargetGroup;
+    if (statusControlGroup == Boolean.TRUE) statusTargetGroup = statusUniversalControlGroup = !statusControlGroup;
+    if (statusUniversalControlGroup == Boolean.TRUE) statusTargetGroup = statusControlGroup = !statusUniversalControlGroup;
+    
+    return getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
   }
 
   //
@@ -474,7 +501,7 @@ public class Journey extends GUIManagedObject
 
   public static SubscriberJourneyStatus getSubscriberJourneyStatus(StatusHistory statusHistory)
   {
-    return getSubscriberJourneyStatus(statusHistory.getJourneyComplete(), statusHistory.getStatusConverted(), statusHistory.getStatusNotified(), statusHistory.getStatusControlGroup());
+    return getSubscriberJourneyStatus(statusHistory.getJourneyComplete(), statusHistory.getStatusConverted(), statusHistory.getStatusNotified(), statusHistory.getStatusTargetGroup(), statusHistory.getStatusControlGroup(), statusHistory.getStatusUniversalControlGroup());
   }
   
   /*****************************************
@@ -3271,6 +3298,9 @@ public class Journey extends GUIManagedObject
       ContextUpdate contextUpdate = new ContextUpdate(ActionType.JourneyContextUpdate);
       switch (journeyLink.getLinkName())
         {
+          case "targetGroup":
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName(), Boolean.TRUE);            
+            break;
           case "controlGroup":
             contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName(), Boolean.TRUE);            
             break;

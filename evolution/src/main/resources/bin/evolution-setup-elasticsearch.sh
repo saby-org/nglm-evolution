@@ -57,6 +57,7 @@
                   "universalControlGroup" : { "type" : "boolean" },
                   "language" : { "type" : "keyword" },
                   "segments" : { "type" : "keyword" },
+                  "targets" :  { "type" : "keyword" },
                   "loyaltyPrograms" : { "type" : "nested"},
                   "pointFluctuations" : { "type" : "object"},
                   "subscriberJourneys" : { "type" : "nested"},
@@ -596,6 +597,7 @@
                 "markConverted" : { "type" : "boolean" },
                 "statusNotified" : { "type" : "boolean" },
                 "statusConverted" : { "type" : "boolean" },
+                "statusTargetGroup" : { "type" : "boolean" },
                 "statusControlGroup" : { "type" : "boolean" },
                 "statusUniversalControlGroup" : { "type" : "boolean" },
                 "journeyComplete" : { "type" : "boolean" }

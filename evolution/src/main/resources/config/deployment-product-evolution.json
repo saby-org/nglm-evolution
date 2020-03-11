@@ -417,6 +417,22 @@
   "ucgEngineESMasRetryTimeout" : 60000,
   "elasticSearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
 
+  "propensityRule"                                       :
+  {
+    "selectedDimensions": [],
+    "size":0
+  },
+  "propensityInitialisationPresentationThreshold"        : 100,
+  "propensityInitialisationDurationInDaysThreshold"      : 90,
+
+  "journeyDefaultTargetingWindowDuration"  : 1,
+  "journeyDefaultTargetingWindowUnit"      : "month",
+  "journeyDefaultTargetingWindowRoundUp"   : false,
+  "journeyUniversalEligibilityCriteria" :
+  [
+    { "id" : "1", "criterionField" : "subscriber.status", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'active', 'inactive' ]" } }
+  ],
+
   "initialVoucherCodeFormats" :
   [
     { "id" : "QR_code",      "name"  : "QR Code"},
