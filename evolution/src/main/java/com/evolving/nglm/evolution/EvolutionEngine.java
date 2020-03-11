@@ -1846,6 +1846,22 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  detectReScheduledDeliveryRequests : add to scheduledEvaluations
+    *
+    *****************************************/
+
+    subscriberStateUpdated = detectReScheduledDeliveryRequests(context, evolutionEvent) || subscriberStateUpdated;
+
+    /*****************************************
+    *
+    *  handleReScheduledDeliveryRequest : trig again a Delivery Request
+    *
+    *****************************************/
+
+    subscriberStateUpdated = handleReScheduledDeliveryRequest(context, evolutionEvent) || subscriberStateUpdated;
+    
+    /*****************************************
+    *
     *  scheduledEvaluations
     *
     *****************************************/
@@ -2503,7 +2519,100 @@ public class EvolutionEngine
       subscriberState.getProfileSegmentChangeEvents().add(profileSegmentChangeEvent);
     }
   }
+  
+  /*****************************************
+  *
+  *  detectReScheduledDeliveryRequests
+  *
+  *****************************************/
 
+  private static boolean detectReScheduledDeliveryRequests(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
+  {
+    /*****************************************
+    *
+    *  result
+    *
+    *****************************************/
+
+    SubscriberState subscriberState = context.getSubscriberState();
+    SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
+    boolean subscriberProfileUpdated = false;
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = context.now();
+
+    /*****************************************
+    *
+    *  for DeliveryRequest with status Reschedule
+    *
+    *****************************************/
+
+    if (evolutionEvent instanceof DeliveryRequest && ((DeliveryRequest) evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Reschedule))
+      {
+
+        //
+        // Construct a ReScheduleDeliveryRequest and to SubscriberState
+        //
+
+        DeliveryRequest deliveryRequest = (DeliveryRequest)evolutionEvent;
+        log.info("Rescheduled Request for " + deliveryRequest.getRescheduledDate());
+        ReScheduledDeliveryRequest reScheduledDeliveryRequest = new ReScheduledDeliveryRequest(subscriberProfile.getSubscriberID(), deliveryRequest.getRescheduledDate(), deliveryRequest);
+        subscriberState.getReScheduledDeliveryRequests().add(reScheduledDeliveryRequest);
+        
+        TimedEvaluation timedEvaluation = new TimedEvaluation(subscriberProfile.getSubscriberID(), deliveryRequest.getRescheduledDate());
+        subscriberState.getScheduledEvaluations().add(timedEvaluation);
+        subscriberProfileUpdated = true;
+      }
+    
+    return subscriberProfileUpdated;
+  }
+
+  /*****************************************
+  *
+  *  handleReScheduledDeliveryRequest
+  *
+  *****************************************/
+
+  private static boolean handleReScheduledDeliveryRequest(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
+  {
+    /*****************************************
+    *
+    *  On any event, check if ReScheduledDeliveryRequest's time has been reached, if yes trig the DeliveryRequest again
+    *
+    *****************************************/
+
+    SubscriberState subscriberState = context.getSubscriberState();
+    SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
+    boolean subscriberProfileUpdated = false;
+    Date now = context.now();
+    
+    
+    List<ReScheduledDeliveryRequest> toTrig = new ArrayList<>();
+    for(ReScheduledDeliveryRequest reScheduledDeliveryRequest : subscriberState.getReScheduledDeliveryRequests()) 
+      {
+        if(reScheduledDeliveryRequest.getEvaluationDate().before(now)) {
+          toTrig.add(reScheduledDeliveryRequest);          
+        }
+      }
+    for(ReScheduledDeliveryRequest toHandle : toTrig) {
+      subscriberState.getReScheduledDeliveryRequests().remove(toHandle);
+      DeliveryRequest deliveryRequest = toHandle.getDeliveryRequest();
+      deliveryRequest.setRescheduledDate(null);
+      deliveryRequest.setDeliveryStatus(DeliveryStatus.Pending);
+      deliveryRequest.resetDeliveryRequestAfterReSchedule();
+      subscriberState.getDeliveryRequests().add(deliveryRequest);
+      subscriberProfileUpdated = true;      
+    }
+    return subscriberProfileUpdated;
+  }
+
+  
+  
   /*****************************************
   * 
   *  updateScheduledEvaluations

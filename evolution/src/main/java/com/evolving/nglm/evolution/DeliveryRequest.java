@@ -232,6 +232,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     schemaBuilder.field("deliveryStatus", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryDate", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("diplomaticBriefcase", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).name("deliveryrequest_diplomaticBriefcase").schema());
+    schemaBuilder.field("rescheduledDate", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("notificationHistory",MetricHistory.serde().optionalSchema());
     commonSchema = schemaBuilder.build();
   };
@@ -359,6 +360,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   public abstract Object subscriberStreamEventPack(Object value);
   public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService);
   public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService);
+  public abstract void resetDeliveryRequestAfterReSchedule();
   public ActivityType getActivityType() { return ActivityType.Other; }
 
   /*****************************************
@@ -559,6 +561,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     struct.put("deliveryStatus", deliveryRequest.getDeliveryStatus().getExternalRepresentation());
     struct.put("deliveryDate", deliveryRequest.getDeliveryDate() != null ? deliveryRequest.getDeliveryDate().getTime() : null);
     struct.put("diplomaticBriefcase", (deliveryRequest.getDiplomaticBriefcase() == null ? new HashMap<String, String>() : deliveryRequest.getDiplomaticBriefcase()));
+    struct.put("rescheduledDate", deliveryRequest.getRescheduledDate() != null ? deliveryRequest.getRescheduledDate().getTime() : null);
     struct.put("notificationHistory",MetricHistory.serde().packOptional(deliveryRequest.getNotificationHistory()));
   }
 
@@ -603,6 +606,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     DeliveryStatus deliveryStatus = DeliveryStatus.fromExternalRepresentation(valueStruct.getString("deliveryStatus"));
     Date deliveryDate = (schemaVersion >= 3) ? (valueStruct.get("deliveryDate") != null ? new Date(valueStruct.getInt64("deliveryDate")) : null) : (Date) valueStruct.get("deliveryDate");
     Map<String, String> diplomaticBriefcase = (Map<String, String>) valueStruct.get("diplomaticBriefcase");
+    Date rescheduledDate = (schemaVersion >= 4) ? (valueStruct.get("rescheduledDate") != null ? new Date(valueStruct.getInt64("rescheduledDate")) : null) : (Date) valueStruct.get("rescheduledDate");
     MetricHistory notificationHistory = schemaVersion >= 4 ?  MetricHistory.serde().unpackOptional(new SchemaAndValue(schema.field("notificationHistory").schema(),valueStruct.get("notificationHistory"))) : null;
 
     //
@@ -629,7 +633,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.deliveryStatus = deliveryStatus;
     this.deliveryDate = deliveryDate;
     this.diplomaticBriefcase = diplomaticBriefcase;
-    this.rescheduledDate = null;
+    this.rescheduledDate = rescheduledDate;
     this.notificationHistory = notificationHistory;
   }
 

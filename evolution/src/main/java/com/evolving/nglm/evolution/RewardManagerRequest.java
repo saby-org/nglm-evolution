@@ -367,4 +367,11 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
     thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
     thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnStatus());
   }
+  @Override
+  public void resetDeliveryRequestAfterReSchedule()
+  {
+    // 
+    // RewardManagerRequest never rescheduled, let return unchanged
+    //      
+  }
 }

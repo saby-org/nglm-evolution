@@ -81,6 +81,24 @@ public class JourneyHistory
   public List<NodeHistory> getNodeHistory() { return nodeHistory; }
   public List<StatusHistory> getStatusHistory() { return statusHistory; }
   public List<RewardHistory> getRewardHistory() { return rewardHistory; }
+  public Boolean getControlGroupStatus()
+  {
+    Boolean result = null;
+    for (StatusHistory statusHistory : getStatusHistory()) { if (statusHistory.getStatusControlGroup() != null) result = statusHistory.getStatusControlGroup(); }
+    return result;
+  }
+  public Boolean getUniversalControlGroupStatus()
+  {
+    Boolean result = null;
+    for (StatusHistory statusHistory : getStatusHistory()) { if (statusHistory.getStatusUniversalControlGroup() != null) result = statusHistory.getStatusUniversalControlGroup(); }
+    return result;
+  }
+  public Boolean getTargetGroupStatus()
+  {
+    Boolean result = null;
+    for (StatusHistory statusHistory : getStatusHistory()) { if (statusHistory.getStatusTargetGroup() != null) result = statusHistory.getStatusTargetGroup(); }
+    return result;
+  }
   
   /*****************************************
   *
@@ -391,9 +409,28 @@ public class JourneyHistory
   { 
     boolean statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
     boolean statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
-    boolean statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : Boolean.FALSE;
-    boolean statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : Boolean.FALSE;
-    StatusHistory statusHistory = new StatusHistory(now, statusNotified, statusConverted, statusControlGroup, statusUniversalControlGroup, journeyComplete);
+    Boolean statusTargetGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
+    Boolean statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
+    Boolean statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
+    
+    //
+    // re-check
+    //
+    
+    if (statusTargetGroup == Boolean.TRUE) statusControlGroup = statusUniversalControlGroup = !statusTargetGroup;
+    if (statusControlGroup == Boolean.TRUE) statusTargetGroup = statusUniversalControlGroup = !statusControlGroup;
+    if (statusUniversalControlGroup == Boolean.TRUE) statusTargetGroup = statusControlGroup = !statusUniversalControlGroup;
+    
+    //
+    //  statusHistory
+    //
+    
+    StatusHistory statusHistory = new StatusHistory(now, statusNotified, statusConverted, statusTargetGroup, statusControlGroup, statusUniversalControlGroup, journeyComplete);
+    
+    //
+    //  add
+    //
+    
     if(!this.statusHistory.contains(statusHistory)) 
       {
         this.statusHistory.add(statusHistory);
@@ -833,15 +870,17 @@ public class JourneyHistory
     //
 
     private static Schema schema = null;
+    private static int currntSchemaVersion = 2;
     static
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("status_history");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(currntSchemaVersion));
       schemaBuilder.field("status", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("date", Timestamp.builder().optional().schema());
       schemaBuilder.field("statusNotified", Schema.OPTIONAL_BOOLEAN_SCHEMA);
       schemaBuilder.field("statusConverted", Schema.OPTIONAL_BOOLEAN_SCHEMA);
+      schemaBuilder.field("statusTargetGroup", Schema.OPTIONAL_BOOLEAN_SCHEMA);
       schemaBuilder.field("statusControlGroup", Schema.OPTIONAL_BOOLEAN_SCHEMA);
       schemaBuilder.field("statusUniversalControlGroup", Schema.OPTIONAL_BOOLEAN_SCHEMA);
       schemaBuilder.field("journeyComplete", Schema.OPTIONAL_BOOLEAN_SCHEMA);
@@ -871,8 +910,9 @@ public class JourneyHistory
     private Date date;
     private boolean statusNotified;
     private boolean statusConverted;
-    private boolean statusControlGroup;
-    private boolean statusUniversalControlGroup;
+    private Boolean statusTargetGroup;
+    private Boolean statusControlGroup;
+    private Boolean statusUniversalControlGroup;
     private boolean journeyComplete;
     
     /*****************************************
@@ -885,8 +925,9 @@ public class JourneyHistory
     public Date getDate() { return date; }
     public boolean getStatusNotified() { return statusNotified; }
     public boolean getStatusConverted() { return statusConverted; }
-    public boolean getStatusControlGroup() { return statusControlGroup; }
-    public boolean getStatusUniversalControlGroup() { return statusUniversalControlGroup; }
+    public Boolean getStatusTargetGroup() { return statusTargetGroup; }
+    public Boolean getStatusControlGroup() { return statusControlGroup; }
+    public Boolean getStatusUniversalControlGroup() { return statusUniversalControlGroup; }
     public boolean getJourneyComplete() { return journeyComplete; }
     public SubscriberJourneyStatus getSubscriberJourneyStatus() { return Journey.getSubscriberJourneyStatus(this); }
 
@@ -904,6 +945,7 @@ public class JourneyHistory
       struct.put("date", statusHistory.getDate());
       struct.put("statusNotified", statusHistory.getStatusNotified());
       struct.put("statusConverted", statusHistory.getStatusConverted());
+      struct.put("statusTargetGroup", statusHistory.getStatusTargetGroup());
       struct.put("statusControlGroup", statusHistory.getStatusControlGroup());
       struct.put("statusUniversalControlGroup", statusHistory.getStatusUniversalControlGroup());
       struct.put("journeyComplete", statusHistory.getJourneyComplete());
@@ -916,11 +958,12 @@ public class JourneyHistory
     *
     *****************************************/
     
-    public StatusHistory(Date date, boolean statusNotified, boolean statusConverted, boolean statusControlGroup, boolean statusUniversalControlGroup, boolean journeyComplete)
+    public StatusHistory(Date date, boolean statusNotified, boolean statusConverted, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup, boolean journeyComplete)
     {
       this.date = date;
       this.statusNotified = statusNotified;
       this.statusConverted = statusConverted;
+      this.statusTargetGroup = statusTargetGroup;
       this.statusControlGroup = statusControlGroup;
       this.statusUniversalControlGroup = statusUniversalControlGroup;
       this.journeyComplete = journeyComplete;
@@ -933,12 +976,13 @@ public class JourneyHistory
     *
     *****************************************/
 
-    public StatusHistory(String status, Date date, boolean statusNotified, boolean statusConverted, boolean statusControlGroup, boolean statusUniversalControlGroup, boolean journeyComplete)
+    public StatusHistory(String status, Date date, boolean statusNotified, boolean statusConverted, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup, boolean journeyComplete)
     {
       this.status = status;
       this.date = date;
       this.statusNotified = statusNotified;
       this.statusConverted = statusConverted;
+      this.statusTargetGroup = statusTargetGroup;
       this.statusControlGroup = statusControlGroup;
       this.statusUniversalControlGroup = statusUniversalControlGroup;
       this.journeyComplete = journeyComplete;
@@ -966,18 +1010,20 @@ public class JourneyHistory
 
       Struct valueStruct = (Struct) value;
       String status = valueStruct.getString("status");
+      status = "controlGroup_entered".equals(status) ? SubscriberJourneyStatus.ControlGroup.getExternalRepresentation() : status;
       Date date = (Date) valueStruct.get("date");
       boolean statusNotified = valueStruct.getBoolean("statusNotified");
       boolean statusConverted = valueStruct.getBoolean("statusConverted");
-      boolean statusControlGroup = valueStruct.getBoolean("statusControlGroup");
-      boolean statusUniversalControlGroup = valueStruct.getBoolean("statusUniversalControlGroup");
+      Boolean statusTargetGroup = schemaVersion >= 2 ? valueStruct.getBoolean("statusTargetGroup") : null;
+      Boolean statusControlGroup = valueStruct.getBoolean("statusControlGroup");
+      Boolean statusUniversalControlGroup = valueStruct.getBoolean("statusUniversalControlGroup");
       boolean journeyComplete = valueStruct.getBoolean("journeyComplete");
       
       //
       //  return
       //
 
-      return new StatusHistory(status, date, statusNotified, statusConverted, statusControlGroup, statusUniversalControlGroup, journeyComplete);
+      return new StatusHistory(status, date, statusNotified, statusConverted, statusTargetGroup, statusControlGroup, statusUniversalControlGroup, journeyComplete);
     }
     
     /*****************************************

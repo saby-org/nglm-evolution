@@ -28,8 +28,10 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.SMSNotificationManager.SMSMessageStatus;
 
 public class PushNotificationManager extends DeliveryManager implements Runnable
 {
@@ -589,43 +591,12 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
     
-    /****************************************
-    *
-    *  getEffectiveDeliveryTime
-    *
-    ****************************************/
-
-    public Date getEffectiveDeliveryTime(PushNotificationManager pushNotificationManager, String communicationChannelID, Date now)
+    @Override
+    public void resetDeliveryRequestAfterReSchedule()
     {
-      //
-      //  retrieve delivery time configuration
-      //
-
-      CommunicationChannel channel = (CommunicationChannel) pushNotificationManager.getCommunicationChannelService().getActiveCommunicationChannel(communicationChannelID, now);
-      CommunicationChannelBlackoutPeriod blackoutPeriod = pushNotificationManager.getBlackoutService().getActiveCommunicationChannelBlackout("blackoutPeriod", now);
-
-      //
-      //  iterate until a valid date is found (give up after 7 days and reschedule even if not legal)
-      //
-
-      Date maximumDeliveryDate = RLMDateUtils.addDays(now, 7, Deployment.getBaseTimeZone());
-      Date deliveryDate = now;
-      while (deliveryDate.before(maximumDeliveryDate))
-        {
-          Date nextDailyWindowDeliveryDate = (channel != null) ? pushNotificationManager.getCommunicationChannelService().getEffectiveDeliveryTime(channel.getGUIManagedObjectID(), deliveryDate) : deliveryDate;
-          Date nextBlackoutWindowDeliveryDate = (blackoutPeriod != null) ? pushNotificationManager.getBlackoutService().getEffectiveDeliveryTime(blackoutPeriod.getGUIManagedObjectID(), deliveryDate) : deliveryDate;
-          Date nextDeliveryDate = nextBlackoutWindowDeliveryDate.after(nextDailyWindowDeliveryDate) ? nextBlackoutWindowDeliveryDate : nextDailyWindowDeliveryDate;
-          if (nextDeliveryDate.after(deliveryDate))
-            deliveryDate = nextDeliveryDate;
-          else
-            break;
-        }
-
-      //
-      //  resolve
-      //
-
-      return deliveryDate;
+      this.setReturnCode(PushMessageStatus.PENDING.getReturnCode());
+      this.setMessageStatus(PushMessageStatus.PENDING);
+      
     }   
   }
 
@@ -811,21 +782,36 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
         
         if (pushTemplate != null) 
           {
-            Date effectiveDeliveryTime = pushRequest.getEffectiveDeliveryTime(this, pushTemplate.getCommunicationChannelID(), now); 
-            if(effectiveDeliveryTime.equals(now))
+            
+            if(pushRequest.getRestricted()) 
               {
-                log.info("PushNotificationManagerRequest run deliveryRequest : sending notification now");
-                pushNotification.send(pushRequest);
+
+                Date effectiveDeliveryTime = now;
+                CommunicationChannel channel = (CommunicationChannel) communicationChannelService.getActiveCommunicationChannel("push", now);
+                if(channel != null) 
+                  {
+                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(communicationChannelService, blackoutService, now);
+                  }
+
+                if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))
+                  {
+                    log.debug("PushNotificationManagerRequest SEND Immediately restricted " + pushRequest);
+                    pushNotification.send(pushRequest);
+                  }
+                else
+                  {
+                    log.debug("PushNotificationManagerRequest RESCHEDULE to " + effectiveDeliveryTime + " restricted " + pushRequest);
+                    pushRequest.setRescheduledDate(effectiveDeliveryTime);
+                    pushRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
+                    pushRequest.setReturnCode(PushMessageStatus.RESCHEDULE.getReturnCode());
+                    pushRequest.setMessageStatus(PushMessageStatus.RESCHEDULE);
+                    completeDeliveryRequest(pushRequest);
+                  }      
               }
-            else
-              {
-                log.info("PushNotificationManagerRequest run deliveryRequest : notification rescheduled ("+effectiveDeliveryTime+")");
-                pushRequest.setRescheduledDate(effectiveDeliveryTime);
-                pushRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
-                pushRequest.setReturnCode(PushMessageStatus.RESCHEDULE.getReturnCode());
-                pushRequest.setMessageStatus(PushMessageStatus.RESCHEDULE);
-                completeDeliveryRequest(pushRequest);
-              }
+            else {
+              log.debug("SMSNotificationManagerRequest SEND Immediately NON restricted " + pushRequest);
+              pushNotification.send(pushRequest);
+            }
           }
         else
           {
@@ -907,7 +893,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
 
   @Override public boolean filterRequest(DeliveryRequest request)
   {
-    return contactPolicyProcessor.ensureContactPolicy(request,this,log);
+    return false; //contactPolicyProcessor.ensureContactPolicy(request,this,log);
   }
 
   /*****************************************

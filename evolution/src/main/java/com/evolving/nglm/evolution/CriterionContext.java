@@ -176,6 +176,7 @@ public class CriterionContext
         internalTargetsJSON.put("display", "Subscriber Targets");
         internalTargetsJSON.put("dataType", "stringSet");
         internalTargetsJSON.put("retriever", "getTargets");
+        internalTargetsJSON.put("esField", "internal.targets");
         internalTargetsJSON.put("internalOnly", false);
         internalTargets  = new CriterionField(JSONUtilities.encodeObject(internalTargetsJSON));
       }

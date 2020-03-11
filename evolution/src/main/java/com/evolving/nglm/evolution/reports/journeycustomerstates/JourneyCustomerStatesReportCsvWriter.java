@@ -34,11 +34,10 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
   private final String customerID = "customerID";
 
   /**
-   * This methods writes a single {@link ReportElement} to the report (csv
-   * file).
+   * This methods writes a single {@link ReportElement} to the report (csv file).
    * 
-   * @throws IOException in case anything goes wrong while writing to the
-   * report.
+   * @throws IOException
+   *           in case anything goes wrong while writing to the report.
    */
   public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer) throws IOException
   {
@@ -89,10 +88,11 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
                     boolean statusNotified = (boolean) journeyStats.get("statusNotified");
                     boolean journeyComplete = (boolean) journeyStats.get("journeyComplete");
                     boolean statusConverted = (boolean) journeyStats.get("statusConverted");
-                    boolean statusControlGroup = (boolean) journeyStats.get("statusControlGroup");
-                    journeyInfo.put("customerStatus",
-                        getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusControlGroup)
-                            .toString());
+                    Boolean statusTargetGroup = journeyStats.get("statusTargetGroup") == null ? null : (boolean) journeyStats.get("statusTargetGroup");
+                    Boolean statusControlGroup = journeyStats.get("statusControlGroup") == null ? null : (boolean) journeyStats.get("statusControlGroup");
+                    Boolean statusUniversalControlGroup = journeyStats.get("statusUniversalControlGroup") == null ? null : (boolean) journeyStats.get("statusUniversalControlGroup");
+
+                    journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).toString());
 
                     List<String> nodeHistory = (List<String>) journeyStats.get("nodeHistory");
                     StringBuilder sbStatus = new StringBuilder();
@@ -120,8 +120,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
                                 date = new Date(Long.valueOf(split[2]));
                               }
 
-                            sbStatus.append("(").append(fromNodeName).append("->").append(toNodeName).append(",")
-                                .append(date).append("),");
+                            sbStatus.append("(").append(fromNodeName).append("->").append(toNodeName).append(",").append(date).append("),");
                           }
                       }
 
@@ -144,17 +143,17 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
                             if (split[0] != null && !split[0].equals("null"))
                               {
                                 statusName = split[0];
-                                
-                              }                            
 
-                            Date date = null;  
+                              }
+
+                            Date date = null;
                             if (split[1] != null && !split[1].equals("null"))
                               {
                                 date = new Date(Long.valueOf(split[1]));
-                              }                            
-                            
-                            sbStatuses.append("(").append(SubscriberJourneyStatus.fromExternalRepresentation(statusName)).append(",").append(date).append("),");                            
-                              
+                              }
+
+                            sbStatuses.append("(").append(SubscriberJourneyStatus.fromExternalRepresentation(statusName)).append(",").append(date).append("),");
+
                           }
                       }
 
@@ -166,7 +165,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
 
                     journeyInfo.put("customerStates", states);
                     journeyInfo.put("customerStatuses", statuses);
-                    journeyInfo.put("dateTime",  ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
+                    journeyInfo.put("dateTime", ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
                     journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
                     journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
 
@@ -180,8 +179,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
                             String rewardID = split[0];
                             String amount = split[1];
                             Date date = new Date(Long.valueOf(split[2]));
-                            sbHistory.append("(").append(rewardID).append(",").append(amount).append(",").append(date)
-                                .append("),");
+                            sbHistory.append("(").append(rewardID).append(",").append(amount).append(",").append(date).append("),");
                           }
                       }
 
@@ -226,16 +224,14 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
     String kafkaNode = args[0];
     String topic = args[1];
     String csvfile = args[2];
-    log.info("Reading data from " + topic + " topic on broker " + kafkaNode + " producing " + csvfile + " with '"
-        + CSV_SEPARATOR + "' separator");
+    log.info("Reading data from " + topic + " topic on broker " + kafkaNode + " producing " + csvfile + " with '" + CSV_SEPARATOR + "' separator");
 
     ReportCsvFactory reportFactory = new JourneyCustomerStatesReportCsvWriter();
     ReportCsvWriter reportWriter = new ReportCsvWriter(reportFactory, kafkaNode, topic);
 
     String journeyTopic = Deployment.getJourneyTopic();
 
-    journeyService = new JourneyService(kafkaNode, "journeycustomerstatesreportcsvwriter-journeyservice-" + topic,
-        journeyTopic, false);
+    journeyService = new JourneyService(kafkaNode, "journeycustomerstatesreportcsvwriter-journeyservice-" + topic, journeyTopic, false);
     journeyService.start();
 
     if (!reportWriter.produceReport(csvfile))
@@ -249,8 +245,8 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
    * private void addHeaders(ZipOutputStream writer, Map<String,Object> values,
    * int offset) throws IOException { if(values != null && !values.isEmpty()) {
    * String headers=""; for(String fields : values.keySet()){
-   * headerFieldsOrder.add(fields); headers += fields + CSV_SEPARATOR; } headers
-   * = headers.substring(0, headers.length() - offset);
+   * headerFieldsOrder.add(fields); headers += fields + CSV_SEPARATOR; } headers =
+   * headers.substring(0, headers.length() - offset);
    * writer.write(headers.getBytes()); if(offset == 1) {
    * writer.write("\n".getBytes()); } addHeaders=false; } }
    */
@@ -273,9 +269,8 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
       }
   }
 
-  public SubscriberJourneyStatus getSubscriberJourneyStatus(boolean journeyComplete, boolean statusConverted,
-      boolean statusNotified, boolean statusControlGroup)
+  public SubscriberJourneyStatus getSubscriberJourneyStatus(boolean journeyComplete, boolean statusConverted, boolean statusNotified, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup)
   {
-    return Journey.getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusControlGroup);
+    return Journey.getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
   }
 }

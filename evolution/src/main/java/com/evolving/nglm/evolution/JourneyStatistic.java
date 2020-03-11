@@ -43,11 +43,12 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   //
 
   private static Schema schema = null;
+  private static int currntSchemaVersion = 3;
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_statistic");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(currntSchemaVersion));
     schemaBuilder.field("journeyStatisticID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyInstanceID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
@@ -62,8 +63,9 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     schemaBuilder.field("markConverted", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("statusNotified", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("statusConverted", Schema.BOOLEAN_SCHEMA);
-    schemaBuilder.field("statusControlGroup", Schema.BOOLEAN_SCHEMA);
-    schemaBuilder.field("statusUniversalControlGroup", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("statusTargetGroup", Schema.OPTIONAL_BOOLEAN_SCHEMA);
+    schemaBuilder.field("statusControlGroup", Schema.OPTIONAL_BOOLEAN_SCHEMA);
+    schemaBuilder.field("statusUniversalControlGroup", Schema.OPTIONAL_BOOLEAN_SCHEMA);
     schemaBuilder.field("journeyComplete", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("journeyNodeHistory", SchemaBuilder.array(NodeHistory.schema()).schema());
     schemaBuilder.field("journeyStatusHistory", SchemaBuilder.array(StatusHistory.schema()).schema());
@@ -106,8 +108,9 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   private boolean markConverted;
   private boolean statusNotified;
   private boolean statusConverted;
-  private boolean statusControlGroup;
-  private boolean statusUniversalControlGroup;
+  private Boolean statusTargetGroup;
+  private Boolean statusControlGroup;
+  private Boolean statusUniversalControlGroup;
   private boolean journeyComplete;
   private List<NodeHistory> journeyNodeHistory;
   private List<StatusHistory> journeyStatusHistory;
@@ -134,8 +137,9 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   public boolean getMarkConverted() { return markConverted; }
   public boolean getStatusNotified() { return statusNotified; }
   public boolean getStatusConverted() { return statusConverted; }
-  public boolean getStatusControlGroup() { return statusControlGroup; }
-  public boolean getStatusUniversalControlGroup() { return statusUniversalControlGroup; }
+  public Boolean getStatusTargetGroup() { return statusTargetGroup; }
+  public Boolean getStatusControlGroup() { return statusControlGroup; }
+  public Boolean getStatusUniversalControlGroup() { return statusUniversalControlGroup; }
   public boolean getJourneyComplete() { return journeyComplete; }
   public Date getEventDate() { return transitionDate; }
   public List<NodeHistory> getJourneyNodeHistory() { return journeyNodeHistory; }
@@ -166,8 +170,9 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.markConverted = false;
     this.statusNotified = false;
     this.statusConverted = false;
-    this.statusControlGroup = false;
-    this.statusUniversalControlGroup = false;
+    this.statusTargetGroup = null;
+    this.statusControlGroup = null;
+    this.statusUniversalControlGroup = null;
     this.journeyComplete = false;
     this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
     this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
@@ -197,8 +202,18 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.markConverted = markConverted;
     this.statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
     this.statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
-    this.statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : Boolean.FALSE;
-    this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : Boolean.FALSE;
+    this.statusTargetGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
+    this.statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
+    this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
+    
+    //
+    // re-check
+    //
+    
+    if (this.statusTargetGroup == Boolean.TRUE) this.statusControlGroup = this.statusUniversalControlGroup = !this.statusTargetGroup;
+    if (this.statusControlGroup == Boolean.TRUE) this.statusTargetGroup = this.statusUniversalControlGroup = !this.statusControlGroup;
+    if (this.statusUniversalControlGroup == Boolean.TRUE) this.statusTargetGroup = this.statusControlGroup = !this.statusUniversalControlGroup;
+    
     this.journeyComplete = journeyLink.getDestination().getExitNode();
     this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
     this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
@@ -227,8 +242,18 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.markConverted = false;
     this.statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
     this.statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
-    this.statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : Boolean.FALSE;
-    this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : Boolean.FALSE;
+    this.statusTargetGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
+    this.statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
+    this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
+    
+    //
+    // re-check
+    //
+    
+    if (this.statusTargetGroup == Boolean.TRUE) this.statusControlGroup = this.statusUniversalControlGroup = !this.statusTargetGroup;
+    if (this.statusControlGroup == Boolean.TRUE) this.statusTargetGroup = this.statusUniversalControlGroup = !this.statusControlGroup;
+    if (this.statusUniversalControlGroup == Boolean.TRUE) this.statusTargetGroup = this.statusControlGroup = !this.statusUniversalControlGroup;
+    
     this.journeyComplete = true;
     this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
     this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
@@ -242,7 +267,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
-  private JourneyStatistic(String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, String sample, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, boolean statusControlGroup, boolean statusUniversalControlGroup, boolean journeyComplete, List<NodeHistory> journeyNodeHistory, List<StatusHistory> journeyStatusHistory, List<RewardHistory> journeyRewardHistory, Map<String, String> subscriberStratum)
+  private JourneyStatistic(String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, String sample, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup, boolean journeyComplete, List<NodeHistory> journeyNodeHistory, List<StatusHistory> journeyStatusHistory, List<RewardHistory> journeyRewardHistory, Map<String, String> subscriberStratum)
   {
     this.journeyStatisticID = journeyStatisticID;
     this.journeyInstanceID = journeyInstanceID;
@@ -258,6 +283,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.markConverted = markConverted;
     this.statusNotified = statusNotified;
     this.statusConverted = statusConverted;
+    this.statusTargetGroup = statusTargetGroup;
     this.statusControlGroup = statusControlGroup;
     this.statusUniversalControlGroup = statusUniversalControlGroup;
     this.journeyComplete = journeyComplete;
@@ -289,6 +315,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.markConverted = journeyStatistic.getMarkConverted();
     this.statusNotified = journeyStatistic.getStatusNotified();
     this.statusConverted = journeyStatistic.getStatusConverted();
+    this.statusTargetGroup = journeyStatistic.getStatusTargetGroup();
     this.statusControlGroup = journeyStatistic.getStatusControlGroup();
     this.statusUniversalControlGroup = journeyStatistic.getStatusUniversalControlGroup();
     this.journeyComplete = journeyStatistic.getJourneyComplete();
@@ -384,6 +411,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     struct.put("markConverted", journeyStatistic.getMarkConverted());
     struct.put("statusNotified", journeyStatistic.getStatusNotified());
     struct.put("statusConverted", journeyStatistic.getStatusConverted());
+    struct.put("statusTargetGroup", journeyStatistic.getStatusTargetGroup());
     struct.put("statusControlGroup", journeyStatistic.getStatusControlGroup());
     struct.put("statusUniversalControlGroup", journeyStatistic.getStatusUniversalControlGroup());
     struct.put("journeyComplete", journeyStatistic.getJourneyComplete());
@@ -483,8 +511,10 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     boolean markConverted = (schemaVersion >= 2) ? valueStruct.getBoolean("markConverted") : false;
     boolean statusNotified = valueStruct.getBoolean("statusNotified");
     boolean statusConverted = valueStruct.getBoolean("statusConverted");
-    boolean statusControlGroup = valueStruct.getBoolean("statusControlGroup");
-    boolean statusUniversalControlGroup = valueStruct.getBoolean("statusUniversalControlGroup");
+    Boolean statusControlGroup = valueStruct.getBoolean("statusControlGroup");
+    Boolean statusUniversalControlGroup = valueStruct.getBoolean("statusUniversalControlGroup");
+    Boolean statusTargetGroup = valueStruct.getBoolean("statusTargetGroup");
+    if (schemaVersion < 3) statusTargetGroup = (statusControlGroup ? false : (statusUniversalControlGroup ? false : null));
     boolean journeyComplete = valueStruct.getBoolean("journeyComplete");
     List<RewardHistory> journeyRewardHistory =  unpackRewardHistory(schema.field("journeyRewardHistory").schema(), valueStruct.get("journeyRewardHistory"));
     List<NodeHistory> journeyNodeHistory =  unpackNodeHistory(schema.field("journeyNodeHistory").schema(), valueStruct.get("journeyNodeHistory"));
@@ -495,7 +525,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     //  return
     //
 
-    return new JourneyStatistic(journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, sample, markNotified, markConverted, statusNotified, statusConverted, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyNodeHistory, journeyStatusHistory, journeyRewardHistory, subscriberStratum);
+    return new JourneyStatistic(journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, sample, markNotified, markConverted, statusNotified, statusConverted, statusTargetGroup, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyNodeHistory, journeyStatusHistory, journeyRewardHistory, subscriberStratum);
   }
   
   /*****************************************

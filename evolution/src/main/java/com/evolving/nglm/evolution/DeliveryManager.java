@@ -1339,7 +1339,10 @@ public abstract class DeliveryManager
             *****************************************/
 
             DeliveryRequest deliveryRequestOnScheduler = waitingForAcknowledgement.get(deliveryRequest.getDeliveryRequestID());
-            deliveryRequestOnScheduler.setTimeout(null);
+            if(deliveryRequestOnScheduler != null) 
+              {
+                deliveryRequestOnScheduler.setTimeout(null);
+              }
             deliveryRequest.setTimeout(null);
           }
 
@@ -1465,7 +1468,9 @@ public abstract class DeliveryManager
             //  clear timeout
             //
 
-            deliveryRequestOnScheduler.setTimeout(null);
+            if(deliveryRequestOnScheduler != null) {
+              deliveryRequestOnScheduler.setTimeout(null);
+            }
             deliveryRequest.setTimeout(null);
 
             //
