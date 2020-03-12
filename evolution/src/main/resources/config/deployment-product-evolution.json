@@ -549,6 +549,11 @@
     }
   ],
 
+  "initialSalesChannels" :
+  [
+    {"id":"2",	"name":"journey",	"display":"Journey",	"active":true,	"readOnly":true,	"callingChannelIDs":[]}
+  ],
+
   "initialJourneyObjectives" : [],
 
   "initialOfferObjectives" :
