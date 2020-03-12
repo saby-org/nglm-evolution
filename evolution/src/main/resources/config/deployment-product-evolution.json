@@ -540,15 +540,6 @@
     { "id" : "evolution_supplier", "name" : "Evolution", "fulfillmentProviderID" : "provider_Point", "display" : "Evolution", "description" : "Evolution", "active" : true, "readOnly" : false, "email" : "", "phone" : "", "website" : "" }
   ],
 
-  "deliveryManagerAccounts" :
-  [
-    {
-      "id"              : "1",
-      "providerID"      : "provider_Point",
-      "accounts"        : [ {"id" : "1", "name" :"Evolution Point", "externalAccountID" : "Evolution Point", "creditable" : true, "debitable" : true} ]
-    }
-  ],
-
   "initialSalesChannels" :
   [
     {"id":"2",	"name":"journey",	"display":"Journey",	"active":true,	"readOnly":true,	"callingChannelIDs":[]}
