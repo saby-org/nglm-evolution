@@ -22,6 +22,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Journey.JourneyStatus;
 
 public class Report extends GUIManagedObject 
 {
@@ -38,14 +39,16 @@ public class Report extends GUIManagedObject
    *****************************************/
 
   public enum SchedulingInterval {
-    MONTHLY("monthly"),
-    WEEKLY("weekly"),
-    DAILY("daily"),
-    HOURLY("hourly"),
-    UNKNOWN("(unknown)");
+    MONTHLY("monthly", Deployment.getMonthlyReportCronEntryString()),
+    WEEKLY("weekly", Deployment.getWeeklyReportCronEntryString()),
+    DAILY("daily", Deployment.getDailyReportCronEntryString()),
+    HOURLY("hourly", Deployment.getHourlyReportCronEntryString()),
+    UNKNOWN("(unknown)", "");
     private String externalRepresentation;
-    private SchedulingInterval(String externalRepresentation) { this.externalRepresentation = externalRepresentation;}
+    private String cron;
+    private SchedulingInterval(String externalRepresentation, String cron) { this.externalRepresentation = externalRepresentation; this.cron = cron; }
     public String getExternalRepresentation() { return externalRepresentation; }
+    public String getCron() { return cron; }
     public static SchedulingInterval fromExternalRepresentation(String externalRepresentation) { for (SchedulingInterval enumeratedValue : SchedulingInterval.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return UNKNOWN; }
   }
 
@@ -64,13 +67,14 @@ public class Report extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("report");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field(REPORT_CLASS, Schema.STRING_SCHEMA);
     schemaBuilder.field(EFFECTIVE_SCHEDULING, SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schemaBuilder.field(AVAILABLE_SCHEDULING, SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schemaBuilder.field(DEFAULT_REPORT_PERIOD_QUANTITY, Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field(DEFAULT_REPORT_PERIOD_UNIT, Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("jobID", Schema.OPTIONAL_INT64_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -99,6 +103,7 @@ public class Report extends GUIManagedObject
   private List<SchedulingInterval> availableScheduling = null;
   private String defaultReportPeriodUnit;
   private Integer defaultReportPeriodQuantity;
+  private Long jobID;
 
   /****************************************
    *
@@ -117,14 +122,17 @@ public class Report extends GUIManagedObject
   public List<SchedulingInterval> getAvailableScheduling() { return availableScheduling; }
   public String getDefaultReportPeriodUnit() { return defaultReportPeriodUnit; }
   public Integer getDefaultReportPeriodQuantity() { return defaultReportPeriodQuantity; }
+  public Long getJobID() { return jobID; }
 
+  public void setJobID(long jobID) { this.jobID = jobID; }
+  
   /*****************************************
    *
    *  constructor -- unpack
    *
    *****************************************/
 
-  public Report(SchemaAndValue schemaAndValue, String reportClass, List<SchedulingInterval> effectiveScheduling, List<SchedulingInterval> availableScheduling, String defaultReportPeriodUnit, Integer defaultReportPeriodQuantity)
+  public Report(SchemaAndValue schemaAndValue, String reportClass, List<SchedulingInterval> effectiveScheduling, List<SchedulingInterval> availableScheduling, String defaultReportPeriodUnit, Integer defaultReportPeriodQuantity, Long jobID)
   {
     super(schemaAndValue);
     this.reportClass = reportClass;
@@ -132,6 +140,7 @@ public class Report extends GUIManagedObject
     this.availableScheduling = availableScheduling;
     this.defaultReportPeriodUnit = defaultReportPeriodUnit;
     this.defaultReportPeriodQuantity = defaultReportPeriodQuantity;
+    this.jobID = jobID;
   }
 
   /*****************************************
@@ -191,6 +200,7 @@ public class Report extends GUIManagedObject
         this.availableScheduling.add(SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr));
       }
     }
+    this.jobID = -1l;
 
     /*****************************************
      *
@@ -220,6 +230,7 @@ public class Report extends GUIManagedObject
     struct.put(AVAILABLE_SCHEDULING, packScheduling(report.getAvailableScheduling()));
     struct.put(DEFAULT_REPORT_PERIOD_UNIT, report.getDefaultReportPeriodUnit());
     struct.put(DEFAULT_REPORT_PERIOD_QUANTITY, report.getDefaultReportPeriodQuantity());
+    struct.put("jobID", report.getJobID());
     return struct;
   }
 
@@ -259,12 +270,14 @@ public class Report extends GUIManagedObject
     for (String str : availableSchedulingStr) {
       availableScheduling.add(SchedulingInterval.fromExternalRepresentation(str));
     }
+    
+    Long jobID = (schemaVersion >= 2) ? valueStruct.getInt64("jobID") : -1;
 
     //
     //  return
     //
 
-    return new Report(schemaAndValue, reportClass, effectiveScheduling, availableScheduling, defaultReportPeriodUnit, defaultReportPeriodQuantity);
+    return new Report(schemaAndValue, reportClass, effectiveScheduling, availableScheduling, defaultReportPeriodUnit, defaultReportPeriodQuantity, jobID);
   }
 
   /****************************************

@@ -1,10 +1,10 @@
 /****************************************************************************
 *
-*  DatacubeScheduler.java 
+*  JobScheduler.java 
 *
 ****************************************************************************/
 
-package com.evolving.nglm.evolution.datacubes;
+package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SystemTime;
@@ -49,13 +49,25 @@ public class JobScheduler
   {
   }
 
+  public ScheduledJob findJob(long jobID)
+  {
+    for (ScheduledJob job : schedule)
+      {
+        if (job.getjobID() == jobID)
+          {
+            return job;
+          }
+      }
+    return null;
+  }
+  
   /*****************************************
   *
   *  schedule
   *
   *****************************************/
 
-  public void schedule(ScheduledJob datacube)
+  public void schedule(ScheduledJob job)
   {
     synchronized (this)
       {
@@ -63,7 +75,7 @@ public class JobScheduler
         //  add to the schedule
         //
         
-        schedule.add(datacube);
+        schedule.add(job);
 
         //
         //  notify
@@ -79,7 +91,7 @@ public class JobScheduler
   *
   *****************************************/
 
-  public void deschedule(ScheduledJob datacube)
+  public void deschedule(ScheduledJob job)
   {
     synchronized (this)
       {
@@ -87,7 +99,7 @@ public class JobScheduler
         //  remove from the schedule
         //
 
-        schedule.remove(datacube);
+        schedule.remove(job);
 
         //
         //  notify
@@ -147,11 +159,17 @@ public class JobScheduler
             long nextWaitDuration = -1;
             
             //
-            // Generate all datacubes with scheduling date in the past
+            // Run all jobs with scheduling date in the past
             //
             
             while (! stopRequested)
               {
+                if (schedule.isEmpty())
+                  {
+                    // If scheduler is entirely empty, wait a bit before trying again. Otherwise process takes all CPU. This does not introduce any lag.
+                    try { Thread.sleep(10000); } catch (InterruptedException e) {}
+                    break;
+                  }
                 ScheduledJob job = schedule.first();
                 if(job == null) 
                   {
@@ -166,7 +184,7 @@ public class JobScheduler
                   }
 
                 //
-                //  generate datacube
+                //  run job
                 //
                 
                 schedule.remove(job);
@@ -181,7 +199,7 @@ public class JobScheduler
                 if (nextWaitDuration >= 0)
                   {
                     log.info("Scheduler will now sleep for "+ nextWaitDuration +" ms.");
-                    this.wait(nextWaitDuration); // wait till the next scheduled datacube generation
+                    this.wait(nextWaitDuration); // wait till the next scheduled job
                   }
                 else 
                   {

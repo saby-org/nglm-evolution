@@ -6,8 +6,8 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.JourneyService;
+import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
-import com.evolving.nglm.evolution.datacubes.ScheduledJob;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 
 public class JourneyDatacubesTemporaryJob extends ScheduledJob

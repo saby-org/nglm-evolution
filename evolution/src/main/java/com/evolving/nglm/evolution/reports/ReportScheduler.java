@@ -6,17 +6,19 @@
 
 package com.evolving.nglm.evolution.reports;
 
-import java.io.File;
+import java.util.List;
 
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.GUIManagedObject;
+import com.evolving.nglm.evolution.JobScheduler;
 import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.ReportService;
+import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.ReportService.ReportListener;
 
 /**
@@ -24,63 +26,152 @@ import com.evolving.nglm.evolution.ReportService.ReportListener;
  * NOTE : this is not yet fully implemented.
  *
  */
-public class ReportScheduler implements Watcher {
-  private static final int sessionTimeout = 10*1000; // 60 seconds
-  private String controlDir = null;
-  private static ZooKeeper zk = null;
-  private static String zkHostList;
+public class ReportScheduler {
   private static final Logger log = LoggerFactory.getLogger(ReportScheduler.class);
   private ReportService reportService;
+  private JobScheduler reportScheduler;
+  private long uniqueID = 0;
 
-  public ReportScheduler() throws Exception {
-    String topDir = Deployment.getReportManagerZookeeperDir();
-    controlDir = topDir + File.separator + ReportManager.CONTROL_SUBDIR;
-    log.debug("controlDir = "+controlDir);
-    zk  = new ZooKeeper(zkHostList, sessionTimeout, this);
-    log.debug("ZK client created : "+zk);
-    listenToGui();
-  }
-
-  public void listenToGui() {
+  public ReportScheduler() {
+    log.trace("Creating ReportService");
     ReportListener reportListener = new ReportListener() {
       @Override public void reportActivated(Report report) {
-        log.trace("report activated : " + report);
+        log.info("report activated : " + report);
+        scheduleReport(report);
       }
       @Override public void reportDeactivated(String guiManagedObjectID) {
-        log.trace("report deactivated: " + guiManagedObjectID);
+        log.info("report deactivated: " + guiManagedObjectID);
+        unscheduleReport(guiManagedObjectID);
       }
     };
-    // ReportService will be used to gather information about reports to schedule them regularly (not yet implemented) 
-    log.trace("Creating ReportService");
-    reportService = new ReportService(
-        Deployment.getBrokerServers(),
-        "reportscheduler-reportservice-001",
-        Deployment.getReportTopic(),
-        false,
-        reportListener);
+    reportService = new ReportService(Deployment.getBrokerServers(), "reportscheduler-reportservice-001", Deployment.getReportTopic(), false, reportListener);
     reportService.start();
     log.trace("ReportService started");
+    reportScheduler = new JobScheduler();
+
+    /*****************************************
+    *
+    *  shutdown hook
+    *
+    *****************************************/
+    
+    NGLMRuntime.addShutdownHook(new ShutdownHook(this));
   }
 
-  @Override
-  public void process(WatchedEvent event) {
-    log.trace("Got event, ignore it... "+event);
+  private void run()
+  {
+//    Date now = SystemTime.getCurrentTime();
+//    for (Report report : reportService.getActiveReports(now))
+//      {
+//        scheduleReport(report);
+//      }
+    log.info("Starting scheduler");
+    reportScheduler.runScheduler();
   }
 
-  public static void main(String[] args) {
-    zkHostList  = Deployment.getZookeeperConnect();
-    try {
-      ReportScheduler rs = new ReportScheduler();
-      log.debug("ZK client created");
-      while (true) { //  sleep forever
-        try {
-          Thread.sleep(Long.MAX_VALUE);
-        } catch (InterruptedException ignore) {}
+  private void scheduleReport(Report report)
+  {
+    List<SchedulingInterval> schedulings = report.getEffectiveScheduling();
+    for (SchedulingInterval scheduling : schedulings)
+      {
+        log.info("processing "+report.getName()+" with scheduling "+scheduling.getExternalRepresentation()+" cron "+scheduling.getCron());
+        ScheduledJob reportJob = new ReportJob(uniqueID++, report, scheduling, reportService);
+        if(reportJob.isProperlyConfigured())
+          {
+            log.info("scheduling "+report.getName()+" with scheduling "+scheduling.getExternalRepresentation()+" cron "+scheduling.getCron());
+            reportScheduler.schedule(reportJob);
+          }
+        else
+          {
+            log.info("issue when configuring "+report.getName());
+          }
       }
-    } catch (Exception e) {
-      log.info("Issue : "+e.getLocalizedMessage());
-      e.printStackTrace();
+  }
+  
+
+  private void unscheduleReport(String reportID)
+  {
+    GUIManagedObject reportUnchecked = reportService.getStoredReport(reportID);
+    if (reportUnchecked != null && reportUnchecked instanceof Report)
+      {
+        Report report = (Report) reportUnchecked;
+        ScheduledJob job = reportScheduler.findJob(report.getJobID());
+        log.info("descheduling "+report.getName()+" job="+job);
+        if (job != null)
+          {
+            reportScheduler.deschedule(job);
+          }
+      }
+  }
+
+  /*****************************************
+  *
+  *  class ShutdownHook
+  *
+  *****************************************/
+
+  private static class ShutdownHook implements NGLMRuntime.NGLMShutdownHook
+  {
+    //
+    //  data
+    //
+
+    private ReportScheduler reportScheduler;
+
+    //
+    //  constructor
+    //
+
+    private ShutdownHook(ReportScheduler reportScheduler)
+    {
+      this.reportScheduler = reportScheduler;
     }
+
+    //
+    //  shutdown
+    //
+
+    @Override public void shutdown(boolean normalShutdown)
+    {
+      reportScheduler.shutdownUCGEngine(normalShutdown);
+    }
+  }
+
+  /****************************************
+  *
+  *  shutdownUCGEngine
+  *
+  ****************************************/
+  
+  private void shutdownUCGEngine(boolean normalShutdown)
+  {
+    /*****************************************
+    *
+    *  stop threads
+    *
+    *****************************************/
+
+    /*****************************************
+    *
+    *  stop services
+    *
+    *****************************************/
+
+    reportService.stop(); 
+
+    /*****************************************
+    *
+    *  log
+    *
+    *****************************************/
+
+    log.info("Stopped ReportScheduler");
+  }
+  
+  public static void main(String[] args) {
+    NGLMRuntime.initialize(true);
+    ReportScheduler rs = new ReportScheduler();
+    rs.run();
   }
 
 }

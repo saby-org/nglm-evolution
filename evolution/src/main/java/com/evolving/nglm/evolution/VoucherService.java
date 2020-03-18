@@ -10,8 +10,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.evolution.datacubes.JobScheduler;
-import com.evolving.nglm.evolution.datacubes.ScheduledJob;
+
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
 import org.elasticsearch.client.RestHighLevelClient;

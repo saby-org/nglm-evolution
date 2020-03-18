@@ -8506,40 +8506,51 @@ public class GUIManager
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
       }
-    if (existingReport != null) {
-      Report existingRept = (Report) existingReport;
-      // Is the new effective scheduling valid ?
-      List<SchedulingInterval> availableScheduling = existingRept.getAvailableScheduling();
-      if (availableScheduling != null) {
-        // Check if the effectiveScheduling is valid
-        JSONArray effectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EFFECTIVE_SCHEDULING, false);
-        if (effectiveSchedulingJSONArray != null) { 
-          for (int i=0; i<effectiveSchedulingJSONArray.size(); i++) {
-            String schedulingIntervalStr = (String) effectiveSchedulingJSONArray.get(i);
-            SchedulingInterval eSchedule = SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr);
-            log.trace("Checking that "+eSchedule+" is allowed");
-            if (! availableScheduling.contains(eSchedule)) {
-              response.put("id", jsonRoot.get("id"));
-              response.put("responseCode", "reportNotValid");
-              response.put("responseMessage", "scheduling "+eSchedule+" is not valid");
-              StringBuffer respMsg = new StringBuffer("scheduling "+eSchedule+" should be part of [ ");
-              for (SchedulingInterval aSched : availableScheduling) {
-                respMsg.append(aSched+" ");
+    if (existingReport != null)
+      {
+        if (existingReport instanceof Report)
+          {
+            Report existingRept = (Report) existingReport;
+            // Is the new effective scheduling valid ?
+            List<SchedulingInterval> availableScheduling = existingRept.getAvailableScheduling();
+            if (availableScheduling != null) {
+              // Check if the effectiveScheduling is valid
+              JSONArray effectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EFFECTIVE_SCHEDULING, false);
+              if (effectiveSchedulingJSONArray != null) { 
+                for (int i=0; i<effectiveSchedulingJSONArray.size(); i++) {
+                  String schedulingIntervalStr = (String) effectiveSchedulingJSONArray.get(i);
+                  SchedulingInterval eSchedule = SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr);
+                  log.trace("Checking that "+eSchedule+" is allowed");
+                  if (! availableScheduling.contains(eSchedule)) {
+                    response.put("id", jsonRoot.get("id"));
+                    response.put("responseCode", "reportNotValid");
+                    response.put("responseMessage", "scheduling "+eSchedule+" is not valid");
+                    StringBuffer respMsg = new StringBuffer("scheduling "+eSchedule+" should be part of [ ");
+                    for (SchedulingInterval aSched : availableScheduling) {
+                      respMsg.append(aSched+" ");
+                    }
+                    respMsg.append("]");
+                    response.put("responseParameter", respMsg.toString());
+                    return JSONUtilities.encodeObject(response);
+                  }
+                }
               }
-              respMsg.append("]");
-              response.put("responseParameter", respMsg.toString());
-              return JSONUtilities.encodeObject(response);
             }
           }
-        }
       }
-    }
+
     long epoch = epochServer.getKey();
     try
       {
-        Report report = new Report(jsonRoot, epoch, null);
+        Report report = new Report(jsonRoot, epoch, existingReport);
         log.trace("new report : "+report);
-        reportService.putReport(report, true, userID);
+        if (report.getEffectiveScheduling() != null && existingReport != null)
+          {
+            // deactivate/activate to make scheduler aware of possible change in scheduling
+            log.info("remove report : "+report);
+            reportService.removeGUIManagedObject(existingReport.getGUIManagedObjectID(), now, userID);
+          }
+        reportService.putReport(report, (existingReport == null), userID);
         response.put("id", report.getReportID());
         response.put("accepted", report.getAccepted());
         response.put("valid", report.getAccepted());
@@ -8580,12 +8591,15 @@ public class GUIManager
       }
     else
       {
-        if(!reportService.isReportRunning(report.getName())) {
-          reportService.launchReport(report.getName());
-          responseCode = "ok";
-        }else {
-          responseCode = "reportIsAlreadyRunning";
-        }
+        if (reportService.isReportRunning(report.getName()))
+          {
+            responseCode = "reportIsAlreadyRunning";
+          }
+        else
+          {
+            reportService.launchReport(report.getName());
+            responseCode = "ok";
+          }
       }
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);

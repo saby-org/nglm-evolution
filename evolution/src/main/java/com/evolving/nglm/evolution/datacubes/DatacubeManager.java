@@ -11,11 +11,13 @@ import com.evolving.nglm.evolution.datacubes.journeys.JourneyTrafficDatacubeGene
 import com.evolving.nglm.evolution.CriterionContext;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.DynamicCriterionFieldService;
+import com.evolving.nglm.evolution.JobScheduler;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.PaymentMeanService;
 import com.evolving.nglm.evolution.SalesChannelService;
+import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.datacubes.journeys.JourneyDatacubesDefinitiveJob;
 import com.evolving.nglm.evolution.datacubes.journeys.JourneyDatacubesTemporaryJob;

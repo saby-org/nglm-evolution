@@ -235,6 +235,11 @@ public class Deployment
   private static Map<String,String> deliveryTypeCommunicationChannelIDMap = new LinkedHashMap<>();
   private static String voucherChangeRequestTopic;
   private static String voucherChangeResponseTopic;
+  private static String hourlyReportCronEntryString;
+  private static String dailyReportCronEntryString;
+  private static String weeklyReportCronEntryString;
+  private static String monthlyReportCronEntryString;
+
 
   // conf for voucher
   // we won't deliver a voucher that expiry in lest than X hours from now :
@@ -486,8 +491,11 @@ public class Deployment
   public static String getCleanExpiredVoucherCronEntry() {return cleanExpiredVoucherCronEntry; }
   public static int getLiveVoucherIndexNumberOfReplicas() { return liveVoucherIndexNumberOfReplicas; }
   public static int getLiveVoucherIndexNumberOfShards() { return liveVoucherIndexNumberOfShards; }
-
-  //
+  public static String getHourlyReportCronEntryString() { return hourlyReportCronEntryString; }
+  public static String getDailyReportCronEntryString() { return dailyReportCronEntryString; }
+  public static String getWeeklyReportCronEntryString() { return weeklyReportCronEntryString; }
+  public static String getMonthlyReportCronEntryString() { return monthlyReportCronEntryString; }
+  
   // addProfileCriterionField
   //
   public static void addProfileCriterionField(String key, CriterionField criterion) { profileCriterionFields.put(key, criterion); }
@@ -3129,6 +3137,59 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
+      
+      //
+      //  hourlyReportCronEntryString
+      //
+
+      try
+        {
+          hourlyReportCronEntryString = JSONUtilities.decodeString(jsonRoot, "hourlyReportCronEntryString", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  dailyReportCronEntryString
+      //
+
+      try
+        {
+          dailyReportCronEntryString = JSONUtilities.decodeString(jsonRoot, "dailyReportCronEntryString", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  weeklyReportCronEntryString
+      //
+
+      try
+        {
+          weeklyReportCronEntryString = JSONUtilities.decodeString(jsonRoot, "weeklyReportCronEntryString", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  monthlyReportCronEntryString
+      //
+
+      try
+        {
+          monthlyReportCronEntryString = JSONUtilities.decodeString(jsonRoot, "monthlyReportCronEntryString", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
     }
 
   /*****************************************

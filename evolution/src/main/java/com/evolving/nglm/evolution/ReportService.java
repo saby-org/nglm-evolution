@@ -202,8 +202,8 @@ public class ReportService extends GUIService
 		  int nbLoop = 0;
 		  do {
 			  try {
-				  zk = new ZooKeeper(System.getProperty("zookeeper.connect"), 3000, new Watcher() { @Override public void process(WatchedEvent event) {} }, false);
-                  try { Thread.sleep(1*1000); } catch (InterruptedException e) {}
+				  zk = new ZooKeeper(Deployment.getZookeeperConnect(), 3000, new Watcher() { @Override public void process(WatchedEvent event) {} }, false);
+          try { Thread.sleep(1*1000); } catch (InterruptedException e) {}
 				  if (!isConnectionValid(zk)) {
 					  log.info("Could not get a zookeeper connection, waiting... ("+(NB_TIMES_TO_TRY-nbLoop)+" more times to go)");
 					  try { Thread.sleep(5*1000); } catch (InterruptedException e) {}

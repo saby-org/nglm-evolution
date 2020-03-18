@@ -11,7 +11,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.PaymentMeanService;
 import com.evolving.nglm.evolution.SalesChannelService;
-import com.evolving.nglm.evolution.datacubes.ScheduledJob;
+import com.evolving.nglm.evolution.ScheduledJob;
 
 public class ODRDatacubeOnTodayJob extends ScheduledJob
 {
