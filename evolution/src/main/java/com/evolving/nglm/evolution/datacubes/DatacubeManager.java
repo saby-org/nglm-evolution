@@ -202,19 +202,19 @@ public class DatacubeManager
     //
     
     ScheduledJob temporaryODR = new ODRDatacubeOnTodayJob(uniqueID++, elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, loyaltyProgramService, journeyService);
-    if(temporaryODR.properlyConfigured)
+    if(temporaryODR.isProperlyConfigured())
       {
         datacubeScheduler.schedule(temporaryODR);
       }
     
     ScheduledJob temporaryLoyalty = new LoyaltyDatacubesOnTodayJob(uniqueID++, elasticsearchRestClient, loyaltyProgramService);
-    if(temporaryLoyalty.properlyConfigured)
+    if(temporaryLoyalty.isProperlyConfigured())
       {
         datacubeScheduler.schedule(temporaryLoyalty);
       }
     
     ScheduledJob temporarySubscriber = new SubscriberProfileDatacubesOnTodayJob(uniqueID++, elasticsearchRestClient, segmentationDimensionService);
-    if(temporarySubscriber.properlyConfigured)
+    if(temporarySubscriber.isProperlyConfigured())
       {
         datacubeScheduler.schedule(temporarySubscriber);
       }
@@ -230,25 +230,25 @@ public class DatacubeManager
     //
     
     ScheduledJob definitiveODR = new ODRDatacubeOnYesterdayJob(uniqueID++, elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, loyaltyProgramService, journeyService);
-    if(definitiveODR.properlyConfigured)
+    if(definitiveODR.isProperlyConfigured())
       {
         datacubeScheduler.schedule(definitiveODR);
       }
     
     ScheduledJob definitiveLoyalty = new LoyaltyDatacubesOnYesterdayJob(uniqueID++, elasticsearchRestClient, loyaltyProgramService);
-    if(definitiveLoyalty.properlyConfigured)
+    if(definitiveLoyalty.isProperlyConfigured())
       {
         datacubeScheduler.schedule(definitiveLoyalty);
       }
     
     ScheduledJob definitiveSubscriber = new SubscriberProfileDatacubesOnYesterdayJob(uniqueID++, elasticsearchRestClient, segmentationDimensionService);
-    if(definitiveSubscriber.properlyConfigured)
+    if(definitiveSubscriber.isProperlyConfigured())
       {
         datacubeScheduler.schedule(definitiveSubscriber);
       }
     
     ScheduledJob definitiveJourneyTraffic = new JourneyDatacubesDefinitiveJob(uniqueID++, elasticsearchRestClient, segmentationDimensionService, journeyService);
-    if(definitiveJourneyTraffic.properlyConfigured)
+    if(definitiveJourneyTraffic.isProperlyConfigured())
       {
         datacubeScheduler.schedule(definitiveJourneyTraffic);
       }
@@ -258,7 +258,7 @@ public class DatacubeManager
     //
     
     ScheduledJob subscriberprofileSnapshot = new SubscriberProfileSnapshot(uniqueID++, elasticsearchRestClient);
-    if(subscriberprofileSnapshot.properlyConfigured)
+    if(subscriberprofileSnapshot.isProperlyConfigured())
       {
         datacubeScheduler.schedule(subscriberprofileSnapshot);
       }
