@@ -54,6 +54,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     QUEUE_FULL(705),
     RESCHEDULE(709),
     THROTTLING(23),
+    CONTACT_POLICY_LIMITATION(710),
     UNKNOWN(999);
     private Integer returnCode;
     private SMSMessageStatus(Integer externalRepresentation) { this.returnCode = externalRepresentation; }
@@ -788,8 +789,15 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
    *****************************************/
 
   @Override protected boolean filterRequest(DeliveryRequest request)
-  {
-    return false; //contactPolicyProcessor.ensureContactPolicy(request,this,log);
+  {EVCOR
+    if(!((SMSNotificationManagerRequest)request).getRestricted()) return false;
+    boolean blockedByContactPolicy = contactPolicyProcessor.ensureContactPolicy(request,this,log);
+    if(blockedByContactPolicy)
+    {
+      ((SMSNotificationManagerRequest)request).setMessageStatus(SMSMessageStatus.CONTACT_POLICY_LIMITATION);
+      ((SMSNotificationManagerRequest)request).setReturnCode(SMSMessageStatus.CONTACT_POLICY_LIMITATION.getReturnCode());
+    }
+    return blockedByContactPolicy;
   }
 
   /*****************************************

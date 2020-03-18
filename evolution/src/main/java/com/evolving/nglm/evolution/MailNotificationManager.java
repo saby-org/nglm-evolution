@@ -54,6 +54,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     INVALID(704),
     QUEUE_FULL(705),
     RESCHEDULE(709),
+    CONTACT_POLICY_LIMITATION(710),
     UNKNOWN(999);
     private Integer returncode;
     private MAILMessageStatus(Integer returncode) { this.returncode = returncode; }
@@ -835,7 +836,14 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
    * @param request*/
   @Override public boolean filterRequest(DeliveryRequest request)
   {
-    return false; //contactPolicyProcessor.ensureContactPolicy(request,this,log);
+    if(!((MailNotificationManagerRequest)request).getRestricted()) return false;
+    boolean blockedByContactPolicy = contactPolicyProcessor.ensureContactPolicy(request,this,log);
+    if(blockedByContactPolicy)
+      {
+        ((MailNotificationManagerRequest)request).setMessageStatus(MAILMessageStatus.CONTACT_POLICY_LIMITATION);
+        ((MailNotificationManagerRequest)request).setReturnCode(MAILMessageStatus.CONTACT_POLICY_LIMITATION.getReturnCode());
+      }
+    return blockedByContactPolicy;
   }
 
   /*****************************************

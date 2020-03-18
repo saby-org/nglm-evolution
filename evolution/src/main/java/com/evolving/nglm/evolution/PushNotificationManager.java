@@ -54,6 +54,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
     INVALID(704),
     QUEUE_FULL(705),
     RESCHEDULE(709),
+    CONTACT_POLICY_LIMITATION(710),
     UNKNOWN(999);
     private Integer returncode;
     private PushMessageStatus(Integer returncode) { this.returncode = returncode; }
@@ -893,7 +894,14 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
 
   @Override public boolean filterRequest(DeliveryRequest request)
   {
-    return false; //contactPolicyProcessor.ensureContactPolicy(request,this,log);
+    if(!((PushNotificationManagerRequest)request).getRestricted()) return false;
+    boolean blockedByContactPolicy = contactPolicyProcessor.ensureContactPolicy(request,this,log);
+    if(blockedByContactPolicy)
+      {
+        ((PushNotificationManagerRequest)request).setMessageStatus(PushMessageStatus.CONTACT_POLICY_LIMITATION.CONTACT_POLICY_LIMITATION);
+        ((PushNotificationManagerRequest)request).setReturnCode(PushMessageStatus.CONTACT_POLICY_LIMITATION.getReturnCode());
+      }
+    return blockedByContactPolicy;
   }
 
   /*****************************************

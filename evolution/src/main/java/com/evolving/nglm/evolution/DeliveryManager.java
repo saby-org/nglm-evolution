@@ -310,6 +310,7 @@ public abstract class DeliveryManager
             result = submitRequestQueue.take();
             if(this.filterRequest(result))
               {
+				completeRequest(result);
                 result = null;
               }
           }
