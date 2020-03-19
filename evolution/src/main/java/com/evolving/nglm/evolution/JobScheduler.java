@@ -12,7 +12,9 @@ import com.evolving.nglm.core.SystemTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -59,6 +61,38 @@ public class JobScheduler
           }
       }
     return null;
+  }
+
+  
+  /*****************************************
+  *
+  *  getAllJobs
+  *  Note that all info in the returned List must be checked before used for validity : jobs might have changed afterwards.
+  *  
+  *
+  *****************************************/
+
+  public List<ScheduledJob> getAllJobs()
+  {
+    List<ScheduledJob> result = new ArrayList<>();
+    synchronized (this)
+    {
+      //
+      //  shallow copy set
+      //
+      
+      for (ScheduledJob job : schedule)
+        {
+          result.add(job);
+        }
+
+      //
+      //  notify
+      //
+
+      this.notifyAll();
+    }
+    return result;
   }
   
   /*****************************************

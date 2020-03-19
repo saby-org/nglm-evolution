@@ -41,7 +41,6 @@ public class ReportScheduler {
       }
       @Override public void reportDeactivated(String guiManagedObjectID) {
         log.info("report deactivated: " + guiManagedObjectID);
-        unscheduleReport(guiManagedObjectID);
       }
     };
     reportService = new ReportService(Deployment.getBrokerServers(), "reportscheduler-reportservice-001", Deployment.getReportTopic(), false, reportListener);
@@ -49,6 +48,24 @@ public class ReportScheduler {
     log.trace("ReportService started");
     reportScheduler = new JobScheduler();
 
+    // add special report to display logs
+    ScheduledJob specialReportJob = new ScheduledJob(uniqueID++, "special report", "0 * * * *", Deployment.getBaseTimeZone(), true) {
+      @Override
+      protected void run()
+      {
+        log.info("===== Special job ");
+        List<ScheduledJob> allJobs = reportScheduler.getAllJobs();
+        for (ScheduledJob job : allJobs)
+          {
+            if (job != null)
+              {
+                log.info("=====   job " + job);
+              }
+          }
+      }
+    };
+    reportScheduler.schedule(specialReportJob);
+    
     /*****************************************
     *
     *  shutdown hook
@@ -70,15 +87,34 @@ public class ReportScheduler {
   }
 
   private void scheduleReport(Report report)
-  {
-    List<SchedulingInterval> schedulings = report.getEffectiveScheduling();
-    for (SchedulingInterval scheduling : schedulings)
+  {    
+    //
+    // First deschedule all jobs associated with this report 
+    //
+    String reportID = report.getReportID();
+    for (ScheduledJob job : reportScheduler.getAllJobs())
+      {
+       if (job != null && job.isProperlyConfigured() && job instanceof ReportJob)
+         {
+           ReportJob reportJob = (ReportJob) job;
+           if (reportID.equals(reportJob.getReportID()))
+             {
+               log.info("desceduling " + job + " because it runs for " + report.getName());
+               reportScheduler.deschedule(job);
+             }
+         }
+      }
+
+    //
+    // then schedule or reschedule everything
+    //
+    for (SchedulingInterval scheduling : report.getEffectiveScheduling())
       {
         log.info("processing "+report.getName()+" with scheduling "+scheduling.getExternalRepresentation()+" cron "+scheduling.getCron());
         ScheduledJob reportJob = new ReportJob(uniqueID++, report, scheduling, reportService);
         if(reportJob.isProperlyConfigured())
           {
-            log.info("scheduling "+report.getName()+" with scheduling "+scheduling.getExternalRepresentation()+" cron "+scheduling.getCron());
+            log.info("--> scheduling "+report.getName()+" with jobIDs "+report.getJobIDs());
             reportScheduler.schedule(reportJob);
           }
         else
@@ -92,14 +128,18 @@ public class ReportScheduler {
   private void unscheduleReport(String reportID)
   {
     GUIManagedObject reportUnchecked = reportService.getStoredReport(reportID);
+    log.info("reportUnchecked = "+reportUnchecked);
     if (reportUnchecked != null && reportUnchecked instanceof Report)
       {
         Report report = (Report) reportUnchecked;
-        ScheduledJob job = reportScheduler.findJob(report.getJobID());
-        log.info("descheduling "+report.getName()+" job="+job);
-        if (job != null)
+        for (Long jobID : report.getJobIDs())
           {
-            reportScheduler.deschedule(job);
+            ScheduledJob job = reportScheduler.findJob(jobID);
+            log.info("descheduling "+report.getName()+" for jobID="+jobID+" job="+job);
+            if (job != null)
+              {
+                reportScheduler.deschedule(job);
+              }
           }
       }
   }

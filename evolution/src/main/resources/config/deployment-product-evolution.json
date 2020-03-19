@@ -19,8 +19,13 @@
   "journeyTrafficDatacubePeriodCronEntryString"      : "0 * * * *",
   "subscriberProfileSnapshotPeriodCronEntryString"   : "5 0 * * *",
 
-  "hourlyReportCronEntryString"   : "0 * * * *",
-  "dailyReportCronEntryString"    : "10 2 * * *",
+  "1hourlyReportCronEntryString"   : "0 * * * *",
+  "1dailyReportCronEntryString"    : "10 2 * * *",
+  "1weeklyReportCronEntryString"   : "20 1 * * 0",
+  "1monthlyReportCronEntryString"  : "30 3 1 * *",
+
+  "hourlyReportCronEntryString"   : "0,10,20,30,40,50 * * * *",
+  "dailyReportCronEntryString"    : "5,15,25,35,45,55 * * * *",
   "weeklyReportCronEntryString"   : "20 1 * * 0",
   "monthlyReportCronEntryString"  : "30 3 1 * *",
   
@@ -748,7 +753,7 @@
       "display"             : "Subscriber Report",
       "description"         : "Description of the Subscriber Report",
       "class"               : "com.evolving.nglm.evolution.reports.subscriber.SubscriberReportDriver",
-      "availableScheduling" : [ "weekly", "monthly" ]
+      "availableScheduling" : [ "hourly", "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "BDRReport",
@@ -834,7 +839,8 @@
       "display"             : "Token Report",
       "description"         : "Description of the characteristics of the token",
       "class"               : "com.evolving.nglm.evolution.reports.token.TokenReportDriver",
-      "availableScheduling" : [ "weekly", "monthly" ]
+      "availableScheduling" : [ "hourly", "daily", "weekly", "monthly" ],
+      "effectiveScheduling" : [ "hourly", "monthly" ]
     },
     {
       "name"                : "offersAllocatedToTokens",

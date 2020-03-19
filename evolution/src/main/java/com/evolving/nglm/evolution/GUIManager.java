@@ -844,7 +844,8 @@ public class GUIManager
     segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "guimanager-segmentationDimensionservice-" + apiProcessKey, segmentationDimensionTopic, true);
     pointService = new PointService(bootstrapServers, "guimanager-pointservice-" + apiProcessKey, pointTopic, true);
     offerService = new OfferService(bootstrapServers, "guimanager-offerservice-" + apiProcessKey, offerTopic, true);
-    reportService = new ReportService(bootstrapServers, "guimanager-reportservice-" + apiProcessKey, reportTopic, true);
+    // set notifyOnSignificantChange = false
+    reportService = new ReportService(bootstrapServers, "guimanager-reportservice-" + apiProcessKey, reportTopic, true, null, false);
     paymentMeanService = new PaymentMeanService(bootstrapServers, "guimanager-paymentmeanservice-" + apiProcessKey, paymentMeanTopic, true);
     scoringStrategyService = new ScoringStrategyService(bootstrapServers, "guimanager-scoringstrategyservice-" + apiProcessKey, scoringStrategyTopic, true);
     presentationStrategyService = new PresentationStrategyService(bootstrapServers, "guimanager-presentationstrategyservice-" + apiProcessKey, presentationStrategyTopic, true);
@@ -8547,8 +8548,9 @@ public class GUIManager
         if (report.getEffectiveScheduling() != null && existingReport != null)
           {
             // deactivate/activate to make scheduler aware of possible change in scheduling
-            log.info("remove report : "+report);
-            reportService.removeGUIManagedObject(existingReport.getGUIManagedObjectID(), now, userID);
+            //log.info("deactivate report : "+report);
+            // might not need to do anything, as we have !notifyOnSignificantChange=true
+            //reportService.removeGUIManagedObject(existingReport.getGUIManagedObjectID(), now, userID);
           }
         reportService.putReport(report, (existingReport == null), userID);
         response.put("id", report.getReportID());

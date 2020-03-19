@@ -21,6 +21,8 @@ public class ReportJob extends ScheduledJob
   private ReportService reportService;
   private static final Logger log = LoggerFactory.getLogger(ReportJob.class);
 
+  public String getReportID() { return (report != null) ? report.getReportID() : null; }
+  
   /*****************************************
   *
   *  constructor
@@ -32,7 +34,7 @@ public class ReportJob extends ScheduledJob
     super(schedulingUniqueID, report.getName()+"("+scheduling.getExternalRepresentation()+")", scheduling.getCron(), Deployment.getBaseTimeZone(), false);
     this.report = report;
     this.reportService = reportService;
-    report.setJobID(schedulingUniqueID);
+    report.addJobID(schedulingUniqueID);
   }
 
   @Override
