@@ -205,7 +205,7 @@ public class ReportCsvWriter
                     break;
                   } catch (Exception e)
                   {
-                    log.info(("Got " + e.getLocalizedMessage() + " we took too long to process batch and got kicked out of the group..."));
+                    log.error(("Got " + e.getLocalizedMessage() + " we took too long to process batch and got kicked out of the group..."));
                     break;
                   }
               }
@@ -266,17 +266,20 @@ public class ReportCsvWriter
             
             for (ConsumerRecord<String, ReportElement> record : consumerRecords)
               {
-                String key = record.key();
-                
-                if (reportElementsMap.containsKey(key))
+                if (record.value().type != ReportElement.MARKER) 
                   {
-                    reportElementsMap.get(key).add(record.value());
-                  }
-                else
-                  {
-                    List<ReportElement> reportElements = new ArrayList<ReportElement>();
-                    reportElements.add(record.value());
-                    reportElementsMap.put(key, reportElements);
+                    String key = record.key();
+                    if (reportElementsMap.containsKey(key))
+                      {
+                        reportElementsMap.get(key).add(record.value());
+                      }
+                    else
+                      {
+                        List<ReportElement> reportElements = new ArrayList<ReportElement>();
+                        reportElements.add(record.value());
+                        reportElementsMap.put(key, reportElements);
+                        
+                      }
                     
                   }
                 nbRecords++;
@@ -290,7 +293,7 @@ public class ReportCsvWriter
                   } 
                 catch (Exception e)
                   {
-                    log.info(("Got " + e.getLocalizedMessage() + " we took too long to process batch and got kicked out of the group..."));
+                    log.error(("Got " + e.getLocalizedMessage() + " we took too long to process batch and got kicked out of the group..."));
                     break;
                   }
               }
