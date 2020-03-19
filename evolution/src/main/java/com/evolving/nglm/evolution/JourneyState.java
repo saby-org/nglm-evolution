@@ -272,4 +272,11 @@ public class JourneyState
 
     return new JourneyState(journeyInstanceID, callingJourneyRequest, journeyID, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, journeyHistory);
   }
+  @Override
+  public String toString()
+  {
+    return "JourneyState [callingJourneyRequest=" + callingJourneyRequest + ", journeyInstanceID=" + journeyInstanceID + ", journeyID=" + journeyID + ", journeyNodeID=" + journeyNodeID + ", journeyParameters=" + journeyParameters + ", journeyActionManagerContext=" + journeyActionManagerContext + ", journeyEntryDate=" + journeyEntryDate + ", journeyExitDate=" + journeyExitDate + ", journeyCloseDate=" + journeyCloseDate + ", journeyMetricsPrior=" + journeyMetricsPrior + ", journeyMetricsDuring=" + journeyMetricsDuring + ", journeyMetricsPost=" + journeyMetricsPost + ", journeyNodeEntryDate=" + journeyNodeEntryDate + ", journeyOutstandingDeliveryRequestID=" + journeyOutstandingDeliveryRequestID + ", journeyHistory=" + journeyHistory + "]";
+  }
+  
+  
 }
