@@ -883,4 +883,12 @@ public class CriterionField extends DeploymentManagedObject
   {
     return super.hashCode();
   }
+  
+  @Override
+  public String toString()
+  {
+    return "CriterionField [fieldDataType=" + fieldDataType + ", mandatoryParameter=" + mandatoryParameter + ", generateDimension=" + generateDimension + ", esField=" + esField + ", criterionFieldRetriever=" + criterionFieldRetriever + ", expressionValuedParameter=" + expressionValuedParameter + ", internalOnly=" + internalOnly + ", evaluationVariable=" + evaluationVariable + ", tagFormat=" + tagFormat + ", tagMaxLength=" + tagMaxLength + ", variableType=" + variableType + ", profileChangeEvent=" + profileChangeEvent + ", retriever=" + retriever + "]";
+  }
+  
+  
 }
