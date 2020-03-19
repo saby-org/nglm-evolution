@@ -6,20 +6,17 @@
 
 package com.evolving.nglm.evolution.reports;
 
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.evolution.Deployment;
-import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.JobScheduler;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.ReportService;
-import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.ReportService.ReportListener;
+import com.evolving.nglm.evolution.ScheduledJob;
 
 /**
  * This class handles the automatic launching of reports, based on the cron-like configuration.
@@ -46,26 +43,8 @@ public class ReportScheduler {
     reportService = new ReportService(Deployment.getBrokerServers(), "reportscheduler-reportservice-001", Deployment.getReportTopic(), false, reportListener);
     reportService.start();
     log.trace("ReportService started");
-    reportScheduler = new JobScheduler();
+    reportScheduler = new JobScheduler("report");
 
-    // add special report to display logs
-    ScheduledJob specialReportJob = new ScheduledJob(uniqueID++, "special report", "0 * * * *", Deployment.getBaseTimeZone(), true) {
-      @Override
-      protected void run()
-      {
-        log.info("===== Special job ");
-        List<ScheduledJob> allJobs = reportScheduler.getAllJobs();
-        for (ScheduledJob job : allJobs)
-          {
-            if (job != null)
-              {
-                log.info("=====   job " + job);
-              }
-          }
-      }
-    };
-    reportScheduler.schedule(specialReportJob);
-    
     /*****************************************
     *
     *  shutdown hook
@@ -94,14 +73,10 @@ public class ReportScheduler {
     String reportID = report.getReportID();
     for (ScheduledJob job : reportScheduler.getAllJobs())
       {
-       if (job != null && job.isProperlyConfigured() && job instanceof ReportJob)
+       if (job != null && job.isProperlyConfigured() && job instanceof ReportJob && reportID.equals(((ReportJob) job).getReportID()))
          {
-           ReportJob reportJob = (ReportJob) job;
-           if (reportID.equals(reportJob.getReportID()))
-             {
-               log.info("desceduling " + job + " because it runs for " + report.getName());
-               reportScheduler.deschedule(job);
-             }
+           log.info("desceduling " + job + " because it ran for " + report.getName());
+           reportScheduler.deschedule(job);
          }
       }
 
@@ -124,26 +99,6 @@ public class ReportScheduler {
       }
   }
   
-
-  private void unscheduleReport(String reportID)
-  {
-    GUIManagedObject reportUnchecked = reportService.getStoredReport(reportID);
-    log.info("reportUnchecked = "+reportUnchecked);
-    if (reportUnchecked != null && reportUnchecked instanceof Report)
-      {
-        Report report = (Report) reportUnchecked;
-        for (Long jobID : report.getJobIDs())
-          {
-            ScheduledJob job = reportScheduler.findJob(jobID);
-            log.info("descheduling "+report.getName()+" for jobID="+jobID+" job="+job);
-            if (job != null)
-              {
-                reportScheduler.deschedule(job);
-              }
-          }
-      }
-  }
-
   /*****************************************
   *
   *  class ShutdownHook

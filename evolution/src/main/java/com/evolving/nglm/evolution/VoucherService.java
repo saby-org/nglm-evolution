@@ -88,7 +88,7 @@ public class VoucherService extends GUIService {
       processVoucherFileThread.start();
 
       // a thread scheduled for clean up expired voucher
-      cleanUpExpiredVouchersScheduler=new JobScheduler();
+      cleanUpExpiredVouchersScheduler=new JobScheduler("cleanUpExpiredVouchers");
       cleanUpExpiredVouchersScheduler.schedule(new ScheduledJob(0,"cleanUpExpiredVouchers",Deployment.getCleanExpiredVoucherCronEntry(),Deployment.getBaseTimeZone(),false) {
         @Override
         protected void run() {
