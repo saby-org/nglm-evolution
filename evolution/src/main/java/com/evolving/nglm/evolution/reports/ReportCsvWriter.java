@@ -294,8 +294,8 @@ public class ReportCsvWriter
                     break;
                   }
               }
-            consumer.close();
           }
+        consumer.close();
         
         //
         //  csvfile
