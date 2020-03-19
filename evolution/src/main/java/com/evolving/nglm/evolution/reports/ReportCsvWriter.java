@@ -346,14 +346,14 @@ public class ReportCsvWriter
                   }
                 
               }
-            fos.close();
             writer.flush();
             writer.closeEntry();
             writer.close();
+            fos.close();
           }
         catch (IOException ex)
           {
-            log.info("Error when writing to " + csvfile + " : " + ex.getLocalizedMessage());
+            log.error("Error when writing to " + csvfile + " : " + ex.getLocalizedMessage());
             return false;
           }
         return true;
