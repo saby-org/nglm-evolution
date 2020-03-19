@@ -19720,6 +19720,10 @@ public class GUIManager
                   }
               }
           }
+        else
+          {
+            responseCode = "Campaign not found";
+          }
       }
     
     if(journey != null)
