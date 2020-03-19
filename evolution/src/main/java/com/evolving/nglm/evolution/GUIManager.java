@@ -8545,13 +8545,6 @@ public class GUIManager
       {
         Report report = new Report(jsonRoot, epoch, existingReport);
         log.trace("new report : "+report);
-        if (report.getEffectiveScheduling() != null && existingReport != null)
-          {
-            // deactivate/activate to make scheduler aware of possible change in scheduling
-            //log.info("deactivate report : "+report);
-            // might not need to do anything, as we have !notifyOnSignificantChange=true
-            //reportService.removeGUIManagedObject(existingReport.getGUIManagedObjectID(), now, userID);
-          }
         reportService.putReport(report, (existingReport == null), userID);
         response.put("id", report.getReportID());
         response.put("accepted", report.getAccepted());

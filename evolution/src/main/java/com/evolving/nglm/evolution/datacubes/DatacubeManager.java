@@ -189,7 +189,7 @@ public class DatacubeManager
 
   public void run()
   {
-    JobScheduler datacubeScheduler = new JobScheduler();
+    JobScheduler datacubeScheduler = new JobScheduler("datacube");
     
     //
     // Adding datacubes scheduling

@@ -40,6 +40,7 @@ public class JobScheduler
 
   private volatile boolean stopRequested = false;
   private SortedSet<ScheduledJob> schedule = new TreeSet<ScheduledJob>();
+  private String name;
   
   /*****************************************
   *
@@ -47,9 +48,18 @@ public class JobScheduler
   *
   *****************************************/
 
-  public JobScheduler()
+  public JobScheduler(String name)
   {
+    this.name = name;
   }
+
+  public String getName() { return name; }
+  
+  /*****************************************
+  *
+  *  findJob
+  *  
+  *****************************************/
 
   public ScheduledJob findJob(long jobID)
   {
@@ -63,13 +73,11 @@ public class JobScheduler
     return null;
   }
 
-  
   /*****************************************
   *
   *  getAllJobs
   *  Note that all info in the returned List must be checked before used for validity : jobs might have changed afterwards.
   *  
-  *
   *****************************************/
 
   public List<ScheduledJob> getAllJobs()
@@ -94,6 +102,37 @@ public class JobScheduler
     }
     return result;
   }
+
+  /*****************************************
+  *
+  *  getAllJobs
+  *  
+  *****************************************/
+  
+  private void traceAllJobs()
+  {
+    log.info("===== JobScheduler : All jobs from " + name);
+    synchronized (this)
+    {
+      //
+      //  trace
+      //
+      
+      for (ScheduledJob job : schedule)
+        {
+          if (job != null)
+            {
+              log.info("======== job " + job);
+            }
+        }
+
+      //
+      //  notify
+      //
+
+      this.notifyAll();
+    }
+  }
   
   /*****************************************
   *
@@ -117,6 +156,8 @@ public class JobScheduler
 
         this.notifyAll();
       }
+    // display a status every time
+    traceAllJobs();
   }
 
   /*****************************************
@@ -191,6 +232,7 @@ public class JobScheduler
 
             Date now = SystemTime.getCurrentTime();
             long nextWaitDuration = -1;
+            Date nextPeriodicEvaluation = null;
             
             //
             // Run all jobs with scheduling date in the past
@@ -210,7 +252,7 @@ public class JobScheduler
                     break;
                   }
 
-                Date nextPeriodicEvaluation = job.getNextGenerationDate();
+                nextPeriodicEvaluation = job.getNextGenerationDate();
                 if (now.before(nextPeriodicEvaluation))
                   {
                     nextWaitDuration = nextPeriodicEvaluation.getTime() - now.getTime();
@@ -232,7 +274,7 @@ public class JobScheduler
               {
                 if (nextWaitDuration >= 0)
                   {
-                    log.info("Scheduler will now sleep for "+ nextWaitDuration +" ms.");
+                    log.info("Scheduler will now sleep for "+ Math.round(nextWaitDuration/1000.0) +" s" + ((nextPeriodicEvaluation!=null)? " until " + new Date(nextPeriodicEvaluation.getTime()) : "."));
                     this.wait(nextWaitDuration); // wait till the next scheduled job
                   }
                 else 
