@@ -200,8 +200,8 @@ public class JobScheduler
               {
                 if (schedule.isEmpty())
                   {
-                    // If scheduler is entirely empty, wait a bit before trying again. Otherwise process takes all CPU. This does not introduce any lag.
-                    try { Thread.sleep(10000); } catch (InterruptedException e) {}
+                    // If scheduler is entirely empty, wait a bit before trying again. Otherwise process takes all CPU.
+                    try { this.wait(1000); } catch (InterruptedException e) {}
                     break;
                   }
                 ScheduledJob job = schedule.first();
