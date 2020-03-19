@@ -48,6 +48,8 @@ public class ReportCsvWriter
   private ReportCsvFactory reportFactory;
   private String topicIn;
   private String kafkaNodeList;
+  private boolean addHeaders = true;
+  
 
   /**
    * Creates a ReportCsvWriter instance.
@@ -191,7 +193,8 @@ public class ReportCsvWriter
                 // alreadySeen.add(key);
                 nbRecords++;
                 ReportElement re = record.value();
-                reportFactory.dumpElementToCsv(key, re, writer);
+                reportFactory.dumpElementToCsv(key, re, writer, addHeaders);
+                addHeaders = false;
               }
             writer.flush();
             while (true)
@@ -335,9 +338,11 @@ public class ReportCsvWriter
                 File dataFile = new File(csvfile + "_" + key);
                 ZipEntry entry = new ZipEntry(dataFile.getName());
                 writer.putNextEntry(entry);
+                addHeaders = true;
                 for (ReportElement reportElement : reportElementsMap.get(key))
                   {
-                    reportFactory.dumpElementToCsv(key, reportElement, writer);
+                    reportFactory.dumpElementToCsv(key, reportElement, writer, addHeaders);
+                    addHeaders = false;
                   }
                 
               }

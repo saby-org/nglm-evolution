@@ -25,6 +25,6 @@ public interface ReportCsvFactory {
 	 * @param gzipOutputStream  {@link Writer} to write to.
 	 * @throws IOException When an error related to filesystem access occurs.
 	 */
-	void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer) throws IOException;
+	void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException;
 	
 }
