@@ -179,6 +179,7 @@ public class GUIService
     consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
     consumerProperties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     consumerProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    setCommonConsumerProperties(consumerProperties);
     guiManagedObjectsConsumer = new KafkaConsumer<>(consumerProperties);
     
     //
@@ -1162,4 +1163,14 @@ public class GUIService
           }
       }
   }
+  
+  
+  public static void setCommonConsumerProperties(Properties consumerProperties)
+  {
+    consumerProperties.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, Deployment.getMaxPollIntervalMs());
+
+  }
+
+  
+  
 }

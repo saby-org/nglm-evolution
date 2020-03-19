@@ -15,8 +15,6 @@ do
    echo "deployment-prepare-docker on $SWARM_HOST"
    ssh $SWARM_HOST "
       docker pull ${env.DOCKER_REGISTRY}ev-guimanager:${project.name}-${project.version}
-      docker pull ${env.DOCKER_REGISTRY}ev-evolutionengine:${project.name}-${project.version}
-      docker pull ${env.DOCKER_REGISTRY}ev-journeytrafficengine:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-propensityengine:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-subscribergroup:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-storeconfiguration:${project.name}-${project.version}

@@ -18,6 +18,10 @@
   "subscriberProfileSnapshotPeriodCronEntryString"       : "5 0 * * *",
 
   "elasticSearchScrollSize" : 1000,
+
+  "maxPollIntervalMsComment": "default is 30 seconds, which causes containers to stop during startup (heavy system load",
+  "maxPollIntervalMs"       : 120000,
+  
   "subscriberESIndexes" :
   [
     "subscriberprofile",

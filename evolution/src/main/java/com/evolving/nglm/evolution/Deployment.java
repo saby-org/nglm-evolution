@@ -229,6 +229,7 @@ public class Deployment
   private static String dynamicCriterionFieldsTopic;
   private static String elasticSearchDateFormat;
   private static int elasticSearchScrollSize;
+  private static int maxPollIntervalMs;
   private static String criterionFieldAvailableValuesTopic;
   private static String sourceAddressTopic;
   private static boolean autoApproveGuiObjects;
@@ -472,6 +473,7 @@ public class Deployment
   public static Map<String,BillingMode> getBillingModes() { return billingModes; }
   public static String getElasticSearchDateFormat() { return elasticSearchDateFormat; }
   public static int getElasticSearchScrollSize() {return elasticSearchScrollSize; }
+  public static int getMaxPollIntervalMs() {return maxPollIntervalMs; }
   public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
   public static String getSourceAddressTopic() { return sourceAddressTopic; }
   public static boolean getAutoApproveGuiObjects() { return autoApproveGuiObjects; }
@@ -1015,6 +1017,19 @@ public class Deployment
       try
         {
           elasticSearchScrollSize = JSONUtilities.decodeInteger(jsonRoot, "elasticSearchScrollSize", 0);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  maxPollIntervalMs
+      //
+
+      try
+        {
+          maxPollIntervalMs = JSONUtilities.decodeInteger(jsonRoot, "maxPollIntervalMs", 0);
         }
       catch (JSONUtilitiesException e)
         {

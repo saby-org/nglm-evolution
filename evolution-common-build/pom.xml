@@ -472,6 +472,7 @@
               </resources>              
             </configuration>            
           </execution>
+<<<<<<< HEAD
 	  
           <execution>
             <id>generate-evolutionengine-docker-stack</id>
@@ -572,6 +573,8 @@
               </resources>              
             </configuration>            
           </execution>
+=======
+>>>>>>> mk200313
           
           <execution>
             <id>generate-subscribergroup-stack</id>
@@ -745,6 +748,7 @@
           </execution>
 
           <execution>
+<<<<<<< HEAD
             <id>docker-evolutionengine</id>
             <goals>
               <goal>build</goal>
@@ -775,6 +779,8 @@
           </execution>
 
           <execution>
+=======
+>>>>>>> mk200313
             <id>docker-subscribergroup</id>
             <goals>
               <goal>build</goal>

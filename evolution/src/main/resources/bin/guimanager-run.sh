@@ -18,9 +18,9 @@ cat /etc/kafka/log4j-evol.properties | perl -e 'while ( $line=<STDIN> ) { $line=
 
 case "${ENTRYPOINT}" in
 
-  "guimanager" | "thirdpartymanager" | "notificationmanagermail" | "notificationmanagersms" | "notificationmanagerpush" | "infulfillmentmanager" | "purchasefulfillment")
+  "guimanager" | "thirdpartymanager" | "notificationmanagermail" | "notificationmanagersms" | "notificationmanagerpush" | "infulfillmentmanager" | "purchasefulfillment" | "evolutionengine")
     ;;
-  "dnboproxy" | "datacubemanager" | "reportmanager" | "reportscheduler" | "emptyfulfillmentmanager" | "commoditydeliverymanager" | "ucgengine" | "propensityengine")
+  "dnboproxy" | "datacubemanager" | "reportmanager" | "reportscheduler" | "emptyfulfillmentmanager" | "commoditydeliverymanager" | "ucgengine" | "propensityengine" | "journeytrafficengine")
 	#
 	#  wait for services
 	#
@@ -99,6 +99,12 @@ case "${ENTRYPOINT}" in
     ;;
   "propensityengine")
     exec kafka-run-class -name propensityengine -loggc com.evolving.nglm.evolution.PropensityEngine /app/runtime $BROKER_SERVERS $KEY $KAFKA_REPLICATION_FACTOR $KAFKA_STREAMS_STANDBY_REPLICAS $PROPENSITYENGINE_STREAMTHREADS
+    ;;
+  "evolutionengine")
+    exec kafka-run-class -name evolutionengine -loggc com.evolving.nglm.evolution.EvolutionEngine /app/runtime $BROKER_SERVERS $KEY $SUBSCRIBERPROFILE_HOST $SUBSCRIBERPROFILE_PORT $INTERNAL_PORT $KAFKA_REPLICATION_FACTOR $KAFKA_STREAMS_STANDBY_REPLICAS $EVOLUTIONENGINE_STREAMTHREADS
+    ;;
+  "journeytrafficengine")
+    exec kafka-run-class -name journeytrafficengine -loggc com.evolving.nglm.evolution.JourneyTrafficEngine /app/runtime $BROKER_SERVERS $KEY $KAFKA_REPLICATION_FACTOR $KAFKA_STREAMS_STANDBY_REPLICAS $JOURNEYTRAFFICENGINE_STREAMTHREADS
     ;;
   *)
     echo -n "unknown"
