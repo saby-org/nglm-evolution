@@ -14,6 +14,10 @@ RUN chmod 0777 /var/lib/kafka /var/lib/zookeeper
 
 COPY lib/ /app/jars
 
+COPY config/log4j-evol.properties /etc/kafka
+RUN chmod 0666 /etc/kafka/log4j-evol.properties
+ENV KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:/etc/kafka/log4j-evol-final.properties"
+
 #
 #  volume(s)
 #
@@ -33,6 +37,7 @@ ENV CLASSPATH=/app/jars/log4j-1.2.17.jar:/app/jars/${project.artifactId}-${proje
 
 COPY bin/ev-cub /app/bin/ev-cub
 RUN chmod 0755 /app/bin/ev-cub
+
 COPY bin/guimanager-run.sh /app/bin/guimanager-run.sh
 RUN chmod 0755 /app/bin/guimanager-run.sh
 
@@ -40,7 +45,7 @@ RUN chmod 0755 /app/bin/guimanager-run.sh
 #  configuration
 #
 
-COPY config/guimanager_jmx.yml /app/config/guimanager_jmx.yml
+COPY config/*_jmx.yml /app/config/
 
 #
 #  run

@@ -14,6 +14,26 @@ set -o errexit \
     -o verbose \
     -o xtrace
 
+cat /etc/kafka/log4j-evol.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' > /etc/kafka/log4j-evol-final.properties
+
+case "${ENTRYPOINT}" in
+
+  "guimanager" | "thirdpartymanager" | "notificationmanagermail" | "notificationmanagersms" | "notificationmanagerpush" | "infulfillmentmanager" | "purchasefulfillment")
+    ;;
+  "dnboproxy" | "datacubemanager" | "reportmanager" | "reportscheduler" | "emptyfulfillmentmanager" | "commoditydeliverymanager" | "ucgengine" | "propensityengine")
+	#
+	#  wait for services
+	#
+
+	/app/bin/ev-cub zk-ready $ZOOKEEPER_SERVERS $CUB_ZOOKEEPER_MIN_NODES $CUB_ZOOKEEPER_TIMEOUT
+	/app/bin/ev-cub kafka-ready -b $BROKER_SERVERS $CUB_BROKER_MIN_NODES $CUB_KAFKA_TIMEOUT
+	/app/bin/ev-cub sr-ready $REGISTRY_SERVERS $CUB_REGISTRY_MIN_NODES $CUB_SCHEMA_REGISTRY_TIMEOUT
+    ;;
+  *)
+    echo -n "unknown"
+    ;;
+esac
+
 #
 #  wait for deployment
 #
@@ -33,4 +53,54 @@ echo deployment complete
 #  run
 #
 
-exec kafka-run-class -name guiManager -loggc com.evolving.nglm.evolution.GUIManager 001 $BROKER_SERVERS $GUIMANAGER_PORT $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT
+case "${ENTRYPOINT}" in
+
+  "guimanager")
+    exec kafka-run-class -name guiManager -loggc com.evolving.nglm.evolution.GUIManager 001 $BROKER_SERVERS $GUIMANAGER_PORT $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT
+    ;;
+  "reportmanager")
+    exec kafka-run-class -name reportmanager -loggc com.evolving.nglm.evolution.reports.ReportManager $BROKER_SERVERS $MASTER_ESROUTER_SERVER
+    ;;
+  "reportscheduler")
+    exec kafka-run-class -name reportscheduler -loggc com.evolving.nglm.evolution.reports.ReportScheduler
+    ;;
+  "thirdpartymanager")
+    exec kafka-run-class -name thirdPartyManager -loggc com.evolving.nglm.evolution.ThirdPartyManager $KEY $BROKER_SERVERS $API_PORT $GUI_FWK_API_SERVER $THREADPOOL_SIZE $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT
+    ;;
+  "dnboproxy")
+    exec kafka-run-class -name dnboproxy -loggc com.evolving.nglm.evolution.DNBOProxy $KEY $API_PORT $DNBOPROXY_THREADS
+    ;;
+  "datacubemanager")  
+    exec kafka-run-class -name datacubemanager -loggc com.evolving.nglm.evolution.datacubes.DatacubeManager /app/runtime $BROKER_SERVERS 001 $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT
+    ;;
+  "notificationmanagermail")
+    exec kafka-run-class -name notificationmanagermail -loggc com.evolving.nglm.evolution.MailNotificationManager $KEY $PLUGIN_NAME $PLUGIN_CONFIGURATION
+    ;;
+  "notificationmanagerpush")
+    exec kafka-run-class -name notificationmanagerpush -loggc com.evolving.nglm.evolution.PushNotificationManager $KEY $PLUGIN_NAME $PLUGIN_CONFIGURATION
+    ;;
+  "notificationmanagersms")
+   exec kafka-run-class -name notificationmanagersms -loggc com.evolving.nglm.evolution.SMSNotificationManager $KEY $PLUGIN_NAME $PLUGIN_CONFIGURATION 
+    ;;
+  "emptyfulfillmentmanager")
+    exec kafka-run-class -name emptyFulfillmentManager -loggc com.evolving.nglm.evolution.EmptyFulfillmentManager $KEY $PLUGIN_NAME
+    ;;
+  "infulfillmentmanager")
+    exec kafka-run-class -name inFulfillmentManager -loggc com.evolving.nglm.evolution.INFulfillmentManager $KEY $PLUGIN_NAME $PLUGIN_CONFIGURATION
+    ;;
+  "commoditydeliverymanager")
+    exec kafka-run-class -name commodityDeliveryManager -loggc com.evolving.nglm.evolution.CommodityDeliveryManager $KEY $COMMODITYDELIVERYMANAGER_INSTANCES
+    ;;
+  "purchasefulfillment")
+    exec kafka-run-class -name purchaseFulfillmentManager -loggc com.evolving.nglm.evolution.PurchaseFulfillmentManager $KEY $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT
+    ;;
+  "ucgengine")
+    exec kafka-run-class -name ucgengine -loggc com.evolving.nglm.evolution.UCGEngine /app/runtime $BROKER_SERVERS $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT
+    ;;
+  "propensityengine")
+    exec kafka-run-class -name propensityengine -loggc com.evolving.nglm.evolution.PropensityEngine /app/runtime $BROKER_SERVERS $KEY $KAFKA_REPLICATION_FACTOR $KAFKA_STREAMS_STANDBY_REPLICAS $PROPENSITYENGINE_STREAMTHREADS
+    ;;
+  *)
+    echo -n "unknown"
+    ;;
+esac
