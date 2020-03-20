@@ -190,10 +190,6 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
                     journeyInfo.put("rewards", history);
                   }
 
-                /*
-                 * if(addHeaders){ headerFieldsOrder.clear(); addHeaders(writer,
-                 * subscriberFields, 0); addHeaders(writer, journeyInfo, 1); }
-                 */
                 if (addHeaders)
                   {
                     addHeaders(writer, journeyInfo.keySet(), 1);
