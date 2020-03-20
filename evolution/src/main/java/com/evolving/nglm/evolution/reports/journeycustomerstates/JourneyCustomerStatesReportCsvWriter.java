@@ -248,7 +248,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
     journeyService = new JourneyService(kafkaNode, "journeycustomerstatesreportcsvwriter-journeyservice-" + topic, journeyTopic, false);
     journeyService.start();
 
-    if (!reportWriter.produceReport(csvfile, true))
+    if (!reportWriter.produceReport(csvfile, false))
       {
         log.warn("An issue occured while producing the report");
         return;

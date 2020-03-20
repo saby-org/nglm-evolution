@@ -338,7 +338,7 @@ public class ReportCsvWriter
                 //  dataFile
                 //
                 
-                File dataFile = new File(csvfile + "_" + key);
+                File dataFile = new File(key + "_"+ csvfile);
                 ZipEntry entry = new ZipEntry(dataFile.getName());
                 writer.putNextEntry(entry);
                 addHeaders = true;
