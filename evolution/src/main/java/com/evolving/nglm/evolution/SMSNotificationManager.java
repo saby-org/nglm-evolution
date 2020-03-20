@@ -789,7 +789,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
    *****************************************/
 
   @Override protected boolean filterRequest(DeliveryRequest request)
-  {EVCOR
+  {
     if(!((SMSNotificationManagerRequest)request).getRestricted()) return false;
     boolean blockedByContactPolicy = contactPolicyProcessor.ensureContactPolicy(request,this,log);
     if(blockedByContactPolicy)
