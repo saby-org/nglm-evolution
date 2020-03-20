@@ -81,6 +81,7 @@ public class JourneyCustomerStatesReportESReader
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     for (Journey journey : actvieJourneys)
       {
+        log.info("RAJ creating esIndexJourney {} ", esIndexJourney + journey.getJourneyID());
         esIndexWithQuery.put(esIndexJourney + journey.getJourneyID(), QueryBuilders.matchAllQuery());
       }
     esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
