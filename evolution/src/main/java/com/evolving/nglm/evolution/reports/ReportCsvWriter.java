@@ -268,7 +268,7 @@ public class ReportCsvWriter
               {
                 if (record.value().type != ReportElement.MARKER) 
                   {
-                    String key = record.key();
+                    String key = reportFactory.getFileSplitBy(record.value());
                     if (reportElementsMap.containsKey(key))
                       {
                         reportElementsMap.get(key).add(record.value());
