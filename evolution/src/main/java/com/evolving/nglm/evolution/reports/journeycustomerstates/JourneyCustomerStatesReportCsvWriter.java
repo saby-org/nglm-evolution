@@ -217,6 +217,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
         result = journeyStats.get("journeyID").toString();
         break;
       }
+    log.info("RAJ getFileSplitBy {}", result);
     return result;
     
   }

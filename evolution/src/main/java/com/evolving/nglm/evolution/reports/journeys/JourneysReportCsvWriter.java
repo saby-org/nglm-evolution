@@ -169,7 +169,7 @@ public class JourneysReportCsvWriter implements ReportCsvFactory
 
     journeyTrafficReader = ReferenceDataReader.<String, JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", "journeysreportcsvwriter-journeytrafficservice-" + topic, kafkaNode, Deployment.getJourneyTrafficChangeLogTopic(), JourneyTrafficHistory::unpack);
 
-    if (!reportWriter.produceReport(csvfile, true))
+    if (!reportWriter.produceReport(csvfile))
       {
         log.warn("An error occured, the report might be corrupted");
         return;

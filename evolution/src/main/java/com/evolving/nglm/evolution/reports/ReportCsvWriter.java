@@ -334,8 +334,6 @@ public class ReportCsvWriter
             for (String key : reportElementsMap.keySet())
               {
                 
-                log.info("RAJ zip entry for {}", key);
-                
                 //
                 //  dataFile
                 //
