@@ -18,25 +18,36 @@ import com.evolving.nglm.evolution.ReportService;
 import com.evolving.nglm.evolution.ReportService.ReportListener;
 import com.evolving.nglm.evolution.ScheduledJob;
 
-/**
- * This class handles the automatic launching of reports, based on the cron-like configuration.
- * NOTE : this is not yet fully implemented.
- *
- */
+/*****************************************
+*
+*  class ReportScheduler
+*
+*****************************************/
+
 public class ReportScheduler {
   private static final Logger log = LoggerFactory.getLogger(ReportScheduler.class);
   private ReportService reportService;
   private JobScheduler reportScheduler;
   private long uniqueID = 0;
 
-  public ReportScheduler() {
+  /*****************************************
+  *
+  *  constructor
+  *
+  *****************************************/
+  
+  public ReportScheduler()
+  {
     log.trace("Creating ReportService");
-    ReportListener reportListener = new ReportListener() {
-      @Override public void reportActivated(Report report) {
+    ReportListener reportListener = new ReportListener()
+    {
+      @Override public void reportActivated(Report report)
+      {
         log.info("report activated : " + report);
         scheduleReport(report);
       }
-      @Override public void reportDeactivated(String guiManagedObjectID) {
+      @Override public void reportDeactivated(String guiManagedObjectID)
+      {
         log.info("report deactivated: " + guiManagedObjectID);
       }
     };
@@ -54,17 +65,24 @@ public class ReportScheduler {
     NGLMRuntime.addShutdownHook(new ShutdownHook(this));
   }
 
+  /*****************************************
+  *
+  *  run
+  *
+  *****************************************/
+  
   private void run()
   {
-//    Date now = SystemTime.getCurrentTime();
-//    for (Report report : reportService.getActiveReports(now))
-//      {
-//        scheduleReport(report);
-//      }
     log.info("Starting scheduler");
     reportScheduler.runScheduler();
   }
-
+  
+  /*****************************************
+  *
+  *  scheduleReport
+  *
+  *****************************************/
+  
   private void scheduleReport(Report report)
   {    
     //
@@ -140,11 +158,6 @@ public class ReportScheduler {
   
   private void shutdownUCGEngine(boolean normalShutdown)
   {
-    /*****************************************
-    *
-    *  stop threads
-    *
-    *****************************************/
 
     /*****************************************
     *
@@ -162,8 +175,15 @@ public class ReportScheduler {
 
     log.info("Stopped ReportScheduler");
   }
-  
-  public static void main(String[] args) {
+
+  /*****************************************
+  *
+  *  main
+  *
+  *****************************************/
+
+  public static void main(String[] args)
+  {
     NGLMRuntime.initialize(true);
     ReportScheduler rs = new ReportScheduler();
     rs.run();

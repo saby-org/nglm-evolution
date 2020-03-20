@@ -19,7 +19,6 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooKeeper.States;
-import org.apache.zookeeper.data.Stat;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -147,25 +146,36 @@ public class ReportService extends GUIService
   /*
    * Called by GuiManager to trigger a one-time report
    */
-  public void launchReport(String reportName) {
-	  log.trace("launchReport : " + reportName);
-	  String znode = ReportManager.getControlDir() + File.separator + "launchReport-" + reportName + "-";
-	  if (getZKConnection()) {
-		  log.debug("Trying to create ephemeral znode " + znode + " for " + reportName);
-		  try {
-			  // Create new file in control dir with reportName inside, to trigger report generation
-			  zk.create(znode, reportName.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
-		  } catch (KeeperException e) {
-			  log.info("Got "+e.getLocalizedMessage());
-		  } catch (InterruptedException e) {
-			  log.info("Got "+e.getLocalizedMessage());
-		  }
-	  } else {
-		  log.info("There was a major issue connecting to zookeeper");
-	  }
+  public void launchReport(String reportName)
+  {
+    log.trace("launchReport : " + reportName);
+    String znode = ReportManager.getControlDir() + File.separator + "launchReport-" + reportName + "-";
+    if (getZKConnection())
+      {
+        log.debug("Trying to create ephemeral znode " + znode + " for " + reportName);
+        try
+          {
+            // Create new file in control dir with reportName inside, to trigger
+            // report generation
+            zk.create(znode, reportName.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
+          }
+        catch (KeeperException e)
+          {
+            log.info("Got " + e.getLocalizedMessage());
+          }
+        catch (InterruptedException e)
+          {
+            log.info("Got " + e.getLocalizedMessage());
+          }
+      }
+    else
+      {
+        log.info("There was a major issue connecting to zookeeper");
+      }
   }
 
-  private boolean isConnectionValid(ZooKeeper zookeeper) {
+  private boolean isConnectionValid(ZooKeeper zookeeper)
+  {
 	  return (zookeeper != null) && (zookeeper.getState() == States.CONNECTED);
   }
   
@@ -183,16 +193,17 @@ public class ReportService extends GUIService
                     return (zk.exists(znode, false) != null);
                   }
               }
-          }else {
+          }
+        else
+          {
             log.info("There was a major issue connecting to zookeeper");
           } 
-      } catch (KeeperException e)
+      }
+    catch (KeeperException e)
     {
-      e.printStackTrace();
-    } catch (InterruptedException e)
-    {
-      e.printStackTrace();
+      log.info(e.getLocalizedMessage());
     }
+    catch (InterruptedException e) { }
     return false;
   }
   
@@ -200,18 +211,24 @@ public class ReportService extends GUIService
 	  if (!isConnectionValid(zk)) {
 		  log.debug("Trying to acquire ZooKeeper connection to "+Deployment.getZookeeperConnect());
 		  int nbLoop = 0;
-		  do {
-			  try {
-				  zk = new ZooKeeper(Deployment.getZookeeperConnect(), 3000, new Watcher() { @Override public void process(WatchedEvent event) {} }, false);
-          try { Thread.sleep(1*1000); } catch (InterruptedException e) {}
-				  if (!isConnectionValid(zk)) {
-					  log.info("Could not get a zookeeper connection, waiting... ("+(NB_TIMES_TO_TRY-nbLoop)+" more times to go)");
-					  try { Thread.sleep(5*1000); } catch (InterruptedException e) {}
-				  }
-			  } catch (IOException e) {
-				  log.info("could not create zookeeper client using {}", Deployment.getZookeeperConnect());
-			  }
-		  } while (!isConnectionValid(zk) && (nbLoop++ < NB_TIMES_TO_TRY));
+		  do
+		    {
+		      try 
+		      {
+		        zk = new ZooKeeper(Deployment.getZookeeperConnect(), 3000, new Watcher() { @Override public void process(WatchedEvent event) {} }, false);
+		        try { Thread.sleep(1*1000); } catch (InterruptedException e) {}
+		        if (!isConnectionValid(zk))
+		          {
+		            log.info("Could not get a zookeeper connection, waiting... ("+(NB_TIMES_TO_TRY-nbLoop)+" more times to go)");
+		            try { Thread.sleep(5*1000); } catch (InterruptedException e) {}
+		          }
+		      }
+		      catch (IOException e) 
+		      {
+		        log.info("could not create zookeeper client using {}", Deployment.getZookeeperConnect());
+		      }
+		    }
+		  while (!isConnectionValid(zk) && (nbLoop++ < NB_TIMES_TO_TRY));
 	  }
 	  return isConnectionValid(zk);
   }
@@ -230,7 +247,8 @@ public class ReportService extends GUIService
 
 	  ReportListener reportListener = new ReportListener()
     {
-      @Override public void reportActivated(Report report) {
+      @Override public void reportActivated(Report report)
+      {
     	  log.trace("report activated: " + report.getReportID());
       }
       @Override public void reportDeactivated(String guiManagedObjectID) { log.trace("report deactivated: " + guiManagedObjectID); }

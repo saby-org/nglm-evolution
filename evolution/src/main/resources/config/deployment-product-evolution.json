@@ -19,15 +19,10 @@
   "journeyTrafficDatacubePeriodCronEntryString"      : "0 * * * *",
   "subscriberProfileSnapshotPeriodCronEntryString"   : "5 0 * * *",
 
-  "1hourlyReportCronEntryString"   : "0 * * * *",
-  "1dailyReportCronEntryString"    : "10 2 * * *",
-  "1weeklyReportCronEntryString"   : "20 1 * * 0",
-  "1monthlyReportCronEntryString"  : "30 3 1 * *",
-
-  "hourlyReportCronEntryString"   : "0,10,20,30,40,50 * * * *",
-  "dailyReportCronEntryString"    : "5,15,25,35,45,55 * * * *",
-  "weeklyReportCronEntryString"   : "20 1 * * 0",
-  "monthlyReportCronEntryString"  : "30 3 1 * *",
+  "hourlyReportCronEntryString"   : "0 * * * *",
+  "dailyReportCronEntryString"    : "5 2 * * *",
+  "weeklyReportCronEntryString"   : "10 2 * * 0",
+  "monthlyReportCronEntryString"  : "15 3 1 * *",
   
   "periodicEvaluationCronEntry" : "0 2 * * *",
   "ucgEvaluationCronEntry" : "0 4 * * *",
