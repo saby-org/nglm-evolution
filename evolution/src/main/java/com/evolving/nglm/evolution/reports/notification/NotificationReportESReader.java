@@ -75,27 +75,27 @@ public class NotificationReportESReader
     //
 
     QueryBuilder query = null;
-    if (reportPeriodUnit == null)
-      reportPeriodUnit = PERIOD.DAYS.getExternalRepresentation();
+    if (reportPeriodUnit == null) reportPeriodUnit = PERIOD.DAYS.getExternalRepresentation();
     switch (reportPeriodUnit.toUpperCase())
-    {
-      case "DAYS":
-        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, Deployment.getBaseTimeZone());
-        break;
+      {
+        case "DAYS":
+          fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, Deployment.getBaseTimeZone());
+          break;
 
-      case "WEEKS":
-        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, Deployment.getBaseTimeZone());
-        break;
+        case "WEEKS":
+          fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, Deployment.getBaseTimeZone());
+          break;
+          
+        case "MONTHS":
+          fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, Deployment.getBaseTimeZone());
+          break;
 
-      case "MONTHS":
-        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, Deployment.getBaseTimeZone());
-        break;
+        default:
+          fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, Deployment.getBaseTimeZone());
+          break;
+      }
 
-      default:
-        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, Deployment.getBaseTimeZone());
-        break;
-    }
-
+    query = QueryBuilders.rangeQuery("eventDatetime").format(elasticSearchDateFormat).gte(dateFormat.format(fromDate.getTime()));
     esIndexWithQuery.put(esIndexNotif, query);
     esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
     

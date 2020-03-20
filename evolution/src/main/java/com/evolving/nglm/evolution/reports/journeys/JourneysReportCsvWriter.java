@@ -51,8 +51,8 @@ public class JourneysReportCsvWriter implements ReportCsvFactory
         if (!alreadyProcessedJourneysIDs.add(journeyID))
           return; // skip this journey as we already produced a report line for it
 
-        GUIManagedObject guiOb = journeyService.getStoredJourney(journeyID);
-        if (guiOb instanceof Journey)
+        GUIManagedObject guiOb = journeyService.getActiveJourney(journeyID, SystemTime.getCurrentTime());
+        if (guiOb != null)
           {
             Journey journey = (Journey) guiOb;
 

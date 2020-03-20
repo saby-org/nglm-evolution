@@ -325,10 +325,12 @@ public class ReportCsvWriter
         //  write
         //
         
+        FileOutputStream fos = null;
+        ZipOutputStream writer = null;
         try
           {
-            FileOutputStream fos = new FileOutputStream(zipFile);
-            ZipOutputStream writer = new ZipOutputStream(fos);
+            fos = new FileOutputStream(zipFile);
+            writer = new ZipOutputStream(fos);
             for (String key : reportElementsMap.keySet())
               {
                 
@@ -347,17 +349,29 @@ public class ReportCsvWriter
                     reportFactory.dumpElementToCsv(key, reportElement, writer, addHeaders);
                     addHeaders = false;
                   }
-                
               }
-            writer.flush();
-            writer.closeEntry();
-            writer.close();
-            fos.close();
           }
         catch (IOException ex)
           {
             log.error("Error when writing to " + csvfile + " : " + ex.getLocalizedMessage());
             return false;
+          }
+        finally 
+          {
+            try
+              {
+                if (writer != null)
+                  {
+                    writer.flush();
+                    writer.closeEntry();
+                    writer.close();
+                  }
+                if (fos != null )fos.close();
+              } 
+            catch (IOException e)
+              {
+                log.error("Error when closing writer and fos" + e.getLocalizedMessage());
+              }
           }
         return true;
       }
