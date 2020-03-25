@@ -409,7 +409,7 @@
 
   "allThoseFollowingAreComingFromNGLMQA": "this is not yet OK, just a first try",
 
-  "autoApproveGuiObjects" : true,
+  "autoApproveGuiObjects" : false,
   "periodicEvaluationCronEntry" : "0 2 * * *",
   "ucgEvaluationCronEntry" : "0 4 * * *",
   "ucgEngineESConnectTimeout" : 30000,
@@ -422,11 +422,12 @@
     "selectedDimensions": [],
     "size":0
   },
+  
   "propensityInitialisationPresentationThreshold"        : 100,
   "propensityInitialisationDurationInDaysThreshold"      : 90,
 
-  "journeyDefaultTargetingWindowDuration"  : 1,
-  "journeyDefaultTargetingWindowUnit"      : "month",
+  "journeyDefaultTargetingWindowDuration"  : 100,
+  "journeyDefaultTargetingWindowUnit"      : "year",
   "journeyDefaultTargetingWindowRoundUp"   : false,
   "journeyUniversalEligibilityCriteria" :
   [
@@ -467,13 +468,7 @@
 
   "supportedLanguages" :
   [
-    { "id" : "1", "name" : "en",    "display" : "English",    "mandatory" : true,  "defaultLanguage" : true },
-    { "id" : "2", "name" : "fr",    "display" : "French",     "mandatory" : false },
-    { "id" : "3", "name" : "ar-sa", "display" : "Arabic",     "mandatory" : false },
-    { "id" : "4", "name" : "pt",    "display" : "Portuguese", "mandatory" : false },
-    { "id" : "5", "name" : "ru",    "display" : "Russian",    "mandatory" : false },
-    { "id" : "6", "name" : "kk",    "display" : "Kazakh",     "mandatory" : false },
-    { "id" : "7", "name" : "ar-dz", "display" : "Algerian",   "mandatory" : false }
+    { "id" : "1", "name" : "en",    "display" : "English",    "mandatory" : true,  "defaultLanguage" : true }
   ],
 
   "customerMetaData" :
@@ -486,6 +481,10 @@
       { "id" : "4",   "textProperty" : true,  "display" : "Subscriber Language",                     "editable" : true,  "alternateID" : false, "topLevel": false,     "dataType" : "string",      "name" : "language",                                  "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null },
       { "id" : "5",   "textProperty" : true,  "display" : "Subscriber Segments",                     "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "stringSet",   "name" : "segments",                                  "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null },
       { "id" : "6",   "textProperty" : true,  "display" : "Subscriber ID",                           "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "string",      "name" : "subscriberID",                              "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null }
+    ],
+    "kpisMetaData" :
+    [
+      { "id": "1",   "textProperty": true,  "display": "Activity", "displayGroups" : [{"rangeUpTo": "active", "imageURL": "ffa fa-ok", "color" : "#3adc3a"}, {"rangeUpTo": "inactive", "imageURL": "fa fa-times", "color" : "#ff0000"}, {"rangeUpTo": null, "imageURL": "fa fa-times", "color" : "#ffff00"}],  "dataType": "int", "name": "activity", "kpiUnit": null, "topLevel": false, "additionalGeneralDetails": [] }
     ]
   },
 
@@ -535,11 +534,6 @@
     }
   ],
 
-  "initialSuppliers" :
-  [
-    { "id" : "evolution_supplier", "name" : "Evolution", "fulfillmentProviderID" : "provider_Point", "display" : "Evolution", "description" : "Evolution", "active" : true, "readOnly" : false, "email" : "", "phone" : "", "website" : "" }
-  ],
-
   "initialSalesChannels" :
   [
     {"id":"2",	"name":"journey",	"display":"Journey",	"active":true,	"readOnly":true,	"callingChannelIDs":[]}
@@ -569,6 +563,7 @@
     { "id": "6", "name": "imageURL", "display": "Image URL" },
     { "id": "7", "name": "price", "display": "Price" }
   ],
+  
 
   "authResponseCacheLifetimeInMinutes" : 60,
   "thirdPartyMethodPermissions" :
@@ -959,8 +954,43 @@
     
   "initialSuppliers" :
     [
-      { "id" : "supplier_1", "name" : "EvolutionPoints,  "fulfillmentProviderID" : "provider_Point", "display" : "Evolution Points", "description" : "Evolution Points Supplier",         "active" : true, "readOnly" : true, "email" : "", "phone" : "", "website" : "" },
+      { "id" : "supplier_1", "name" : "EvolutionPoints",  "fulfillmentProviderID" : "provider_Point", "display" : "Evolution Points", "description" : "Evolution Points Supplier",         "active" : true, "readOnly" : true, "email" : "", "phone" : "", "website" : "" },
       { "id" : "supplier_2", "name" : "EvolutionCampaigns","fulfillmentProviderID" : "provider_Journey","display" : "Evolution Campaigns",       "description" : "Evolution Campaigns Supplier", "active" : true, "readOnly" : true, "email" : "", "phone" : "", "website" : "" }
-    ]
+    ],
+    
+   "supportedCurrencies" : [],
+   
+   "supportedRelationships" : [],
+
+  "catalogCharacteristicUnits" :
+    [
+      { "id": "day",        "display": "Days",     "dataTypes": [ "integer" ] },
+      { "id": "hour",       "display": "Hours",    "dataTypes": [ "integer" ] },
+      { "id": "minute" ,    "display": "Minutes",  "dataTypes": [ "integer" ] },
+      { "id": "MB",         "display": "MB",       "dataTypes": [ "integer", "double" ] },
+      { "id": "GB",         "display": "GB",       "dataTypes": [ "integer", "double" ] },
+      { "id": "percentage", "display": "%",        "dataTypes": [ "integer", "double" ] }
+    ],
+    
+    "presentationCriterionFields" :
+    [
+      { "id" : "offer.rank",              "display" : "Offer Rank",               "dataType" : "integer", "minValue" : null, "maxValue" : null, "excludedOperators" : null,                                                                            "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : null },
+      { "id" : "offer.price",             "display" : "Offer Price",              "dataType" : "integer", "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : [ "subscriber.balance" ],  "excludedComparableFields" : null,               "availableValues" : null },
+      { "id" : "offer.serviceTypeID",     "display" : "Service Type",             "dataType" : "string",  "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : [ { "id" : "1", "display" : "Prepaid" }, { "id" : "2", "display" : "Postpaid" } ] },
+      { "id" : "offer.startDate",         "display" : "Offer Start Date",         "dataType" : "date",    "minValue" : null, "maxValue" : null, "excludedOperators" : null,                                                                            "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : null },
+      { "id" : "offer.endDate",           "display" : "Offer End Date",           "dataType" : "date",    "minValue" : null, "maxValue" : null, "excludedOperators" : null,                                                                            "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : null },
+      { "id" : "offer.name",              "display" : "Offer Name",               "dataType" : "string",  "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : [ "#offers#" ] },
+      { "id" : "product.type",            "display" : "Product Type",             "dataType" : "string",  "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : [ "#productTypes#" ] },
+      { "id" : "product.name",            "display" : "Product Name",             "dataType" : "string",  "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : [ "#products#" ] },
+      { "id" : "product.validity",        "display" : "Product Validity(days)",   "dataType" : "integer", "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : null }
+    ],
+    
+    "journeyMetrics" : [],
+    
+    "subscriberProfileDatacubeMetrics" : [],
+    
+    "enableProfileSegmentChange" : true
+     
+    
     
 }
