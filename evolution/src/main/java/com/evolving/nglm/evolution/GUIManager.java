@@ -4938,39 +4938,6 @@ public class GUIManager
 
   /*****************************************
   *
-  *  getOfferCategories
-  *
-  *****************************************/
-
-  private JSONObject processGetOfferCategories(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve offerCategories
-    *
-    *****************************************/
-
-    List<JSONObject> offerCategories = new ArrayList<JSONObject>();
-    for (OfferCategory offerCategory : Deployment.getOfferCategories().values())
-      {
-        JSONObject offerCategoryJSON = offerCategory.getJSONRepresentation();
-        offerCategories.add(offerCategoryJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("offerCategories", JSONUtilities.encodeArray(offerCategories));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
   *  getOfferProperties
   *
   *****************************************/
