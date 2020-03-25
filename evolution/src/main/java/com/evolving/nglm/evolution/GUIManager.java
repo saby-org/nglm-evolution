@@ -205,7 +205,6 @@ public class GUIManager
     getJourneyCriterionFields("getJourneyCriterionFields"),
     getJourneyCriterionFieldIDs("getJourneyCriterionFieldIDs"),
     getJourneyCriterionField("getJourneyCriterionField"),
-    getOfferCategories("getOfferCategories"),
     getOfferProperties("getOfferProperties"),
     getScoringEngines("scoringEngines"),
     getOfferOptimizationAlgorithms("getOfferOptimizationAlgorithms"),
@@ -1680,7 +1679,6 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getJourneyCriterionFields", new APISimpleHandler(API.getJourneyCriterionFields));
         restServer.createContext("/nglm-guimanager/getJourneyCriterionFieldIDs", new APISimpleHandler(API.getJourneyCriterionFieldIDs));
         restServer.createContext("/nglm-guimanager/getJourneyCriterionField", new APISimpleHandler(API.getJourneyCriterionField));
-        restServer.createContext("/nglm-guimanager/getOfferCategories", new APISimpleHandler(API.getOfferCategories));
         restServer.createContext("/nglm-guimanager/getOfferProperties", new APISimpleHandler(API.getOfferProperties));
         restServer.createContext("/nglm-guimanager/getScoringEngines", new APISimpleHandler(API.getScoringEngines));
         restServer.createContext("/nglm-guimanager/getOfferOptimizationAlgorithms", new APISimpleHandler(API.getOfferOptimizationAlgorithms));
@@ -2324,10 +2322,6 @@ public class GUIManager
                   jsonResponse = processGetSupportedRelationships(userID, jsonRoot);
                   break;
 
-                case getServiceTypes:
-                  jsonResponse = processGetServiceTypes(userID, jsonRoot);
-                  break;
-
                 case getCallingChannelProperties:
                   jsonResponse = processGetCallingChannelProperties(userID, jsonRoot);
                   break;
@@ -2398,10 +2392,6 @@ public class GUIManager
 
                 case getJourneyCriterionField:
                   jsonResponse = processGetJourneyCriterionField(userID, jsonRoot);
-                  break;
-
-                case getOfferCategories:
-                  jsonResponse = processGetOfferCategories(userID, jsonRoot);
                   break;
 
                 case getOfferProperties:
@@ -3833,19 +3823,6 @@ public class GUIManager
         JSONObject supportedRelationshipJSON = supportedRelationship.getJSONRepresentation();
         supportedRelationships.add(supportedRelationshipJSON);
       }
-    
-    /*****************************************
-    *
-    *  retrieve serviceTypes
-    *
-    *****************************************/
-
-    List<JSONObject> serviceTypes = new ArrayList<JSONObject>();
-    for (ServiceType serviceType : Deployment.getServiceTypes().values())
-      {
-        JSONObject serviceTypeJSON = serviceType.getJSONRepresentation();
-        serviceTypes.add(serviceTypeJSON);
-      }
 
     /*****************************************
     *
@@ -3915,18 +3892,6 @@ public class GUIManager
 
     List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.getCriterionFields(), false);
 
-    /*****************************************
-    *
-    *  retrieve offerCategories
-    *
-    *****************************************/
-
-    List<JSONObject> offerCategories = new ArrayList<JSONObject>();
-    for (OfferCategory offerCategory : Deployment.getOfferCategories().values())
-      {
-        JSONObject offerCategoryJSON = offerCategory.getJSONRepresentation();
-        offerCategories.add(offerCategoryJSON);
-      }
 
     /*****************************************
     *
@@ -4037,7 +4002,6 @@ public class GUIManager
     response.put("supportedDataTypes", JSONUtilities.encodeArray(supportedDataTypes));
     response.put("profileCriterionFields", JSONUtilities.encodeArray(profileCriterionFields));
     response.put("presentationCriterionFields", JSONUtilities.encodeArray(presentationCriterionFields));
-    response.put("offerCategories", JSONUtilities.encodeArray(offerCategories));
     response.put("offerProperties", JSONUtilities.encodeArray(offerProperties));
     response.put("scoringEngines", JSONUtilities.encodeArray(scoringEngines));
     response.put("offerOptimizationAlgorithms", JSONUtilities.encodeArray(offerOptimizationAlgorithms));
@@ -4246,38 +4210,6 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
-  /*****************************************
-  *
-  *  getServiceTypes
-  *
-  *****************************************/
-
-  private JSONObject processGetServiceTypes(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve serviceTypes
-    *
-    *****************************************/
-
-    List<JSONObject> serviceTypes = new ArrayList<JSONObject>();
-    for (ServiceType serviceType : Deployment.getServiceTypes().values())
-      {
-        JSONObject serviceTypeJSON = serviceType.getJSONRepresentation();
-        serviceTypes.add(serviceTypeJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("serviceTypes", JSONUtilities.encodeArray(serviceTypes));
-    return JSONUtilities.encodeObject(response);
-  }
 
   /*****************************************
   *
