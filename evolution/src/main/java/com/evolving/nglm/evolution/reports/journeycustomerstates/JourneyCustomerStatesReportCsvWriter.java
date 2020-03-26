@@ -120,7 +120,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
                                 date = new Date(Long.valueOf(split[2]));
                               }
 
-                            sbStatus.append("(").append(fromNodeName).append("->").append(toNodeName).append(",").append(date).append("),");
+                            sbStatus.append("(").append(fromNodeName).append("->").append(toNodeName).append(",").append(ReportsCommonCode.getDateString(date)).append("),");
                           }
                       }
 
