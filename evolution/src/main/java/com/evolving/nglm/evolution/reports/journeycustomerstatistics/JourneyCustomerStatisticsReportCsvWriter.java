@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,7 +78,8 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
                   }
 
                 journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).toString());
-                journeyInfo.put("dateTime", SystemTime.getCurrentTime());
+                Date currentDate = SystemTime.getCurrentTime();
+                journeyInfo.put("dateTime", ReportsCommonCode.getDateString(currentDate));
                 journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
                 journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
 
