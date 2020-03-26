@@ -1910,11 +1910,11 @@ public class ThirdPartyManager
 
     String subscriberID = resolveSubscriberID(jsonRoot);
 
-    String journeyObjectiveName = readString(jsonRoot, "objective", true);
-    String journeyState = readString(jsonRoot, "journeyState", true);
-    String customerStatus = readString(jsonRoot, "customerStatus", true);
-    String journeyStartDateStr = readString(jsonRoot, "journeyStartDate", true);
-    String journeyEndDateStr = readString(jsonRoot, "journeyEndDate", true);
+    String journeyObjectiveName = readString(jsonRoot, "objective", false);
+    String journeyState = readString(jsonRoot, "journeyState", false);
+    String customerStatus = readString(jsonRoot, "customerStatus", false);
+    String journeyStartDateStr = readString(jsonRoot, "journeyStartDate", false);
+    String journeyEndDateStr = readString(jsonRoot, "journeyEndDate", false);
 
     Date journeyStartDate = prepareStartDate(getDateFromString(journeyStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
     Date journeyEndDate = prepareEndDate(getDateFromString(journeyEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
@@ -2194,12 +2194,11 @@ public class ThirdPartyManager
 
     String subscriberID = resolveSubscriberID(jsonRoot);
 
-    String campaignObjectiveName = readString(jsonRoot, "objective", true);
-    String campaignState = readString(jsonRoot, "campaignState", true);
-    String customerStatus = readString(jsonRoot, "customerStatus", true);
-    String campaignStartDateStr = readString(jsonRoot, "campaignStartDate", true);
-    String campaignEndDateStr = readString(jsonRoot, "campaignEndDate", true);
-
+    String campaignObjectiveName = readString(jsonRoot, "objective", false);
+    String campaignState = readString(jsonRoot, "campaignState", false);
+    String customerStatus = readString(jsonRoot, "customerStatus", false);
+    String campaignStartDateStr = readString(jsonRoot, "campaignStartDate", false);
+    String campaignEndDateStr = readString(jsonRoot, "campaignEndDate", false);
 
     Date campaignStartDate = prepareStartDate(getDateFromString(campaignStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
     Date campaignEndDate = prepareEndDate(getDateFromString(campaignEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
@@ -2784,8 +2783,27 @@ public class ThirdPartyManager
      *  argument
      *
      ****************************************/
-
-    String subscriberID = resolveSubscriberID(jsonRoot);
+    String subscriberID = null;
+    boolean subscriberParameter = false;
+    if (JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID, false) == null)
+      {
+        for (String id : Deployment.getAlternateIDs().keySet())
+          {
+            if (JSONUtilities.decodeString(jsonRoot, id, false) != null)
+              {
+                subscriberParameter = true;
+                break;
+              }
+          }
+      }
+    else
+      {
+        subscriberParameter = true;
+      }
+    if (subscriberParameter)
+      {
+        subscriberID = resolveSubscriberID(jsonRoot);
+      }
 
     String offerState = readString(jsonRoot, "state", false);
     String startDateString = readString(jsonRoot, "startDate", false);
@@ -2800,29 +2818,30 @@ public class ThirdPartyManager
 
     try
     {
-      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+      SubscriberProfile subscriberProfile = null;
+      if (subscriberID != null)
+        {
+          subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+          if (subscriberProfile == null)
+            {
+              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+              return JSONUtilities.encodeObject(response);
+            }
+        }
       
       if ((activeResellerAndSalesChannelIDs.containsKey("activeReseller")) && (activeResellerAndSalesChannelIDs.get("activeReseller")).size() == 0) {
-        response.put(GENERIC_RESPONSE_CODE,
-            RESTAPIGenericReturnCodes.INACTIVE_RESELLER.getGenericResponseCode());
-        response.put(GENERIC_RESPONSE_MSG,
-            RESTAPIGenericReturnCodes.INACTIVE_RESELLER.getGenericResponseMessage());
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.INACTIVE_RESELLER.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.INACTIVE_RESELLER.getGenericResponseMessage());
         return JSONUtilities.encodeObject(response);
       }
       
       if (activeResellerAndSalesChannelIDs.containsKey("salesChannelIDsList") && (activeResellerAndSalesChannelIDs.get("salesChannelIDsList")).size() == 0) {
-        response.put(GENERIC_RESPONSE_CODE,
-            RESTAPIGenericReturnCodes.RESELLER_WITHOUT_SALESCHANNEL.getGenericResponseCode());
-        response.put(GENERIC_RESPONSE_MSG,
-            RESTAPIGenericReturnCodes.RESELLER_WITHOUT_SALESCHANNEL.getGenericResponseMessage());
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.RESELLER_WITHOUT_SALESCHANNEL.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.RESELLER_WITHOUT_SALESCHANNEL.getGenericResponseMessage());
         return JSONUtilities.encodeObject(response);
       }
-      if (subscriberProfile == null)
-        {
-          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
-          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
-        }
-      else if (offerState != null && !offerState.isEmpty() && !offerState.equalsIgnoreCase("ACTIVE"))
+      if (offerState != null && !offerState.isEmpty() && !offerState.equalsIgnoreCase("ACTIVE"))
         {
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
           response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage()+"-(state)");
