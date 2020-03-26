@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import java.time.Duration;
 import java.util.*;
 
+import com.evolving.nglm.core.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -29,11 +30,6 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
@@ -813,6 +809,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     String responseTopic = deliveryManager.getResponseTopic();
     String prefix = "CommodityDeliveryResponseConsumer_"+applicationID;
     Thread consumerThread = new Thread(new Runnable(){
+      private volatile boolean stopping=false;
       @Override
       public void run()
       {
@@ -825,9 +822,10 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
         consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
         KafkaConsumer consumer = new KafkaConsumer<byte[], byte[]>(consumerProperties);
         consumer.subscribe(Arrays.asList(responseTopic));
+        NGLMRuntime.addShutdownHook(normalShutdown -> stopping=true);
         log.info("CommodityDeliveryManager.addCommodityDeliveryResponseConsumer(...) : added kafka consumer for application "+applicationID);
 
-        while(true){
+        while(!stopping){
 
           // poll
 
@@ -850,6 +848,8 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
           consumer.commitSync();
         }
+        consumer.close();
+        log.warn(Thread.currentThread().getId()+" CommodityDeliveryManager.addCommodityDeliveryResponseConsumer : STOPPING reading response from "+responseTopic);
       }
     }, "consumer_"+prefix);
     consumerThread.start();
