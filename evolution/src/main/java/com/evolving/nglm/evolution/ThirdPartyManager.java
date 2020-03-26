@@ -3924,7 +3924,7 @@ public class ThirdPartyManager
 
     String subscriberID = resolveSubscriberID(jsonRoot);
     
-    String offerName = JSONUtilities.decodeString(jsonRoot, "offerName", true);
+    String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
     String salesChannel = JSONUtilities.decodeString(jsonRoot, "salesChannel", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
@@ -3969,17 +3969,7 @@ public class ThirdPartyManager
         }
 
       Date now = SystemTime.getCurrentTime();
-
-      String offerID = null;
-      for (Offer offer : offerService.getActiveOffers(now))
-        {
-          if (offer.getDisplay().equals(offerName))
-            {
-              offerID = offer.getGUIManagedObjectID();
-              break;
-            }
-        }
-      if (offerID == null)
+      if (offerService.getActiveOffer(offerID, now) == null)
         {
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.OFFER_NOT_FOUND .getGenericResponseCode());
           response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.OFFER_NOT_FOUND .getGenericResponseMessage());
