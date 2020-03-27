@@ -235,23 +235,9 @@
                     <include>bin/prometheus-application-run-postamble.sh</include>
                     <include>bin/evolutionengine-run.sh</include>
                     <include>bin/journeytrafficengine-run.sh</include>
-                    <include>bin/propensityengine-run.sh</include>
-                    <include>bin/ucgengine-run.sh</include>
-                    <include>bin/infulfillmentmanager-run.sh</include>
-                    <include>bin/emptyfulfillmentmanager-run.sh</include>
-                    <include>bin/commoditydeliverymanager-run.sh</include>
-                    <include>bin/purchasefulfillmentmanager-run.sh</include>
-                    <include>bin/notificationmanagersms-run.sh</include>
-                    <include>bin/notificationmanagermail-run.sh</include>
-                    <include>bin/notificationmanagerpush-run.sh</include>
-                    <include>bin/reportmanager-run.sh</include>
-                    <include>bin/reportscheduler-run.sh</include>
-                    <include>bin/datacubemanager-run.sh</include>
                     <include>bin/subscribergroup-run.sh</include>
                     <include>bin/storeconfiguration-run.sh</include>
                     <include>bin/guimanager-run.sh</include>
-                    <include>bin/thirdpartymanager-run.sh</include>
-                    <include>bin/dnboproxy-run.sh</include>
                     <include>bin/update-subscribergroup.sh</include>
                     <include>bin/storeconfiguration.sh</include>
                     <include>bin/upgrade-run-preamble.sh</include>
