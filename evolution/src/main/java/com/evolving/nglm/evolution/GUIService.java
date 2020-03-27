@@ -114,7 +114,11 @@ public class GUIService
   *
   *****************************************/
 
-  protected GUIService(String bootstrapServers, String serviceName, String groupID, String guiManagedObjectTopic, boolean masterService, GUIManagedObjectListener guiManagedObjectListener, String putAPIString, String removeAPIString, boolean notifyOnSignificantChange)
+  // to remove once cleaned up
+  protected GUIService(String bootstrapServers, String serviceName, String groupID, String guiManagedObjectTopic, boolean masterService, GUIManagedObjectListener guiManagedObjectListener, String putAPIString, String removeAPIString, boolean notifyOnSignificantChange){
+    this(bootstrapServers,serviceName,guiManagedObjectTopic,masterService,guiManagedObjectListener,putAPIString,removeAPIString,notifyOnSignificantChange);
+  }
+  protected GUIService(String bootstrapServers, String serviceName, String guiManagedObjectTopic, boolean masterService, GUIManagedObjectListener guiManagedObjectListener, String putAPIString, String removeAPIString, boolean notifyOnSignificantChange)
   {
     //
     //  configuration
@@ -168,7 +172,6 @@ public class GUIService
 
     Properties consumerProperties = new Properties();
     consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-    consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, groupID);
     consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
     consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
     consumerProperties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
