@@ -1262,7 +1262,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     if(purchaseStatus.getPaymentToBeDebited() != null && !purchaseStatus.getPaymentToBeDebited().isEmpty()){
       OfferPrice offerPrice = purchaseStatus.getPaymentToBeDebited().remove(0);
-      if(offerPrice == null){// => offer is free
+      if(offerPrice == null || offerPrice.getAmount()<=0){// => offer is free
         purchaseStatus.addPaymentDebited(offerPrice);
       }else{
         purchaseStatus.setPaymentBeingDebited(offerPrice);
