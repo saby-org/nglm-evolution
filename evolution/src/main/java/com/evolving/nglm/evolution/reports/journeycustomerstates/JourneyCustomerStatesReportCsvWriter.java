@@ -27,7 +27,6 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
 {
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatesReportCsvWriter.class);
   final private static String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private boolean addHeaders = true;
   private static JourneyService journeyService;
   List<String> headerFieldsOrder = new ArrayList<String>();
   private final String subscriberID = "subscriberID";
@@ -39,7 +38,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
    * @throws IOException
    *           in case anything goes wrong while writing to the report.
    */
-  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer) throws IOException
+  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
     if (re.type == ReportElement.MARKER) // We will find markers in the topic
       return;
@@ -191,10 +190,6 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
                     journeyInfo.put("rewards", history);
                   }
 
-                /*
-                 * if(addHeaders){ headerFieldsOrder.clear(); addHeaders(writer,
-                 * subscriberFields, 0); addHeaders(writer, journeyInfo, 1); }
-                 */
                 if (addHeaders)
                   {
                     addHeaders(writer, journeyInfo.keySet(), 1);
@@ -206,6 +201,21 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
               }
           }
       }
+  }
+  
+  public String getFileSplitBy(ReportElement re)
+  {
+    String result = null;
+    Map<String, Object> journeyStatsMap = re.fields.get(0);
+    for (Object journeyStatsObj : journeyStatsMap.values())
+      {
+        Map<String, Object> journeyStats = (Map<String, Object>) journeyStatsObj;
+        result = journeyStats.get("journeyID").toString();
+        break;
+      }
+    log.info("RAJ getFileSplitBy {}", result);
+    return result;
+    
   }
 
   public static void main(String[] args)
@@ -234,22 +244,13 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
     journeyService = new JourneyService(kafkaNode, "journeycustomerstatesreportcsvwriter-journeyservice-" + topic, journeyTopic, false);
     journeyService.start();
 
-    if (!reportWriter.produceReport(csvfile))
+    if (!reportWriter.produceReport(csvfile, false))
       {
         log.warn("An issue occured while producing the report");
         return;
       }
   }
 
-  /*
-   * private void addHeaders(ZipOutputStream writer, Map<String,Object> values,
-   * int offset) throws IOException { if(values != null && !values.isEmpty()) {
-   * String headers=""; for(String fields : values.keySet()){
-   * headerFieldsOrder.add(fields); headers += fields + CSV_SEPARATOR; } headers =
-   * headers.substring(0, headers.length() - offset);
-   * writer.write(headers.getBytes()); if(offset == 1) {
-   * writer.write("\n".getBytes()); } addHeaders=false; } }
-   */
   private void addHeaders(ZipOutputStream writer, Set<String> headers, int offset) throws IOException
   {
     if (headers != null && !headers.isEmpty())
@@ -265,7 +266,6 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
           {
             writer.write("\n".getBytes());
           }
-        addHeaders = false;
       }
   }
 

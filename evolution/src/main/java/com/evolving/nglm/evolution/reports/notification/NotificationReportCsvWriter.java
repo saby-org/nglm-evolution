@@ -27,8 +27,6 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
   private static LoyaltyProgramService loyaltyProgramService;
   
   List<String> headerFieldsOrder = new ArrayList<String>();
-  private boolean addHeaders = true;
-
   private static final String moduleId = "moduleID";
   private static final String featureId = "featureID";
   private static final String moduleName = "moduleName";
@@ -51,7 +49,7 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
    * This methods writes a single {@link ReportElement} to the report (csv file).
    * @throws IOException in case anything goes wrong while writing to the report.
    */
-  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer) throws IOException {
+  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException {
       if (re.type == ReportElement.MARKER) // We will find markers in the topic
           return;
 
@@ -281,7 +279,6 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
           {
             writer.write("\n".getBytes());
           }
-        addHeaders = false;
       }
   }
 

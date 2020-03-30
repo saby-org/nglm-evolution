@@ -23,13 +23,12 @@ public class LoyaltyProgramCustomerStatesCsvWriter implements ReportCsvFactory
 
   private static final Logger log = LoggerFactory.getLogger(LoyaltyProgramCustomerStatesCsvWriter.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private boolean addHeaders = true;
   List<String> headerFieldsOrder = new ArrayList<String>();
   private static LoyaltyProgramService loyaltyProgramService;
   private final static String customerID = "customerID";
 
   @Override
-  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer) throws IOException
+  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
     if (re.type == ReportElement.MARKER) // We will find markers in the topic
       return;
@@ -246,7 +245,6 @@ public class LoyaltyProgramCustomerStatesCsvWriter implements ReportCsvFactory
       if(offset == 1) {
         writer.write("\n".getBytes());
       }
-      addHeaders=false;
     }
   }
   

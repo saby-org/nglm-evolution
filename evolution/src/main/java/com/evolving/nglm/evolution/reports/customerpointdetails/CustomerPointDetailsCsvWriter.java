@@ -29,7 +29,7 @@ public class CustomerPointDetailsCsvWriter implements ReportCsvFactory
   private static PointService pointService;
 
   @Override
-  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer) throws IOException
+  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
     if (re.type == ReportElement.MARKER) // We will find markers in the topic
       return;

@@ -23,7 +23,6 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
 {
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatisticsReportCsvWriter.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private boolean addHeaders = true;
   private static JourneyService journeyService;
   List<String> headerFieldsOrder = new ArrayList<String>();
   private final String subscriberID = "subscriberID";
@@ -35,7 +34,7 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
    * @throws IOException
    *           in case anything goes wrong while writing to the report.
    */
-  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer) throws IOException
+  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
     if (re.type == ReportElement.MARKER) // We will find markers in the topic
       return;
@@ -167,7 +166,6 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
           {
             writer.write("\n".getBytes());
           }
-        addHeaders = false;
       }
   }
 
