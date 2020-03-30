@@ -28,8 +28,7 @@ do
       docker pull ${env.DOCKER_REGISTRY}ev-prometheus-application:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-grafana:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-licensemanager:${project.name}-${project.version}
-	  docker pull ${env.DOCKER_REGISTRY}ev-upgrade:${project.name}-${project.version}
-      docker pull ${env.DOCKER_REGISTRY}ev-suspenseprocessor:${project.name}-${project.version}
+      docker pull ${env.DOCKER_REGISTRY}ev-upgrade:${project.name}-${project.version}
    " &
 done
 
