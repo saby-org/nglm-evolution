@@ -808,8 +808,8 @@
       "description"         : "Description of the ODR Report",
       "class"               : "com.evolving.nglm.evolution.reports.odr.ODRReportDriver",
       "availableScheduling" : [ "weekly", "monthly" ],
-      "defaultReportPeriodQuantity" : 6,
-      "defaultReportPeriodUnit"     : "MONTHS"
+      "defaultReportPeriodQuantity" : 1,
+      "defaultReportPeriodUnit"     : "DAYS"
     },
     {
       "name"                : "notificationReport",
