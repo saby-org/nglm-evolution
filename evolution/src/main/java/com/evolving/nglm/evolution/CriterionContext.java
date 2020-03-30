@@ -178,6 +178,8 @@ public class CriterionContext
         internalTargetsJSON.put("retriever", "getTargets");
         internalTargetsJSON.put("esField", "internal.targets");
         internalTargetsJSON.put("internalOnly", false);
+        internalTargetsJSON.put("availableValues", "[ \"#targets#\" ]");
+        
         internalTargets  = new CriterionField(JSONUtilities.encodeObject(internalTargetsJSON));
       }
     catch (GUIManagerException e)

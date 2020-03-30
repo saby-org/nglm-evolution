@@ -23945,6 +23945,19 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             }
           break;
           
+        case "targets":
+          if (includeDynamic)
+            {
+              for (Target target : targetService.getActiveTargets(now))
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", target.getGUIManagedObjectID());
+                  availableValue.put("display", target.getGUIManagedObjectDisplay());
+                  result.add(JSONUtilities.encodeObject(availableValue));                  
+                }
+            }
+          break;
+          
         default:
           boolean foundValue = false;
           if(includeDynamic)
