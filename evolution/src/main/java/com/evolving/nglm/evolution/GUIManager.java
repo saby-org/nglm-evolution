@@ -24446,7 +24446,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           voucher.validate(voucherTypeService,uploadedFileService,date);
         }
         if (voucher == null && existingVoucher instanceof VoucherPersonal) {
-          VoucherType voucherType = voucherTypeService.getActiveVoucherType(voucher.getVoucherTypeId(),now);
+          VoucherType voucherType = voucherTypeService.getActiveVoucherType(((VoucherPersonal)existingVoucher).getVoucherTypeId(),now);
           voucher = new VoucherPersonal(existingVoucher.getJSONRepresentation(), epoch, existingVoucher,voucherType);
           voucher.validate(voucherTypeService,uploadedFileService,date);
         }

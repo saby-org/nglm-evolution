@@ -15,6 +15,9 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SystemTime;
 
+import kafka.security.auth.Topic;
+import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.errors.TimeoutException;
 import org.json.simple.JSONObject;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -34,17 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Matcher;
@@ -85,6 +78,7 @@ public class GUIService
   private String guiManagedObjectTopic;
   private String guiAuditTopic = Deployment.getGUIAuditTopic();
   private KafkaProducer<byte[], byte[]> kafkaProducer;
+  private Properties guiManagedObjectsConsumerProperties;
   private KafkaConsumer<byte[], byte[]> guiManagedObjectsConsumer;
   private boolean masterService;
   Thread schedulerThread = null;
@@ -120,7 +114,11 @@ public class GUIService
   *
   *****************************************/
 
-  protected GUIService(String bootstrapServers, String serviceName, String groupID, String guiManagedObjectTopic, boolean masterService, GUIManagedObjectListener guiManagedObjectListener, String putAPIString, String removeAPIString, boolean notifyOnSignificantChange)
+  // to remove once cleaned up
+  protected GUIService(String bootstrapServers, String serviceName, String groupID, String guiManagedObjectTopic, boolean masterService, GUIManagedObjectListener guiManagedObjectListener, String putAPIString, String removeAPIString, boolean notifyOnSignificantChange){
+    this(bootstrapServers,serviceName,guiManagedObjectTopic,masterService,guiManagedObjectListener,putAPIString,removeAPIString,notifyOnSignificantChange);
+  }
+  protected GUIService(String bootstrapServers, String serviceName, String guiManagedObjectTopic, boolean masterService, GUIManagedObjectListener guiManagedObjectListener, String putAPIString, String removeAPIString, boolean notifyOnSignificantChange)
   {
     //
     //  configuration
@@ -174,32 +172,18 @@ public class GUIService
 
     Properties consumerProperties = new Properties();
     consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-    consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, groupID);
     consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
     consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
     consumerProperties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     consumerProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-    setCommonConsumerProperties(consumerProperties);
-    guiManagedObjectsConsumer = new KafkaConsumer<>(consumerProperties);
-    
-    //
-    //  subscribe to topic
-    //
-
-    // we do want assign() here instead of subscribe()
-    // it does not care about "consumer group id", which is a what we do want, + this speed up consumers initialization
-    //guiManagedObjectsConsumer.subscribe(Arrays.asList(guiManagedObjectTopic), new GuiManagedObjectsConsumerRebalanceListener(serviceName, groupID));
-    Set<TopicPartition> partitions = new HashSet<>();
-    for (org.apache.kafka.common.PartitionInfo partitionInfo : guiManagedObjectsConsumer.partitionsFor(guiManagedObjectTopic)) {
-      partitions.add(new TopicPartition(guiManagedObjectTopic, partitionInfo.partition()));
-    }
-    guiManagedObjectsConsumer.assign(partitions);
+    guiManagedObjectsConsumerProperties = consumerProperties;
+    guiManagedObjectsConsumer = new KafkaConsumer<>(guiManagedObjectsConsumerProperties);
     
     //
     //  read initial guiManagedObjects
     //
 
-    readGUIManagedObjects(guiManagedObjectsConsumer, true);
+    readGUIManagedObjects(true);
 
     //
     //  close consumer (if master)
@@ -247,7 +231,7 @@ public class GUIService
 
     if (! masterService)
       {
-        Runnable guiManagedObjectReader = new Runnable() { @Override public void run() { readGUIManagedObjects(guiManagedObjectsConsumer, false); } };
+        Runnable guiManagedObjectReader = new Runnable() { @Override public void run() { readGUIManagedObjects(false); } };
         guiManagedObjectReaderThread = new Thread(guiManagedObjectReader, "GUIManagedObjectReader");
         guiManagedObjectReaderThread.start();
       }
@@ -718,8 +702,11 @@ public class GUIService
   *
   ****************************************/
 
-  private void readGUIManagedObjects(KafkaConsumer<byte[], byte[]> consumer, boolean readInitialTopicRecords)
+  private void readGUIManagedObjects(boolean readInitialTopicRecords)
   {
+
+    assignAllTopicPartitions();
+
     //
     //  on the initial read, skip the poll if there are no records
     //
@@ -727,12 +714,7 @@ public class GUIService
     if (readInitialTopicRecords)
       {
         boolean foundRecord = false;
-        Set<TopicPartition> partitions = new HashSet<TopicPartition>();
-        for (org.apache.kafka.common.PartitionInfo partitionInfo : consumer.partitionsFor(guiManagedObjectTopic))
-          {
-            partitions.add(new TopicPartition(guiManagedObjectTopic, partitionInfo.partition()));
-          }
-        Map<TopicPartition,Long> endOffsets = consumer.endOffsets(partitions);
+        Map<TopicPartition,Long> endOffsets = getEndOffsets();
         for (TopicPartition partition : endOffsets.keySet())
           {
             if (endOffsets.get(partition) > 0)
@@ -755,9 +737,9 @@ public class GUIService
     Date readStartDate = SystemTime.getCurrentTime();
     boolean consumedAllAvailable = false;
     Map<TopicPartition,Long> consumedOffsets = new HashMap<TopicPartition,Long>();
-    for (TopicPartition topicPartition : consumer.assignment())
+    for (TopicPartition topicPartition : guiManagedObjectsConsumer.assignment())
       {
-        consumedOffsets.put(topicPartition, consumer.position(topicPartition) - 1L);
+        consumedOffsets.put(topicPartition, guiManagedObjectsConsumer.position(topicPartition) - 1L);
       }
     
     //
@@ -770,14 +752,14 @@ public class GUIService
         // poll
         //
 
-        ConsumerRecords<byte[], byte[]> guiManagedObjectRecords;
+        ConsumerRecords<byte[], byte[]> guiManagedObjectRecords=ConsumerRecords.<byte[], byte[]>empty();
         try
           {
-            guiManagedObjectRecords = consumer.poll(5000);
+            guiManagedObjectRecords = guiManagedObjectsConsumer.poll(5000);
           }
         catch (WakeupException e)
           {
-            guiManagedObjectRecords = ConsumerRecords.<byte[], byte[]>empty();
+            log.info("wakeup while reading topic "+guiManagedObjectTopic);
           }
 
         //
@@ -831,8 +813,8 @@ public class GUIService
         //  consumed all available?
         //
 
-        Set<TopicPartition> assignedPartitions = consumer.assignment();
-        Map<TopicPartition,Long> availableOffsets = consumer.endOffsets(assignedPartitions);
+        Set<TopicPartition> assignedPartitions = guiManagedObjectsConsumer.assignment();
+        Map<TopicPartition,Long> availableOffsets = getEndOffsets();
         consumedAllAvailable = true;
         for (TopicPartition partition : availableOffsets.keySet())
           {
@@ -840,7 +822,7 @@ public class GUIService
             Long consumedOffsetForPartition = consumedOffsets.get(partition);
             if (consumedOffsetForPartition == null)
               {
-                consumedOffsetForPartition = consumer.position(partition) - 1L;
+                consumedOffsetForPartition = guiManagedObjectsConsumer.position(partition) - 1L;
                 consumedOffsets.put(partition, consumedOffsetForPartition);
               }
             if (consumedOffsetForPartition < availableOffsetForPartition-1)
@@ -851,6 +833,41 @@ public class GUIService
           }
       }
     while (!stopRequested && (! consumedAllAvailable || ! readInitialTopicRecords));
+  }
+
+  private void assignAllTopicPartitions(){
+    if(guiManagedObjectsConsumer!=null){
+      Set<TopicPartition> partitions = new HashSet<>();
+      for (PartitionInfo partitionInfo : guiManagedObjectsConsumer.partitionsFor(guiManagedObjectTopic)) {
+        partitions.add(new TopicPartition(guiManagedObjectTopic, partitionInfo.partition()));
+      }
+      guiManagedObjectsConsumer.assign(partitions);
+    }else{
+      log.error("NULL kafka consumer while assigning topic partitions "+guiManagedObjectTopic);
+    }
+  }
+
+  private Map<TopicPartition, Long> getEndOffsets(){
+    if(guiManagedObjectsConsumer==null){
+      log.error("NULL kafka consumer reading end offets");
+      return Collections.emptyMap();
+    }
+    while(true){
+      try{
+        return guiManagedObjectsConsumer.endOffsets(guiManagedObjectsConsumer.assignment());
+      }catch (TimeoutException e){
+        // a kafka broker might just went down (kafkaConsumer.assign(), not kafkaConsumer.consume(), so need to catch it)
+        reconnectConsumer();
+        log.warn("timeout while getting end offsets", e.getMessage());
+      }catch (WakeupException e){
+      }
+    }
+  }
+
+  private void reconnectConsumer(){
+    if(guiManagedObjectsConsumer!=null) guiManagedObjectsConsumer.close();
+    guiManagedObjectsConsumer=new KafkaConsumer<byte[], byte[]>(guiManagedObjectsConsumerProperties);
+    assignAllTopicPartitions();
   }
 
   /****************************************
@@ -1163,14 +1180,14 @@ public class GUIService
           }
       }
   }
-  
-  
+
+
   public static void setCommonConsumerProperties(Properties consumerProperties)
   {
     consumerProperties.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, Deployment.getMaxPollIntervalMs());
 
   }
 
-  
-  
+
+
 }

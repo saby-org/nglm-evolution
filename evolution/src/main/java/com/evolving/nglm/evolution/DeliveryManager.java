@@ -1953,6 +1953,7 @@ public abstract class DeliveryManager
         managerStatus = normalShutdown ? ManagerStatus.Stopping : ManagerStatus.Aborting;
         requestConsumer.wakeup();
         routingConsumer.wakeup();
+
         this.notifyAll();
       }
 
@@ -2035,6 +2036,15 @@ public abstract class DeliveryManager
               }
           }
         routingConsumer.close();
+      }
+
+    //
+    // wake up timeoutWorkerThread
+    //
+
+    if (timeoutWorkerThread != null)
+      {
+        timeoutWorkerThread.interrupt();
       }
 
     //

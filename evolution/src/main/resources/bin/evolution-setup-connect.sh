@@ -574,7 +574,7 @@ prepare-curl -XPOST $CONNECT_URL_SALESCHANNEL_ES/connectors -H "Content-Type: ap
   #
 
   export CONNECT_URL_CAMPAIGNINFO_ES=${CONNECT_URL_CAMPAIGNINFO_ES:-$DEFAULT_CONNECT_URL}
-  curl -XPOST $CONNECT_URL_CAMPAIGNINFO_ES/connectors -H "Content-Type: application/json" -d '    {
+prepare-curl -XPOST $CONNECT_URL_CAMPAIGNINFO_ES/connectors -H "Content-Type: application/json" -d '    {
        "name" : "campaigninfo_es_sink_connector",
        "config" :
          {
@@ -586,6 +586,6 @@ prepare-curl -XPOST $CONNECT_URL_SALESCHANNEL_ES/connectors -H "Content-Type: ap
          "indexName" : "campaigninfo",
          "batchRecordCount" : "1000"
          }
-    }' &
+    }'
 
 wait

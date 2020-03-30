@@ -5,11 +5,13 @@
   <packaging>pom</packaging>
   <version>1.4.0_3</version>
   <version>1.4.0_3</version>
+  <version>1.4.0_3</version>
   <version>1.4.0_1</version>
   <version>1.4.0_3</version>
   <version>1.4.0_1-169-SNAPSHOT</version>
   <version>1.4.0_3-bld200326a-SNAPSHOT</version>
   <version>1.4.0_3-mk-SNAPSHOT</version>
+  <version>EVPRO-156</version>
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -31,14 +33,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.0</version>
+    <version>EVPRO-156</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>1.4.0</nglm.core.version>
+    <nglm.core.version>EVPRO-156</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->

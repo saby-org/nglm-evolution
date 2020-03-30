@@ -5,11 +5,13 @@
   <packaging>pom</packaging>
   <version>1.4.0_3</version>
   <version>1.4.0_3</version>
+  <version>1.4.0_3</version>
   <version>1.4.0_1</version>
   <version>1.4.0_3</version>
   <version>1.4.0_1-169-SNAPSHOT</version>
   <version>1.4.0_3-bld200326a-SNAPSHOT</version>
   <version>1.4.0_3-mk-SNAPSHOT</version>
+  <version>EVPRO-156</version>
   <name>evolution-root</name>
   <url>http://10.100.0.6:8090/artifactory/repo</url>
   <description>NGLM evolution</description>
