@@ -175,6 +175,7 @@ public class SubscriberReportCsvWriter implements ReportCsvFactory
         if (addHeaders)
           {
             addHeaders(writer, result.keySet(), 1);
+            addHeaders = false;
           }
         String line = ReportUtils.formatResult(result);
         log.trace("Writing to csv file : " + line);

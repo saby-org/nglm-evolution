@@ -38,6 +38,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -186,8 +187,6 @@ public class ReportEsReader
     props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, reportElementSerializer.getClass().getName());
     final Producer<String, ReportElement> producerReportElement = new KafkaProducer<>(props);
 
-    // log.info("Query="+searchRequest.source().query());
-
     final AtomicInteger count = new AtomicInteger(0);
     final AtomicInteger nbReallySent = new AtomicInteger(0);
     final AtomicLong before = new AtomicLong(SystemTime.getCurrentTime().getTime());
@@ -219,8 +218,7 @@ public class ReportEsReader
                     port = s.nextInt();
                     s.close();
                   }
-              } 
-            else
+              } else
               {
                 Scanner s = new Scanner(esNode);
                 s.useDelimiter(":");
@@ -233,10 +231,15 @@ public class ReportEsReader
             // Search for everyone
 
             Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
-            String indexToRead = index.getKey();
-            log.trace("Reading ES index " + indexToRead);
-
-            searchRequest.indices(indexToRead);
+            String[] indicesToRead = getIndices(index.getKey());
+            
+            //
+            //  indicesToRead is blank?
+            //
+            
+            if (indicesToRead == null || indicesToRead.length == 0) continue;
+            
+            searchRequest.indices(indicesToRead);
             searchRequest.source().size(getScrollSize());
             searchRequest.scroll(scroll);
             SearchResponse searchResponse;
@@ -343,6 +346,63 @@ public class ReportEsReader
       }
 
     log.trace(SystemTime.getCurrentTime() + " Sent " + d(count.get()) + " messages, nbReallySent : " + d(nbReallySent.get()));
+  }
+
+  private String[] getIndices(String key)
+  {
+    StringBuilder existingIndexes = new StringBuilder();
+    boolean firstEntry = true;
+    
+    //
+    // blank key 
+    //
+    
+    if (key == null || key.isEmpty()) return null;
+    
+    for (String index : key.split(","))
+      {
+        
+        //
+        //  wildcard
+        //
+        
+        if(index.endsWith("*")) 
+          {
+            if (!firstEntry) existingIndexes.append(",");
+            existingIndexes.append(index); 
+            firstEntry = false;
+            continue;
+          }
+        
+        //
+        //  indices-exists
+        //
+        
+        GetIndexRequest request = new GetIndexRequest(index);
+        request.local(false); 
+        request.humanReadable(true); 
+        request.includeDefaults(false); 
+        try
+          {
+            boolean exists = elasticsearchReaderClient.indices().exists(request, RequestOptions.DEFAULT);
+            if (exists) 
+              {
+                if (!firstEntry) existingIndexes.append(",");
+                existingIndexes.append(index);
+                firstEntry = false;
+              }
+            else
+              {
+                log.debug("{} index does not exists - record will not be in report", index);
+              }
+          } 
+        catch (IOException e)
+          {
+            e.printStackTrace();
+          }
+      }
+    log.debug("index to be read {}", existingIndexes.toString());
+    return existingIndexes.toString().split(",");
   }
 
   private int getScrollSize()

@@ -12,9 +12,12 @@ import org.slf4j.LoggerFactory;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.TimeZone;
 
 public class BDRReportESReader
 {
@@ -22,6 +25,12 @@ public class BDRReportESReader
   private static final Logger log = LoggerFactory.getLogger(BDRReportESReader.class);
   private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
   private static DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
+  private static final DateFormat DATE_FORMAT;
+  static
+  {
+    DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+  }
 
   public static void main(String[] args)
   {
@@ -43,75 +52,81 @@ public class BDRReportESReader
     String esIndexBdr = args[4];
     String esIndexCustomer = args[5];
 
-    Integer reportPeriodQuantity = 1;
+    Integer reportPeriodQuantity = 0;
     String reportPeriodUnit = null;
     if (args.length > 6 && args[6] != null && args[7] != null)
       {
         reportPeriodQuantity = Integer.parseInt(args[6]);
         reportPeriodUnit = args[7];
       }
+    
+    Date fromDate = getFromDate(reportPeriodUnit, reportPeriodQuantity);
+    Date toDate = SystemTime.getCurrentTime();
+    
+    List<String> esIndexDates = getEsIndexDates(fromDate, toDate);
+    StringBuilder esIndexBdrList = new StringBuilder();
+    boolean firstEntry = true;
+    for (String esIndexDate : esIndexDates)
+      {
+        if (!firstEntry) esIndexBdrList.append(",");
+        String indexName = esIndexBdr + esIndexDate;
+        esIndexBdrList.append(indexName);
+        firstEntry = false;
+      }
 
-    log.info("Reading data from ES in " + esIndexBdr + " and joining on " + esIndexCustomer + "  index and writing to " + topicName + " topic.");
+    log.info("Reading data from ES in (" + esIndexBdrList.toString() + ") and joining on " + esIndexCustomer + "  index and writing to " + topicName + " topic.");
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-
-    //
-    // date
-    //
-
-    Date now = SystemTime.getCurrentTime();
-    Date fromDate = null;
-
-    //
-    // 00:00:00
-    //
-
-    RLMDateUtils.setField(now, Calendar.HOUR_OF_DAY, 0, Deployment.getBaseTimeZone());
-    RLMDateUtils.setField(now, Calendar.MINUTE, 0, Deployment.getBaseTimeZone());
-    RLMDateUtils.setField(now, Calendar.SECOND, 0, Deployment.getBaseTimeZone());
-
-    //
-    // query
-    //
-
-    QueryBuilder query = null;
-    if (reportPeriodUnit == null)
-      reportPeriodUnit = PERIOD.DAYS.getExternalRepresentation();
-    switch (reportPeriodUnit.toUpperCase())
-    {
-      case "DAYS":
-        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, Deployment.getBaseTimeZone());
-        break;
-
-      case "WEEKS":
-        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, Deployment.getBaseTimeZone());
-        break;
-
-      case "MONTHS":
-        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, Deployment.getBaseTimeZone());
-        break;
-
-      default:
-        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, Deployment.getBaseTimeZone());
-        break;
-    }
-
-    query = QueryBuilders.rangeQuery("eventDatetime").format(elasticSearchDateFormat).gte(dateFormat.format(fromDate.getTime()));
-    esIndexWithQuery.put(esIndexBdr, query);
+    esIndexWithQuery.put(esIndexBdrList.toString(), QueryBuilders.matchAllQuery());
     esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
 
-    //
-    // reportEsReader
-    //
-
     ReportEsReader reportEsReader = new ReportEsReader("subscriberID", topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery);
-    
-    //
-    //  start
-    //
 
     reportEsReader.start();
     log.info("Finished BDRReportESReader");
+  }
+  
+  private static List<String> getEsIndexDates(final Date fromDate, Date toDate)
+  {
+    Date tempfromDate = fromDate;
+    List<String> esIndexOdrList = new ArrayList<String>();
+    while(tempfromDate.getTime() <= toDate.getTime())
+      {
+        esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
+        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
+      }
+    return esIndexOdrList;
+  }
+  
+  private static Date getFromDate(String reportPeriodUnit, Integer reportPeriodQuantity)
+  {
+    reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(1) : reportPeriodQuantity;
+    if (reportPeriodUnit == null) reportPeriodUnit  = PERIOD.DAYS.getExternalRepresentation();
+    
+    //
+    //
+    //
+    
+    Date now = SystemTime.getCurrentTime();
+    Date fromDate = null;
+    switch (reportPeriodUnit.toUpperCase())
+      {
+        case "DAYS":
+          fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+          break;
+          
+        case "WEEKS":
+          fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+          break;
+          
+        case "MONTHS":
+          fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+          break;
+          
+        default:
+          break;
+      }
+    return fromDate;
   }
 
 }

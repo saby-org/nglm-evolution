@@ -52,7 +52,37 @@ public class ODRReportCsvWriter implements ReportCsvFactory
   private static final String returnCode = "returnCode";
   private static final String returnCodeDetails = "returnCodeDetails";
 
-  List<String> headerFieldsOrder = new ArrayList<String>();
+  private static List<String> headerFieldsOrder = new LinkedList<String>();
+  static 
+  {
+    headerFieldsOrder.add(moduleId);
+    headerFieldsOrder.add(featureId);
+    headerFieldsOrder.add(moduleName);
+    headerFieldsOrder.add(featureDisplay);
+    headerFieldsOrder.add(subscriberID);
+    headerFieldsOrder.add(offerID);
+    headerFieldsOrder.add(offerDisplay);
+    headerFieldsOrder.add(salesChannelID);
+    headerFieldsOrder.add(voucherPartnerID);
+    headerFieldsOrder.add(salesChannelDisplay);
+    headerFieldsOrder.add(customerID);
+    headerFieldsOrder.add(offerContent);
+    headerFieldsOrder.add(eventDatetime);
+    headerFieldsOrder.add(originatingDeliveryRequestID);
+    headerFieldsOrder.add(deliveryRequestID);
+    headerFieldsOrder.add(deliveryStatus);
+    headerFieldsOrder.add(eventID);
+    headerFieldsOrder.add(meanOfPayment);
+    headerFieldsOrder.add(offerPrice);
+    headerFieldsOrder.add(offerQty);
+    headerFieldsOrder.add(offerStock);
+    headerFieldsOrder.add(origin);
+    headerFieldsOrder.add(voucherCode);
+    headerFieldsOrder.add(returnCode);
+    headerFieldsOrder.add(returnCodeDetails);
+  }
+  
+  
   
   /**
    * This methods writes a single {@link ReportElement} to the report (csv file).
@@ -229,7 +259,8 @@ public class ODRReportCsvWriter implements ReportCsvFactory
 
           if (addHeaders)
             {
-              addHeaders(writer, result.keySet(), 1);
+              addHeaders(writer, headerFieldsOrder, 1);
+              addHeaders = false;
             }
           String line = ReportUtils.formatResult(headerFieldsOrder, result);
           log.trace("Writing to csv file : "+line);
@@ -239,6 +270,223 @@ public class ODRReportCsvWriter implements ReportCsvFactory
       }
   }
 
+  @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
+  {
+    try
+      {
+        if (addHeaders)
+          {
+            addHeaders(writer, headerFieldsOrder, 1);
+          }
+        String line = ReportUtils.formatResult(headerFieldsOrder, lineMap);
+        log.trace("Writing to csv file : " + line);
+        writer.write(line.getBytes());
+        writer.write("\n".getBytes());
+      } 
+    catch (IOException e)
+      {
+        e.printStackTrace();
+      }
+  }
+  
+  public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement)
+  {
+    Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
+    Map<String, Object> odrFieldsMap = reportElement.fields.get(0);
+    Map<String, Object> subscriberFields = reportElement.fields.get(1);
+    LinkedHashMap<String, Object> oderRecs = new LinkedHashMap<>();
+    LinkedHashMap<String, Object> subscriberFieldsresult = new LinkedHashMap<>();
+    for (Object odrFieldsObj : odrFieldsMap.values()) // we don't care about the keys
+      {
+        Map<String, Object> odrFields = (Map<String, Object>) odrFieldsObj;
+        if (odrFields != null && !odrFields.isEmpty() && subscriberFields != null && !subscriberFields.isEmpty()) 
+          {
+            if(odrFields.get(subscriberID) != null) {
+              Object subscriberIDField = odrFields.get(subscriberID);
+              oderRecs.put(customerID, subscriberIDField);
+             // odrFields.remove(subscriberID);
+            }
+            for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+              {
+                if (subscriberFields.get(alternateID.getESField()) != null)
+                  {
+                    Object alternateId = subscriberFields.get(alternateID.getESField());
+                    oderRecs.put(alternateID.getName(), alternateId);
+                  }
+              }
+            
+            if (odrFields.containsKey(originatingDeliveryRequestID))
+              {
+                // TODO : same as salesChannelID
+                oderRecs.put(originatingDeliveryRequestID, odrFields.get(originatingDeliveryRequestID));
+              }
+            if (odrFields.containsKey(deliveryRequestID))
+              {
+                // TODO : same as salesChannelID
+                oderRecs.put(deliveryRequestID, odrFields.get(deliveryRequestID));
+              }
+            if (odrFields.containsKey(deliveryStatus))
+              {
+                // TODO : same as salesChannelID
+                oderRecs.put(deliveryStatus, odrFields.get(deliveryStatus));
+              }
+            if (odrFields.containsKey(eventID))
+              {
+                // TODO : same as salesChannelID
+                oderRecs.put(eventID, odrFields.get(eventID));
+              }
+
+            if (odrFields.get(eventDatetime) != null)
+              {
+                Object eventDatetimeObj = odrFields.get(eventDatetime);
+                if (eventDatetimeObj instanceof String)
+                  {
+                    
+                    // TEMP fix for BLK : reformat date with correct template.
+
+                    List<SimpleDateFormat> standardDateFormats = ReportsCommonCode.initializeDateFormats();
+                    oderRecs.put(eventDatetime, ReportsCommonCode.parseDate(standardDateFormats, (String) eventDatetimeObj));
+
+                    // END TEMP fix for BLK
+
+                  }
+                else
+                  {
+                    log.info(eventDatetime + " is of wrong type : "+eventDatetimeObj.getClass().getName());
+                  }
+            }
+
+
+            //Compute featureName and ModuleName from ID
+            if(odrFields.containsKey(moduleId) && odrFields.containsKey(featureId)){
+              Module module = Module.fromExternalRepresentation(String.valueOf(odrFields.get(moduleId)));
+              String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(odrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
+              oderRecs.put(featureDisplay, feature);
+              oderRecs.put(moduleName, module.toString());           
+
+             // odrFields.remove(featureId);
+              //odrFields.remove(moduleId);
+            }  
+            if (odrFields.containsKey(meanOfPayment))
+              {
+                // TODO : same as salesChannelID
+                oderRecs.put(meanOfPayment, odrFields.get(meanOfPayment));
+              }
+            if (odrFields.containsKey(offerID))
+              {
+                oderRecs.put(offerID, odrFields.get(offerID));
+                GUIManagedObject offerObject = offerService.getStoredOffer(String.valueOf(odrFields.get(offerID)));
+                if (offerObject instanceof Offer)
+                  {
+                    oderRecs.put(offerDisplay, ((Offer)offerObject).getDisplay());
+                    //odrFields.remove(offerID);                  
+                  }
+                else {
+                  oderRecs.put(offerDisplay, "");
+                }
+                
+            }
+            if (odrFields.containsKey(offerPrice))
+              {
+                // TODO : same as salesChannelID
+                oderRecs.put(offerPrice, odrFields.get(offerPrice));
+              }
+            
+            if (odrFields.containsKey(offerContent))
+              {
+                List<Map<String, Object>> offerContentJSON = new ArrayList<>();
+                GUIManagedObject offerObject = offerService.getStoredOffer(String.valueOf(odrFields.get(offerID)));
+                if (offerObject != null && offerObject instanceof Offer)
+                  {
+                    Offer offer = (Offer) offerObject;
+                    for (OfferProduct offerProduct : offer.getOfferProducts())
+                      {
+                        Map<String, Object> outputJSON = new HashMap<>();
+                        String objectid = offerProduct.getProductID();
+                        GUIManagedObject guiManagedObject = (GUIManagedObject) productService.getStoredProduct(objectid);
+                        if (guiManagedObject != null && guiManagedObject instanceof Product)
+                          {
+                            Product product = (Product) guiManagedObject;
+                            outputJSON.put(product.getDisplay(), offerProduct.getQuantity());
+                          }
+                        offerContentJSON.add(outputJSON);
+                      }
+                  }
+                oderRecs.put(offerContent, ReportUtils.formatJSON(offerContentJSON));
+              }
+         
+            if (odrFields.containsKey(offerQty))
+              {
+                // TODO : same as salesChannelID
+                oderRecs.put(offerQty, odrFields.get(offerQty));
+              }
+            if (odrFields.containsKey(offerStock))
+              {
+                // TODO : same as salesChannelID
+                oderRecs.put(offerStock, odrFields.get(offerStock));
+              }
+            if (odrFields.containsKey(origin))
+              {
+                // TODO : same as salesChannelID
+                oderRecs.put(origin, odrFields.get(origin));
+              }
+            // get salesChannel display
+            if (odrFields.containsKey(salesChannelID))
+              {
+                GUIManagedObject salesChannelObject = salesChannelService.getStoredSalesChannel(String.valueOf(odrFields.get(salesChannelID)));
+                if(salesChannelObject instanceof SalesChannel)
+                  {
+                    odrFields.put(salesChannelDisplay, ((SalesChannel)salesChannelObject).getGUIManagedObjectDisplay());
+                    odrFields.remove(salesChannelID);
+                  }
+              }
+            if (odrFields.containsKey(voucherCode))
+              {
+                // TODO : same as salesChannelID
+                oderRecs.put(voucherCode, odrFields.get(voucherCode));
+              }
+            if (odrFields.containsKey(returnCode))
+              {
+                // TODO : same as salesChannelID
+                oderRecs.put(returnCode, odrFields.get(returnCode));
+              }
+            if (odrFields.containsKey(returnCodeDetails))
+              {
+                // TODO : same as salesChannelID
+                oderRecs.put(returnCodeDetails, odrFields.get(returnCodeDetails));
+              }    
+            
+            //
+            // result
+            //
+
+            String rawEventDateTime = oderRecs.get(eventDatetime) == null ? null : oderRecs.get(eventDatetime).toString();
+            if (rawEventDateTime == null) log.warn("bad EventDateTime -- report will be generated in 'null' file name -- for record {} ", odrFields );
+            String evntDate = getEventDate(rawEventDateTime);
+            if (result.containsKey(evntDate))
+              {
+                result.get(evntDate).add(oderRecs);
+              } 
+            else
+              {
+                List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
+                elements.add(oderRecs);
+                result.put(evntDate, elements);
+              }
+          }
+      }
+    return result;
+  }
+  
+  private String getEventDate(String rawEventDateTime)
+  {
+    String result = "null";
+    if (rawEventDateTime == null || rawEventDateTime.trim().isEmpty()) return result;
+    String eventDateTimeFormat = "yyyy-MM-dd";
+    result = rawEventDateTime.substring(0, eventDateTimeFormat.length());
+    return result;
+  }
+  
   public static void main(String[] args) {
       log.info("received " + args.length + " args");
       for(String arg : args){
@@ -274,13 +522,13 @@ public class ODRReportCsvWriter implements ReportCsvFactory
       productService = new ProductService(kafkaNode, "odrreportcsvwriter-productService-" + topic, productTopic, false);
       productService.start();
       
-      if (!reportWriter.produceReport(csvfile)) {
+      if (!reportWriter.produceReport(csvfile, true)) {
           log.warn("An error occured, the report might be corrupted");
           return;
       }
   }
   
-  private void addHeaders(ZipOutputStream writer, Set<String> headers, int offset) throws IOException
+  private void addHeaders(ZipOutputStream writer, List<String> headers, int offset) throws IOException
   {
     if (headers != null && !headers.isEmpty())
       {

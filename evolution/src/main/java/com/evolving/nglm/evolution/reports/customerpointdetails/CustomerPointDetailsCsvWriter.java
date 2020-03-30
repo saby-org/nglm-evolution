@@ -24,7 +24,6 @@ public class CustomerPointDetailsCsvWriter implements ReportCsvFactory
 
   private static final Logger log = LoggerFactory.getLogger(CustomerPointDetailsCsvWriter.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private boolean addHeaders = true;
   List<String> headerFieldsOrder = new ArrayList<String>();
   private static PointService pointService;
 
@@ -131,6 +130,7 @@ public class CustomerPointDetailsCsvWriter implements ReportCsvFactory
       if(addHeaders){
         headerFieldsOrder.clear();
         addHeaders(writer, elementsToBeDump.get(0), 1);
+        addHeaders = false;
       }
 
       for(Map<String, Object> oneElement : elementsToBeDump){
@@ -188,7 +188,6 @@ public class CustomerPointDetailsCsvWriter implements ReportCsvFactory
       if(offset == 1) {
         writer.write("\n".getBytes());
       }
-      addHeaders=false;
     }
   }
 
