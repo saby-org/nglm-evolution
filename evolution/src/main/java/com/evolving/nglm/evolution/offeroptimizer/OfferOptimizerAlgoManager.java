@@ -108,12 +108,12 @@ public class OfferOptimizerAlgoManager {
             propensityState = propensityDataReader.get(pk);
           }
         
-        double currentPropensity = 0.5; // TODO: In the future, use: o.getInitialPropensity();
+        double currentPropensity = o.getInitialPropensity();
         if (propensityState != null) 
           {
             int presentationThreshold = Deployment.getPropensityInitialisationPresentationThreshold();
             int daysThreshold = Deployment.getPropensityInitialisationDurationInDaysThreshold();
-            currentPropensity = propensityState.getPropensity(0.50d, o.getEffectiveStartDate(), presentationThreshold, daysThreshold); // TODO: In the future, use: o.getInitialPropensity();
+            currentPropensity = propensityState.getPropensity(currentPropensity, o.getEffectiveStartDate(), presentationThreshold, daysThreshold);
           } 
         else 
           {
