@@ -119,7 +119,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
                                 date = new Date(Long.valueOf(split[2]));
                               }
 
-                            sbStatus.append("(").append(fromNodeName).append("->").append(toNodeName).append(",").append(date).append("),");
+                            sbStatus.append("(").append(fromNodeName).append("->").append(toNodeName).append(",").append(ReportsCommonCode.getDateString(date)).append("),");
                           }
                       }
 
@@ -151,7 +151,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
                                 date = new Date(Long.valueOf(split[1]));
                               }
 
-                            sbStatuses.append("(").append(SubscriberJourneyStatus.fromExternalRepresentation(statusName)).append(",").append(date).append("),");
+                            sbStatuses.append("(").append(SubscriberJourneyStatus.fromExternalRepresentation(statusName)).append(",").append(ReportsCommonCode.getDateString(date)).append("),");
 
                           }
                       }
@@ -164,7 +164,8 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
 
                     journeyInfo.put("customerStates", states);
                     journeyInfo.put("customerStatuses", statuses);
-                    journeyInfo.put("dateTime", ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
+                    Date currentDate = SystemTime.getCurrentTime();
+                    journeyInfo.put("dateTime", ReportsCommonCode.getDateString(currentDate));
                     journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
                     journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
 
@@ -178,7 +179,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
                             String rewardID = split[0];
                             String amount = split[1];
                             Date date = new Date(Long.valueOf(split[2]));
-                            sbHistory.append("(").append(rewardID).append(",").append(amount).append(",").append(date).append("),");
+                            sbHistory.append("(").append(rewardID).append(",").append(amount).append(",").append(ReportsCommonCode.getDateString(date)).append("),");
                           }
                       }
 
