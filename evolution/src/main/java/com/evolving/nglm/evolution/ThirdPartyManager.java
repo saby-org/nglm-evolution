@@ -3924,7 +3924,8 @@ public class ThirdPartyManager
 
     String subscriberID = resolveSubscriberID(jsonRoot);
     
-    String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
+    String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
+    String offerDisplay = JSONUtilities.decodeString(jsonRoot, "offer", false);
     String salesChannel = JSONUtilities.decodeString(jsonRoot, "salesChannel", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
@@ -3969,10 +3970,37 @@ public class ThirdPartyManager
         }
 
       Date now = SystemTime.getCurrentTime();
-      if (offerService.getActiveOffer(offerID, now) == null)
+      
+      if (offerID != null)
         {
-          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.OFFER_NOT_FOUND .getGenericResponseCode());
-          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.OFFER_NOT_FOUND .getGenericResponseMessage());
+          if (offerService.getActiveOffer(offerID, now) == null)
+            {
+              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.OFFER_NOT_FOUND.getGenericResponseCode());
+              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.OFFER_NOT_FOUND.getGenericResponseMessage());
+              return JSONUtilities.encodeObject(response);          
+            }
+        }
+      else if (offerDisplay != null)
+        {
+          for (Offer offer : offerService.getActiveOffers(now))
+            {
+              if (offer.getDisplay().equals(offerDisplay))
+                {
+                  offerID = offer.getGUIManagedObjectID();
+                  break;
+                }
+            }
+          if (offerID == null)
+            {
+              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.OFFER_NOT_FOUND.getGenericResponseCode());
+              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.OFFER_NOT_FOUND.getGenericResponseMessage());
+              return JSONUtilities.encodeObject(response);          
+            }
+        }
+      else
+        {
+          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
+          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage());
           return JSONUtilities.encodeObject(response);          
         }
 
