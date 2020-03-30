@@ -5311,7 +5311,7 @@ public class GUIManager
             JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journey.getGUIManagedObjectID());
             if (journeyTrafficHistory != null && journeyTrafficHistory.getCurrentData() != null && journeyTrafficHistory.getCurrentData().getGlobal() != null)
               {
-                subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberCount();
+                subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberInflow();
               }
             journeyInfo.put("subscriberCount", subscriberCount);
             journeys.add(journeyInfo);

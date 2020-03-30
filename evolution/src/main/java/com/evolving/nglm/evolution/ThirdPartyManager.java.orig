@@ -2194,11 +2194,23 @@ public class ThirdPartyManager
 
     String subscriberID = resolveSubscriberID(jsonRoot);
 
+<<<<<<< HEAD
+    String campaignObjectiveName = readString(jsonRoot, "objective", true);
+    String campaignState = readString(jsonRoot, "campaignState", true);
+    String customerStatus = readString(jsonRoot, "customerStatus", true);
+    String campaignStartDateStr = readString(jsonRoot, "campaignStartDate", true);
+    String campaignEndDateStr = readString(jsonRoot, "campaignEndDate", true);
+=======
     String campaignObjectiveName = readString(jsonRoot, "objective", false);
     String campaignState = readString(jsonRoot, "campaignState", false);
     String customerStatus = readString(jsonRoot, "customerStatus", false);
     String campaignStartDateStr = readString(jsonRoot, "campaignStartDate", false);
     String campaignEndDateStr = readString(jsonRoot, "campaignEndDate", false);
+<<<<<<< HEAD
+>>>>>>> fe9b9fc... EVPRO-180 Adjust 3rd Party API REST methods to initial specifications
+
+=======
+>>>>>>> EVPRO-180-2
 
     Date campaignStartDate = prepareStartDate(getDateFromString(campaignStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
     Date campaignEndDate = prepareEndDate(getDateFromString(campaignEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));

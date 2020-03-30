@@ -2462,7 +2462,14 @@ public class EvolutionEngine
     for(String dimensionId : segmentsMap.keySet())
       {
         SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionId, SystemTime.getCurrentTime());
-        profileSegmentChangeNewValues.put(dimension.getSegmentationDimensionName(), segmentsMap.get(dimensionId));
+        if (dimension == null)
+          {
+            log.warn("unknown dimensionID " + dimensionId + " from keyset " + segmentsMap.keySet());
+          }
+        else
+          {
+            profileSegmentChangeNewValues.put(dimension.getSegmentationDimensionName(), segmentsMap.get(dimensionId));
+          }
       }
     
     // complete list with dimension not set so segment null
