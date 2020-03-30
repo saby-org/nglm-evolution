@@ -13,6 +13,7 @@ import com.evolving.nglm.core.SystemTime;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -23,6 +24,7 @@ import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import org.apache.http.HttpHost;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -254,6 +256,7 @@ public class ReportEsReader
                 log.info("getTook = " + searchResponse.getTook());
                 log.info("searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
               }
+            boolean alreadyTraced = false;
             while (searchHits != null && searchHits.length > 0)
               {
                 log.debug("got " + searchHits.length + " hits");
@@ -263,31 +266,37 @@ public class ReportEsReader
                     // write record to kafka topic
                     String key;
                     Object res = sourceMap.get(elasticKey);
-                    // Need to be extended to support other types of attributes, currently only int
-                    // and String
-                    if (res instanceof Integer)
-                      key = Integer.toString((Integer) res);
-                    else
-                      key = (String) res;
-                    ReportElement re = new ReportElement(i, sourceMap);
-                    log.trace("Sending record k=" + key + ", v=" + re);
-                    ProducerRecord<String, ReportElement> record = new ProducerRecord<>(topicName, key, re);
-                    producerReportElement.send(record, (mdata, e) -> {
-                      nbReallySent.incrementAndGet();
-                      lastTS.set(mdata.timestamp());
-                    });
-                    if (count.getAndIncrement() % traceInterval == 0)
+                    if (res == null)
                       {
-                        long now = SystemTime.getCurrentTime().getTime();
-                        long diff = now - before.get();
-                        double speed = (traceInterval * 1000.0) / (double) diff;
-                        before.set(now);
-                        log.debug(now + " Sending msg " + d(count.get() - 1) + " to topic " + topicName + " nbReallySent : " + d(nbReallySent.get())
-                        // + " lastTS : "+d(lastTS.get())
+                        if (!alreadyTraced)
+                          {
+                            log.warn("unexpected, null key while reading " + Arrays.stream(indicesToRead).map(s -> "\""+s+"\"").collect(Collectors.toList()) + " sourceMap=" + sourceMap);
+                            alreadyTraced = true;
+                          }
+                      }
+                    else
+                      {
+                        // Need to be extended to support other types of attributes, currently only int and String
+                        key = (res instanceof Integer) ? Integer.toString((Integer) res) : (String) res;
+                        ReportElement re = new ReportElement(i, sourceMap);
+                        log.trace("Sending record k=" + key + ", v=" + re);
+                        ProducerRecord<String, ReportElement> record = new ProducerRecord<>(topicName, key, re);
+                        producerReportElement.send(record, (mdata, e) -> {
+                          nbReallySent.incrementAndGet();
+                          lastTS.set(mdata.timestamp());
+                        });
+                        if (count.getAndIncrement() % traceInterval == 0)
+                          {
+                            long now = SystemTime.getCurrentTime().getTime();
+                            long diff = now - before.get();
+                            double speed = (traceInterval * 1000.0) / (double) diff;
+                            before.set(now);
+                            log.debug(now + " Sending msg " + d(count.get() - 1) + " to topic " + topicName + " nbReallySent : " + d(nbReallySent.get())
+                            // + " lastTS : "+d(lastTS.get())
                             + " speed = " + d((int) speed) + " messages/sec" + " ( " + key + " , " + record.value() + " )");
+                          }
                       }
                   }
-                // log.trace("processing next scroll");
                 SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
                 scrollRequest.scroll(scroll);
                 searchResponse = elasticsearchReaderClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
