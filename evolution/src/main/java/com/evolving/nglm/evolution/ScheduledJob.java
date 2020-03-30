@@ -1,10 +1,10 @@
 /*****************************************************************************
 *
-*  DatacubeScheduling.java
+*  ScheduledJob.java
 *
 *****************************************************************************/
 
-package com.evolving.nglm.evolution.datacubes;
+package com.evolving.nglm.evolution;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -90,6 +90,7 @@ public abstract class ScheduledJob implements Comparable<ScheduledJob>
   
   public Date getNextGenerationDate() { return this.nextGenerationDate; }
   public boolean isProperlyConfigured() { return this.properlyConfigured; }
+  public long getjobID() { return this.schedulingUniqueID; }
 
   /*****************************************
   *

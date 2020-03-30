@@ -8,15 +8,33 @@
   "journeyTrafficArchivePeriodInSeconds"     : 3600,
   "journeyTrafficArchiveMaxNumberOfPeriods"  : 168,
 
-  "yesterdayODRDatacubePeriodCronEntryString"            : "0 1 * * *",
-  "todayODRDatacubePeriodCronEntryString"                : "0 * * * *",
-  "yesterdayLoyaltyDatacubePeriodCronEntryString"        : "0 1 * * *",
-  "todayLoyaltyDatacubePeriodCronEntryString"            : "0 * * * *",
-  "yesterdaySubscriberDatacubePeriodCronEntryString"     : "0 1 * * *",
-  "todaySubscriberDatacubePeriodCronEntryString"         : "0 * * * *",
-  "journeyTrafficDatacubePeriodCronEntryString"          : "0 * * * *",
-  "subscriberProfileSnapshotPeriodCronEntryString"       : "5 0 * * *",
+  "CronFormat_comment": "minute (0-59), hour (0-23), day of month (1-31), month of year (1-12:JAN-DEC case-insensitive), day of week (0-7:MON-SUN case-insensitive) 1 is always Monday",
 
+  "yesterdayODRDatacubePeriodCronEntryString"        : "0 1 * * *",
+  "todayODRDatacubePeriodCronEntryString"            : "0 * * * *",
+  "yesterdayLoyaltyDatacubePeriodCronEntryString"    : "0 1 * * *",
+  "todayLoyaltyDatacubePeriodCronEntryString"        : "0 * * * *",
+  "yesterdaySubscriberDatacubePeriodCronEntryString" : "0 1 * * *",
+  "todaySubscriberDatacubePeriodCronEntryString"     : "0 * * * *",
+  "journeyTrafficDatacubePeriodCronEntryString"      : "0 * * * *",
+  "subscriberProfileSnapshotPeriodCronEntryString"   : "5 0 * * *",
+
+  "hourlyReportCronEntryString"   : "0 * * * *",
+  "dailyReportCronEntryString"    : "5 2 * * *",
+  "weeklyReportCronEntryString"   : "10 2 * * 0",
+  "monthlyReportCronEntryString"  : "15 3 1 * *",
+  
+  "periodicEvaluationCronEntry" : "0 2 * * *",
+  "ucgEvaluationCronEntry" : "0 4 * * *",
+  
+  
+  
+  
+  "ucgEngineESConnectTimeout" : 30000,
+  "ucgEngineESSocketTimeout" : 60000,
+  "ucgEngineESMasRetryTimeout" : 60000,
+  "elasticSearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
+  
   "elasticSearchScrollSize" : 1000,
 
   "maxPollIntervalMsComment": "default is 30 seconds, which causes containers to stop during startup (heavy system load",
@@ -405,21 +423,9 @@
       }
     ],
 
-
-
-
-
-
-
   "allThoseFollowingAreComingFromNGLMQA": "this is not yet OK, just a first try",
 
   "autoApproveGuiObjects" : true,
-  "periodicEvaluationCronEntry" : "0 2 * * *",
-  "ucgEvaluationCronEntry" : "0 4 * * *",
-  "ucgEngineESConnectTimeout" : 30000,
-  "ucgEngineESSocketTimeout" : 60000,
-  "ucgEngineESMasRetryTimeout" : 60000,
-  "elasticSearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
 
   "propensityRule"                                       :
   {
@@ -731,6 +737,7 @@
     "reportManagerCsvSeparator"   : ";",
     "reportManagerStreamsTempDir" : "/tmp"
   },
+  
   "initialReports" :
   [
     {
@@ -745,7 +752,7 @@
       "display"             : "Subscriber Report",
       "description"         : "Description of the Subscriber Report",
       "class"               : "com.evolving.nglm.evolution.reports.subscriber.SubscriberReportDriver",
-      "availableScheduling" : [ "weekly", "monthly" ]
+      "availableScheduling" : [ "hourly", "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "BDRReport",
@@ -831,7 +838,8 @@
       "display"             : "Token Report",
       "description"         : "Description of the characteristics of the token",
       "class"               : "com.evolving.nglm.evolution.reports.token.TokenReportDriver",
-      "availableScheduling" : [ "weekly", "monthly" ]
+      "availableScheduling" : [ "hourly", "daily", "weekly", "monthly" ],
+      "effectiveScheduling" : [ "hourly", "monthly" ]
     },
     {
       "name"                : "offersAllocatedToTokens",

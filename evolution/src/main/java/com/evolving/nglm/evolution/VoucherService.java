@@ -10,8 +10,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.evolution.datacubes.JobScheduler;
-import com.evolving.nglm.evolution.datacubes.ScheduledJob;
+
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -89,7 +88,7 @@ public class VoucherService extends GUIService {
       processVoucherFileThread.start();
 
       // a thread scheduled for clean up expired voucher
-      cleanUpExpiredVouchersScheduler=new JobScheduler();
+      cleanUpExpiredVouchersScheduler=new JobScheduler("cleanUpExpiredVouchers");
       cleanUpExpiredVouchersScheduler.schedule(new ScheduledJob(0,"cleanUpExpiredVouchers",Deployment.getCleanExpiredVoucherCronEntry(),Deployment.getBaseTimeZone(),false) {
         @Override
         protected void run() {

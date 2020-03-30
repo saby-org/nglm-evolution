@@ -6,8 +6,8 @@ import org.elasticsearch.client.RestHighLevelClient;
 
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
-import com.evolving.nglm.evolution.datacubes.ScheduledJob;
 
 public class SubscriberProfileDatacubesOnTodayJob extends ScheduledJob
 {

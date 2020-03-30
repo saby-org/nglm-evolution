@@ -15,7 +15,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
@@ -44,11 +43,11 @@ import com.evolving.nglm.evolution.ReportService.ReportListener;
 /**
  * This class uses Zookeeper to launch the generation of reports. 
  * When a node is created in the controlDir, it triggers the generation of a report.
- * During this generation, an ephemeral node is created in lockDir, to prevent another report
- * (of the same type) to be created. 
+ * During this generation, an ephemeral node is created in lockDir, to prevent another report (of the same type) to be created. 
  *
  */
-public class ReportManager implements Watcher{
+public class ReportManager implements Watcher 
+{
 
   public static final String CONTROL_SUBDIR = "control"; // used in ReportScheduler
   private static final String LOCK_SUBDIR = "lock";
@@ -88,6 +87,12 @@ public class ReportManager implements Watcher{
     return getTopDir() + File.separator + LOCK_SUBDIR;
   }
 
+  /*****************************************
+  *
+  *  constructor
+  *
+  *****************************************/
+  
   public ReportManager() throws Exception
   {
     String topDir = getTopDir();
@@ -130,6 +135,12 @@ public class ReportManager implements Watcher{
     zk.getChildren(controlDir, this); // sets watch
   }
 
+  /*****************************************
+  *
+  *  createZKNode
+  *
+  *****************************************/
+  
   private void createZKNode(String znode, boolean canExist) {
     log.debug("Trying to create znode "	+ znode
         + " (" + (canExist?"may":"must not")+" already exist)");
@@ -168,6 +179,12 @@ public class ReportManager implements Watcher{
       log.error("Error processing report", e);
     }
   }
+  
+  /*****************************************
+  *
+  *  processChildren
+  *
+  *****************************************/
 
   private void processChildren(List<String> children) throws KeeperException, InterruptedException
   {
@@ -272,7 +289,13 @@ public class ReportManager implements Watcher{
         }
       }
   }
-
+  
+  /*****************************************
+  *
+  *  handleReport
+  *
+  *****************************************/
+  
   private void handleReport(String reportName, Report report, String restOfLine)
   {
     log.trace("---> Starting report "+reportName+" "+restOfLine);
@@ -336,6 +359,12 @@ public class ReportManager implements Watcher{
       reportManagerStatistics.incrementFailureCount();
     }
   }
+
+  /*****************************************
+  *
+  *  main
+  *
+  *****************************************/
 
   public static void main(String[] args) 
   {
