@@ -1910,11 +1910,11 @@ public class ThirdPartyManager
 
     String subscriberID = resolveSubscriberID(jsonRoot);
 
-    String journeyObjectiveName = readString(jsonRoot, "objective", true);
-    String journeyState = readString(jsonRoot, "journeyState", true);
-    String customerStatus = readString(jsonRoot, "customerStatus", true);
-    String journeyStartDateStr = readString(jsonRoot, "journeyStartDate", true);
-    String journeyEndDateStr = readString(jsonRoot, "journeyEndDate", true);
+    String journeyObjectiveName = readString(jsonRoot, "objective", false);
+    String journeyState = readString(jsonRoot, "journeyState", false);
+    String customerStatus = readString(jsonRoot, "customerStatus", false);
+    String journeyStartDateStr = readString(jsonRoot, "journeyStartDate", false);
+    String journeyEndDateStr = readString(jsonRoot, "journeyEndDate", false);
 
     Date journeyStartDate = prepareStartDate(getDateFromString(journeyStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
     Date journeyEndDate = prepareEndDate(getDateFromString(journeyEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));

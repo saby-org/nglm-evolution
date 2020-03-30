@@ -148,7 +148,6 @@ public class Deployment
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
   private static Map<String,SupportedTokenCodesFormat> supportedTokenCodesFormats = new LinkedHashMap<String,SupportedTokenCodesFormat>();
-  private static Map<String,ServiceType> serviceTypes = new LinkedHashMap<String,ServiceType>();
   private static Map<String,SupportedRelationship> supportedRelationships = new LinkedHashMap<String,SupportedRelationship>();
   private static Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
   private static Map<String,CatalogCharacteristicUnit> catalogCharacteristicUnits = new LinkedHashMap<String,CatalogCharacteristicUnit>();
@@ -181,7 +180,6 @@ public class Deployment
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static List<EvaluationCriterion> universalControlGroupCriteria = new ArrayList<EvaluationCriterion>();
   private static List<EvaluationCriterion> controlGroupCriteria = new ArrayList<EvaluationCriterion>();
-  private static Map<String,OfferCategory> offerCategories = new LinkedHashMap<String,OfferCategory>();
   private static Map<String,OfferProperty> offerProperties = new LinkedHashMap<String,OfferProperty>();
   private static Map<String,ScoringEngine> scoringEngines = new LinkedHashMap<String,ScoringEngine>();
   private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
@@ -396,7 +394,6 @@ public class Deployment
   public static Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
   public static Map<String,SupportedTokenCodesFormat> getSupportedTokenCodesFormats() { return supportedTokenCodesFormats; }
-  public static Map<String,ServiceType> getServiceTypes() { return serviceTypes; }
   public static Map<String,SupportedRelationship> getSupportedRelationships() { return supportedRelationships; }
   public static Map<String,CallingChannelProperty> getCallingChannelProperties() { return callingChannelProperties; }
   public static Map<String,CatalogCharacteristicUnit> getCatalogCharacteristicUnits() { return catalogCharacteristicUnits; }
@@ -428,7 +425,6 @@ public class Deployment
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
   public static List<EvaluationCriterion> getUniversalControlGroupCriteria() { return universalControlGroupCriteria; }
   public static List<EvaluationCriterion> getControlGroupCriteria() { return controlGroupCriteria; }
-  public static Map<String,OfferCategory> getOfferCategories() { return offerCategories; }
   public static Map<String,OfferProperty> getOfferProperties() { return offerProperties; }
   public static Map<String,ScoringEngine> getScoringEngines() { return scoringEngines; }
   public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; }
@@ -2284,25 +2280,6 @@ public class Deployment
         }
 
       //
-      //  serviceTypes
-      //
-
-      try
-        {
-          JSONArray serviceTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "serviceTypes", true);
-          for (int i=0; i<serviceTypeValues.size(); i++)
-            {
-              JSONObject serviceTypeJSON = (JSONObject) serviceTypeValues.get(i);
-              ServiceType serviceType = new ServiceType(serviceTypeJSON);
-              serviceTypes.put(serviceType.getID(), serviceType);
-            }
-        }
-      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
       //  supportedRelationships
       //
 
@@ -2664,25 +2641,6 @@ public class Deployment
             }
         }
       catch (GUIManagerException | JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  offerCategories
-      //
-
-      try
-        {
-          JSONArray offerCategoryValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerCategories", new JSONArray());
-          for (int i=0; i<offerCategoryValues.size(); i++)
-            {
-              JSONObject offerCategoryJSON = (JSONObject) offerCategoryValues.get(i);
-              OfferCategory offerCategory = new OfferCategory(offerCategoryJSON);
-              offerCategories.put(offerCategory.getID(), offerCategory);
-            }
-        }
-      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
         {
           throw new ServerRuntimeException("deployment", e);
         }
