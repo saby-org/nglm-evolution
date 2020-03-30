@@ -440,7 +440,6 @@ public class ReportUtils {
         else 
           {
             format(line);
-            line.append(getSeparator());
           }
       }
     return line.toString();
@@ -470,7 +469,6 @@ public class ReportUtils {
         else 
           {
             format(line);
-            line.append(getSeparator());
           }
       }
     return line.toString();
