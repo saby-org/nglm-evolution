@@ -48,8 +48,6 @@ public class ReportCsvWriter
   private ReportCsvFactory reportFactory;
   private String topicIn;
   private String kafkaNodeList;
-  private boolean addHeaders = true;
-  
 
   /**
    * Creates a ReportCsvWriter instance.
@@ -140,7 +138,8 @@ public class ReportCsvWriter
     try
       {
         fos = new FileOutputStream(file);
-      } catch (IOException ex)
+      } 
+    catch (IOException ex)
       {
         log.info("Error when creating " + csvfile + " : " + ex.getLocalizedMessage());
         return false;
@@ -157,8 +156,6 @@ public class ReportCsvWriter
         final long delay = 10 * 1000; // 10 seconds
         final int giveUp = 3;
         int noRecordsCount = 0;
-
-        log.debug("Waiting 10 seconds...");
         consumer.poll(10 * 1000); // necessary for consumer to reset to beginning of partitions
         consumer.seekToBeginning(consumer.assignment());
         // consumer.poll(Duration.ofSeconds(10));
@@ -181,20 +178,14 @@ public class ReportCsvWriter
             if (nbLoop % nbLoopForTrace == 0)
               log.debug("" + SystemTime.getCurrentTime() + " got " + d(consumerRecords.count()) + " records, total " + d(nbRecords) + " free mem = " + d(rt.freeMemory()) + "/" + d(rt.totalMemory()));
 
+            boolean addHeader = true;
             for (ConsumerRecord<String, ReportElement> record : consumerRecords)
               {
                 String key = record.key();
-                // if (alreadySeen.contains(key)) {
-                // //System.err.println("Skip record (already seen) "+key);
-                // System.err.print(".");
-                // continue;
-                // }
-                // //System.err.println("Adding "+key);
-                // alreadySeen.add(key);
                 nbRecords++;
                 ReportElement re = record.value();
-                reportFactory.dumpElementToCsv(key, re, writer, addHeaders);
-                addHeaders = false;
+                reportFactory.dumpElementToCsv(key, re, writer, addHeader);
+                addHeader = false;
               }
             writer.flush();
             while (true)
@@ -205,7 +196,7 @@ public class ReportCsvWriter
                     break;
                   } catch (Exception e)
                   {
-                    log.error(("Got " + e.getLocalizedMessage() + " we took too long to process batch and got kicked out of the group..."));
+                    log.info(("Got " + e.getLocalizedMessage() + " we took too long to process batch and got kicked out of the group..."));
                     break;
                   }
               }
@@ -222,34 +213,53 @@ public class ReportCsvWriter
     log.info("Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION);
     return true;
   }
-
+  
   public final boolean produceReport(String csvfile, boolean multipleFile)
   {
     if (!multipleFile)
       {
         return produceReport(csvfile);
-      } 
+      }
     else
       {
-        //
-        // generate report per object (EVPRO-170)
-        //
+        if (csvfile == null)
+          {
+            log.info("csvfile is null !");
+            return false;
+          }
+
+        File file = new File(csvfile + ReportUtils.ZIP_EXTENSION);
+        if (file.exists())
+          {
+            log.info(csvfile + " already exists, do nothing");
+            return false;
+          }
         
         //
         //  consumer
         //
         
         final Consumer<String, ReportElement> consumer = createConsumer(topicIn);
-        final long delay = 10*1000;
+        Map<String, List<Map<String, Object>>> records = new HashMap<String, List<Map<String, Object>>>();
+        
+        //
+        //  set
+        //
+        
+        final long delay = 10 * 1000; // 10 seconds
         final int giveUp = 3;
         int noRecordsCount = 0;
-        consumer.poll(10*1000);
+        consumer.poll(10 * 1000); // necessary for consumer to reset to beginning of partitions
         consumer.seekToBeginning(consumer.assignment());
         showOffsets(consumer);
         int nbRecords = 1;
         boolean breakMainLoop = false;
-        Map<String, List<ReportElement>> reportElementsMap = new HashMap<String, List<ReportElement>>();
-        for (int nbLoop=0; !breakMainLoop; nbLoop++) 
+        
+        //
+        //  read
+        //
+        
+        for (int nbLoop = 0; !breakMainLoop; nbLoop++)
           {
             log.debug("Doing poll...");
             final ConsumerRecords<String, ReportElement> consumerRecords = consumer.poll(delay);
@@ -261,28 +271,28 @@ public class ReportCsvWriter
                 else
                   continue;
               }
-            
             if (nbLoop % nbLoopForTrace == 0) log.debug("" + SystemTime.getCurrentTime() + " got " + d(consumerRecords.count()) + " records, total " + d(nbRecords) + " free mem = " + d(rt.freeMemory()) + "/" + d(rt.totalMemory()));
-            
+
             for (ConsumerRecord<String, ReportElement> record : consumerRecords)
               {
-                if (record.value().type != ReportElement.MARKER) 
+                nbRecords++;
+                ReportElement re = record.value();
+                if (re.type != ReportElement.MARKER && re.isComplete)
                   {
-                    String key = reportFactory.getFileSplitBy(record.value());
-                    if (reportElementsMap.containsKey(key))
+                    Map<String, List<Map<String, Object>>> splittedReportElements = reportFactory.getSplittedReportElementsForFile(record.value());
+                    for (String fileKey : splittedReportElements.keySet())
+                    
+                    if (records.containsKey(fileKey))
                       {
-                        reportElementsMap.get(key).add(record.value());
+                        records.get(fileKey).addAll(splittedReportElements.get(fileKey));
                       }
                     else
                       {
-                        List<ReportElement> reportElements = new ArrayList<ReportElement>();
-                        reportElements.add(record.value());
-                        reportElementsMap.put(key, reportElements);
-                        
+                        List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
+                        elements.addAll(splittedReportElements.get(fileKey));
+                        records.put(fileKey, elements);
                       }
-                    
                   }
-                nbRecords++;
               }
             while (true)
               {
@@ -293,86 +303,52 @@ public class ReportCsvWriter
                   } 
                 catch (Exception e)
                   {
-                    log.error(("Got " + e.getLocalizedMessage() + " we took too long to process batch and got kicked out of the group..."));
+                    log.info(("Got " + e.getLocalizedMessage() + " we took too long to process batch and got kicked out of the group..."));
                     break;
                   }
               }
           }
         consumer.close();
         
-        //
-        //  csvfile
-        //
-        
-        if (csvfile == null) 
-          {
-            log.info("csvfile is null !");
-            return false;
-          }
-        
-        //
-        //  zipFile
-        //
-        
-        File zipFile = new File(csvfile+ReportUtils.ZIP_EXTENSION);
-        if (zipFile.exists())
-          {
-            log.info(zipFile + " already exists, do nothing");
-            return false;
-          }
-        
-        //
-        //  write
-        //
-        
-        FileOutputStream fos = null;
-        ZipOutputStream writer = null;
         try
           {
-            fos = new FileOutputStream(zipFile);
-            writer = new ZipOutputStream(fos);
-            for (String key : reportElementsMap.keySet())
+            //
+            //  ZIP
+            //
+            
+            FileOutputStream fos = new FileOutputStream(file);
+            ZipOutputStream writer = new ZipOutputStream(fos);
+            
+            for (String key : records.keySet())
               {
-                
                 //
-                //  dataFile
+                // data
                 //
-                
-                File dataFile = new File(key + "_"+ csvfile);
-                ZipEntry entry = new ZipEntry(dataFile.getName());
+
+                boolean addHeader = true;
+                String dataFile[] = csvfile.split("[.]");
+                String dataFileName = dataFile[0] + "_" + key;
+                String zipEntryName = new File(dataFileName + "." + dataFile[1]).getName();
+                ZipEntry entry = new ZipEntry(zipEntryName);
                 writer.putNextEntry(entry);
-                addHeaders = true;
-                for (ReportElement reportElement : reportElementsMap.get(key))
+                for (Map<String, Object> lineMap : records.get(key))
                   {
-                    reportFactory.dumpElementToCsv(key, reportElement, writer, addHeaders);
-                    addHeaders = false;
+                    reportFactory.dumpLineToCsv(lineMap, writer, addHeader);
+                    addHeader = false;
                   }
               }
+            writer.flush();
+            writer.closeEntry();
+            writer.close();
+            fos.close();
           }
-        catch (IOException ex)
+        catch (Exception e) 
           {
-            log.error("Error when writing to " + csvfile + " : " + ex.getLocalizedMessage());
-            return false;
+            log.error("Error in file {} ", e);
           }
-        finally 
-          {
-            try
-              {
-                if (writer != null)
-                  {
-                    writer.flush();
-                    writer.closeEntry();
-                    writer.close();
-                  }
-                if (fos != null )fos.close();
-              } 
-            catch (IOException e)
-              {
-                log.error("Error when closing writer and fos" + e.getLocalizedMessage());
-              }
-          }
-        return true;
       }
+    log.info("Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION);
+    return true;
   }
 
   private void showOffsets(final Consumer<String, ReportElement> consumer)

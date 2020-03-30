@@ -22,7 +22,7 @@ public class NotificationReportDriver extends ReportDriver{
         String topicPrefix = super.getTopicPrefix(report.getName());
         String topic1 = topicPrefix+"_a";
         String topic2 = topicPrefix+"_b";
-        String esIndexNotif = "detailedrecords_messages-*";
+        String esIndexNotif = "detailedrecords_messages-";
         String esIndexCustomer = "subscriberprofile";
         String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
         int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();

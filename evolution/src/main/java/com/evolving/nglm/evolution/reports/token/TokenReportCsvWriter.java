@@ -33,6 +33,7 @@ public class TokenReportCsvWriter implements ReportCsvFactory
 {
   private static final Logger log = LoggerFactory.getLogger(TokenReportCsvWriter.class);
   final private static String CSV_SEPARATOR = ReportUtils.getSeparator();
+
   private final static String subscriberID = "subscriberID";
   private final static String customerID = "customerID";
 
@@ -267,6 +268,7 @@ public class TokenReportCsvWriter implements ReportCsvFactory
                         if (addHeaders)
                           {
                             addHeaders(writer, result.keySet(), 1);
+                            addHeaders = false;
                           }
                         String line = ReportUtils.formatResult(result);
                         log.trace("Writing to csv file : " + line);

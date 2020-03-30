@@ -11,9 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.Date;
 import java.util.LinkedHashMap;
-import java.util.List;
 
 /**
  * This implements phase 1 of the Journey report. All it does is specifying
@@ -48,46 +46,35 @@ public class JourneyCustomerStatesReportESReader
         log.warn("Usage : JourneyCustomerStatesReportESReader <Output Topic> <KafkaNodeList> <ZKhostList> <ESNode> <ES customer index> <ES journey index>");
         return;
       }
-    
-    //
-    //  read arguments
-    //
-    
     String topicName = args[0];
-    String kafkaNode = args[1];
+    String kafkaNodeList = args[1];
     String kzHostList = args[2];
     String esNode = args[3];
     String esIndexJourney = args[4];
     String esIndexCustomer = args[5];
-    
-    //
-    //  journeyService
-    //
-    
-    Date now = SystemTime.getCurrentTime();
-    JourneyService journeyService = new JourneyService(kafkaNode, "JourneyCustomerStatesReportESReader-journeyservice-" + now.getTime(), Deployment.getJourneyTopic(), false);
+
+    JourneyService journeyService = new JourneyService(kafkaNodeList, "JourneyCustomerStatesReportESReader-journeyservice-" + topicName, Deployment.getJourneyTopic(), false);
     journeyService.start();
-    
-    //
-    //  actvieJourneys
-    //
-    
-    Collection<Journey> actvieJourneys = journeyService.getActiveJourneys(now);
-    
-    //
-    // elasticserach
-    //
-    
-    LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    for (Journey journey : actvieJourneys)
+
+    Collection<Journey> activeJourneys = journeyService.getActiveJourneys(SystemTime.getCurrentTime());
+    StringBuilder activeJourneyEsIndex = new StringBuilder();
+    boolean firstEntry = true;
+    for (Journey journey : activeJourneys)
       {
-        log.info("RAJ creating esIndexJourney {} ", esIndexJourney + journey.getJourneyID());
-        esIndexWithQuery.put(esIndexJourney + journey.getJourneyID(), QueryBuilders.matchAllQuery());
+        if (!firstEntry) activeJourneyEsIndex.append(",");
+        String indexName = esIndexJourney + journey.getJourneyID();
+        activeJourneyEsIndex.append(indexName);
+        firstEntry = false;
       }
+
+    log.info("Reading data from ES in (" + activeJourneyEsIndex.toString() + ") and " + esIndexJourney + " index and writing to " + topicName + " topic.");
+    LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
+    esIndexWithQuery.put(activeJourneyEsIndex.toString(), QueryBuilders.matchAllQuery());
     esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
-    log.info("Reading data from ES and writing to topic.");
-    ReportEsReader reportEsReader = new ReportEsReader(JourneyCustomerStatesReportObjects.KEY_STR, topicName, kafkaNode, kzHostList, esNode, esIndexWithQuery);
+
+    ReportEsReader reportEsReader = new ReportEsReader(JourneyCustomerStatesReportObjects.KEY_STR, topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery);
     reportEsReader.start();
+    journeyService.stop();
     log.info("Finished JourneyCustomerStatesReportESReader");
   }
 

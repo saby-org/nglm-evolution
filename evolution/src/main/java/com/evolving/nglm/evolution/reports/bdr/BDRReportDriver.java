@@ -22,7 +22,7 @@ public class BDRReportDriver extends ReportDriver{
         String topicPrefix = super.getTopicPrefix(report.getName());
         String topic1 = topicPrefix+"_a";
         String topic2 = topicPrefix+"_b";
-        String esIndexBdr = "detailedrecords_bonuses-*";
+        String esIndexBdr = "detailedrecords_bonuses-";
         String esIndexCustomer = "subscriberprofile";
         log.debug("PHASE 1 : read ElasticSearch");
         String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
