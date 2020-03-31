@@ -404,8 +404,17 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     public CommodityDeliveryOperation getOperation() { return operation; }
     public int getAmount() { return amount; }
     public TimeUnit getValidityPeriodType() { return validityPeriodType; }
-    public Integer getValidityPeriodQuantity() { return validityPeriodQuantity; }
-    public Date getDeliverableExpirationDate() { return deliverableExpirationDate; }
+    public Integer getValidityPeriodQuantity() { return validityPeriodQuantity; }    
+    public Date getDeliverableExpirationDate() {
+      // so far only internal point returns this
+      if(deliverableExpirationDate!=null) return deliverableExpirationDate;
+      // but if empty we will compute it (so might be not a real one), for all the others cases, based on delivery date
+      if(validityPeriodType!=null && validityPeriodType!=TimeUnit.Unknown && validityPeriodQuantity!=null){
+        return EvolutionUtilities.addTime(getDeliveryDate(), validityPeriodQuantity, validityPeriodType, Deployment.getBaseTimeZone(), EvolutionUtilities.RoundingSelection.NoRound);
+      }
+      // should be null here
+      return deliverableExpirationDate;
+    }    
     public CommodityDeliveryStatus getCommodityDeliveryStatus() { return commodityDeliveryStatus; }
     public String getStatusMessage() { return statusMessage; }
 
