@@ -570,6 +570,70 @@
     }
   ],
 
+  "initialCallingChannels": [
+    {
+      "id": "-1", 
+      "name": "CustomerCare",
+      "display": "Customer Care",
+      "active": true,
+      "readOnly": true,
+      "offerProperties": [
+        {
+          "offerPropertyID": "1",
+          "offerPropertyName": "offerID",
+          "presentOffers": true,
+          "presentOfferDetails": true,
+          "hidden": true
+        },
+        {
+          "offerPropertyID": "2",
+          "offerPropertyName": "offerName",
+          "presentOffers": true,
+          "presentOfferDetails": true,
+          "hidden": true
+        },
+        {
+          "offerPropertyID": "3",
+          "offerPropertyName": "offerDescription",
+          "presentOffers": true,
+          "presentOfferDetails": true,
+          "hidden": true
+        },
+        {
+          "offerPropertyID": "4",
+          "offerPropertyName": "offerScore",
+          "presentOffers": true,
+          "presentOfferDetails": true,
+          "hidden": false
+        },
+        {
+          "offerPropertyID": "5",
+          "offerPropertyName": "offerRank",
+          "presentOffers": true,
+          "presentOfferDetails": true,
+          "hidden": false
+        },
+        {
+          "offerPropertyID": "6",
+          "offerPropertyName": "imageURL",
+          "presentOffers": true,
+          "presentOfferDetails": true,
+          "hidden": false
+        },
+        {
+          "offerPropertyID": "7",
+          "offerPropertyName": "price",
+          "presentOffers": true,
+          "presentOfferDetails": true,
+          "hidden": false
+        }
+      ],
+      "catalogCharacteristics": []
+    }
+  ],
+
+
+
   "offerProperties" :
   [
     { "id": "1", "name": "offerID", "display": "Offer ID" },
