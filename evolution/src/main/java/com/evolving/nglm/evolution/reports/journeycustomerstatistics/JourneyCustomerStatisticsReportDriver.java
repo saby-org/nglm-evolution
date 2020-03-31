@@ -11,7 +11,7 @@ public class JourneyCustomerStatisticsReportDriver extends ReportDriver {
 
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatisticsReportDriver.class);
   public static final String SUBSCRIBER_ES_INDEX = "subscriberprofile";
-  public static final String JOURNEY_ES_INDEX = "journeystatistic*";
+  public static final String JOURNEY_ES_INDEX = "journeystatistic-";
   public static final String JOURNEY_METRIC_ES_INDEX = "journeymetric";
 
   @Override

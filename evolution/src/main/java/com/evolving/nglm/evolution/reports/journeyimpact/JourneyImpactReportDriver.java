@@ -11,7 +11,7 @@ public class JourneyImpactReportDriver extends ReportDriver {
 
   private static final Logger log = LoggerFactory.getLogger(JourneyImpactReportDriver.class);
   public static final String JOURNEY_METRIC_ES_INDEX = "journeymetric";
-  public static final String JOURNEY_STATS_ES_INDEX = "journeystatistic*";
+  public static final String JOURNEY_STATS_ES_INDEX = "journeystatistic-";
 
   @Override
   public void produceReport(

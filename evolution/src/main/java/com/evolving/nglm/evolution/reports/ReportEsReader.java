@@ -131,7 +131,12 @@ public class ReportEsReader
     this.kafkaNodeList = kafkaNodeList;
     this.kzHostList = kzHostList;
     this.esNode = esNode;
-    this.esIndex = esIndex;
+    // convert index names to lower case, because this is what ElasticSearch expects
+    this.esIndex = new LinkedHashMap<>();
+    for (Entry<String, QueryBuilder> elem : esIndex.entrySet())
+      {
+        this.esIndex.put(elem.getKey().toLowerCase(), elem.getValue());
+      }
   }
 
   public enum PERIOD
@@ -306,27 +311,7 @@ public class ReportEsReader
                 scrollId = searchResponse.getScrollId();
                 searchHits = searchResponse.getHits().getHits();
               }
-            if (i == esIndex.size() - 1)
-              {
-                // send 1 marker per partition
-                for (int partition = 0; partition < ReportUtils.getNbPartitions(); partition++)
-                  {
-                    ReportElement re = new ReportElement();
-                    re.type = ReportElement.MARKER;
-                    ProducerRecord<String, ReportElement> record = new ProducerRecord<>(topicName, partition, "-1", re); // negative
-                                                                                                                         // key
-                    log.debug("Sending Marker message " + re);
-                    count.getAndIncrement();
-                    producerReportElement.send(record, (mdata, e) -> {
-                      log.debug("Marker was sent to partition " + mdata.partition());
-                      nbReallySent.incrementAndGet();
-                      lastTS.set(mdata.timestamp());
-                    });
-                  }
-              } else
-              {
-                log.debug("Finished with index " + i); // Markers are sent at the end
-              }
+            log.debug("Finished with index " + i);
             if (scrollId != null)
               {
                 ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
@@ -338,6 +323,21 @@ public class ReportEsReader
             e.printStackTrace();
           }
         i++;
+      }
+
+    // send 1 marker per partition
+    for (int partition = 0; partition < ReportUtils.getNbPartitions(); partition++)
+      {
+        ReportElement re = new ReportElement();
+        re.type = ReportElement.MARKER;
+        ProducerRecord<String, ReportElement> record = new ProducerRecord<>(topicName, partition, "-1", re); // negative key
+        log.debug("Sending Marker message " + re);
+        count.getAndIncrement();
+        producerReportElement.send(record, (mdata, e) -> {
+          log.debug("Marker was sent to partition " + mdata.partition());
+          nbReallySent.incrementAndGet();
+          lastTS.set(mdata.timestamp());
+        });
       }
 
     reportElementSerializer.close();
@@ -411,7 +411,14 @@ public class ReportEsReader
           }
       }
     log.debug("index to be read {}", existingIndexes.toString());
-    return existingIndexes.toString().split(",");
+    if (firstEntry) // nothing got added
+      {
+        return null;
+      }
+    else
+      {
+        return existingIndexes.toString().split(",");
+      }
   }
 
   private int getScrollSize()
