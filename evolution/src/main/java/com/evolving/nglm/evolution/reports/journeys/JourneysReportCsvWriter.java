@@ -79,7 +79,7 @@ public class JourneysReportCsvWriter implements ReportCsvFactory
 
           if(journeyTrafficHistory != null) {
             for(SubscriberJourneyStatus states : SubscriberJourneyStatus.values()){
-              sbStatus.append(states).append("=").append(journeyTrafficHistory.getCurrentData().getStatusSubscribersCount(states)).append(",");
+              sbStatus.append(states.getDisplay()).append("=").append(journeyTrafficHistory.getCurrentData().getStatusSubscribersCount(states)).append(",");
             }
             journeyStatus = sbStatus.toString().substring(0, sbStatus.toString().length()-1);
 
