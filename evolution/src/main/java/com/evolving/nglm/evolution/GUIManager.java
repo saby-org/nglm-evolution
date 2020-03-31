@@ -23211,7 +23211,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                                 case Campaign:
                                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
                                   availableValue.put("id", campaign.getJourneyID());
-                                  availableValue.put("display", campaign.getJourneyName());
+                                  availableValue.put("display", campaign.getGUIManagedObjectDisplay());
                                   result.add(JSONUtilities.encodeObject(availableValue));
                                   break;
                               }
@@ -23238,7 +23238,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                                 case Workflow:
                                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
                                   availableValue.put("id", workflow.getJourneyID());
-                                  availableValue.put("display", workflow.getJourneyName());
+                                  availableValue.put("display", workflow.getGUIManagedObjectDisplay());
                                   result.add(JSONUtilities.encodeObject(availableValue));
                                   break;
                               }
@@ -23259,7 +23259,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                       LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", loyaltyProgram.getLoyaltyProgramID());
-                      availableValue.put("display", loyaltyProgram.getLoyaltyProgramDisplay());
+                      availableValue.put("display", loyaltyProgram.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23282,7 +23282,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                                 case Journey:
                                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
                                   availableValue.put("id", journey.getJourneyID());
-                                  availableValue.put("display", journey.getJourneyName());
+                                  availableValue.put("display", journey.getGUIManagedObjectDisplay());
                                   result.add(JSONUtilities.encodeObject(availableValue));
                                   break;
                               }
@@ -23303,7 +23303,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                       Deliverable deliverable = (Deliverable) deliverablesUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", deliverable.getGUIManagedObjectID());
-                      availableValue.put("display", deliverable.getDeliverableDisplay());
+                      availableValue.put("display", deliverable.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23320,7 +23320,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                       Deliverable deliverable = (Deliverable) deliverablesUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", deliverable.getDeliverableName());
-                      availableValue.put("display", deliverable.getDeliverableDisplay());
+                      availableValue.put("display", deliverable.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23411,7 +23411,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                       LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramsUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", loyaltyProgram.getLoyaltyProgramName());
-                      availableValue.put("display", loyaltyProgram.getLoyaltyProgramDisplay());
+                      availableValue.put("display", loyaltyProgram.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23462,7 +23462,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                       Offer offer = (Offer) offerUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", offer.getOfferID());
-                      availableValue.put("display", offer.getDisplay());
+                      availableValue.put("display", offer.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23479,7 +23479,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                       Offer offer = (Offer) offerUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", offer.getOfferID());
-                      availableValue.put("display", offer.getDisplay());
+                      availableValue.put("display", offer.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23496,7 +23496,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                       OfferObjective offerObjective = (OfferObjective) offerObjectiveUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", offerObjective.getOfferObjectiveID());
-                      availableValue.put("display", offerObjective.getDisplay());
+                      availableValue.put("display", offerObjective.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23516,7 +23516,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                           case OffersPresentation:
                             HashMap<String,Object> availableValue = new HashMap<String,Object>();
                             availableValue.put("id", tokenType.getTokenTypeID());
-                            availableValue.put("display", tokenType.getTokenTypeDisplay());
+                            availableValue.put("display", tokenType.getGUIManagedObjectDisplay());
                             result.add(JSONUtilities.encodeObject(availableValue));
                             break;
                         }
@@ -23535,7 +23535,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                       PaymentMean paymentMean = (PaymentMean) paymentMeanUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", paymentMean.getPaymentMeanID());
-                      availableValue.put("display", paymentMean.getDisplay());
+                      availableValue.put("display", paymentMean.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23558,7 +23558,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                           if(deliverable.getFulfillmentProviderID().equals(providerID)){
                             HashMap<String,Object> availableValue = new HashMap<String,Object>();
                             availableValue.put("id", deliverable.getDeliverableID());
-                            availableValue.put("display", deliverable.getDeliverableDisplay());
+                            availableValue.put("display", deliverable.getGUIManagedObjectDisplay());
                             result.add(JSONUtilities.encodeObject(availableValue));
                           }
                         }
@@ -23583,7 +23583,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                           if(paymentMean.getFulfillmentProviderID().equals(providerID)){
                             HashMap<String,Object> availableValue = new HashMap<String,Object>();
                             availableValue.put("id", paymentMean.getPaymentMeanID());
-                            availableValue.put("display", paymentMean.getPaymentMeanDisplay());
+                            availableValue.put("display", paymentMean.getGUIManagedObjectDisplay());
                             result.add(JSONUtilities.encodeObject(availableValue));
                           }
                         }
@@ -23602,7 +23602,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                       PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", presentationStrategy.getPresentationStrategyID());
-                      availableValue.put("display", presentationStrategy.getGUIManagedObjectName());
+                      availableValue.put("display", presentationStrategy.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23619,7 +23619,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                       Product product = (Product) productUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", product.getProductID());
-                      availableValue.put("display", product.getDisplay());
+                      availableValue.put("display", product.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23636,7 +23636,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                       ProductType productType = (ProductType) productTypeUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", productType.getID());
-                      availableValue.put("display", productType.getDisplay());
+                      availableValue.put("display", productType.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23653,7 +23653,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 Voucher voucher = (Voucher) voucherUnchecked;
                 HashMap<String,Object> availableValue = new HashMap<String,Object>();
                 availableValue.put("id", voucher.getVoucherID());
-                availableValue.put("display", voucher.getVoucherDisplay());
+                availableValue.put("display", voucher.getGUIManagedObjectDisplay());
                 result.add(JSONUtilities.encodeObject(availableValue));
               }
             }
@@ -23670,7 +23670,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 VoucherType voucherType = (VoucherType) voucherTypeUnchecked;
                 HashMap<String,Object> availableValue = new HashMap<String,Object>();
                 availableValue.put("id", voucherType.getID());
-                availableValue.put("display", voucherType.getDisplay());
+                availableValue.put("display", voucherType.getGUIManagedObjectDisplay());
                 result.add(JSONUtilities.encodeObject(availableValue));
               }
             }
@@ -23731,7 +23731,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     {
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", segment.getID());
-                      availableValue.put("display", dimension.getSegmentationDimensionDisplay() + ":" + segment.getName());
+                      availableValue.put("display", dimension.getGUIManagedObjectDisplay() + ":" + segment.getName());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23748,7 +23748,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                       SMSTemplate messageTemplate = (SMSTemplate) messageTemplateUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", messageTemplate.getSubscriberMessageTemplateID());
-                      availableValue.put("display", messageTemplate.getSubscriberMessageTemplateDisplay());
+                      availableValue.put("display", messageTemplate.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23795,7 +23795,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                         {
                           HashMap<String,Object> availableValue = new HashMap<String,Object>();
                           availableValue.put("id", sourceAddress.getSourceAddressId());
-                          availableValue.put("display", sourceAddress.getSourceAddressDisplay());
+                          availableValue.put("display", sourceAddress.getGUIManagedObjectDisplay());
                           result.add(JSONUtilities.encodeObject(availableValue));
                         }
                     }
@@ -23832,7 +23832,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                         {
                           HashMap<String,Object> availableValue = new HashMap<String,Object>();
                           availableValue.put("id", sourceAddress.getSourceAddressId());
-                          availableValue.put("display", sourceAddress.getSourceAddressDisplay());
+                          availableValue.put("display", sourceAddress.getGUIManagedObjectDisplay());
                           result.add(JSONUtilities.encodeObject(availableValue));
                         }
                     }
@@ -23850,7 +23850,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                       TokenType tokenType = (TokenType) tokenTypesUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", tokenType.getGUIManagedObjectID());
-                      availableValue.put("display", tokenType.getTokenTypeDisplay());
+                      availableValue.put("display", tokenType.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
