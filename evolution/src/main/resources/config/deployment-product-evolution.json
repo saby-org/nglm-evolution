@@ -552,7 +552,8 @@
 
   "initialSalesChannels" :
   [
-    {"id":"2",	"name":"journey",	"display":"Journey",	"active":true,	"readOnly":true,	"callingChannelIDs":[]}
+    {"id":"-1", "name":"CustomerCare",  "display":"Customer Care","active":true, "readOnly":true, "callingChannelIDs" : [ "-1" ] }
+    {"id":"2",	"name":"journey",	"display":"Journey",	  "active":true, "readOnly":true, "callingChannelIDs":[]}
   ],
 
   "initialJourneyObjectives" : [],
