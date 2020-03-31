@@ -96,17 +96,17 @@ public class Journey extends GUIManagedObject
 
   public enum SubscriberJourneyStatus
   {
-    NotEligible("notEligible", "Not Eligible"),
+    NotEligible("notEligible", "NotEligible"),
     Entered("entered", "Entered"),
     Targeted("targeted", "Targeted"),
     Notified("notified", "Notified"),
-    ConvertedNotNotified("unnotified_converted", "Not-Notified/Converted"),
-    ConvertedNotified("notified_converted", "Notified/Converted"),
-    ControlGroup("controlGroup", "Entered (control)"),
-    UniversalControlGroup("UniversalControlGroup", "Entered (UniversalControlGroup)"),
-    ControlGroupConverted("controlGroup_converted", "Control Group Converted"),
-    UniversalControlGroupConverted("UniversalControlGroup_converted", "Universal Control Group Converted"),
-    Unknown("(unknown)", "(unknown)");
+    ConvertedNotNotified("unnotified_converted", "Converted"),
+    ConvertedNotified("notified_converted", "ConvertedNotified"),
+    ControlGroup("controlGroup", "Control"),
+    UniversalControlGroup("UniversalControlGroup", "UCG"),
+    ControlGroupConverted("controlGroup_converted", "ControlConverted"),
+    UniversalControlGroupConverted("UniversalControlGroup_converted", "UCGConverted"),
+    Unknown("(unknown)", "Unknown");
     private String externalRepresentation;
     private String display;
     private SubscriberJourneyStatus(String externalRepresentation, String display) { this.externalRepresentation = externalRepresentation; this.display = display; }

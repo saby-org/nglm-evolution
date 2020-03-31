@@ -74,7 +74,7 @@ public class JourneyImpactReportCsvWriter implements ReportCsvFactory
               {
                 for (SubscriberJourneyStatus states : SubscriberJourneyStatus.values())
                   {
-                    sbStatus.append(states).append("=").append(journeyTrafficHistory.getCurrentData().getStatusSubscribersCount(states)).append(",");
+                    sbStatus.append(states.getDisplay()).append("=").append(journeyTrafficHistory.getCurrentData().getStatusSubscribersCount(states)).append(",");
                   }
 
                 if (sbStatus.length() > 0)
@@ -177,7 +177,7 @@ public class JourneyImpactReportCsvWriter implements ReportCsvFactory
               {
                 for (SubscriberJourneyStatus states : SubscriberJourneyStatus.values())
                   {
-                    sbStatus.append(states).append("=").append(journeyTrafficHistory.getCurrentData().getStatusSubscribersCount(states)).append(",");
+                    sbStatus.append(states.getDisplay()).append("=").append(journeyTrafficHistory.getCurrentData().getStatusSubscribersCount(states)).append(",");
                   }
 
                 if (sbStatus.length() > 0)
