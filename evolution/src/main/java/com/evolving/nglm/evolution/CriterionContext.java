@@ -198,6 +198,7 @@ public class CriterionContext
   private static CriterionField nodeEntryDate;
   private static CriterionField journeyActionDeliveryStatus;
   private static CriterionField journeyActionJourneyStatus;
+  private static CriterionField journeyEndDate;
   static
   {
     //
@@ -213,6 +214,25 @@ public class CriterionContext
         journeyEntryDateJSON.put("retriever", "getJourneyEntryDate");
         journeyEntryDateJSON.put("internalOnly", false);
         journeyEntryDate  = new CriterionField(JSONUtilities.encodeObject(journeyEntryDateJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
+    //
+    //  journeyEndDate
+    //
+
+    try
+      {
+        Map<String,Object> journeyEndDateJSON = new LinkedHashMap<String,Object>();
+        journeyEndDateJSON.put("id", "journey.endDate");
+        journeyEndDateJSON.put("display", "journey.endDate");
+        journeyEndDateJSON.put("dataType", "date");
+        journeyEndDateJSON.put("retriever", "getJourneyEndDate");
+        journeyEndDateJSON.put("internalOnly", false);
+        journeyEndDate  = new CriterionField(JSONUtilities.encodeObject(journeyEndDateJSON));
       }
     catch (GUIManagerException e)
       {
@@ -364,6 +384,7 @@ public class CriterionContext
     this.criterionContextType = CriterionContextType.Journey;
     this.additionalCriterionFields = new LinkedHashMap<String,CriterionField>();
     this.additionalCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
+    this.additionalCriterionFields.put(journeyEndDate.getID(), journeyEndDate);
     this.additionalCriterionFields.putAll(journeyParameters);
     for (CriterionField contextVariable : contextVariables.values())
       {
@@ -414,6 +435,7 @@ public class CriterionContext
         //
 
         this.additionalCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
+        this.additionalCriterionFields.put(journeyEndDate.getID(), journeyEndDate);
 
         //
         //  journey parameters
