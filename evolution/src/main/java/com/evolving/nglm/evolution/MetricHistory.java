@@ -903,6 +903,8 @@ public class MetricHistory
   *    D - D    result := 0
   *
   *****************************************/
+  
+  // @rl: is there really a difference between case C & D for endDate (e.g. in the future) or is it just useless complexity 
 
   private enum DateCase { A, B, C, D }
 
