@@ -3112,11 +3112,16 @@ public class EvolutionEngine
       MessageDelivery messageDelivery = (MessageDelivery)evolutionEvent;
       if(messageDelivery.getMessageDeliveryDeliveryStatus() == DeliveryStatus.Delivered)
         {
-          MetricHistory channelMetricHistory = context.getSubscriberState().getNotificationHistory().stream().filter(p -> p.getFirstElement().equals(Deployment.getDeliveryTypeCommunicationChannelIDMap().get(((DeliveryRequest)messageDelivery).getDeliveryType()))).collect(Collectors.toList()).get(0).getSecondElement();
-          Date messageDeliveryDate = RLMDateUtils.truncate(messageDelivery.getMessageDeliveryEventDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-          //long messageCount = channelMetricHistory.getValue(messageDeliveryDate, messageDeliveryDate).longValue() + 1;
-          //this update should be called increment for metric history.
-          channelMetricHistory.update(messageDeliveryDate,1);
+          try {
+            MetricHistory channelMetricHistory = context.getSubscriberState().getNotificationHistory().stream().filter(p -> p.getFirstElement().equals(Deployment.getDeliveryTypeCommunicationChannelIDMap().get(((DeliveryRequest)messageDelivery).getDeliveryType()))).collect(Collectors.toList()).get(0).getSecondElement();
+            Date messageDeliveryDate = RLMDateUtils.truncate(messageDelivery.getMessageDeliveryEventDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+            //long messageCount = channelMetricHistory.getValue(messageDeliveryDate, messageDeliveryDate).longValue() + 1;
+            //this update should be called increment for metric history.
+            channelMetricHistory.update(messageDeliveryDate,1);
+          }
+          catch(Exception e) {
+            log.warn("CATCHED Exception " + e.getClass().getName() + " while updating channelMetricHistory", e);
+          }
         }
     }
 
