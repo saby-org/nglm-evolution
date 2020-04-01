@@ -47,14 +47,18 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
     private SubscriberMessageTemplateService subscriberMessageTemplateService;
     private DynamicEventDeclarationsService dynamicEventDeclarationsService;
     private CommunicationChannelService communicationChannelService;
+    private DynamicCriterionFieldService dynamicCriterionFieldService;
 
     public OfferESSinkTask()
     {
+      dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "journeyessinkconnector-dynamiccriterionfieldservice-" + getTaskNumber(), Deployment.getDynamicCriterionFieldTopic(), false);
+      CriterionContext.initialize(dynamicCriterionFieldService);
       journeyService = new JourneyService(Deployment.getBrokerServers(), "journeyessinkconnector-journeyservice-" + getTaskNumber(), Deployment.getJourneyTopic(), false);
       catalogCharacteristicService = new CatalogCharacteristicService(Deployment.getBrokerServers(), "journeyessinkconnector-catalogcharacteristicservice-" + getTaskNumber(), Deployment.getCatalogCharacteristicTopic(), false);
       subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "journeyessinkconnector-subscriberMessageTemplateService-" + getTaskNumber(), Deployment.getSubscriberMessageTemplateTopic(), false);
       dynamicEventDeclarationsService = new DynamicEventDeclarationsService(Deployment.getBrokerServers(), "journeyessinkconnector-dynamicEventDeclarationsService-" + getTaskNumber(), Deployment.getDynamicEventDeclarationsTopic(), false);
       communicationChannelService = new CommunicationChannelService(Deployment.getBrokerServers(), "journeyessinkconnector-communicationChannelService-" + getTaskNumber(), Deployment.getCommunicationChannelTopic(), false);
+      dynamicCriterionFieldService.start();
       journeyService.start();
       catalogCharacteristicService.start();
       subscriberMessageTemplateService.start();
