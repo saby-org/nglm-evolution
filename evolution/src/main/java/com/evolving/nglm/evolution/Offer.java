@@ -41,8 +41,11 @@ public class Offer extends GUIManagedObject implements StockableItem
   //
   //  initial propensity
   //
-  public static double getValidPropensity(double p) {
-    if(p >= 0.0d && p <= 1.0d) {
+  public static double getValidPropensity(Double p) {
+    if(p == null) {
+      // Default value is 0.50
+      return 0.50d;
+    } else if(p >= 0.0d && p <= 1.0d) {
       return p;
     } else {
       log.error("Trying to set invalid initial propensity (" + p + "). Will be set to the default value (0.50).");
@@ -562,7 +565,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     *
     *****************************************/
     
-    this.initialPropensity = getValidPropensity(JSONUtilities.decodeDouble(jsonRoot, "initialPropensity", true));
+    this.initialPropensity = getValidPropensity(JSONUtilities.decodeDouble(jsonRoot, "initialPropensity", false));
     this.stock = JSONUtilities.decodeInteger(jsonRoot, "presentationStock", false);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
     this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true));
@@ -585,40 +588,7 @@ public class Offer extends GUIManagedObject implements StockableItem
         this.setEpoch(epoch);
       }
   }
-
-  /*****************************************
-  *
-  *  constructor -- JSON without context -- for externals read-only (such as datacubes & reports)
-  *
-  *****************************************/
-
-  public Offer(JSONObject jsonRoot) throws GUIManagerException
-  {
-    /*****************************************
-    *
-    *  super
-    *
-    *****************************************/
-
-    super(jsonRoot, 0);
-
-    /*****************************************
-    *
-    *  attributes
-    *
-    *****************************************/
-
-    this.initialPropensity = getValidPropensity(JSONUtilities.decodeDouble(jsonRoot, "initialPropensity", true));
-    this.stock = JSONUtilities.decodeInteger(jsonRoot, "presentationStock", false);
-    this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
-    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true));
-    this.offerSalesChannelsAndPrices = decodeOfferSalesChannelsAndPrices(JSONUtilities.decodeJSONArray(jsonRoot, "salesChannelsAndPrices", true));
-    this.offerProducts = decodeOfferProducts(JSONUtilities.decodeJSONArray(jsonRoot, "products", false));
-    this.offerVouchers = decodeOfferVouchers(JSONUtilities.decodeJSONArray(jsonRoot, "vouchers", false));
-    this.offerTranslations = decodeOfferTranslations(JSONUtilities.decodeJSONArray(jsonRoot, "offerTranslations", false));
-    this.stockableItemID = "offer-" + getOfferID();
-  }
-
+  
   /*****************************************
   *
   *  decodeProfileCriteria
