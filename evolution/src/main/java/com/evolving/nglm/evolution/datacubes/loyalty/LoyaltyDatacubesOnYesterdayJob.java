@@ -8,7 +8,7 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
-import com.evolving.nglm.evolution.datacubes.ScheduledJob;
+import com.evolving.nglm.evolution.ScheduledJob;
 
 public class LoyaltyDatacubesOnYesterdayJob extends ScheduledJob
 {

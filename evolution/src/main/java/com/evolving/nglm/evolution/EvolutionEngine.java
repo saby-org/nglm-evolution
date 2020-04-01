@@ -93,7 +93,6 @@ import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.StringValue;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SubscriberTrace;
@@ -1847,6 +1846,22 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  detectReScheduledDeliveryRequests : add to scheduledEvaluations
+    *
+    *****************************************/
+
+    subscriberStateUpdated = detectReScheduledDeliveryRequests(context, evolutionEvent) || subscriberStateUpdated;
+
+    /*****************************************
+    *
+    *  handleReScheduledDeliveryRequest : trig again a Delivery Request
+    *
+    *****************************************/
+
+    subscriberStateUpdated = handleReScheduledDeliveryRequest(context, evolutionEvent) || subscriberStateUpdated;
+    
+    /*****************************************
+    *
     *  scheduledEvaluations
     *
     *****************************************/
@@ -2447,7 +2462,14 @@ public class EvolutionEngine
     for(String dimensionId : segmentsMap.keySet())
       {
         SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionId, SystemTime.getCurrentTime());
-        profileSegmentChangeNewValues.put(dimension.getSegmentationDimensionName(), segmentsMap.get(dimensionId));
+        if (dimension == null)
+          {
+            log.warn("unknown dimensionID " + dimensionId + " from keyset " + segmentsMap.keySet());
+          }
+        else
+          {
+            profileSegmentChangeNewValues.put(dimension.getSegmentationDimensionName(), segmentsMap.get(dimensionId));
+          }
       }
     
     // complete list with dimension not set so segment null
@@ -2504,7 +2526,100 @@ public class EvolutionEngine
       subscriberState.getProfileSegmentChangeEvents().add(profileSegmentChangeEvent);
     }
   }
+  
+  /*****************************************
+  *
+  *  detectReScheduledDeliveryRequests
+  *
+  *****************************************/
 
+  private static boolean detectReScheduledDeliveryRequests(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
+  {
+    /*****************************************
+    *
+    *  result
+    *
+    *****************************************/
+
+    SubscriberState subscriberState = context.getSubscriberState();
+    SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
+    boolean subscriberProfileUpdated = false;
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = context.now();
+
+    /*****************************************
+    *
+    *  for DeliveryRequest with status Reschedule
+    *
+    *****************************************/
+
+    if (evolutionEvent instanceof DeliveryRequest && ((DeliveryRequest) evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Reschedule))
+      {
+
+        //
+        // Construct a ReScheduleDeliveryRequest and to SubscriberState
+        //
+
+        DeliveryRequest deliveryRequest = (DeliveryRequest)evolutionEvent;
+        log.info("Rescheduled Request for " + deliveryRequest.getRescheduledDate());
+        ReScheduledDeliveryRequest reScheduledDeliveryRequest = new ReScheduledDeliveryRequest(subscriberProfile.getSubscriberID(), deliveryRequest.getRescheduledDate(), deliveryRequest);
+        subscriberState.getReScheduledDeliveryRequests().add(reScheduledDeliveryRequest);
+        
+        TimedEvaluation timedEvaluation = new TimedEvaluation(subscriberProfile.getSubscriberID(), deliveryRequest.getRescheduledDate());
+        subscriberState.getScheduledEvaluations().add(timedEvaluation);
+        subscriberProfileUpdated = true;
+      }
+    
+    return subscriberProfileUpdated;
+  }
+
+  /*****************************************
+  *
+  *  handleReScheduledDeliveryRequest
+  *
+  *****************************************/
+
+  private static boolean handleReScheduledDeliveryRequest(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
+  {
+    /*****************************************
+    *
+    *  On any event, check if ReScheduledDeliveryRequest's time has been reached, if yes trig the DeliveryRequest again
+    *
+    *****************************************/
+
+    SubscriberState subscriberState = context.getSubscriberState();
+    SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
+    boolean subscriberProfileUpdated = false;
+    Date now = context.now();
+    
+    
+    List<ReScheduledDeliveryRequest> toTrig = new ArrayList<>();
+    for(ReScheduledDeliveryRequest reScheduledDeliveryRequest : subscriberState.getReScheduledDeliveryRequests()) 
+      {
+        if(reScheduledDeliveryRequest.getEvaluationDate().before(now)) {
+          toTrig.add(reScheduledDeliveryRequest);          
+        }
+      }
+    for(ReScheduledDeliveryRequest toHandle : toTrig) {
+      subscriberState.getReScheduledDeliveryRequests().remove(toHandle);
+      DeliveryRequest deliveryRequest = toHandle.getDeliveryRequest();
+      deliveryRequest.setRescheduledDate(null);
+      deliveryRequest.setDeliveryStatus(DeliveryStatus.Pending);
+      deliveryRequest.resetDeliveryRequestAfterReSchedule();
+      subscriberState.getDeliveryRequests().add(deliveryRequest);
+      subscriberProfileUpdated = true;      
+    }
+    return subscriberProfileUpdated;
+  }
+
+  
+  
   /*****************************************
   * 
   *  updateScheduledEvaluations
@@ -2997,7 +3112,7 @@ public class EvolutionEngine
       MessageDelivery messageDelivery = (MessageDelivery)evolutionEvent;
       if(messageDelivery.getMessageDeliveryDeliveryStatus() == DeliveryStatus.Delivered)
         {
-          MetricHistory channelMetricHistory = context.getSubscriberState().getNotificationStatus().stream().filter(p -> p.getFirstElement().equals(Deployment.getDeliveryTypeCommunicationChannelIDMap().get(((DeliveryRequest)messageDelivery).getDeliveryType()))).collect(Collectors.toList()).get(0).getSecondElement();
+          MetricHistory channelMetricHistory = context.getSubscriberState().getNotificationHistory().stream().filter(p -> p.getFirstElement().equals(Deployment.getDeliveryTypeCommunicationChannelIDMap().get(((DeliveryRequest)messageDelivery).getDeliveryType()))).collect(Collectors.toList()).get(0).getSecondElement();
           Date messageDeliveryDate = RLMDateUtils.truncate(messageDelivery.getMessageDeliveryEventDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
           //long messageCount = channelMetricHistory.getValue(messageDeliveryDate, messageDeliveryDate).longValue() + 1;
           //this update should be called increment for metric history.

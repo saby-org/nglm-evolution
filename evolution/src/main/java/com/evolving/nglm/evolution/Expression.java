@@ -20,6 +20,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
@@ -36,6 +39,14 @@ import com.evolving.nglm.evolution.Expression.ExpressionFunction;
 
 public abstract class Expression
 {
+  
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(Expression.class);
+
+  
   /*****************************************************************************
   *
   *  enum
@@ -496,8 +507,14 @@ public abstract class Expression
       //
       //  retrieve
       //
-
-      Object referenceValue = reference.retrieve(subscriberEvaluationRequest);
+      Object referenceValue = null;
+      try {
+        referenceValue = reference.retrieve(subscriberEvaluationRequest);
+      }
+      catch(StackOverflowError e) {
+        log.warn("Exception " + e.getClass().getName() + " with criterionField reference : " + reference + " and subscriberEvaluationRequest : " + subscriberEvaluationRequest, e);
+      }
+      
       
       //
       //  null check

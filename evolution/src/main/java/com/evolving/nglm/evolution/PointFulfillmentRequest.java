@@ -325,4 +325,12 @@ public class PointFulfillmentRequest extends DeliveryRequest implements BonusDel
     b.append("}");
     return b.toString();
   }
+  @Override
+  public void resetDeliveryRequestAfterReSchedule()
+  {
+    // 
+    // PointFulfillmentRequest never rescheduled, let return unchanged
+    //  
+    
+  }
 }

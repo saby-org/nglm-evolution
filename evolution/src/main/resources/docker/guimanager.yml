@@ -21,11 +21,12 @@ guimanager:
     CONNECT_CUB_ESROUTER_HOST: <_MASTER_ESROUTER_HOST_>
     CONNECT_CUB_ESROUTER_PORT: <_MASTER_ESROUTER_PORT_>
     GUIMANAGER_PORT: <_GUIMANAGER_PORT_>
-    TRACE_LEVEL: <_TRACE_LEVEL_>
     KAFKA_DEBUG: <_GUIMANAGER_DEBUG_>
     JAVA_DEBUG_OPTS: -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=<_GUIMANAGER_DEBUG_PORT_>,suspend=n
     KAFKA_HEAP_OPTS: <_GUIMANAGER_HEAP_OPTS_>
+    KAFKA_LOG4J_OPTS: -Dlog4j.configuration=file:/app/config/log4j-guimanager.properties
     KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_GUIMANAGER_MONITORING_PORT_>:/app/config/guimanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_>  -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> -Dnglm.license.nodeid=<_GUIMANAGER_HOST_>
+    ENTRYPOINT: guimanager
   deploy: 
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
@@ -40,6 +41,10 @@ guimanager:
   networks:
     - outside
   volumes:
+    - <_NGLM_CONFIG_LOGS_>/log4j-guimanager.properties:/app/config/log4j-guimanager.properties
+    - type: bind
+      source: <_NGLM_LOGS_>
+      target: /app/logs
     - type: bind
       source: <_NGLM_UPLOADED_>
       target: /app/uploaded

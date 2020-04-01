@@ -1339,7 +1339,10 @@ public abstract class DeliveryManager
             *****************************************/
 
             DeliveryRequest deliveryRequestOnScheduler = waitingForAcknowledgement.get(deliveryRequest.getDeliveryRequestID());
-            deliveryRequestOnScheduler.setTimeout(null);
+            if(deliveryRequestOnScheduler != null) 
+              {
+                deliveryRequestOnScheduler.setTimeout(null);
+              }
             deliveryRequest.setTimeout(null);
           }
 
@@ -1465,7 +1468,9 @@ public abstract class DeliveryManager
             //  clear timeout
             //
 
-            deliveryRequestOnScheduler.setTimeout(null);
+            if(deliveryRequestOnScheduler != null) {
+              deliveryRequestOnScheduler.setTimeout(null);
+            }
             deliveryRequest.setTimeout(null);
 
             //
@@ -1948,6 +1953,7 @@ public abstract class DeliveryManager
         managerStatus = normalShutdown ? ManagerStatus.Stopping : ManagerStatus.Aborting;
         requestConsumer.wakeup();
         routingConsumer.wakeup();
+
         this.notifyAll();
       }
 
@@ -2030,6 +2036,15 @@ public abstract class DeliveryManager
               }
           }
         routingConsumer.close();
+      }
+
+    //
+    // wake up timeoutWorkerThread
+    //
+
+    if (timeoutWorkerThread != null)
+      {
+        timeoutWorkerThread.interrupt();
       }
 
     //

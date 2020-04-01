@@ -259,6 +259,7 @@ public class DNBOProxy
     consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
     consumerProperties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     consumerProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    GUIService.setCommonConsumerProperties(consumerProperties);
     kafkaConsumer = new KafkaConsumer<>(consumerProperties);
     kafkaConsumer.subscribe(Arrays.asList(Deployment.getRecordSubscriberIDTopic()));
 

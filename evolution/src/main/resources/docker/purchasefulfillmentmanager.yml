@@ -1,5 +1,5 @@
 purchasemanager-<_KEY_>:
-  image: ${env.DOCKER_REGISTRY}ev-purchasefulfillmentmanager:${project.name}-${project.version}
+  image: ${env.DOCKER_REGISTRY}ev-guimanager:${project.name}-${project.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
     KAFKA_BROKER_ID: ignored
@@ -28,6 +28,7 @@ purchasemanager-<_KEY_>:
     KAFKA_HEAP_OPTS: <_PURCHASEFULFILLMENTMANAGER_HEAP_OPTS_>
     KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_MONITORING_PORT_>:/app/config/purchasefulfillmentmanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> 
     KAFKA_LOG4J_OPTS: -Dlog4j.configuration=file:/app/config/log4j-purchasefulfillment.properties
+    ENTRYPOINT: purchasefulfillment
   volumes:
     - <_NGLM_CONFIG_LOGS_>/log4j-purchasefulfillment-<_KEY_>.properties:/app/config/log4j-purchasefulfillment.properties
     - type: bind

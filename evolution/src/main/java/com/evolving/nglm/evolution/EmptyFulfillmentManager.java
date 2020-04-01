@@ -488,6 +488,13 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
     }
+    @Override
+    public void resetDeliveryRequestAfterReSchedule()
+    {
+      // 
+      // EmptyFulfillmentRequest never rescheduled, let return unchanged
+      //        
+    }
   }
 
   /*****************************************

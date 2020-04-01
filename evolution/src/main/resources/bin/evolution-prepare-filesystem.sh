@@ -12,20 +12,6 @@
 #########################################
 
 #
-#  nglm logs
-#
-
-for SWARM_HOST in $SWARM_HOSTS
-do
-   ssh $SWARM_HOST "
-      mkdir -p $NGLM_LOGS
-   "
-   ssh $SWARM_HOST "
-      mkdir -p $NGLM_CONFIG_LOGS
-   "
-done
-
-#
 #  nglm runtime
 #
 

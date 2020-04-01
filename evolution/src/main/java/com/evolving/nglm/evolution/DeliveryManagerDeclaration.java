@@ -117,11 +117,11 @@ public class DeliveryManagerDeclaration
     this.responseTopic = JSONUtilities.decodeString(jsonRoot, "responseTopic", true);
     this.internalTopic = JSONUtilities.decodeString(jsonRoot, "internalTopic", false);
     this.routingTopic = JSONUtilities.decodeString(jsonRoot, "routingTopic", false);
-    this.deliveryRatePerMinute = JSONUtilities.decodeInteger(jsonRoot, "deliveryRatePerMinute", 0);
+    this.deliveryRatePerMinute = JSONUtilities.decodeInteger(jsonRoot, "deliveryRatePerMinute", Integer.MAX_VALUE);
     this.deliveryGuarantee = (JSONUtilities.decodeString(jsonRoot, "deliveryGuarantee", false) != null) ? DeliveryGuarantee.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryGuarantee", true)) : null;
     this.retries = JSONUtilities.decodeInteger(jsonRoot, "retries", 0);
-    this.acknowledgementTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "acknowledgementTimeoutSeconds", 60);
-    this.correlatorUpdateTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "correlatorUpdateTimeoutSeconds", 600);
+    this.acknowledgementTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "acknowledgementTimeoutSeconds", 86400);
+    this.correlatorUpdateTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "correlatorUpdateTimeoutSeconds", 86400);
     this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", false);
     this.providerName = JSONUtilities.decodeString(jsonRoot, "providerName", false);
     this.profileExternalSubscriberIDField = JSONUtilities.decodeString(jsonRoot, "profileExternalSubscriberIDField", false);

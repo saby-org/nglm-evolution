@@ -7,7 +7,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
-import com.evolving.nglm.evolution.datacubes.ScheduledJob;
+import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.datacubes.SnapshotTask;
 
 public class SubscriberProfileSnapshot extends ScheduledJob

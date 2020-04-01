@@ -12,6 +12,10 @@ docker stack deploy -c $DEPLOY_ROOT/stack/stack-evolutionengine.yml ${DOCKER_STA
 #  optional stacks (from configuration)
 #
 
+if [ "${REPORTMANAGER_ENABLED}" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-reportmanager.yml ${DOCKER_STACK}-reportmanager
+fi
+
 if [ "${UCGENGINE_ENABLED}" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-ucgengine.yml ${DOCKER_STACK}-ucgengine
 fi
@@ -54,10 +58,6 @@ fi
 
 if [ "${NOTIFICATIONMANAGER_PUSH_ENABLED}" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-notificationmanagerpush.yml ${DOCKER_STACK}-notificationmanagerpush
-fi
-
-if [ "${REPORTMANAGER_ENABLED}" = "true" ]; then
-  docker stack deploy -c $DEPLOY_ROOT/stack/stack-reportmanager.yml ${DOCKER_STACK}-reportmanager
 fi
 
 if [ "${REPORTSCHEDULER_ENABLED}" = "true" ]; then

@@ -30,6 +30,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 import org.apache.lucene.search.join.ScoreMode;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
@@ -1344,6 +1345,17 @@ public class EvaluationCriterion
         QueryBuilder query = handleSpecialCriterion(esField);
         return query;
       }
+
+    //
+    // Handle targets
+    //
+    
+    if ("internal.targets".equals(esField))
+      {
+        QueryBuilder query = handleTargetsCriterion(esField);
+        return query;
+      }
+
     /*****************************************
     *
     *  script
@@ -1725,6 +1737,53 @@ public class EvaluationCriterion
                                           QueryBuilders.boolQuery()
                                                            .filter(queryID)
                                                            .filter(queryStatus), ScoreMode.Total);
+    return query;
+  }
+
+  /*****************************************
+  *
+  *  handleTargetsCriterion
+  *
+  * generates POST subscriberprofile/_search
+      {
+        "query": {
+          "constant_score": {
+            "filter": {
+              "bool": {
+                "should": [
+                  { "term": { "targets": "Target_107"  }},
+                  { "term": { "targets": "target_108" }}
+                ]
+              }
+            }
+          }
+        }
+      }
+  *****************************************/
+  
+  public QueryBuilder handleTargetsCriterion(String esField) throws CriterionException
+  {
+    if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("target criterion can only be compared to constants " + esField + ", " + argument);
+    Object value =  argument.evaluate(null, null);
+    BoolQueryBuilder innerQuery = QueryBuilders.boolQuery();
+    String fieldName = "targets";
+    if (argument.getType() == ExpressionDataType.StringExpression)
+      {
+        String val = (String) value;
+        innerQuery = innerQuery.should(QueryBuilders.termQuery(fieldName, val));
+      }
+    else if (argument.getType() == ExpressionDataType.StringSetExpression)
+      {
+        for (Object obj : (Set<Object>) value)
+          {
+            innerQuery = innerQuery.should(QueryBuilders.termQuery(fieldName, (String) obj));
+          }
+      }
+    else
+      {
+        throw new CriterionException(esField+" can only be compared to " + ExpressionDataType.StringExpression + " or " + ExpressionDataType.StringSetExpression + " " + esField + ", "+argument.getType());
+      }
+    QueryBuilder query = QueryBuilders.constantScoreQuery(innerQuery);
     return query;
   }
   

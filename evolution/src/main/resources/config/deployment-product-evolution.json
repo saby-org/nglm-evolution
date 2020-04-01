@@ -1,0 +1,1079 @@
+{
+  "baseTimeZone"                             : "<_DEPLOYMENT_TIMEZONE_>",
+  "baseLanguage"                             : "<_DEPLOYMENT_LOCALE_LANGUAGE_>",
+  "baseCountry"                              : "<_DEPLOYMENT_LOCALE_COUNTRY_>",
+  "generateNumericIDs"                       : true,
+  "APIresponseDateFormat"                    : "yyyy-MM-dd'T'HH:mm:ssZZZZ",
+
+  "journeyTrafficArchivePeriodInSeconds"     : 3600,
+  "journeyTrafficArchiveMaxNumberOfPeriods"  : 168,
+
+  "CronFormat_comment": "minute (0-59), hour (0-23), day of month (1-31), month of year (1-12:JAN-DEC case-insensitive), day of week (0-7:MON-SUN case-insensitive) 1 is always Monday",
+
+  "yesterdayODRDatacubePeriodCronEntryString"        : "0 1 * * *",
+  "todayODRDatacubePeriodCronEntryString"            : "0 * * * *",
+  "yesterdayLoyaltyDatacubePeriodCronEntryString"    : "0 1 * * *",
+  "todayLoyaltyDatacubePeriodCronEntryString"        : "0 * * * *",
+  "yesterdaySubscriberDatacubePeriodCronEntryString" : "0 1 * * *",
+  "todaySubscriberDatacubePeriodCronEntryString"     : "0 * * * *",
+  "journeyTrafficDatacubePeriodCronEntryString"      : "0 * * * *",
+  "subscriberProfileSnapshotPeriodCronEntryString"   : "5 0 * * *",
+
+  "hourlyReportCronEntryString"   : "0 * * * *",
+  "dailyReportCronEntryString"    : "5 2 * * *",
+  "weeklyReportCronEntryString"   : "10 2 * * 0",
+  "monthlyReportCronEntryString"  : "15 3 1 * *",
+  
+  "periodicEvaluationCronEntry" : "0 2 * * *",
+  "ucgEvaluationCronEntry" : "0 4 * * *",
+  
+  
+  
+  
+  "ucgEngineESConnectTimeout" : 30000,
+  "ucgEngineESSocketTimeout" : 60000,
+  "ucgEngineESMasRetryTimeout" : 60000,
+  "elasticSearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
+  
+  "elasticSearchScrollSize" : 1000,
+
+  "maxPollIntervalMsComment": "default is 30 seconds, which causes containers to stop during startup (heavy system load",
+  "maxPollIntervalMs"       : 120000,
+  
+  "subscriberESIndexes" :
+  [
+    "subscriberprofile",
+    "detailedrecords_bonuses-*",
+    "detailedrecords_offers-*",
+    "detailedrecords_messages-*",
+    "detailedrecords_tokens-*",
+    "journeystatistic*",
+    "journeymetric",
+    "regr_criteria"
+  ],
+
+  "emptyTopic"                                           : "${topic.empty}",
+  "journeyTopic"                                         : "${topic.journey}",
+  "journeyTemplateTopic"                                 : "${topic.journeytemplate}",
+  "segmentationDimensionTopic"                           : "${topic.segmentationdimension}",
+  "pointTopic"                                           : "${topic.point}",
+  "paymentMeanTopic"                                     : "${topic.paymentMean}",
+  "offerTopic"                                           : "${topic.offer}",
+  "presentationStrategyTopic"                            : "${topic.presentationstrategy}",
+  "scoringStrategyTopic"                                 : "${topic.scoringstrategy}",
+  "callingChannelTopic"                                  : "${topic.callingchannel}",
+  "salesChannelTopic"                                    : "${topic.saleschannel}",
+  "supplierTopic"                                        : "${topic.supplier}",
+  "resellerTopic"                                        : "${topic.reseller}",
+  "productTopic"                                         : "${topic.product}",
+  "catalogCharacteristicTopic"                           : "${topic.catalogcharacteristic}",
+  "contactPolicyTopic"                                   : "${topic.contactpolicy}",
+  "journeyObjectiveTopic"                                : "${topic.journeyobjective}",
+  "offerObjectiveTopic"                                  : "${topic.offerobjective}",
+  "productTypeTopic"                                     : "${topic.producttype}",
+  "ucgRuleTopic"                                         : "${topic.ucgrule}",
+  "deliverableTopic"                                     : "${topic.deliverable}",
+  "tokenTypeTopic"                                       : "${topic.tokentype}",  
+  "voucherTypeTopic"                                     : "${topic.vouchertype}",  
+  "voucherTopic"                                         : "${topic.voucher}",  
+  "guiAuditTopic"                                        : "${topic.guiaudit}",
+  "reportTopic"                                          : "${topic.report}",
+  "subscriberUpdateTopic"                                : "subscriberupdate",
+  "assignSubscriberIDsTopic"                             : "${topic.assignsubscriberids}",
+  "updateExternalSubscriberIDTopic"                      : "${topic.updateexternalsubscriberid}",
+  "assignExternalSubscriberIDsTopic"                     : "${topic.assignexternalsubscriberids}",
+  "recordSubscriberIDTopic"                              : "${topic.recordsubscriberid}",
+  "recordAlternateIDTopic"                               : "${topic.recordalternateid}",
+  "subscriberGroupTopic"                                 : "${topic.subscribergroup}",
+  "subscriberGroupAssignSubscriberIDTopic"               : "${topic.subscribergroup.assignsubscriberid}",
+  "subscriberGroupEpochTopic"                            : "${topic.subscribergroupepoch}",
+  "ucgStateTopic"                                        : "${topic.ucgstate}",
+  "renamedProfileCriterionFieldTopic"                    : "${topic.renamedprofilecriterionfield}",
+  "timedEvaluationTopic"                                 : "${topic.timedevaluation}",
+  "evaluateTargetsTopic"                                 : "${topic.evaluatetargets}",
+  "cleanupSubscriberTopic"                               : "${topic.cleanupsubscriber}",
+  "subscriberProfileForceUpdateTopic"                    : "${topic.subscriberprofileforceupdate}",
+  "tokenRedeemedTopic"                                   : "${topic.tokenredeemed}",
+  "subscriberStateChangeLog"                             : "${changelog.evolutionengine.subscriberstate}",
+  "subscriberStateChangeLogTopic"                        : "${changelog.evolutionengine.subscriberstate.topic}",
+  "extendedSubscriberProfileChangeLog"                   : "${changelog.evolutionengine.extendedsubscriberprofile}",
+  "extendedSubscriberProfileChangeLogTopic"              : "${changelog.evolutionengine.extendedsubscriberprofile.topic}",
+  "subscriberHistoryChangeLog"                           : "${changelog.evolutionengine.subscriberhistory}",
+  "subscriberHistoryChangeLogTopic"                      : "${changelog.evolutionengine.subscriberhistory.topic}",
+  "propensityStateChangeLog"                             : "${changelog.propensityengine.propensitystate}",
+  "propensityStateChangeLogTopic"                        : "${changelog.propensityengine.propensitystate.topic}",
+  "propensityOutputTopic"                                : "${topic.propensityoutput}",
+  "journeyTrafficChangeLog"                              : "${changelog.journeytrafficengine.journeytraffic}",
+  "journeyTrafficChangeLogTopic"                         : "${changelog.journeytrafficengine.journeytraffic.topic}",
+  "journeyTrafficTopic"                                  : "${topic.journeytraffic}",
+  "tokenChangeTopic"                                     : "${topic.tokenchange}",
+  "autoProvisionedSubscriberChangeLog"                   : "${changelog.subscribermanager.autoprovisionedsubscriber}",
+  "autoProvisionedSubscriberChangeLogTopic"              : "${changelog.subscribermanager.autoprovisionedsubscriber.topic}",
+  "rekeyedAutoProvisionedAssignSubscriberIDsStreamTopic" : "${rekeyed.subscribermanager.autoprovisionedsubscriber.topic}",
+  "subscriberTraceControlTopic"                          : "${topic.subscribertracecontrol}",
+  "subscriberTraceControlAssignSubscriberIDTopic"        : "${topic.subscribertracecontrol.assignsubscriberid}",
+  "subscriberTraceTopic"                                 : "${topic.subscribertrace}",
+  "simulatedTimeTopic"                                   : "${topic.simulatedtime}",
+  "journeyRequestTopic"                                  : "${topic.journeyrequest}",
+  "journeyResponseTopic"                                 : "${topic.journeyresponse}",
+  "journeyStatisticTopic"                                : "${topic.journeystatistic}",
+  "journeyMetricTopic"                                   : "${topic.journeymetric}",
+  "loyaltyProgramRequestTopic"                           : "${topic.loyaltyprogramrequest}",
+  "loyaltyProgramResponseTopic"                          : "${topic.loyaltyprogramresponse}",
+  "deliverableSourceTopic"                               : "${topic.deliverable.source}",
+  "presentationLogTopic"                                 : "${topic.presentationlog}",
+  "acceptanceLogTopic"                                   : "${topic.acceptancelog}",
+  "propensityLogTopic"                                   : "${topic.propensitylog}",
+  "subscriberMessageTemplateTopic"                       : "${topic.template.subscribermessage}",
+  "uploadedFileTopic"                                    : "${topic.uploadedfile}",
+  "targetTopic"                                          : "${topic.target}",
+  "pointFulfillmentRequestTopic"                         : "${topic.pointfulfillment.request}",
+  "pointFulfillmentResponseTopic"                        : "${topic.pointfulfillment.response}",
+  "pointFulfillmentRekeyedTopic"                         : "${topic.pointfulfillment.rekeyed}",
+  "communicationChannelTopic"                            : "${topic.communicationchannel}",
+  "communicationChannelBlackoutTopic"                    : "${topic.blackoutperiod}",
+  "loyaltyProgramTopic"                                  : "${topic.loyaltyprogram}",
+  "exclusionInclusionTargetTopic"                        : "${topic.exclusioninclusiontarget}",
+  "profileChangeEventTopic"                              : "${topic.profilechangeevent}",
+  "profileSegmentChangeEventTopic"                       : "${topic.profilesegmentchangeevent}",
+  "profileLoyaltyProgramChangeEventTopic"                : "${topic.profileloyaltyprogramchangeevent}",
+  "dnboMatrixTopic"                                      : "${topic.dnbomatrix}",
+  "dynamicEventDeclarationsTopic"                        : "${topic.dynamiceventdeclarations}",
+  "dynamicCriterionFieldTopic"                           : "${topic.dynamiccriterionfield}",
+  "segmentContactPolicyTopic"                            : "${topic.segmentcontactpolicy}",
+  "criterionFieldAvailableValuesTopic"                   : "${topic.criterionfieldavailablevalues}",
+  "sourceAddressTopic"                   				 : "${topic.sourceaddress}",
+  "voucherChangeRequestTopic"                            : "${topic.voucherchange.request}",
+  "voucherChangeResponseTopic"                           : "${topic.voucherchange.response}",
+
+  "supportedDataTypes" :
+    [
+      { 
+        "id" : "string",
+        "operators" : 
+          [ 
+            { "id" : "is null",           "display" : "is not known",        "argumentRequired" : false,   "argumentSet" : false },
+            { "id" : "is not null",       "display" : "is known",            "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "==",                "display" : "equals",              "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : "<>",                "display" : "is not equal to",     "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "contains keyword",  "display" : "contains keyword",    "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "is in set",         "display" : "is contained in",     "argumentRequired" : true,    "argumentSet" : true }, 
+            { "id" : "not in set",        "display" : "is not contained in", "argumentRequired" : true,    "argumentSet" : true }
+          ],
+        "formats" :
+          [
+            { "format" : "{INDEX}", "display" : "standard" }
+          ]
+      },
+      {
+        "id" : "boolean",
+        "operators" : 
+          [ 
+            { "id" : "is null",     "display" : "is not known",        "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "is not null", "display" : "is known",            "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "==",          "display" : "equals",              "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : "<>",          "display" : "is not equal to",     "argumentRequired" : true,    "argumentSet" : false }
+          ],
+        "formats" :
+          [
+            { "format" : "{INDEX}", "display" : "standard" }
+          ]
+      },
+      {
+        "id" : "integer",
+        "operators" : 
+          [ 
+            { "id" : "is null",     "display" : "is not known",        "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "is not null", "display" : "is known",            "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "==",          "display" : "equals",              "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : "<>",          "display" : "is not equal to",     "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : ">",           "display" : "is greater than",     "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : ">=",          "display" : "is at least",         "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "<",           "display" : "is less than",        "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "<=",          "display" : "is at most",          "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "is in set",   "display" : "is contained in",     "argumentRequired" : true,    "argumentSet" : true }, 
+            { "id" : "not in set",  "display" : "is not contained in", "argumentRequired" : true,    "argumentSet" : true }
+          ],
+        "formats" :
+          [
+            { "format" : "{INDEX,number,integer}", "display" : "standard" }
+          ]
+      },
+      {
+        "id" : "double",
+        "operators" : 
+          [ 
+            { "id" : "is null",     "display" : "is not known",        "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "is not null", "display" : "is known",            "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "==",          "display" : "equals",              "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : "<>",          "display" : "is not equal to",     "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : ">",           "display" : "is greater than",     "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : ">=",          "display" : "is at least",         "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "<",           "display" : "is less than",        "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "<=",          "display" : "is at most",          "argumentRequired" : true,    "argumentSet" : false }
+          ],
+        "formats" :
+          [
+            { "format" : "{INDEX,number,#.#}", "display" : "decimal (1 decimal point)" },
+            { "format" : "{INDEX,number,#.##}", "display" : "decimal (2 decimal points)" },
+            { "format" : "{INDEX,number,percent}", "display" : "decimal (percent)" }
+          ]
+      },
+      {
+        "id" : "date",
+        "operators" : 
+          [ 
+            { "id" : "is null",     "display" : "is not known",        "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "is not null", "display" : "is known",            "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "==",          "display" : "equals",              "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "<>",          "display" : "is not equal to",     "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : "<",           "display" : "is before",           "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : "<=",          "display" : "is on or before",     "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : ">",           "display" : "is after",            "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : ">=",          "display" : "is on or after",      "argumentRequired" : true,    "argumentSet" : false }
+          ],
+       "formats" :
+          [
+            { "format" : "{INDEX,date,dd-mmm-yyyy}", "display" : "date (12-Oct-2016)" },
+            { "format" : "{INDEX,number,dd/mm/yyyy}", "display" : "date (12/10/2016)" }
+          ]
+      },
+      {
+        "id" : "stringSet",
+        "operators" : 
+          [ 
+            { "id" : "is null",                 "display" : "is not known",             "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "is not null",             "display" : "is known",                 "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "contains",                "display" : "contains",                 "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "does not contain",        "display" : "does not contain",         "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "non empty intersection",  "display" : "contains at least one of", "argumentRequired" : true,    "argumentSet" : true },
+            { "id" : "empty intersection",      "display" : "does not contain any of",  "argumentRequired" : true,    "argumentSet" : true }
+          ],
+        "formats" :
+          [
+            { "format" : "{INDEX}", "display" : "standard" }
+          ]
+      }
+    ],
+
+  "supportedTimeUnits" :
+    [ 
+      { "id" : "instant", "display" : "Instant" },
+      { "id" : "minute",  "display" : "Minute" },
+      { "id" : "hour",    "display" : "Hour" },
+      { "id" : "day",     "display" : "Day" },
+      { "id" : "month",   "display" : "Month" },
+      { "id" : "year",    "display" : "Year" }
+    ],
+
+    "supportedTokenCodesFormats" :
+      [ 
+          { "id" : "c1-5", "display" : "[ACDEFGHJKMNPQRTWXY34679]{5}" },
+          { "id" : "c1-6", "display" : "[ACDEFGHJKMNPQRTWXY34679]{6}" },
+          { "id" : "c1-7", "display" : "[ACDEFGHJKMNPQRTWXY34679]{7}" },
+          { "id" : "c2-5", "display" : "[0123456789abcdef]{5}" },
+          { "id" : "c2-6", "display" : "[0123456789abcdef]{6}" }
+     ],
+        
+    "evolutionEngineCoreEvents" :
+      [
+        { 
+          "name" : "tokenRedeemed",
+          "eventClass" : "com.evolving.nglm.evolution.TokenRedeemed",
+          "eventTopic" : "${topic.tokenredeemed}",
+          "eventRule"  : "standard",
+          "eventCriterionFields" : 
+            [
+              { "id" : "event.tokenType",      "display" : "Token Type",       "dataType" : "string", "retriever" : "getTokenType",      "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#tokenTypes#"] },
+              { "id" : "event.acceptedOfferId","display" : "Accepted Offer Id","dataType" : "string", "retriever" : "getAcceptedOfferId","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#offers#"] }
+            ]
+        },          
+        { 
+          "name" : "journeyComplete",
+          "eventClass" : null,
+          "eventTopic" : null,
+          "eventRule"  : "internal",
+          "eventCriterionFields" : 
+            [
+            ]
+        },      
+        { 
+          "name" : "bonusDelivery",
+          "eventClass" : null,
+          "eventTopic" : null,
+          "eventRule"  : "internal",
+          "eventCriterionFields" : 
+            [
+              { "id" : "event.moduleID",             "display" : "Module Id",             "dataType" : "string", "retriever" : "getModuleId_BonusDelivery",             "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#moduleIds#"] },
+              { "id" : "event.featureID",            "display" : "Feature Id",            "dataType" : "string", "retriever" : "getFeatureId_BonusDelivery",            "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.returnCode",           "display" : "Return Code",           "dataType" : "integer","retriever" : "getReturnCode_BonusDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.deliveryStatus",       "display" : "Delivery Status",       "dataType" : "string", "retriever" : "getDeliveryStatus_BonusDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#deliveryStatuses#"] },
+              { "id" : "event.returnCodeDetails",    "display" : "Return Code Details",   "dataType" : "string", "retriever" : "getReturnCodeDetails_BonusDelivery",    "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
+              { "id" : "event.origin",               "display" : "Origin",                "dataType" : "string", "retriever" : "getOrigin_BonusDelivery",               "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
+              { "id" : "event.providerId",           "display" : "Provider Id",           "dataType" : "string", "retriever" : "getProviderId_BonusDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#providerIds#"] },
+              { "id" : "event.deliverableId",        "display" : "Deliverable",           "dataType" : "string", "retriever" : "getDeliverableId_BonusDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#deliverableIds#"] },
+              { "id" : "event.deliverableQty",       "display" : "Deliverable Qty",       "dataType" : "integer","retriever" : "getDeliverableQty_BonusDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.deliverableExpiration","display" : "Deliverable Expiration","dataType" : "string", "retriever" : "getDeliverableExpiration_BonusDelivery","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.operation",            "display" : "Operation",             "dataType" : "string", "retriever" : "getOperation_BonusDelivery",            "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
+           ]
+        },      
+        { 
+          "name" : "offerDelivery",
+          "eventClass" : null,
+          "eventTopic" : null,
+          "eventRule"  : "internal",
+          "eventCriterionFields" : 
+            [
+              { "id" : "event.moduleID",         "display" : "Module Id",          "dataType" : "string", "retriever" : "getModuleId_OfferDelivery",         "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#moduleIds#"] },
+              { "id" : "event.featureID",        "display" : "Feature Id",         "dataType" : "string", "retriever" : "getFeatureId_OfferDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.returnCode",       "display" : "Return Code",        "dataType" : "integer","retriever" : "getReturnCode_OfferDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.deliveryStatus",   "display" : "Delivery Status",    "dataType" : "string", "retriever" : "getDeliveryStatus_OfferDelivery",   "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#deliveryStatuses#"] },
+              { "id" : "event.returnCodeDetails","display" : "Return Code Details","dataType" : "string", "retriever" : "getReturnCodeDetails_OfferDelivery","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
+              { "id" : "event.origin",           "display" : "Origin",             "dataType" : "string", "retriever" : "getOrigin_OfferDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
+              { "id" : "event.offerID",          "display" : "Offer Id",           "dataType" : "string", "retriever" : "getOfferID_OfferDelivery",          "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#offerIDs#"] },
+              { "id" : "event.offerDisplay",     "display" : "Offer Display",      "dataType" : "string", "retriever" : "getOfferDisplay_OfferDelivery",     "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : ["#offers#"] },
+              { "id" : "event.offerQty",         "display" : "Offer Qty",          "dataType" : "integer","retriever" : "getOfferQty_OfferDelivery",         "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.salesChannelId",   "display" : "Sales Channel Id",   "dataType" : "string", "retriever" : "getSalesChannelId_OfferDelivery",   "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.offerPrice",       "display" : "Offer Price",        "dataType" : "integer","retriever" : "getOfferPrice_OfferDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.meanOfPayment",    "display" : "Mean Of Payment",    "dataType" : "string", "retriever" : "getMeanOfPayment_OfferDelivery",    "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#paymentMeans#"] },
+              { "id" : "event.offerContent",     "display" : "Offer Content",      "dataType" : "string", "retriever" : "getOfferContent_OfferDelivery",     "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.voucherCode",      "display" : "Voucher Code",       "dataType" : "string", "retriever" : "getVoucherCode_OfferDelivery",      "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.voucherPartnerId", "display" : "Voucher Partner Id", "dataType" : "string", "retriever" : "getVoucherPartnerId_OfferDelivery", "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
+            ]
+        },      
+        { 
+          "name" : "messageDelivery",
+          "eventClass" : null,
+          "eventTopic" : null,
+          "eventRule"  : "internal",
+          "eventCriterionFields" : 
+            [
+              { "id" : "event.moduleID",         "display" : "Module Id",          "dataType" : "string", "retriever" : "getModuleId_MessageDelivery",         "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#moduleIds#"] },
+              { "id" : "event.featureID",        "display" : "Feature Id",         "dataType" : "string", "retriever" : "getFeatureId_MessageDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.returnCode",       "display" : "Return Code",        "dataType" : "integer","retriever" : "getReturnCode_MessageDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.deliveryStatus",   "display" : "Delivery Status",    "dataType" : "string", "retriever" : "getDeliveryStatus_MessageDelivery",   "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#deliveryStatuses#"] },
+              { "id" : "event.returnCodeDetails","display" : "Return Code Details","dataType" : "string", "retriever" : "getReturnCodeDetails_MessageDelivery","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
+              { "id" : "event.origin",           "display" : "Origin",             "dataType" : "string", "retriever" : "getOrigin_MessageDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
+              { "id" : "event.messageId",        "display" : "Message Id",         "dataType" : "string", "retriever" : "getMessageId_MessageDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
+           ]
+        }
+    ],
+
+  "evolutionProfileCriterionFields" :
+    [
+      { "id" : "loyaltyprogram.name",          "display" : "Loyalty Program",              "dataType" : "stringSet", "tagFormat" : null, "tagMaxLength" : 100,  "esField" : "loyaltyprogram.name",                "retriever" : "getLoyaltyPrograms",         "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#loyaltyPrograms#" ] },
+      { "id" : "journey.name",                 "display" : "Journey Name",                 "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionJourney",            "retriever" : "getEvaluationJourney",       "minValue" : null, "maxValue" : null, "includedOperators" : [ "==" ], "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#historicalJourneys#" ],      "evaluationVariable" : true },
+      { "id" : "campaign.name",                "display" : "Campaign Name",                "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionCampaign",           "retriever" : "getEvaluationJourney",       "minValue" : null, "maxValue" : null, "includedOperators" : [ "==" ], "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#historicalCampaigns#" ],     "evaluationVariable" : true },
+      { "id" : "bulkcampaign.name",            "display" : "BulkCampaign Name",            "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionBulkcampaign",       "retriever" : "getEvaluationJourney",       "minValue" : null, "maxValue" : null, "includedOperators" : [ "==" ], "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#historicalBulkCampaigns#" ], "evaluationVariable" : true },
+      { "id" : "journey.customer.status",      "display" : "Journey Customer Status",      "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionJourneyStatus",      "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] },
+      { "id" : "campaign.customer.status",     "display" : "Campaign Customer Status",     "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionCampaignStatus",     "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] },
+      { "id" : "bulkcampaign.customer.status", "display" : "BulkCampaign Customer Status", "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionBulkcampaignStatus", "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] }
+    ],
+
+  "offerOptimizationAlgorithmsCommon": 
+    [
+      {
+        "id": "M-Random",
+        "name": "Random",
+        "display": "Random",
+        "parameters": 
+          [
+            {
+              "name":"predictable",
+              "availableValues": 
+                [
+                  {
+                    "id":"false",
+                    "display":"false"
+                  },
+                  {
+                    "id":"true",
+                    "display":"true"
+                  }
+                ]
+            }
+          ],
+        "javaClass": "com.evolving.nglm.evolution.offeroptimizer.RandomAlgo"
+      },
+      {
+        "id": "M-Price",
+        "name": "Price",
+        "display": "Price",
+        "parameters": 
+          [
+            {
+              "name":"reversed",
+              "availableValues": 
+                [
+                  {
+                    "id":"false",
+                    "display":"false"
+                  },
+                  {
+                    "id":"true",
+                    "display":"true"
+                  }
+                ]
+            },
+            {
+               "name":"thresholdValue"
+            }
+          ],
+        "javaClass": "com.evolving.nglm.evolution.offeroptimizer.PriceAlgo"
+      }
+    ],
+
+  "allThoseFollowingAreComingFromNGLMQA": "this is not yet OK, just a first try",
+
+  "autoApproveGuiObjects" : false,
+  "periodicEvaluationCronEntry" : "0 2 * * *",
+  "ucgEvaluationCronEntry" : "0 4 * * *",
+  "ucgEngineESConnectTimeout" : 30000,
+  "ucgEngineESSocketTimeout" : 60000,
+  "ucgEngineESMasRetryTimeout" : 60000,
+  "elasticSearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
+
+  "propensityRule"                                       :
+  {
+    "selectedDimensions": [],
+    "size":0
+  },
+  
+  "propensityInitialisationPresentationThreshold"        : 100,
+  "propensityInitialisationDurationInDaysThreshold"      : 90,
+
+  "journeyDefaultTargetingWindowDuration"  : 100,
+  "journeyDefaultTargetingWindowUnit"      : "year",
+  "journeyDefaultTargetingWindowRoundUp"   : false,
+  "journeyUniversalEligibilityCriteria" :
+  [
+    { "id" : "1", "criterionField" : "subscriber.status", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'active', 'inactive' ]" } }
+  ],
+
+  "initialVoucherCodeFormats" :
+  [
+    { "id" : "QR_code",      "name"  : "QR Code"},
+    { "id" : "bar_code",     "name"  : "Bar Code"},
+    { "id" : "alphanumeric", "name"  : "Alphanumeric"}
+  ],
+
+  "universalControlGroupCriteria" :
+  [
+    { "id" : "1", "criterionField" : "subscriber.universalControlGroup", "criterionOperator" : "==", "argument" : { "valueType" : "simple",  "value" : "true",  "expression" : "true" } }
+  ],
+  "controlGroupCriteria" :
+  [
+    { "id" : "1", "criterionField" : "subscriber.segments", "criterionOperator" : "contains", "argument" : { "valueType" : "simple",  "value" : "controlGroup",  "expression" : "'controlGroup'" } }
+  ],
+
+  "partnerTypes" : [],
+  "billingModes" : [],
+  "serviceTypes" : [],
+  "callingChannelProperties" : [],
+
+  "notificationDailyWindows" :
+  {
+    "monday"    : [ { "id":"1", "from":"09:00", "until":"20:59" }],
+    "tuesday"   : [ { "id":"1", "from":"09:00", "until":"20:59" }],
+    "wednesday" : [ { "id":"1", "from":"09:00", "until":"20:59" }],
+    "thursday"  : [ { "id":"1", "from":"09:00", "until":"20:59" }],
+    "friday"    : [ { "id":"1", "from":"09:00", "until":"20:59" }],
+    "saturday"  : [ { "id":"1", "from":"09:00", "until":"20:59" }],
+    "sunday"    : [ { "id":"1", "from":"09:00", "until":"20:59" }]
+  },
+
+  "supportedLanguages" :
+  [
+    { "id" : "1", "name" : "en",    "display" : "English",    "mandatory" : true,  "defaultLanguage" : true }
+  ],
+
+  "customerMetaData" :
+  {
+    "generalDetailsMetaData" :
+    [
+      { "id" : "1",   "textProperty" : true,  "display" : "Evolution Subscriber Status",             "editable" : true,  "alternateID" : false, "topLevel": true,      "dataType" : "string",      "name" : "evolutionSubscriberStatus",                 "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : ["active", "inactive", "(unknown)"] },
+      { "id" : "2",   "textProperty" : true,  "display" : "Evolution Subscriber Status Change Date", "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "date",        "name" : "evolutionSubscriberStatusChangeDate",       "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null },
+      { "id" : "3",   "textProperty" : true,  "display" : "Previous Evolution Subscriber Status",    "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "string",      "name" : "previousEvolutionSubscriberStatus",         "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : ["active", "inactive", "(unknown)"] },
+      { "id" : "4",   "textProperty" : true,  "display" : "Subscriber Language",                     "editable" : true,  "alternateID" : false, "topLevel": false,     "dataType" : "string",      "name" : "language",                                  "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null },
+      { "id" : "5",   "textProperty" : true,  "display" : "Subscriber Segments",                     "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "stringSet",   "name" : "segments",                                  "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null },
+      { "id" : "6",   "textProperty" : true,  "display" : "Subscriber ID",                           "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "string",      "name" : "subscriberID",                              "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null }
+    ],
+    "kpisMetaData" :
+    [
+      { "id": "1",   "textProperty": true,  "display": "Activity", "displayGroups" : [{"rangeUpTo": "active", "imageURL": "ffa fa-ok", "color" : "#3adc3a"}, {"rangeUpTo": "inactive", "imageURL": "fa fa-times", "color" : "#ff0000"}, {"rangeUpTo": null, "imageURL": "fa fa-times", "color" : "#ffff00"}],  "dataType": "int", "name": "activity", "kpiUnit": null, "topLevel": false, "additionalGeneralDetails": [] }
+    ]
+  },
+
+  "deliveryManagers":
+  [
+    {
+      "deliveryType"              : "pointFulfillment",
+      "requestClass"              : "com.evolving.nglm.evolution.PointFulfillmentRequest",
+      "requestTopic"              : "${topic.pointfulfillment.request}",
+      "responseTopic"             : "${topic.pointfulfillment.response}",
+      "providerID"                : "provider_Point",
+      "providerName"              : "Points provider"
+    },
+    {
+      "deliveryType"              : "journeyFulfillment",
+      "requestClass"              : "com.evolving.nglm.evolution.JourneyRequest",
+      "requestTopic"              : "${topic.journeyrequest}",
+      "responseTopic"             : "${topic.journeyresponse}",
+      "providerID"                : "provider_Journey",
+      "providerName"              : "Journeys provider"
+    },
+    {
+      "deliveryType"              : "loyaltyProgramFulfillment",
+      "requestClass"              : "com.evolving.nglm.evolution.LoyaltyProgramRequest",
+      "requestTopic"              : "${topic.loyaltyprogramrequest}",
+      "responseTopic"             : "${topic.loyaltyprogramresponse}",
+      "providerID"                : "provider_Loyalty_Program",
+      "providerName"              : "Loyalty Programs provider"
+    },
+    {
+      "deliveryType"              : "purchaseFulfillment",
+      "requestClass"              : "com.evolving.nglm.evolution.PurchaseFulfillmentManager$PurchaseFulfillmentRequest",
+      "requestTopic"              : "${topic.fulfillment.purchasefulfillment.request}",
+      "responseTopic"             : "${topic.fulfillment.purchasefulfillment.response}",
+      "internalTopic"             : "${topic.fulfillment.purchasefulfillment.internal}",
+      "routingTopic"              : "${topic.fulfillment.purchasefulfillment.routing}",
+      "deliveryGuarantee"         : "atLeastOnce"
+    },
+    {
+      "deliveryType"              : "commodityDelivery",
+      "requestClass"              : "com.evolving.nglm.evolution.CommodityDeliveryManager$CommodityDeliveryRequest",
+      "requestTopic"              : "${topic.commoditydelivery.request}",
+      "responseTopic"             : "${topic.commoditydelivery.response}",
+      "internalTopic"             : "${topic.commoditydelivery.internal}",
+      "routingTopic"              : "${topic.commoditydelivery.routing}",
+      "deliveryGuarantee"         : "atLeastOnce"
+    }
+  ],
+
+  "initialSalesChannels" :
+  [
+    {"id":"-1", "name":"CustomerCare",  "display":"Customer Care","active":true, "readOnly":true, "callingChannelIDs" : [ "-1" ] },
+    {"id":"2",	"name":"journey",	"display":"Journey",	  "active":true, "readOnly":true, "callingChannelIDs":[]}
+  ],
+
+  "initialJourneyObjectives" : [],
+
+  "initialOfferObjectives" :
+  [
+    {
+      "id" : "1",
+      "name" : "default",
+      "display" : "Default",
+      "active" : true,
+      "readOnly" : false,
+      "catalogCharacteristics" : [ ]
+    }
+  ],
+
+  "initialCallingChannels": [
+    {
+      "id": "-1", 
+      "name": "CustomerCare",
+      "display": "Customer Care",
+      "active": true,
+      "readOnly": true,
+      "offerProperties": [
+        {
+          "offerPropertyID": "1",
+          "offerPropertyName": "offerID",
+          "presentOffers": true,
+          "presentOfferDetails": true,
+          "hidden": true
+        },
+        {
+          "offerPropertyID": "2",
+          "offerPropertyName": "offerName",
+          "presentOffers": true,
+          "presentOfferDetails": true,
+          "hidden": true
+        },
+        {
+          "offerPropertyID": "3",
+          "offerPropertyName": "offerDescription",
+          "presentOffers": true,
+          "presentOfferDetails": true,
+          "hidden": true
+        },
+        {
+          "offerPropertyID": "4",
+          "offerPropertyName": "offerScore",
+          "presentOffers": true,
+          "presentOfferDetails": true,
+          "hidden": false
+        },
+        {
+          "offerPropertyID": "5",
+          "offerPropertyName": "offerRank",
+          "presentOffers": true,
+          "presentOfferDetails": true,
+          "hidden": false
+        },
+        {
+          "offerPropertyID": "6",
+          "offerPropertyName": "imageURL",
+          "presentOffers": true,
+          "presentOfferDetails": true,
+          "hidden": false
+        },
+        {
+          "offerPropertyID": "7",
+          "offerPropertyName": "price",
+          "presentOffers": true,
+          "presentOfferDetails": true,
+          "hidden": false
+        }
+      ],
+      "catalogCharacteristics": []
+    }
+  ],
+
+
+
+  "offerProperties" :
+  [
+    { "id": "1", "name": "offerID", "display": "Offer ID" },
+    { "id": "2", "name": "offerName", "display": "Offer Name" },
+    { "id": "3", "name": "offerDescription", "display": "Offer Description" },
+    { "id": "4", "name": "offerScore", "display": "Offer Score" },
+    { "id": "5", "name": "offerRank", "display": "Offer Rank" },
+    { "id": "6", "name": "imageURL", "display": "Image URL" },
+    { "id": "7", "name": "price", "display": "Price" }
+  ],
+  
+
+  "authResponseCacheLifetimeInMinutes" : 60,
+  "thirdPartyMethodPermissions" :
+  [
+    {
+      "id"           : "ping",
+      "methodName"   : "ping",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "],
+      "byPassAuth"   : true
+    },
+    {
+      "id"           : "getCustomer",
+      "methodName"   : "getCustomer",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerBDRs",
+      "methodName"   : "getCustomerBDRs",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerODRs",
+      "methodName"   : "getCustomerODRs",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerPoints",
+      "methodName"   : "getCustomerPoints",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "creditBonus",
+      "methodName"   : "creditBonus",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "debitBonus",
+      "methodName"   : "debitBonus",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerMessages",
+      "methodName"   : "getCustomerMessages",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getOffersList",
+      "methodName"   : "getOffersList",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getActiveOffer",
+      "methodName"   : "getActiveOffer",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getActiveOffers",
+      "methodName"   : "getActiveOffers",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerJourneys",
+      "methodName"   : "getCustomerJourneys",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerCampaigns",
+      "methodName"   : "getCustomerCampaigns",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerAvailableCampaigns",
+      "methodName"   : "getCustomerAvailableCampaigns",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getLoyaltyProgram",
+      "methodName"   : "getLoyaltyProgram",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getLoyaltyProgramList",
+      "methodName"   : "getLoyaltyProgramList",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerLoyaltyPrograms",
+      "methodName"   : "getCustomerLoyaltyPrograms",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "updateCustomer",
+      "methodName"   : "updateCustomer",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getCustomerNBOs",
+      "methodName"   : "getCustomerNBOs",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "getTokensCodesList",
+      "methodName"   : "getTokensCodesList",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "acceptOffer",
+      "methodName"   : "acceptOffer",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "purchaseOffer",
+      "methodName"   : "purchaseOffer",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "triggerEvent",
+      "methodName"   : "triggerEvent",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "updateCustomerParent",
+      "methodName"   : "updateCustomerParent",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "removeCustomerParent",
+      "methodName"   : "removeCustomerParent",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "enterCampaign",
+      "methodName"   : "enterCampaign",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "loyaltyProgramOptIn",
+      "methodName"   : "loyaltyProgramOptIn",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "loyaltyProgramOptOut",
+      "methodName"   : "loyaltyProgramOptOut",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "validateVoucher",
+      "methodName"   : "validateVoucher",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
+      "id"           : "redeemVoucher",
+      "methodName"   : "redeemVoucher",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    }
+
+  ],
+
+  "uploadedFileSeparator" : ";",
+  "reportManager" :
+  {
+    "reportManagerZookeeperDir"   : "${zookeeper.root}/reports",
+    "reportManagerOutputPath"     : "/app/reports",
+    "reportManagerDateFormat"     : "yyyy-MM-dd_HH-mm-ss",
+    "reportManagerFileExtension"  : "csv",
+    "reportManagerCsvSeparator"   : ";",
+    "reportManagerStreamsTempDir" : "/tmp"
+  },
+  
+  "initialReports" :
+  [
+    {
+      "name"                : "journeyCustomerStatesReport",
+      "display"             : "Journey Customer States Report",
+      "description"         : "Description of the Journey Customer States Report",
+      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportDriver",
+      "availableScheduling" : [ "hourly", "daily", "weekly", "monthly" ]
+    },
+    {
+      "name"                : "subscriberReport",
+      "display"             : "Subscriber Report",
+      "description"         : "Description of the Subscriber Report",
+      "class"               : "com.evolving.nglm.evolution.reports.subscriber.SubscriberReportDriver",
+      "availableScheduling" : [ "hourly", "daily", "weekly", "monthly" ]
+    },
+    {
+      "name"                : "BDRReport",
+      "display"             : "BDR Report",
+      "description"         : "Description of the BDR Report",
+      "class"               : "com.evolving.nglm.evolution.reports.bdr.BDRReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "ODRReport",
+      "display"             : "ODR Report",
+      "description"         : "Description of the ODR Report",
+      "class"               : "com.evolving.nglm.evolution.reports.odr.ODRReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ],
+      "defaultReportPeriodQuantity" : 1,
+      "defaultReportPeriodUnit"     : "DAYS"
+    },
+    {
+      "name"                : "notificationReport",
+      "display"             : "Notification Report",
+      "description"         : "Description of the Notification Report",
+      "class"               : "com.evolving.nglm.evolution.reports.notification.NotificationReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "journeysReport",
+      "display"             : "Journeys Report",
+      "description"         : "Description of the Journeys Report",
+      "class"               : "com.evolving.nglm.evolution.reports.journeys.JourneysReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "productReport",
+      "display"             : "Product Report",
+      "description"         : "Description of the Product Report",
+      "class"               : "com.evolving.nglm.evolution.reports.product.ProductReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "offerReport",
+      "display"             : "Offer Report",
+      "description"         : "Description of the Offer Report",
+      "class"               : "com.evolving.nglm.evolution.reports.offer.OfferReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "journeyImpactReport",
+      "display"             : "Journey Impact Report",
+      "description"         : "Description of the Journey Impact Report",
+      "class"               : "com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "journeyCustomerStatisticsReport",
+      "display"             : "Journey Customer Statistics Report",
+      "description"         : "Description of the Journey Customer Statistics Report",
+      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "contactPolicyConfiguration",
+      "display"             : "Contact Policy Configuration",
+      "description"         : "Description of the Contact Policy Configuration Report",
+      "class"               : "com.evolving.nglm.evolution.reports.contactpolicyconfig.ContactPolicyConfigurationReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "loyaltyProgramCustomerStates",
+      "display"             : "Loyalty Program Customer States",
+      "description"         : "Description of the Loyalty Program Customer States Report",
+      "class"               : "com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate.LoyaltyProgramCustomerStatesDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "customerPointsDetails",
+      "display"             : "Customer Points Details",
+      "description"         : "Description of the Customer Points Details Report",
+      "class"               : "com.evolving.nglm.evolution.reports.customerpointdetails.CustomerPointDetailsDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    },
+    {
+      "name"                : "tokenReport",
+      "display"             : "Token Report",
+      "description"         : "Description of the characteristics of the token",
+      "class"               : "com.evolving.nglm.evolution.reports.token.TokenReportDriver",
+      "availableScheduling" : [ "hourly", "daily", "weekly", "monthly" ],
+      "effectiveScheduling" : [ "hourly", "monthly" ]
+    },
+    {
+      "name"                : "offersAllocatedToTokens",
+      "display"             : "Token Offer Report",
+      "description"         : "Description offer details of the tokens",
+      "class"               : "com.evolving.nglm.evolution.reports.tokenOffer.TokenOfferReportDriver",
+      "availableScheduling" : [ "weekly", "monthly" ]
+    }
+  ],
+
+  "licenseManagement" :
+  {
+    "timeLimit" :
+    [
+      { "id" : "1", "alarmLevel" : 1, "raise" : "-1 day" },
+      { "id" : "2", "alarmLevel" : 2, "raise" : "-5 minute" },
+      { "id" : "3", "alarmLevel" : 3, "raise" : "+1 minute" },
+      { "id" : "4", "alarmLevel" : 4, "raise" : "+5 minute" }
+    ],
+    "nodeLimit" :
+    {
+      "defaultAlarmLevel" : 4,
+      "configuredAlarmLevels" : [ ]
+    },
+    "componentLimit" :
+    {
+      "defaultAlarmLevel" : 3,
+      "configuredAlarmLevels" :
+      [
+        { "id" : "1", "name" : "JourneyManager", "alarmLevel" : 4 },
+        { "id" : "2", "name" : "OfferManager", "alarmLevel" : 4 },
+        { "id" : "3", "name" : "Analytics", "alarmLevel" : 1 }
+      ]
+    },
+    "capacityLimit" :
+    [
+      {
+        "metric" : "ConcurrentUsers",
+        "alarmInstructions" :
+        [
+          { "id" : "1", "tier" : "1", "bound" : "0%", "escalation" : { "startLevel" : 3, "endLevel" : 3, "escalationTimeUnit" : "hour" }}
+        ]
+      },
+      {
+        "metric" : "SubscriberCount",
+        "alarmInstructions" :
+        [
+          { "id" : "1", "tier" : "1", "bound" : "10%",    "escalation" : { "startLevel" : 1, "endLevel" : 2, "escalationTimeUnit" : "day" }},
+          { "id" : "2", "tier" : "2", "bound" : "25%",    "escalation" : { "startLevel" : 1, "endLevel" : 3, "escalationTimeUnit" : "day" }},
+          { "id" : "3", "tier" : "3", "bound" : "excess", "escalation" : { "startLevel" : 2, "endLevel" : 4, "escalationTimeUnit" : "day" }}
+        ]
+      }
+    ]
+  },
+
+
+  "subscriberProfileRegistrySubjectComment"              : "todo, remove totally this hack from the conf",
+  "subscriberProfileRegistrySubject"                     : "subscriberprofile",
+  
+  "scoringEngines" :
+    [
+      {
+        "id": "1",
+	    "name": "ScoringEngineName#120190508185800",
+	    "display": "DNBO Scoring Engine",
+	    "description": "DNBO Scoring Engine",
+	    "active": true,
+	    "readOnly": true
+      }
+    ],
+
+  "scoringTypes" :
+    [
+                {
+                        "id": "1",
+                        "display": "Offer Matrix",
+                        "name": "OfferMatrix20190624185800"
+                }
+        ],
+
+  "dnboMatrixVariables" :
+    [
+                {
+                        "id": "1",
+                        "display": "Balance",
+                        "name": "Balance0190624185800"
+                }
+    ],
+    
+  "initialSuppliers" :
+    [
+      { "id" : "supplier_1", "name" : "EvolutionPoints",  "fulfillmentProviderID" : "provider_Point", "display" : "Evolution Points", "description" : "Evolution Points Supplier",         "active" : true, "readOnly" : true, "email" : "", "phone" : "", "website" : "" },
+      { "id" : "supplier_2", "name" : "EvolutionCampaigns","fulfillmentProviderID" : "provider_Journey","display" : "Evolution Campaigns",       "description" : "Evolution Campaigns Supplier", "active" : true, "readOnly" : true, "email" : "", "phone" : "", "website" : "" }
+    ],
+    
+   "supportedCurrencies" : [],
+   
+   "supportedRelationships" : [],
+
+  "catalogCharacteristicUnits" :
+    [
+      { "id": "day",        "display": "Days",     "dataTypes": [ "integer" ] },
+      { "id": "hour",       "display": "Hours",    "dataTypes": [ "integer" ] },
+      { "id": "minute" ,    "display": "Minutes",  "dataTypes": [ "integer" ] },
+      { "id": "MB",         "display": "MB",       "dataTypes": [ "integer", "double" ] },
+      { "id": "GB",         "display": "GB",       "dataTypes": [ "integer", "double" ] },
+      { "id": "percentage", "display": "%",        "dataTypes": [ "integer", "double" ] }
+    ],
+    
+    "presentationCriterionFields" :
+    [
+      { "id" : "offer.rank",              "display" : "Offer Rank",               "dataType" : "integer", "minValue" : null, "maxValue" : null, "excludedOperators" : null,                                                                            "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : null },
+      { "id" : "offer.price",             "display" : "Offer Price",              "dataType" : "integer", "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : [ "subscriber.balance" ],  "excludedComparableFields" : null,               "availableValues" : null },
+      { "id" : "offer.serviceTypeID",     "display" : "Service Type",             "dataType" : "string",  "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : [ { "id" : "1", "display" : "Prepaid" }, { "id" : "2", "display" : "Postpaid" } ] },
+      { "id" : "offer.startDate",         "display" : "Offer Start Date",         "dataType" : "date",    "minValue" : null, "maxValue" : null, "excludedOperators" : null,                                                                            "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : null },
+      { "id" : "offer.endDate",           "display" : "Offer End Date",           "dataType" : "date",    "minValue" : null, "maxValue" : null, "excludedOperators" : null,                                                                            "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : null },
+      { "id" : "offer.name",              "display" : "Offer Name",               "dataType" : "string",  "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : [ "#offers#" ] },
+      { "id" : "product.type",            "display" : "Product Type",             "dataType" : "string",  "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : [ "#productTypes#" ] },
+      { "id" : "product.name",            "display" : "Product Name",             "dataType" : "string",  "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : [ "#products#" ] },
+      { "id" : "product.validity",        "display" : "Product Validity(days)",   "dataType" : "integer", "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : null }
+    ],
+    
+    "journeyMetrics" : [],
+    
+    "subscriberProfileDatacubeMetrics" : [],
+    
+    "enableProfileSegmentChange" : true
+     
+    
+    
+}

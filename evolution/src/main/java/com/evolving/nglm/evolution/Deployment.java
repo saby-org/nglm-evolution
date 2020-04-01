@@ -23,7 +23,6 @@ import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.SuspenseProcessEventConfiguration;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -148,7 +147,6 @@ public class Deployment
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
   private static Map<String,SupportedTokenCodesFormat> supportedTokenCodesFormats = new LinkedHashMap<String,SupportedTokenCodesFormat>();
-  private static Map<String,ServiceType> serviceTypes = new LinkedHashMap<String,ServiceType>();
   private static Map<String,SupportedRelationship> supportedRelationships = new LinkedHashMap<String,SupportedRelationship>();
   private static Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
   private static Map<String,CatalogCharacteristicUnit> catalogCharacteristicUnits = new LinkedHashMap<String,CatalogCharacteristicUnit>();
@@ -181,7 +179,6 @@ public class Deployment
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static List<EvaluationCriterion> universalControlGroupCriteria = new ArrayList<EvaluationCriterion>();
   private static List<EvaluationCriterion> controlGroupCriteria = new ArrayList<EvaluationCriterion>();
-  private static Map<String,OfferCategory> offerCategories = new LinkedHashMap<String,OfferCategory>();
   private static Map<String,OfferProperty> offerProperties = new LinkedHashMap<String,OfferProperty>();
   private static Map<String,ScoringEngine> scoringEngines = new LinkedHashMap<String,ScoringEngine>();
   private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
@@ -229,12 +226,18 @@ public class Deployment
   private static String dynamicCriterionFieldsTopic;
   private static String elasticSearchDateFormat;
   private static int elasticSearchScrollSize;
+  private static int maxPollIntervalMs;
   private static String criterionFieldAvailableValuesTopic;
   private static String sourceAddressTopic;
   private static boolean autoApproveGuiObjects;
   private static Map<String,String> deliveryTypeCommunicationChannelIDMap = new LinkedHashMap<>();
   private static String voucherChangeRequestTopic;
   private static String voucherChangeResponseTopic;
+  private static String hourlyReportCronEntryString;
+  private static String dailyReportCronEntryString;
+  private static String weeklyReportCronEntryString;
+  private static String monthlyReportCronEntryString;
+
 
   // conf for voucher
   // we won't deliver a voucher that expiry in lest than X hours from now :
@@ -283,10 +286,6 @@ public class Deployment
   public static String getSubscriberTraceControlTopic() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlTopic(); }
   public static String getSubscriberTraceControlAssignSubscriberIDTopic() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlAssignSubscriberIDTopic(); }
   public static String getSubscriberTraceTopic() { return com.evolving.nglm.core.Deployment.getSubscriberTraceTopic(); }
-  public static String getSuspenseCronEntry() { return com.evolving.nglm.core.Deployment.getSuspenseCronEntry(); }
-  public static String getSuspenseTopic() { return com.evolving.nglm.core.Deployment.getSuspenseTopic(); }
-  public static String getSuspenseAuditTopic() { return com.evolving.nglm.core.Deployment.getSuspenseAuditTopic(); }
-  public static Map<String,SuspenseProcessEventConfiguration> getSuspenseProcessEventConfiguration() { return com.evolving.nglm.core.Deployment.getSuspenseProcessEventConfiguration(); }
   public static Map<String, AlternateID> getAlternateIDs() { return com.evolving.nglm.core.Deployment.getAlternateIDs(); }
 
   //
@@ -390,7 +389,6 @@ public class Deployment
   public static Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
   public static Map<String,SupportedTokenCodesFormat> getSupportedTokenCodesFormats() { return supportedTokenCodesFormats; }
-  public static Map<String,ServiceType> getServiceTypes() { return serviceTypes; }
   public static Map<String,SupportedRelationship> getSupportedRelationships() { return supportedRelationships; }
   public static Map<String,CallingChannelProperty> getCallingChannelProperties() { return callingChannelProperties; }
   public static Map<String,CatalogCharacteristicUnit> getCatalogCharacteristicUnits() { return catalogCharacteristicUnits; }
@@ -422,7 +420,6 @@ public class Deployment
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
   public static List<EvaluationCriterion> getUniversalControlGroupCriteria() { return universalControlGroupCriteria; }
   public static List<EvaluationCriterion> getControlGroupCriteria() { return controlGroupCriteria; }
-  public static Map<String,OfferCategory> getOfferCategories() { return offerCategories; }
   public static Map<String,OfferProperty> getOfferProperties() { return offerProperties; }
   public static Map<String,ScoringEngine> getScoringEngines() { return scoringEngines; }
   public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; }
@@ -472,6 +469,7 @@ public class Deployment
   public static Map<String,BillingMode> getBillingModes() { return billingModes; }
   public static String getElasticSearchDateFormat() { return elasticSearchDateFormat; }
   public static int getElasticSearchScrollSize() {return elasticSearchScrollSize; }
+  public static int getMaxPollIntervalMs() {return maxPollIntervalMs; }
   public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
   public static String getSourceAddressTopic() { return sourceAddressTopic; }
   public static boolean getAutoApproveGuiObjects() { return autoApproveGuiObjects; }
@@ -486,8 +484,11 @@ public class Deployment
   public static String getCleanExpiredVoucherCronEntry() {return cleanExpiredVoucherCronEntry; }
   public static int getLiveVoucherIndexNumberOfReplicas() { return liveVoucherIndexNumberOfReplicas; }
   public static int getLiveVoucherIndexNumberOfShards() { return liveVoucherIndexNumberOfShards; }
-
-  //
+  public static String getHourlyReportCronEntryString() { return hourlyReportCronEntryString; }
+  public static String getDailyReportCronEntryString() { return dailyReportCronEntryString; }
+  public static String getWeeklyReportCronEntryString() { return weeklyReportCronEntryString; }
+  public static String getMonthlyReportCronEntryString() { return monthlyReportCronEntryString; }
+  
   // addProfileCriterionField
   //
   public static void addProfileCriterionField(String key, CriterionField criterion) { profileCriterionFields.put(key, criterion); }
@@ -1015,6 +1016,19 @@ public class Deployment
       try
         {
           elasticSearchScrollSize = JSONUtilities.decodeInteger(jsonRoot, "elasticSearchScrollSize", 0);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  maxPollIntervalMs
+      //
+
+      try
+        {
+          maxPollIntervalMs = JSONUtilities.decodeInteger(jsonRoot, "maxPollIntervalMs", 30000);
         }
       catch (JSONUtilitiesException e)
         {
@@ -2261,25 +2275,6 @@ public class Deployment
         }
 
       //
-      //  serviceTypes
-      //
-
-      try
-        {
-          JSONArray serviceTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "serviceTypes", true);
-          for (int i=0; i<serviceTypeValues.size(); i++)
-            {
-              JSONObject serviceTypeJSON = (JSONObject) serviceTypeValues.get(i);
-              ServiceType serviceType = new ServiceType(serviceTypeJSON);
-              serviceTypes.put(serviceType.getID(), serviceType);
-            }
-        }
-      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
       //  supportedRelationships
       //
 
@@ -2641,25 +2636,6 @@ public class Deployment
             }
         }
       catch (GUIManagerException | JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  offerCategories
-      //
-
-      try
-        {
-          JSONArray offerCategoryValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerCategories", new JSONArray());
-          for (int i=0; i<offerCategoryValues.size(); i++)
-            {
-              JSONObject offerCategoryJSON = (JSONObject) offerCategoryValues.get(i);
-              OfferCategory offerCategory = new OfferCategory(offerCategoryJSON);
-              offerCategories.put(offerCategory.getID(), offerCategory);
-            }
-        }
-      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
         {
           throw new ServerRuntimeException("deployment", e);
         }
@@ -3129,6 +3105,59 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
+      
+      //
+      //  hourlyReportCronEntryString
+      //
+
+      try
+        {
+          hourlyReportCronEntryString = JSONUtilities.decodeString(jsonRoot, "hourlyReportCronEntryString", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  dailyReportCronEntryString
+      //
+
+      try
+        {
+          dailyReportCronEntryString = JSONUtilities.decodeString(jsonRoot, "dailyReportCronEntryString", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  weeklyReportCronEntryString
+      //
+
+      try
+        {
+          weeklyReportCronEntryString = JSONUtilities.decodeString(jsonRoot, "weeklyReportCronEntryString", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  monthlyReportCronEntryString
+      //
+
+      try
+        {
+          monthlyReportCronEntryString = JSONUtilities.decodeString(jsonRoot, "monthlyReportCronEntryString", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
     }
 
   /*****************************************

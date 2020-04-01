@@ -268,4 +268,12 @@ public class LoyaltyProgramRequest extends DeliveryRequest implements BonusDeliv
     thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
     thirdPartyPresentationMap.put(ORIGIN, "");
   }
+  @Override
+  public void resetDeliveryRequestAfterReSchedule()
+  {
+    // 
+    // LoyaltyProgramRequest never rescheduled, let return unchanged
+    //  
+    
+  }
 }

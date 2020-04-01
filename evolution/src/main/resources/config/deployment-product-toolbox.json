@@ -1,0 +1,1203 @@
+{
+
+  "nodeTypes" :
+    [
+
+      {
+        "id"                    : "101",
+        "name"                  : "start",
+        "display"               : "Start",
+        "icon"                  : "jmr_components/styles/images/objects/1-1-start.png",
+        "color"                 : "#c72285", 
+        "height"                : 70,
+        "width"                 : 70,
+        "startNode"             : true,
+        "allowContextVariables" : true,
+        "outputType"            : "static",
+        "outputConnectors" : 
+          [ 
+            { "name" : "start", "display" : "Start", "evaluateContextVariables" : true, "transitionCriteria" : [ ] } 
+          ],
+        "parameters"       : [ ]
+      },
+
+      {
+        "id"               : "102",
+        "name"             : "end",
+        "display"          : "End",
+        "icon"             : "jmr_components/styles/images/objects/1-4-stop.png",
+        "height"           : 70,
+        "width"            : 70,
+        "endNode"          : true,
+        "outputType"       : "none",
+        "outputConnectors" : [ ],
+        "parameters"       : [ ]
+      }, 
+
+      {
+        "id"               : "103",
+        "name"             : "wait",
+        "display"          : "Wait",
+        "icon"             : "jmr_components/styles/images/objects/1-3-wait.png",
+        "color"            : "#c72285", 
+        "height"           : 70,
+        "width"            : 70,
+        "enableCycle"      : true,
+        "outputType"       : "static",
+        "outputConnectors" : 
+          [ 
+            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.duration, node.parameter.unit)" } } ] }
+          ],
+        "parameters"       :
+          [
+            { 
+              "id" : "node.parameter.duration", 
+              "display" : "Wait Duration", 
+              "dataType" : "integer", 
+              "width" : "50%", 
+              "multiple" : false, 
+              "mandatory" : true,
+              "availableValues" : null,
+              "defaultValue" : null
+            },
+            { 
+              "id" : "node.parameter.unit",     
+              "display" : "Units",         
+              "dataType" : "string",  
+              "width" : "50%", 
+              "multiple" : false, 
+              "mandatory" : true, 
+              "availableValues" : 
+                [
+                  { "id" : "minute", "display" : "Minutes" },
+                  { "id" : "hour",   "display" : "Hours" },
+                  { "id" : "day",    "display" : "Days" },
+                  { "id" : "week",   "display" : "Weeks" },
+                  { "id" : "month",  "display" : "Months" }
+                ],
+              "defaultValue" : null
+            }
+          ]
+      },
+
+      {
+        "id"               : "104",
+        "name"             : "schedule",
+        "display"          : "Schedule",
+        "icon"             : "jmr_components/styles/images/objects/1-2-schedule.png",
+        "color"            : "#c72285", 
+        "height"           : 70,
+        "width"            : 70,
+        "enableCycle"      : true,
+        "outputType"       : "static",
+        "outputConnectors" : 
+          [ 
+            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "node.parameter.schedule" } } ] }
+          ],
+        "parameters"       :
+          [
+            { 
+              "id" : "node.parameter.schedule", 
+              "display" : "Wait Until", 
+              "dataType" : "date", 
+              "width" : "50%", 
+              "multiple" : false, 
+              "mandatory" : true,
+              "availableValues" : null,
+              "defaultValue" : null
+            }
+          ]
+      }, 
+
+      {
+        "id"               : "111",
+        "name"             : "control.group",
+        "display"          : "Control Group",
+        "icon"             : "jmr_components/styles/images/objects/control-group.png",
+        "height"           : 70,
+        "width"            : 70,
+        "outputType"       : "static",
+        "outputConnectors" : 
+          [ 
+            { "name" : "targetGroup",           "display" : "Target",  "evaluationPriority" : "normal", "transitionCriteria" : [ { "criterionField" : "internal.random100",               "criterionOperator" : ">=", "argument" : { "expression" : "node.parameter.controlgrouppercent" } } ] },
+            { "name" : "controlGroup",          "display" : "Control", "evaluationPriority" : "last",   "transitionCriteria" : [ ] },
+            { "name" : "universalControlGroup", "display" : "UCG",     "evaluationPriority" : "first",  "transitionCriteria" : [ { "criterionField" : "subscriber.universalControlGroup", "criterionOperator" : "==", "argument" : { "expression" : "true" } } ] }
+          ],
+        "parameters"       :
+          [
+            { 
+              "id" : "node.parameter.controlgrouppercent", 
+              "display" : "Control Group Percent", 
+              "dataType" : "integer", 
+              "width" : "50%", 
+              "multiple" : false, 
+              "mandatory" : true,
+              "availableValues" : null,
+              "defaultValue" : null
+            }
+          ],
+        "action" : 
+          {
+            "actionManagerClass" : "com.evolving.nglm.evolution.Journey$ControlGroupAction"
+          } 
+      },
+
+      {
+          "id"               : "112",
+          "name"             : "ab.split",
+          "display"          : "A/B Testing",
+          "icon"             : "jmr_components/styles/images/objects/ab-testing.png",
+          "height"           : 70,
+          "width"            : 70,
+          "outputType"       : "static",
+          "outputConnectors" : 
+            [ 
+              { "name" : "sample.a",   "display" : "A",  "evaluationPriority" : "normal", "transitionCriteria" : [ { "criterionField" : "internal.random100", "criterionOperator" : "<", "argument" : { "expression" : "node.parameter.sample.a" } } ] },
+              { "name" : "sample.b",  "display" : "B", "evaluationPriority" : "normal",   "transitionCriteria" : [ ] }
+            ],
+            "parameters"             : [ 
+                { 
+                    "id" : "node.parameter.sample.a",               
+                    "display" : "Percentage For Sample A", 
+                    "dataType" : "integer", 
+                    "width" : "100%", 
+                    "multiple" : false, 
+                    "mandatory" : true,
+                    "availableValues" : null,
+                    "defaultValue" : null
+                }
+            ],
+          "action" : 
+            {
+                  "actionManagerClass" : "com.evolving.nglm.evolution.Journey$ABTestingAction"
+            }
+      },
+
+      {
+        "id"                     : "121",
+        "name"                   : "event.selection",
+        "display"                : "Event Selection",
+        "icon"                   : "jmr_components/styles/images/objects/event-selection.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "enableCycle"            : true,
+        "allowContextVariables"  : true,
+        "outputType"             : "static",
+        "outputConnectors"       : 
+          [ 
+            { "name" : "event",   "display" : "Event",   "evaluationPriority" : "last",  "evaluateContextVariables" : true,  "transitionCriteria" : [ { "criterionField" : "evaluation.eventname", "criterionOperator" : "==", "argument" : { "expression" : "node.parameter.eventname" } } ], "additionalCriteria" : "node.parameter.additionalcriteria" },
+            { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "first", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] } 
+          ],
+        "parameters"             : 
+          [ 
+            { 
+              "id" : "node.parameter.eventname",               
+              "display" : "Event Name", 
+              "dataType" : "string", 
+              "width" : "100%", 
+              "multiple" : false, 
+              "mandatory" : true,
+              "availableValues" : [ "#eventNames#" ],
+              "defaultValue" : null
+            },
+            { 
+              "id" : "node.parameter.additionalcriteria", 
+              "display" : "Additional Criteria", 
+              "dataType" : "evaluationCriteria", 
+              "retrieveAdditionalCriteriaFields" : [ "node.parameter.eventname" ],
+              "width" : "100%", 
+              "multiple" : true, 
+              "mandatory" : false,
+              "availableValues" : null,
+              "defaultValue" : [ ]
+            },
+            { 
+              "id" : "node.parameter.timeoutduration", 
+              "display" : "Timeout Duration", 
+              "dataType" : "integer", 
+              "width" : "50%", 
+              "multiple" : false, 
+              "mandatory" : true,
+              "availableValues" : null,
+              "defaultValue" : null
+            },
+            { 
+              "id" : "node.parameter.timeoutunit",     
+              "display" : "Units",         
+              "dataType" : "string",  
+              "width" : "50%", 
+              "multiple" : false, 
+              "mandatory" : true, 
+              "availableValues" : 
+                [
+                  { "id" : "minute", "display" : "Minutes" },
+                  { "id" : "hour",   "display" : "Hours" },
+                  { "id" : "day",    "display" : "Days" },
+                  { "id" : "week",   "display" : "Weeks" },
+                  { "id" : "month",  "display" : "Months" }
+                ],
+              "defaultValue" : null
+            }
+          ]
+      },
+
+      {
+        "id"                     : "122",
+        "name"                   : "profile.selection",
+        "display"                : "Profile Selection",
+        "icon"                   : "jmr_components/styles/images/objects/profile-selection.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "allowContextVariables"  : true,
+        "outputType"             : "dynamic",
+        "outputConnectors"       :
+        [
+          { "name" : "other", "display" : "Other", "evaluationPriority" : "last", "transitionCriteria" : [ ] }
+        ],
+        "parameters"             : [ ],
+        "dynamicOutputConnector" :
+        {
+          "outputConnectorName" : "link.parameter.outputconnectorname",
+          "parameters"             :
+          [
+            {
+              "id" : "link.parameter.outputconnectorname",
+              "display" : "Selection Name",
+              "dataType" : "string",
+              "width" : "100%",
+              "multiple" : false,
+              "mandatory" : true,
+              "availableValues" : null,
+              "defaultValue" : null
+            },
+            {
+              "id" : "link.parameter.profilecriteria",
+              "display" : "Profile Criteria",
+              "dataType" : "evaluationCriteria",
+              "width" : "100%",
+              "multiple" : true,
+              "mandatory" : true,
+              "availableValues" : null,
+              "defaultValue" : [ ]
+            }
+          ],
+          "transitionCriteria" : [ ],
+          "additionalCriteria" : "link.parameter.profilecriteria"
+        }
+      },
+
+      {
+        "id"                     : "125",
+        "name"                   : "event.multi.selection",
+        "display"                : "Event Multi-Selection",
+        "icon"                   : "jmr_components/styles/images/objects/event-selection.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "enableCycle"            : true,
+        "allowContextVariables"  : false,
+        "outputType"             : "dynamic",
+        "outputConnectors"       : 
+          [ 
+            { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "first", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] } 
+          ],
+        "dynamicOutputConnector" : 
+          {
+            "outputConnectorName" : "link.parameter.outputconnectorname", 
+            "parameters"             : 
+              [ 
+                { 
+                  "id" : "link.parameter.outputconnectorname", 
+                  "display" : "Selection Name", 
+                  "dataType" : "string", 
+                  "width" : "100%", 
+                  "multiple" : false, 
+                  "mandatory" : true,
+                  "availableValues" : null,
+                  "defaultValue" : null
+                },
+                { 
+                  "id" : "link.parameter.eventname", 
+                  "display" : "Event Name", 
+                  "dataType" : "string", 
+                  "width" : "100%", 
+                  "multiple" : false, 
+                  "mandatory" : true,
+                  "availableValues" : [ "#eventNames#" ],
+                  "defaultValue" : null
+                },
+                { 
+                  "id" : "link.parameter.additionalcriteria", 
+                  "display" : "Event Criteria", 
+                  "dataType" : "evaluationCriteria", 
+                  "retrieveAdditionalCriteriaFields" : [ "link.parameter.eventname" ],
+                  "width" : "100%", 
+                  "multiple" : true, 
+                  "mandatory" : true,
+                  "availableValues" : null,
+                  "defaultValue" : [ ]
+                }
+              ],
+            "transitionCriteria" : 
+              [
+                { "name" : "event",   "display" : "Event",   "evaluationPriority" : "normal",  "evaluateContextVariables" : false,  "transitionCriteria" : [ { "criterionField" : "evaluation.eventname", "criterionOperator" : "==", "argument" : { "expression" : "link.parameter.eventname" } } ] }
+              ],
+            "additionalCriteria" : "link.parameter.additionalcriteria"
+          },
+        "parameters"             : 
+          [ 
+            { 
+              "id" : "node.parameter.timeoutduration", 
+              "display" : "Timeout Duration", 
+              "dataType" : "integer", 
+              "width" : "50%", 
+              "multiple" : false, 
+              "mandatory" : true,
+              "availableValues" : null,
+              "defaultValue" : null
+            },
+            { 
+              "id" : "node.parameter.timeoutunit",     
+              "display" : "Units",         
+              "dataType" : "string",  
+              "width" : "50%", 
+              "multiple" : false, 
+              "mandatory" : true, 
+              "availableValues" : 
+                [
+                  { "id" : "minute", "display" : "Minutes" },
+                  { "id" : "hour",   "display" : "Hours" },
+                  { "id" : "day",    "display" : "Days" },
+                  { "id" : "week",   "display" : "Weeks" },
+                  { "id" : "month",  "display" : "Months" }
+                ],
+              "defaultValue" : null
+            }
+          ]
+      },
+
+      {
+        "id"                     : "131",
+        "name"                   : "enter.campaign",
+        "display"                : "Enter Campaign",
+        "icon"                   : "jmr_components/styles/images/objects/5-2-bonus.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "enableCycle"            : true,
+        "outputType"             : "static",
+        "outputConnectors"       : 
+          [ 
+            { "name" : "entered",      "display" : "Entered",        "transitionCriteria" : [ { "criterionField" : "node.action.journeystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'entered' ]" } } ] },
+            { "name" : "notEligible",  "display" : "Not-Eligible",   "transitionCriteria" : [ { "criterionField" : "node.action.journeystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'notEligible' ]" } } ] }
+          ],
+        "parameters" :
+          [
+            { 
+              "id" : "node.parameter.journey",
+              "display" : "Campaign", 
+              "dataType" : "string", 
+              "width" : "100%", 
+              "multiple" : false, 
+              "mandatory" : true,
+              "availableValues" : [ "#callableCampaigns#" ],
+              "defaultValue" : null
+            }
+          ],
+        "action" : 
+          {
+            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$EnterJourneyAction"
+          }
+      },
+
+      {
+        "id"                     : "132",
+        "name"                   : "enter.journey",
+        "display"                : "Enter Sub-Journey",
+        "icon"                   : "jmr_components/styles/images/objects/5-2-bonus.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "enableCycle"            : true,
+        "outputType"             : "static",
+        "outputConnectors"       : 
+          [ 
+            { "name" : "entered",      "display" : "Entered",        "transitionCriteria" : [ { "criterionField" : "node.action.journeystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'entered' ]" } } ] },
+            { "name" : "notEligible",  "display" : "Not-Eligible",   "transitionCriteria" : [ { "criterionField" : "node.action.journeystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'notEligible' ]" } } ] }
+          ],
+        "parameters" :
+          [
+            { 
+              "id" : "node.parameter.journey",
+              "display" : "Sub-Journey", 
+              "dataType" : "string", 
+              "width" : "100%", 
+              "multiple" : false, 
+              "mandatory" : true,
+              "availableValues" : [ "#callableJourneys#" ],
+              "defaultValue" : null
+            }
+          ],
+        "action" : 
+          {
+            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$EnterJourneyAction"
+          }
+      },
+
+      {
+        "id"                     : "133",
+        "name"                   : "bonus.point.credit",
+        "display"                : "Bonus Point - Credit",
+        "icon"                   : "jmr_components/styles/images/objects/in-credit.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "outputType"             : "static",
+        "outputConnectors"       : 
+          [ 
+            { "name" : "credited",  "display" : "Credited",  "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
+            { "name" : "failed",    "display" : "Failed",    "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
+            { "name" : "timeout",   "display" : "Timeout",   "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'day')" } } ] }
+          ],
+        "parameters" :
+          [
+            { 
+              "id" : "node.parameter.commodityid",
+              "display" : "Point", 
+              "dataType" : "string", 
+              "multiple" : false,
+              "mandatory" : true,
+              "expressionValuedParameter" : false,
+              "availableValues" : [ "#pointDeliverables#" ], 
+              "defaultValue" : null
+            },
+            { 
+              "id" : "node.parameter.amount",
+              "display" : "Credit Amount", 
+              "dataType" : "integer", 
+              "multiple" : false,
+              "mandatory" : true,
+              "expressionValuedParameter" : true,
+              "availableValues" : null,
+              "defaultValue" : null
+            },
+            { 
+              "id" : "node.parameter.validity.period.type",
+              "display" : "Period type", 
+              "dataType" : "string", 
+              "multiple" : false,
+              "mandatory" : false,
+              "availableValues" : [
+                  { "id" : "minute", "display" : "Minutes" },
+                  { "id" : "hour",   "display" : "Hours" },
+                  { "id" : "day",    "display" : "Days" },
+                  { "id" : "week",   "display" : "Weeks" },
+                  { "id" : "month",  "display" : "Months" },
+                  { "id" : "year",  "display" : "Years" }
+              ], 
+              "defaultValue" : null
+            },
+            { 
+              "id" : "node.parameter.validity.period.quantity",
+              "display" : "Period quantity", 
+              "dataType" : "integer", 
+              "multiple" : false,
+              "mandatory" : false,
+              "availableValues" : null,
+              "defaultValue" : null
+            }
+          ],
+        "action" : 
+          {
+            "actionManagerClass" : "com.evolving.nglm.evolution.CommodityDeliveryManager$ActionManager",
+            "deliveryType" : "pointFulfillment",
+            "moduleID" : "1",
+            "operation" : "credit"
+          }
+      },
+
+      {
+        "id"                     : "135",
+        "name"                   : "loyalty.opt-in",
+        "display"                : "Loyalty Opt-in",
+        "icon"                   : "jmr_components/styles/images/objects/opt-in.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "outputType"             : "static",
+        "outputConnectors"       : 
+          [ 
+            { "name" : "registered",  "display" : "Registered",  "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
+            { "name" : "failed",      "display" : "Failed",      "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
+            { "name" : "timeout",     "display" : "Timeout",     "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'day')" } } ] }
+          ],
+        "parameters" :
+          [
+            { 
+              "id" : "node.parameter.loyaltyProgramId",
+              "display" : "Loyalty Program", 
+              "dataType" : "string", 
+              "multiple" : false,
+              "mandatory" : true,
+              "availableValues" : [ "#callableLoyaltyPrograms#" ],
+              "defaultValue" : null
+            }
+          ],
+        "action" : 
+          {
+            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$LoyaltyProgramAction",
+            "moduleID" : "1",
+            "operation" : "opt-in"
+          }
+      },
+
+      {
+        "id"                     : "136",
+        "name"                   : "purchase.offer",
+        "display"                : "Purchase Offer",
+        "icon"                   : "jmr_components/styles/images/objects/purchase-offer.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "outputType"             : "static",
+        "outputConnectors"       :
+        [
+          { "name" : "purchased", "display" : "Purchased", "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
+          { "name" : "failed",    "display" : "Failed",    "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
+          { "name" : "timeout",   "display" : "Timeout",   "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] }
+        ],
+        "parameters" :
+        [
+          {
+            "id" : "node.parameter.offerid",
+            "display" : "Offer",
+            "dataType" : "string",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" : [ "#offers#" ],
+            "defaultValue" : null
+          },
+          {
+            "id" : "node.parameter.quantity",
+            "display" : "Quantity",
+            "dataType" : "integer",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" : null,
+            "defaultValue" : null
+          }
+        ],
+        "action" :
+        {
+          "actionManagerClass" : "com.evolving.nglm.evolution.PurchaseFulfillmentManager$ActionManager",
+          "moduleID" : "1",
+          "salesChannel" : "2"
+        }
+      },
+
+      {
+        "id"                     : "137",
+        "name"                   : "journey.status",
+        "display"                : "Set Status",
+        "icon"                   : "jmr_components/styles/images/objects/6-2-campaign.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "allowContextVariables"  : true,
+        "outputType"             : "static",
+        "outputConnectors"       :
+        [
+          { "name" : "set", "display" : "Status Set", "transitionCriteria" : [ ] }
+        ],
+        "parameters"             :
+        [
+          {
+            "id" : "node.parameter.journeystatus",
+            "display" : "Status",
+            "dataType" : "string",
+            "width" : "100%",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" :
+            [
+              { "id" : "statusNotified",  "display" : "Notified" },
+              { "id" : "statusConverted", "display" : "Converted" }
+            ],
+            "defaultValue" : null
+          }
+        ],
+        "action" :
+        {
+          "actionManagerClass" : "com.evolving.nglm.evolution.Journey$SetStatusAction"
+        }
+      },
+
+      {
+        "id"                     : "138",
+        "name"                   : "bonus.point.debit",
+        "display"                : "Bonus Point - Debit",
+        "icon"                   : "jmr_components/styles/images/objects/in-debit.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "outputType"             : "static",
+        "outputConnectors"       : 
+          [ 
+            { "name" : "credited",  "display" : "Credited",  "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
+            { "name" : "failed",    "display" : "Failed",    "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
+            { "name" : "timeout",   "display" : "Timeout",   "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'day')" } } ] }
+          ],
+        "parameters" :
+          [
+            { 
+              "id" : "node.parameter.commodityid",
+              "display" : "Point", 
+              "dataType" : "string", 
+              "multiple" : false,
+              "mandatory" : true,
+              "expressionValuedParameter" : false,
+              "availableValues" : [ "#pointPaymentMeans#" ], 
+              "defaultValue" : null
+            },
+            { 
+              "id" : "node.parameter.amount",
+              "display" : "Debit Amount", 
+              "dataType" : "integer", 
+              "multiple" : false,
+              "mandatory" : true,
+              "expressionValuedParameter" : true,
+              "availableValues" : null,
+              "defaultValue" : null
+            }
+          ],
+        "action" : 
+          {
+            "actionManagerClass" : "com.evolving.nglm.evolution.CommodityDeliveryManager$ActionManager",
+            "deliveryType" : "pointFulfillment",
+            "moduleID" : "1",
+            "operation" : "debit"
+          }
+      },
+
+      {
+        "id"                     : "139",
+        "name"                   : "loyalty.opt-out",
+        "display"                : "Loyalty Opt-out",
+        "icon"                   : "jmr_components/styles/images/objects/opt-out.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "outputType"             : "static",
+        "outputConnectors"       : 
+          [ 
+            { "name" : "deregistered",  "display" : "Deregistered",  "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
+            { "name" : "failed",        "display" : "Failed",        "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
+            { "name" : "timeout",       "display" : "Timeout",       "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] } 
+          ],
+        "parameters" :
+          [
+            { 
+              "id" : "node.parameter.loyaltyProgramId",
+              "display" : "Loyalty Program", 
+              "dataType" : "string", 
+              "multiple" : false,
+              "mandatory" : true,
+              "availableValues" : [ "#callableLoyaltyPrograms#" ],
+              "defaultValue" : null
+            }
+          ],
+        "action" : 
+          {
+            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$LoyaltyProgramAction",
+            "moduleID" : "1",
+            "operation" : "opt-out"
+          }
+      },
+
+
+      {
+        "id": "150",
+        "name": "next.best.offer.token",
+        "display": "Token",
+        "icon": "jmr_components/styles/images/objects/token.png",
+        "height": 70,
+        "width": 70,
+        "allowContextVariables": true,
+        "outputType": "static",
+        "outputConnectors":
+        [
+          { "name": "success", "display": "success", "transitionCriteria": [ ] },
+          { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "first", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] }
+        ],
+        "parameters":
+        [
+          {
+            "id": "node.parameter.strategy",
+            "display": "Scoring strategy",
+            "dataType": "string",
+            "width": "100%",
+            "multiple": false,
+            "mandatory": true,
+            "availableValues": [ "#scoringStrategies#" ],
+            "defaultValue": null
+          },
+          {
+            "id": "node.parameter.tokentype",
+            "display": "Token Type",
+            "dataType": "string",
+            "width": "100%",
+            "multiple": false,
+            "mandatory": true,
+            "availableValues": [ "#offersPresentationTokenTypes#" ],
+            "defaultValue": null
+          },
+          {
+            "id" : "node.parameter.timeoutduration",
+            "display" : "Timeout Duration",
+            "dataType" : "integer",
+            "width" : "50%",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" : null,
+            "defaultValue" : null
+          },
+          {
+            "id" : "node.parameter.timeoutunit",
+            "display" : "Units",
+            "dataType" : "string",
+            "width" : "50%",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" :
+            [
+              { "id" : "minute", "display" : "Minutes" },
+              { "id" : "hour",   "display" : "Hours" },
+              { "id" : "day",    "display" : "Days" },
+              { "id" : "week",   "display" : "Weeks" },
+              { "id" : "month",  "display" : "Months" }
+            ],
+            "defaultValue" : null
+          }
+        ],
+        "action":
+        {
+          "actionManagerClass": "com.evolving.nglm.evolution.DNBOUtils$ActionManagerToken",
+          "outputAttributes" :
+          [
+            { "id" : "action.token.code", "display" : "New Token Code", "dataType" : "string", "retriever" : "getActionAttribute" }
+          ]
+        }
+      },
+
+      {
+        "id": "151",
+        "name": "next.best.offer.allocate",
+        "display": "Next Best Offers",
+        "icon": "jmr_components/styles/images/objects/token.png",
+        "height": 70,
+        "width": 70,
+        "allowContextVariables": true,
+        "outputType": "static",
+        "outputConnectors":
+        [
+          { "name": "success", "display": "success", "transitionCriteria": [ ] },
+          { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "first", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] }
+        ],
+        "parameters":
+        [
+          {
+            "id": "node.parameter.strategy",
+            "display": "Scoring strategy",
+            "dataType": "string",
+            "width": "100%",
+            "multiple": false,
+            "mandatory": true,
+            "availableValues": [ "#scoringStrategies#" ],
+            "defaultValue": null
+          },
+          {
+            "id": "node.parameter.tokentype",
+            "display": "Token Type",
+            "dataType": "string",
+            "width": "100%",
+            "multiple": false,
+            "mandatory": true,
+            "availableValues": [ "#offersPresentationTokenTypes#" ],
+            "defaultValue": null
+          },
+          {
+            "id" : "node.parameter.timeoutduration",
+            "display" : "Timeout Duration",
+            "dataType" : "integer",
+            "width" : "50%",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" : null,
+            "defaultValue" : null
+          },
+          {
+            "id" : "node.parameter.timeoutunit",
+            "display" : "Units",
+            "dataType" : "string",
+            "width" : "50%",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" :
+            [
+              { "id" : "minute", "display" : "Minutes" },
+              { "id" : "hour",   "display" : "Hours" },
+              { "id" : "day",    "display" : "Days" },
+              { "id" : "week",   "display" : "Weeks" },
+              { "id" : "month",  "display" : "Months" }
+            ],
+            "defaultValue" : null
+          }
+        ],
+        "action":
+        {
+          "actionManagerClass": "com.evolving.nglm.evolution.DNBOUtils$ActionManagerAllocate",
+          "outputAttributes" :
+          [
+            { "id" : "action.token.code",        "display" : "New Token Code",    "dataType" : "string", "retriever" : "getActionAttribute" },
+            { "id" : "action.presented.offer.1", "display" : "Presented Offer 1", "dataType" : "string", "retriever" : "getActionAttribute" },
+            { "id" : "action.presented.offer.2", "display" : "Presented Offer 2", "dataType" : "string", "retriever" : "getActionAttribute" },
+            { "id" : "action.presented.offer.3", "display" : "Presented Offer 3", "dataType" : "string", "retriever" : "getActionAttribute" },
+            { "id" : "action.presented.offer.4", "display" : "Presented Offer 4", "dataType" : "string", "retriever" : "getActionAttribute" },
+            { "id" : "action.presented.offer.5", "display" : "Presented Offer 5", "dataType" : "string", "retriever" : "getActionAttribute" }
+          ]
+        }
+      },
+
+      {
+        "id": "152",
+        "name": "next.best.offer.purchase",
+        "display": "Best Offer",
+        "icon": "jmr_components/styles/images/objects/purchase-offer.png",
+        "height": 70,
+        "width": 70,
+        "allowContextVariables": true,
+        "outputType": "static",
+        "outputConnectors":
+        [
+          { "name": "success", "display": "success", "transitionCriteria": [ ] },
+          { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "first", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] }
+        ],
+        "parameters":
+        [
+          {
+            "id": "node.parameter.strategy",
+            "display": "Scoring strategy",
+            "dataType": "string",
+            "width": "100%",
+            "multiple": false,
+            "mandatory": true,
+            "availableValues": [ "#scoringStrategies#" ],
+            "defaultValue": null
+          },
+          {
+            "id": "node.parameter.tokentype",
+            "display": "Token Type",
+            "dataType": "string",
+            "width": "100%",
+            "multiple": false,
+            "mandatory": true,
+            "availableValues": [ "#offersPresentationTokenTypes#" ],
+            "defaultValue": null
+          },
+          {
+            "id" : "node.parameter.timeoutduration",
+            "display" : "Timeout Duration",
+            "dataType" : "integer",
+            "width" : "50%",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" : null,
+            "defaultValue" : null
+          },
+          {
+            "id" : "node.parameter.timeoutunit",
+            "display" : "Units",
+            "dataType" : "string",
+            "width" : "50%",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" :
+            [
+              { "id" : "minute", "display" : "Minutes" },
+              { "id" : "hour",   "display" : "Hours" },
+              { "id" : "day",    "display" : "Days" },
+              { "id" : "week",   "display" : "Weeks" },
+              { "id" : "month",  "display" : "Months" }
+            ],
+            "defaultValue" : null
+          }
+        ],
+        "action":
+        {
+          "actionManagerClass": "com.evolving.nglm.evolution.DNBOUtils$ActionManagerPurchase",
+          "outputAttributes" :
+          [
+            { "id" : "action.token.code",        "display" : "New Token Code",    "dataType" : "string", "retriever" : "getActionAttribute" },
+            { "id" : "action.presented.offer.1", "display" : "Presented Offer 1", "dataType" : "string", "retriever" : "getActionAttribute" },
+            { "id" : "action.presented.offer.2", "display" : "Presented Offer 2", "dataType" : "string", "retriever" : "getActionAttribute" },
+            { "id" : "action.presented.offer.3", "display" : "Presented Offer 3", "dataType" : "string", "retriever" : "getActionAttribute" },
+            { "id" : "action.presented.offer.4", "display" : "Presented Offer 4", "dataType" : "string", "retriever" : "getActionAttribute" },
+            { "id" : "action.presented.offer.5", "display" : "Presented Offer 5", "dataType" : "string", "retriever" : "getActionAttribute" },
+            { "id" : "action.accepted.offer",    "display" : "Accepted Offer",    "dataType" : "string", "retriever" : "getActionAttribute" }
+          ]
+        }
+      },
+
+      {
+        "id"                     : "201",
+        "name"                   : "earn.badge",
+        "display"                : "Earn Badge",
+        "icon"                   : "jmr_components/styles/images/objects/medal-3.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "outputType"             : "static",
+        "outputConnectors"       : 
+          [ 
+            { "name" : "earned",    "display" : "Earned",   "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
+            { "name" : "failed",    "display" : "Failed",    "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
+            { "name" : "timeout",   "display" : "Timeout",   "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] } 
+          ],
+        "parameters" :
+          [
+            {
+              "id" : "node.parameter.offerid",
+              "display" : "Badge",
+              "dataType" : "string",
+              "multiple" : false,
+              "mandatory" : true,   
+              "availableValues" : [ "#offersByBadge#" ],
+              "defaultValue" : null
+            }
+          ]
+      },
+
+      {
+        "id"                     : "301",
+        "name"                   : "enter.workflow",
+        "display"                : "Enter Workflow",
+        "icon"                   : "jmr_components/styles/images/objects/5-2-bonus.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "enableCycle"            : false,
+        "allowContextVariables"  : true,
+        "outputType"             : "static",
+        "outputConnectors"       :
+        [
+          { "name" : "entered", "display" : "Entered", "transitionCriteria" : [ ] }
+        ],
+        "parameters" :
+        [
+          {
+            "id" : "node.parameter.workflow",
+            "display" : "Workflow",
+            "dataType" : "workflow",
+            "width" : "100%",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" : [ "#callableWorkflows#" ],
+            "defaultValue" : null
+          }
+        ],
+        "action" :
+        {
+          "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$EnterWorkflowAction"
+        }
+      }
+
+    ],
+
+
+  "journeyToolbox" :
+    [
+      {
+        "id"  : "1001",
+        "name"  : "Execution",
+        "color" : "#B63482", 
+        "items" :
+          [
+            { "id" : "101", "name" : "start" },
+            { "id" : "102", "name" : "end" },
+            { "id" : "103", "name" : "wait" },
+            { "id" : "104", "name" : "schedule" }
+          ]
+      },
+
+      {
+        "id"  : "1002",
+        "name"  : "Target",
+        "color" : "#366CAB",
+        "items" :
+          [
+            { "id" : "122", "name" : "profile.selection" },
+            { "id" : "112", "name" : "ab.split" }
+          ]
+      },
+
+      {
+        "id"  : "1003",
+        "name"  : "Conditions",
+        "color" : "#F2A83C",
+        "items" :
+          [
+            { "id" : "121", "name" : "event.selection" },
+            { "id" : "125", "name" : "event.multi.selection" }
+          ]
+      },
+
+      {
+        "id"  : "1004",
+        "name"  : "Actions",
+        "color" : "#549D9F",
+        "items" :
+          [
+            { "id" : "131", "name" : "campaign" },
+            { "id" : "132", "name" : "subjourney" },
+            { "id" : "301", "name" : "workflow" },
+            { "id" : "135", "name" : "loyalty.opt-in" },
+            { "id" : "139", "name" : "loyalty.opt-out" }
+          ]
+       }
+    ],
+
+
+  "campaignToolbox" :
+    [
+      {
+        "id"  : "2001",
+        "name"  : "Execution",
+        "color" : "#B63482", 
+        "items" :
+          [
+            { "id" : "101", "name" : "start" },
+            { "id" : "102", "name" : "end" },
+            { "id" : "103", "name" : "wait" },
+            { "id" : "104", "name" : "schedule" }
+          ]
+      },
+      {
+        "id"  : "2002",
+        "name"  : "Target",
+        "color" : "#366CAB",
+        "items" :
+          [
+            { "id" : "122", "name" : "profile.selection" },
+            { "id" : "111", "name" : "control.group" },
+            { "id" : "112", "name" : "ab.split" }
+          ]
+      },
+      {
+        "id"  : "2003",
+        "name"  : "Conditions",
+        "color" : "#F2A83C",
+        "items" :
+          [
+            { "id" : "121", "name" : "event.selection" },
+            { "id" : "125", "name" : "event.multi.selection" }
+          ]
+      },
+      {
+        "id"  : "2004",
+        "name"  : "Actions",
+        "color" : "#549D9F",
+        "items" :
+          [
+            { "id" : "133", "name" : "bonus.point.credit" },
+            { "id" : "138", "name" : "bonus.point.debit" },
+            { "id" : "135", "name" : "loyalty.opt-in" },
+            { "id" : "139", "name" : "loyalty.opt-out" },
+            { "id" : "136", "name" : "purchase.offer" },
+            { "id" : "201", "name" : "earn.badge" },
+            { "id" : "301", "name" : "workflow" },
+            { "id" : "137", "name" : "journey.status" }
+          ]
+      },
+      {
+        "id"  : "2005",
+        "name"  : "Dialogues",
+        "color" : "#A2A18D",
+        "items" :
+          [
+          ]
+      },
+      {
+        "id"  : "2006",
+        "name"  : "DNBO",
+        "color" : "#A2A08C",
+        "items" :
+          [
+            { "id" : "150", "name" : "next.best.offer.token" },
+            { "id" : "151", "name" : "next.best.offer.allocate" },
+            { "id" : "152", "name" : "next.best.offer.purchase" }
+          ]
+      }
+    ],
+
+
+  "workflowToolbox" :
+    [
+      {
+        "id"  : "2001",
+        "name"  : "Execution",
+        "color" : "#B63482", 
+        "items" :
+          [
+            { "id" : "101", "name" : "start" },
+            { "id" : "102", "name" : "end" },
+            { "id" : "103", "name" : "wait" },
+            { "id" : "104", "name" : "schedule" }
+          ]
+      },
+      {
+        "id"  : "2002",
+        "name"  : "Target",
+        "color" : "#366CAB",
+        "items" :
+          [
+            { "id" : "122", "name" : "profile.selection" },
+            { "id" : "111", "name" : "control.group" },
+            { "id" : "112", "name" : "ab.split" }
+          ]
+      },
+      {
+        "id"  : "2003",
+        "name"  : "Conditions",
+        "color" : "#F2A83C",
+        "items" :
+          [
+            { "id" : "121", "name" : "event.selection" },
+            { "id" : "125", "name" : "event.multi.selection" }
+          ]
+      },
+      {
+        "id"  : "2004",
+        "name"  : "Actions",
+        "color" : "#549D9F",
+        "items" :
+          [
+            { "id" : "133", "name" : "bonus.point.credit" },
+            { "id" : "138", "name" : "bonus.point.debit" },
+            { "id" : "135", "name" : "loyalty.opt-in" },
+            { "id" : "139", "name" : "loyalty.opt-out" },
+            { "id" : "136", "name" : "purchase.offer" },
+            { "id" : "201", "name" : "earn.badge" },
+            { "id" : "137", "name" : "journey.status" }
+          ]
+      },
+      {
+        "id"  : "2005",
+        "name"  : "Dialogues",
+        "color" : "#A2A18D",
+        "items" :
+          [
+          ]
+      },
+      {
+        "id"  : "2006",
+        "name"  : "DNBO",
+        "color" : "#A2A08C",
+        "items" :
+          [
+            { "id" : "150", "name" : "next.best.offer.token" },
+            { "id" : "151", "name" : "next.best.offer.allocate" },
+            { "id" : "152", "name" : "next.best.offer.purchase" }
+          ]
+      }
+    ]
+
+}

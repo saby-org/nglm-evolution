@@ -145,4 +145,12 @@ public class SubscriberEvaluationRequest
         traceDetails.clear();
       }
   }
+
+  @Override
+  public String toString()
+  {
+    return "SubscriberEvaluationRequest [subscriberProfile=" + subscriberProfile + ", extendedSubscriberProfile=" + extendedSubscriberProfile + ", subscriberGroupEpochReader=" + subscriberGroupEpochReader + ", journeyState=" + journeyState + ", journeyNode=" + journeyNode + ", journeyLink=" + journeyLink + ", subscriberStreamEvent=" + subscriberStreamEvent + ", evaluationDate=" + evaluationDate + ", nextEvaluationDates=" + nextEvaluationDates + ", evaluationVariables=" + evaluationVariables + ", traceDetails=" + traceDetails + "]";
+  }
+  
+  
 }  

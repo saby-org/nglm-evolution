@@ -21,6 +21,8 @@ COPY lib/ /app/jars
 COPY config/log4j-evol.properties /etc/kafka
 RUN chmod 0666 /etc/kafka/log4j-evol.properties
 ENV KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:/etc/kafka/log4j-evol-final.properties"
+ENV KAFKA_DEBUG=1
+ENV JAVA_DEBUG_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=7401,suspend=n"
 
 #
 #  volume(s)

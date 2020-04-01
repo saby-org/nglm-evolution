@@ -381,4 +381,12 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
     thirdPartyPresentationMap.put(ORIGIN, "");
   }
+  @Override
+  public void resetDeliveryRequestAfterReSchedule()
+  {
+    // 
+    // JourneyRequest never rescheduled, let return unchanged
+    //  
+    
+  }
 }

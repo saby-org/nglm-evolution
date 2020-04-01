@@ -26,11 +26,30 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 
 public class Offer extends GUIManagedObject implements StockableItem
-{
+{  
+  //
+  //  logger
+  //
+  private static final Logger log = LoggerFactory.getLogger(Offer.class);
+
+  //
+  //  initial propensity
+  //
+  public static double getValidPropensity(double p) {
+    if(p >= 0.0d && p <= 1.0d) {
+      return p;
+    } else {
+      log.error("Trying to set invalid initial propensity (" + p + "). Will be set to the default value (0.50).");
+      return 0.50d;
+    }
+  }
+  
   /*****************************************
   *
   *  schema
@@ -73,7 +92,7 @@ public class Offer extends GUIManagedObject implements StockableItem
 
   public static Schema schema() { return schema; }
   public static ConnectSerde<Offer> serde() { return serde; }
-
+  
   /****************************************
   *
   *  data
@@ -143,7 +162,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations)
   {
     super(schemaAndValue);
-    this.initialPropensity = initialPropensity;
+    this.initialPropensity = getValidPropensity(initialPropensity);
     this.stock = stock;
     this.unitaryCost = unitaryCost;
     this.profileCriteria = profileCriteria;
@@ -543,7 +562,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     *
     *****************************************/
     
-    this.initialPropensity = JSONUtilities.decodeDouble(jsonRoot, "initialPropensity", true);
+    this.initialPropensity = getValidPropensity(JSONUtilities.decodeDouble(jsonRoot, "initialPropensity", true));
     this.stock = JSONUtilities.decodeInteger(jsonRoot, "presentationStock", false);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
     this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true));
@@ -589,7 +608,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    this.initialPropensity = JSONUtilities.decodeDouble(jsonRoot, "initialPropensity", true);
+    this.initialPropensity = getValidPropensity(JSONUtilities.decodeDouble(jsonRoot, "initialPropensity", true));
     this.stock = JSONUtilities.decodeInteger(jsonRoot, "presentationStock", false);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
     this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true));

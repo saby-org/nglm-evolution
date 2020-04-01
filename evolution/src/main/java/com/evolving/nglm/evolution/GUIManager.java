@@ -43,7 +43,11 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -150,6 +154,8 @@ import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.ThirdPartyManager.API;
+import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyManagerException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
@@ -199,7 +205,6 @@ public class GUIManager
     getJourneyCriterionFields("getJourneyCriterionFields"),
     getJourneyCriterionFieldIDs("getJourneyCriterionFieldIDs"),
     getJourneyCriterionField("getJourneyCriterionField"),
-    getOfferCategories("getOfferCategories"),
     getOfferProperties("getOfferProperties"),
     getScoringEngines("scoringEngines"),
     getOfferOptimizationAlgorithms("getOfferOptimizationAlgorithms"),
@@ -461,8 +466,10 @@ public class GUIManager
     getCustomerNBOs("getCustomerNBOs"),
     getTokensCodesList("getTokensCodesList"),
     acceptOffer("acceptOffer"),
+    purchaseOffer("purchaseOffer"),
     getTokenEventDetails("getTokenEventDetails"),
     getTenantList("getTenantList"),
+    getOffersList("getOffersList"),
 
     //
     //  configAdaptor APIs
@@ -592,10 +599,12 @@ public class GUIManager
   private static Method externalAPIMethodJourneyActivated;
   private static Method externalAPIMethodJourneyDeactivated;
   private ZookeeperUniqueKeyServer zuks;
+  private KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
 
   private static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   private static final String FILE_REQUEST = "file"; 
   private static final String FILE_UPLOAD_META_DATA= "fileUploadMetaData"; 
+  private int httpTimeout = 5000;
 
   //
   //  context
@@ -843,7 +852,8 @@ public class GUIManager
     segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "guimanager-segmentationDimensionservice-" + apiProcessKey, segmentationDimensionTopic, true);
     pointService = new PointService(bootstrapServers, "guimanager-pointservice-" + apiProcessKey, pointTopic, true);
     offerService = new OfferService(bootstrapServers, "guimanager-offerservice-" + apiProcessKey, offerTopic, true);
-    reportService = new ReportService(bootstrapServers, "guimanager-reportservice-" + apiProcessKey, reportTopic, true);
+    // set notifyOnSignificantChange = false
+    reportService = new ReportService(bootstrapServers, "guimanager-reportservice-" + apiProcessKey, reportTopic, true, null, false);
     paymentMeanService = new PaymentMeanService(bootstrapServers, "guimanager-paymentmeanservice-" + apiProcessKey, paymentMeanTopic, true);
     scoringStrategyService = new ScoringStrategyService(bootstrapServers, "guimanager-scoringstrategyservice-" + apiProcessKey, scoringStrategyTopic, true);
     presentationStrategyService = new PresentationStrategyService(bootstrapServers, "guimanager-presentationstrategyservice-" + apiProcessKey, presentationStrategyTopic, true);
@@ -881,6 +891,10 @@ public class GUIManager
     segmentContactPolicyService = new SegmentContactPolicyService(bootstrapServers, "guimanager-segmentcontactpolicyservice-"+apiProcessKey, segmentContactPolicyTopic, true);
     subscriberGroupSharedIDService = new SharedIDService(segmentationDimensionService, targetService, exclusionInclusionTargetService);
     criterionFieldAvailableValuesService = new CriterionFieldAvailableValuesService(bootstrapServers, "guimanager-criterionfieldavailablevaluesservice-"+apiProcessKey, criterionFieldAvailableValuesTopic, true);
+    
+    DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
+    purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(),StringKey.serde(),PurchaseFulfillmentRequest.serde());
+    purchaseResponseListenerService.start();
 
     /*****************************************
     *
@@ -1675,7 +1689,6 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getJourneyCriterionFields", new APISimpleHandler(API.getJourneyCriterionFields));
         restServer.createContext("/nglm-guimanager/getJourneyCriterionFieldIDs", new APISimpleHandler(API.getJourneyCriterionFieldIDs));
         restServer.createContext("/nglm-guimanager/getJourneyCriterionField", new APISimpleHandler(API.getJourneyCriterionField));
-        restServer.createContext("/nglm-guimanager/getOfferCategories", new APISimpleHandler(API.getOfferCategories));
         restServer.createContext("/nglm-guimanager/getOfferProperties", new APISimpleHandler(API.getOfferProperties));
         restServer.createContext("/nglm-guimanager/getScoringEngines", new APISimpleHandler(API.getScoringEngines));
         restServer.createContext("/nglm-guimanager/getOfferOptimizationAlgorithms", new APISimpleHandler(API.getOfferOptimizationAlgorithms));
@@ -1698,6 +1711,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/stopCampaign", new APISimpleHandler(API.stopCampaign));
         restServer.createContext("/nglm-guimanager/getWorkflowToolbox", new APISimpleHandler(API.getWorkflowToolbox));
         restServer.createContext("/nglm-guimanager/getWorkflowList", new APISimpleHandler(API.getWorkflowList));
+        restServer.createContext("/nglm-guimanager/getFullWorkflowList", new APISimpleHandler(API.getFullWorkflowList));
         restServer.createContext("/nglm-guimanager/getWorkflowSummaryList", new APISimpleHandler(API.getWorkflowSummaryList));
         restServer.createContext("/nglm-guimanager/getWorkflow", new APISimpleHandler(API.getWorkflow));
         restServer.createContext("/nglm-guimanager/putWorkflow", new APISimpleHandler(API.putWorkflow));
@@ -1845,6 +1859,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeSMSTemplate", new APISimpleHandler(API.removeSMSTemplate));
         
         restServer.createContext("/nglm-guimanager/getPushTemplateList", new APISimpleHandler(API.getPushTemplateList));
+        restServer.createContext("/nglm-guimanager/getFullPushTemplateList", new APISimpleHandler(API.getFullPushTemplateList));
         restServer.createContext("/nglm-guimanager/getPushTemplateSummaryList", new APISimpleHandler(API.getPushTemplateSummaryList));
         restServer.createContext("/nglm-guimanager/getPushTemplate", new APISimpleHandler(API.getPushTemplate));
         restServer.createContext("/nglm-guimanager/putPushTemplate", new APISimpleHandler(API.putPushTemplate));
@@ -1954,6 +1969,9 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCustomerNBOs", new APISimpleHandler(API.getCustomerNBOs));
         restServer.createContext("/nglm-guimanager/getTokensCodesList", new APISimpleHandler(API.getTokensCodesList));
         restServer.createContext("/nglm-guimanager/acceptOffer", new APISimpleHandler(API.acceptOffer));
+        restServer.createContext("/nglm-guimanager/purchaseOffer", new APISimpleHandler(API.purchaseOffer));
+        restServer.createContext("/nglm-guimanager/getOffersList", new APISimpleHandler(API.getOffersList));
+
         restServer.createContext("/nglm-guimanager/getTokenEventDetails", new APISimpleHandler(API.getTokenEventDetails));
         restServer.createContext("/nglm-guimanager/getTenantList", new APISimpleHandler(API.getTenantList));
         
@@ -2322,10 +2340,6 @@ public class GUIManager
                   jsonResponse = processGetSupportedRelationships(userID, jsonRoot);
                   break;
 
-                case getServiceTypes:
-                  jsonResponse = processGetServiceTypes(userID, jsonRoot);
-                  break;
-
                 case getCallingChannelProperties:
                   jsonResponse = processGetCallingChannelProperties(userID, jsonRoot);
                   break;
@@ -2396,10 +2410,6 @@ public class GUIManager
 
                 case getJourneyCriterionField:
                   jsonResponse = processGetJourneyCriterionField(userID, jsonRoot);
-                  break;
-
-                case getOfferCategories:
-                  jsonResponse = processGetOfferCategories(userID, jsonRoot);
                   break;
 
                 case getOfferProperties:
@@ -3490,7 +3500,15 @@ public class GUIManager
                 case acceptOffer:
                   jsonResponse = processAcceptOffer(userID, jsonRoot);
                   break;
-                  
+
+                case purchaseOffer:
+                  jsonResponse = processPurchaseOffer(userID, jsonRoot);
+                  break;
+
+                case getOffersList:
+                  jsonResponse = processGetOffersList(userID, jsonRoot);
+                  break;
+
                 case getTokenEventDetails:
                   jsonResponse = processGetTokenEventDetails(userID, jsonRoot);
                   break;
@@ -3848,19 +3866,6 @@ public class GUIManager
         JSONObject supportedRelationshipJSON = supportedRelationship.getJSONRepresentation();
         supportedRelationships.add(supportedRelationshipJSON);
       }
-    
-    /*****************************************
-    *
-    *  retrieve serviceTypes
-    *
-    *****************************************/
-
-    List<JSONObject> serviceTypes = new ArrayList<JSONObject>();
-    for (ServiceType serviceType : Deployment.getServiceTypes().values())
-      {
-        JSONObject serviceTypeJSON = serviceType.getJSONRepresentation();
-        serviceTypes.add(serviceTypeJSON);
-      }
 
     /*****************************************
     *
@@ -3930,18 +3935,6 @@ public class GUIManager
 
     List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.getCriterionFields(), false);
 
-    /*****************************************
-    *
-    *  retrieve offerCategories
-    *
-    *****************************************/
-
-    List<JSONObject> offerCategories = new ArrayList<JSONObject>();
-    for (OfferCategory offerCategory : Deployment.getOfferCategories().values())
-      {
-        JSONObject offerCategoryJSON = offerCategory.getJSONRepresentation();
-        offerCategories.add(offerCategoryJSON);
-      }
 
     /*****************************************
     *
@@ -4052,7 +4045,6 @@ public class GUIManager
     response.put("supportedDataTypes", JSONUtilities.encodeArray(supportedDataTypes));
     response.put("profileCriterionFields", JSONUtilities.encodeArray(profileCriterionFields));
     response.put("presentationCriterionFields", JSONUtilities.encodeArray(presentationCriterionFields));
-    response.put("offerCategories", JSONUtilities.encodeArray(offerCategories));
     response.put("offerProperties", JSONUtilities.encodeArray(offerProperties));
     response.put("scoringEngines", JSONUtilities.encodeArray(scoringEngines));
     response.put("offerOptimizationAlgorithms", JSONUtilities.encodeArray(offerOptimizationAlgorithms));
@@ -4261,38 +4253,6 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
-  /*****************************************
-  *
-  *  getServiceTypes
-  *
-  *****************************************/
-
-  private JSONObject processGetServiceTypes(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve serviceTypes
-    *
-    *****************************************/
-
-    List<JSONObject> serviceTypes = new ArrayList<JSONObject>();
-    for (ServiceType serviceType : Deployment.getServiceTypes().values())
-      {
-        JSONObject serviceTypeJSON = serviceType.getJSONRepresentation();
-        serviceTypes.add(serviceTypeJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("serviceTypes", JSONUtilities.encodeArray(serviceTypes));
-    return JSONUtilities.encodeObject(response);
-  }
 
   /*****************************************
   *
@@ -5021,39 +4981,6 @@ public class GUIManager
 
   /*****************************************
   *
-  *  getOfferCategories
-  *
-  *****************************************/
-
-  private JSONObject processGetOfferCategories(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve offerCategories
-    *
-    *****************************************/
-
-    List<JSONObject> offerCategories = new ArrayList<JSONObject>();
-    for (OfferCategory offerCategory : Deployment.getOfferCategories().values())
-      {
-        JSONObject offerCategoryJSON = offerCategory.getJSONRepresentation();
-        offerCategories.add(offerCategoryJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("offerCategories", JSONUtilities.encodeArray(offerCategories));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
   *  getOfferProperties
   *
   *****************************************/
@@ -5326,9 +5253,9 @@ public class GUIManager
             JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journey.getGUIManagedObjectID());
             if (journeyTrafficHistory != null && journeyTrafficHistory.getCurrentData() != null && journeyTrafficHistory.getCurrentData().getGlobal() != null)
               {
-                subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberCount();
+                subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberInflow();
               }
-            journeyInfo.put("journeySubscriberCount", subscriberCount);
+            journeyInfo.put("subscriberCount", subscriberCount);
             journeys.add(journeyInfo);
           }
       }
@@ -8521,40 +8448,45 @@ public class GUIManager
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
       }
-    if (existingReport != null) {
-      Report existingRept = (Report) existingReport;
-      // Is the new effective scheduling valid ?
-      List<SchedulingInterval> availableScheduling = existingRept.getAvailableScheduling();
-      if (availableScheduling != null) {
-        // Check if the effectiveScheduling is valid
-        JSONArray effectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EFFECTIVE_SCHEDULING, false);
-        if (effectiveSchedulingJSONArray != null) { 
-          for (int i=0; i<effectiveSchedulingJSONArray.size(); i++) {
-            String schedulingIntervalStr = (String) effectiveSchedulingJSONArray.get(i);
-            SchedulingInterval eSchedule = SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr);
-            log.trace("Checking that "+eSchedule+" is allowed");
-            if (! availableScheduling.contains(eSchedule)) {
-              response.put("id", jsonRoot.get("id"));
-              response.put("responseCode", "reportNotValid");
-              response.put("responseMessage", "scheduling "+eSchedule+" is not valid");
-              StringBuffer respMsg = new StringBuffer("scheduling "+eSchedule+" should be part of [ ");
-              for (SchedulingInterval aSched : availableScheduling) {
-                respMsg.append(aSched+" ");
+    if (existingReport != null)
+      {
+        if (existingReport instanceof Report)
+          {
+            Report existingRept = (Report) existingReport;
+            // Is the new effective scheduling valid ?
+            List<SchedulingInterval> availableScheduling = existingRept.getAvailableScheduling();
+            if (availableScheduling != null) {
+              // Check if the effectiveScheduling is valid
+              JSONArray effectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EFFECTIVE_SCHEDULING, false);
+              if (effectiveSchedulingJSONArray != null) { 
+                for (int i=0; i<effectiveSchedulingJSONArray.size(); i++) {
+                  String schedulingIntervalStr = (String) effectiveSchedulingJSONArray.get(i);
+                  SchedulingInterval eSchedule = SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr);
+                  log.trace("Checking that "+eSchedule+" is allowed");
+                  if (! availableScheduling.contains(eSchedule)) {
+                    response.put("id", jsonRoot.get("id"));
+                    response.put("responseCode", "reportNotValid");
+                    response.put("responseMessage", "scheduling "+eSchedule+" is not valid");
+                    StringBuffer respMsg = new StringBuffer("scheduling "+eSchedule+" should be part of [ ");
+                    for (SchedulingInterval aSched : availableScheduling) {
+                      respMsg.append(aSched+" ");
+                    }
+                    respMsg.append("]");
+                    response.put("responseParameter", respMsg.toString());
+                    return JSONUtilities.encodeObject(response);
+                  }
+                }
               }
-              respMsg.append("]");
-              response.put("responseParameter", respMsg.toString());
-              return JSONUtilities.encodeObject(response);
             }
           }
-        }
       }
-    }
+
     long epoch = epochServer.getKey();
     try
       {
-        Report report = new Report(jsonRoot, epoch, null);
+        Report report = new Report(jsonRoot, epoch, existingReport);
         log.trace("new report : "+report);
-        reportService.putReport(report, true, userID);
+        reportService.putReport(report, (existingReport == null), userID);
         response.put("id", report.getReportID());
         response.put("accepted", report.getAccepted());
         response.put("valid", report.getAccepted());
@@ -8595,12 +8527,15 @@ public class GUIManager
       }
     else
       {
-        if(!reportService.isReportRunning(report.getName())) {
-          reportService.launchReport(report.getName());
-          responseCode = "ok";
-        }else {
-          responseCode = "reportIsAlreadyRunning";
-        }
+        if (reportService.isReportRunning(report.getName()))
+          {
+            responseCode = "reportIsAlreadyRunning";
+          }
+        else
+          {
+            reportService.launchReport(report.getName());
+            responseCode = "ok";
+          }
       }
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
@@ -10054,7 +9989,7 @@ public class GUIManager
     *****************************************/
     
     
-    response.put("ResponseCode", "ok" );    
+    response.put("responseCode", "ok" );
     response.put("salesChannels", JSONUtilities.encodeArray(salesChannels));    
     return JSONUtilities.encodeObject(response);
   }
@@ -16537,37 +16472,16 @@ public class GUIManager
                         
                         boolean statusNotified = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusNotified()).count() > 0L ;
                         boolean statusConverted = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusConverted()).count() > 0L ;
-                        boolean statusControlGroup = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusControlGroup()).count() > 0L ;
-                        boolean statusUniversalControlGroup = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusUniversalControlGroup()).count() > 0L ;
+                        Boolean statusTargetGroup = subsLatestStatistic.getTargetGroupStatus();
+                        Boolean statusControlGroup = subsLatestStatistic.getControlGroupStatus();
+                        Boolean statusUniversalControlGroup = subsLatestStatistic.getUniversalControlGroupStatus();
                         boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
+                        SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
 
                         if (customerStatus != null)
                           {
-                            SubscriberJourneyStatus customerStatusInJourney = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
-                            boolean criteriaSatisfied = false;
-                            switch (customerStatusInJourney)
-                              {
-                                case Entered:
-                                  criteriaSatisfied = ! statusControlGroup && ! statusNotified && ! statusConverted;
-                                  break;
-                                case ConvertedNotNotified:
-                                  criteriaSatisfied = ! statusControlGroup && ! statusNotified && statusConverted;
-                                  break;
-                                case Notified:
-                                  criteriaSatisfied = ! statusControlGroup && statusNotified && ! statusConverted;
-                                  break;
-                                case ConvertedNotified:
-                                  criteriaSatisfied = ! statusControlGroup && statusNotified && statusConverted;
-                                  break;
-                                case ControlGroupEntered:
-                                  criteriaSatisfied = statusControlGroup && ! statusConverted;
-                                  break;
-                                case ControlGroupConverted:
-                                  criteriaSatisfied = statusControlGroup && statusConverted;
-                                  break;
-                                case Unknown:
-                                  break;
-                              }
+                            SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
+                            boolean criteriaSatisfied = customerStatusInJourney == customerStatusInReq;
                             if (!criteriaSatisfied) continue;
                           }
 
@@ -16638,7 +16552,7 @@ public class GUIManager
                             nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                           }
 
-                        journeyResponseMap.put("customerStatus", Journey.getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusControlGroup).getExternalRepresentation());
+                        journeyResponseMap.put("customerStatus", customerStatusInJourney.getExternalRepresentation());
                         journeyResponseMap.put("journeyComplete", journeyComplete);
                         journeyResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
                         journeyResponseMap.put("currentState", currentStateJson);
@@ -16855,37 +16769,16 @@ public class GUIManager
                         
                         boolean statusNotified = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusNotified()).count() > 0L ;
                         boolean statusConverted = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusConverted()).count() > 0L ;
-                        boolean statusControlGroup = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusControlGroup()).count() > 0L ;
-                        boolean statusUniversalControlGroup = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusUniversalControlGroup()).count() > 0L ;
+                        Boolean statusTargetGroup = subsLatestStatistic.getTargetGroupStatus();
+                        Boolean statusControlGroup = subsLatestStatistic.getControlGroupStatus();
+                        Boolean statusUniversalControlGroup = subsLatestStatistic.getUniversalControlGroupStatus();
                         boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
-
+                        SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
+                        
                         if (customerStatus != null)
                           {
-                            SubscriberJourneyStatus customerStatusInJourney = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
-                            boolean criteriaSatisfied = false;
-                            switch (customerStatusInJourney)
-                              {
-                                case Entered:
-                                  criteriaSatisfied = ! statusControlGroup && ! statusNotified && ! statusConverted;
-                                  break;
-                                case ConvertedNotNotified:
-                                  criteriaSatisfied = ! statusControlGroup && ! statusNotified && statusConverted;
-                                  break;
-                                case Notified:
-                                  criteriaSatisfied = ! statusControlGroup && statusNotified && ! statusConverted;
-                                  break;
-                                case ConvertedNotified:
-                                  criteriaSatisfied = ! statusControlGroup && statusNotified && statusConverted;
-                                  break;
-                                case ControlGroupEntered:
-                                  criteriaSatisfied = statusControlGroup && ! statusConverted;
-                                  break;
-                                case ControlGroupConverted:
-                                  criteriaSatisfied = statusControlGroup && statusConverted;
-                                  break;
-                                case Unknown:
-                                  break;
-                              }
+                            SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
+                            boolean criteriaSatisfied = customerStatusInReq == customerStatusInJourney;
                             if (!criteriaSatisfied) continue;
                           }
 
@@ -16955,7 +16848,7 @@ public class GUIManager
                             nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                             nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                           }
-                        campaignResponseMap.put("customerStatus", Journey.getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusControlGroup).getExternalRepresentation());
+                        campaignResponseMap.put("customerStatus", customerStatusInJourney.getExternalRepresentation());
                         campaignResponseMap.put("journeyComplete", journeyComplete);
                         campaignResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
                         campaignResponseMap.put("currentState", currentStateJson);
@@ -20080,6 +19973,10 @@ public class GUIManager
                   }
               }
           }
+        else
+          {
+            responseCode = "Campaign not found";
+          }
       }
     
     if(journey != null)
@@ -21888,9 +21785,10 @@ public class GUIManager
             }
           String salesChannelID = subscriberStoredToken.getPresentedOffersSalesChannel();
           String featureID = (userID != null) ? userID : "1"; // for PTT tests, never happens when called by browser
-          String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation(); 
+          String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation();
+          String resellerID = "";
           Offer offer = offerService.getActiveOffer(offerID, now);
-          deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, kafkaProducer);
+          deliveryRequestID = purchaseOffer(true, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
 
           // Redeem the token : Send an AcceptanceLog to EvolutionEngine
 
@@ -21961,6 +21859,298 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
+  /*****************************************
+  *
+  *  processPurchaseOffer
+  *
+  *****************************************/
+
+ private JSONObject processPurchaseOffer(String userID, JSONObject jsonRoot) throws GUIManagerException
+ {
+   
+   boolean sync = true; // always sync today
+   /****************************************
+   *
+   *  response
+   *
+   ****************************************/
+
+   HashMap<String,Object> response = new HashMap<String,Object>();
+   Date now = SystemTime.getCurrentTime();
+
+   String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+
+   /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+   String subscriberID = resolveSubscriberID(customerID);
+   if (subscriberID == null)
+     {
+       log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+       response.put("responseCode", "CustomerNotFound");
+       return JSONUtilities.encodeObject(response);
+     }
+ 
+   String offerName = JSONUtilities.decodeString(jsonRoot, "offerName", true);
+   String salesChannel = JSONUtilities.decodeString(jsonRoot, "salesChannel", true);
+   Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+   String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+
+   /*****************************************
+    *
+    * getSubscriberProfile - no history
+    *
+    *****************************************/
+   PurchaseFulfillmentRequest purchaseResponse=null;
+
+  /*****************************************
+   *
+   *  getSubscriberProfile
+   *
+   *****************************************/
+  String deliveryRequestID = "";
+
+  try
+  {
+    SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+    if (subscriberProfile == null)
+      {
+        response.put("responseCode", "CustomerNotFound");
+      } 
+    else
+      {
+        String offerID = null;
+        for (Offer offer : offerService.getActiveOffers(now))
+          {
+            if (offer.getDisplay().equals(offerName))
+              {
+                offerID = offer.getGUIManagedObjectID();
+                break;
+              }
+          }
+        if (offerID == null)
+          {
+            String str = "Invalid Offer";
+            log.error(str);
+            response.put("responseCode", str);
+            return JSONUtilities.encodeObject(response);
+          }
+        String salesChannelID = null;
+        for (SalesChannel sc : salesChannelService.getActiveSalesChannels(now))
+          {
+            if (sc.getGUIManagedObjectName().equals(salesChannel))
+              {
+                salesChannelID = sc.getGUIManagedObjectID();
+                break;
+              }
+          }
+        if (salesChannelID == null)
+          {
+            String str = "Invalid SalesChannel";
+            log.error(str);
+            response.put("responseCode", str);
+            return JSONUtilities.encodeObject(response);
+          }
+
+        String featureID = (userID != null) ? userID : "1"; // for PTT tests, never happens when called by browser
+        String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation(); 
+        String resellerID = "";
+        if(!sync)
+          {
+            purchaseResponse = purchaseOffer(false,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer);
+          }
+        else
+          {
+            purchaseResponse = purchaseOffer(true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer);
+            response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService));
+          }
+      }
+   }
+   catch (SubscriberProfileServiceException e) 
+   {
+     String str = "unable to process request purchaseOffer " + e.getLocalizedMessage();
+     log.error(str);
+     response.put("responseCode", str);
+     return JSONUtilities.encodeObject(response);
+   } 
+
+   /*****************************************
+    *
+    *  decorate and response
+    *
+    *****************************************/
+   response.put("deliveryRequestID", purchaseResponse.getDeliveryRequestID());
+   if(purchaseResponse==null){
+     String str = "System error";
+     log.error(str);
+     response.put("responseCode", str);
+     return JSONUtilities.encodeObject(response);
+   }else{
+     response.put("responseCode", "ok");
+   }
+   return JSONUtilities.encodeObject(response);
+ }
+
+ /*****************************************
+ *
+ *  processGetOffersList
+ *
+ *****************************************/
+
+private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) throws GUIManagerException
+{
+
+  /****************************************
+   *
+   *  response
+   *
+   ****************************************/
+
+  Map<String,Object> response = new HashMap<String,Object>();
+
+  /****************************************
+   *
+   *  argument
+   *
+   ****************************************/
+  String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+
+  /*****************************************
+   *
+   *  resolve subscriberID
+   *
+   *****************************************/
+
+  String subscriberID = resolveSubscriberID(customerID);
+  if (subscriberID == null)
+    {
+      log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+      response.put("responseCode", "CustomerNotFound");
+      return JSONUtilities.encodeObject(response);
+    }
+
+  String offerState = JSONUtilities.decodeString(jsonRoot, "state", false);
+  String startDateString = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+  String endDateString = JSONUtilities.decodeString(jsonRoot, "endDate", false);
+  String offerObjective = JSONUtilities.decodeString(jsonRoot, "objective", false);
+
+  Date offerStartDate = prepareStartDate(getDateFromString(startDateString, ThirdPartyManager.REQUEST_DATE_FORMAT, ThirdPartyManager.REQUEST_DATE_PATTERN));
+  Date offerEndDate = prepareEndDate(getDateFromString(endDateString, ThirdPartyManager.REQUEST_DATE_FORMAT, ThirdPartyManager.REQUEST_DATE_PATTERN));
+
+  try
+  {
+    SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+    if (subscriberProfile == null)
+      {
+        response.put("responseCode", "CustomerNotFound");
+      } 
+    else if (offerState != null && !offerState.isEmpty() && !offerState.equalsIgnoreCase("ACTIVE"))
+      {
+        response.put("responseCode", "Bad Field Value " + offerState);
+      }
+    else
+      {
+        Collection<Offer> offers = new ArrayList<>();
+        if (offerState == null || offerState.isEmpty())
+          {
+            //
+            // retrieve stored offers
+            //
+
+            for (GUIManagedObject ofr : offerService.getStoredOffers())
+              {
+                if (ofr instanceof Offer) offers.add( (Offer) ofr);
+              }
+          }
+        else
+          {
+            //
+            // retrieve active offers
+            //
+
+            offers = offerService.getActiveOffers(SystemTime.getCurrentTime());
+          }
+
+        //
+        // filter using subscriberID
+        //
+
+        if (subscriberID != null)
+          {
+            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
+            offers = offers.stream().filter(offer -> offer.evaluateProfileCriteria(evaluationRequest)).collect(Collectors.toList());
+          }
+
+        //
+        // filter using startDate
+        //
+
+        if (offerStartDate != null)
+          {
+            offers = offers.stream().filter(offer -> (offer.getEffectiveStartDate() == null || offer.getEffectiveStartDate().compareTo(offerStartDate) >= 0)).collect(Collectors.toList()); 
+          }
+
+        //
+        // filter using endDate
+        //
+
+        if (offerEndDate != null)
+          {
+            offers = offers.stream().filter(campaign -> (campaign.getEffectiveEndDate() == null || campaign.getEffectiveEndDate().compareTo(offerEndDate) <= 0)).collect(Collectors.toList());
+          }
+
+
+        if (offerObjective != null && !offerObjective.isEmpty())
+          {
+
+            //
+            //  read objective
+            //
+
+            Collection<OfferObjective> activeOfferObjectives = offerObjectiveService.getActiveOfferObjectives(SystemTime.getCurrentTime());
+
+            //
+            //  filter activejourneyObjective by name
+            //
+
+            List<OfferObjective> offerObjectives = activeOfferObjectives.stream().filter(offerObj -> offerObj.getOfferObjectiveDisplay().equals(offerObjective)).collect(Collectors.toList());
+            OfferObjective exactOfferObjectives = offerObjectives.size() > 0 ? offerObjectives.get(0) : null;
+
+            //
+            //  filter
+            //
+
+            if (exactOfferObjectives == null)
+              offers = new ArrayList<Offer>();
+            else
+              offers = offers.stream().filter(offer -> (offer.getOfferObjectives() != null && (offer.getOfferObjectives().stream().filter(obj -> obj.getOfferObjectiveID().equals(exactOfferObjectives.getOfferObjectiveID())).count() > 0L))).collect(Collectors.toList());
+
+          }
+
+        /*****************************************
+         *
+         *  decorate offers response
+         *
+         *****************************************/
+
+        List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService)).collect(Collectors.toList());
+        response.put("offers", JSONUtilities.encodeArray(offersJson));
+        response.put("responseCode", "ok");
+      }
+  }
+  catch(SubscriberProfileServiceException spe)
+  {
+    String str = "unable to process request getOffersList " + spe.getLocalizedMessage();
+    log.error(str);
+    response.put("responseCode", str);
+    return JSONUtilities.encodeObject(response);
+  }
+  return JSONUtilities.encodeObject(response);
+}
+
   /*****************************************
   *
   *  processGetTokenEventDetails
@@ -22328,8 +22518,7 @@ public class GUIManager
    *
    *****************************************/
   
-  private String purchaseOffer(String subscriberID, String offerID, String salesChannelID, int quantity, 
-      String moduleID, String featureID, String origin, KafkaProducer<byte[],byte[]> kafkaProducer) throws GUIManagerException
+  private PurchaseFulfillmentRequest purchaseOffer(boolean sync, String subscriberID, String offerID, String salesChannelID, int quantity, String moduleID, String featureID, String origin, String resellerID, KafkaProducer<byte[],byte[]> kafkaProducer) throws GUIManagerException
   {
     DeliveryManagerDeclaration deliveryManagerDeclaration = null;
     for (DeliveryManagerDeclaration dmd : Deployment.getDeliveryManagers().values())
@@ -22370,18 +22559,43 @@ public class GUIManager
     request.put("moduleID", moduleID);
     request.put("featureID", featureID);
     request.put("origin", origin);
+    request.put("resellerID", resellerID);
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
-    PurchaseFulfillmentRequest pfr = new PurchaseFulfillmentRequest(valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, SystemTime.getCurrentTime());
+    PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, SystemTime.getCurrentTime());
 
-    // Write it to the right topic
+    Future<PurchaseFulfillmentRequest> waitingResponse=null;
+    if(sync){
+      waitingResponse = purchaseResponseListenerService.addWithOnValueFilter(purchaseResponse->!purchaseResponse.isPending()&&purchaseResponse.getDeliveryRequestID().equals(deliveryRequestID));
+    }
+
     kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
         topic,
         keySerializer.serialize(topic, new StringKey(deliveryRequestID)),
-        valueSerializer.serialize(topic, pfr)
+        valueSerializer.serialize(topic, purchaseRequest)
         ));
-    return deliveryRequestID;
+
+    if (sync) {
+      return handleWaitingResponse(waitingResponse);
+    }
+    return purchaseRequest;
+  }
+
+  private <T> T handleWaitingResponse(Future<T> waitingResponse) throws GUIManagerException {
+    try {
+      T response = waitingResponse.get(httpTimeout, TimeUnit.MILLISECONDS);
+      if(log.isDebugEnabled()) log.debug("response processed : "+response);
+      return response;
+    } catch (InterruptedException|ExecutionException e) {
+      String str = "Error waiting purchase response"; 
+      log.warn(str);
+      throw new GUIManagerException("Internal error", str);
+    } catch (TimeoutException e) {
+      String str = "Timeout waiting purchase response";
+      log.info(str);
+      throw new GUIManagerException("Internal error", str);
+    }
   }
 
   /*****************************************
@@ -23351,7 +23565,7 @@ public class GUIManager
                                 case Campaign:
                                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
                                   availableValue.put("id", campaign.getJourneyID());
-                                  availableValue.put("display", campaign.getJourneyName());
+                                  availableValue.put("display", campaign.getGUIManagedObjectDisplay());
                                   result.add(JSONUtilities.encodeObject(availableValue));
                                   break;
                               }
@@ -23378,7 +23592,7 @@ public class GUIManager
                                 case Workflow:
                                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
                                   availableValue.put("id", workflow.getJourneyID());
-                                  availableValue.put("display", workflow.getJourneyName());
+                                  availableValue.put("display", workflow.getGUIManagedObjectDisplay());
                                   result.add(JSONUtilities.encodeObject(availableValue));
                                   break;
                               }
@@ -23399,7 +23613,7 @@ public class GUIManager
                       LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", loyaltyProgram.getLoyaltyProgramID());
-                      availableValue.put("display", loyaltyProgram.getLoyaltyProgramDisplay());
+                      availableValue.put("display", loyaltyProgram.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23422,7 +23636,7 @@ public class GUIManager
                                 case Journey:
                                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
                                   availableValue.put("id", journey.getJourneyID());
-                                  availableValue.put("display", journey.getJourneyName());
+                                  availableValue.put("display", journey.getGUIManagedObjectDisplay());
                                   result.add(JSONUtilities.encodeObject(availableValue));
                                   break;
                               }
@@ -23443,7 +23657,7 @@ public class GUIManager
                       Deliverable deliverable = (Deliverable) deliverablesUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", deliverable.getGUIManagedObjectID());
-                      availableValue.put("display", deliverable.getDeliverableDisplay());
+                      availableValue.put("display", deliverable.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23460,7 +23674,7 @@ public class GUIManager
                       Deliverable deliverable = (Deliverable) deliverablesUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", deliverable.getDeliverableName());
-                      availableValue.put("display", deliverable.getDeliverableDisplay());
+                      availableValue.put("display", deliverable.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23551,7 +23765,7 @@ public class GUIManager
                       LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramsUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", loyaltyProgram.getLoyaltyProgramName());
-                      availableValue.put("display", loyaltyProgram.getLoyaltyProgramDisplay());
+                      availableValue.put("display", loyaltyProgram.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23602,7 +23816,7 @@ public class GUIManager
                       Offer offer = (Offer) offerUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", offer.getOfferID());
-                      availableValue.put("display", offer.getDisplay());
+                      availableValue.put("display", offer.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23619,7 +23833,7 @@ public class GUIManager
                       Offer offer = (Offer) offerUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", offer.getOfferID());
-                      availableValue.put("display", offer.getDisplay());
+                      availableValue.put("display", offer.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23636,7 +23850,7 @@ public class GUIManager
                       OfferObjective offerObjective = (OfferObjective) offerObjectiveUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", offerObjective.getOfferObjectiveID());
-                      availableValue.put("display", offerObjective.getDisplay());
+                      availableValue.put("display", offerObjective.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23656,7 +23870,7 @@ public class GUIManager
                           case OffersPresentation:
                             HashMap<String,Object> availableValue = new HashMap<String,Object>();
                             availableValue.put("id", tokenType.getTokenTypeID());
-                            availableValue.put("display", tokenType.getTokenTypeDisplay());
+                            availableValue.put("display", tokenType.getGUIManagedObjectDisplay());
                             result.add(JSONUtilities.encodeObject(availableValue));
                             break;
                         }
@@ -23675,7 +23889,7 @@ public class GUIManager
                       PaymentMean paymentMean = (PaymentMean) paymentMeanUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", paymentMean.getPaymentMeanID());
-                      availableValue.put("display", paymentMean.getDisplay());
+                      availableValue.put("display", paymentMean.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23698,7 +23912,7 @@ public class GUIManager
                           if(deliverable.getFulfillmentProviderID().equals(providerID)){
                             HashMap<String,Object> availableValue = new HashMap<String,Object>();
                             availableValue.put("id", deliverable.getDeliverableID());
-                            availableValue.put("display", deliverable.getDeliverableDisplay());
+                            availableValue.put("display", deliverable.getGUIManagedObjectDisplay());
                             result.add(JSONUtilities.encodeObject(availableValue));
                           }
                         }
@@ -23723,7 +23937,7 @@ public class GUIManager
                           if(paymentMean.getFulfillmentProviderID().equals(providerID)){
                             HashMap<String,Object> availableValue = new HashMap<String,Object>();
                             availableValue.put("id", paymentMean.getPaymentMeanID());
-                            availableValue.put("display", paymentMean.getPaymentMeanDisplay());
+                            availableValue.put("display", paymentMean.getGUIManagedObjectDisplay());
                             result.add(JSONUtilities.encodeObject(availableValue));
                           }
                         }
@@ -23742,7 +23956,7 @@ public class GUIManager
                       PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", presentationStrategy.getPresentationStrategyID());
-                      availableValue.put("display", presentationStrategy.getGUIManagedObjectName());
+                      availableValue.put("display", presentationStrategy.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23759,7 +23973,7 @@ public class GUIManager
                       Product product = (Product) productUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", product.getProductID());
-                      availableValue.put("display", product.getDisplay());
+                      availableValue.put("display", product.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23776,7 +23990,7 @@ public class GUIManager
                       ProductType productType = (ProductType) productTypeUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", productType.getID());
-                      availableValue.put("display", productType.getDisplay());
+                      availableValue.put("display", productType.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23793,7 +24007,7 @@ public class GUIManager
                 Voucher voucher = (Voucher) voucherUnchecked;
                 HashMap<String,Object> availableValue = new HashMap<String,Object>();
                 availableValue.put("id", voucher.getVoucherID());
-                availableValue.put("display", voucher.getVoucherDisplay());
+                availableValue.put("display", voucher.getGUIManagedObjectDisplay());
                 result.add(JSONUtilities.encodeObject(availableValue));
               }
             }
@@ -23810,7 +24024,7 @@ public class GUIManager
                 VoucherType voucherType = (VoucherType) voucherTypeUnchecked;
                 HashMap<String,Object> availableValue = new HashMap<String,Object>();
                 availableValue.put("id", voucherType.getID());
-                availableValue.put("display", voucherType.getDisplay());
+                availableValue.put("display", voucherType.getGUIManagedObjectDisplay());
                 result.add(JSONUtilities.encodeObject(availableValue));
               }
             }
@@ -23871,7 +24085,7 @@ public class GUIManager
                     {
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", segment.getID());
-                      availableValue.put("display", dimension.getSegmentationDimensionDisplay() + ":" + segment.getName());
+                      availableValue.put("display", dimension.getGUIManagedObjectDisplay() + ":" + segment.getName());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23888,7 +24102,7 @@ public class GUIManager
                       SMSTemplate messageTemplate = (SMSTemplate) messageTemplateUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", messageTemplate.getSubscriberMessageTemplateID());
-                      availableValue.put("display", messageTemplate.getSubscriberMessageTemplateDisplay());
+                      availableValue.put("display", messageTemplate.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -23935,7 +24149,7 @@ public class GUIManager
                         {
                           HashMap<String,Object> availableValue = new HashMap<String,Object>();
                           availableValue.put("id", sourceAddress.getSourceAddressId());
-                          availableValue.put("display", sourceAddress.getSourceAddressDisplay());
+                          availableValue.put("display", sourceAddress.getGUIManagedObjectDisplay());
                           result.add(JSONUtilities.encodeObject(availableValue));
                         }
                     }
@@ -23972,7 +24186,7 @@ public class GUIManager
                         {
                           HashMap<String,Object> availableValue = new HashMap<String,Object>();
                           availableValue.put("id", sourceAddress.getSourceAddressId());
-                          availableValue.put("display", sourceAddress.getSourceAddressDisplay());
+                          availableValue.put("display", sourceAddress.getGUIManagedObjectDisplay());
                           result.add(JSONUtilities.encodeObject(availableValue));
                         }
                     }
@@ -24017,9 +24231,22 @@ public class GUIManager
                       TokenType tokenType = (TokenType) tokenTypesUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", tokenType.getGUIManagedObjectID());
-                      availableValue.put("display", tokenType.getTokenTypeDisplay());
+                      availableValue.put("display", tokenType.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
+                }
+            }
+          break;
+          
+        case "targets":
+          if (includeDynamic)
+            {
+              for (Target target : targetService.getActiveTargets(now))
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", target.getGUIManagedObjectID());
+                  availableValue.put("display", target.getGUIManagedObjectDisplay());
+                  result.add(JSONUtilities.encodeObject(availableValue));                  
                 }
             }
           break;
@@ -24633,7 +24860,7 @@ public class GUIManager
           voucher.validate(voucherTypeService,uploadedFileService,date);
         }
         if (voucher == null && existingVoucher instanceof VoucherPersonal) {
-          VoucherType voucherType = voucherTypeService.getActiveVoucherType(voucher.getVoucherTypeId(),now);
+          VoucherType voucherType = voucherTypeService.getActiveVoucherType(((VoucherPersonal)existingVoucher).getVoucherTypeId(),now);
           voucher = new VoucherPersonal(existingVoucher.getJSONRepresentation(), epoch, existingVoucher,voucherType);
           voucher.validate(voucherTypeService,uploadedFileService,date);
         }
@@ -25179,6 +25406,36 @@ public class GUIManager
     return result;
   }
   
+
+  /*****************************************
+   *
+   *  getDateFromString
+   *
+   *****************************************/
+
+  private Date getDateFromString(String dateString, String dateFormat, String pattern) throws GUIManagerException
+  {
+    Date result = null;
+    if (dateString != null)
+      {
+        if (pattern != null && !dateString.matches(pattern))
+          {
+            throw new GUIManagerException("Bad Field Value", "(invalid date/format expected in "+dateFormat+" and found "+dateString+")");
+          }
+        try 
+          {
+            result = RLMDateUtils.parseDate(dateString, dateFormat, Deployment.getBaseTimeZone(), false);
+          }
+        catch(Exception ex)
+          {
+            throw new GUIManagerException("Bad Field Value", "(invalid date/format expected in "+dateFormat+" and found "+dateString+")");
+          }
+        
+      }
+    return result;
+  }
+
+  
   /*****************************************
   *
   *  prepareEndDate
@@ -25520,6 +25777,7 @@ public class GUIManager
       consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
       consumerProperties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
       consumerProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+      GUIService.setCommonConsumerProperties(consumerProperties);
       deliverableSourceConsumer = new KafkaConsumer<>(consumerProperties);
 
       //

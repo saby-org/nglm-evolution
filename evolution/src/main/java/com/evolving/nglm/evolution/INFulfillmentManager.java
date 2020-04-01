@@ -527,6 +527,13 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
     }
+    @Override
+    public void resetDeliveryRequestAfterReSchedule()
+    {
+      // 
+      // INFulfillmentRequest never rescheduled, let return unchanged
+      //        
+    }
   }
 
   /*****************************************

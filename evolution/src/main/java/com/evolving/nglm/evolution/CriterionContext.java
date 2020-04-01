@@ -173,10 +173,15 @@ public class CriterionContext
       {
         Map<String,Object> internalTargetsJSON = new LinkedHashMap<String,Object>();
         internalTargetsJSON.put("id", "internal.targets");
-        internalTargetsJSON.put("display", "internal.targets");
+        internalTargetsJSON.put("display", "Subscriber Targets");
         internalTargetsJSON.put("dataType", "stringSet");
         internalTargetsJSON.put("retriever", "getTargets");
-        internalTargetsJSON.put("internalOnly", true);
+        internalTargetsJSON.put("esField", "internal.targets");
+        internalTargetsJSON.put("internalOnly", false);
+        ArrayList<String> av = new ArrayList<>();
+        av.add("#targets#");
+        internalTargetsJSON.put("availableValues", JSONUtilities.encodeArray(av));
+        
         internalTargets  = new CriterionField(JSONUtilities.encodeObject(internalTargetsJSON));
       }
     catch (GUIManagerException e)
