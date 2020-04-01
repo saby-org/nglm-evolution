@@ -35,11 +35,12 @@ ssh $MASTER_SWARM_HOST "
 #
 
 ssh $GUIMANAGER_HOST "
-
    mkdir -p $NGLM_UPLOADED
    mkdir -p $NGLM_REPORTS  
 "
- scp $DEPLOY_ROOT/config/logger/log4j-guimanager.properties $GUIMANAGER_HOST:$NGLM_CONFIG_LOGS/log4j-guimanager.properties
+cat $DEPLOY_ROOT/config/logger/log4j-guimanager.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-guimanager-001.properties
+scp $DEPLOY_ROOT/config/logger/log4j-guimanager-001.properties $GUIMANAGER_HOST:$NGLM_CONFIG_LOGS/log4j-guimanager.properties
+rm -f $DEPLOY_ROOT/config/logger/log4j-guimanager-001.properties
 
 #
 #  prometheus runtime volume(s)
