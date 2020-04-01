@@ -938,7 +938,70 @@
           ]
         }
       },
-
+      {
+        "id"                     : "153",
+        "name"                   : "next.best.offer.accept",
+        "display"                : "Accept Offer",
+        "icon"                   : "jmr_components/styles/images/objects/purchase-offer.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "allowContextVariables"  : true,
+        "outputType"             : "static",
+        "outputConnectors"       :
+        [
+          { "name" : "purchased", "display" : "Purchased", "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
+          { "name" : "failed",    "display" : "Failed",    "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
+          { "name" : "timeout", "display" : "Timeout", "evaluationPriority" : "first", "evaluateContextVariables" : false, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.timeoutduration, node.parameter.timeoutunit)" } } ] }
+        ],
+        "parameters" :
+        [
+          {
+            "id" : "node.parameter.rank",
+            "display" : "Offer Rank",
+            "dataType" : "integer",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" : null,
+            "defaultValue" : null
+          },
+          {
+            "id" : "node.parameter.timeoutduration",
+            "display" : "Timeout Duration",
+            "dataType" : "integer",
+            "width" : "50%",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" : null,
+            "defaultValue" : null
+          },
+          {
+            "id" : "node.parameter.timeoutunit",
+            "display" : "Units",
+            "dataType" : "string",
+            "width" : "50%",
+            "multiple" : false,
+            "mandatory" : true,
+            "availableValues" :
+            [
+              { "id" : "minute", "display" : "Minutes" },
+              { "id" : "hour",   "display" : "Hours" },
+              { "id" : "day",    "display" : "Days" },
+              { "id" : "week",   "display" : "Weeks" },
+              { "id" : "month",  "display" : "Months" }
+            ],
+            "defaultValue" : null
+          }
+        ],
+        "action" :
+        {
+          "actionManagerClass" : "com.evolving.nglm.evolution.DNBOUtils$ActionManagerAccept",
+          "outputAttributes" :
+          [
+            { "id" : "action.accepted.offer",    "display" : "Accepted Offer",    "dataType" : "string", "retriever" : "getActionAttribute" }
+          ]
+          
+        }
+      },
       {
         "id"                     : "201",
         "name"                   : "earn.badge",
@@ -1123,7 +1186,8 @@
           [
             { "id" : "150", "name" : "next.best.offer.token" },
             { "id" : "151", "name" : "next.best.offer.allocate" },
-            { "id" : "152", "name" : "next.best.offer.purchase" }
+            { "id" : "152", "name" : "next.best.offer.purchase" },
+            { "id" : "153", "name" : "next.best.offer.accept" }
           ]
       }
     ],
@@ -1195,7 +1259,8 @@
           [
             { "id" : "150", "name" : "next.best.offer.token" },
             { "id" : "151", "name" : "next.best.offer.allocate" },
-            { "id" : "152", "name" : "next.best.offer.purchase" }
+            { "id" : "152", "name" : "next.best.offer.purchase" },
+            { "id" : "153", "name" : "next.best.offer.accept" }
           ]
       }
     ]
