@@ -76,9 +76,9 @@ cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-guimanager
 cat $DEPLOY_ROOT/docker/guimanager.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-guimanager.yml
 echo >> $DEPLOY_ROOT/stack/stack-guimanager.yml
 
-cat $DEPLOY_ROOT/config/logger/log4j-guimanager.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-guimanager-001.properties
-scp $DEPLOY_ROOT/config/logger/log4j-guimanager-001.properties $HOST:$NGLM_CONFIG_LOGS/log4j-guimanager.properties
-rm -f $DEPLOY_ROOT/config/logger/log4j-guimanager-001.properties
+#cat $DEPLOY_ROOT/config/logger/log4j-guimanager.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-guimanager-001.properties
+#scp $DEPLOY_ROOT/config/logger/log4j-guimanager-001.properties $HOST:$NGLM_CONFIG_LOGS/log4j-guimanager.properties
+#rm -f $DEPLOY_ROOT/config/logger/log4j-guimanager-001.properties
 
 #
 #  postamble
@@ -116,9 +116,9 @@ if [ "$THIRDPARTYMANAGER_ENABLED" = "true" ]; then
      cat $DEPLOY_ROOT/docker/thirdpartymanager.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
      echo >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
      
-     cat $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent-$KEY.properties
-     scp $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-thirdpartyevent-$KEY.properties
-     rm -f $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent-$KEY.properties
+     #cat $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent-$KEY.properties
+     #scp $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-thirdpartyevent-$KEY.properties
+     #rm -f $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent-$KEY.properties
      
   done
 
@@ -196,9 +196,9 @@ do
    cat $DEPLOY_ROOT/docker/evolutionengine.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-evolutionengine.yml
    echo >> $DEPLOY_ROOT/stack/stack-evolutionengine.yml
    
-   cat $DEPLOY_ROOT/config/logger/log4j-evolutionengine.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-evolutionengine-$KEY.properties
-   scp $DEPLOY_ROOT/config/logger/log4j-evolutionengine-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-evolutionengine-$KEY.properties
-   rm -f $DEPLOY_ROOT/config/logger/log4j-evolutionengine-$KEY.properties
+   #cat $DEPLOY_ROOT/config/logger/log4j-evolutionengine.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-evolutionengine-$KEY.properties
+   #scp $DEPLOY_ROOT/config/logger/log4j-evolutionengine-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-evolutionengine-$KEY.properties
+   #rm -f $DEPLOY_ROOT/config/logger/log4j-evolutionengine-$KEY.properties
    
 done
 
@@ -303,9 +303,9 @@ if [ "$INFULFILLMENTMANAGER_ENABLED" = "true" ]; then
      cat $DEPLOY_ROOT/docker/infulfillmentmanager.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-infulfillmentmanager.yml
      echo >> $DEPLOY_ROOT/stack/stack-infulfillmentmanager.yml
 
-     cat $DEPLOY_ROOT/config/logger/log4j-infulfillment.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-infulfillment-$KEY.properties
-     scp $DEPLOY_ROOT/config/logger/log4j-infulfillment-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-infulfillment-$KEY.properties
-     rm -f $DEPLOY_ROOT/config/logger/log4j-infulfillment-$KEY.properties
+     #cat $DEPLOY_ROOT/config/logger/log4j-infulfillment.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-infulfillment-$KEY.properties
+     #scp $DEPLOY_ROOT/config/logger/log4j-infulfillment-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-infulfillment-$KEY.properties
+     #rm -f $DEPLOY_ROOT/config/logger/log4j-infulfillment-$KEY.properties
 
   done
 
@@ -386,9 +386,9 @@ if [ "$COMMODITYDELIVERYMANAGER_ENABLED" = "true" ]; then
      cat $DEPLOY_ROOT/docker/commoditydeliverymanager.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-commoditydeliverymanager.yml
      echo >> $DEPLOY_ROOT/stack/stack-commoditydeliverymanager.yml
 
-     cat $DEPLOY_ROOT/config/logger/log4j-commoditydelivery.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-commoditydelivery-$KEY.properties
-     scp $DEPLOY_ROOT/config/logger/log4j-commoditydelivery-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-commoditydelivery-$KEY.properties
-     rm -f $DEPLOY_ROOT/config/logger/log4j-commoditydelivery-$KEY.properties
+     #cat $DEPLOY_ROOT/config/logger/log4j-commoditydelivery.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-commoditydelivery-$KEY.properties
+     #scp $DEPLOY_ROOT/config/logger/log4j-commoditydelivery-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-commoditydelivery-$KEY.properties
+     #rm -f $DEPLOY_ROOT/config/logger/log4j-commoditydelivery-$KEY.properties
 
   done
 
@@ -430,9 +430,9 @@ if [ "$PURCHASEFULFILLMENTMANAGER_ENABLED" = "true" ]; then
      cat $DEPLOY_ROOT/docker/purchasefulfillmentmanager.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-purchasefulfillmentmanager.yml
      echo >> $DEPLOY_ROOT/stack/stack-purchasefulfillmentmanager.yml
 
-     cat $DEPLOY_ROOT/config/logger/log4j-purchasefulfillment.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-purchasefulfillment-$KEY.properties
-     scp $DEPLOY_ROOT/config/logger/log4j-purchasefulfillment-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-purchasefulfillment-$KEY.properties
-     rm -f scp $DEPLOY_ROOT/config/logger/log4j-purchasefulfillment-$KEY.properties
+     #cat $DEPLOY_ROOT/config/logger/log4j-purchasefulfillment.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-purchasefulfillment-$KEY.properties
+     #scp $DEPLOY_ROOT/config/logger/log4j-purchasefulfillment-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-purchasefulfillment-$KEY.properties
+     #rm -f $DEPLOY_ROOT/config/logger/log4j-purchasefulfillment-$KEY.properties
 
   done
 
@@ -474,9 +474,9 @@ if [ "$NOTIFICATIONMANAGER_SMS_ENABLED" = "true" ]; then
      cat $DEPLOY_ROOT/docker/notificationmanagersms.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-notificationmanagersms.yml
      echo >> $DEPLOY_ROOT/stack/stack-notificationmanagersms.yml
      
-     cat $DEPLOY_ROOT/config/logger/log4j-sms.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-sms-$KEY.properties
-     scp $DEPLOY_ROOT/config/logger/log4j-sms-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-sms-$KEY.properties
-     rm -f $DEPLOY_ROOT/config/logger/log4j-sms-$KEY.properties
+     #cat $DEPLOY_ROOT/config/logger/log4j-sms.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-sms-$KEY.properties
+     #scp $DEPLOY_ROOT/config/logger/log4j-sms-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-sms-$KEY.properties
+     #rm -f $DEPLOY_ROOT/config/logger/log4j-sms-$KEY.properties
      
   done
 
@@ -516,9 +516,9 @@ if [ "$NOTIFICATIONMANAGER_MAIL_ENABLED" = "true" ]; then
      cat $DEPLOY_ROOT/docker/notificationmanagermail.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-notificationmanagermail.yml
      echo >> $DEPLOY_ROOT/stack/stack-notificationmanagermail.yml
 
-     cat $DEPLOY_ROOT/config/logger/log4j-mail.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-mail-$KEY.properties
-     scp $DEPLOY_ROOT/config/logger/log4j-mail-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-mail-$KEY.properties
-     rm -f scp $DEPLOY_ROOT/config/logger/log4j-mail-$KEY.properties
+     #cat $DEPLOY_ROOT/config/logger/log4j-mail.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-mail-$KEY.properties
+     #scp $DEPLOY_ROOT/config/logger/log4j-mail-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-mail-$KEY.properties
+     #rm -f $DEPLOY_ROOT/config/logger/log4j-mail-$KEY.properties
 
   done
 
@@ -558,9 +558,9 @@ if [ "$NOTIFICATIONMANAGER_PUSH_ENABLED" = "true" ]; then
      cat $DEPLOY_ROOT/docker/notificationmanagerpush.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-notificationmanagerpush.yml
      echo >> $DEPLOY_ROOT/stack/stack-notificationmanagerpush.yml
 
-     cat $DEPLOY_ROOT/config/logger/log4j-push.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-push-$KEY.properties
-     scp $DEPLOY_ROOT/config/logger/log4j-push-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-push-$KEY.properties
-     rm -f scp $DEPLOY_ROOT/config/logger/log4j-push-$KEY.properties
+     #cat $DEPLOY_ROOT/config/logger/log4j-push.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-push-$KEY.properties
+     #scp $DEPLOY_ROOT/config/logger/log4j-push-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-push-$KEY.properties
+     #rm -f $DEPLOY_ROOT/config/logger/log4j-push-$KEY.properties
 
   done
 
