@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>release_1.4.1_1-198-SNAPSHOT</version>
+  <version>release_1.4.1_1</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -27,14 +27,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>release_1.4.1_1-198-SNAPSHOT</version>
+    <version>release_1.4.1_1</version>
     <relativePath/>
   </parent>
 
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>release_1.4.1_1-198-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>release_1.4.1_1</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.4.0</gui-fwk.version>
@@ -48,6 +48,7 @@
     <gui-sbm.version>1.4.0</gui-sbm.version>
     <gui-lpm.version>1.4.0</gui-lpm.version>
     <gui-tls.version>1.4.0</gui-tls.version>
+    <gui-audit.version>1.0.3</gui-audit.version>
 
     <!-- dependencies - mysql -->
     <mysql.gui.version>8.0.13</mysql.gui.version>
