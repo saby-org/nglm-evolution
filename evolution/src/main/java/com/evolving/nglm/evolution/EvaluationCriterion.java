@@ -758,10 +758,7 @@ public class EvaluationCriterion
       {
         if (log.isDebugEnabled())
           {
-            log.debug("invalid argument {}", argumentExpression);
-            StringWriter stackTraceWriter = new StringWriter();
-            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-            log.debug(stackTraceWriter.toString());
+            log.info("EvaluationCriterion.evaluate Exception " + e.getClass().getName() + " while evaluating criterionField {} and argumentExpression {}", criterionField, argumentExpression);
           }
         evaluationRequest.subscriberTrace("FalseCondition : invalid argument {0}", argumentExpression);
         return false;
