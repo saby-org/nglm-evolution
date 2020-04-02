@@ -231,6 +231,7 @@ public class Deployment
   private static String sourceAddressTopic;
   private static boolean autoApproveGuiObjects;
   private static Map<String,String> deliveryTypeCommunicationChannelIDMap = new LinkedHashMap<>();
+  private static int purchaseTimeoutMs;
   private static String voucherChangeRequestTopic;
   private static String voucherChangeResponseTopic;
   private static String hourlyReportCronEntryString;
@@ -470,6 +471,7 @@ public class Deployment
   public static String getElasticSearchDateFormat() { return elasticSearchDateFormat; }
   public static int getElasticSearchScrollSize() {return elasticSearchScrollSize; }
   public static int getMaxPollIntervalMs() {return maxPollIntervalMs; }
+  public static int getPurchaseTimeoutMs() {return purchaseTimeoutMs; }
   public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
   public static String getSourceAddressTopic() { return sourceAddressTopic; }
   public static boolean getAutoApproveGuiObjects() { return autoApproveGuiObjects; }
@@ -1029,6 +1031,18 @@ public class Deployment
       try
         {
           maxPollIntervalMs = JSONUtilities.decodeInteger(jsonRoot, "maxPollIntervalMs", 30000);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      // purchaseTimeoutMs
+      //
+      try
+        {
+          purchaseTimeoutMs = JSONUtilities.decodeInteger(jsonRoot, "purchaseTimeoutMs", 15000);
         }
       catch (JSONUtilitiesException e)
         {
