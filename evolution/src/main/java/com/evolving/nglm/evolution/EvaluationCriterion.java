@@ -1440,9 +1440,8 @@ public class EvaluationCriterion
           break;
           
         case TimeCriterion:
-          //
-          //  TO DO (not now)
-          //
+          throw new UnsupportedOperationException("timeCriterion is not supported");
+          
         default:
           script.append("def left = (doc." + esField + ".size() != 0) ? doc." + esField + "?.value : null; ");
           break;
@@ -1508,9 +1507,8 @@ public class EvaluationCriterion
                 script.append("return (left != null) ? left.isAfter(right) : false; ");
                 break;
               case TimeCriterion:
-                //
-                //  TO DO (not now)
-                //
+                throw new UnsupportedOperationException("timeCriterion is not supported");
+                
               default:
                 script.append("return (left != null) ? left > right : false; ");
                 break;
@@ -1525,10 +1523,7 @@ public class EvaluationCriterion
                 break;
 
               case TimeCriterion:
-                
-                //
-                //  TO DO (not now)
-                //
+                throw new UnsupportedOperationException("timeCriterion is not supported");
                 
               default:
                 script.append("return (left != null) ? left >= right : false; ");
@@ -1544,10 +1539,7 @@ public class EvaluationCriterion
                 break;
 
               case TimeCriterion:
-                
-                //
-                //  to do (not now)
-                //
+                throw new UnsupportedOperationException("timeCriterion is not supported");
                 
               default:
                 script.append("return (left != null) ? left < right : false; ");
@@ -1563,9 +1555,7 @@ public class EvaluationCriterion
                 break;
                 
               case TimeCriterion:
-                //
-                //  to do (not now)
-                //
+                throw new UnsupportedOperationException("timeCriterion is not supported");
                 
               default:
                 script.append("return (left != null) ? left <= right : false; ");
