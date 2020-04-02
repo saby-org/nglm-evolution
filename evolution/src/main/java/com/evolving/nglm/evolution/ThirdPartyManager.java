@@ -131,6 +131,7 @@ public class ThirdPartyManager
   private DeliverableService deliverableService;
   private TokenTypeService tokenTypeService;
   private ScoringStrategyService scoringStrategyService;
+  private PresentationStrategyService presentationStrategyService;
   private ProductTypeService productTypeService;
   private VoucherTypeService voucherTypeService;
   private CatalogCharacteristicService catalogCharacteristicService;
@@ -421,6 +422,9 @@ public class ThirdPartyManager
     
     scoringStrategyService = new ScoringStrategyService(Deployment.getBrokerServers(), "thirdpartymanager-scoringstrategyservice-" + apiProcessKey, Deployment.getScoringStrategyTopic(), false);
     scoringStrategyService.start();
+    
+    presentationStrategyService = new PresentationStrategyService(bootstrapServers, "thirdpartymanager-presentationstrategyservice-" + apiProcessKey, Deployment.getPresentationStrategyTopic(), false);
+    presentationStrategyService.start();
     
     productTypeService = new ProductTypeService(Deployment.getBrokerServers(), "thirdpartymanager-producttypeservice-" + apiProcessKey, Deployment.getProductTypeTopic(), false);
     productTypeService.start();
@@ -3682,7 +3686,7 @@ public class ThirdPartyManager
        *  decorate and response
        *
        *****************************************/
-      response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, offerObjectiveService, loyaltyProgramService);
+      response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService);
       response.putAll(resolveAllSubscriberIDs(subscriberProfile));
       response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
       response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
@@ -4302,7 +4306,7 @@ public class ThirdPartyManager
               tokenStream = tokenStream.filter(token -> tokenStatusForStreams.equalsIgnoreCase(token.getTokenStatus().getExternalRepresentation()));
             }
           tokensJson = tokenStream
-              .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, offerObjectiveService, loyaltyProgramService))
+              .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService))
               .collect(Collectors.toList());
         }
 
