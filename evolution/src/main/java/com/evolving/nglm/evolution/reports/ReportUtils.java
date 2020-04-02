@@ -277,8 +277,6 @@ public class ReportUtils {
 	}
 	
 	static private void createTopic(String topicName, Properties prop, String kzHostList) {
-			log.info("Creating kafka topic "+topicName);
-
 			Properties adminClientConfig = new Properties();
 	    adminClientConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, System.getProperty("broker.servers"));
 

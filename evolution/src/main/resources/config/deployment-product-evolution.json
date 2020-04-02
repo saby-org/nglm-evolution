@@ -842,7 +842,7 @@
     "reportManagerFileExtension"  : "csv",
     "reportManagerCsvSeparator"   : ";",
     "reportManagerStreamsTempDir" : "/tmp",
-    "reportManagerTopicsCreationProperties" : "--config cleanup.policy=delete --config segment.bytes=52428800 --config retention.ms=64800000"
+    "reportManagerTopicsCreationProperties" : "cleanup.policy=delete segment.bytes=52428800 retention.ms=64800000"
   },
   
   "initialReports" :
