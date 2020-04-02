@@ -63,6 +63,10 @@ public class ReportManager implements Watcher
   private static final Logger log = LoggerFactory.getLogger(ReportManager.class);
   private static ReportManagerStatistics reportManagerStatistics;
   private ReportService reportService;
+  
+  public static short replicationFactor;
+  public static int nbPartitions;
+  public static int standbyReplicas;
 
   /**
    * Used by ReportScheduler to launch reports.
@@ -373,13 +377,17 @@ public class ReportManager implements Watcher
       {
         log.info("ReportManager main : arg " + arg);
       }
-    if (args.length < 2) 
+    if (args.length < 5) 
       {
-        log.error("Usage : ReportManager BrokerServers ESNode");
+        log.error("Usage : ReportManager BrokerServers ESNode replication partitions standby");
         System.exit(1);
       }
     brokerServers = args[0];
     esNode        = args[1];
+    replicationFactor = Short.parseShort(args[2]);
+    nbPartitions = Integer.parseInt(args[3]);
+    standbyReplicas = Integer.parseInt(args[4]);
+    
     zkHostList = Deployment.getZookeeperConnect();
     try 
     {

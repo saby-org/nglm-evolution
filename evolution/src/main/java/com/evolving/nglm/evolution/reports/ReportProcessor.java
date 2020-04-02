@@ -100,6 +100,8 @@ public class ReportProcessor {
 	 */
 	public void process() {
 		ReportUtils.createTopic(topicOut, zkHostList); // In case it does not exist
+    int portNumber = 8080+instanceNb;
+    final Serde<ReportElement> reportElementSerde = new ReportElementSerde();
 		Properties streamsConfig = new Properties();
 		streamsConfig.put(StreamsConfig.APPLICATION_ID_CONFIG, appId);
 		streamsConfig.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaNodeList);
@@ -107,10 +109,10 @@ public class ReportProcessor {
 		streamsConfig.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
 		streamsConfig.put(StreamsConfig.STATE_DIR_CONFIG, getTempDir());
 		streamsConfig.put(StreamsConfig.METRICS_RECORDING_LEVEL_CONFIG, "DEBUG");
-		int portNumber = 8080+instanceNb;
+		streamsConfig.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, Integer.toString(ReportManager.replicationFactor));
+		streamsConfig.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, Integer.toString(ReportManager.standbyReplicas));
 		streamsConfig.put(StreamsConfig.APPLICATION_SERVER_CONFIG, "http://localhost:"+portNumber); // Needed for allMetadata() to work
 		//streamsConfig.put(StreamsConfig.CLIENT_ID_CONFIG, "client-id-1");
-		final Serde<ReportElement> reportElementSerde = new ReportElementSerde();
 		streamsConfig.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, ReportElementSerde.class);
 		streamsConfig.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
 		

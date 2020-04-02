@@ -207,6 +207,7 @@ public class Deployment
   private static String reportManagerDateFormat;
   private static String reportManagerFileExtension;
   private static String reportManagerStreamsTempDir;
+  private static String reportManagerTopicsCreationProperties;
   private static String reportManagerCsvSeparator;
   private static String uploadedFileSeparator;
   private static CustomerMetaData customerMetaData = null;
@@ -449,6 +450,7 @@ public class Deployment
   public static String getReportManagerCsvSeparator() { return reportManagerCsvSeparator; }
   public static String getUploadedFileSeparator() { return uploadedFileSeparator; }
   public static String getReportManagerStreamsTempDir() { return reportManagerStreamsTempDir; }
+  public static String getReportManagerTopicsCreationProperties() { return reportManagerTopicsCreationProperties; }
   public static CustomerMetaData getCustomerMetaData() { return customerMetaData; }
   public static String getAPIresponseDateFormat() { return APIresponseDateFormat; }
   public static String getUploadedFileTopic() { return uploadedFileTopic; }
@@ -2964,6 +2966,7 @@ public class Deployment
               reportManagerFileExtension = JSONUtilities.decodeString(reportManager, "reportManagerFileExtension", false);
               reportManagerCsvSeparator = JSONUtilities.decodeString(reportManager, "reportManagerCsvSeparator", false);
               reportManagerStreamsTempDir = JSONUtilities.decodeString(reportManager, "reportManagerStreamsTempDir", false);
+              reportManagerTopicsCreationProperties = JSONUtilities.decodeString(reportManager, "reportManagerTopicsCreationProperties", false);
             }
           else
             {
@@ -2973,6 +2976,7 @@ public class Deployment
               reportManagerFileExtension = "csv";
               reportManagerCsvSeparator = ";";
               reportManagerStreamsTempDir = System.getProperty("java.io.tmpdir");
+              reportManagerTopicsCreationProperties = "--config cleanup.policy=delete --config segment.bytes=52428800 --config retention.ms=86400000";
             }
         }
       catch (JSONUtilitiesException e)
