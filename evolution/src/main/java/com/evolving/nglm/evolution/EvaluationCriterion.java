@@ -937,12 +937,12 @@ public class EvaluationCriterion
                       criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
                       break;
                   }
-                break;
               }
+              break;
               
             case TimeCriterion:
             {
-              // RAJ K TO DO
+              // to do not now
               log.info("RAJ K TimeCriterion - criterionFieldValue {} - evaluatedArgument {} ", criterionFieldValue, evaluatedArgument);
             }
           }
