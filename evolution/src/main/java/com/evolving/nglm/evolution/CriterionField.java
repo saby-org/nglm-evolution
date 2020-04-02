@@ -224,6 +224,7 @@ public class CriterionField extends DeploymentManagedObject
             case StringCriterion:
             case BooleanCriterion:
             case DateCriterion:
+            case TimeCriterion:
             case EvaluationCriteriaParameter:
             case SMSMessageParameter:
             case EmailMessageParameter:
@@ -659,6 +660,7 @@ public class CriterionField extends DeploymentManagedObject
                   if (! (criterionFieldValue instanceof Boolean)) throw new CriterionException("criterionField " + this + " expected boolean retrieved " + criterionFieldValue.getClass());
                   break;
 
+                case TimeCriterion:
                 case DateCriterion:
                   if (! (criterionFieldValue instanceof Date)) throw new CriterionException("criterionField " + this + " expected date retrieved " + criterionFieldValue.getClass());
                   break;
@@ -827,6 +829,7 @@ public class CriterionField extends DeploymentManagedObject
         case DoubleCriterion:
           return 9;
           
+        case TimeCriterion:
         case DateCriterion:
           return 20;
 

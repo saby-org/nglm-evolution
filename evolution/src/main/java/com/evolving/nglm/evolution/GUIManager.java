@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -22616,6 +22617,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             case DoubleCriterion:
             case StringCriterion:
             case BooleanCriterion:
+            case TimeCriterion:
             case DateCriterion:
               criterionFields.put(criterionField.getID(), criterionField);
               break;
@@ -23865,7 +23867,21 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
                   availableValue.put("id", target.getGUIManagedObjectID());
                   availableValue.put("display", target.getGUIManagedObjectDisplay());
-                  result.add(JSONUtilities.encodeObject(availableValue));                  
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+        case "weekDays":
+          if (includeDynamic)
+            {
+              List<String> weekDays = new LinkedList<String>();
+              weekDays.add("SUNDAY"); weekDays.add("MONDAY"); weekDays.add("TUESDAY"); weekDays.add("WEDNESDAY"); weekDays.add("THURSDAY"); weekDays.add("FRIDAY"); weekDays.add("SATURDAY");
+              for (String weekDay : weekDays)
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", weekDay.toUpperCase());
+                  availableValue.put("display", weekDay.toUpperCase());
+                  result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }
           break;

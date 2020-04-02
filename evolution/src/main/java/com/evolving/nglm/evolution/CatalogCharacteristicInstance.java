@@ -147,6 +147,7 @@ public class CatalogCharacteristicInstance
           value = integerSetValue;
           break;
 
+        case TimeCriterion:
         default:
           throw new GUIManagerException("unsupported catalogCharacteristic", catalogCharacteristicID);
       }

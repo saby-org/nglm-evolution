@@ -109,6 +109,7 @@ public class EvaluationCriterion
     StringCriterion("string"),
     BooleanCriterion("boolean"),
     DateCriterion("date"),
+    TimeCriterion("time"),
     StringSetCriterion("stringSet"),
     
     //
@@ -330,7 +331,8 @@ public class EvaluationCriterion
     try
       {
         JSONObject argumentJSON = JSONUtilities.decodeJSONObject(jsonRoot, "argument", false);
-        this.argumentExpression = (argumentJSON != null) ? JSONUtilities.decodeString(argumentJSON, "expression", true) : null;
+        // org this.argumentExpression = (argumentJSON != null) ? JSONUtilities.decodeString(argumentJSON, "expression", true) : null;
+        this.argumentExpression = (argumentJSON != null) ? JSONUtilities.decodeString(argumentJSON, "expression", "timeConstant('22:20:10')") : null; // RAJ K hack
         this.argumentBaseTimeUnit = (argumentJSON != null) ? TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(argumentJSON, "timeUnit", "(unknown)")) : TimeUnit.Unknown;
         parseArgument();
       }
@@ -427,6 +429,18 @@ public class EvaluationCriterion
                   }
                 break;
                 
+              case TimeCriterion:
+                switch (argumentType)
+                  {
+                    case TimeExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
+                
               default:
                 validCombination = false;
                 break;
@@ -457,6 +471,18 @@ public class EvaluationCriterion
                 switch (argumentType)
                   {
                     case DateExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
+                
+              case TimeCriterion:
+                switch (argumentType)
+                  {
+                    case TimeExpression:
                       validCombination = true;
                       break;
                     default:
@@ -911,10 +937,17 @@ public class EvaluationCriterion
                       criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
                       break;
                   }
+                break;
               }
+              
+            case TimeCriterion:
+            {
+              // RAJ K TO DO
+              log.info("RAJ K TimeCriterion - criterionFieldValue {} - evaluatedArgument {} ", criterionFieldValue, evaluatedArgument);
+            }
           }
       }
-        
+    
     /****************************************
     *
     *  evaluate
@@ -952,6 +985,8 @@ public class EvaluationCriterion
               case DoubleCriterion:
                 result = traceCondition(evaluationRequest, ((Double) criterionFieldValue).compareTo((Double) evaluatedArgument) > 0, criterionFieldValue, evaluatedArgument);
                 break;
+                
+              case TimeCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) > 0, criterionFieldValue, evaluatedArgument);
                 if (referencesEvaluationDate) evaluationRequest.getNextEvaluationDates().add((Date) evaluatedArgument);
@@ -968,6 +1003,8 @@ public class EvaluationCriterion
               case DoubleCriterion:
                 result = traceCondition(evaluationRequest, ((Double) criterionFieldValue).compareTo((Double) evaluatedArgument) >= 0, criterionFieldValue, evaluatedArgument);
                 break;
+                
+              case TimeCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) >= 0, criterionFieldValue, evaluatedArgument);
                 if (referencesEvaluationDate) evaluationRequest.getNextEvaluationDates().add((Date) evaluatedArgument);
@@ -984,6 +1021,8 @@ public class EvaluationCriterion
               case DoubleCriterion:
                 result = traceCondition(evaluationRequest, ((Double) criterionFieldValue).compareTo((Double) evaluatedArgument) < 0, criterionFieldValue, evaluatedArgument);
                 break;
+              
+              case TimeCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) < 0, criterionFieldValue, evaluatedArgument);
                 break;
@@ -999,6 +1038,8 @@ public class EvaluationCriterion
               case DoubleCriterion:
                 result = traceCondition(evaluationRequest, ((Double) criterionFieldValue).compareTo((Double) evaluatedArgument) <= 0, criterionFieldValue, evaluatedArgument);
                 break;
+                
+              case TimeCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) <= 0, criterionFieldValue, evaluatedArgument);
                 break;
@@ -1398,6 +1439,10 @@ public class EvaluationCriterion
           script.append("def left = new ArrayList(); left.addAll(doc." + esField + "); ");
           break;
           
+        case TimeCriterion:
+          //
+          //  TO DO (not now)
+          //
         default:
           script.append("def left = (doc." + esField + ".size() != 0) ? doc." + esField + "?.value : null; ");
           break;
@@ -1462,7 +1507,10 @@ public class EvaluationCriterion
               case DateCriterion:
                 script.append("return (left != null) ? left.isAfter(right) : false; ");
                 break;
-
+              case TimeCriterion:
+                //
+                //  TO DO (not now)
+                //
               default:
                 script.append("return (left != null) ? left > right : false; ");
                 break;
@@ -1476,6 +1524,12 @@ public class EvaluationCriterion
                 script.append("return (left != null) ? !left.isBefore(right) : true; ");
                 break;
 
+              case TimeCriterion:
+                
+                //
+                //  TO DO (not now)
+                //
+                
               default:
                 script.append("return (left != null) ? left >= right : false; ");
                 break;
@@ -1489,6 +1543,12 @@ public class EvaluationCriterion
                 script.append("return (left != null) ? left.isBefore(right) : false; ");
                 break;
 
+              case TimeCriterion:
+                
+                //
+                //  to do (not now)
+                //
+                
               default:
                 script.append("return (left != null) ? left < right : false; ");
                 break;
@@ -1501,7 +1561,12 @@ public class EvaluationCriterion
               case DateCriterion:
                 script.append("return (left != null) ? !left.isAfter(right) : true; ");
                 break;
-
+                
+              case TimeCriterion:
+                //
+                //  to do (not now)
+                //
+                
               default:
                 script.append("return (left != null) ? left <= right : false; ");
                 break;
@@ -2020,6 +2085,12 @@ public class EvaluationCriterion
         case BooleanExpression:
           value = ((Boolean) (argument.evaluate(null, null))).toString();
           break;
+          
+        case TimeExpression:
+          
+          //
+          //  to do (not now)
+          //
           
         default:
           throw new CriterionException("datatype not yet implemented : " + expectedType);

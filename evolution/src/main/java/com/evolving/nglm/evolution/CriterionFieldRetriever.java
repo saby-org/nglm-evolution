@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
@@ -13,6 +14,7 @@ import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -58,6 +60,13 @@ public abstract class CriterionFieldRetriever
   public static Object getTrue(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return Boolean.TRUE; }
   public static Object getFalse(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return Boolean.FALSE; }
   public static Object getUnsupportedField(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return null; }
+  public static Object getEvaluationDay(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
+  { 
+    int today = RLMDateUtils.getField(evaluationRequest.getEvaluationDate(), Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
+    String evaluationDay = getDay(today);
+    return evaluationDay; 
+  }
+  public static Object getEvaluationTime(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getEvaluationDate(); }
 
   //
   //  journey
@@ -554,5 +563,42 @@ public abstract class CriterionFieldRetriever
         result = expression.evaluateExpression(evaluationRequest, baseTimeUnit);
       }
     return result;
+  }
+  
+  /*****************************************
+  *
+  *  getDay
+  *
+  *****************************************/
+  
+  private static String getDay(int today)
+  {
+    String result = null;
+    
+    switch(today)
+    {
+      case Calendar.SUNDAY:
+        result = "SUNDAY";
+        break;
+      case Calendar.MONDAY:
+        result = "MONDAY";
+        break;
+      case Calendar.TUESDAY:
+        result = "TUESDAY";
+        break;
+      case Calendar.WEDNESDAY:
+        result = "WEDNESDAY";
+        break;
+      case Calendar.THURSDAY:
+        result = "THURSDAY";
+        break;
+      case Calendar.FRIDAY:
+        result = "FRIDAY";
+        break;
+      case Calendar.SATURDAY:
+        result = "SATURDAY";
+        break;
+    }
+    return result.toUpperCase();
   }
 }
