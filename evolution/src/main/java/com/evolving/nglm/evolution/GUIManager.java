@@ -835,6 +835,7 @@ public class GUIManager
           }
       }
     };
+    //TODO: very bad dégeulasse implémentation : (dépendence du CriterionContext.initialize(dynamicCriterionFieldService) avec JourneyService)
     dynamicCriterionFieldService = new DynamicCriterionFieldService(bootstrapServers, "guimanager-dynamiccriterionfieldservice-"+apiProcessKey, dynamicCriterionFieldTopic, true);
     CriterionContext.initialize(dynamicCriterionFieldService);
     journeyService = new JourneyService(bootstrapServers, "guimanager-journeyservice-" + apiProcessKey, journeyTopic, true, journeyListener);
