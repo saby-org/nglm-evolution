@@ -739,22 +739,22 @@ public class EvaluationCriterion
     *  retrieve fieldValue
     *
     ****************************************/
-
-    Object criterionFieldValue = criterionField.retrieveNormalized(evaluationRequest);
-
-    /****************************************
-    *
-    *  evaluate argument
-    *
-    ****************************************/
-
-    ExpressionDataType argumentType = (argument != null) ? argument.getType() : ExpressionDataType.NoArgument;
+    Object criterionFieldValue = null;
     Object evaluatedArgument = null;
+    ExpressionDataType argumentType = null;
     try
-      {
+      {        
+        criterionFieldValue = criterionField.retrieveNormalized(evaluationRequest);
+    
+        /****************************************
+        *
+        *  evaluate argument
+        *
+        ****************************************/    
+        argumentType = (argument != null) ? argument.getType() : ExpressionDataType.NoArgument;        
         evaluatedArgument = (argument != null) ? argument.evaluateExpression(evaluationRequest, argumentBaseTimeUnit) : null;
       }
-    catch (ExpressionEvaluationException|ArithmeticException e)
+    catch (Exception e)
       {
         if (log.isDebugEnabled())
           {
