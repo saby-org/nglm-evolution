@@ -287,7 +287,16 @@
               { "id" : "event.tokenType",      "display" : "Token Type",       "dataType" : "string", "retriever" : "getTokenType",      "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#tokenTypes#"] },
               { "id" : "event.acceptedOfferId","display" : "Accepted Offer Id","dataType" : "string", "retriever" : "getAcceptedOfferId","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#offers#"] }
             ]
-        },          
+        },
+        { 
+          "name" : "dailyRoutine",
+          "eventClass" : "com.evolving.nglm.evolution.TimedEvaluation",
+          "eventTopic" : null,
+          "eventRule" : "standard",
+		  "eventCriterionFields" :
+[
+]
+        },             
         { 
           "name" : "journeyComplete",
           "eventClass" : null,
