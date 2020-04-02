@@ -841,7 +841,8 @@
     "reportManagerDateFormat"     : "yyyy-MM-dd_HH-mm-ss",
     "reportManagerFileExtension"  : "csv",
     "reportManagerCsvSeparator"   : ";",
-    "reportManagerStreamsTempDir" : "/tmp"
+    "reportManagerStreamsTempDir" : "/tmp",
+    "reportManagerTopicsCreationProperties" : "--config cleanup.policy=delete --config segment.bytes=52428800 --config retention.ms=64800000"
   },
   
   "initialReports" :
