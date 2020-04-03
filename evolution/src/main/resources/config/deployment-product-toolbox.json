@@ -51,9 +51,25 @@
         "parameters"       :
           [
             { 
+              "id" : "node.parameter.wait.type",               
+              "display" : "Wait Type", 
+              "dataType" : "string", 
+              "width" : "100%", 
+              "multiple" : false, 
+              "mandatory" : true,
+              "availableValues" : 
+                [
+                  { "id" : "time.based",   "display" : "Time Based" },
+                  { "id" : "date.based",   "display" : "Date Based"   }
+                ],
+              "defaultValue" : null
+            },
+            
+            { 
               "id" : "node.parameter.duration", 
               "display" : "Wait Duration", 
-              "dataType" : "integer", 
+              "dataType" : "integer",
+              "retrieveAdditionalCriteriaFields" : [ "node.parameter.wait.type" ],
               "width" : "50%", 
               "multiple" : false, 
               "mandatory" : true,
