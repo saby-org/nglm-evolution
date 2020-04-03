@@ -2976,7 +2976,7 @@ public class Deployment
               reportManagerFileExtension = "csv";
               reportManagerCsvSeparator = ";";
               reportManagerStreamsTempDir = System.getProperty("java.io.tmpdir");
-              reportManagerTopicsCreationProperties = "--config cleanup.policy=delete --config segment.bytes=52428800 --config retention.ms=86400000";
+              reportManagerTopicsCreationProperties = "cleanup.policy=delete segment.bytes=52428800 retention.ms=86400000";
             }
         }
       catch (JSONUtilitiesException e)
