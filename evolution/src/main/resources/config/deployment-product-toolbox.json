@@ -107,6 +107,51 @@
               "defaultValue" : null
             }
           ]
+      },
+      
+      {
+        "id"                     : "106",
+        "name"                   : "schedule.new",
+        "display"                : "Schedule New",
+        "icon"                   : "jmr_components/styles/images/objects/1-2-schedule.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "allowContextVariables"  : false,
+        "outputType"             : "dynamic",
+        "outputConnectors"       :
+        [
+          { "name" : "other", "display" : "Other", "evaluationPriority" : "last", "transitionCriteria" : [ ] }
+        ],
+        "parameters"             : [ ],
+        "dynamicOutputConnector" :
+        {
+          "outputConnectorName" : "link.parameter.outputconnectorname",
+          "parameters"             :
+          [
+            {
+              "id" : "link.parameter.outputconnectorname",
+              "display" : "Selection Name",
+              "dataType" : "string",
+              "width" : "100%",
+              "multiple" : false,
+              "mandatory" : true,
+              "availableValues" : null,
+              "defaultValue" : null
+            },
+            {
+              "id" : "link.parameter.profilecriteria",
+              "display" : "Profile Criteria",
+              "dataType" : "evaluationCriteria",
+              "width" : "100%",
+              "multiple" : true,
+              "mandatory" : true,
+              "availableValues" : null,
+              "defaultValue" : [ ]
+            }
+          ],
+          "transitionCriteria" : [ ],
+          "additionalCriteria" : "link.parameter.profilecriteria"
+        }
       }, 
 
       {
@@ -1014,7 +1059,8 @@
             { "id" : "101", "name" : "start" },
             { "id" : "102", "name" : "end" },
             { "id" : "103", "name" : "wait" },
-            { "id" : "104", "name" : "schedule" }
+            { "id" : "104", "name" : "schedule" },
+            { "id" : "106", "name" : "schedule.new" }
           ]
       },
 
@@ -1067,7 +1113,8 @@
             { "id" : "101", "name" : "start" },
             { "id" : "102", "name" : "end" },
             { "id" : "103", "name" : "wait" },
-            { "id" : "104", "name" : "schedule" }
+            { "id" : "104", "name" : "schedule" },
+            { "id" : "106", "name" : "schedule.new" }
           ]
       },
       {
@@ -1140,7 +1187,8 @@
             { "id" : "101", "name" : "start" },
             { "id" : "102", "name" : "end" },
             { "id" : "103", "name" : "wait" },
-            { "id" : "104", "name" : "schedule" }
+            { "id" : "104", "name" : "schedule" },
+            { "id" : "106", "name" : "schedule.new" }
           ]
       },
       {
