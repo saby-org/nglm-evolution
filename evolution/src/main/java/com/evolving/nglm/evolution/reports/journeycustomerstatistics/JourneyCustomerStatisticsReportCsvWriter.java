@@ -77,7 +77,7 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
                     journeyInfo.put("sample", journeyStats.get("sample"));
                   }
 
-                journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).toString());
+                journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
                 Date currentDate = SystemTime.getCurrentTime();
                 journeyInfo.put("dateTime", ReportsCommonCode.getDateString(currentDate));
                 journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
@@ -170,7 +170,7 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
                     journeyInfo.put("sample", journeyStats.get("sample"));
                   }
 
-                journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).toString());
+                journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
                 Date currentDate = SystemTime.getCurrentTime();
                 journeyInfo.put("dateTime", ReportsCommonCode.getDateString(currentDate));
                 journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
