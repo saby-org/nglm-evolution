@@ -101,7 +101,7 @@ public class NodeType extends DeploymentManagedObject
     this.endNode = JSONUtilities.decodeBoolean(jsonRoot, "endNode", Boolean.FALSE);
     this.enableCycle = JSONUtilities.decodeBoolean(jsonRoot, "enableCycle", Boolean.FALSE);
     this.allowContextVariables = JSONUtilities.decodeBoolean(jsonRoot, "allowContextVariables", Boolean.FALSE);
-    this.scheduleNode = JSONUtilities.decodeBoolean(jsonRoot, "scheduleNode", Boolean.FALSE);
+    this.scheduleNode = JSONUtilities.decodeBoolean(jsonRoot, "scheduleNode", Boolean.FALSE); 
     this.outputType = OutputType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "outputType", true));
 
     //
