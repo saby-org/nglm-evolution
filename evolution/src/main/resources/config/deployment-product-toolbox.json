@@ -51,25 +51,9 @@
         "parameters"       :
           [
             { 
-              "id" : "node.parameter.wait.type",               
-              "display" : "Wait Type", 
-              "dataType" : "string", 
-              "width" : "100%", 
-              "multiple" : false, 
-              "mandatory" : true,
-              "availableValues" : 
-                [
-                  { "id" : "time.based",   "display" : "Time Based" },
-                  { "id" : "date.based",   "display" : "Date Based"   }
-                ],
-              "defaultValue" : null
-            },
-            
-            { 
               "id" : "node.parameter.duration", 
               "display" : "Wait Duration", 
-              "dataType" : "integer",
-              "retrieveAdditionalCriteriaFields" : [ "node.parameter.wait.type" ],
+              "dataType" : "integer", 
               "width" : "50%", 
               "multiple" : false, 
               "mandatory" : true,
@@ -127,8 +111,8 @@
       
       {
         "id"                     : "105",
-        "name"                   : "schedule.new",
-        "display"                : "Schedule New",
+        "name"                   : "schedule",
+        "display"                : "Schedule",
         "icon"                   : "jmr_components/styles/images/objects/1-2-schedule.png",
         "height"                 : 70,
         "width"                  : 70,
@@ -1077,7 +1061,7 @@
             { "id" : "102", "name" : "end" },
             { "id" : "103", "name" : "wait.tilltime" },
             { "id" : "104", "name" : "wait.tilldate" },
-            { "id" : "105", "name" : "schedule.new" }
+            { "id" : "105", "name" : "schedule" }
           ]
       },
 
@@ -1131,7 +1115,7 @@
             { "id" : "102", "name" : "end" },
             { "id" : "103", "name" : "wait.tilltime" },
             { "id" : "104", "name" : "wait.tilldate" },
-            { "id" : "105", "name" : "schedule.new" }
+            { "id" : "105", "name" : "schedule" }
           ]
       },
       {
@@ -1205,7 +1189,7 @@
             { "id" : "102", "name" : "end" },
             { "id" : "103", "name" : "wait.tilltime" },
             { "id" : "104", "name" : "wait.tilldate" },
-            { "id" : "105", "name" : "schedule.new" }
+            { "id" : "105", "name" : "schedule" }
           ]
       },
       {
