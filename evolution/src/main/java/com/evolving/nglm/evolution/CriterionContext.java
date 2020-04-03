@@ -46,6 +46,7 @@ public class CriterionContext
     JourneyNode("journeyNode"),
     DynamicProfile("dynamicProfile"),
     FullDynamicProfile("fullDynamicProfile"),
+    ScheduleNode("scheduleNode"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private CriterionContextType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -64,6 +65,8 @@ public class CriterionContext
   public static final CriterionContext DynamicProfile = new CriterionContext(CriterionContextType.DynamicProfile);
   public static final CriterionContext FullDynamicProfile = new CriterionContext(CriterionContextType.FullDynamicProfile);
   public static final CriterionContext Presentation = new CriterionContext(CriterionContextType.Presentation);
+  public static final String EVALUATION_DAY = "evaluation.day";
+  public static final String EVALUATION_TIME = "evaluation.time";
 
   /*****************************************
   *
@@ -399,6 +402,7 @@ public class CriterionContext
     *****************************************/
 
     this.criterionContextType = CriterionContextType.JourneyNode;
+    if (journeyNodeType.getScheduleNode()) this.criterionContextType = CriterionContextType.ScheduleNode;
 
     /*****************************************
     *
@@ -617,6 +621,7 @@ public class CriterionContext
           result.put(internalFalse.getID(), internalFalse);
           result.put(internalTargets.getID(), internalTargets);
           result.putAll(Deployment.getProfileCriterionFields());
+          if(result.containsKey(EVALUATION_TIME)) result.remove(EVALUATION_TIME);
           break;
 
         case FullProfile:
@@ -646,6 +651,12 @@ public class CriterionContext
           result = new LinkedHashMap<String,CriterionField>();
           result.putAll(additionalCriterionFields);
           result.putAll(DynamicProfile.getCriterionFields());
+          break;
+          
+        case ScheduleNode:
+          result = new LinkedHashMap<String,CriterionField>();
+          result.put(EVALUATION_DAY, Deployment.getProfileCriterionFields().get(EVALUATION_DAY));
+          result.put(EVALUATION_TIME, Deployment.getProfileCriterionFields().get(EVALUATION_TIME));
           break;
 
         case Presentation:
