@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -838,7 +839,18 @@ public class GUIService
   private void assignAllTopicPartitions(){
     if(guiManagedObjectsConsumer!=null){
       Set<TopicPartition> partitions = new HashSet<>();
-      for (PartitionInfo partitionInfo : guiManagedObjectsConsumer.partitionsFor(guiManagedObjectTopic)) {
+      List<PartitionInfo> partitionInfos=null;
+      while(partitionInfos==null){
+        try{
+          partitionInfos=guiManagedObjectsConsumer.partitionsFor(guiManagedObjectTopic, Duration.ofSeconds(5));
+        }catch (TimeoutException e){
+          // a kafka broker might just be down, consumer.partitionsFor() can ends up timeout trying on this one
+          reconnectConsumer();
+          log.warn("timeout while getting topic partitions", e.getMessage());
+        }catch (WakeupException e){
+        }
+      }
+      for (PartitionInfo partitionInfo : partitionInfos) {
         partitions.add(new TopicPartition(guiManagedObjectTopic, partitionInfo.partition()));
       }
       guiManagedObjectsConsumer.assign(partitions);
