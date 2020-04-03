@@ -2302,6 +2302,7 @@ public class GUIManager
         JSONObject jsonResponse = null;
         if (licenseState.isValid() && allowAccess)
           {
+            log.info("RAJ k api {}, jsonRoot {}", api, jsonRoot);
             switch (api)
               {
                 case getStaticConfiguration:
