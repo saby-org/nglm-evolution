@@ -57,7 +57,6 @@ public class NodeType extends DeploymentManagedObject
   private boolean endNode;
   private boolean enableCycle;
   private boolean allowContextVariables;
-  private boolean scheduleNode;
   private OutputType outputType;
   private LinkedHashMap<String,CriterionField> parameters = new LinkedHashMap<String,CriterionField>();
   private LinkedHashMap<String,CriterionField> outputConnectorParameters = new LinkedHashMap<String,CriterionField>();
@@ -73,7 +72,6 @@ public class NodeType extends DeploymentManagedObject
   public boolean getEndNode() { return endNode; }
   public boolean getEnableCycle() { return enableCycle; }
   public boolean getAllowContextVariables() { return allowContextVariables; }
-  public boolean getScheduleNode() {return scheduleNode; }
   public OutputType getOutputType() { return  outputType; }
   public Map<String,CriterionField> getParameters() { return parameters; }
   public Map<String,CriterionField> getOutputConnectorParameters() { return outputConnectorParameters; }
@@ -101,7 +99,6 @@ public class NodeType extends DeploymentManagedObject
     this.endNode = JSONUtilities.decodeBoolean(jsonRoot, "endNode", Boolean.FALSE);
     this.enableCycle = JSONUtilities.decodeBoolean(jsonRoot, "enableCycle", Boolean.FALSE);
     this.allowContextVariables = JSONUtilities.decodeBoolean(jsonRoot, "allowContextVariables", Boolean.FALSE);
-    this.scheduleNode = JSONUtilities.decodeBoolean(jsonRoot, "scheduleNode", Boolean.FALSE); 
     this.outputType = OutputType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "outputType", true));
 
     //

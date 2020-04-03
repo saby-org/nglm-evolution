@@ -116,7 +116,6 @@
         "icon"                   : "jmr_components/styles/images/objects/1-2-schedule.png",
         "height"                 : 70,
         "width"                  : 70,
-        "scheduleNode"			 : true,
         "allowContextVariables"  : false,
         "outputType"             : "dynamic",
         "outputConnectors"       :
