@@ -60,12 +60,9 @@ public abstract class CriterionFieldRetriever
   public static Object getTrue(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return Boolean.TRUE; }
   public static Object getFalse(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return Boolean.FALSE; }
   public static Object getUnsupportedField(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return null; }
-  public static Object getEvaluationWeekDay(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
-  { 
-    int today = RLMDateUtils.getField(evaluationRequest.getEvaluationDate(), Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
-    String evaluationDay = getDay(today);
-    return evaluationDay; 
-  }
+  public static Object getEvaluationWeekDay(SubscriberEvaluationRequest evaluationRequest, String fieldName) { int today = RLMDateUtils.getField(evaluationRequest.getEvaluationDate(), Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone()); return getDay(today); }
+  public static Object getEvaluationMonth(SubscriberEvaluationRequest evaluationRequest, String fieldName) { int today = RLMDateUtils.getField(evaluationRequest.getEvaluationDate(), Calendar.MONTH, Deployment.getBaseTimeZone()); return getMonth(today); }
+  public static Object getEvaluationDayOfMonth(SubscriberEvaluationRequest evaluationRequest, String fieldName) {  int dayOfMonth = RLMDateUtils.getField(evaluationRequest.getEvaluationDate(), Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone()); return dayOfMonth; }
   public static Object getEvaluationTime(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getEvaluationDate(); }
 
   //
@@ -597,6 +594,58 @@ public abstract class CriterionFieldRetriever
         break;
       case Calendar.SATURDAY:
         result = "SATURDAY";
+        break;
+    }
+    return result.toLowerCase();
+  }
+  
+  /*****************************************
+  *
+  *  getMonth
+  *
+  *****************************************/
+  
+  private static String getMonth(int today)
+  {
+    String result = null;
+    
+    switch(today)
+    {
+      case Calendar.JANUARY:
+        result = "JANUARY";
+        break;
+      case Calendar.FEBRUARY:
+        result = "FEBRUARY";
+        break;
+      case Calendar.MARCH:
+        result = "MARCH";
+        break;
+      case Calendar.APRIL:
+        result = "APRIL";
+        break;
+      case Calendar.MAY:
+        result = "MAY";
+        break;
+      case Calendar.JUNE:
+        result = "JUNE";
+        break;
+      case Calendar.JULY:
+        result = "JULY";
+        break;
+      case Calendar.AUGUST:
+        result = "AUGUST";
+        break;
+      case Calendar.SEPTEMBER:
+        result = "SEPTEMBER";
+        break;
+      case Calendar.OCTOBER:
+        result = "OCTOBER";
+        break;
+      case Calendar.NOVEMBER:
+        result = "NOVEMBER";
+        break;
+      case Calendar.DECEMBER:
+        result = "DECEMBER";
         break;
     }
     return result.toLowerCase();

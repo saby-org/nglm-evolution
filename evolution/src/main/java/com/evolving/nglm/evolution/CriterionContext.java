@@ -64,6 +64,8 @@ public class CriterionContext
   public static final CriterionContext DynamicProfile = new CriterionContext(CriterionContextType.DynamicProfile);
   public static final CriterionContext FullDynamicProfile = new CriterionContext(CriterionContextType.FullDynamicProfile);
   public static final CriterionContext Presentation = new CriterionContext(CriterionContextType.Presentation);
+  public static final String EVALUATION_WK_DAY_ID = "evaluation.weekday";
+  public static final String EVALUATION_TIME_ID = "evaluation.time";
 
   /*****************************************
   *
