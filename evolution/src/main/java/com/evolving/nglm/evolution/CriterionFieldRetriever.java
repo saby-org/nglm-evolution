@@ -60,7 +60,7 @@ public abstract class CriterionFieldRetriever
   public static Object getTrue(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return Boolean.TRUE; }
   public static Object getFalse(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return Boolean.FALSE; }
   public static Object getUnsupportedField(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return null; }
-  public static Object getEvaluationDay(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
+  public static Object getEvaluationWeekDay(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
   { 
     int today = RLMDateUtils.getField(evaluationRequest.getEvaluationDate(), Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
     String evaluationDay = getDay(today);
@@ -599,6 +599,6 @@ public abstract class CriterionFieldRetriever
         result = "SATURDAY";
         break;
     }
-    return result.toUpperCase();
+    return result.toLowerCase();
   }
 }

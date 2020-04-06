@@ -23876,12 +23876,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           if (includeDynamic)
             {
               List<String> weekDays = new LinkedList<String>();
-              weekDays.add("SUNDAY"); weekDays.add("MONDAY"); weekDays.add("TUESDAY"); weekDays.add("WEDNESDAY"); weekDays.add("THURSDAY"); weekDays.add("FRIDAY"); weekDays.add("SATURDAY");
+              weekDays.add("Sunday"); weekDays.add("Monday"); weekDays.add("Tuesday"); weekDays.add("Wednesday"); weekDays.add("Thursday"); weekDays.add("Friday"); weekDays.add("Saturday");
               for (String weekDay : weekDays)
                 {
                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                  availableValue.put("id", weekDay.toUpperCase());
-                  availableValue.put("display", weekDay.toUpperCase());
+                  availableValue.put("id", weekDay.toLowerCase());
+                  availableValue.put("display", weekDay);
                   result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }

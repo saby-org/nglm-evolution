@@ -82,6 +82,8 @@ public class CriterionContext
   //
 
   private static CriterionField evaluationDate;
+  private static CriterionField evaluationWeekday;
+  private static CriterionField evaluationTime;
   private static CriterionField evaluationEventName;
   private static CriterionField internalRandom100;
   private static CriterionField internalFalse;
@@ -102,6 +104,46 @@ public class CriterionContext
         evaluationDateJSON.put("esField", "evaluationDate");
         evaluationDateJSON.put("internalOnly", false);
         evaluationDate  = new CriterionField(JSONUtilities.encodeObject(evaluationDateJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
+    //
+    //  evaluationWeekday
+    //
+
+    try
+      {
+        Map<String,Object> evaluationWeekdayJSON = new LinkedHashMap<String,Object>();
+        evaluationWeekdayJSON.put("id", "evaluation.weekday");
+        evaluationWeekdayJSON.put("display", "Evaluation Day Of Week");
+        evaluationWeekdayJSON.put("dataType", "stringSet");
+        evaluationWeekdayJSON.put("retriever", "getEvaluationWeekDay");
+        ArrayList<String> availableValues = new ArrayList<>(); availableValues.add("#weekDays#");
+        evaluationWeekdayJSON.put("availableValues", JSONUtilities.encodeArray(availableValues));
+        evaluationWeekdayJSON.put("internalOnly", false);
+        evaluationWeekday  = new CriterionField(JSONUtilities.encodeObject(evaluationWeekdayJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
+    //
+    //  evaluationTime
+    //
+
+    try
+      {
+        Map<String,Object> evaluationTimeJSON = new LinkedHashMap<String,Object>();
+        evaluationTimeJSON.put("id", "evaluation.time");
+        evaluationTimeJSON.put("display", "Evaluation Time");
+        evaluationTimeJSON.put("dataType", "time");
+        evaluationTimeJSON.put("retriever", "getEvaluationTime");
+        evaluationTimeJSON.put("internalOnly", false);
+        evaluationTime  = new CriterionField(JSONUtilities.encodeObject(evaluationTimeJSON));
       }
     catch (GUIManagerException e)
       {
@@ -470,6 +512,16 @@ public class CriterionContext
                 String resultFieldID = Journey.generateJourneyResultID(selectedJourney, contextVariable);
                 this.additionalCriterionFields.put(resultFieldID, new CriterionField(resultFieldID, selectedJourney, contextVariable));
               }
+          }
+        
+        //
+        //  scheduleNode
+        //
+        
+        if (journeyNodeType.getScheduleNode())
+          {
+            this.additionalCriterionFields.put(evaluationWeekday.getID(), evaluationWeekday);
+            this.additionalCriterionFields.put(evaluationTime.getID(), evaluationTime);
           }
       }
   }
