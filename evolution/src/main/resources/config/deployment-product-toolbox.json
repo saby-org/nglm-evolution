@@ -125,7 +125,7 @@
         ],
         "parameters"             : [
             {
-              "id" : "link.parameter.outputconnectorname",
+              "id" : "other",
               "display" : "Selection Name",
               "dataType" : "string",
               "width" : "100%",
