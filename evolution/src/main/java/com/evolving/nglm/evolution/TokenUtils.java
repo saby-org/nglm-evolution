@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -244,17 +245,88 @@ public class TokenUtils
   }
 
   
-  public static Collection<ProposedOfferDetails> getOffers(Date now, String salesChannelID,
-      SubscriberProfile subscriberProfile, ScoringStrategy scoringStrategy,
+  public static Collection<ProposedOfferDetails> getOffers(Date now, SubscriberEvaluationRequest evaluationRequest,
+      SubscriberProfile subscriberProfile, PresentationStrategy presentationStrategy,
       ProductService productService, ProductTypeService productTypeService,
       VoucherService voucherService, VoucherTypeService voucherTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
+      ScoringStrategyService scoringStrategyService,
       ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader,
       ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
-      SegmentationDimensionService segmentationDimensionService, DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters, OfferService offerService, StringBuffer returnedLog,
+      SegmentationDimensionService segmentationDimensionService,
+      DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters, OfferService offerService, StringBuffer returnedLog,
       String msisdn) throws GetOfferException
   {
-    String logFragment;
+    Set<String> salesChannelIDs = presentationStrategy.getSalesChannelIDs();
+    // TODO : which sales channel to take ?
+    String salesChannelID = salesChannelIDs.iterator().next();
+    PositionSet setA = presentationStrategy.getSetA();
+    List<EvaluationCriterion> setAEligibility = setA.getEligibility();
+    PositionSet setToUse = presentationStrategy.getSetB(); // default one
+    for (EvaluationCriterion criterion : setAEligibility)
+      {
+        if (criterion.evaluate(evaluationRequest))
+          {
+            setToUse = presentationStrategy.getSetA();
+            break;
+          }
+      }
+    Map<String, Collection<ProposedOfferDetails>> scoringCache = new HashMap<>(); // indexed by scoringStrategyID
+    List<ProposedOfferDetails> res = new ArrayList<>();
+    int indexResult = 0;
+    for (int positionIndex=0; positionIndex < setToUse.getPositions().size(); positionIndex++)
+      {
+        PositionElement position = setToUse.getPositions().get(positionIndex);
+        boolean valid = false;
+        for (EvaluationCriterion criterion : position.getAdditionalCriteria())
+          {
+            if (criterion.evaluate(evaluationRequest))
+              {
+                valid = true;
+                break;
+              }
+          }
+        if (!valid)
+          {
+            log.trace("For positionIndex " + (positionIndex+1) + " skip element because criteria not true");
+            continue; // skip this position in the result            
+          }
+        String scoringStrategyID = position.getScoringStrategyID();
+        ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, now);
+        if (scoringStrategy == null)
+          {
+            log.warn("For positionIndex " + (positionIndex+1) + " invalid scoring strategy " + scoringStrategyID);
+            continue; // skip this position in the result
+          }
+        Collection<ProposedOfferDetails> localScoring = scoringCache.get(scoringStrategyID);
+        if (localScoring == null) // cache miss
+          {
+            localScoring = getOffersWithScoringStrategy(now, salesChannelID, subscriberProfile, scoringStrategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, propensityDataReader, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, msisdn);
+            scoringCache.put(scoringStrategyID, localScoring);
+          }
+        if (localScoring.size() < indexResult+1)
+          {
+            log.warn("For positionIndex " + (positionIndex+1) + " result does not have enough elements : " + localScoring.size());
+            continue; // skip this position in the result            
+          }
+        res.add(indexResult, localScoring.toArray(new ProposedOfferDetails[0])[positionIndex]);
+        indexResult++;
+      }
+    log.trace("Finished scoring, got " + indexResult + " elements, max possible " + setToUse.getPositions().size());
+    return res;
+  }
+  
+public static Collection<ProposedOfferDetails> getOffersWithScoringStrategy(Date now, String salesChannelID,
+    SubscriberProfile subscriberProfile, ScoringStrategy scoringStrategy,
+    ProductService productService, ProductTypeService productTypeService,
+    VoucherService voucherService, VoucherTypeService voucherTypeService,
+    CatalogCharacteristicService catalogCharacteristicService,
+    ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader,
+    ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
+    SegmentationDimensionService segmentationDimensionService, DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters, OfferService offerService, StringBuffer returnedLog,
+    String msisdn) throws GetOfferException
+{
+  String logFragment;
     ScoringSegment selectedScoringSegment = getScoringSegment(scoringStrategy, subscriberProfile, subscriberGroupEpochReader);
     logFragment = "getOffers " + scoringStrategy.getScoringStrategyID() + " Selected ScoringSegment for " + msisdn + " " + selectedScoringSegment;
     returnedLog.append(logFragment+", ");

@@ -724,12 +724,12 @@
         [
           {
             "id": "node.parameter.strategy",
-            "display": "Scoring strategy",
+            "display": "Presentation strategy",
             "dataType": "string",
             "width": "100%",
             "multiple": false,
             "mandatory": true,
-            "availableValues": [ "#scoringStrategies#" ],
+            "availableValues": [ "#presentationStrategies#" ],
             "defaultValue": null
           },
           {
@@ -798,12 +798,12 @@
         [
           {
             "id": "node.parameter.strategy",
-            "display": "Scoring strategy",
+            "display": "Presentation strategy",
             "dataType": "string",
             "width": "100%",
             "multiple": false,
             "mandatory": true,
-            "availableValues": [ "#scoringStrategies#" ],
+            "availableValues": [ "#presentationStrategies#" ],
             "defaultValue": null
           },
           {
@@ -877,12 +877,12 @@
         [
           {
             "id": "node.parameter.strategy",
-            "display": "Scoring strategy",
+            "display": "Presentation strategy",
             "dataType": "string",
             "width": "100%",
             "multiple": false,
             "mandatory": true,
-            "availableValues": [ "#scoringStrategies#" ],
+            "availableValues": [ "#presentationStrategies#" ],
             "defaultValue": null
           },
           {

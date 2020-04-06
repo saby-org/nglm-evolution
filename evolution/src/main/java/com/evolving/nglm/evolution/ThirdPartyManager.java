@@ -3572,8 +3572,8 @@ public class ThirdPartyManager
         }
       
       DNBOToken subscriberStoredToken = (DNBOToken) subscriberToken;
-      List<String> sss = subscriberStoredToken.getScoringStrategyIDs();
-      if (sss == null)
+      String presentationStrategyID = subscriberStoredToken.getPresentationStrategyID();
+      if (presentationStrategyID == null)
         {
           log.error(RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericDescription()+" null value");
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode());
@@ -3582,11 +3582,10 @@ public class ThirdPartyManager
           generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str, API.getCustomerNBOs);
           return JSONUtilities.encodeObject(response);                    
         }
-      String strategyID = sss.get(0); // MK : not sure why we could have >1, only consider first one
-      ScoringStrategy scoringStrategy = (ScoringStrategy) scoringStrategyService.getStoredScoringStrategy(strategyID);
-      if (scoringStrategy == null)
+      PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
+      if (presentationStrategy == null)
         {
-          log.error(RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericDescription()+" unknown id : "+strategyID);
+          log.error(RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericDescription()+" unknown id : "+presentationStrategyID);
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode());
           String str = RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseMessage();
           response.put(GENERIC_RESPONSE_MSG, str);
@@ -3604,10 +3603,11 @@ public class ThirdPartyManager
           // Here we have no saleschannel (we pass null), this means only the first salesChannelsAndPrices of the offer will be used and returned.  
           Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(
               now, null,
-              subscriberProfile, scoringStrategy,
+              subscriberProfile, presentationStrategy,
               productService, productTypeService,
               voucherService, voucherTypeService,
               catalogCharacteristicService,
+              scoringStrategyService,
               propensityDataReader,
               subscriberGroupEpochReader,
               segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
@@ -3624,7 +3624,6 @@ public class ThirdPartyManager
               String channelID = "channelID";
               String userID = "0"; //TODO : fixthis
               String callUniqueIdentifier = "";
-              String presentationStrategyID = strategyID; // HACK, see above
               String controlGroupState = "controlGroupState";
               String featureID = API.getCustomerNBOs.getMethodIndex()+"";
               String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation(); 
@@ -3640,7 +3639,7 @@ public class ThirdPartyManager
                   positions.add(new Integer(position));
                   position++;
                   presentedOfferScores.add(1.0);
-                  scoringStrategyIDs.add(strategyID);
+               // TODO scoringStrategyIDs.add(strategyID);
                 }
               String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
               int transactionDurationMs = 0; // TODO
