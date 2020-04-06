@@ -21044,7 +21044,7 @@ public class GUIManager
                   tokenStream = tokenStream.filter(token -> tokenStatusForStreams.equalsIgnoreCase(token.getTokenStatus().getExternalRepresentation()));
                 }
               tokensJson = tokenStream
-                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, offerObjectiveService, loyaltyProgramService))
+                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService))
                   .collect(Collectors.toList());
             }
 
@@ -21278,7 +21278,7 @@ public class GUIManager
            *  decorate and response
            *
            *****************************************/
-          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, offerObjectiveService, loyaltyProgramService);
+          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService);
           response.put("responseCode", "ok");
         }
     }
