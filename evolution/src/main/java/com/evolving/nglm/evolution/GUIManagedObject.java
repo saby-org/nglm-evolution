@@ -179,7 +179,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(Report.serde());
     guiManagedObjectSerdes.add(MailTemplate.serde());
     guiManagedObjectSerdes.add(SMSTemplate.serde());
-    guiManagedObjectSerdes.add(PushTemplate.serde());
+//    guiManagedObjectSerdes.add(PushTemplate.serde());
     guiManagedObjectSerdes.add(DialogTemplate.serde());
     guiManagedObjectSerdes.add(UploadedFile.serde());
     guiManagedObjectSerdes.add(Target.serde());

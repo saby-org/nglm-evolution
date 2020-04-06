@@ -23,7 +23,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-public class PushTemplate extends SubscriberMessageTemplate
+public class PushTemplateOLD extends SubscriberMessageTemplate
 {
   /*****************************************
   *
@@ -83,7 +83,7 @@ public class PushTemplate extends SubscriberMessageTemplate
   *
   *****************************************/
 
-  public PushTemplate(SchemaAndValue schemaAndValue, String communicationChannelID)
+  public PushTemplateOLD(SchemaAndValue schemaAndValue, String communicationChannelID)
   {
     super(schemaAndValue);
     this.communicationChannelID = communicationChannelID;
@@ -141,7 +141,7 @@ public class PushTemplate extends SubscriberMessageTemplate
   *
   *****************************************/
 
-  public PushTemplate(CommunicationChannelService communicationChannelService, JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
+  public PushTemplateOLD(CommunicationChannelService communicationChannelService, JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
   {
     /*****************************************
     *

@@ -14603,6 +14603,7 @@ public class GUIManager
   *
   *****************************************/
 
+  @Deprecated
   private JSONObject processPutPushTemplate(String userID, JSONObject jsonRoot)
   {
     /****************************************
@@ -14666,7 +14667,7 @@ public class GUIManager
         *
         ****************************************/
 
-        PushTemplate pushTemplate = new PushTemplate(communicationChannelService, jsonRoot, epoch, existingTemplate);
+        DialogTemplate pushTemplate = new DialogTemplate(communicationChannelService, jsonRoot, epoch, existingTemplate);
 
         /*****************************************
         *
@@ -14694,14 +14695,14 @@ public class GUIManager
           {
             if (! pushTemplate.getReadOnly())
               {
-                PushTemplate readOnlyCopy = (PushTemplate) SubscriberMessageTemplate.newReadOnlyCopy(pushTemplate, subscriberMessageTemplateService, communicationChannelService);
-                pushTemplate.setReadOnlyCopyID(readOnlyCopy.getPushTemplateID());
+                DialogTemplate readOnlyCopy = (DialogTemplate) SubscriberMessageTemplate.newReadOnlyCopy(pushTemplate, subscriberMessageTemplateService, communicationChannelService);
+                pushTemplate.setReadOnlyCopyID(readOnlyCopy.getDialogTemplateID());
                 subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null);
               }
           }
         else if (existingTemplate.getAccepted())
           {
-            pushTemplate.setReadOnlyCopyID(((PushTemplate) existingTemplate).getReadOnlyCopyID());
+            pushTemplate.setReadOnlyCopyID(((DialogTemplate) existingTemplate).getReadOnlyCopyID());
           }
 
         /*****************************************
@@ -14718,7 +14719,7 @@ public class GUIManager
         *
         *****************************************/
 
-        response.put("id", pushTemplate.getPushTemplateID());
+        response.put("id", pushTemplate.getDialogTemplateID());
         response.put("accepted", pushTemplate.getAccepted());
         response.put("processing", subscriberMessageTemplateService.isActiveSubscriberMessageTemplate(pushTemplate, now));
         response.put("responseCode", "ok");
@@ -24045,19 +24046,19 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             }
           break;
 
-        case "pushTemplates_app":
-          if (includeDynamic)
-            {
-              filterPushTemplates("3", result, now);  //Note : "3" is the id of the communication channel (defined in deployment.json)
-            }
-          break;
-          
-        case "pushTemplates_USSD":
-          if (includeDynamic)
-            {
-              filterPushTemplates("4", result, now);  //Note : "4" is the id of the communication channel (defined in deployment.json)
-            }
-          break;
+//        case "pushTemplates_app":
+//          if (includeDynamic)
+//            {
+//              filterPushTemplates("3", result, now);  //Note : "3" is the id of the communication channel (defined in deployment.json)
+//            }
+//          break;
+//          
+//        case "pushTemplates_USSD":
+//          if (includeDynamic)
+//            {
+//              filterPushTemplates("4", result, now);  //Note : "4" is the id of the communication channel (defined in deployment.json)
+//            }
+//          break;
 
         case "scoringStrategies":
           if (includeDynamic)
@@ -24323,29 +24324,29 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     return result;
   }
 
-  @Deprecated
-  private void filterPushTemplates(String communicationChannelID, List<JSONObject> result, Date now){
-    for (SubscriberMessageTemplate messageTemplate : subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now))
-      {
-        if (messageTemplate.getAccepted() && !messageTemplate.getInternalOnly())
-          {
-            switch (messageTemplate.getTemplateType())
-            {
-            case "push":
-              PushTemplate pushTemplate = (PushTemplate) messageTemplate;
-              if(pushTemplate.getCommunicationChannelID().equals(communicationChannelID)){
-                HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                availableValue.put("id", messageTemplate.getSubscriberMessageTemplateID());
-                //TODO : Gui is not sending the display field yet. Change this when GUI will be updated ...
-                //availableValue.put("display", messageTemplate.getSubscriberMessageTemplateDisplay());
-                availableValue.put("display", ((messageTemplate.getSubscriberMessageTemplateDisplay() != null && !messageTemplate.getSubscriberMessageTemplateDisplay().isEmpty()) ? messageTemplate.getSubscriberMessageTemplateDisplay() : messageTemplate.getSubscriberMessageTemplateName()));
-                result.add(JSONUtilities.encodeObject(availableValue));
-                break;
-              }
-            }
-          }
-      }
-  }
+//  @Deprecated
+//  private void filterPushTemplates(String communicationChannelID, List<JSONObject> result, Date now){
+//    for (SubscriberMessageTemplate messageTemplate : subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now))
+//      {
+//        if (messageTemplate.getAccepted() && !messageTemplate.getInternalOnly())
+//          {
+//            switch (messageTemplate.getTemplateType())
+//            {
+//            case "push":
+//              PushTemplate pushTemplate = (PushTemplate) messageTemplate;
+//              if(pushTemplate.getCommunicationChannelID().equals(communicationChannelID)){
+//                HashMap<String,Object> availableValue = new HashMap<String,Object>();
+//                availableValue.put("id", messageTemplate.getSubscriberMessageTemplateID());
+//                //TODO : Gui is not sending the display field yet. Change this when GUI will be updated ...
+//                //availableValue.put("display", messageTemplate.getSubscriberMessageTemplateDisplay());
+//                availableValue.put("display", ((messageTemplate.getSubscriberMessageTemplateDisplay() != null && !messageTemplate.getSubscriberMessageTemplateDisplay().isEmpty()) ? messageTemplate.getSubscriberMessageTemplateDisplay() : messageTemplate.getSubscriberMessageTemplateName()));
+//                result.add(JSONUtilities.encodeObject(availableValue));
+//                break;
+//              }
+//            }
+//          }
+//      }
+//  }
   
   /*****************************************
   *
@@ -24675,7 +24676,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             SubscriberMessageTemplate subscriberMessageTemplate = null;
             if (existingSubscriberMessageTemplate instanceof SMSTemplate) subscriberMessageTemplate = new SMSTemplate(communicationChannelService, existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
             if (existingSubscriberMessageTemplate instanceof MailTemplate) subscriberMessageTemplate = new MailTemplate(communicationChannelService, existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
-            if (existingSubscriberMessageTemplate instanceof PushTemplate) subscriberMessageTemplate = new PushTemplate(communicationChannelService, existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
+//            if (existingSubscriberMessageTemplate instanceof PushTemplate) subscriberMessageTemplate = new PushTemplate(communicationChannelService, existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
             if (existingSubscriberMessageTemplate instanceof DialogTemplate) subscriberMessageTemplate = new DialogTemplate(communicationChannelService, existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
             if ( !(existingSubscriberMessageTemplate instanceof IncompleteObject) && subscriberMessageTemplate == null) throw new ServerRuntimeException("illegal subscriberMessageTemplate");            
             modifiedSubscriberMessageTemplate = subscriberMessageTemplate;

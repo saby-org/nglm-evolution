@@ -1840,6 +1840,11 @@ public class Journey extends GUIManagedObject
                 boundParameters.put(parameterName, pushMessageValue);
                 break;
 
+              case DialogMessageParameter:
+                DialogMessageFromGUI dialogMessageValue = new DialogMessageFromGUI(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
+                boundParameters.put(parameterName, dialogMessageValue);
+                break;
+
               case WorkflowParameter:
                 WorkflowParameter workflowParameterValue = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);
                 boundParameters.put(parameterName, workflowParameterValue);
@@ -1922,6 +1927,7 @@ public class Journey extends GUIManagedObject
               case SMSMessageParameter:
               case EmailMessageParameter:
               case PushMessageParameter:
+              case DialogMessageParameter:
               case WorkflowParameter:
                 switch (parameterExpressionValue.getType())
                   {
@@ -2619,6 +2625,11 @@ public class Journey extends GUIManagedObject
                 PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
                 nodeParameters.put(parameterName, pushMessageValue);
                 break;
+                
+              case DialogMessageParameter:
+                DialogMessageFromGUI dialogMessageValue = new DialogMessageFromGUI(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
+                nodeParameters.put(parameterName, dialogMessageValue);
+                break;
 
               case WorkflowParameter:
                 WorkflowParameter workflowParameter = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);
@@ -2727,6 +2738,7 @@ public class Journey extends GUIManagedObject
               case SMSMessageParameter:
               case EmailMessageParameter:
               case PushMessageParameter:
+              case DialogMessageParameter:
               case WorkflowParameter:
                 switch (parameterExpressionValue.getType())
                   {
@@ -2989,6 +3001,11 @@ public class Journey extends GUIManagedObject
                 PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
                 outputConnectorParameters.put(parameterName, pushMessageValue);
                 break;
+                
+              case DialogMessageParameter:
+                DialogMessageFromGUI dialogMessageValue = new DialogMessageFromGUI(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
+                outputConnectorParameters.put(parameterName, dialogMessageValue);
+                break;
 
               case WorkflowParameter:
                 WorkflowParameter workflowParameter = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);
@@ -3097,6 +3114,7 @@ public class Journey extends GUIManagedObject
               case SMSMessageParameter:
               case EmailMessageParameter:
               case PushMessageParameter:
+              case DialogMessageParameter:
               case WorkflowParameter:
                 switch (parameterExpressionValue.getType())
                   {

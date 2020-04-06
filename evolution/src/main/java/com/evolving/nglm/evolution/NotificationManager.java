@@ -598,45 +598,15 @@ public class NotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, getChannelID());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
-    
-    /****************************************
-    *
-    *  getEffectiveDeliveryTime
-    *
-    ****************************************/
-
-    public Date getEffectiveDeliveryTime(NotificationManager NotificationManager, String communicationChannelID, Date now)
+	
+	public void resetDeliveryRequestAfterReSchedule()
     {
-      //
-      //  retrieve delivery time configuration
-      //
+      this.setReturnCode(MessageStatus.PENDING.getReturnCode());
+      this.setMessageStatus(MessageStatus.PENDING);
+      
+    }   
 
-      CommunicationChannel channel = (CommunicationChannel) NotificationManager.getCommunicationChannelService().getActiveCommunicationChannel(communicationChannelID, now);
-      CommunicationChannelBlackoutPeriod blackoutPeriod = NotificationManager.getBlackoutService().getActiveCommunicationChannelBlackout("blackoutPeriod", now);
-
-      //
-      //  iterate until a valid date is found (give up after 7 days and reschedule even if not legal)
-      //
-
-      Date maximumDeliveryDate = RLMDateUtils.addDays(now, 7, Deployment.getBaseTimeZone());
-      Date deliveryDate = now;
-      while (deliveryDate.before(maximumDeliveryDate))
-        {
-          Date nextDailyWindowDeliveryDate = (channel != null) ? NotificationManager.getCommunicationChannelService().getEffectiveDeliveryTime(channel.getGUIManagedObjectID(), deliveryDate) : deliveryDate;
-          Date nextBlackoutWindowDeliveryDate = (blackoutPeriod != null) ? NotificationManager.getBlackoutService().getEffectiveDeliveryTime(blackoutPeriod.getGUIManagedObjectID(), deliveryDate) : deliveryDate;
-          Date nextDeliveryDate = nextBlackoutWindowDeliveryDate.after(nextDailyWindowDeliveryDate) ? nextBlackoutWindowDeliveryDate : nextDailyWindowDeliveryDate;
-          if (nextDeliveryDate.after(deliveryDate))
-            deliveryDate = nextDeliveryDate;
-          else
-            break;
-        }
-
-      //
-      //  resolve
-      //
-
-      return deliveryDate;
-    }
+    
     @Override
     public String toString()
     {
@@ -788,7 +758,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
           request = new NotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID);
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
-          request.setNotificationStatus(evolutionEventContext.getSubscriberState().getNotificationStatus());
+          request.setNotificationHistory(evolutionEventContext.getSubscriberState().getNotificationHistory());
         }
       else
         {
@@ -927,7 +897,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
 
   @Override public boolean filterRequest(DeliveryRequest request)
   {
-    return contactPolicyProcessor.ensureContactPolicy(request,this,log);
+    return false; //contactPolicyProcessor.ensureContactPolicy(request,this,log);
   }
 
   /*****************************************

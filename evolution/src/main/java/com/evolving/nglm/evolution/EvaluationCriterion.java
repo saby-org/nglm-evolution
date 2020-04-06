@@ -119,7 +119,10 @@ public class EvaluationCriterion
     SMSMessageParameter("smsMessage"),
     EmailMessageParameter("emailMessage"),
     PushMessageParameter("pushMessage"),
+    DialogMessageParameter("dialogMessage"),
     WorkflowParameter("workflow"),
+    HTMLStringParameter("html_string"),
+    MultiStringParameter("multi_string"),
 
     //
     //  only for criterionArguments
