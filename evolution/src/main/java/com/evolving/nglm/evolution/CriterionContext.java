@@ -66,6 +66,8 @@ public class CriterionContext
   public static final CriterionContext Presentation = new CriterionContext(CriterionContextType.Presentation);
   public static final String EVALUATION_WK_DAY_ID = "evaluation.weekday";
   public static final String EVALUATION_TIME_ID = "evaluation.time";
+  public static final String EVALUATION_MONTH_ID = "evaluation.month";
+  public static final String EVALUATION_DAY_OF_MONTH_ID = "evaluation.dayofmonth";
 
   /*****************************************
   *
@@ -86,6 +88,8 @@ public class CriterionContext
   private static CriterionField evaluationDate;
   private static CriterionField evaluationWeekday;
   private static CriterionField evaluationTime;
+  private static CriterionField evaluationMonth;
+  private static CriterionField evaluationDayOfMonth;
   private static CriterionField evaluationEventName;
   private static CriterionField internalRandom100;
   private static CriterionField internalFalse;
@@ -119,7 +123,7 @@ public class CriterionContext
     try
       {
         Map<String,Object> evaluationWeekdayJSON = new LinkedHashMap<String,Object>();
-        evaluationWeekdayJSON.put("id", "evaluation.weekday");
+        evaluationWeekdayJSON.put("id", EVALUATION_WK_DAY_ID);
         evaluationWeekdayJSON.put("display", "Evaluation Day Of Week");
         evaluationWeekdayJSON.put("dataType", "stringSet");
         evaluationWeekdayJSON.put("retriever", "getEvaluationWeekDay");
@@ -140,12 +144,54 @@ public class CriterionContext
     try
       {
         Map<String,Object> evaluationTimeJSON = new LinkedHashMap<String,Object>();
-        evaluationTimeJSON.put("id", "evaluation.time");
+        evaluationTimeJSON.put("id", EVALUATION_TIME_ID);
         evaluationTimeJSON.put("display", "Evaluation Time");
         evaluationTimeJSON.put("dataType", "time");
         evaluationTimeJSON.put("retriever", "getEvaluationTime");
         evaluationTimeJSON.put("internalOnly", false);
         evaluationTime  = new CriterionField(JSONUtilities.encodeObject(evaluationTimeJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
+    //
+    //  evaluationMonth
+    //
+
+    try
+      {
+        Map<String,Object> evaluationMonthJSON = new LinkedHashMap<String,Object>();
+        evaluationMonthJSON.put("id", EVALUATION_MONTH_ID);
+        evaluationMonthJSON.put("display", "Evaluation Month");
+        evaluationMonthJSON.put("dataType", "stringSet");
+        evaluationMonthJSON.put("retriever", "getEvaluationMonth");
+        ArrayList<String> availableValues = new ArrayList<>(); availableValues.add("#months#");
+        evaluationMonthJSON.put("availableValues", JSONUtilities.encodeArray(availableValues));
+        evaluationMonthJSON.put("internalOnly", false);
+        evaluationMonth  = new CriterionField(JSONUtilities.encodeObject(evaluationMonthJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
+    //
+    //  evaluationDayOfMonth
+    //
+
+    try
+      {
+        Map<String,Object> evaluationDayOfMonthJSON = new LinkedHashMap<String,Object>();
+        evaluationDayOfMonthJSON.put("id", EVALUATION_DAY_OF_MONTH_ID);
+        evaluationDayOfMonthJSON.put("display", "Evaluation Day Of Month");
+        evaluationDayOfMonthJSON.put("dataType", "integer");
+        evaluationDayOfMonthJSON.put("retriever", "getEvaluationDayOfMonth");
+        evaluationDayOfMonthJSON.put("minValue", new Integer(1));
+        evaluationDayOfMonthJSON.put("maxValue", new Integer(31));
+        evaluationDayOfMonthJSON.put("internalOnly", false);
+        evaluationDayOfMonth  = new CriterionField(JSONUtilities.encodeObject(evaluationDayOfMonthJSON));
       }
     catch (GUIManagerException e)
       {
@@ -670,6 +716,8 @@ public class CriterionContext
           result.put(internalRandom100.getID(), internalRandom100);
           result.put(internalFalse.getID(), internalFalse);
           result.put(internalTargets.getID(), internalTargets);
+          result.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
+          result.put(evaluationMonth.getID(), evaluationMonth);
           result.putAll(Deployment.getProfileCriterionFields());
           break;
 
