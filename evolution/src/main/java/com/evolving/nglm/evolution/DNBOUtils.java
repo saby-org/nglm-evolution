@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -214,7 +215,7 @@ public class DNBOUtils
     *  handleAllocate
     *
     *****************************************/
-    // returns TokenChange if error, otherwise Collection<ProposedOfferDetails>
+    // returns an array of Action if error, otherwise Collection<ProposedOfferDetails>
     protected Object handleAllocate(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, ScoringStrategy scoringStrategy, DNBOToken token, TokenType tokenType, ContextUpdate tokenContextUpdate, String action)
     {
       /*****************************************
@@ -229,7 +230,7 @@ public class DNBOUtils
         {
           String str = "maxNumberofPlays has been reached " + maxNumberofPlays;
             log.error(str);
-            return generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), action, str);
+            return invalidPurchase(evolutionEventContext, subscriberEvaluationRequest, token, action, str).toArray(new Action[0]);
         }
       token.setBoundCount(boundCount+1);
       
@@ -273,7 +274,7 @@ public class DNBOUtils
         {
           String str = "unknown offer while scoring " + e.getLocalizedMessage();
           log.error(str);
-          return generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), action, str);
+          return invalidPurchase(evolutionEventContext, subscriberEvaluationRequest, token, action, str).toArray(new Action[0]);
         }
 
       /*****************************************
@@ -293,7 +294,7 @@ public class DNBOUtils
             {
               String str = "invalid offer returned by scoring " + offerId;
               log.error(str);
-              return generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), action, str);
+              return invalidPurchase(evolutionEventContext, subscriberEvaluationRequest, token, action, str).toArray(new Action[0]);
             }
           tokenContextUpdate.getParameters().put("action.presented.offer." + (index+1), offer.getDisplay());
           if (++index == MAX_PRESENTED_OFFERS)
@@ -430,12 +431,12 @@ public class DNBOUtils
       *****************************************/
       
       Object resAllocate = handleAllocate(evolutionEventContext, subscriberEvaluationRequest, scoringStrategy, token, tokenType, tokenContextUpdate, TokenChange.ALLOCATE);
-      if (resAllocate instanceof TokenChange)
+      if (resAllocate instanceof Action[])
         {
-          return Collections.<Action>singletonList((TokenChange) resAllocate);
+          return Arrays.asList((Action[]) resAllocate);
         }
       token.setTokenStatus(TokenStatus.Bound);
-      token.setAutoBounded(true);
+      token.setAutoBound(true);
       token.setAutoRedeemed(false);
 
       /*****************************************
@@ -495,9 +496,9 @@ public class DNBOUtils
       *****************************************/
       
       Object resAllocate = handleAllocate(evolutionEventContext, subscriberEvaluationRequest, scoringStrategy, token, tokenType, tokenUpdate, TokenChange.REDEEM);
-      if (resAllocate instanceof TokenChange)
+      if (resAllocate instanceof Action[])
         {
-          return Collections.<Action>singletonList((TokenChange) resAllocate);
+          return Arrays.asList((Action[]) resAllocate);
         }
       Collection<ProposedOfferDetails> presentedOfferDetailsList = (Collection<ProposedOfferDetails>) resAllocate;
       
@@ -505,7 +506,7 @@ public class DNBOUtils
         {
           String str = "cannot select first offer because list is empty";
           log.error(str);
-          return Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), TokenChange.REDEEM, str));
+          return invalidPurchase(evolutionEventContext, subscriberEvaluationRequest, token, TokenChange.REDEEM, str);
         }
 
       //   select 1st offer of the list
@@ -518,12 +519,12 @@ public class DNBOUtils
         {
           String str = "invalid offer returned by scoring " + offerID; 
           log.error(str);
-          return Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), TokenChange.REDEEM, str));
+          return invalidPurchase(evolutionEventContext, subscriberEvaluationRequest, token, TokenChange.REDEEM, str);
         }
       tokenUpdate.getParameters().put("action.accepted.offer", offer.getDisplay());
       
       token.setTokenStatus(TokenStatus.Redeemed);
-      token.setAutoBounded(true);
+      token.setAutoBound(true);
       token.setAutoRedeemed(true);
       token.setRedeemedDate(evolutionEventContext.now());
       
@@ -584,7 +585,7 @@ public class DNBOUtils
         {
           String str = "rank must be at least 1, found " + rankParam; 
           log.error(str);
-          return Collections.<Action>emptyList();
+          return invalidPurchase(evolutionEventContext, subscriberEvaluationRequest, null, null, null);
         }
       int rank = rankParam - 1;
 
@@ -595,7 +596,7 @@ public class DNBOUtils
         {
           String str = "internal error : cannot find current journey ID"; 
           log.error(str);
-          return Collections.<Action>emptyList();
+          return invalidPurchase(evolutionEventContext, subscriberEvaluationRequest, null, null, null);
         }
       for (Token token : currentTokens)
         {
@@ -630,7 +631,7 @@ public class DNBOUtils
         }
       if (rank >= presentedOffers.size())
         {
-          String str = "presented offers list does not contain enough elements : " + presentedOffers.size() + " , expected > " + rank; 
+          String str = "presented offers list does not contain enough elements : " + presentedOffers.size() + " , expected >= " + rankParam; 
           log.error(str);
           return invalidPurchase(evolutionEventContext, subscriberEvaluationRequest, token, TokenChange.REDEEM, str);
         }
@@ -660,7 +661,7 @@ public class DNBOUtils
       result.add(tokenChange);
       
       token.setTokenStatus(TokenStatus.Redeemed);
-      token.setAutoBounded(true);
+      token.setAutoBound(true);
       token.setAutoRedeemed(true);
       token.setRedeemedDate(evolutionEventContext.now());
       

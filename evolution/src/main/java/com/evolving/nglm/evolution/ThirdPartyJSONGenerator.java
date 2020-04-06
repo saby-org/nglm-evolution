@@ -285,7 +285,7 @@ public class ThirdPartyJSONGenerator
       {
         DNBOToken dnboToken = (DNBOToken) token;
         //tokenMap.put("presentationStrategyID", dnboToken.getPresentationStrategyID());
-        tokenMap.put("isAutoBounded", dnboToken.isAutoBounded());
+        tokenMap.put("isAutoBound", dnboToken.isAutoBound());
         tokenMap.put("isAutoRedeemed", dnboToken.isAutoRedeemed());
         
         ArrayList<Object> scoringStrategiesList = new ArrayList<>();
