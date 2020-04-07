@@ -146,16 +146,16 @@
         "width"                  : 70,
         "enableCycle"            : true,
         "allowContextVariables"  : false,
-        "outputType"             : "dynamic",
+        "outputType"             : "static",
         "outputConnectors"       : 
           [ 
-            { "name" : "wait",   "display" : "Wait",   "evaluationPriority" : "last",  "transitionCriteria" : [ ], "additionalCriteria" : "node.parameter.additionalcriteria" } 
+            { "name" : "wait",   "display" : "Wait",   "evaluationPriority" : "last",  "transitionCriteria" : [ "link.parameter.profilecriteria" ], "additionalCriteria" : "link.parameter.profilecriteria" } 
           ],
         "parameters"             : 
           [ 
             { 
-              "id" : "node.parameter.additionalcriteria", 
-              "display" : "Additional Criteria", 
+              "id" : "link.parameter.profilecriteria", 
+              "display" : "Waiting Criteria", 
               "dataType" : "evaluationCriteria",
               "width" : "100%", 
               "multiple" : false, 
