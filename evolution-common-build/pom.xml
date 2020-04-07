@@ -25,14 +25,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.1_1</version>
+    <version>1.4.1_1-200407</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>1.4.1_1</nglm.core.version>
+    <nglm.core.version>1.4.1_1-200407</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
