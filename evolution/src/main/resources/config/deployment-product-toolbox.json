@@ -69,7 +69,7 @@
               "multiple" : false, 
               "mandatory" : true,
               "availableValues" : null,
-              "defaultValue" : null
+              "defaultValue" : 0
             },
             { 
               "id" : "node.parameter.unit",     
@@ -87,7 +87,7 @@
                   { "id" : "week",   "display" : "Weeks" },
                   { "id" : "month",  "display" : "Months" }
                 ],
-              "defaultValue" : null
+              "defaultValue" : "date"
             }
           ]
       },
