@@ -149,7 +149,7 @@
         "outputType"             : "static",
         "outputConnectors"       : 
           [ 
-            { "name" : "wait",   "display" : "Wait",   "evaluationPriority" : "last",  "transitionCriteria" : [ "link.parameter.profilecriteria" ], "additionalCriteria" : "link.parameter.profilecriteria" } 
+            { "name" : "wait",   "display" : "Wait",   "evaluationPriority" : "last",  "transitionCriteria" : [ ], "additionalCriteria" : "link.parameter.profilecriteria" } 
           ],
         "parameters"             : 
           [ 
@@ -157,6 +157,7 @@
               "id" : "link.parameter.profilecriteria", 
               "display" : "Waiting Criteria", 
               "dataType" : "evaluationCriteria",
+              "retrieveAdditionalCriteriaFields" : [ "" ],
               "width" : "100%", 
               "multiple" : false, 
               "mandatory" : true,
