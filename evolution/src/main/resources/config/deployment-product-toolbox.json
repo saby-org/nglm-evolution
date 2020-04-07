@@ -36,8 +36,8 @@
 
       {
         "id"               : "103",
-        "name"             : "wait.tilltime",
-        "display"          : "Wait - Till Time - Final",
+        "name"             : "wait",
+        "display"          : "Wait",
         "icon"             : "jmr_components/styles/images/objects/1-3-wait.png",
         "color"            : "#c72285", 
         "height"           : 70,
@@ -103,65 +103,9 @@
             }
           ]
       },
-
-      {
-        "id"               : "104",
-        "name"             : "wait.tilldate",
-        "display"          : "Wait - Till Date",
-        "icon"             : "jmr_components/styles/images/objects/1-3-wait.png",
-        "color"            : "#c72285", 
-        "height"           : 70,
-        "width"            : 70,
-        "enableCycle"      : true,
-        "outputType"       : "static",
-        "outputConnectors" : 
-          [ 
-            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "node.parameter.schedule" } } ] }
-          ],
-        "parameters"       :
-          [
-            { 
-              "id" : "node.parameter.schedule", 
-              "display" : "Wait Until", 
-              "dataType" : "date", 
-              "width" : "50%", 
-              "multiple" : false, 
-              "mandatory" : true,
-              "availableValues" : null,
-              "defaultValue" : null
-            },
-            { 
-              "id" : "node.parameter.duration", 
-              "display" : "Wait Duration", 
-              "dataType" : "integer", 
-              "width" : "50%", 
-              "multiple" : false, 
-              "mandatory" : true,
-              "availableValues" : null,
-              "defaultValue" : null
-            },
-            { 
-              "id" : "node.parameter.unit",     
-              "display" : "Units",         
-              "dataType" : "string",  
-              "width" : "50%", 
-              "multiple" : false, 
-              "mandatory" : true, 
-              "availableValues" : 
-                [
-                  { "id" : "minute", "display" : "Minutes" },
-                  { "id" : "hour",   "display" : "Hours" },
-                  { "id" : "day",    "display" : "Days" },
-                  { "id" : "week",   "display" : "Weeks" },
-                  { "id" : "month",  "display" : "Months" }
-                ],
-              "defaultValue" : null
-            }
-          ]
-      },
       
       {
-        "id"                     : "105",
+        "id"                     : "104",
         "name"                   : "schedule",
         "display"                : "Schedule",
         "icon"                   : "jmr_components/styles/images/objects/1-2-schedule.png",
@@ -1110,9 +1054,8 @@
           [
             { "id" : "101", "name" : "start" },
             { "id" : "102", "name" : "end" },
-            { "id" : "103", "name" : "wait.tilltime" },
-            { "id" : "104", "name" : "wait.tilldate" },
-            { "id" : "105", "name" : "schedule" }
+            { "id" : "103", "name" : "wait" },
+            { "id" : "104", "name" : "schedule" }
           ]
       },
 
@@ -1164,9 +1107,8 @@
           [
             { "id" : "101", "name" : "start" },
             { "id" : "102", "name" : "end" },
-            { "id" : "103", "name" : "wait.tilltime" },
-            { "id" : "104", "name" : "wait.tilldate" },
-            { "id" : "105", "name" : "schedule" }
+            { "id" : "103", "name" : "wait" },
+            { "id" : "104", "name" : "schedule" }
           ]
       },
       {
@@ -1238,9 +1180,8 @@
           [
             { "id" : "101", "name" : "start" },
             { "id" : "102", "name" : "end" },
-            { "id" : "103", "name" : "wait.tilltime" },
-            { "id" : "104", "name" : "wait.tilldate" },
-            { "id" : "105", "name" : "schedule" }
+            { "id" : "103", "name" : "wait" },
+            { "id" : "104", "name" : "schedule" }
           ]
       },
       {

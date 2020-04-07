@@ -1676,7 +1676,7 @@ public abstract class Expression
       //  validate number of arguments
       //
       
-      if (arguments.size() != 4) throw new ExpressionTypeCheckException("type exception");
+      if (arguments.size() != 5) throw new ExpressionTypeCheckException("type exception");
 
       //
       //  arguments
