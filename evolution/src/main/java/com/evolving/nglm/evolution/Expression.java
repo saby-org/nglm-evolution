@@ -156,6 +156,7 @@ public abstract class Expression
     DateConstantFunction("dateConstant"),
     TimeConstantFunction("timeConstant"),
     DateAddFunction("dateAdd"),
+    DateAddOnUnitFunction("dateAddOnUnit"),
     RoundFunction("round"),
     RoundUpFunction("roundUp"),
     RoundDownFunction("roundDown"),
@@ -1230,6 +1231,10 @@ public abstract class Expression
             typeCheckDateAddFunction(baseTimeUnit);
             break;
             
+          case DateAddOnUnitFunction:
+            typeCheckDateAddOnUnitFunction(baseTimeUnit);
+            break;
+            
           case RoundFunction:
           case RoundUpFunction:
           case RoundDownFunction:
@@ -1652,6 +1657,136 @@ public abstract class Expression
       setTagFormat(arg1.getTagFormat());
       setTagMaxLength(arg1.getTagMaxLength());
     }
+    
+    //
+    //  typeCheckDateAddOnUnitFunction
+    //
+    
+    
+    private void typeCheckDateAddOnUnitFunction(TimeUnit baseTimeUnit)
+    {
+      log.info("RAJ K typeCheckDateAddOnUnitFunction() enter"); 
+      /****************************************
+      *
+      *  arguments
+      *
+      ****************************************/
+      
+      //
+      //  validate number of arguments
+      //
+      
+      if (arguments.size() != 4) throw new ExpressionTypeCheckException("type exception");
+
+      //
+      //  arguments
+      //
+      
+      Expression arg1 = (arguments.size() > 0) ? arguments.get(0) : null;
+      Expression arg2 = (arguments.size() > 1) ? arguments.get(1) : null;
+      Expression arg3 = (arguments.size() > 2) ? arguments.get(2) : null;
+      Expression arg4 = (arguments.size() > 3) ? arguments.get(3) : null;
+
+      //
+      //  validate arg1
+      //
+      
+      switch (arg1.getType())
+        {
+          case DateExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+      
+      //
+      //  validate arg2
+      //
+      
+      switch (arg2.getType())
+        {
+          case DateExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+
+      //
+      //  validate arg3
+      //
+      
+      switch (arg3.getType())
+        {
+          case IntegerExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+
+      //
+      //  validate arg4
+      //
+      
+      switch (arg4.getType())
+        {
+          case StringExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+
+      //
+      //  validate baseTimeUnit
+      //
+
+      switch (baseTimeUnit)
+        {
+          case Unknown:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+      
+      /****************************************
+      *
+      *  constant evaluation
+      *
+      ****************************************/
+
+      if (arg4.isConstant())
+        {
+          String arg4Value = (String) arg4.evaluate(null, TimeUnit.Unknown);
+          if ( !"date".equalsIgnoreCase(arg4Value))
+            {
+              switch (TimeUnit.fromExternalRepresentation(arg4Value))
+              {
+                case Instant:
+                case Unknown:
+                  throw new ExpressionTypeCheckException("type exception");
+              }
+            }
+        }
+
+      /****************************************
+      *
+      *  type
+      *
+      ****************************************/
+      
+      setType(ExpressionDataType.DateExpression);
+
+      /*****************************************
+      *
+      *  tagFormat/tagMaxLength
+      *
+      *****************************************/
+
+      setTagFormat(arg1.getTagFormat());
+      setTagMaxLength(arg1.getTagMaxLength());
+      log.info("RAJ K typeCheckDateAddOnUnitFunction() exit"); 
+    }
 
     /*****************************************
     *
@@ -1686,6 +1821,7 @@ public abstract class Expression
       Object arg1Value = (arguments.size() > 0) ? arguments.get(0).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
       Object arg2Value = (arguments.size() > 1) ? arguments.get(1).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
       Object arg3Value = (arguments.size() > 2) ? arguments.get(2).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+      Object arg4Value = (arguments.size() > 3) ? arguments.get(3).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
 
       /*****************************************
       *
@@ -1701,7 +1837,6 @@ public abstract class Expression
             break;
             
           case TimeConstantFunction:
-            //result = preevaluatedResult;
             result = evaluateTimeConstantFunction((String) arg1Value);
             break;
             
@@ -1709,6 +1844,11 @@ public abstract class Expression
             // TODO : don't do roundDown for now, not sure why we could need this
             result = evaluateDateAddFunction((Date) arg1Value, (Number) arg2Value, TimeUnit.fromExternalRepresentation((String) arg3Value), baseTimeUnit, false);
             break;
+            
+          case DateAddOnUnitFunction:
+            result = evaluateDateAddOnUnitFunction((Date) arg1Value, (Date) arg2Value, (Number) arg3Value, (String) arg4Value, baseTimeUnit, false);
+            break;
+            
           case RoundFunction:
           case RoundUpFunction:
           case RoundDownFunction:
@@ -1978,6 +2118,25 @@ public abstract class Expression
       //
       
       return date;
+    }
+    
+    //
+    //  evaluateDateAddOnUnitFunction
+    //
+    
+    private Date evaluateDateAddOnUnitFunction(Date dateAddDate, Date strictScheduleDate, Number arg3Value, String unit, TimeUnit baseTimeUnit, boolean roundDown)
+    {
+      log.info("RAJ K evaluateDateAddOnUnitFunction() {}, {}, {}, {}, {}", dateAddDate, strictScheduleDate, arg3Value, unit, baseTimeUnit); 
+      Date result = null;
+      if ("date".equalsIgnoreCase(unit)) result = strictScheduleDate;
+      else
+        {
+          TimeUnit timeUnit = TimeUnit.fromExternalRepresentation(unit);
+          result = evaluateDateAddFunction(dateAddDate, arg3Value, timeUnit, baseTimeUnit, roundDown);
+        }
+      log.info("RAJ K evaluateDateAddOnUnitFunction() result {}", result); 
+      return result;
+      
     }
 
     /*****************************************
