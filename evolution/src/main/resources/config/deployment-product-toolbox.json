@@ -46,7 +46,7 @@
         "outputType"       : "static",
         "outputConnectors" : 
           [ 
-            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "DateAddOrConstant(node.entryDate, node.parameter.schedule, node.parameter.duration, node.parameter.unit, node.parameter.waitfor)" } } ] }
+            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAddOrConstant(node.entryDate, node.parameter.schedule, node.parameter.duration, node.parameter.unit, node.parameter.waitfor)" } } ] }
           ],
         "parameters"       :
           [
