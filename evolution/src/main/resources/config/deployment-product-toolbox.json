@@ -70,7 +70,7 @@
               "dataType" : "date", 
               "width" : "50%", 
               "multiple" : false, 
-              "mandatory" : true,
+              "mandatory" : false,
               "availableValues" : null,
               "defaultValue" : null
             },
@@ -80,7 +80,7 @@
               "dataType" : "integer", 
               "width" : "50%", 
               "multiple" : false, 
-              "mandatory" : true,
+              "mandatory" : false,
               "availableValues" : null,
               "defaultValue" : 0
             },
@@ -90,7 +90,7 @@
               "dataType" : "string",  
               "width" : "50%", 
               "multiple" : false, 
-              "mandatory" : true, 
+              "mandatory" : false, 
               "availableValues" : 
                 [
                   { "id" : "minute", "display" : "Minutes" },
