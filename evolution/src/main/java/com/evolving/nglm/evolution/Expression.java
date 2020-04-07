@@ -2275,7 +2275,7 @@ public abstract class Expression
       Date result = null;
       if ("date".equalsIgnoreCase(arg5Value)) result = strictScheduleDate;
       else result = evaluateDateAddFunction(dateAddDate, arg3Value, timeUnit, baseTimeUnit, roundDown);
-      log.info("RAJ K evaluateDateAddOrConstantFunction() result {}", result)
+      log.info("RAJ K evaluateDateAddOrConstantFunction() result {}", result);
       return result;
       
     }
