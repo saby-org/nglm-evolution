@@ -155,6 +155,7 @@ public abstract class Expression
   {
     DateConstantFunction("dateConstant"),
     TimeConstantFunction("timeConstant"),
+    TimeAddFunction("timeAdd"),
     DateAddFunction("dateAdd"),
     DateAddOrConstantFunction("dateAddOrConstant"),
     RoundFunction("round"),
@@ -1226,6 +1227,10 @@ public abstract class Expression
           case TimeConstantFunction:
             typeCheckTimeConstantFunction();
             break;
+            
+          case TimeAddFunction:
+            typeCheckTimeAddFunction(baseTimeUnit);
+            break;
 
           case DateAddFunction:
             typeCheckDateAddFunction(baseTimeUnit);
@@ -1658,6 +1663,120 @@ public abstract class Expression
       setTagMaxLength(arg1.getTagMaxLength());
     }
     
+    /*****************************************
+    *
+    *  typeCheckTimeAddFunction
+    *
+    *****************************************/
+
+    private void typeCheckTimeAddFunction(TimeUnit baseTimeUnit)
+    {
+      /****************************************
+      *
+      *  arguments
+      *
+      ****************************************/
+      
+      //
+      //  validate number of arguments
+      //
+      
+      if (arguments.size() != 3) throw new ExpressionTypeCheckException("type exception");
+
+      //
+      //  arguments
+      //
+      
+      Expression arg1 = (arguments.size() > 0) ? arguments.get(0) : null;
+      Expression arg2 = (arguments.size() > 1) ? arguments.get(1) : null;
+      Expression arg3 = (arguments.size() > 2) ? arguments.get(2) : null;
+      
+      log.info("RAJ K typeCheckTimeAddFunction arg1.getType() {}", arg1.getType());
+
+      //
+      //  validate arg1
+      //
+      
+      switch (arg1.getType())
+        {
+          case DateExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+
+      //
+      //  validate arg2
+      //
+      
+      switch (arg2.getType())
+        {
+          case IntegerExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+
+      //
+      //  validate arg3
+      //
+      
+      switch (arg3.getType())
+        {
+          case StringExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+
+      //
+      //  validate baseTimeUnit
+      //
+
+      switch (baseTimeUnit)
+        {
+          case Unknown:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+      
+      /****************************************
+      *
+      *  constant evaluation
+      *
+      ****************************************/
+
+      if (arg3.isConstant())
+        {
+          String arg3Value = (String) arg3.evaluate(null, TimeUnit.Unknown);
+          switch (TimeUnit.fromExternalRepresentation(arg3Value))
+            {
+              case Instant:
+              case Unknown:
+                throw new ExpressionTypeCheckException("type exception");
+            }
+        }
+
+      /****************************************
+      *
+      *  type
+      *
+      ****************************************/
+      
+      setType(ExpressionDataType.TimeExpression);
+
+      /*****************************************
+      *
+      *  tagFormat/tagMaxLength
+      *
+      *****************************************/
+
+      setTagFormat(arg1.getTagFormat());
+      setTagMaxLength(arg1.getTagMaxLength());
+    }
+    
     //
     //  typeCheckDateAddOrConstantFunction
     //
@@ -1848,6 +1967,10 @@ public abstract class Expression
             
           case TimeConstantFunction:
             result = evaluateTimeConstantFunction((String) arg1Value);
+            break;
+            
+          case TimeAddFunction:
+            result = evaluateTimeAddFunction((Date) arg1Value, (Number) arg2Value, TimeUnit.fromExternalRepresentation((String) arg3Value), baseTimeUnit, false);
             break;
             
           case DateAddFunction:
@@ -2131,6 +2254,16 @@ public abstract class Expression
     }
     
     //
+    //  evaluateTimeAddFunction
+    //
+    
+    private Date evaluateTimeAddFunction(Date date, Number number, TimeUnit timeUnit, TimeUnit baseTimeUnit, boolean roundDown)
+    {
+      return evaluateDateAddFunction(date, number, timeUnit, baseTimeUnit, roundDown);
+    }
+    
+    
+    //
     //  evaluateDateAddOrConstantFunction
     //
     
@@ -2211,6 +2344,7 @@ public abstract class Expression
             break;
             
           case TimeConstantFunction:
+          case TimeAddFunction:
           default:
             throw new ExpressionEvaluationException();
         }
