@@ -205,7 +205,7 @@
               <exportAntProperties>true</exportAntProperties>
               <target>
                 <copy todir="${project.build.directory}/assembled-resources/config/logger" force="yes">
-                  <fileset dir="${project.basedir}/src/main/resources/config/logger" includes="log4j-*.*"/>
+                  <fileset dir="${project.basedir}/src/main/resources/config/logger" includes="log4j-*.xml"/>
                 </copy>
               </target>
             </configuration>
