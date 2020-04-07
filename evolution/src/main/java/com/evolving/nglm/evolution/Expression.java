@@ -1665,7 +1665,6 @@ public abstract class Expression
     
     private void typeCheckDateAddOrConstantFunction(TimeUnit baseTimeUnit)
     {
-      log.info("RAJ K typeCheckDateAddOrConstantFunction() enter"); 
       /****************************************
       *
       *  arguments
@@ -1796,7 +1795,6 @@ public abstract class Expression
 
       setTagFormat(arg1.getTagFormat());
       setTagMaxLength(arg1.getTagMaxLength());
-      log.info("RAJ K typeCheckDateAddOrConstantFunction() exit"); 
     }
 
     /*****************************************
@@ -2138,11 +2136,9 @@ public abstract class Expression
     
     private Date evaluateDateAddOrConstantFunction(Date dateAddDate, Date strictScheduleDate, Number arg3Value, TimeUnit timeUnit, String arg5Value, TimeUnit baseTimeUnit, boolean roundDown)
     {
-      log.info("RAJ K evaluateDateAddOrConstantFunction() {}, {}, {}, {}, {}", dateAddDate, strictScheduleDate, arg3Value, timeUnit, baseTimeUnit); 
       Date result = null;
       if ("date".equalsIgnoreCase(arg5Value)) result = strictScheduleDate;
       else result = evaluateDateAddFunction(dateAddDate, arg3Value, timeUnit, baseTimeUnit, roundDown);
-      log.info("RAJ K evaluateDateAddOrConstantFunction() result {}", result); 
       return result;
       
     }
