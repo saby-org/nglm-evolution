@@ -117,7 +117,7 @@
         "height"                 : 70,
         "width"                  : 70,
         "scheduleNode"			 : true,
-        "allowContextVariables"  : false,
+        "allowContextVariables"  : true,
         "outputType"             : "static",
         "outputConnectors"       :
         [
@@ -125,21 +125,11 @@
         ],
         "parameters"             : [
             {
-              "id" : "other",
-              "display" : "Selection Name",
-              "dataType" : "string",
-              "width" : "100%",
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : null,
-              "defaultValue" : null
-            },
-            {
               "id" : "link.parameter.profilecriteria",
-              "display" : "Profile Criteria",
+              "display" : "Waiting Criteria",
               "dataType" : "evaluationCriteria",
               "width" : "100%",
-              "multiple" : true,
+              "multiple" : false,
               "mandatory" : true,
               "availableValues" : null,
               "defaultValue" : [ ]
