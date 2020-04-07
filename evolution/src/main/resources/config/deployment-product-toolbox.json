@@ -145,11 +145,11 @@
         "height"                 : 70,
         "width"                  : 70,
         "enableCycle"            : true,
-        "allowContextVariables"  : true,
-        "outputType"             : "static",
+        "allowContextVariables"  : false,
+        "outputType"             : "dynamic",
         "outputConnectors"       : 
           [ 
-            { "name" : "wait",   "display" : "Wait",   "evaluationPriority" : "last",  "evaluateContextVariables" : true,  "transitionCriteria" : [ ], "additionalCriteria" : "node.parameter.additionalcriteria" } 
+            { "name" : "wait",   "display" : "Wait",   "evaluationPriority" : "last",  "transitionCriteria" : [ ], "additionalCriteria" : "node.parameter.additionalcriteria" } 
           ],
         "parameters"             : 
           [ 
