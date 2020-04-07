@@ -46,10 +46,24 @@
         "outputType"       : "static",
         "outputConnectors" : 
           [ 
-            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAddOnUnit(node.entryDate, node.parameter.schedule, node.parameter.duration, node.parameter.unit)" } } ] }
+            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "DateAddOrConstant(node.entryDate, node.parameter.schedule, node.parameter.duration, node.parameter.unit, node.parameter.waitfor)" } } ] }
           ],
         "parameters"       :
           [
+            { 
+              "id" : "node.parameter.waitfor", 
+              "display" : "Wait For", 
+              "dataType" : "string", 
+              "width" : "50%", 
+              "multiple" : false, 
+              "mandatory" : true,
+              "availableValues" : 
+                [
+                  { "id" : "date",   "display" : "Date" },
+                  { "id" : "time",   "display" : "Time" }
+                ],
+              "defaultValue" : "date"
+            },
             { 
               "id" : "node.parameter.schedule", 
               "display" : "Wait Until", 
@@ -60,7 +74,6 @@
               "availableValues" : null,
               "defaultValue" : null
             },
-            
             { 
               "id" : "node.parameter.duration", 
               "display" : "Wait Duration", 
@@ -80,14 +93,13 @@
               "mandatory" : true, 
               "availableValues" : 
                 [
-                  { "id" : "date",   "display" : "Date Based" },
                   { "id" : "minute", "display" : "Minutes" },
                   { "id" : "hour",   "display" : "Hours" },
                   { "id" : "day",    "display" : "Days" },
                   { "id" : "week",   "display" : "Weeks" },
                   { "id" : "month",  "display" : "Months" }
                 ],
-              "defaultValue" : "date"
+              "defaultValue" : "minute"
             }
           ]
       },

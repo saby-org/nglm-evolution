@@ -156,7 +156,7 @@ public abstract class Expression
     DateConstantFunction("dateConstant"),
     TimeConstantFunction("timeConstant"),
     DateAddFunction("dateAdd"),
-    DateAddOnUnitFunction("dateAddOnUnit"),
+    DateAddOrConstantFunction("dateAddOrConstant"),
     RoundFunction("round"),
     RoundUpFunction("roundUp"),
     RoundDownFunction("roundDown"),
@@ -1231,8 +1231,8 @@ public abstract class Expression
             typeCheckDateAddFunction(baseTimeUnit);
             break;
             
-          case DateAddOnUnitFunction:
-            typeCheckDateAddOnUnitFunction(baseTimeUnit);
+          case DateAddOrConstantFunction:
+            typeCheckDateAddOrConstantFunction(baseTimeUnit);
             break;
             
           case RoundFunction:
@@ -1659,13 +1659,13 @@ public abstract class Expression
     }
     
     //
-    //  typeCheckDateAddOnUnitFunction
+    //  typeCheckDateAddOrConstantFunction
     //
     
     
-    private void typeCheckDateAddOnUnitFunction(TimeUnit baseTimeUnit)
+    private void typeCheckDateAddOrConstantFunction(TimeUnit baseTimeUnit)
     {
-      log.info("RAJ K typeCheckDateAddOnUnitFunction() enter"); 
+      log.info("RAJ K typeCheckDateAddOrConstantFunction() enter"); 
       /****************************************
       *
       *  arguments
@@ -1686,6 +1686,7 @@ public abstract class Expression
       Expression arg2 = (arguments.size() > 1) ? arguments.get(1) : null;
       Expression arg3 = (arguments.size() > 2) ? arguments.get(2) : null;
       Expression arg4 = (arguments.size() > 3) ? arguments.get(3) : null;
+      Expression arg5 = (arguments.size() > 4) ? arguments.get(4) : null;
 
       //
       //  validate arg1
@@ -1738,6 +1739,19 @@ public abstract class Expression
           default:
             throw new ExpressionTypeCheckException("type exception");
         }
+      
+      //
+      //  validate arg5
+      //
+      
+      switch (arg5.getType())
+        {
+          case StringExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
 
       //
       //  validate baseTimeUnit
@@ -1758,15 +1772,12 @@ public abstract class Expression
       if (arg4.isConstant())
         {
           String arg4Value = (String) arg4.evaluate(null, TimeUnit.Unknown);
-          if ( !"date".equalsIgnoreCase(arg4Value))
-            {
-              switch (TimeUnit.fromExternalRepresentation(arg4Value))
-              {
-                case Instant:
-                case Unknown:
-                  throw new ExpressionTypeCheckException("type exception");
-              }
-            }
+          switch (TimeUnit.fromExternalRepresentation(arg4Value))
+          {
+            case Instant:
+            case Unknown:
+              throw new ExpressionTypeCheckException("type exception");
+          }
         }
 
       /****************************************
@@ -1785,7 +1796,7 @@ public abstract class Expression
 
       setTagFormat(arg1.getTagFormat());
       setTagMaxLength(arg1.getTagMaxLength());
-      log.info("RAJ K typeCheckDateAddOnUnitFunction() exit"); 
+      log.info("RAJ K typeCheckDateAddOrConstantFunction() exit"); 
     }
 
     /*****************************************
@@ -1822,6 +1833,7 @@ public abstract class Expression
       Object arg2Value = (arguments.size() > 1) ? arguments.get(1).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
       Object arg3Value = (arguments.size() > 2) ? arguments.get(2).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
       Object arg4Value = (arguments.size() > 3) ? arguments.get(3).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+      Object arg5Value = (arguments.size() > 4) ? arguments.get(4).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
 
       /*****************************************
       *
@@ -1845,8 +1857,8 @@ public abstract class Expression
             result = evaluateDateAddFunction((Date) arg1Value, (Number) arg2Value, TimeUnit.fromExternalRepresentation((String) arg3Value), baseTimeUnit, false);
             break;
             
-          case DateAddOnUnitFunction:
-            result = evaluateDateAddOnUnitFunction((Date) arg1Value, (Date) arg2Value, (Number) arg3Value, (String) arg4Value, baseTimeUnit, false);
+          case DateAddOrConstantFunction:
+            result = evaluateDateAddOrConstantFunction((Date) arg1Value, (Date) arg2Value, (Number) arg3Value, TimeUnit.fromExternalRepresentation((String) arg4Value), (String) arg5Value, baseTimeUnit, false);
             break;
             
           case RoundFunction:
@@ -2121,20 +2133,16 @@ public abstract class Expression
     }
     
     //
-    //  evaluateDateAddOnUnitFunction
+    //  evaluateDateAddOrConstantFunction
     //
     
-    private Date evaluateDateAddOnUnitFunction(Date dateAddDate, Date strictScheduleDate, Number arg3Value, String unit, TimeUnit baseTimeUnit, boolean roundDown)
+    private Date evaluateDateAddOrConstantFunction(Date dateAddDate, Date strictScheduleDate, Number arg3Value, TimeUnit timeUnit, String arg5Value, TimeUnit baseTimeUnit, boolean roundDown)
     {
-      log.info("RAJ K evaluateDateAddOnUnitFunction() {}, {}, {}, {}, {}", dateAddDate, strictScheduleDate, arg3Value, unit, baseTimeUnit); 
+      log.info("RAJ K evaluateDateAddOrConstantFunction() {}, {}, {}, {}, {}", dateAddDate, strictScheduleDate, arg3Value, timeUnit, baseTimeUnit); 
       Date result = null;
-      if ("date".equalsIgnoreCase(unit)) result = strictScheduleDate;
-      else
-        {
-          TimeUnit timeUnit = TimeUnit.fromExternalRepresentation(unit);
-          result = evaluateDateAddFunction(dateAddDate, arg3Value, timeUnit, baseTimeUnit, roundDown);
-        }
-      log.info("RAJ K evaluateDateAddOnUnitFunction() result {}", result); 
+      if ("date".equalsIgnoreCase(arg5Value)) result = strictScheduleDate;
+      else result = evaluateDateAddFunction(dateAddDate, arg3Value, timeUnit, baseTimeUnit, roundDown);
+      log.info("RAJ K evaluateDateAddOrConstantFunction() result {}", result); 
       return result;
       
     }
