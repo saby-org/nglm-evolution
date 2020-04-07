@@ -23,26 +23,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -25079,7 +25061,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     //  resolve
     //
 
-    List<JSONObject>  resolvedParameters = new ArrayList<JSONObject>();
+    List<JSONObject>  resolvedParameters = new LinkedList<>();
     JSONArray parameters = JSONUtilities.decodeJSONArray(journeyJSON, "journeyParameters", new JSONArray());
     for (int i=0; i<parameters.size(); i++)
       {
