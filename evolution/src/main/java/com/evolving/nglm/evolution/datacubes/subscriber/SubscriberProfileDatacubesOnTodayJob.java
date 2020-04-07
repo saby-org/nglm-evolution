@@ -1,10 +1,7 @@
 package com.evolving.nglm.evolution.datacubes.subscriber;
 
-import java.util.Date;
-
 import org.elasticsearch.client.RestHighLevelClient;
 
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.datacubes.ScheduledJob;
@@ -13,25 +10,23 @@ public class SubscriberProfileDatacubesOnTodayJob extends ScheduledJob
 {
   /*****************************************
   *
-  *  data
+  * Properties
   *
   *****************************************/
-
   private SubscriberProfileDatacubeGenerator subscriberProfileDatacube;
   
   /*****************************************
   *
-  *  constructor
+  * Constructor
   *  
-  *  This will generated a datacube every hours and will aggregate current data from the subscriberprofile index.
-  *  Every hour will update the previous datacubes of the day, according to new data.
+  * This will generated a datacube preview of the day from the subscriberprofile index (not a snapshot one).
+  * Those data are not definitive, the day is not ended yet, metrics can still change.
   *
   *****************************************/
-  
   public SubscriberProfileDatacubesOnTodayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch, SegmentationDimensionService segmentationDimensionService) 
   {
     super(schedulingUniqueID, 
-        "SubscriberProfile(today)", 
+        "SubscriberProfile(preview)", 
         Deployment.getTodaySubscriberDatacubePeriodCronEntryString(), 
         Deployment.getBaseTimeZone(),
         true);
@@ -40,14 +35,13 @@ public class SubscriberProfileDatacubesOnTodayJob extends ScheduledJob
 
   /*****************************************
   *
-  *  DatacubeScheduling
+  * DatacubeScheduling
   *
   *****************************************/
   @Override
   protected void run()
   {
-    Date now = SystemTime.getCurrentTime();
-    this.subscriberProfileDatacube.run(now, true);
+    this.subscriberProfileDatacube.preview();
   }
 
 }

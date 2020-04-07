@@ -1,15 +1,13 @@
 package com.evolving.nglm.evolution.datacubes.odr;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -22,6 +20,8 @@ import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.Pa
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.OfferService;
@@ -38,18 +38,17 @@ import com.evolving.nglm.evolution.datacubes.mapping.SalesChannelsMap;
 
 public class ODRDatacubeGenerator extends DatacubeGenerator
 {
-  private static final DateFormat DATE_FORMAT;
-  static
-  {
-    DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-  }
   private static final String DATACUBE_ES_INDEX = "datacube_odr";
   private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_offers-";
-  private static final String DATA_TOTAL_AMOUNT = "totalAmount";
+  private static final String METRIC_TOTAL_AMOUNT = "totalAmount";
 
+  /*****************************************
+  *
+  * Properties
+  *
+  *****************************************/
   private List<String> filterFields;
-  private List<AggregationBuilder> dataAggregations;
+  private List<AggregationBuilder> metricAggregations;
   private OffersMap offersMap;
   private ModulesMap modulesMap;
   private SalesChannelsMap salesChannelsMap;
@@ -57,9 +56,14 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
   private LoyaltyProgramsMap loyaltyProgramsMap;
   private DeliverablesMap deliverablesMap;
   private JourneysMap journeysMap;
-  
-  private String targetDate;
-  
+
+  private String targetDay;
+
+  /*****************************************
+  *
+  * Constructors
+  *
+  *****************************************/
   public ODRDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService)  
   {
     super(datacubeName, elasticsearch);
@@ -75,7 +79,6 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
     //
     // Filter fields
     //
-    
     this.filterFields = new ArrayList<String>();
     this.filterFields.add("offerID");
     this.filterFields.add("moduleID");
@@ -87,23 +90,37 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
     // Data Aggregations
     // - totalAmount
     //
+    this.metricAggregations = new ArrayList<AggregationBuilder>();
     
-    this.dataAggregations = new ArrayList<AggregationBuilder>();
-    
-    AggregationBuilder totalAmount = AggregationBuilders.sum(DATA_TOTAL_AMOUNT)
+    AggregationBuilder totalAmount = AggregationBuilders.sum(METRIC_TOTAL_AMOUNT)
             .script(new Script(ScriptType.INLINE, "painless", "doc['offerPrice'].value * doc['offerQty'].value", Collections.emptyMap()));
-    dataAggregations.add(totalAmount);
+    metricAggregations.add(totalAmount);
   }
 
+  /*****************************************
+  *
+  * Elasticsearch indices settings
+  *
+  *****************************************/
   @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX; }
-  @Override protected String getDataESIndex() { return (DATA_ES_INDEX_PREFIX+targetDate); }
+  @Override protected String getDataESIndex() { return (DATA_ES_INDEX_PREFIX+targetDay); }
+
+  /*****************************************
+  *
+  * Filters settings
+  *
+  *****************************************/
   @Override protected List<String> getFilterFields() { return filterFields; }
   @Override protected List<CompositeValuesSourceBuilder<?>> getFilterComplexSources() { return Collections.emptyList(); }
-  @Override protected List<AggregationBuilder> getDataAggregations() { return this.dataAggregations; }
-    
+  
   @Override
   protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
+    if(!isESIndexAvailable(getDataESIndex())) {
+      log.info("Elasticsearch index [" + getDataESIndex() + "] does not exist.");
+      return false;
+    }
+    
     offersMap.update();
     modulesMap.updateFromElasticsearch(elasticsearch);
     salesChannelsMap.update();
@@ -114,27 +131,17 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
     
     return true;
   }
-
-  @Override
-  protected void addStaticFilters(Map<String, Object> filters)
-  {
-    filters.put("dataDate", targetDate);
-  }
-
+  
   @Override
   protected void embellishFilters(Map<String, Object> filters)
   {
     String offerID = (String) filters.remove("offerID");
-    filters.put("offer.id", offerID);
-    filters.put("offer.display", offersMap.getDisplay(offerID, "offer"));
+    filters.put("offer", offersMap.getDisplay(offerID, "offer"));
 
     String moduleID = (String) filters.remove("moduleID");
-    filters.put("module.id", moduleID);
-    filters.put("module.display", modulesMap.getDisplay(moduleID, "module"));
+    filters.put("module", modulesMap.getDisplay(moduleID, "module"));
 
     String featureID = (String) filters.remove("featureID");
-    filters.put("feature.id", featureID);
-    
     String featureDisplay = featureID; // default
     switch(modulesMap.getFeature(moduleID, "feature"))
       {
@@ -154,46 +161,110 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
           // For None feature we let the featureID as a display (it is usually a string)
           break;
       }
-    filters.put("feature.display", featureDisplay);
+    filters.put("feature", featureDisplay);
 
     String salesChannelID = (String) filters.remove("salesChannelID");
-    filters.put("salesChannel.id", salesChannelID);
-    filters.put("salesChannel.display", salesChannelsMap.getDisplay(salesChannelID, "salesChannel"));
+    filters.put("salesChannel", salesChannelsMap.getDisplay(salesChannelID, "salesChannel"));
 
     String meanOfPayment = (String) filters.remove("meanOfPayment");
-    filters.put("meanOfPayment.id", meanOfPayment);
-    filters.put("meanOfPayment.display", paymentMeansMap.getDisplay(meanOfPayment, "meanOfPayment"));
-    filters.put("meanOfPayment.paymentProviderID", paymentMeansMap.getProviderID(meanOfPayment, "meanOfPayment"));
-  }
-  
-  @Override
-  protected Map<String, Object> extractData(ParsedBucket compositeBucket, Map<String, Object> contextFilters) throws ClassCastException
-  {
-    HashMap<String, Object> data = new HashMap<String,Object>();
-    if (compositeBucket.getAggregations() == null) {
-      log.error("Unable to extract data, aggregation is missing.");
-      return data;
-    }
-    
-    ParsedSum dataTotalAmountBucket = compositeBucket.getAggregations().get(DATA_TOTAL_AMOUNT);
-    if (dataTotalAmountBucket == null) {
-      log.error("Unable to extract totalAmount data, aggregation is missing.");
-      return data;
-    }
-    data.put(DATA_TOTAL_AMOUNT, (int) dataTotalAmountBucket.getValue());
-    
-    return data;
+    filters.put("meanOfPayment", paymentMeansMap.getDisplay(meanOfPayment, "meanOfPayment"));
+    filters.put("meanOfPaymentProviderID", paymentMeansMap.getProviderID(meanOfPayment, "meanOfPayment"));
   }
 
   /*****************************************
   *
-  *  run
+  * Metrics settings
   *
   *****************************************/
-  
-  public void run(Date targetDate)
+  @Override protected List<AggregationBuilder> getMetricAggregations() { return this.metricAggregations; }
+    
+  @Override
+  protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket, Map<String, Object> contextFilters) throws ClassCastException
   {
-    this.targetDate = DATE_FORMAT.format(targetDate);
-    this.run();
+    HashMap<String, Object> metrics = new HashMap<String,Object>();
+    if (compositeBucket.getAggregations() == null) {
+      log.error("Unable to extract metrics, aggregation is missing.");
+      return metrics;
+    }
+    
+    ParsedSum dataTotalAmountBucket = compositeBucket.getAggregations().get(METRIC_TOTAL_AMOUNT);
+    if (dataTotalAmountBucket == null) {
+      log.error("Unable to extract totalAmount metric, aggregation is missing.");
+      return metrics;
+    }
+    metrics.put(METRIC_TOTAL_AMOUNT, (int) dataTotalAmountBucket.getValue());
+    
+    return metrics;
+  }
+  
+  /*****************************************
+  *
+  * DocumentID settings
+  *
+  *****************************************/
+  /**
+   * For the moment, we only publish with a period of the day (except for preview)
+   * In order to keep only one document per day (for each combination of filters), we use the following trick:
+   * We only use the day as a timestamp (without the hour) in the document ID definition.
+   * This way, preview documents will override each other till be overriden by the definitive one at 23:59:59.999 
+   * 
+   * Be careful, it only works if we ensure to publish the definitive one. 
+   * Already existing combination of filters must be published even if there is 0 count inside, in order to 
+   * override potential previews.
+   */
+  @Override
+  protected String getDocumentID(Map<String,Object> filters, String timestamp) {
+    return this.extractDocumentIDFromFilter(filters, this.targetDay);
+  }
+  
+  /*****************************************
+  *
+  * Run
+  *
+  *****************************************/
+  /**
+   * The definitive datacube is generated on yesterday, for a period of 1 day (~24 hours except for some special days)
+   * Rows will be timestamped at yesterday_23:59:59.999+ZZZZ
+   * Timestamp is the last millisecond of the period (therefore included).
+   * This way it shows that *count* is computed for this day (yesterday) but at the very end of the day.
+   */
+  public void definitive()
+  {
+    Date now = SystemTime.getCurrentTime();
+    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
+    Date beginningOfYesterday = RLMDateUtils.truncate(yesterday, Calendar.DATE, Deployment.getBaseTimeZone());
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
+    Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
+
+    this.targetDay = DAY_FORMAT.format(yesterday);
+
+    //
+    // Timestamp & period
+    //
+    String timestamp = TIMESTAMP_FORMAT.format(endOfYesterday);
+    long targetPeriod = beginningOfToday.getTime() - beginningOfYesterday.getTime();    // most of the time 86400000ms (24 hours)
+    
+    this.run(timestamp, targetPeriod);
+  }
+  
+  /**
+   * A preview is a datacube generation on the today's day. 
+   * Timestamp is the last millisecond of the period (therefore included).
+   * Because the day is still not ended, it won't be the definitive value of *count*.
+   */
+  public void preview()
+  {
+    Date now = SystemTime.getCurrentTime();
+    Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
+
+    this.targetDay = DAY_FORMAT.format(now);
+
+    //
+    // Timestamp & period
+    //
+    String timestamp = TIMESTAMP_FORMAT.format(now);
+    long targetPeriod = now.getTime() - beginningOfToday.getTime() + 1; // +1 !
+    
+    this.run(timestamp, targetPeriod);
   }
 }

@@ -1,10 +1,7 @@
 package com.evolving.nglm.evolution.datacubes.loyalty;
 
-import java.util.Date;
-
 import org.elasticsearch.client.RestHighLevelClient;
 
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.datacubes.ScheduledJob;
@@ -13,26 +10,24 @@ public class LoyaltyDatacubesOnTodayJob extends ScheduledJob
 {
   /*****************************************
   *
-  *  data
+  * Properties
   *
   *****************************************/
-
   private ProgramsHistoryDatacubeGenerator loyaltyHistoryDatacube;
   private ProgramsChangesDatacubeGenerator tierChangesDatacube;
   
   /*****************************************
   *
-  *  constructor
-  *  
-  *  LoyaltyProgramsHistory & LoyaltyProgramsChanges datacubeswill be generated every hours and will aggregate current data from today !
-  *  Every hour will update the previous datacubes of the day, according to new data.
-  *
+  * Constructor
+  * 
+  * This will generate a datacube preview of the day from the subscriberprofile index (not a snapshot one).
+  * Those data are not definitive, the day is not ended yet, metrics can still change.
+  * 
   *****************************************/
-  
   public LoyaltyDatacubesOnTodayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch, LoyaltyProgramService loyaltyProgramService) 
   {
     super(schedulingUniqueID, 
-        "LoyaltyPrograms(today)", 
+        "LoyaltyPrograms(preview)", 
         Deployment.getTodayLoyaltyDatacubePeriodCronEntryString(), 
         Deployment.getBaseTimeZone(),
         true);
@@ -42,15 +37,14 @@ public class LoyaltyDatacubesOnTodayJob extends ScheduledJob
 
   /*****************************************
   *
-  *  DatacubeScheduling
+  * DatacubeScheduling
   *
   *****************************************/
   @Override
   protected void run()
   {
-    Date now = SystemTime.getCurrentTime();
-    this.loyaltyHistoryDatacube.run(now);
-    this.tierChangesDatacube.run(now);
+    this.loyaltyHistoryDatacube.preview();
+    this.tierChangesDatacube.preview();
   }
 
 }

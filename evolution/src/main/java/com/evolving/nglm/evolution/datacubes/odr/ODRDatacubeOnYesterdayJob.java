@@ -1,11 +1,7 @@
 package com.evolving.nglm.evolution.datacubes.odr;
 
-import java.util.Date;
-
 import org.elasticsearch.client.RestHighLevelClient;
 
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
@@ -18,25 +14,22 @@ public class ODRDatacubeOnYesterdayJob extends ScheduledJob
 {
   /*****************************************
   *
-  *  data
+  * Properties
   *
   *****************************************/
-
   private ODRDatacubeGenerator datacube;
   
   /*****************************************
   *
-  *  constructor
+  * Constructor
   *  
-  *  This ODR datacube will be generated every day at 1:00 am
-  *  and it will aggregate data from the previous day.
+  * This will generated a datacube every day from the detailedrecords_offers-YYYY-MM-dd index of the previous day.
   *
   *****************************************/
-  
   public ODRDatacubeOnYesterdayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService) 
   {
     super(schedulingUniqueID, 
-        "ODR(yesterday)",
+        "ODR(definitive)",
         Deployment.getYesterdayODRDatacubePeriodCronEntryString(), 
         Deployment.getBaseTimeZone(),
         true);
@@ -45,15 +38,12 @@ public class ODRDatacubeOnYesterdayJob extends ScheduledJob
   
   /*****************************************
   *
-  *  DatacubeScheduling
+  * DatacubeScheduling
   *
   *****************************************/
   @Override
   protected void run()
   {
-    Date now = SystemTime.getCurrentTime();
-    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
-    this.datacube.run(yesterday);
+    this.datacube.definitive();
   }
-
 }

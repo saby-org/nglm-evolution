@@ -65,7 +65,8 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile -H'Content
             "loyaltyPrograms" : { "type" : "nested"},
             "pointFluctuations" : { "type" : "object"},
             "subscriberJourneys" : { "type" : "nested"},
-            "pointBalances" : { "type" : "nested"}
+            "pointBalances" : { "type" : "nested"},
+            "lastUpdateDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
           }
       }
   }'
@@ -837,6 +838,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_subscriberprofile -
     "mappings" : {
         "properties" : {
             "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+            "period" : { "type" : "long" },
             "count" : { "type" : "integer" }
           }
       }
@@ -849,6 +851,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_loyaltyprogramshist
     "mappings" : {
         "properties" : {
             "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+            "period" : { "type" : "long" },
             "filter.loyaltyProgram" : { "type" : "keyword" },
             "filter.tier" : { "type" : "keyword" },
             "filter.evolutionSubscriberStatus" : { "type" : "keyword" },
@@ -868,7 +871,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_loyaltyprogramschan
     "mappings" : {
         "properties" : {
             "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
-            "filter.period" : { "type" : "keyword" },
+            "period" : { "type" : "long" },
             "filter.loyaltyProgram" : { "type" : "keyword" },
             "filter.newTier" : { "type" : "keyword" },
             "filter.previousTier" : { "type" : "keyword" },
@@ -885,6 +888,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeytraffic- -H'
     "mappings" : {
         "properties" : {
             "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+            "period" : { "type" : "long" },
             "filter.journeyID" : { "type" : "keyword" },
             "filter.node" : { "type" : "keyword" },
             "filter.status" : { "type" : "keyword" },
@@ -900,6 +904,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeyrewards- -H'
     "mappings" : {
         "properties" : {
             "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+            "period" : { "type" : "long" },
             "filter.journeyID" : { "type" : "keyword" },
             "count" : { "type" : "integer" }
           }
@@ -913,7 +918,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_odr -H'Content-Type
     "mappings" : {
         "properties" : {
             "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
-            "filter.period" : { "type" : "keyword"},
+            "period" : { "type" : "long" },
             "filter.offer" : { "type" : "keyword" },
             "filter.module" : { "type" : "keyword" },
             "filter.feature" : { "type" : "keyword" },
@@ -1040,7 +1045,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeys -H'Content-
     "mappings" : {
         "properties" : {
             "journeyID" : { "type" : "keyword" },
-            "name" : { "type" : "keyword" },
+            "display" : { "type" : "keyword" },
             "description" : { "type" : "keyword" },
             "type" : { "type" : "keyword" },
             "author" : { "type" : "keyword" },

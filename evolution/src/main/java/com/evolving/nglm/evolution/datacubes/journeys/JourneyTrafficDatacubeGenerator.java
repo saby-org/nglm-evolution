@@ -1,14 +1,11 @@
 package com.evolving.nglm.evolution.datacubes.journeys;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -16,7 +13,7 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
 
-import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
@@ -25,24 +22,27 @@ import com.evolving.nglm.evolution.datacubes.mapping.SegmentationDimensionsMap;
 
 public class JourneyTrafficDatacubeGenerator extends DatacubeGenerator
 {
-  private static final DateFormat DATE_FORMAT;
-  static
-  {
-    DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-  }
   private static final String DATACUBE_ES_INDEX_PREFIX = "datacube_journeytraffic-";
   private static final String DATA_ES_INDEX_PREFIX = "journeystatistic-";
   private static final String FILTER_STRATUM_PREFIX = "subscriberStratum.";
 
+  /*****************************************
+  *
+  * Properties
+  *
+  *****************************************/
   private List<String> filterFields;
   private List<String> basicFilterFields;
   private SegmentationDimensionsMap segmentationDimensionList;
   private JourneysMap journeysMap;
   
   private String journeyID;
-  private String generationDate;
-  
+
+  /*****************************************
+  *
+  * Constructors
+  *
+  *****************************************/
   public JourneyTrafficDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService)  
   {
     super(datacubeName, elasticsearch);
@@ -53,33 +53,51 @@ public class JourneyTrafficDatacubeGenerator extends DatacubeGenerator
     //
     // Filter fields
     //
-    
     this.basicFilterFields = new ArrayList<String>();
     this.basicFilterFields.add("status");
     this.basicFilterFields.add("nodeID");
-    
     this.filterFields = new ArrayList<String>();
   }
 
+  /*****************************************
+  *
+  * Elasticsearch indices settings
+  *
+  *****************************************/
   // We need to lowerCase the journeyID, cf. JourneyStatisticESSinkConnector (we will follow the same rule)
-  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX_PREFIX + this.journeyID.toLowerCase(); }
-  @Override protected String getDataESIndex() { return DATA_ES_INDEX_PREFIX + this.journeyID.toLowerCase(); }
+  @Override protected String getDataESIndex() 
+  { 
+    return DATA_ES_INDEX_PREFIX + this.journeyID.toLowerCase(); 
+  }
+  
+  @Override protected String getDatacubeESIndex() 
+  { 
+    return DATACUBE_ES_INDEX_PREFIX + this.journeyID.toLowerCase(); 
+  }
+
+  /*****************************************
+  *
+  * Filters settings
+  *
+  *****************************************/
   @Override protected List<String> getFilterFields() { return filterFields; }
   @Override protected List<CompositeValuesSourceBuilder<?>> getFilterComplexSources() { return new ArrayList<CompositeValuesSourceBuilder<?>>(); }
-  @Override protected List<AggregationBuilder> getDataAggregations() { return Collections.emptyList(); }
-  @Override protected Map<String, Object> extractData(ParsedBucket compositeBucket, Map<String, Object> contextFilters) throws ClassCastException { return Collections.emptyMap(); }
-
+  
   @Override
   protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
+    if(!isESIndexAvailable(getDataESIndex())) {
+      log.info("Elasticsearch index [" + getDataESIndex() + "] does not exist.");
+      return false;
+    }
+    
     this.segmentationDimensionList.update();
     this.journeysMap.update();
     
     this.filterFields = new ArrayList<String>(this.basicFilterFields);
-    for(String dimensionID: segmentationDimensionList.keySet())
-      {
-        this.filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
-      }
+    for(String dimensionID: segmentationDimensionList.keySet()) {
+      this.filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
+    }
     
     return true;
   }
@@ -88,59 +106,54 @@ public class JourneyTrafficDatacubeGenerator extends DatacubeGenerator
   protected void embellishFilters(Map<String, Object> filters) 
   {
     //
-    // JourneyID (already in index name, added for Kibana)
+    // JourneyID (already in index name, added for Kibana/Grafana)
     //
-
-    filters.put("journey.id", journeyID);
-    filters.put("journey.display", journeysMap.getDisplay(journeyID, "journey"));
+    filters.put("journeyID", journeyID);
     
     //
     // nodeID
     //
-
     String nodeID = (String) filters.remove("nodeID");
-    filters.put("node.id", nodeID);
-    filters.put("node.display", journeysMap.getNodeDisplay(journeyID, nodeID, "node"));
+    filters.put("node", journeysMap.getNodeDisplay(journeyID, nodeID, "node"));
+    
+    //
+    // Special dimension with all, for Grafana 
+    //
+    filters.put(FILTER_STRATUM_PREFIX + "Global", "");
     
     //
     // subscriberStratum dimensions
     //
-    
     for(String dimensionID: segmentationDimensionList.keySet())
       {
         String fieldName = FILTER_STRATUM_PREFIX + dimensionID;
         String segmentID = (String) filters.remove(fieldName);
         
-        filters.put(fieldName + ".id", segmentID);
-        filters.put(fieldName + ".display", segmentationDimensionList.getSegmentDisplay(dimensionID, segmentID, fieldName));
+        String newFieldName = FILTER_STRATUM_PREFIX + segmentationDimensionList.getDimensionDisplay(dimensionID, fieldName);
+        filters.put(newFieldName, segmentationDimensionList.getSegmentDisplay(dimensionID, segmentID, fieldName));
       }
-  }
-
-  @Override
-  protected void addStaticFilters(Map<String, Object> filters)
-  {
-    filters.put("dataDate", generationDate);
   }
   
   /*****************************************
   *
-  *  run
+  * Metrics settings
   *
   *****************************************/
-  
-  public void run(String journeyID, Date generationDate)
+  @Override protected List<AggregationBuilder> getMetricAggregations() { return Collections.emptyList(); }
+  @Override protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket, Map<String, Object> contextFilters) throws ClassCastException { return Collections.emptyMap(); }
+
+  /*****************************************
+  *
+  * Run
+  *
+  *****************************************/
+  public void definitive(String journeyID, long journeyStartDateTime)
   {
     this.journeyID = journeyID;
-    this.generationDate = DATE_FORMAT.format(generationDate);
     
-    this.run();
-  }
-  
-  public void run(String journeyID)
-  {
-    this.journeyID = journeyID;
-    this.generationDate = "last"; // special date for the "current" status that we will override on refresh
-    
-    this.run();
+    Date now = SystemTime.getCurrentTime();
+    String timestamp = TIMESTAMP_FORMAT.format(now);
+    long targetPeriod = now.getTime() - journeyStartDateTime;
+    this.run(timestamp, targetPeriod);
   }
 }

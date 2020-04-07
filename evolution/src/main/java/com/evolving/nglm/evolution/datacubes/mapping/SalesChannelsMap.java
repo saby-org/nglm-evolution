@@ -15,15 +15,14 @@ public class SalesChannelsMap extends GUIManagedObjectMap<SalesChannel>
 
   /*****************************************
   *
-  *  data
+  * Properties
   *
   *****************************************/
-  
   private SalesChannelService service;
   
   /*****************************************
   *
-  *  constructor
+  * Constructor
   *
   *****************************************/
   
@@ -34,10 +33,9 @@ public class SalesChannelsMap extends GUIManagedObjectMap<SalesChannel>
   
   /*****************************************
   *
-  *  getCollection
+  * GUIManagedObjectMap implementation
   *
   *****************************************/
-  
   // TODO: for the moment, we also retrieve archived objects
   protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredSalesChannels(true); }
 }

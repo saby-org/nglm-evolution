@@ -4,37 +4,34 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.datacubes.ScheduledJob;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 
-public class JourneyDatacubesDefinitiveJob extends ScheduledJob
+public class JourneyDatacubesJob extends ScheduledJob
 {
-  protected static final Logger log = LoggerFactory.getLogger(JourneyDatacubesDefinitiveJob.class);
+  protected static final Logger log = LoggerFactory.getLogger(JourneyDatacubesJob.class);
   
   /*****************************************
   *
-  *  data
+  * Properties
   *
   *****************************************/
-
   private JourneyTrafficDatacubeGenerator trafficDatacube;
   private JourneyRewardsDatacubeGenerator rewardsDatacube;
   private JourneysMap journeysMap;
   
   /*****************************************
   *
-  *  constructor
+  * Constructor
   *
   *****************************************/
-  
-  public JourneyDatacubesDefinitiveJob(long schedulingUniqueID, RestHighLevelClient elasticsearch, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService)
+  public JourneyDatacubesJob(long schedulingUniqueID, RestHighLevelClient elasticsearch, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService)
   {
     super(schedulingUniqueID, 
-        "Journey(definitive)",
+        "Journey",
         Deployment.getJourneyTrafficDatacubePeriodCronEntryString(), 
         Deployment.getBaseTimeZone(),
         true);
@@ -54,8 +51,8 @@ public class JourneyDatacubesDefinitiveJob extends ScheduledJob
     this.journeysMap.update();
     for(String journeyID : this.journeysMap.keySet())
       {
-        this.trafficDatacube.run(journeyID, SystemTime.getCurrentTime());
-        this.rewardsDatacube.run(journeyID, SystemTime.getCurrentTime());
+        this.trafficDatacube.definitive(journeyID, this.journeysMap.getStartDateTime(journeyID));
+        this.rewardsDatacube.definitive(journeyID, this.journeysMap.getStartDateTime(journeyID));
       }
   }
 }

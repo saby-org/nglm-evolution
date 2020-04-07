@@ -16,18 +16,16 @@ public class SegmentationDimensionsMap extends GUIManagedObjectMap<SegmentationD
 
   /*****************************************
   *
-  *  data
+  * Properties
   *
   *****************************************/
-  
   private SegmentationDimensionService service;
   
   /*****************************************
   *
-  *  constructor
+  * Constructor
   *
   *****************************************/
-  
   public SegmentationDimensionsMap(SegmentationDimensionService service) {
     super(SegmentationDimension.class);
     this.service = service;
@@ -35,40 +33,46 @@ public class SegmentationDimensionsMap extends GUIManagedObjectMap<SegmentationD
   
   /*****************************************
   *
-  *  getCollection
+  * GUIManagedObjectMap implementation
   *
   *****************************************/
-  
   // TODO: for the moment, we also retrieve archived objects
-  protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredSegmentationDimensions(true); }
+  @Override protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredSegmentationDimensions(true); }
   
   /*****************************************
   *
-  *  accessors
+  * Getters
   *
   *****************************************/ 
+  public String getDimensionDisplay(String dimensionID, String fieldName)
+  {
+    SegmentationDimension dimension = this.guiManagedObjects.get(dimensionID);
+    if(dimension != null && dimension.getGUIManagedObjectDisplay() != null) {
+      return dimension.getGUIManagedObjectDisplay();
+    } else {
+      logWarningOnlyOnce("Unable to retrieve display for " + fieldName + " field term.");
+      return dimensionID; // When missing, return default.
+    }
+  }
   
   public String getSegmentDisplay(String dimensionID, String segmentID, String fieldName)
   {
     String segmentDisplay = null;
     SegmentationDimension dimension = this.guiManagedObjects.get(dimensionID);
-    if(dimension != null)
-      {
-        for(Segment segment : dimension.getSegments()) 
-          {
-            if(segment.getID().equals(segmentID))
-              {
-                segmentDisplay = segment.getName();
-                break;
-              }
-          }
+    if(dimension != null) {
+      for(Segment segment : dimension.getSegments()) {
+        if(segment.getID().equals(segmentID)) {
+          segmentDisplay = segment.getName();
+          break;
+        }
       }
+    }
     
     if(segmentDisplay != null) {
       return segmentDisplay;
     } else {
-      logWarningOnlyOnce("Unable to retrieve " + fieldName + ".display for " + fieldName + ".id: " + segmentID + " for segmentationDimension.id: " + dimensionID);
-      return segmentID; // When missing, return the segmentID by default.
+      logWarningOnlyOnce("Unable to retrieve display for " + fieldName + " id: " + segmentID + " for dimension id: " + dimensionID);
+      return segmentID; // When missing, return default.
     }
   }
 }

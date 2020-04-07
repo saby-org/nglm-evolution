@@ -4,11 +4,16 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TimeZone;
 import java.util.HashMap;
 
 import org.elasticsearch.ElasticsearchException;
@@ -33,27 +38,46 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.evolution.Deployment;
+
 public abstract class DatacubeGenerator
 {
   /*****************************************
   *
-  *  configuration
+  * Static
   *
   *****************************************/
-  
   protected static final Logger log = LoggerFactory.getLogger(DatacubeGenerator.class);
   
-  /** The maximum number of buckets allowed in a single response is limited by a dynamic cluster
-   *  setting named search.max_buckets. It defaults to 10,000, requests that try to return more
-   *  than the limit will fail with an exception. */
+  /** 
+   * The maximum number of buckets allowed in a single response is limited by a dynamic cluster
+   * setting named search.max_buckets. It defaults to 10,000, requests that try to return more
+   * than the limit will fail with an exception. */
   protected static final int BUCKETS_MAX_NBR = 10000; // TODO: factorize in ES client later (with some generic ES calls)
+  private static final String UNDEFINED_BUCKET_VALUE = "undefined";
 
+  //
+  // Date formats
+  //
+  public static final DateFormat TIMESTAMP_FORMAT;
+  static
+  {
+    TIMESTAMP_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
+    TIMESTAMP_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+  }
+  
+  public static final DateFormat DAY_FORMAT;
+  static
+  {
+    DAY_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    DAY_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+  }
+  
   /*****************************************
   *
-  *  data
+  * Properties
   *
   *****************************************/
-  
   protected RestHighLevelClient elasticsearch;
   protected String datacubeName;
   protected String compositeAggregationName = "DATACUBE";
@@ -61,10 +85,9 @@ public abstract class DatacubeGenerator
 
   /*****************************************
   *
-  *  constructor
+  * Constructor
   *
   *****************************************/
-  
   public DatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch) 
   {
     this.datacubeName = datacubeName;
@@ -76,16 +99,41 @@ public abstract class DatacubeGenerator
   *  abstract functions
   *
   *****************************************/
-  
+  //
+  // Elasticsearch indices settings
+  //
   protected abstract String getDataESIndex();
   protected abstract String getDatacubeESIndex();
+  
+  //
+  // Filters settings
+  //
   protected abstract List<String> getFilterFields();
   protected abstract List<CompositeValuesSourceBuilder<?>> getFilterComplexSources();
-  protected abstract List<AggregationBuilder> getDataAggregations();
   protected abstract boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException; // return false if generation must stop here.
-  protected abstract void addStaticFilters(Map<String, Object> filters);
   protected abstract void embellishFilters(Map<String, Object> filters);
-  protected abstract Map<String, Object> extractData(ParsedBucket compositeBucket, Map<String, Object> contextFilters) throws ClassCastException;
+  
+  //
+  // Metrics settings
+  //
+  protected abstract List<AggregationBuilder> getMetricAggregations();
+  protected abstract Map<String, Object> extractMetrics(ParsedBucket compositeBucket, Map<String, Object> contextFilters) throws ClassCastException;
+
+  /*****************************************
+  *
+  *  overridable functions
+  *
+  *****************************************/
+  //
+  // DocumentID settings
+  //
+  protected void addStaticFilters(Map<String, Object> filters) { 
+    return; 
+  }
+  
+  protected String getDocumentID(Map<String,Object> filters, String timestamp) {
+    return this.extractDocumentIDFromFilter(filters, timestamp);
+  }
   
   /*****************************************
   *
@@ -97,21 +145,25 @@ public abstract class DatacubeGenerator
   *  
   *  We use **URLEncoder** for base64 (with '-' and '_') to be consistent with IDs
   *  in Elasticsearch.
+  *  
+  *  rl: There is a potential bug with dynamic filters. Two rows could have different
+  *  filters with same value and be considered equal (with the same ID).
   *
   *****************************************/
-  
-  protected String extractDocumentIDFromFilter(Map<String,Object> filter) 
+  protected String extractDocumentIDFromFilter(Map<String,Object> filters, String timestamp) 
   {
-    Set<String> keySet = filter.keySet();
+    List<String> sortedkeys = new ArrayList<String>(filters.keySet());
+    Collections.sort(sortedkeys);
     
     if(tmpBuffer == null) {
-      tmpBuffer = ByteBuffer.allocate(Integer.BYTES * keySet.size());
+      tmpBuffer = ByteBuffer.allocate(Integer.BYTES * (sortedkeys.size() + 1));
     } else {
       tmpBuffer.rewind();
     }
     
-    for(String key: keySet) {
-      tmpBuffer.putInt(filter.get(key).toString().hashCode());
+    tmpBuffer.putInt(timestamp.hashCode());
+    for(String key: sortedkeys) {
+      tmpBuffer.putInt(filters.get(key).toString().hashCode());
     }
     
     return Base64.getUrlEncoder().encodeToString(tmpBuffer.array());
@@ -119,22 +171,51 @@ public abstract class DatacubeGenerator
   
   /*****************************************
   *
+  * isESIndexAvailable
+  *  
+  * @return false if the ES index does not exist
+  *****************************************/
+  protected boolean isESIndexAvailable(String index)
+  {
+    SearchSourceBuilder request = new SearchSourceBuilder()
+        .sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
+        .query(QueryBuilders.matchAllQuery())
+        .size(1);
+    
+    try 
+      {
+        elasticsearch.search(new SearchRequest(index).source(request), RequestOptions.DEFAULT);
+      } 
+    catch(ElasticsearchException e) 
+      {
+        if (e.status() == RestStatus.NOT_FOUND) {
+          // ES index does not exist.
+          return false;
+        }
+      }
+    catch(IOException e)
+      {
+      }
+    
+    return true;
+  }
+  
+  /*****************************************
+  *
   *  getElasticsearchRequest
   *
   *****************************************/
-  
   private SearchRequest getElasticsearchRequest() 
   {
     String ESIndex = getDataESIndex();
     
     List<String> datacubeFilterFields = getFilterFields();
     List<CompositeValuesSourceBuilder<?>> datacubeFilterComplexSources = getFilterComplexSources();
-    List<AggregationBuilder> datacubeDataAggregations = getDataAggregations();
+    List<AggregationBuilder> datacubeMetricAggregations = getMetricAggregations();
     
     //
     // Composite sources are created from datacube filters and complex sources (scripts)
     //
-    
     List<CompositeValuesSourceBuilder<?>> sources = new ArrayList<>();
     for(String datacubeFilter: datacubeFilterFields) {
       TermsValuesSourceBuilder sourceTerms = new TermsValuesSourceBuilder(datacubeFilter).field(datacubeFilter).missingBucket(true);
@@ -148,17 +229,15 @@ public abstract class DatacubeGenerator
         .size(BUCKETS_MAX_NBR);
 
     //
-    // Data aggregations
+    // Metric aggregations
     //
-    
-    for(AggregationBuilder subaggregation : datacubeDataAggregations) {
+    for(AggregationBuilder subaggregation : datacubeMetricAggregations) {
       compositeAggregation = compositeAggregation.subAggregation(subaggregation);
     }
     
     //
     // Datacube request
     //
-    
     SearchSourceBuilder datacubeRequest = new SearchSourceBuilder()
         .sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
         .query(QueryBuilders.matchAllQuery())
@@ -173,7 +252,6 @@ public abstract class DatacubeGenerator
   *  executeESSearchRequest
   *
   *****************************************/
-  
   protected SearchResponse executeESSearchRequest(SearchRequest request) throws ElasticsearchException, IOException 
   {
     try 
@@ -184,7 +262,7 @@ public abstract class DatacubeGenerator
     catch(ElasticsearchException e)
       {
         if (e.status() == RestStatus.NOT_FOUND) {
-          log.warn("[{}]: elasticsearch index {} is empty", this.datacubeName, request.indices());
+          log.warn("[{}]: elasticsearch index {} does not exist", this.datacubeName, request.indices());
           return null;
         } else {
           throw e;
@@ -197,8 +275,7 @@ public abstract class DatacubeGenerator
   *  extractDatacubeRows
   *
   *****************************************/
-  
-  private List<Map<String,Object>> extractDatacubeRows(SearchResponse response) throws ClassCastException 
+  private List<Map<String,Object>> extractDatacubeRows(SearchResponse response, String timestamp, long period) throws ClassCastException 
   {
     List<Map<String,Object>> result = new ArrayList<Map<String,Object>>();
     
@@ -222,62 +299,59 @@ public abstract class DatacubeGenerator
     }
     
     for(ParsedBucket bucket: compositeBuckets.getBuckets()) {
-      long computationDate = System.currentTimeMillis();
       long docCount = bucket.getDocCount();
 
       //
-      // Extract filter 
+      // Extract filter, replace null
       //
-      
       Map<String, Object> filters = bucket.getKey();
+      for(String key: filters.keySet()) {
+        if(filters.get(key) == null) {
+          filters.replace(key, UNDEFINED_BUCKET_VALUE);
+        }
+      }
       
       //
       // Add static filters that will be used for ID generation (such as date for instance)
       //
-      
       addStaticFilters(filters);
       
       //
-      // Extract documentID
+      // Extract documentID from filters & timestamp (before calling embellish)
       //
-      
-      String documentID = extractDocumentIDFromFilter(filters);
+      String documentID = getDocumentID(filters, timestamp);
       
       //
-      // Embellish filters for Kibana (display names)
+      // Embellish filters for Kibana/Grafana (display names), they won't be taken into account for documentID
       //
-      
       embellishFilters(filters);
       
       //
-      // Extract data 
+      // Extract metrics 
       //
-      
-      Map<String, Object> data = extractData(bucket, filters);
+      Map<String, Object> metrics = extractMetrics(bucket, filters);
       
       //
       // Result
       //
-
       HashMap<String,Object> datacubeRow = new HashMap<String,Object>();
       datacubeRow.put("_id",  documentID); // _id field is a temporary variable and will be removed before insertion
-      datacubeRow.put("computationDate", computationDate);
+      datacubeRow.put("timestamp", timestamp);
+      datacubeRow.put("period", period);
       datacubeRow.put("count", docCount);
       
       //
-      // Flat filter fields for Kibana
+      // Flat filter fields for Kibana/Grafana
       //
-      
       for(String filter: filters.keySet()) {
         datacubeRow.put("filter." + filter, filters.get(filter));
       }
       
       //
-      // Flat data fields for Kibana
+      // Flat metric fields for Kibana/Grafana
       //
-      
-      for(String dataKey : data.keySet()) {
-        datacubeRow.put("data." + dataKey, data.get(dataKey));
+      for(String metric : metrics.keySet()) {
+        datacubeRow.put("metric." + metric, metrics.get(metric));
       }
       
       result.add(datacubeRow);
@@ -292,7 +366,6 @@ public abstract class DatacubeGenerator
   *  pushDatacubeRows
   *
   *****************************************/
-  
   private void pushDatacubeRows(List<Map<String,Object>> datacubeRows) throws ElasticsearchException, IOException 
   {
     for(Map<String,Object> datacubeRow: datacubeRows) {
@@ -312,15 +385,13 @@ public abstract class DatacubeGenerator
   *  run
   *
   *****************************************/
-  
-  protected void run() 
+  protected void run(String timestamp, long period) 
   {  
     try 
       {
         //
         // Pre-generation phase (for retrieving some mapping infos)
         //
-
         log.debug("[{}]: running pre-generation phase.", this.datacubeName);
         boolean success = runPreGenerationPhase();
         if(!success) {
@@ -331,14 +402,12 @@ public abstract class DatacubeGenerator
         //
         // Generate Elasticsearch request
         //
-        
         SearchRequest request = getElasticsearchRequest();
         log.info("[{}]: executing ES request: {}", this.datacubeName, request);
         
         //
         // Execute Elasticsearch request
         //
-
         SearchResponse response = executeESSearchRequest(request);
         if(response == null) {
           log.warn("[{}]: cannot retrieve any ES response, datacube generation stop here.", this.datacubeName);
@@ -349,14 +418,12 @@ public abstract class DatacubeGenerator
         //
         // Extract datacube rows from JSON response
         //
-
         log.debug("[{}]: extracting data from ES response.", this.datacubeName);
-        List<Map<String,Object>> datacubeRows = extractDatacubeRows(response);
+        List<Map<String,Object>> datacubeRows = extractDatacubeRows(response, timestamp, period);
         
         //
         // Push datacube rows in Elasticsearch
         //
-
         log.info("[{}]: pushing {} datacube row(s) in ES index [{}].", this.datacubeName, datacubeRows.size(), this.getDatacubeESIndex());
         pushDatacubeRows(datacubeRows);
       } 
