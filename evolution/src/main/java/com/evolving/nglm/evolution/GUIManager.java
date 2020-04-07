@@ -21188,7 +21188,7 @@ public class GUIManager
               // Allocate offers for this subscriber, and associate them in the token
               // Here we have no saleschannel (we pass null), this means only the first salesChannelsAndPrices of the offer will be used and returned.  
               Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(
-                  now, null,
+                  now, subscriberStoredToken, null,
                   subscriberProfile, presentationStrategy,
                   productService, productTypeService, voucherService, voucherTypeService,
                   catalogCharacteristicService,
@@ -21222,7 +21222,8 @@ public class GUIManager
                       positions.add(new Integer(position));
                       position++;
                       presentedOfferScores.add(1.0);
-                      // TODO scoringStrategyIDs.add(strategyID);
+                      // scoring strategy not used anymore
+                      // scoringStrategyIDs.add(strategyID);
                     }
                   String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
                   int transactionDurationMs = 0; // TODO

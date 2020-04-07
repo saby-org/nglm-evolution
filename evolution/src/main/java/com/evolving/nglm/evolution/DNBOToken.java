@@ -16,6 +16,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Timestamp;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -43,7 +44,7 @@ public class DNBOToken extends Token
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("dnbo_token");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),4));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("presentationStrategyID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("scoringStrategyIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());

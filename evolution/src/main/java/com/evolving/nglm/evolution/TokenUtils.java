@@ -245,7 +245,7 @@ public class TokenUtils
   }
 
   
-  public static Collection<ProposedOfferDetails> getOffers(Date now, SubscriberEvaluationRequest evaluationRequest,
+  public static Collection<ProposedOfferDetails> getOffers(Date now, DNBOToken token, SubscriberEvaluationRequest evaluationRequest,
       SubscriberProfile subscriberProfile, PresentationStrategy presentationStrategy,
       ProductService productService, ProductTypeService productTypeService,
       VoucherService voucherService, VoucherTypeService voucherTypeService,
@@ -257,18 +257,29 @@ public class TokenUtils
       DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters, OfferService offerService, StringBuffer returnedLog,
       String msisdn) throws GetOfferException
   {
+    // check if we can call this PS
+    // TODO
+    
     Set<String> salesChannelIDs = presentationStrategy.getSalesChannelIDs();
     // TODO : which sales channel to take ?
     String salesChannelID = salesChannelIDs.iterator().next();
     PositionSet setA = presentationStrategy.getSetA();
     List<EvaluationCriterion> setAEligibility = setA.getEligibility();
-    PositionSet setToUse = presentationStrategy.getSetB(); // default one
-    for (EvaluationCriterion criterion : setAEligibility)
+    PositionSet setToUse;
+    if (setAEligibility == null || setAEligibility.isEmpty())
       {
-        if (criterion.evaluate(evaluationRequest))
+        setToUse = setA;
+      }
+    else
+      {
+        setToUse = presentationStrategy.getSetB(); // default one
+        for (EvaluationCriterion criterion : setAEligibility)
           {
-            setToUse = presentationStrategy.getSetA();
-            break;
+            if (criterion.evaluate(evaluationRequest))
+              {
+                setToUse = presentationStrategy.getSetA();
+                break;
+              }
           }
       }
     Map<String, Collection<ProposedOfferDetails>> scoringCache = new HashMap<>(); // indexed by scoringStrategyID
@@ -277,20 +288,23 @@ public class TokenUtils
     for (int positionIndex=0; positionIndex < setToUse.getPositions().size(); positionIndex++)
       {
         PositionElement position = setToUse.getPositions().get(positionIndex);
-        boolean valid = false;
-        for (EvaluationCriterion criterion : position.getAdditionalCriteria())
-          {
-            if (criterion.evaluate(evaluationRequest))
-              {
-                valid = true;
-                break;
-              }
-          }
-        if (!valid)
-          {
-            log.trace("For positionIndex " + (positionIndex+1) + " skip element because criteria not true");
-            continue; // skip this position in the result            
-          }
+        if (position.getAdditionalCriteria() != null && !position.getAdditionalCriteria().isEmpty())
+        {
+          boolean valid = false;
+          for (EvaluationCriterion criterion : position.getAdditionalCriteria())
+            {
+              if (criterion.evaluate(evaluationRequest))
+                {
+                  valid = true;
+                  break;
+                }
+            }
+          if (!valid)
+            {
+              log.trace("For positionIndex " + (positionIndex+1) + " skip element because criteria not true");
+              continue; // skip this position in the result            
+            }
+        }
         String scoringStrategyID = position.getScoringStrategyID();
         ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, now);
         if (scoringStrategy == null)

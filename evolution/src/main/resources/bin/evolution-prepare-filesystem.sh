@@ -38,9 +38,9 @@ ssh $GUIMANAGER_HOST "
    mkdir -p $NGLM_UPLOADED
    mkdir -p $NGLM_REPORTS  
 "
-cat $DEPLOY_ROOT/config/logger/log4j-guimanager.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-guimanager-001.properties
-scp $DEPLOY_ROOT/config/logger/log4j-guimanager-001.properties $GUIMANAGER_HOST:$NGLM_CONFIG_LOGS/log4j-guimanager.properties
-rm -f $DEPLOY_ROOT/config/logger/log4j-guimanager-001.properties
+cat $DEPLOY_ROOT/config/logger/log4j-guimanager.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-guimanager-001.xml
+scp $DEPLOY_ROOT/config/logger/log4j-guimanager-001.xml $GUIMANAGER_HOST:$NGLM_CONFIG_LOGS/log4j-guimanager.xml
+rm -f $DEPLOY_ROOT/config/logger/log4j-guimanager-001.xml
 
 #
 #  prometheus runtime volume(s)
@@ -63,9 +63,9 @@ do
    export INTERNAL_PORT=`echo $TUPLE | cut -d: -f4`
    export MONITORING_PORT=`echo $TUPLE | cut -d: -f5`
    export DEBUG_PORT=`echo $TUPLE | cut -d: -f6`
-   cat $DEPLOY_ROOT/config/logger/log4j-evolutionengine.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-evolutionengine-$KEY.properties
-   scp $DEPLOY_ROOT/config/logger/log4j-evolutionengine-$KEY.properties $HOST:$NGLM_CONFIG_LOGS/log4j-evolutionengine-$KEY.properties
-   rm -f $DEPLOY_ROOT/config/logger/log4j-evolutionengine-$KEY.properties
+   cat $DEPLOY_ROOT/config/logger/log4j-evolutionengine.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-evolutionengine-$KEY.xml
+   scp $DEPLOY_ROOT/config/logger/log4j-evolutionengine-$KEY.xml $HOST:$NGLM_CONFIG_LOGS/log4j-evolutionengine-$KEY.xml
+   rm -f $DEPLOY_ROOT/config/logger/log4j-evolutionengine-$KEY.xml
 
    ssh $HOST "
       mkdir -p $NGLM_STREAMS_RUNTIME/streams-evolutionengine-$KEY      
