@@ -105,6 +105,33 @@
               "mandatory" : true,
               "availableValues" : null,
               "defaultValue" : null
+            },
+            { 
+              "id" : "node.parameter.duration", 
+              "display" : "Wait Duration", 
+              "dataType" : "integer", 
+              "width" : "50%", 
+              "multiple" : false, 
+              "mandatory" : true,
+              "availableValues" : null,
+              "defaultValue" : null
+            },
+            { 
+              "id" : "node.parameter.unit",     
+              "display" : "Units",         
+              "dataType" : "string",  
+              "width" : "50%", 
+              "multiple" : false, 
+              "mandatory" : true, 
+              "availableValues" : 
+                [
+                  { "id" : "minute", "display" : "Minutes" },
+                  { "id" : "hour",   "display" : "Hours" },
+                  { "id" : "day",    "display" : "Days" },
+                  { "id" : "week",   "display" : "Weeks" },
+                  { "id" : "month",  "display" : "Months" }
+                ],
+              "defaultValue" : null
             }
           ]
       },
@@ -113,29 +140,30 @@
         "id"                     : "106",
         "name"                   : "wait.test",
         "display"                : "Wait Test",
-        "icon"                   : "jmr_components/styles/images/objects/1-2-schedule.png",
+        "icon"                   : "jmr_components/styles/images/objects/1-3-wait.png",
+		"color"                  : "#c72285",
         "height"                 : 70,
         "width"                  : 70,
-        "scheduleNode"			 : true,
+        "enableCycle"            : true,
         "allowContextVariables"  : true,
         "outputType"             : "static",
-        "outputConnectors"       :
-        [
-          { "name" : "other", "display" : "Other", "evaluationPriority" : "last", "transitionCriteria" : [ ] }
-        ],
-        "parameters"             : [
-            {
-              "id" : "link.parameter.profilecriteria",
-              "display" : "Waiting Criteria",
+        "outputConnectors"       : 
+          [ 
+            { "name" : "wait",   "display" : "Wait",   "evaluationPriority" : "last",  "evaluateContextVariables" : true,  "transitionCriteria" : [ ], "additionalCriteria" : "node.parameter.additionalcriteria" } 
+          ],
+        "parameters"             : 
+          [ 
+            { 
+              "id" : "node.parameter.additionalcriteria", 
+              "display" : "Additional Criteria", 
               "dataType" : "evaluationCriteria",
-              "width" : "100%",
-              "multiple" : false,
+              "width" : "100%", 
+              "multiple" : false, 
               "mandatory" : true,
               "availableValues" : null,
               "defaultValue" : [ ]
             }
-          ],
-		  "additionalCriteria" : "link.parameter.profilecriteria"
+          ]
       },
       
       {
