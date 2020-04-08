@@ -2296,11 +2296,11 @@ public abstract class Expression
       c.set(Calendar.SECOND, ss);
       Date finalDateTime = evaluateDateAddFunction(c.getTime(), number, timeUnit, baseTimeUnit, roundDown);
       
-      StringBuilder evaluationTimeBuilder = new StringBuilder();
-      evaluationTimeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.HOUR_OF_DAY, com.evolving.nglm.core.Deployment.getBaseTimeZone())).append(":");
-      evaluationTimeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.MINUTE, com.evolving.nglm.core.Deployment.getBaseTimeZone())).append(":");
-      evaluationTimeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.SECOND, com.evolving.nglm.core.Deployment.getBaseTimeZone()));
-      return evaluationTimeBuilder.toString(); 
+      StringBuilder timeBuilder = new StringBuilder();
+      timeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.HOUR_OF_DAY, com.evolving.nglm.core.Deployment.getBaseTimeZone())).append(":");
+      timeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.MINUTE, com.evolving.nglm.core.Deployment.getBaseTimeZone())).append(":");
+      timeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.SECOND, com.evolving.nglm.core.Deployment.getBaseTimeZone()));
+      return timeBuilder.toString(); 
     }
     
     
