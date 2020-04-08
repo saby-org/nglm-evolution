@@ -753,6 +753,7 @@ public class EvaluationCriterion
 
   public boolean evaluate(SubscriberEvaluationRequest evaluationRequest)
   {
+    log.info("RAJ K evaluate ()");
     /*****************************************
     *
     *  result
@@ -783,6 +784,7 @@ public class EvaluationCriterion
       }
     catch (ExpressionEvaluationException|ArithmeticException e)
       {
+        log.info("RAJ K ExpressionEvaluationException|ArithmeticException e () {}", e);
         if (log.isDebugEnabled())
           {
             log.debug("invalid argument {}", argumentExpression);
