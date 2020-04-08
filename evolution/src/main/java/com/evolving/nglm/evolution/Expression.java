@@ -1947,12 +1947,23 @@ public abstract class Expression
       *  evaluate arguments
       *
       *****************************************/
+      
+      log.info("RAJ K evaluation {}", function);
+      for (Expression e : arguments)
+        {
+          log.info("RAJ K class {}, type {}", e.getClass(), e.getType());
+        }
 
       Object arg1Value = (arguments.size() > 0) ? arguments.get(0).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+      log.info("RAJ K arg1Value {}", arg1Value);
       Object arg2Value = (arguments.size() > 1) ? arguments.get(1).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+      log.info("RAJ K arg2Value {}", arg2Value);
       Object arg3Value = (arguments.size() > 2) ? arguments.get(2).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+      log.info("RAJ K arg3Value {}", arg3Value);
       Object arg4Value = (arguments.size() > 3) ? arguments.get(3).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+      log.info("RAJ K arg4Value {}", arg4Value);
       Object arg5Value = (arguments.size() > 4) ? arguments.get(4).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+      log.info("RAJ K arg5Value {}", arg5Value);
 
       /*****************************************
       *
