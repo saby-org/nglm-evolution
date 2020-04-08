@@ -20,6 +20,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SystemTime;
 
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -944,7 +945,18 @@ public class EvaluationCriterion
               
             case TimeCriterion:
             {
-              // to do not now
+              String[] args = ((String) criterionFieldValue).trim().split(":");
+              if (args.length != 3) throw new ExpressionEvaluationException();
+              
+              int hh = Integer.parseInt(args[0]);
+              int mm = Integer.parseInt(args[1]);
+              int ss = Integer.parseInt(args[2]);
+              Calendar c = SystemTime.getCalendar();
+              c.setTime(SystemTime.getCurrentTime());
+              c.set(Calendar.HOUR_OF_DAY, hh);
+              c.set(Calendar.MINUTE, mm);
+              c.set(Calendar.SECOND, ss);
+              criterionFieldValue = c.getTime();
               log.info("RAJ K TimeCriterion - criterionFieldValue {} - evaluatedArgument {} ", criterionFieldValue, evaluatedArgument);
             }
           }

@@ -63,7 +63,15 @@ public abstract class CriterionFieldRetriever
   public static Object getEvaluationWeekDay(SubscriberEvaluationRequest evaluationRequest, String fieldName) { int today = RLMDateUtils.getField(evaluationRequest.getEvaluationDate(), Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone()); return getDay(today); }
   public static Object getEvaluationMonth(SubscriberEvaluationRequest evaluationRequest, String fieldName) { int today = RLMDateUtils.getField(evaluationRequest.getEvaluationDate(), Calendar.MONTH, Deployment.getBaseTimeZone()); return getMonth(today); }
   public static Object getEvaluationDayOfMonth(SubscriberEvaluationRequest evaluationRequest, String fieldName) {  int dayOfMonth = RLMDateUtils.getField(evaluationRequest.getEvaluationDate(), Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone()); return dayOfMonth; }
-  public static Object getEvaluationTime(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getEvaluationDate(); }
+  public static Object getEvaluationTime(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
+  { 
+    Date evaluationDate = evaluationRequest.getEvaluationDate();
+    StringBuilder evaluationTimeBuilder = new StringBuilder();
+    evaluationTimeBuilder.append(RLMDateUtils.getField(evaluationDate, Calendar.HOUR_OF_DAY, com.evolving.nglm.core.Deployment.getBaseTimeZone())).append(":");
+    evaluationTimeBuilder.append(RLMDateUtils.getField(evaluationDate, Calendar.MINUTE, com.evolving.nglm.core.Deployment.getBaseTimeZone())).append(":");
+    evaluationTimeBuilder.append(RLMDateUtils.getField(evaluationDate, Calendar.SECOND, com.evolving.nglm.core.Deployment.getBaseTimeZone()));
+    return evaluationTimeBuilder.toString(); 
+  }
 
   //
   //  journey
