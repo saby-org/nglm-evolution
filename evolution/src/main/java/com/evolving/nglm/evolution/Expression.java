@@ -29,6 +29,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.Expression.ExpressionFunction;
 
 /*****************************************
@@ -1928,13 +1929,14 @@ public abstract class Expression
     {
       Object result = null;
       boolean expressionNullExceptionOccoured = false;
-      ExpressionNullException expressionNullException = null; 
+      ExpressionNullException expressionNullException = null;
       
       /*****************************************
       *
       *  evaluate arguments
       *
       *****************************************/
+      
       Object arg1Value = null;
       Object arg2Value = null;
       Object arg3Value = null;
@@ -1995,7 +1997,7 @@ public abstract class Expression
             
           case TimeAddFunction:
             if (expressionNullExceptionOccoured) throw expressionNullException;
-            result = evaluateTimeAddFunction((Date) arg1Value, (Number) arg2Value, TimeUnit.fromExternalRepresentation((String) arg3Value), baseTimeUnit, false);
+            result = evaluateTimeAddFunction((String) arg1Value, (Number) arg2Value, TimeUnit.fromExternalRepresentation((String) arg3Value), baseTimeUnit, false);
             break;
             
           case DateAddFunction:
@@ -2014,6 +2016,7 @@ public abstract class Expression
             if (expressionNullExceptionOccoured) throw expressionNullException;
             result = evaluateRoundFunction((Double) arg1Value, function);
             break;
+            
           case DaysUntilFunction:
           case MonthsUntilFunction:
           case DaysSinceFunction:
@@ -2021,6 +2024,7 @@ public abstract class Expression
             if (expressionNullExceptionOccoured) throw expressionNullException;
             result = evaluateUntilFunction((Date) arg1Value, function);
             break;
+            
           default:
             throw new ExpressionEvaluationException();
         }
@@ -2285,10 +2289,21 @@ public abstract class Expression
     //  evaluateTimeAddFunction
     //
     
-    private Date evaluateTimeAddFunction(Date date, Number number, TimeUnit timeUnit, TimeUnit baseTimeUnit, boolean roundDown)
+    private Date evaluateTimeAddFunction(String time, Number number, TimeUnit timeUnit, TimeUnit baseTimeUnit, boolean roundDown)
     {
-      log.info("RAJ K evaluateTimeAddFunction() date {}, number {}, timeUnit {} ", date, number, timeUnit); 
-      return evaluateDateAddFunction(date, number, timeUnit, baseTimeUnit, roundDown);
+      log.info("RAJ K evaluateTimeAddFunction() time {}, number {}, timeUnit {} ", time, number, timeUnit); 
+      String[] args = time.trim().split(":");
+      if (args.length != 3) throw new ExpressionEvaluationException();
+      int hh = Integer.parseInt(args[0]);
+      int mm = Integer.parseInt(args[1]);
+      int ss = Integer.parseInt(args[2]);
+      
+      Calendar c = SystemTime.getCalendar();
+      c.setTime(SystemTime.getCurrentTime());
+      c.set(Calendar.HOUR_OF_DAY, hh);
+      c.set(Calendar.MINUTE, mm);
+      c.set(Calendar.SECOND, ss);
+      return evaluateDateAddFunction(c.getTime(), number, timeUnit, baseTimeUnit, roundDown);
     }
     
     
