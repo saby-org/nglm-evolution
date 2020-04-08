@@ -1940,14 +1940,38 @@ public abstract class Expression
       try
         {
           arg1Value = (arguments.size() > 0) ? arguments.get(0).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+        } 
+      catch (ExpressionNullException expressionNullException)
+        {
+          log.warn("evaluation got an exception in {}", expressionNullException.getCriterionField());
+          log.info("RAJ K evaluation got an exception in {}", expressionNullException.getCriterionField());
+        }
+      try
+        {
           arg2Value = (arguments.size() > 1) ? arguments.get(1).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+        } 
+      catch (ExpressionNullException expressionNullException)
+        {
+          log.warn("evaluation got an exception in {}", expressionNullException.getCriterionField());
+          log.info("RAJ K evaluation got an exception in {}", expressionNullException.getCriterionField());
+        }
+      try
+        {
           arg3Value = (arguments.size() > 2) ? arguments.get(2).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+        } 
+      catch (ExpressionNullException expressionNullException)
+        {
+          log.warn("evaluation got an exception in {}", expressionNullException.getCriterionField());
+          log.info("RAJ K evaluation got an exception in {}", expressionNullException.getCriterionField());
+        }
+      try
+        {
           arg4Value = (arguments.size() > 3) ? arguments.get(3).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
         } 
       catch (ExpressionNullException expressionNullException)
         {
-          log.warn("evaluation got an exception {}", expressionNullException.getMessage());
-          log.info("RAJ K evaluation got an exception {}", expressionNullException.getMessage());
+          log.warn("evaluation got an exception in {}", expressionNullException.getCriterionField());
+          log.info("RAJ K evaluation got an exception in {}", expressionNullException.getCriterionField());
         }
 
       /*****************************************

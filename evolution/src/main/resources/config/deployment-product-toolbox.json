@@ -75,7 +75,7 @@
                   { "id" : "week",   "display" : "Weeks" },
                   { "id" : "month",  "display" : "Months" }
                 ],
-              "defaultValue" : "minute"
+              "defaultValue" : null
             },
             { 
               "id" : "node.parameter.schedule", 
