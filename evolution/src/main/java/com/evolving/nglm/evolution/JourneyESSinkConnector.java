@@ -46,7 +46,6 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
     private CatalogCharacteristicService catalogCharacteristicService;
     private SubscriberMessageTemplateService subscriberMessageTemplateService;
     private DynamicEventDeclarationsService dynamicEventDeclarationsService;
-    private CommunicationChannelService communicationChannelService;
 
     public OfferESSinkTask()
     {
@@ -54,12 +53,10 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
       catalogCharacteristicService = new CatalogCharacteristicService(Deployment.getBrokerServers(), "journeyessinkconnector-catalogcharacteristicservice-" + getTaskNumber(), Deployment.getCatalogCharacteristicTopic(), false);
       subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "journeyessinkconnector-subscriberMessageTemplateService-" + getTaskNumber(), Deployment.getSubscriberMessageTemplateTopic(), false);
       dynamicEventDeclarationsService = new DynamicEventDeclarationsService(Deployment.getBrokerServers(), "journeyessinkconnector-dynamicEventDeclarationsService-" + getTaskNumber(), Deployment.getDynamicEventDeclarationsTopic(), false);
-      communicationChannelService = new CommunicationChannelService(Deployment.getBrokerServers(), "journeyessinkconnector-communicationChannelService-" + getTaskNumber(), Deployment.getCommunicationChannelTopic(), false);
       journeyService.start();
       catalogCharacteristicService.start();
       subscriberMessageTemplateService.start();
       dynamicEventDeclarationsService.start();
-      communicationChannelService.start();
     }
 
     @Override public String getDocumentID(SinkRecord sinkRecord)
@@ -96,7 +93,7 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
 
       try
         {
-          Journey journey = new Journey(guiManagedObject.getJSONRepresentation(), guiManagedObject.getGUIManagedObjectType(), guiManagedObject.getEpoch(), guiManagedObject, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
+          Journey journey = new Journey(guiManagedObject.getJSONRepresentation(), guiManagedObject.getGUIManagedObjectType(), guiManagedObject.getEpoch(), guiManagedObject, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
 
           //
           //  flat fields

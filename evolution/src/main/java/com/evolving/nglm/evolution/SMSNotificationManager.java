@@ -103,7 +103,6 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
   private static String applicationID = "deliverymanager-notificationmanagersms";
   public String pluginName;
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
-  private CommunicationChannelService communicationChannelService;
   private CommunicationChannelBlackoutService blackoutService;
   private ContactPolicyProcessor contactPolicyProcessor;
 
@@ -120,7 +119,6 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
   *****************************************/
 
   public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
-  public CommunicationChannelService getCommunicationChannelService() { return communicationChannelService; }
   public CommunicationChannelBlackoutService getBlackoutService() { return blackoutService; }
 
   /*****************************************
@@ -153,13 +151,6 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "smsnotificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
     subscriberMessageTemplateService.start();
         
-    //
-    //  communicationChannelService
-    //
-
-    communicationChannelService = new CommunicationChannelService(Deployment.getBrokerServers(), "smsnotificationmanager-communicationchannelservice-" + deliveryManagerKey, Deployment.getCommunicationChannelTopic(), false);
-    communicationChannelService.start();
-
     //
     //  blackoutService
     //
@@ -722,10 +713,10 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
           {
             Date effectiveDeliveryTime = now;
             String channelID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(smsRequest.getDeliveryType());
-            CommunicationChannel channel = (CommunicationChannel) communicationChannelService.getActiveCommunicationChannel(channelID, now);
+            CommunicationChannel channel = Deployment.getCommunicationChannels().get(channelID);
             if(channel != null) 
               {
-                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(communicationChannelService, blackoutService, now);
+                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(blackoutService, now);
               }
             
             if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))

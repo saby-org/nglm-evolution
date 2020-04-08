@@ -141,7 +141,7 @@ public class DialogTemplate extends SubscriberMessageTemplate
   *
   *****************************************/
 
-  public DialogTemplate(CommunicationChannelService communicationChannelService, JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
+  public DialogTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
   {
     /*****************************************
     *
@@ -149,7 +149,7 @@ public class DialogTemplate extends SubscriberMessageTemplate
     *
     *****************************************/
 
-    super(communicationChannelService, jsonRoot, GUIManagedObjectType.DialogTemplate, epoch, existingTemplateUnchecked);
+    super(jsonRoot, GUIManagedObjectType.DialogTemplate, epoch, existingTemplateUnchecked);
     
     /*****************************************
     *
@@ -187,7 +187,7 @@ public class DialogTemplate extends SubscriberMessageTemplate
 
   @Override public String getTemplateType() { return "dialogTemplate"; } // should be useless for generic DialogTemplate
 
-  @Override public void retrieveDialogMessageFields(CommunicationChannelService communicationChannelService, JSONObject jsonRoot) throws GUIManagerException
+  @Override public void retrieveDialogMessageFields(JSONObject jsonRoot) throws GUIManagerException
   {
     /*****************************************
     *
@@ -199,7 +199,7 @@ public class DialogTemplate extends SubscriberMessageTemplate
 
     this.dialogMessageFields = new HashMap<String, Boolean>();
     Date now = SystemTime.getCurrentTime();
-    CommunicationChannel communicationChannel = communicationChannelService.getActiveCommunicationChannel(communicationChannelID, now);
+    CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(communicationChannelID);
     if(communicationChannel == null)
       {
         throw new GUIManagerException("unknown communication channel", communicationChannelID);

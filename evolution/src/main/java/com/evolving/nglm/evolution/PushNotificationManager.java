@@ -101,7 +101,6 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
   private static String applicationID = "deliverymanager-notificationmanagerpush";
   public String pluginName;
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
-  private CommunicationChannelService communicationChannelService;
   private CommunicationChannelBlackoutService blackoutService;
   private ContactPolicyProcessor contactPolicyProcessor;
 
@@ -118,7 +117,6 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
   *****************************************/
 
   public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
-  public CommunicationChannelService getCommunicationChannelService() { return communicationChannelService; }
   public CommunicationChannelBlackoutService getBlackoutService() { return blackoutService; }
 
   /*****************************************
@@ -141,13 +139,6 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
 
     subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "pushnotificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
     subscriberMessageTemplateService.start();
-
-    //
-    //  communicationChannelService
-    //
-
-    communicationChannelService = new CommunicationChannelService(Deployment.getBrokerServers(), "pushnotificationmanager-communicationchannelservice-" + deliveryManagerKey, Deployment.getCommunicationChannelTopic(), false);
-    communicationChannelService.start();
 
     //
     //  blackoutService
@@ -680,8 +671,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
           //  get communicationChannel
           //
           
-          CommunicationChannelService communicationChannelService = evolutionEventContext.getCommunicationChannelService();
-          CommunicationChannel communicationChannel = communicationChannelService.getActiveCommunicationChannel(template.getCommunicationChannelID(), now);
+          CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(template.getCommunicationChannelID());
           
           //
           //  get dest address
@@ -787,10 +777,10 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
               {
 
                 Date effectiveDeliveryTime = now;
-                CommunicationChannel channel = (CommunicationChannel) communicationChannelService.getActiveCommunicationChannel("push", now);
+                CommunicationChannel channel = (CommunicationChannel) Deployment.getCommunicationChannels().get("push");
                 if(channel != null) 
                   {
-                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(communicationChannelService, blackoutService, now);
+                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(blackoutService, now);
                   }
 
                 if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))

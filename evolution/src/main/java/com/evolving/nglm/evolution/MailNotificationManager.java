@@ -101,7 +101,6 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
   private static String applicationID = "deliverymanager-notificationmanagermail";
   public String pluginName;
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
-  private CommunicationChannelService communicationChannelService;
   private CommunicationChannelBlackoutService blackoutService;
   private ContactPolicyProcessor contactPolicyProcessor;
 
@@ -118,7 +117,6 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
   *****************************************/
 
   public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
-  public CommunicationChannelService getCommunicationChannelService() { return communicationChannelService; }
   public CommunicationChannelBlackoutService getBlackoutService() { return blackoutService; }
 
   /*****************************************
@@ -141,13 +139,6 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
 
     subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "mailnotificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
     subscriberMessageTemplateService.start();
-
-    //
-    //  communicationChannelService
-    //
-
-    communicationChannelService = new CommunicationChannelService(Deployment.getBrokerServers(), "mailnotificationmanager-communicationchannelservice-" + deliveryManagerKey, Deployment.getCommunicationChannelTopic(), false);
-    communicationChannelService.start();
 
     //
     //  blackoutService
@@ -761,10 +752,10 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
         if(mailRequest.getRestricted()) 
           {
             Date effectiveDeliveryTime = now;
-            CommunicationChannel channel = (CommunicationChannel) communicationChannelService.getActiveCommunicationChannel("mail", now);
+            CommunicationChannel channel = Deployment.getCommunicationChannels().get("mail");
             if(channel != null) 
               {
-                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(communicationChannelService, blackoutService, now);
+                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(blackoutService, now);
               }
             
             if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))

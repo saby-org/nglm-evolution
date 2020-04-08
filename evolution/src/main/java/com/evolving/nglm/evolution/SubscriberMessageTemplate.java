@@ -93,7 +93,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   //
 
   public abstract String getTemplateType();
-  public abstract void retrieveDialogMessageFields(CommunicationChannelService communicationChannelService, JSONObject jsonRoot) throws GUIManagerException;
+  public abstract void retrieveDialogMessageFields(JSONObject jsonRoot) throws GUIManagerException;
 
   /*****************************************
   *
@@ -109,7 +109,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  protected SubscriberMessageTemplate(CommunicationChannelService communicationChannelService, JSONObject jsonRoot, GUIManagedObjectType messageTemplateType, long epoch, GUIManagedObject existingSubscriberMessageTemplateUnchecked) throws GUIManagerException
+  protected SubscriberMessageTemplate(JSONObject jsonRoot, GUIManagedObjectType messageTemplateType, long epoch, GUIManagedObject existingSubscriberMessageTemplateUnchecked) throws GUIManagerException
   {
     /*****************************************
     *
@@ -126,7 +126,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     *****************************************/
 
     this.readOnlyCopyID = null;
-    retrieveDialogMessageFields(communicationChannelService, jsonRoot);
+    retrieveDialogMessageFields(jsonRoot);
     
     /*****************************************
     *
@@ -161,7 +161,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  public static SubscriberMessageTemplate newReadOnlyCopy(SubscriberMessageTemplate subscriberMessageTemplate, SubscriberMessageTemplateService subscriberMessageTemplateService, CommunicationChannelService communicationChannelService) throws GUIManagerException
+  public static SubscriberMessageTemplate newReadOnlyCopy(SubscriberMessageTemplate subscriberMessageTemplate, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
   {
     //
     //  construct JSON representation
@@ -182,10 +182,10 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     //
 
     SubscriberMessageTemplate result = null;
-    if (subscriberMessageTemplate instanceof SMSTemplate) result = new SMSTemplate(communicationChannelService, readOnlyCopy, 0L, null);
-    if (subscriberMessageTemplate instanceof MailTemplate) result = new MailTemplate(communicationChannelService, readOnlyCopy, 0L, null);
+    if (subscriberMessageTemplate instanceof SMSTemplate) result = new SMSTemplate(readOnlyCopy, 0L, null);
+    if (subscriberMessageTemplate instanceof MailTemplate) result = new MailTemplate(readOnlyCopy, 0L, null);
 //    if (subscriberMessageTemplate instanceof PushTemplate) result = new PushTemplate(communicationChannelService, readOnlyCopy, 0L, null);
-    if (subscriberMessageTemplate instanceof DialogTemplate) result = new DialogTemplate(communicationChannelService, readOnlyCopy, 0L, null);
+    if (subscriberMessageTemplate instanceof DialogTemplate) result = new DialogTemplate(readOnlyCopy, 0L, null);
     if (result == null) throw new ServerRuntimeException("illegal subscriberMessageTemplate");
 
     //
@@ -201,7 +201,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  public static SubscriberMessageTemplate newInternalTemplate(SubscriberMessage subscriberMessage, SubscriberMessageTemplateService subscriberMessageTemplateService, CommunicationChannelService communicationChannelService) throws GUIManagerException
+  public static SubscriberMessageTemplate newInternalTemplate(SubscriberMessage subscriberMessage, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
   {
     //
     //  construct JSON representation
@@ -221,10 +221,10 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     //
 
     SubscriberMessageTemplate result = null;
-    if (subscriberMessage instanceof SMSMessage) result = new SMSTemplate(communicationChannelService, internalSubscriberMessageTemplate, 0L, null);
-    if (subscriberMessage instanceof EmailMessage) result = new MailTemplate(communicationChannelService, internalSubscriberMessageTemplate, 0L, null);
+    if (subscriberMessage instanceof SMSMessage) result = new SMSTemplate(internalSubscriberMessageTemplate, 0L, null);
+    if (subscriberMessage instanceof EmailMessage) result = new MailTemplate(internalSubscriberMessageTemplate, 0L, null);
 //    if (subscriberMessage instanceof PushMessage) result = new PushTemplate(communicationChannelService, internalSubscriberMessageTemplate, 0L, null);
-    if (subscriberMessage instanceof DialogMessageFromGUI) result = new DialogTemplate(communicationChannelService, internalSubscriberMessageTemplate, 0L, null);
+    if (subscriberMessage instanceof DialogMessageFromGUI) result = new DialogTemplate(internalSubscriberMessageTemplate, 0L, null);
     if (result == null) throw new ServerRuntimeException("illegal subscriberMessage");
 
     //

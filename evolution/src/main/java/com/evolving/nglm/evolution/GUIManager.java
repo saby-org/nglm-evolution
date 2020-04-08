@@ -424,8 +424,6 @@ public class GUIManager
     getCommunicationChannelList("getCommunicationChannelList"),
     getCommunicationChannelSummaryList("getCommunicationChannelSummaryList"),
     getCommunicationChannel("getCommunicationChannel"),
-    putCommunicationChannel("putCommunicationChannel"),
-    removeCommunicationChannel("removeCommunicationChannel"),
     getBlackoutPeriodsList("getBlackoutPeriodsList"),
     getBlackoutPeriodsSummaryList("getBlackoutPeriodsSummaryList"),
     getBlackoutPeriods("getBlackoutPeriods"),
@@ -587,7 +585,6 @@ public class GUIManager
   private String getCustomerAlternateID;
   private UploadedFileService uploadedFileService;
   private TargetService targetService;
-  private CommunicationChannelService communicationChannelService;
   private CommunicationChannelBlackoutService communicationChannelBlackoutService;
   private LoyaltyProgramService loyaltyProgramService;
   private ExclusionInclusionTargetService exclusionInclusionTargetService;
@@ -883,7 +880,6 @@ public class GUIManager
     uploadedFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
     targetService = new TargetService(bootstrapServers, "guimanager-targetservice-" + apiProcessKey, targetTopic, true);
     voucherService = new VoucherService(bootstrapServers, "guimanager-voucherservice-" + apiProcessKey, voucherTopic, true,elasticsearch,uploadedFileService);
-    communicationChannelService = new CommunicationChannelService(bootstrapServers, "guimanager-communicationchannelservice-" + apiProcessKey, communicationChannelTopic, true);
     communicationChannelBlackoutService = new CommunicationChannelBlackoutService(bootstrapServers, "guimanager-blackoutservice-" + apiProcessKey, communicationChannelBlackoutTopic, true);
     loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, "guimanager-loyaltyprogramservice-"+apiProcessKey, loyaltyProgramTopic, true);
     exclusionInclusionTargetService = new ExclusionInclusionTargetService(bootstrapServers, "guimanager-exclusioninclusiontargetservice-" + apiProcessKey, exclusionInclusionTargetTopic, true);
@@ -1291,24 +1287,6 @@ public class GUIManager
       }
 
     //
-    //  communicationChannels
-    //
-
-    try
-      {
-        JSONArray initialCommunicationChannelsJSONArray = Deployment.getInitialCommunicationChannelsJSONArray();
-        for (int i=0; i<initialCommunicationChannelsJSONArray.size(); i++)
-          {
-            JSONObject communicationChannelJSON = (JSONObject) initialCommunicationChannelsJSONArray.get(i);
-            processPutCommunicationChannel("0", communicationChannelJSON);
-          }
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
     //  Source Addresses not before communicationChannels
     //
     
@@ -1644,7 +1622,6 @@ public class GUIManager
     uploadedFileService.start();
     targetService.start();
     voucherService.start();
-    communicationChannelService.start();
     communicationChannelBlackoutService.start();
     loyaltyProgramService.start();
     exclusionInclusionTargetService.start();
@@ -1907,8 +1884,6 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCommunicationChannelList", new APISimpleHandler(API.getCommunicationChannelList));
         restServer.createContext("/nglm-guimanager/getCommunicationChannelSummaryList", new APISimpleHandler(API.getCommunicationChannelSummaryList));
         restServer.createContext("/nglm-guimanager/getCommunicationChannel", new APISimpleHandler(API.getCommunicationChannel));
-        restServer.createContext("/nglm-guimanager/putCommunicationChannel", new APISimpleHandler(API.putCommunicationChannel));
-        restServer.createContext("/nglm-guimanager/removeCommunicationChannel", new APISimpleHandler(API.removeCommunicationChannel));
         restServer.createContext("/nglm-guimanager/getBlackoutPeriodsList", new APISimpleHandler(API.getBlackoutPeriodsList));
         restServer.createContext("/nglm-guimanager/getBlackoutPeriodsSummaryList", new APISimpleHandler(API.getBlackoutPeriodsSummaryList));
         restServer.createContext("/nglm-guimanager/getBlackoutPeriods", new APISimpleHandler(API.getBlackoutPeriods));
@@ -1995,7 +1970,7 @@ public class GUIManager
     *
     *****************************************/
 
-    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService);
+    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService);
 
     /*****************************************
     *
@@ -2003,7 +1978,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService));
 
     /*****************************************
     *
@@ -2061,8 +2036,7 @@ public class GUIManager
     private DeliverableSourceService deliverableSourceService;
     private UploadedFileService uploadedFileService;
     private TargetService targetService;
-    private CommunicationChannelService communicationChannelService;
-    private CommunicationChannelBlackoutService communicationChannelBlackoutService;
+        private CommunicationChannelBlackoutService communicationChannelBlackoutService;
     private LoyaltyProgramService loyaltyProgramService;
     private ExclusionInclusionTargetService exclusionInclusionTargetService;
     private ResellerService resellerService;
@@ -2073,7 +2047,7 @@ public class GUIManager
     //  constructor
     //
     
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -2109,7 +2083,6 @@ public class GUIManager
       this.deliverableSourceService = deliverableSourceService;
       this.uploadedFileService = uploadedFileService;
       this.targetService = targetService;
-      this.communicationChannelService = communicationChannelService;
       this.communicationChannelBlackoutService = communicationChannelBlackoutService;
       this.loyaltyProgramService = loyaltyProgramService;
       this.exclusionInclusionTargetService = exclusionInclusionTargetService;
@@ -2165,8 +2138,6 @@ public class GUIManager
       if (deliverableSourceService != null) deliverableSourceService.stop();
       if (uploadedFileService != null) uploadedFileService.stop();
       if (targetService != null) targetService.stop();
-      if (communicationChannelService != null) communicationChannelService.stop();
-      if (communicationChannelBlackoutService != null) communicationChannelBlackoutService.stop();
       if (loyaltyProgramService != null) loyaltyProgramService.stop();
       if (exclusionInclusionTargetService != null) exclusionInclusionTargetService.stop();
       if (resellerService != null) resellerService.stop();
@@ -3242,23 +3213,15 @@ public class GUIManager
                   break;
                   
                 case getCommunicationChannelList:
-                  jsonResponse = processgetCommunicationChannelList(userID, jsonRoot, true, includeArchived);
+                  jsonResponse = processGetCommunicationChannelList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getCommunicationChannelSummaryList:
-                  jsonResponse = processgetCommunicationChannelList(userID, jsonRoot, false, includeArchived);
+                  jsonResponse = processGetCommunicationChannelList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getCommunicationChannel:
                   jsonResponse = processGetCommunicationChannel(userID, jsonRoot, includeArchived);
-                  break;
-
-                case putCommunicationChannel:
-                  jsonResponse = processPutCommunicationChannel(userID, jsonRoot);
-                  break;
-
-                case removeCommunicationChannel:
-                  jsonResponse = processRemoveCommunicationChannel(userID, jsonRoot);
                   break;
 
                 case getBlackoutPeriodsList:
@@ -3874,7 +3837,7 @@ public class GUIManager
     *****************************************/
 
     List<JSONObject> communicationChannels = new ArrayList<JSONObject>();
-    for (GUIManagedObject communicationChannel : communicationChannelService.getStoredCommunicationChannels(includeArchived))
+    for (CommunicationChannel communicationChannel : Deployment.getCommunicationChannels().values())
       {
         JSONObject communicationChannelJSON = communicationChannel.getJSONRepresentation();
         communicationChannels.add(communicationChannelJSON);
@@ -5448,7 +5411,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService, approval);
+        Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, approval);
 
         /*****************************************
         *
@@ -5817,7 +5780,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey element = new Journey(elementRoot, type, epoch, existingElement, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService, approval);
+        Journey element = new Journey(elementRoot, type, epoch, existingElement, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, approval);
 
         /*****************************************
         *
@@ -6130,7 +6093,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
+        Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
 
         /*****************************************
         *
@@ -6348,7 +6311,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journeyTemplate = new Journey(jsonRoot, GUIManagedObjectType.JourneyTemplate, epoch, existingJourneyTemplate, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
+        Journey journeyTemplate = new Journey(jsonRoot, GUIManagedObjectType.JourneyTemplate, epoch, existingJourneyTemplate, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
 
         /*****************************************
         *
@@ -11308,7 +11271,7 @@ public class GUIManager
         *
         *****************************************/
 
-        contactPolicyService.putContactPolicy(contactPolicy, communicationChannelService, (existingContactPolicy == null), userID);
+        contactPolicyService.putContactPolicy(contactPolicy, (existingContactPolicy == null), userID);
 
         /*****************************************
         *
@@ -11343,7 +11306,7 @@ public class GUIManager
         //  store
         //
 
-        contactPolicyService.putContactPolicy(incompleteObject, communicationChannelService, (existingContactPolicy == null), userID);
+        contactPolicyService.putContactPolicy(incompleteObject, (existingContactPolicy == null), userID);
 
         //
         //  revalidate dependent objects
@@ -14058,7 +14021,7 @@ public class GUIManager
         *
         ****************************************/
 
-        MailTemplate mailTemplate = new MailTemplate(communicationChannelService, jsonRoot, epoch, existingTemplate);
+        MailTemplate mailTemplate = new MailTemplate(jsonRoot, epoch, existingTemplate);
 
         /*****************************************
         *
@@ -14086,7 +14049,7 @@ public class GUIManager
           {
             if (! mailTemplate.getReadOnly())
               {
-                MailTemplate readOnlyCopy = (MailTemplate) SubscriberMessageTemplate.newReadOnlyCopy(mailTemplate, subscriberMessageTemplateService, communicationChannelService);
+                MailTemplate readOnlyCopy = (MailTemplate) SubscriberMessageTemplate.newReadOnlyCopy(mailTemplate, subscriberMessageTemplateService);
                 mailTemplate.setReadOnlyCopyID(readOnlyCopy.getMailTemplateID());
                 subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null);
               }
@@ -14356,7 +14319,7 @@ public class GUIManager
         *
         ****************************************/
 
-        SMSTemplate smsTemplate = new SMSTemplate(communicationChannelService, jsonRoot, epoch, existingTemplate);
+        SMSTemplate smsTemplate = new SMSTemplate(jsonRoot, epoch, existingTemplate);
 
         /*****************************************
         *
@@ -14384,7 +14347,7 @@ public class GUIManager
           {
             if (! smsTemplate.getReadOnly())
               {
-                SMSTemplate readOnlyCopy = (SMSTemplate) SubscriberMessageTemplate.newReadOnlyCopy(smsTemplate, subscriberMessageTemplateService, communicationChannelService);
+                SMSTemplate readOnlyCopy = (SMSTemplate) SubscriberMessageTemplate.newReadOnlyCopy(smsTemplate, subscriberMessageTemplateService);
                 smsTemplate.setReadOnlyCopyID(readOnlyCopy.getSMSTemplateID());
                 subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null);
               }
@@ -14667,7 +14630,7 @@ public class GUIManager
         *
         ****************************************/
 
-        DialogTemplate pushTemplate = new DialogTemplate(communicationChannelService, jsonRoot, epoch, existingTemplate);
+        DialogTemplate pushTemplate = new DialogTemplate(jsonRoot, epoch, existingTemplate);
 
         /*****************************************
         *
@@ -14695,7 +14658,7 @@ public class GUIManager
           {
             if (! pushTemplate.getReadOnly())
               {
-                DialogTemplate readOnlyCopy = (DialogTemplate) SubscriberMessageTemplate.newReadOnlyCopy(pushTemplate, subscriberMessageTemplateService, communicationChannelService);
+                DialogTemplate readOnlyCopy = (DialogTemplate) SubscriberMessageTemplate.newReadOnlyCopy(pushTemplate, subscriberMessageTemplateService);
                 pushTemplate.setReadOnlyCopyID(readOnlyCopy.getDialogTemplateID());
                 subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null);
               }
@@ -14977,7 +14940,7 @@ public class GUIManager
         *
         ****************************************/
 
-        DialogTemplate dialogTemplate = new DialogTemplate(communicationChannelService, jsonRoot, epoch, existingTemplate);
+        DialogTemplate dialogTemplate = new DialogTemplate(jsonRoot, epoch, existingTemplate);
 
         /*****************************************
         *
@@ -15005,7 +14968,7 @@ public class GUIManager
           {
             if (! dialogTemplate.getReadOnly())
               {
-                DialogTemplate readOnlyCopy = (DialogTemplate) SubscriberMessageTemplate.newReadOnlyCopy(dialogTemplate, subscriberMessageTemplateService, communicationChannelService);
+                DialogTemplate readOnlyCopy = (DialogTemplate) SubscriberMessageTemplate.newReadOnlyCopy(dialogTemplate, subscriberMessageTemplateService);
                 dialogTemplate.setReadOnlyCopyID(readOnlyCopy.getDialogTemplateID());
                 subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null);
               }
@@ -15485,7 +15448,7 @@ public class GUIManager
     response.put("exclusionInclusionCount", exclusionInclusionTargetService.getStoredExclusionInclusionTargets(includeArchived).size());
     response.put("segmentContactPolicies",segmentContactPolicyService.getStoredSegmentContactPolicys(includeArchived).size());
     response.put("contactPolicyCount", contactPolicyService.getStoredContactPolicies(includeArchived).size());
-    response.put("communicationChannelCount", communicationChannelService.getStoredCommunicationChannels(includeArchived).size());
+    response.put("communicationChannelCount", Deployment.getCommunicationChannels().size());
     response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived).size());
     response.put("partnerCount", resellerService.getStoredResellers(includeArchived).size());
     return JSONUtilities.encodeObject(response);
@@ -18179,7 +18142,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processgetCommunicationChannelList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  private JSONObject processGetCommunicationChannelList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -18189,9 +18152,9 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> communicationChannelList = new ArrayList<JSONObject>();
-    for (GUIManagedObject communicationChannel : communicationChannelService.getStoredCommunicationChannels(includeArchived))
+    for (CommunicationChannel communicationChannel : Deployment.getCommunicationChannels().values())
       {
-        JSONObject channel = communicationChannelService.generateResponseJSON(communicationChannel, fullDetails, now);
+        JSONObject channel = communicationChannel.generateResponseJSON(fullDetails, now);
         communicationChannelList.add(channel);
       }
 
@@ -18241,8 +18204,8 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject communicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID, includeArchived);
-    JSONObject communicationChannelJSON = communicationChannelService.generateResponseJSON(communicationChannel, true, SystemTime.getCurrentTime());
+    CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(communicationChannelID);
+    JSONObject communicationChannelJSON = communicationChannel.generateResponseJSON(true, SystemTime.getCurrentTime());
 
     /*****************************************
     *
@@ -18252,195 +18215,6 @@ public class GUIManager
 
     response.put("responseCode", (communicationChannel != null) ? "ok" : "communicationChannelNotFound");
     if (communicationChannel != null) response.put("communicationChannel", communicationChannelJSON);
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processPutCommunicationChannel
-  *
-  *****************************************/
-
-  private JSONObject processPutCommunicationChannel(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  communicationChannelID
-    *
-    *****************************************/
-
-    String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (communicationChannelID == null)
-      {
-        communicationChannelID = communicationChannelService.generateCommunicationChannelID();
-        jsonRoot.put("id", communicationChannelID);
-      }
-
-    /*****************************************
-    *
-    *  existing CommunicationChannel
-    *
-    *****************************************/
-
-    GUIManagedObject existingCommunicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID);
-
-    /*****************************************
-    *
-    *  read-only
-    *
-    *****************************************/
-
-    if (existingCommunicationChannel != null && existingCommunicationChannel.getReadOnly())
-      {
-        response.put("id", existingCommunicationChannel.getGUIManagedObjectID());
-        response.put("accepted", existingCommunicationChannel.getAccepted());
-        response.put("valid", existingCommunicationChannel.getAccepted());
-        response.put("processing", communicationChannelService.isActiveCommunicationChannel(existingCommunicationChannel, now));
-        response.put("responseCode", "failedReadOnly");
-        return JSONUtilities.encodeObject(response);
-      }
-
-    /*****************************************
-    *
-    *  process CommunicationChannel
-    *
-    *****************************************/
-
-    long epoch = epochServer.getKey();
-    try
-      {
-        /****************************************
-        *
-        *  instantiate CommunicationChannel
-        *
-        ****************************************/
-
-        CommunicationChannel communicationChannel = new CommunicationChannel(jsonRoot, epoch, existingCommunicationChannel);
-
-        /*****************************************
-        *
-        *  store
-        *
-        *****************************************/
-
-        communicationChannelService.putCommunicationChannel(communicationChannel, (existingCommunicationChannel == null), userID);
-
-        /*****************************************
-        *
-        *  response
-        *
-        *****************************************/
-
-        response.put("id", communicationChannel.getGUIManagedObjectID());
-        response.put("accepted", communicationChannel.getAccepted());
-        response.put("valid", communicationChannel.getAccepted());
-        response.put("processing", communicationChannelService.isActiveCommunicationChannel(communicationChannel, now));
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
-      }
-    catch (JSONUtilitiesException|GUIManagerException e)
-      {
-        //
-        //  incompleteObject
-        //
-
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
-
-        //
-        //  store
-        //
-
-        communicationChannelService.putCommunicationChannel(incompleteObject, (existingCommunicationChannel == null), userID);
-
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-        //
-        //  response
-        //
-
-        response.put("communicationChannelID", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "communicationChannelNotValid");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
-  }
-
-  /*****************************************
-  *
-  *  processRemoveCommunicationChannel
-  *
-  *****************************************/
-
-  private JSONObject processRemoveCommunicationChannel(String userID, JSONObject jsonRoot){
-
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject existingCommunicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID);
-    if (existingCommunicationChannel != null && (force || !existingCommunicationChannel.getReadOnly())) {
-      communicationChannelService.removeCommunicationChannel(communicationChannelID, userID);
-    }
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (existingCommunicationChannel != null && (force || !existingCommunicationChannel.getReadOnly())) {
-      responseCode = "ok";
-    }
-    else if (existingCommunicationChannel != null) {
-      responseCode = "failedReadOnly";
-    }
-    else {
-      responseCode = "communicationChannelNotFound";
-    }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -20761,8 +20535,8 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject communicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID);
-    JSONObject communicationChannelJSON = communicationChannelService.generateResponseJSON(communicationChannel, true, SystemTime.getCurrentTime());
+    CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(communicationChannelID);
+    JSONObject communicationChannelJSON = communicationChannel.generateResponseJSON(true, SystemTime.getCurrentTime());
 
     //
     //  remove gui specific fields
@@ -22396,7 +22170,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         *
         *****************************************/
         
-        sourceAddressService.putSourceAddress(sourceAddress, communicationChannelService, (existingSourceAddress == null), userID);
+        sourceAddressService.putSourceAddress(sourceAddress, (existingSourceAddress == null), userID);
 
         /*****************************************
         *
@@ -22423,7 +22197,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         //  store
         //
 
-        sourceAddressService.putSourceAddress(incompleteObject, communicationChannelService, (existingSourceAddress == null), userID);
+        sourceAddressService.putSourceAddress(incompleteObject, (existingSourceAddress == null), userID);
 
         //
         //  log
@@ -24137,7 +23911,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           //  communicationChannelesEmail
           //
           
-          Collection<CommunicationChannel> communicationChannelesEmail = communicationChannelService.getActiveCommunicationChanneles(now).stream().filter(communicationChannel -> "email".equalsIgnoreCase(communicationChannel.getGUIManagedObjectName())).collect(Collectors.toList());
+          Collection<CommunicationChannel> communicationChannelesEmail = Deployment.getCommunicationChannels().values().stream().filter(communicationChannel -> "email".equalsIgnoreCase(communicationChannel.getName())).collect(Collectors.toList());
           if (communicationChannelesEmail.size() > 0)
             {
               CommunicationChannel communicationChannelEmail = communicationChannelesEmail.iterator().next();
@@ -24146,7 +23920,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   if (sourceAddressUnchecked.getAccepted())
                     {
                       SourceAddress sourceAddress = (SourceAddress) sourceAddressUnchecked;
-                      if (sourceAddress.getCommunicationChannelId().equals(communicationChannelEmail.getGUIManagedObjectID()))
+                      if (sourceAddress.getCommunicationChannelId().equals(communicationChannelEmail.getID()))
                         {
                           HashMap<String,Object> availableValue = new HashMap<String,Object>();
                           availableValue.put("id", sourceAddress.getSourceAddressId());
@@ -24174,7 +23948,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           //  communicationChannelesSMS
           //
           
-          Collection<CommunicationChannel> communicationChannelesSMS = communicationChannelService.getActiveCommunicationChanneles(now).stream().filter(communicationChannel -> "SMS".equalsIgnoreCase(communicationChannel.getGUIManagedObjectName())).collect(Collectors.toList());
+          Collection<CommunicationChannel> communicationChannelesSMS = Deployment.getCommunicationChannels().values().stream().filter(communicationChannel -> "SMS".equalsIgnoreCase(communicationChannel.getName())).collect(Collectors.toList());
           if (communicationChannelesSMS.size() > 0)
             {
               CommunicationChannel communicationChannelSMS = communicationChannelesSMS.iterator().next();
@@ -24183,7 +23957,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   if (sourceAddressUnchecked.getAccepted())
                     {
                       SourceAddress sourceAddress = (SourceAddress) sourceAddressUnchecked;
-                      if (sourceAddress.getCommunicationChannelId().equals(communicationChannelSMS.getGUIManagedObjectID()))
+                      if (sourceAddress.getCommunicationChannelId().equals(communicationChannelSMS.getID()))
                         {
                           HashMap<String,Object> availableValue = new HashMap<String,Object>();
                           availableValue.put("id", sourceAddress.getSourceAddressId());
@@ -24201,7 +23975,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           //  communicationChannelesFlashSMS
           //
           
-          Collection<CommunicationChannel> communicationChannelesFlashSMS = communicationChannelService.getActiveCommunicationChanneles(now).stream().filter(communicationChannel -> "flashsms".equalsIgnoreCase(communicationChannel.getGUIManagedObjectName())).collect(Collectors.toList());
+          Collection<CommunicationChannel> communicationChannelesFlashSMS = Deployment.getCommunicationChannels().values().stream().filter(communicationChannel -> "flashsms".equalsIgnoreCase(communicationChannel.getName())).collect(Collectors.toList());
           if (communicationChannelesFlashSMS.size() > 0)
             {
               CommunicationChannel communicationChannelSMS = communicationChannelesFlashSMS.iterator().next();
@@ -24210,7 +23984,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   if (sourceAddressUnchecked.getAccepted())
                     {
                       SourceAddress sourceAddress = (SourceAddress) sourceAddressUnchecked;
-                      if (sourceAddress.getCommunicationChannelId().equals(communicationChannelSMS.getGUIManagedObjectID()))
+                      if (sourceAddress.getCommunicationChannelId().equals(communicationChannelSMS.getID()))
                         {
                           HashMap<String,Object> availableValue = new HashMap<String,Object>();
                           availableValue.put("id", sourceAddress.getSourceAddressId());
@@ -24617,7 +24391,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         GUIManagedObject modifiedJourney;
         try
           {
-            Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
+            Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
             journey.validate(journeyObjectiveService, catalogCharacteristicService, targetService, date);
             modifiedJourney = journey;
           }
@@ -24674,10 +24448,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         try
           {
             SubscriberMessageTemplate subscriberMessageTemplate = null;
-            if (existingSubscriberMessageTemplate instanceof SMSTemplate) subscriberMessageTemplate = new SMSTemplate(communicationChannelService, existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
-            if (existingSubscriberMessageTemplate instanceof MailTemplate) subscriberMessageTemplate = new MailTemplate(communicationChannelService, existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
-//            if (existingSubscriberMessageTemplate instanceof PushTemplate) subscriberMessageTemplate = new PushTemplate(communicationChannelService, existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
-            if (existingSubscriberMessageTemplate instanceof DialogTemplate) subscriberMessageTemplate = new DialogTemplate(communicationChannelService, existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
+            if (existingSubscriberMessageTemplate instanceof SMSTemplate) subscriberMessageTemplate = new SMSTemplate(existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
+            if (existingSubscriberMessageTemplate instanceof MailTemplate) subscriberMessageTemplate = new MailTemplate(existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
+//            if (existingSubscriberMessageTemplate instanceof PushTemplate) subscriberMessageTemplate = new PushTemplate(existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
+            if (existingSubscriberMessageTemplate instanceof DialogTemplate) subscriberMessageTemplate = new DialogTemplate(existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
             if ( !(existingSubscriberMessageTemplate instanceof IncompleteObject) && subscriberMessageTemplate == null) throw new ServerRuntimeException("illegal subscriberMessageTemplate");            
             modifiedSubscriberMessageTemplate = subscriberMessageTemplate;
           }
@@ -26042,7 +25816,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     private DeliverableSourceService deliverableSourceService;
     private UploadedFileService uploadedFileService;
     private TargetService targetService;
-    private CommunicationChannelService communicationChannelService;
     private CommunicationChannelBlackoutService communicationChannelBlackoutService;
     private LoyaltyProgramService loyaltyProgramService;
     private ExclusionInclusionTargetService exclusionInclusionTargetService;
@@ -26085,7 +25858,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     public DeliverableSourceService getDeliverableSourceService() { return deliverableSourceService; }
     public UploadedFileService getUploadFileService() { return uploadedFileService; }
     public TargetService getTargetService() { return targetService; }
-    public CommunicationChannelService getCommunicationChannelService() { return communicationChannelService; }
     public CommunicationChannelBlackoutService getCommunicationChannelBlackoutService() { return communicationChannelBlackoutService; }
     public LoyaltyProgramService getLoyaltyProgramService() { return loyaltyProgramService; }
     public ExclusionInclusionTargetService getExclusionInclusionTargetService() { return exclusionInclusionTargetService; }
@@ -26100,7 +25872,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     *
     *****************************************/
 
-    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
+    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
     {
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
@@ -26131,7 +25903,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       this.deliverableSourceService = deliverableSourceService;
       this.uploadedFileService = uploadedFileService;
       this.targetService = targetService;
-      this.communicationChannelService = communicationChannelService;
       this.communicationChannelBlackoutService = communicationChannelBlackoutService;
       this.loyaltyProgramService = loyaltyProgramService;
       this.exclusionInclusionTargetService = exclusionInclusionTargetService;

@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -35,53 +36,23 @@ public class CommunicationChannel extends GUIManagedObject
 {
     /*****************************************
     *
-    *  schema
-    *
-    *****************************************/
-
-    //
-    //  schema
-    //
-
-    private static Schema schema = null;
-    static
-    {
-      SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-      schemaBuilder.name("communication_channel");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
-      for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-      schemaBuilder.field("defaultSourceAddress", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("profileAddressField", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("deliveryType", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("notificationDailyWindows", NotificationDailyWindows.serde().optionalSchema().schema());
-      schemaBuilder.field("communicationChannelParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, CriterionField.schema()).name("communication_channel_parameters").schema());
-      schema = schemaBuilder.build();
-    };
-
-    //
-    //  serde
-    //
-
-    private static ConnectSerde<CommunicationChannel> serde = new ConnectSerde<CommunicationChannel>(schema, false, CommunicationChannel.class, CommunicationChannel::pack, CommunicationChannel::unpack);
-
-    //
-    //  accessor
-    //
-
-    public static Schema schema() { return schema; }
-    public static ConnectSerde<CommunicationChannel> serde() { return serde; }
-
-    /*****************************************
-    *
     *  data
     *
     *****************************************/
 
+    String id;
+    String name;
+    String display;
     String defaultSourceAddress;
     String profileAddressField;
     String deliveryType;
     NotificationDailyWindows notificationDailyWindows;
     Map<String,CriterionField> parameters = new HashMap<String, CriterionField>();
+    String notificationPluginClass;
+    ParameterMap notificationPluginConfiguration = new ParameterMap(); 
+    String icon;
+    Integer toolboxHeight;
+    Integer toolboxWidth;
     
 
     /*****************************************
@@ -90,115 +61,20 @@ public class CommunicationChannel extends GUIManagedObject
     *
     *****************************************/
 
+    public String getID() { return id; }
+    public String getName() { return name; }
+    public String getDisplay() { return display; }
     public String getDefaultSourceAddress() { return defaultSourceAddress; }
     public String getProfileAddressField() { return profileAddressField; }
     public String getDeliveryType () { return deliveryType; } 
     public NotificationDailyWindows getNotificationDailyWindows() { return notificationDailyWindows; }
     public Map<String,CriterionField> getParameters() { return parameters; }
-
-    /*****************************************
-    *
-    *  constructor -- unpack
-    *
-    *****************************************/
-
-    public CommunicationChannel(SchemaAndValue schemaAndValue, String defaultSourceAddress, String profileAddressField, String deliveryType, NotificationDailyWindows notificationDailyWindows, Map<String, CriterionField> communicationChannelParameters)
-    {
-      super(schemaAndValue);
-      this.defaultSourceAddress = defaultSourceAddress;
-      this.profileAddressField = profileAddressField;
-      this.deliveryType = deliveryType;
-      this.notificationDailyWindows = notificationDailyWindows; 
-      this.parameters = communicationChannelParameters;
-    }
+    public String getNotificationPluginClass() { return notificationPluginClass; }
+    public ParameterMap getNotificationPluginConfiguration() { return notificationPluginConfiguration; }
+    public String getIcon() { return icon; }
+    public Integer getToolboxHeight() { return toolboxHeight; }
+    public Integer getToolboxWidth() { return toolboxWidth; }
     
-    /*****************************************
-    *
-    *  pack
-    *
-    *****************************************/
-
-    public static Object pack(Object value)
-    {
-      CommunicationChannel communicationChannel = (CommunicationChannel) value;
-      Struct struct = new Struct(schema);
-      packCommon(struct, communicationChannel);
-      struct.put("defaultSourceAddress", communicationChannel.getDefaultSourceAddress());
-      struct.put("profileAddressField", communicationChannel.getProfileAddressField());
-      struct.put("deliveryType", communicationChannel.getDeliveryType());
-      struct.put("notificationDailyWindows", NotificationDailyWindows.serde().packOptional(communicationChannel.getNotificationDailyWindows()));
-      struct.put("communicationChannelParameters", packCommunicationChannelParameters(communicationChannel.getParameters()));
-      return struct;
-    }
-    
-    /****************************************
-    *
-    *  packCommunicationChannelParameters
-    *
-    ****************************************/
-
-    private static Map<String,Object> packCommunicationChannelParameters(Map<String,CriterionField> parameters)
-    {
-      Map<String,Object> result = new LinkedHashMap<String,Object>();
-      for (String parameterName : parameters.keySet())
-        {
-          CriterionField communicationChannelParameter = parameters.get(parameterName);
-          result.put(parameterName,CriterionField.pack(communicationChannelParameter));
-        }
-      return result;
-    }
-
-    /*****************************************
-    *
-    *  unpack
-    *
-    *****************************************/
-
-    public static CommunicationChannel unpack(SchemaAndValue schemaAndValue)
-    {
-      //
-      //  data
-      //
-
-      Schema schema = schemaAndValue.schema();
-      Object value = schemaAndValue.value();
-      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
-
-      //
-      //  unpack
-      //
-
-      Struct valueStruct = (Struct) value;
-      String defaultSourceAddress = valueStruct.getString("defaultSourceAddress");
-      String profileAddressField = valueStruct.getString("profileAddressField");
-      String deliveryType = valueStruct.getString("deliveryType");
-      NotificationDailyWindows notificationTimeWindows = null;
-      notificationTimeWindows = NotificationDailyWindows.serde().unpackOptional(new SchemaAndValue(schema.field("notificationDailyWindows").schema(), valueStruct.get("notificationDailyWindows")));
-      Map<String,CriterionField> communicationChannelParameters = unpackCommunicationChannelParameters(schema.field("communicationChannelParameters").schema(), (Map<String,Object>) valueStruct.get("communicationChannelParameters"));
-      
-      //
-      //  return
-      //
-
-      return new CommunicationChannel(schemaAndValue, defaultSourceAddress, profileAddressField, deliveryType, notificationTimeWindows, communicationChannelParameters);
-    }
-    
-    /*****************************************
-    *
-    *  unpackCommunicationChannelParameters
-    *
-    *****************************************/
-
-    private static Map<String,CriterionField> unpackCommunicationChannelParameters(Schema schema, Map<String,Object> parameters)
-    {
-      Map<String,CriterionField> result = new HashMap<String,CriterionField>();
-      for (String parameterName : parameters.keySet())
-        {
-          CriterionField communicationChannelParameter = CriterionField.unpack(new SchemaAndValue(schema.valueSchema(), parameters.get(parameterName)));
-          result.put(parameterName, communicationChannelParameter);
-        }
-      return result;
-    }
     
     /*****************************************
     *
@@ -206,7 +82,7 @@ public class CommunicationChannel extends GUIManagedObject
     *
     *****************************************/
 
-    public Date getEffectiveDeliveryTime(CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutServiceBlackout, Date now)
+    public Date getEffectiveDeliveryTime(CommunicationChannelBlackoutService communicationChannelBlackoutServiceBlackout, Date now)
     {
       //
       //  retrieve delivery time configuration
@@ -222,7 +98,7 @@ public class CommunicationChannel extends GUIManagedObject
       Date deliveryDate = now;
       while (deliveryDate.before(maximumDeliveryDate))
         {
-          Date nextDailyWindowDeliveryDate = communicationChannelService.getEffectiveDeliveryTime(this, deliveryDate);
+          Date nextDailyWindowDeliveryDate = this.getEffectiveDeliveryTime(this, deliveryDate);
           Date nextBlackoutWindowDeliveryDate = (blackoutPeriod != null) ? communicationChannelBlackoutServiceBlackout.getEffectiveDeliveryTime(blackoutPeriod.getGUIManagedObjectID(), deliveryDate) : deliveryDate;
           Date nextDeliveryDate = nextBlackoutWindowDeliveryDate.after(nextDailyWindowDeliveryDate) ? nextBlackoutWindowDeliveryDate : nextDailyWindowDeliveryDate;
           if (nextDeliveryDate.after(deliveryDate))
@@ -237,6 +113,7 @@ public class CommunicationChannel extends GUIManagedObject
 
       return deliveryDate;
     }
+
     
     /*****************************************
     *
@@ -244,7 +121,7 @@ public class CommunicationChannel extends GUIManagedObject
     *
     *****************************************/
 
-    public CommunicationChannel(JSONObject jsonRoot, long epoch, GUIManagedObject existingCommunicationChannelUnchecked) throws GUIManagerException
+    public CommunicationChannel(JSONObject jsonRoot) throws GUIManagerException
     {
       /*****************************************
       *
@@ -252,22 +129,16 @@ public class CommunicationChannel extends GUIManagedObject
       *
       *****************************************/
 
-      super(jsonRoot, (existingCommunicationChannelUnchecked != null) ? existingCommunicationChannelUnchecked.getEpoch() : epoch);
+      super(jsonRoot, 0);
 
-      /*****************************************
-      *
-      *  existingCommunicationChannel
-      *
-      *****************************************/
-
-      CommunicationChannel existingContactPolicy = (existingCommunicationChannelUnchecked != null && existingCommunicationChannelUnchecked instanceof CommunicationChannel) ? (CommunicationChannel) existingCommunicationChannelUnchecked : null;
-      
       /*****************************************
       *
       *  attributes
       *
       *****************************************/
-
+      this.id = JSONUtilities.decodeString(jsonRoot, "id", false);
+      this.name = JSONUtilities.decodeString(jsonRoot, "name", false);
+      this.display = JSONUtilities.decodeString(jsonRoot, "display", false);
       this.defaultSourceAddress = JSONUtilities.decodeString(jsonRoot, "defaultSourceAddress", false);
       this.profileAddressField = JSONUtilities.decodeString(jsonRoot, "profileAddressField", false);
       this.deliveryType = JSONUtilities.decodeString(jsonRoot, "deliveryType", false);
@@ -283,17 +154,6 @@ public class CommunicationChannel extends GUIManagedObject
           CriterionField parameter = new CriterionField(parameterJSON);
           this.parameters.put(parameter.getID(), parameter);
         }
-      
-      /*****************************************
-      *
-      *  epoch
-      *
-      *****************************************/
-
-      if (epochChanged(existingContactPolicy))
-        {
-          this.setEpoch(epoch);
-        }
     }
 
     /*****************************************
@@ -307,26 +167,7 @@ public class CommunicationChannel extends GUIManagedObject
       return now;
     }
 
-    /*****************************************
-    *
-    *  epochChanged
-    *
-    *****************************************/
-
-    private boolean epochChanged(CommunicationChannel existingCommunicationChannel)
-    {
-      if (existingCommunicationChannel != null && existingCommunicationChannel.getAccepted())
-        {
-          boolean epochChanged = false;
-          epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingCommunicationChannel.getGUIManagedObjectID());
-          return epochChanged;
-        }
-      else
-        {
-          return true;
-        }
-    }
-    
+   
     public List<DailyWindow> getTodaysDailyWindows(Date now)
     {
       List<DailyWindow> result = null;
@@ -359,5 +200,91 @@ public class CommunicationChannel extends GUIManagedObject
             }
         }
       return (result != null) ? result : Collections.<DailyWindow>emptyList();
+    }
+    
+    
+    /*****************************************
+    *
+    *  getEffectiveDeliveryTime
+    *
+    *****************************************/
+    
+    private Date getEffectiveDeliveryTime(CommunicationChannel communicationChannel, Date now)
+    {
+      Date effectiveDeliveryDate = now;
+      if (communicationChannel != null && communicationChannel.getNotificationDailyWindows() != null)
+        {
+          effectiveDeliveryDate = NGLMRuntime.END_OF_TIME;
+          Date today = RLMDateUtils.truncate(now, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+          for (int i=0; i<8; i++)
+            {
+              //
+              //  check the i-th day
+              //
+
+              Date windowDay = RLMDateUtils.addDays(today, i, Deployment.getBaseTimeZone());
+              Date nextDay = RLMDateUtils.addDays(today, i+1, Deployment.getBaseTimeZone());
+              for (DailyWindow dailyWindow : communicationChannel.getTodaysDailyWindows(windowDay))
+                {
+                  Date windowStartDate = dailyWindow.getFromDate(windowDay);
+                  Date windowEndDate = dailyWindow.getUntilDate(windowDay);
+                  if (EvolutionUtilities.isDateBetween(now, windowStartDate, windowEndDate))
+                    {
+                      effectiveDeliveryDate = now;
+                    }
+                  else if (now.compareTo(windowStartDate) < 0)
+                    {
+                      effectiveDeliveryDate = windowStartDate.compareTo(effectiveDeliveryDate) < 0 ? windowStartDate : effectiveDeliveryDate;
+                    }
+                }
+
+              //
+              //  effectiveDeliveryDate found?
+              //
+
+              if (effectiveDeliveryDate.compareTo(nextDay) < 0)
+                {
+                  break;
+                }
+            }
+        } 
+      return effectiveDeliveryDate;
+    }
+    
+    
+    /*****************************************
+    *
+    *  generateResponseJSON For the GUI: This object is not a real GUIManagedObject...
+    *
+    *****************************************/
+
+    public JSONObject generateResponseJSON(boolean fullDetails, Date date)
+    {
+      JSONObject responseJSON = new JSONObject();
+      JSONObject jsonRepresentation = new JSONObject();
+      jsonRepresentation.putAll(this.getJSONRepresentation());
+          
+      JSONObject summaryJSONRepresentation = new JSONObject();
+      summaryJSONRepresentation.put("id", this.getJSONRepresentation().get("id"));
+      summaryJSONRepresentation.put("name", this.getJSONRepresentation().get("name"));
+      summaryJSONRepresentation.put("description", this.getJSONRepresentation().get("description"));
+      summaryJSONRepresentation.put("display", this.getJSONRepresentation().get("display"));
+      summaryJSONRepresentation.put("icon", this.getJSONRepresentation().get("icon"));
+      summaryJSONRepresentation.put("effectiveStartDate", this.getJSONRepresentation().get("effectiveStartDate"));
+      summaryJSONRepresentation.put("effectiveEndDate", this.getJSONRepresentation().get("effectiveEndDate"));
+      summaryJSONRepresentation.put("userID", this.getJSONRepresentation().get("userID"));
+      summaryJSONRepresentation.put("userName", this.getJSONRepresentation().get("userName"));
+      summaryJSONRepresentation.put("groupID", this.getJSONRepresentation().get("groupID"));
+      summaryJSONRepresentation.put("createdDate", this.getJSONRepresentation().get("createdDate"));
+      summaryJSONRepresentation.put("updatedDate", this.getJSONRepresentation().get("updatedDate"));
+      summaryJSONRepresentation.put("deleted", this.getJSONRepresentation().get("deleted") != null ? this.getJSONRepresentation().get("deleted") : false);
+       
+      responseJSON.putAll(fullDetails ? jsonRepresentation : summaryJSONRepresentation);
+      responseJSON.put("accepted", this.getAccepted());
+      responseJSON.put("active", this.getActive());
+      responseJSON.put("valid", this.getAccepted());
+      responseJSON.put("processing", true);
+      responseJSON.put("readOnly", this.getReadOnly());
+      return responseJSON;
     }
 }

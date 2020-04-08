@@ -24,6 +24,8 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.NodeType.OutputType;
+import com.evolving.nglm.evolution.toolbox.ToolBoxBuilder;
 
 public class NotificationManager extends DeliveryManager implements Runnable
 {
@@ -93,8 +95,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
   private static String applicationID = "deliverymanager-notificationmanager";
   public String pluginName;
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
-  private CommunicationChannelService communicationChannelService;
-  private CommunicationChannelBlackoutService blackoutService;
+    private CommunicationChannelBlackoutService blackoutService;
   private ContactPolicyProcessor contactPolicyProcessor;
 
   //
@@ -110,7 +111,6 @@ public class NotificationManager extends DeliveryManager implements Runnable
   *****************************************/
 
   public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
-  public CommunicationChannelService getCommunicationChannelService() { return communicationChannelService; }
   public CommunicationChannelBlackoutService getBlackoutService() { return blackoutService; }
 
   /*****************************************
@@ -133,13 +133,6 @@ public class NotificationManager extends DeliveryManager implements Runnable
 
     subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "notificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
     subscriberMessageTemplateService.start();
-
-    //
-    //  communicationChannelService
-    //
-
-    communicationChannelService = new CommunicationChannelService(Deployment.getBrokerServers(), "notificationmanager-communicationchannelservice-" + deliveryManagerKey, Deployment.getCommunicationChannelTopic(), false);
-    communicationChannelService.start();
 
     //
     //  blackoutService
@@ -699,8 +692,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
           //  get communicationChannel
           //
           
-          CommunicationChannelService communicationChannelService = evolutionEventContext.getCommunicationChannelService();
-          CommunicationChannel communicationChannel = communicationChannelService.getActiveCommunicationChannel(template.getCommunicationChannelID(), now);
+          CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(template.getCommunicationChannelID());
           
           //
           //  get dest address
@@ -946,6 +938,77 @@ public class NotificationManager extends DeliveryManager implements Runnable
 
     manager.run();
     
+  }
+  public static String[] getNotificationNodeTypes()
+  {
+    
+//    {
+//      "id"                     : "143",
+//      "name"                   : "appPush",
+//      "display"                : "App Push",
+//      "icon"                   : "jmr_components/styles/images/objects/app-push.png",
+//      "height"                 : 70,
+//      "width"                  : 70,
+//      "outputType"             : "static",
+//      "outputConnectors"       : 
+//        [ 
+//          { "name" : "delivered", "display" : "Delivered/Sent","transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered', 'acknowledged' ]" } } ] },
+//          { "name" : "failed",    "display" : "Failed",        "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
+//          { "name" : "timeout",   "display" : "Timeout",       "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] },
+//          { "name" : "unknown",   "display" : "UnknownAppID",  "transitionCriteria" : [ { "criterionField" : "subscriber.appID", "criterionOperator" : "is null" } ] }
+//        ],
+//      "parameters" :
+//        [
+//          { 
+//            "id" : "node.parameter.dialog_template",
+//            "display" : "Message Template",
+//            "dataType" : "string",
+//            "multiple" : false,
+//            "mandatory" : true,
+//            "availableValues" : [ "#dialog_template_3#" ],
+//            "defaultValue" : null
+//          },
+//          { 
+//            "id" : "node.parameter.contacttype",
+//            "display" : "Contact Type",
+//            "dataType" : "string",
+//            "multiple" : false,
+//            "mandatory" : true,
+//            "availableValues" : 
+//              [ 
+//                { "id" : "callToAction",  "display" : "Call To Action" },
+//                { "id" : "response", "display" : "Response" },
+//                { "id" : "reminder", "display" : "Reminder" },
+//                { "id" : "announcement", "display" : "Announcement" },
+//                { "id" : "actionNotification", "display" : "Action Notification" }
+//              ],
+//            "defaultValue" : null
+//          },
+//
+//          { 
+//            "id" : "node.parameter.fromaddress",
+//            "display" : "From Address",
+//            "dataType" : "string",
+//            "multiple" : false,
+//            "mandatory" : true,
+//            "availableValues" : [ "#dialog_source_address_3#" ],
+//            "defaultValue" : null
+//          }
+//        ],
+//      "action" : 
+//        {
+//          "actionManagerClass" : "com.evolving.nglm.evolution.NotificationManager$ActionManager",
+//          "channelID" : "3",
+//          "moduleID" : "1"
+//        }
+//     },
+
+    for(CommunicationChannel current : Deployment.getCommunicationChannels().values()) {
+      ToolBoxBuilder tb = new ToolBoxBuilder(
+          "NotifChannel-" + current.getID(), current.getName(), current.getDisplay(), current.getIcon(), current.getToolboxHeight(), current.getToolboxWidth(), OutputType.Static);
+    }
+    
+    return null;
   }
 }
   

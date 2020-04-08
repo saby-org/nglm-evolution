@@ -74,7 +74,7 @@ public class MailTemplate extends SubscriberMessageTemplate
   //
 
   @Override public String getTemplateType() { return "mail"; }
-  @Override public void retrieveDialogMessageFields(CommunicationChannelService communicationChannelService, JSONObject jsonRoot) throws GUIManagerException 
+  @Override public void retrieveDialogMessageFields(JSONObject jsonRoot) throws GUIManagerException 
   { 
     this.dialogMessageFields = new HashMap<String, Boolean>();
     dialogMessageFields.put("subject", true);
@@ -88,7 +88,7 @@ public class MailTemplate extends SubscriberMessageTemplate
   *
   *****************************************/
 
-  public MailTemplate(CommunicationChannelService communicationChannelService, JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
+  public MailTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
   {
     /*****************************************
     *
@@ -96,7 +96,7 @@ public class MailTemplate extends SubscriberMessageTemplate
     *
     *****************************************/
     
-    super(communicationChannelService, jsonRoot, GUIManagedObjectType.MailMessageTemplate, epoch, existingTemplateUnchecked);
+    super(jsonRoot, GUIManagedObjectType.MailMessageTemplate, epoch, existingTemplateUnchecked);
     
     /*****************************************
     *

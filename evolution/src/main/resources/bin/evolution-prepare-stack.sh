@@ -522,6 +522,14 @@ if [ "$NOTIFICATIONMANAGER_MAIL_ENABLED" = "true" ]; then
 
   done
 
+  #
+  #  postamble
+  #
+
+  cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-notificationmanagermail.yml
+
+fi  
+
 #
 #  notificationmanager
 #
@@ -560,7 +568,7 @@ if [ "$NOTIFICATIONMANAGER_ENABLED" = "true" ]; then
   #  postamble
   #
 
-  cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-notificationmanagermail.yml
+  cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-notificationmanager.yml
 
 fi  
 

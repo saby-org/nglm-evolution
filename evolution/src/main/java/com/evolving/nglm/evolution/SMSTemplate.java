@@ -72,7 +72,7 @@ public class SMSTemplate extends SubscriberMessageTemplate
   //
 
   @Override public String getTemplateType() { return "sms"; }
-  @Override public void retrieveDialogMessageFields(CommunicationChannelService communicationChannelService, JSONObject jsonRoot) throws GUIManagerException 
+  @Override public void retrieveDialogMessageFields(JSONObject jsonRoot) throws GUIManagerException 
   { 
     this.dialogMessageFields = new HashMap<String, Boolean>();
     dialogMessageFields.put("messageText", true);
@@ -84,9 +84,9 @@ public class SMSTemplate extends SubscriberMessageTemplate
   *
   *****************************************/
 
-  public SMSTemplate(CommunicationChannelService communicationChannelService, JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
+  public SMSTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
   {
-    super(communicationChannelService, jsonRoot, GUIManagedObjectType.SMSMessageTemplate, epoch, existingTemplateUnchecked);
+    super(jsonRoot, GUIManagedObjectType.SMSMessageTemplate, epoch, existingTemplateUnchecked);
     
     /*****************************************
     *

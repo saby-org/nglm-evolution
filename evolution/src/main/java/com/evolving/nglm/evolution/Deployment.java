@@ -18,6 +18,7 @@ import java.util.Set;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.JSONUtilities;
@@ -169,8 +170,8 @@ public class Deployment
   private static JSONArray initialVoucherCodeFormatsJSONArray = null;
   private static JSONArray initialScoringTypesJSONArray = null;
   private static JSONArray initialSegmentationDimensionsJSONArray = null;
-  private static JSONArray initialCommunicationChannelsJSONArray = null;
   private static boolean generateSimpleProfileDimensions;
+  private static Map<String,CommunicationChannel> communicationChannels = new LinkedHashMap<>();
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
   private static Map<String,JourneyMetricDeclaration> journeyMetricDeclarations = new LinkedHashMap<String,JourneyMetricDeclaration>();
   private static Map<String,SubscriberProfileDatacubeMetric> subscriberProfileDatacubeMetrics = new LinkedHashMap<String,SubscriberProfileDatacubeMetric>();
@@ -408,7 +409,6 @@ public class Deployment
   public static JSONArray getInitialTokenTypesJSONArray() { return initialTokenTypesJSONArray; }
   public static JSONArray getInitialVoucherCodeFormatsJSONArray() { return initialVoucherCodeFormatsJSONArray; }
   public static JSONArray getInitialSegmentationDimensionsJSONArray() { return initialSegmentationDimensionsJSONArray; }
-  public static JSONArray getInitialCommunicationChannelsJSONArray() { return initialCommunicationChannelsJSONArray; }
   public static boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
   public static Map<String,JourneyMetricDeclaration> getJourneyMetricDeclarations() { return journeyMetricDeclarations; }
@@ -473,6 +473,7 @@ public class Deployment
   public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
   public static String getSourceAddressTopic() { return sourceAddressTopic; }
   public static boolean getAutoApproveGuiObjects() { return autoApproveGuiObjects; }
+  public static Map<String,CommunicationChannel> getCommunicationChannels(){ return communicationChannels; };
   public static Map<String,String> getDeliveryTypeCommunicationChannelIDMap(){ return deliveryTypeCommunicationChannelIDMap; };
   public static String getVoucherChangeRequestTopic() { return voucherChangeRequestTopic; }
   public static String getVoucherChangeResponseTopic() { return voucherChangeResponseTopic; }
@@ -890,7 +891,27 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
-
+      
+      
+      //
+      //  communicationChannels
+      //
+      
+      try 
+        {
+          JSONArray communicationChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "communicationChannels", new JSONArray());
+          for (int i=0; i<communicationChannelsJSONArray.size(); i++)
+            {
+              JSONObject communicationChannelJSON = (JSONObject) communicationChannelsJSONArray.get(i);              
+              CommunicationChannel communicationChannel = new CommunicationChannel(communicationChannelJSON);
+              communicationChannels.put(communicationChannel.getID(), communicationChannel);
+            }
+        }
+      catch (GUIManagerException | JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
       //
       //  notificationDailyWindows
       //
@@ -2428,11 +2449,6 @@ public class Deployment
       initialSegmentationDimensionsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSegmentationDimensions", new JSONArray());
 
       //
-      // initialCommunicationChannelsJSONArray
-      //
-      initialCommunicationChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "communicationChannels", new JSONArray());
-
-      //
       //  generateSimpleProfileDimensions
       //
 
@@ -2835,6 +2851,20 @@ public class Deployment
               NodeType nodeType = new NodeType(nodeTypeJSON);
               nodeTypes.put(nodeType.getID(), nodeType);
             }
+          
+          // Add generated Node Types: 
+          // * Generic Notification Manager
+          String[] notificationNodeTypesAsString = NotificationManager.getNotificationNodeTypes();
+          for(String current : notificationNodeTypesAsString) {
+            try {
+              JSONObject jsonNodeTypeRoot = (JSONObject) (new JSONParser()).parse(current);
+              NodeType nodeType = new NodeType(jsonNodeTypeRoot);
+              nodeTypes.put(nodeType.getID(), nodeType);
+            }
+            catch(Exception e) {
+              log.warn("Deployment: Can't interpret nodeType definition : " + current + " due to exception " + e.getClass().getName(), e);
+            }
+          }
         }
       catch (GUIManagerException | JSONUtilitiesException e)
         {

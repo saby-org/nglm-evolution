@@ -99,7 +99,7 @@ public class SourceAddressService extends GUIService
   *
   *****************************************/
 
-  public void putSourceAddress(GUIManagedObject sourceAddress, CommunicationChannelService communicationChannelService, boolean newObject, String userID) throws GUIManagerException
+  public void putSourceAddress(GUIManagedObject sourceAddress, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -113,7 +113,7 @@ public class SourceAddressService extends GUIService
 
     if (sourceAddress instanceof SourceAddress)      
       {
-        ((SourceAddress) sourceAddress).validate(communicationChannelService, now);
+        ((SourceAddress) sourceAddress).validate(now);
       }
     
     //
@@ -129,11 +129,11 @@ public class SourceAddressService extends GUIService
   *
   *****************************************/
 
-  public void putSourceAddress(IncompleteObject sourceAddress, CommunicationChannelService communicationChannelService, boolean newObject, String userID)
+  public void putSourceAddress(IncompleteObject sourceAddress, boolean newObject, String userID)
   {
     try
       {
-        putSourceAddress((GUIManagedObject) sourceAddress, communicationChannelService, newObject, userID);
+        putSourceAddress((GUIManagedObject) sourceAddress, newObject, userID);
       }
     catch (GUIManagerException e)
       {

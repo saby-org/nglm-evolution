@@ -969,9 +969,9 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
   
-  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, JourneyService journeyService, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, CommunicationChannelService communicationChannelService) throws GUIManagerException
+  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, JourneyService journeyService, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService) throws GUIManagerException
   {
-	  this(jsonRoot, journeyType, epoch, existingJourneyUnchecked, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService, JourneyStatus.Pending);
+	  this(jsonRoot, journeyType, epoch, existingJourneyUnchecked, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, JourneyStatus.Pending);
   }
   
   /*****************************************
@@ -980,7 +980,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
   
-  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, JourneyService journeyService, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, CommunicationChannelService communicationChannelService, JourneyStatus approval) throws GUIManagerException
+  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, JourneyService journeyService, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyStatus approval) throws GUIManagerException
   {
     /*****************************************
     *
@@ -1578,7 +1578,7 @@ public class Journey extends GUIManagedObject
 
         if (matchingSubscriberMessage == null)
           {
-            SubscriberMessageTemplate internalSubscriberMessageTemplate = SubscriberMessageTemplate.newInternalTemplate(subscriberMessage, subscriberMessageTemplateService, communicationChannelService);
+            SubscriberMessageTemplate internalSubscriberMessageTemplate = SubscriberMessageTemplate.newInternalTemplate(subscriberMessage, subscriberMessageTemplateService);
             subscriberMessage.setSubscriberMessageTemplateID(internalSubscriberMessageTemplate.getSubscriberMessageTemplateID());
             subscriberMessageTemplateService.putSubscriberMessageTemplate(internalSubscriberMessageTemplate, true, null);
           }

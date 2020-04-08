@@ -259,7 +259,7 @@ public class ContactPolicy extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(Date date, CommunicationChannelService communicationChannelService) throws GUIManagerException
+  public void validate(Date date) throws GUIManagerException
   {
     /*****************************************
     *
@@ -269,7 +269,7 @@ public class ContactPolicy extends GUIManagedObject
 
     for (ContactPolicyCommunicationChannels communicationChannel : contactPolicyCommunicationChannels)
       {
-        CommunicationChannel channel = (CommunicationChannel) communicationChannelService.getStoredCommunicationChannel(communicationChannel.getCommunicationChannelID());
+        CommunicationChannel channel = Deployment.getCommunicationChannels().get(communicationChannel.getCommunicationChannelID());
         if (channel == null) throw new GUIManagerException("unknown communication channel ", communicationChannel.getCommunicationChannelID());
       }
   }

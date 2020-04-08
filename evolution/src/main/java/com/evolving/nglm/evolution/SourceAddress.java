@@ -219,7 +219,7 @@ public class SourceAddress extends GUIManagedObject
   *
   *****************************************/
   
-  public void validate(CommunicationChannelService communicationChannelService, Date date) throws GUIManagerException
+  public void validate(Date date) throws GUIManagerException
   {
     /*****************************************
     *
@@ -227,6 +227,6 @@ public class SourceAddress extends GUIManagedObject
     *
     *****************************************/
     
-    if (communicationChannelService.getActiveCommunicationChannel(communicationChannelId, date) == null) throw new GUIManagerException("unknown communicationChannel ", communicationChannelId);
+    if (Deployment.getCommunicationChannels().get(communicationChannelId) == null) throw new GUIManagerException("unknown communicationChannel ", communicationChannelId);
   }
 }
