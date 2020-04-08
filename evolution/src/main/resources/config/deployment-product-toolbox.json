@@ -46,34 +46,10 @@
         "outputType"       : "static",
         "outputConnectors" : 
           [ 
-            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAddOrConstant(node.entryDate, node.parameter.schedule, node.parameter.duration, node.parameter.unit, node.parameter.waitfor)" } } ] }
+            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAddOrConstant(node.entryDate, node.parameter.schedule, node.parameter.duration, node.parameter.unit)" } } ] }
           ],
         "parameters"       :
           [
-            { 
-              "id" : "node.parameter.waitfor", 
-              "display" : "Wait For", 
-              "dataType" : "string", 
-              "width" : "50%", 
-              "multiple" : false, 
-              "mandatory" : true,
-              "availableValues" : 
-                [
-                  { "id" : "date",   "display" : "Date" },
-                  { "id" : "time",   "display" : "Time" }
-                ],
-              "defaultValue" : "date"
-            },
-            { 
-              "id" : "node.parameter.schedule", 
-              "display" : "Wait Until", 
-              "dataType" : "date", 
-              "width" : "50%", 
-              "multiple" : false, 
-              "mandatory" : false,
-              "availableValues" : null,
-              "defaultValue" : null
-            },
             { 
               "id" : "node.parameter.duration", 
               "display" : "Wait Duration", 
@@ -100,6 +76,16 @@
                   { "id" : "month",  "display" : "Months" }
                 ],
               "defaultValue" : "minute"
+            },
+            { 
+              "id" : "node.parameter.schedule", 
+              "display" : "Wait Until", 
+              "dataType" : "date", 
+              "width" : "50%", 
+              "multiple" : false, 
+              "mandatory" : false,
+              "availableValues" : null,
+              "defaultValue" : null
             }
           ]
       },
