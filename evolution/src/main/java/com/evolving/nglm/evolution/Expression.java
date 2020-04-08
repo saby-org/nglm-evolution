@@ -1697,7 +1697,7 @@ public abstract class Expression
       
       switch (arg1.getType())
         {
-          case DateExpression:
+          case TimeExpression:
             break;
 
           default:
@@ -1927,6 +1927,8 @@ public abstract class Expression
     @Override protected Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit)
     {
       Object result = null;
+      boolean expressionNullExceptionOccoured = false;
+      ExpressionNullException expressionNullException = null;
       
       /*****************************************
       *
@@ -1941,37 +1943,37 @@ public abstract class Expression
         {
           arg1Value = (arguments.size() > 0) ? arguments.get(0).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
         } 
-      catch (ExpressionNullException expressionNullException)
+      catch (ExpressionNullException e)
         {
-          log.warn("evaluation got an exception in {}", expressionNullException.getCriterionField());
-          log.info("RAJ K evaluation got an exception in {}", expressionNullException.getCriterionField());
+          expressionNullExceptionOccoured = true;
+          expressionNullException = e;
         }
       try
         {
           arg2Value = (arguments.size() > 1) ? arguments.get(1).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
         } 
-      catch (ExpressionNullException expressionNullException)
+      catch (ExpressionNullException e)
         {
-          log.warn("evaluation got an exception in {}", expressionNullException.getCriterionField());
-          log.info("RAJ K evaluation got an exception in {}", expressionNullException.getCriterionField());
+          expressionNullExceptionOccoured = true;
+          expressionNullException = e;
         }
       try
         {
           arg3Value = (arguments.size() > 2) ? arguments.get(2).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
         } 
-      catch (ExpressionNullException expressionNullException)
+      catch (ExpressionNullException e)
         {
-          log.warn("evaluation got an exception in {}", expressionNullException.getCriterionField());
-          log.info("RAJ K evaluation got an exception in {}", expressionNullException.getCriterionField());
+          expressionNullExceptionOccoured = true;
+          expressionNullException = e;
         }
       try
         {
           arg4Value = (arguments.size() > 3) ? arguments.get(3).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
         } 
-      catch (ExpressionNullException expressionNullException)
+      catch (ExpressionNullException e)
         {
-          log.warn("evaluation got an exception in {}", expressionNullException.getCriterionField());
-          log.info("RAJ K evaluation got an exception in {}", expressionNullException.getCriterionField());
+          expressionNullExceptionOccoured = true;
+          expressionNullException = e;
         }
 
       /*****************************************
@@ -1987,18 +1989,18 @@ public abstract class Expression
             break;
             
           case TimeConstantFunction:
-            if (arg1Value == null) throw new ExpressionNullException();
+            if (expressionNullExceptionOccoured) throw expressionNullException;
             result = evaluateTimeConstantFunction((String) arg1Value);
             break;
             
           case TimeAddFunction:
-            if (arg1Value == null || arg2Value == null || arg3Value == null) throw new ExpressionNullException();
+            if (expressionNullExceptionOccoured) throw expressionNullException;
             result = evaluateTimeAddFunction((Date) arg1Value, (Number) arg2Value, TimeUnit.fromExternalRepresentation((String) arg3Value), baseTimeUnit, false);
             break;
             
           case DateAddFunction:
             // TODO : don't do roundDown for now, not sure why we could need this
-            if (arg1Value == null || arg2Value == null || arg3Value == null) throw new ExpressionNullException();
+            if (expressionNullExceptionOccoured) throw expressionNullException;
             result = evaluateDateAddFunction((Date) arg1Value, (Number) arg2Value, TimeUnit.fromExternalRepresentation((String) arg3Value), baseTimeUnit, false);
             break;
             
@@ -2009,14 +2011,14 @@ public abstract class Expression
           case RoundFunction:
           case RoundUpFunction:
           case RoundDownFunction:
-            if (arg1Value == null) throw new ExpressionNullException();
+            if (expressionNullExceptionOccoured) throw expressionNullException;
             result = evaluateRoundFunction((Double) arg1Value, function);
             break;
           case DaysUntilFunction:
           case MonthsUntilFunction:
           case DaysSinceFunction:
           case MonthsSinceFunction:
-            if (arg1Value == null) throw new ExpressionNullException();
+            if (expressionNullExceptionOccoured) throw expressionNullException;
             result = evaluateUntilFunction((Date) arg1Value, function);
             break;
           default:
@@ -2285,6 +2287,7 @@ public abstract class Expression
     
     private Date evaluateTimeAddFunction(Date date, Number number, TimeUnit timeUnit, TimeUnit baseTimeUnit, boolean roundDown)
     {
+      log.info("RAJ K evaluateTimeAddFunction() date {}, number {}, timeUnit {} ", date, number, timeUnit); 
       return evaluateDateAddFunction(date, number, timeUnit, baseTimeUnit, roundDown);
     }
     
@@ -2295,7 +2298,7 @@ public abstract class Expression
     
     private Date evaluateDateAddOrConstantFunction(Date dateAddDate, Date strictScheduleDate, Number waitDuration, TimeUnit timeUnit, TimeUnit baseTimeUnit, boolean roundDown)
     {
-      log.info("RAJ K evaluateDateAddOrConstantFunction() dateAddDate {}, strictScheduleDate {}, arg3Value {}, timeUnit {} ", dateAddDate, strictScheduleDate, waitDuration, timeUnit); 
+      log.info("RAJ K evaluateDateAddOrConstantFunction() dateAddDate {}, strictScheduleDate {}, waitDuration {}, timeUnit {} ", dateAddDate, strictScheduleDate, waitDuration, timeUnit); 
       boolean dateBasedWait = strictScheduleDate != null;
       boolean timeBasedWait = waitDuration != null && timeUnit != TimeUnit.Unknown;
       boolean dateAndTimeBasedWait = dateBasedWait && timeBasedWait;

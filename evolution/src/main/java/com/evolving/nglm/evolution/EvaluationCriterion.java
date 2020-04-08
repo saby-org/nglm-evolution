@@ -753,12 +753,6 @@ public class EvaluationCriterion
 
   public boolean evaluate(SubscriberEvaluationRequest evaluationRequest)
   {
-    boolean rajLog = false;
-    if (getCriterionOperator() == CriterionOperator.GreaterThanOrEqualOperator)
-      {
-        rajLog = true;
-      }
-
     /*****************************************
     *
     *  result
@@ -786,12 +780,9 @@ public class EvaluationCriterion
     try
       {
         evaluatedArgument = (argument != null) ? argument.evaluateExpression(evaluationRequest, argumentBaseTimeUnit) : null;
-        if (rajLog) log.info("RAJ K evaluatedArgument {}, class {}", evaluatedArgument, argument.getClass());
       }
     catch (ExpressionEvaluationException|ArithmeticException e)
       {
-        log.info("RAJ K ExpressionEvaluationException|ArithmeticException e () {}", e);
-        e.printStackTrace();//RAJ K 
         if (log.isDebugEnabled())
           {
             log.debug("invalid argument {}", argumentExpression);
@@ -811,10 +802,8 @@ public class EvaluationCriterion
 
     if (criterionField.getEvaluationVariable())
       {
-        if (rajLog) log.info("RAJ K criterionFieldValue {}, evaluatedArgument {}", (String) criterionFieldValue, evaluatedArgument);
         evaluationRequest.getEvaluationVariables().put((String) criterionFieldValue, evaluatedArgument);
         result = traceCondition(evaluationRequest, true, criterionFieldValue, evaluatedArgument);
-        if (rajLog) log.info("RAJ K criterionField.getEvaluationVariable() {}", result);
         return result;
       }
 
@@ -834,7 +823,6 @@ public class EvaluationCriterion
           if (criterionFieldValue == null)
             {
               evaluationRequest.subscriberTrace((criterionDefault ? "TrueCondition : " : "FalseCondition: ") + "DefaultCriterion {0} {1} value {2} argument {3}", criterionField.getID(), criterionOperator, criterionFieldValue, evaluatedArgument);
-              if (rajLog) log.info("RAJ K criterionOperator() - criterionFieldValue {} ", criterionDefault);
               return criterionDefault;
             }
           break;
@@ -856,7 +844,6 @@ public class EvaluationCriterion
           if (evaluatedArgument == null)
             {
               evaluationRequest.subscriberTrace("FalseCondition : invalid null argument {0}", argumentExpression);
-              if (rajLog) log.info("RAJ K criterionOperator() - evaluatedArgument ");
               return false;
             }
           break;
@@ -882,8 +869,6 @@ public class EvaluationCriterion
     *****************************************/
 
     CriterionDataType evaluationDataType = criterionField.getFieldDataType();
-    
-    if (rajLog) log.info("RAJ K criterionField.getFieldDataType() {}, argumentType {}, criterionFieldValue {}, evaluatedArgument {}", criterionField.getFieldDataType(), argumentType, criterionFieldValue, evaluatedArgument);
     if (criterionFieldValue != null && evaluatedArgument != null)
       {
         switch (criterionField.getFieldDataType())
@@ -962,7 +947,6 @@ public class EvaluationCriterion
               log.info("RAJ K TimeCriterion - criterionFieldValue {} - evaluatedArgument {} ", criterionFieldValue, evaluatedArgument);
             }
           }
-        if (rajLog) log.info("RAJ K criterionFieldValue {} - evaluatedArgument {} ", criterionFieldValue, evaluatedArgument);
       }
     
     /****************************************
@@ -1024,7 +1008,6 @@ public class EvaluationCriterion
               case TimeCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) >= 0, criterionFieldValue, evaluatedArgument);
-                if (rajLog) log.info("RAJ K DateCriterion criterionFieldValue {} - evaluatedArgument {}, result {}", criterionFieldValue, evaluatedArgument, result);
                 if (referencesEvaluationDate) evaluationRequest.getNextEvaluationDates().add((Date) evaluatedArgument);
                 break;
             }
@@ -1160,8 +1143,7 @@ public class EvaluationCriterion
     *  return
     *
     ****************************************/
-    if (rajLog) log.info("RAJ K final result {}", result);
-
+    
     return result;
   }
   
@@ -1200,7 +1182,6 @@ public class EvaluationCriterion
     boolean result = true;
     for (EvaluationCriterion criterion : criteria)
       {
-        if (criterion.getCriterionOperator() == CriterionOperator.GreaterThanOrEqualOperator) log.info("RAJ K evaluate criterion {} ", criterion.toString());
         result = result && criterion.evaluate(evaluationRequest);
       }
     return result;
