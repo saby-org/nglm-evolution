@@ -753,7 +753,6 @@ public class EvaluationCriterion
 
   public boolean evaluate(SubscriberEvaluationRequest evaluationRequest)
   {
-    log.info("RAJ K evaluate enter()");
     /*****************************************
     *
     *  result
@@ -785,6 +784,7 @@ public class EvaluationCriterion
     catch (ExpressionEvaluationException|ArithmeticException e)
       {
         log.info("RAJ K ExpressionEvaluationException|ArithmeticException e () {}", e);
+        e.printStackTrace();//RAJ K 
         if (log.isDebugEnabled())
           {
             log.debug("invalid argument {}", argumentExpression);
@@ -802,13 +802,12 @@ public class EvaluationCriterion
     *
     *****************************************/
 
-    log.info("RAJ K criterionFieldValue {}, evaluatedArgument {}", (String) criterionFieldValue, evaluatedArgument);
-    
     if (criterionField.getEvaluationVariable())
       {
         log.info("RAJ K criterionFieldValue {}, evaluatedArgument {}", (String) criterionFieldValue, evaluatedArgument);
         evaluationRequest.getEvaluationVariables().put((String) criterionFieldValue, evaluatedArgument);
         result = traceCondition(evaluationRequest, true, criterionFieldValue, evaluatedArgument);
+        log.info("RAJ K criterionField.getEvaluationVariable() {}", result);
         return result;
       }
 
@@ -828,6 +827,7 @@ public class EvaluationCriterion
           if (criterionFieldValue == null)
             {
               evaluationRequest.subscriberTrace((criterionDefault ? "TrueCondition : " : "FalseCondition: ") + "DefaultCriterion {0} {1} value {2} argument {3}", criterionField.getID(), criterionOperator, criterionFieldValue, evaluatedArgument);
+              log.info("RAJ K criterionOperator() - criterionFieldValue {} ", criterionDefault);
               return criterionDefault;
             }
           break;
@@ -849,6 +849,7 @@ public class EvaluationCriterion
           if (evaluatedArgument == null)
             {
               evaluationRequest.subscriberTrace("FalseCondition : invalid null argument {0}", argumentExpression);
+              log.info("RAJ K criterionOperator() - evaluatedArgument ");
               return false;
             }
           break;
@@ -1189,6 +1190,7 @@ public class EvaluationCriterion
     boolean result = true;
     for (EvaluationCriterion criterion : criteria)
       {
+        log.info("RAJ K evaluate criterion {} ", criterion.toString());
         result = result && criterion.evaluate(evaluationRequest);
       }
     return result;
