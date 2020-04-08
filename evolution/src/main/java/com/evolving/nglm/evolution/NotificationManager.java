@@ -22,10 +22,22 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.NodeType.OutputType;
+import com.evolving.nglm.evolution.toolbox.ActionBuilder;
+import com.evolving.nglm.evolution.toolbox.ArgumentBuilder;
+import com.evolving.nglm.evolution.toolbox.AvailableValueDynamicBuilder;
+import com.evolving.nglm.evolution.toolbox.AvailableValueStaticStringBuilder;
+import com.evolving.nglm.evolution.toolbox.OutputConnectorBuilder;
+import com.evolving.nglm.evolution.toolbox.ParameterBuilder;
 import com.evolving.nglm.evolution.toolbox.ToolBoxBuilder;
+import com.evolving.nglm.evolution.toolbox.TransitionCriteriaBuilder;
+import com.google.gson.JsonArray;
 
 public class NotificationManager extends DeliveryManager implements Runnable
 {
@@ -1006,6 +1018,56 @@ public class NotificationManager extends DeliveryManager implements Runnable
     for(CommunicationChannel current : Deployment.getCommunicationChannels().values()) {
       ToolBoxBuilder tb = new ToolBoxBuilder(
           "NotifChannel-" + current.getID(), current.getName(), current.getDisplay(), current.getIcon(), current.getToolboxHeight(), current.getToolboxWidth(), OutputType.Static);
+      
+      tb.addOutputConnector(new OutputConnectorBuilder("delivered", "Delivered/Sent")
+          .addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'delivered', 'acknowledged' ]"))));
+      tb.addOutputConnector(new OutputConnectorBuilder("failed", "Failed")
+          .addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'failed', 'indeterminate', 'failedTimeout' ]"))));
+      tb.addOutputConnector(new OutputConnectorBuilder("timeout", "Timeout")
+          .addTransitionCriteria(new TransitionCriteriaBuilder("evaluation.date", CriterionOperator.GreaterThanOrEqualOperator, new ArgumentBuilder("dateAdd(node.entryDate, 1, 'minute')").setTimeUnit(TimeUnit.Instant))));
+      tb.addOutputConnector(new OutputConnectorBuilder("unknown", "UnknownAppID")
+          .addTransitionCriteria(new TransitionCriteriaBuilder("subscriber.appID", CriterionOperator.IsNullOperator, null)));
+      
+      // add manually all parameters common to any notification : contact type, from address
+      // node.parameter.contacttype
+      ParameterBuilder parameterBuilder = new ParameterBuilder("node.parameter.contacttype", "Contact Type", CriterionDataType.StringCriterion, false, true, null);
+      for(ContactType currentContactType : ContactType.values()) {
+        parameterBuilder.addAvailableValue(new AvailableValueStaticStringBuilder(currentContactType.name(), currentContactType.getExternalRepresentation()));
+      }      
+      tb.addParameter(parameterBuilder);
+      
+      // node.parameter.fromaddress
+      tb.addParameter(new ParameterBuilder("node.parameter.fromaddress", "From Address", CriterionDataType.StringCriterion, false, true, null)
+          .addAvailableValue(new AvailableValueDynamicBuilder("#dialog_template_" + current.getID() + "#")));
+     
+      // if the configuration of the communication channel allows the use the templates that are created from template GUI, let add the following parameter:
+      if(current.allowGuiTemplate()) {
+        tb.addParameter(new ParameterBuilder("node.parameter.dialog_template", "Message Template", CriterionDataType.StringCriterion, false, false, null)
+          .addAvailableValue(new AvailableValueDynamicBuilder("#dialog_source_address_" + current.getID() + "#")));
+      }
+      if(current.allowInLineTemplate()) {
+        if(current.getJSONRepresentation().get("parameters" ) != null) {
+          JSONArray paramsJSON = JSONUtilities.decodeJSONArray(current.getJSONRepresentation(), "parameters");
+          for(int i=0; i<paramsJSON.size(); i++)
+            {
+              JSONObject cp = (JSONObject)paramsJSON.get(i);
+              parameterBuilder = new ParameterBuilder(
+                  JSONUtilities.decodeString(cp, "id"), 
+                  JSONUtilities.decodeString(cp, "display"), 
+                  CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(cp, "outputType")), 
+                  JSONUtilities.decodeBoolean(cp, "multiple"), 
+                  JSONUtilities.decodeBoolean(cp, "mandatory"),
+                  cp.get("defaultValue"));
+              // TODO EVPRO-146 Available Values
+            }
+        }
+      }
+      
+      // Action:
+      tb.setAction(new ActionBuilder("com.evolving.nglm.evolution.NotificationManager$ActionManager")
+          .addManagerClassConfigurationField("channelID", current.getID())
+          .addManagerClassConfigurationField("moduleID", "1")
+          ); 
     }
     
     return null;

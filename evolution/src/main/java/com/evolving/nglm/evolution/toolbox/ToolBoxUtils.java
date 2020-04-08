@@ -119,7 +119,8 @@ public class ToolBoxUtils
         .addAvailableValue(new AvailableValueStaticBooleanAndNumberBuilder(Boolean.TRUE))
         .addAvailableValue(new AvailableValueStaticBooleanAndNumberBuilder(Boolean.FALSE)));
     
-    b.setAction(new ActionBuilder("com.evolving.nglm.evolution.SMSNotificationManager$ActionManager", "notificationmanagersms")
+    b.setAction(new ActionBuilder("com.evolving.nglm.evolution.SMSNotificationManager$ActionManager")
+        .addManagerClassConfigurationField("deliveryType", "notificationmanagersms")
         .addManagerClassConfigurationField("isFlashSMS", Boolean.FALSE)
         .addManagerClassConfigurationField("moduleID", "1"));
     

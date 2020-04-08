@@ -16,12 +16,10 @@ public class ActionBuilder implements ToolBoxBuilderInterface
 //  }
   
   private String actionManagerClass = null;
-  private String deliveryType = null;
   private HashMap<String, String> managerClassConfiguration = new HashMap<>();
 
-  public ActionBuilder(String actionManagerClass, String deliveryType) {
+  public ActionBuilder(String actionManagerClass) {
     this.actionManagerClass = actionManagerClass;
-    this.deliveryType = deliveryType;
   }
 
   public ActionBuilder addManagerClassConfigurationField(String name, Object value) {
@@ -45,7 +43,6 @@ public class ActionBuilder implements ToolBoxBuilderInterface
     StringBuilder sb = new StringBuilder();
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber+1) + "{\n");
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber+2) + "\"actionManagerClass\" : \"" + actionManagerClass + "\",\n");
-    sb.append(ToolBoxUtils.getIndentation(indentationTabNumber+2) + "\"deliveryType\" : \"" + deliveryType + "\"");
     if(managerClassConfiguration.size() > 0) {
       sb.append(",\n");
       for(Iterator<Map.Entry<String, String>> it = managerClassConfiguration.entrySet().iterator(); it.hasNext();) {

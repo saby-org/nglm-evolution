@@ -51,8 +51,11 @@ public class CommunicationChannel extends GUIManagedObject
     String notificationPluginClass;
     ParameterMap notificationPluginConfiguration = new ParameterMap(); 
     String icon;
-    Integer toolboxHeight;
-    Integer toolboxWidth;
+    int toolboxHeight;
+    int toolboxWidth;
+    boolean allowGuiTemplate;
+    boolean allowInLineTemplate;
+    
     
 
     /*****************************************
@@ -72,9 +75,10 @@ public class CommunicationChannel extends GUIManagedObject
     public String getNotificationPluginClass() { return notificationPluginClass; }
     public ParameterMap getNotificationPluginConfiguration() { return notificationPluginConfiguration; }
     public String getIcon() { return icon; }
-    public Integer getToolboxHeight() { return toolboxHeight; }
-    public Integer getToolboxWidth() { return toolboxWidth; }
-    
+    public int getToolboxHeight() { return toolboxHeight; }
+    public int getToolboxWidth() { return toolboxWidth; }
+    public boolean allowGuiTemplate() { return allowGuiTemplate; }
+    public boolean allowInLineTemplate() { return allowInLineTemplate; }  
     
     /*****************************************
     *
@@ -154,6 +158,8 @@ public class CommunicationChannel extends GUIManagedObject
           CriterionField parameter = new CriterionField(parameterJSON);
           this.parameters.put(parameter.getID(), parameter);
         }
+      this.allowGuiTemplate =  JSONUtilities.decodeBoolean(jsonRoot, "allowGuiTemplate", Boolean.TRUE);
+      this.allowInLineTemplate =  JSONUtilities.decodeBoolean(jsonRoot, "allowInLineTemplate", Boolean.FALSE);
     }
 
     /*****************************************
