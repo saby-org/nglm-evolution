@@ -1928,7 +1928,7 @@ public abstract class Expression
     {
       Object result = null;
       boolean expressionNullExceptionOccoured = false;
-      ExpressionNullException expressionNullException = null;
+      ExpressionNullException expressionNullException = null; 
       
       /*****************************************
       *
