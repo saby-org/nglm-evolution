@@ -774,7 +774,6 @@ public class EvaluationCriterion
     ****************************************/
 
     Object criterionFieldValue = criterionField.retrieveNormalized(evaluationRequest);
-    if (rajLog) log.info("RAJ K criterionFieldValue {}", criterionFieldValue);
 
     /****************************************
     *
@@ -787,7 +786,7 @@ public class EvaluationCriterion
     try
       {
         evaluatedArgument = (argument != null) ? argument.evaluateExpression(evaluationRequest, argumentBaseTimeUnit) : null;
-        if (rajLog) log.info("RAJ K evaluatedArgument {}", evaluatedArgument);
+        if (rajLog) log.info("RAJ K evaluatedArgument {}, class {}", evaluatedArgument, argument.getClass());
       }
     catch (ExpressionEvaluationException|ArithmeticException e)
       {
