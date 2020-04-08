@@ -54,7 +54,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
     schemaBuilder.field("callingJourneyInstanceID", SchemaBuilder.string().optional().defaultValue(null).schema());
     schemaBuilder.field("callingJourneyNodeID", SchemaBuilder.string().optional().defaultValue(null).schema());
-    schemaBuilder.field("waitForCompletion", SchemaBuilder.bool().defaultValue(false).schema());
+    schemaBuilder.field("waitForCompletion", SchemaBuilder.bool().optional().defaultValue(false).schema());
     schemaBuilder.field("boundParameters", SimpleParameterMap.serde().optionalSchema());
     schemaBuilder.field("journeyStatus", SchemaBuilder.string().optional().defaultValue(null).schema());
     schemaBuilder.field("journeyResults", SimpleParameterMap.serde().optionalSchema());
@@ -333,9 +333,9 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     String journeyRequestID = valueStruct.getString("journeyRequestID");
     Date eventDate = (Date) valueStruct.get("eventDate");
     String journeyID = valueStruct.getString("journeyID");
-    String callingJourneyInstanceID = valueStruct.getString("callingJourneyInstanceID");
-    String callingJourneyNodeID = valueStruct.getString("callingJourneyNodeID");
-    boolean waitForCompletion = valueStruct.getBoolean("waitForCompletion");
+    String callingJourneyInstanceID = (schemaVersion >= 2) ? valueStruct.getString("callingJourneyInstanceID") : null;
+    String callingJourneyNodeID = (schemaVersion >= 2) ? valueStruct.getString("callingJourneyNodeID") : null;
+    boolean waitForCompletion = (schemaVersion >= 2) ? valueStruct.getBoolean("waitForCompletion") : false;
     SimpleParameterMap boundParameters = (schemaVersion >= 2) ? SimpleParameterMap.serde().unpackOptional(new SchemaAndValue(schema.field("boundParameters").schema(), valueStruct.get("boundParameters"))) : new SimpleParameterMap();
     SubscriberJourneyStatus journeyStatus = (schemaVersion >= 2) ? (valueStruct.get("journeyStatus") != null ? SubscriberJourneyStatus.fromExternalRepresentation(valueStruct.getString("journeyStatus")) : null) : null;
     SimpleParameterMap journeyResults = (schemaVersion >= 2) ? SimpleParameterMap.serde().unpackOptional(new SchemaAndValue(schema.field("journeyResults").schema(), valueStruct.get("journeyResults"))) : null;
