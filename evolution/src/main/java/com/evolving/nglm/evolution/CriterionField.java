@@ -660,9 +660,12 @@ public class CriterionField extends DeploymentManagedObject
                   if (! (criterionFieldValue instanceof Boolean)) throw new CriterionException("criterionField " + this + " expected boolean retrieved " + criterionFieldValue.getClass());
                   break;
 
-                case TimeCriterion:
                 case DateCriterion:
                   if (! (criterionFieldValue instanceof Date)) throw new CriterionException("criterionField " + this + " expected date retrieved " + criterionFieldValue.getClass());
+                  break;
+                  
+                case TimeCriterion:
+                  if (! (criterionFieldValue instanceof String)) throw new CriterionException("criterionField " + this + " expected string retrieved " + criterionFieldValue.getClass());
                   break;
 
                 case StringSetCriterion:
