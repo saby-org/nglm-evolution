@@ -52,7 +52,7 @@ public class JourneyRewardsDatacubeGenerator extends DatacubeGenerator
 
     this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
     this.journeysMap = new JourneysMap(journeyService);
-    this.journeyRewardsList = new JourneyRewardsMap();
+    this.journeyRewardsList = new JourneyRewardsMap(elasticsearch);
     
     //
     // Filter fields
@@ -94,9 +94,9 @@ public class JourneyRewardsDatacubeGenerator extends DatacubeGenerator
     
     this.segmentationDimensionList.update();
     this.journeysMap.update();
-    this.journeyRewardsList.updateFromElasticsearch(elasticsearch, this.getDataESIndex());
+    this.journeyRewardsList.update(this.journeyID, this.getDataESIndex());
     
-    if(this.journeyRewardsList.getRewardIDs().isEmpty()) {
+    if(this.journeyRewardsList.getRewards().isEmpty()) {
       log.info("No rewards found in " + this.journeyID + " journey statistics.");
       // It is useless to generate a rewards datacube if there is not any rewards.
       return false;
@@ -147,7 +147,7 @@ public class JourneyRewardsDatacubeGenerator extends DatacubeGenerator
     // Those aggregations need to be recomputed with the update of journeyRewardsList
     List<AggregationBuilder> metricAggregations = new ArrayList<AggregationBuilder>();
     
-    for(String reward : journeyRewardsList.getRewardIDs()) 
+    for(String reward : journeyRewardsList.getRewards()) 
       {
         metricAggregations.add(AggregationBuilders.sum(reward).field("rewards." + reward));
       }
@@ -165,7 +165,7 @@ public class JourneyRewardsDatacubeGenerator extends DatacubeGenerator
       return metrics;
     }
 
-    for(String reward : journeyRewardsList.getRewardIDs()) 
+    for(String reward : journeyRewardsList.getRewards()) 
       {
         ParsedSum rewardAggregation = compositeBucket.getAggregations().get(reward);
         if (rewardAggregation == null) {
