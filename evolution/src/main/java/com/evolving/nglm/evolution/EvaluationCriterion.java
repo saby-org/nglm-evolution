@@ -873,6 +873,7 @@ public class EvaluationCriterion
     CriterionDataType evaluationDataType = criterionField.getFieldDataType();
     if (criterionFieldValue != null && evaluatedArgument != null)
       {
+        log.info("RAJ K criterionField.getFieldDataType {}, argumentType {}", criterionField.getFieldDataType(), argumentType); 
         switch (criterionField.getFieldDataType())
           {
             case IntegerCriterion:
@@ -947,7 +948,6 @@ public class EvaluationCriterion
             {
               String[] args = ((String) criterionFieldValue).trim().split(":");
               if (args.length != 3) throw new ExpressionEvaluationException();
-              
               int hh = Integer.parseInt(args[0]);
               int mm = Integer.parseInt(args[1]);
               int ss = Integer.parseInt(args[2]);

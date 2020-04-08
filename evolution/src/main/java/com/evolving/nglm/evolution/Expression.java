@@ -1342,6 +1342,7 @@ public abstract class Expression
 
     private void typeCheckTimeConstantFunction()
     {
+      log.info("RAJ K typeCheckTimeConstantFunction()");
       /****************************************
       *
       *  arguments
@@ -2150,6 +2151,7 @@ public abstract class Expression
 
     private Date evaluateTimeConstantFunction(String arg)
     {
+      log.info("RAJ K evaluateTimeConstantFunction() arg {}", arg); 
       /*****************************************
       *
       *  parse argument
