@@ -950,20 +950,12 @@ public class EvaluationCriterion
               }
               break;
               
-            case TimeCriterion:
+          case TimeCriterion:
             {
-              String[] args = ((String) criterionFieldValue).trim().split(":");
-              if (args.length != 3) throw new ExpressionEvaluationException();
-              int hh = Integer.parseInt(args[0]);
-              int mm = Integer.parseInt(args[1]);
-              int ss = Integer.parseInt(args[2]);
-              Calendar c = SystemTime.getCalendar();
-              c.setTime(SystemTime.getCurrentTime());
-              c.set(Calendar.HOUR_OF_DAY, hh);
-              c.set(Calendar.MINUTE, mm);
-              c.set(Calendar.SECOND, ss);
-              criterionFieldValue = c.getTime();
               log.info("RAJ K TimeCriterion - criterionFieldValue {} - evaluatedArgument {} ", criterionFieldValue, evaluatedArgument);
+              criterionFieldValue = getCurrentDateFromTime((String) criterionFieldValue);
+              evaluatedArgument = getCurrentDateFromTime((String) evaluatedArgument);
+              log.info("RAJ K TimeCriterion - convertedDate criterionFieldValue {} - evaluatedArgument {} ", criterionFieldValue, evaluatedArgument);
             }
           }
       }
@@ -1166,6 +1158,25 @@ public class EvaluationCriterion
     return result;
   }
   
+  //
+  // getCurrentDateFromTime
+  //
+  
+  private Date getCurrentDateFromTime(String arg)
+  {
+    String[] args = ((String) arg).trim().split(":");
+    if (args.length != 3) throw new ExpressionEvaluationException();
+    int hh = Integer.parseInt(args[0]);
+    int mm = Integer.parseInt(args[1]);
+    int ss = Integer.parseInt(args[2]);
+    Calendar c = SystemTime.getCalendar();
+    c.setTime(SystemTime.getCurrentTime());
+    c.set(Calendar.HOUR_OF_DAY, hh);
+    c.set(Calendar.MINUTE, mm);
+    c.set(Calendar.SECOND, ss);
+    return c.getTime();
+  }
+
   /*****************************************
   *
   *  evaluateCriteria

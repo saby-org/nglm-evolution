@@ -2149,7 +2149,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    private Date evaluateTimeConstantFunction(String arg)
+    private String evaluateTimeConstantFunction(String arg)
     {
       log.info("RAJ K evaluateTimeConstantFunction() arg {}", arg); 
       /*****************************************
@@ -2165,24 +2165,13 @@ public abstract class Expression
           throw new ExpressionEvaluationException();
         }
 
-      int hh = Integer.parseInt(args[0]);
-      int mm = Integer.parseInt(args[1]);
-      int ss = Integer.parseInt(args[2]);
-      
-      Calendar c = SystemTime.getCalendar();
-      c.setTime(SystemTime.getCurrentTime());
-      
-      c.set(Calendar.HOUR_OF_DAY, hh);
-      c.set(Calendar.MINUTE, mm);
-      c.set(Calendar.SECOND, ss);
-      
       /*****************************************
       *
       *  return
       *
       *****************************************/
 
-      return c.getTime();
+      return arg;
     }
 
     /*****************************************
@@ -2291,7 +2280,7 @@ public abstract class Expression
     //  evaluateTimeAddFunction
     //
     
-    private Date evaluateTimeAddFunction(String time, Number number, TimeUnit timeUnit, TimeUnit baseTimeUnit, boolean roundDown)
+    private String evaluateTimeAddFunction(String time, Number number, TimeUnit timeUnit, TimeUnit baseTimeUnit, boolean roundDown)
     {
       log.info("RAJ K evaluateTimeAddFunction() time {}, number {}, timeUnit {} ", time, number, timeUnit); 
       String[] args = time.trim().split(":");
@@ -2305,7 +2294,13 @@ public abstract class Expression
       c.set(Calendar.HOUR_OF_DAY, hh);
       c.set(Calendar.MINUTE, mm);
       c.set(Calendar.SECOND, ss);
-      return evaluateDateAddFunction(c.getTime(), number, timeUnit, baseTimeUnit, roundDown);
+      Date finalDateTime = evaluateDateAddFunction(c.getTime(), number, timeUnit, baseTimeUnit, roundDown);
+      
+      StringBuilder evaluationTimeBuilder = new StringBuilder();
+      evaluationTimeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.HOUR_OF_DAY, com.evolving.nglm.core.Deployment.getBaseTimeZone())).append(":");
+      evaluationTimeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.MINUTE, com.evolving.nglm.core.Deployment.getBaseTimeZone())).append(":");
+      evaluationTimeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.SECOND, com.evolving.nglm.core.Deployment.getBaseTimeZone()));
+      return evaluationTimeBuilder.toString(); 
     }
     
     
