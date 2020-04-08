@@ -753,7 +753,7 @@ public class EvaluationCriterion
 
   public boolean evaluate(SubscriberEvaluationRequest evaluationRequest)
   {
-    log.info("RAJ K evaluate ()");
+    log.info("RAJ K evaluate enter()");
     /*****************************************
     *
     *  result
@@ -802,8 +802,11 @@ public class EvaluationCriterion
     *
     *****************************************/
 
+    log.info("RAJ K criterionFieldValue {}, evaluatedArgument {}", (String) criterionFieldValue, evaluatedArgument);
+    
     if (criterionField.getEvaluationVariable())
       {
+        log.info("RAJ K criterionFieldValue {}, evaluatedArgument {}", (String) criterionFieldValue, evaluatedArgument);
         evaluationRequest.getEvaluationVariables().put((String) criterionFieldValue, evaluatedArgument);
         result = traceCondition(evaluationRequest, true, criterionFieldValue, evaluatedArgument);
         return result;
@@ -871,6 +874,8 @@ public class EvaluationCriterion
     *****************************************/
 
     CriterionDataType evaluationDataType = criterionField.getFieldDataType();
+    
+    log.info("RAJ K criterionField.getFieldDataType() {}, argumentType {}, criterionFieldValue {}, evaluatedArgument {}", criterionField.getFieldDataType(), argumentType, criterionFieldValue, evaluatedArgument);
     if (criterionFieldValue != null && evaluatedArgument != null)
       {
         switch (criterionField.getFieldDataType())
