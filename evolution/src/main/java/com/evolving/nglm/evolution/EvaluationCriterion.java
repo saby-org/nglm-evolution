@@ -334,7 +334,8 @@ public class EvaluationCriterion
         // org this.argumentExpression = (argumentJSON != null) ? JSONUtilities.decodeString(argumentJSON, "expression", true) : null;
         //this.argumentExpression = (argumentJSON != null) ? JSONUtilities.decodeString(argumentJSON, "expression", "timeConstant('22:20:10')") : null; // RAJ K hack timeConstant
         this.argumentExpression = (argumentJSON != null) ? JSONUtilities.decodeString(argumentJSON, "expression", "timeAdd(evaluation.time, 17, 'minute')") : null; // RAJ K hack timeAdd
-        this.argumentBaseTimeUnit = (argumentJSON != null) ? TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(argumentJSON, "timeUnit", "(unknown)")) : TimeUnit.Unknown;
+        //org this.argumentBaseTimeUnit = (argumentJSON != null) ? TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(argumentJSON, "timeUnit", "(unknown)")) : TimeUnit.Unknown;
+        this.argumentBaseTimeUnit = (argumentJSON != null) ? TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(argumentJSON, "timeUnit", "instant")) : TimeUnit.Unknown; // RAJ K hack timeAdd
         parseArgument();
       }
     catch (ExpressionParseException|ExpressionTypeCheckException e)
