@@ -7540,11 +7540,7 @@ public class GUIManager
     BoolQueryBuilder query = null;
     try
       {
-        query = QueryBuilders.boolQuery();
-        for (EvaluationCriterion evaluationCriterion : criteriaList)
-          {
-            query = query.filter(evaluationCriterion.esQuery());
-          }
+        query = Journey.processEvaluateProfileCriteriaGetQuery(criteriaList);
       }
     catch (CriterionException e)
       {
@@ -7575,9 +7571,7 @@ public class GUIManager
     long result;
     try
       {
-        SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(query).size(0));
-        SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
-        result = searchResponse.getHits().getTotalHits().value;
+        result = Journey.processEvaluateProfileCriteriaExecuteQuery(query, elasticsearch);
       }
     catch (IOException e)
       {
@@ -16139,7 +16133,7 @@ public class GUIManager
                         Map<String, Object> journeyResponseMap = new HashMap<String, Object>();
                         journeyResponseMap.put("journeyID", storeJourney.getJourneyID());
                         journeyResponseMap.put("journeyName", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("display"));
-                        journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));
+                        journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));     // @rl: maybe generateJSON only once?
                         journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
                         journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
                         journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));

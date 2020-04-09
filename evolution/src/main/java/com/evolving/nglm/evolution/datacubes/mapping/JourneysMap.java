@@ -16,18 +16,16 @@ public class JourneysMap extends GUIManagedObjectMap<Journey>
 
   /*****************************************
   *
-  *  data
+  * Properties
   *
   *****************************************/
-  
   private JourneyService service;
   
   /*****************************************
   *
-  *  constructor
+  * Constructor
   *
   *****************************************/
-  
   public JourneysMap(JourneyService service) {
     super(Journey.class);
     this.service = service;
@@ -35,19 +33,17 @@ public class JourneysMap extends GUIManagedObjectMap<Journey>
   
   /*****************************************
   *
-  *  getCollection
+  * GUIManagedObjectMap implementation
   *
   *****************************************/
-  
   // TODO: for the moment, we also retrieve archived objects
   protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredJourneys(true); }
   
   /*****************************************
   *
-  *  accessors
+  * Getters
   *
   *****************************************/
-
   public String getNodeDisplay(String journeyID, String nodeID, String fieldName)
   {
     JourneyNode node = null;
@@ -59,8 +55,19 @@ public class JourneysMap extends GUIManagedObjectMap<Journey>
     if(node != null) {
       return node.getNodeName();
     } else {
-      logWarningOnlyOnce("Unable to retrieve " + fieldName + ".display for " + fieldName + ".id: " + nodeID + " for journey.id: " + journeyID);
-      return nodeID; // When missing, return the nodeID by default.
+      logWarningOnlyOnce("Unable to retrieve display for " + fieldName + " id: " + nodeID + " (for journeyID: " + journeyID + ").");
+      return nodeID; // When missing, return default.
+    }
+  }
+  
+  public long getStartDateTime(String journeyID)
+  {
+    Journey journey = this.guiManagedObjects.get(journeyID);
+    if(journey != null) {
+      return journey.getEffectiveStartDate().getTime();
+    } else {
+      log.error("Could not retrieve journey start date from journeyID "+ journeyID);
+      return 0;
     }
   }
 }

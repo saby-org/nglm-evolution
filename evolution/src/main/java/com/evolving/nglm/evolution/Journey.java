@@ -6,6 +6,9 @@
 
 package com.evolving.nglm.evolution;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -28,6 +31,15 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -39,6 +51,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -2336,6 +2349,33 @@ public class Journey extends GUIManagedObject
     *****************************************/
     
     return contextVariableFields;
+  }
+  
+  /*****************************************
+  *
+  *  processEvaluateProfileCriteria
+  *
+  *****************************************/
+  //
+  // construct query
+  //
+  public static BoolQueryBuilder processEvaluateProfileCriteriaGetQuery(List<EvaluationCriterion> criteriaList) throws CriterionException {
+    BoolQueryBuilder query = QueryBuilders.boolQuery();
+    for (EvaluationCriterion evaluationCriterion : criteriaList)
+      {
+        query = query.filter(evaluationCriterion.esQuery());
+      }
+    
+    return query;
+  }
+  
+  //
+  // execute query
+  //
+  public static long processEvaluateProfileCriteriaExecuteQuery(BoolQueryBuilder query, RestHighLevelClient elasticsearch) throws IOException {
+    SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(query).size(0));
+    SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+    return searchResponse.getHits().getTotalHits().value;
   }
   
   /*****************************************

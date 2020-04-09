@@ -38,7 +38,7 @@ public abstract class ScheduledJob implements Comparable<ScheduledJob>
   private static final DateFormat DATE_FORMAT;
   static
   {
-    DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz");
+    DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz"); // @rl: TODO: chose one standard ? ss.SSSZ ?
     DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
   }
   

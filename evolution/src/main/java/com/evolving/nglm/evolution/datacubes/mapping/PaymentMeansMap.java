@@ -15,18 +15,16 @@ public class PaymentMeansMap extends GUIManagedObjectMap<PaymentMean>
 
   /*****************************************
   *
-  *  data
+  * Properties
   *
   *****************************************/
-  
   private PaymentMeanService service;
   
   /*****************************************
   *
-  *  constructor
+  * Constructor
   *
   *****************************************/
-  
   public PaymentMeansMap(PaymentMeanService service) {
     super(PaymentMean.class);
     this.service = service;
@@ -34,19 +32,17 @@ public class PaymentMeansMap extends GUIManagedObjectMap<PaymentMean>
   
   /*****************************************
   *
-  *  getCollection
+  * GUIManagedObjectMap implementation
   *
   *****************************************/
-  
   // TODO: for the moment, we also retrieve archived objects
   protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredPaymentMeans(true); }
   
   /*****************************************
   *
-  *  accessors
+  * Getters
   *
   *****************************************/
-
   public String getProviderID(String id, String fieldName)
   {
     PaymentMean result = this.guiManagedObjects.get(id);
@@ -56,8 +52,8 @@ public class PaymentMeansMap extends GUIManagedObjectMap<PaymentMean>
       }
     else
       {
-        logWarningOnlyOnce("Unable to retrieve " + fieldName + ".providerID for " + fieldName + ".id: " + id);
-        return id; // When missing, return the ID by default.
+        logWarningOnlyOnce("Unable to retrieve providerID for " + fieldName + " (PaymentMeanID: " + id + ").");
+        return id; // When missing, return default.
       }
   }
   
