@@ -260,7 +260,6 @@ public class DNBOUtils
       StringBuffer returnedLog = new StringBuffer();
       SubscriberProfile subscriberProfile = evolutionEventContext.getSubscriberState().getSubscriberProfile();
       DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService, 0);
-
       /*****************************************
       *
       *  Score offers for this subscriber

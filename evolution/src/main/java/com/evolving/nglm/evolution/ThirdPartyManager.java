@@ -3650,7 +3650,7 @@ public class ThirdPartyManager
                   tokenCode, 
                   presentationStrategyID, transactionDurationMs, 
                   presentedOfferIDs, presentedOfferScores, positions, 
-                  controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID
+                  controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, subscriberStoredToken.getPresentationDates()
                   );
 
               //

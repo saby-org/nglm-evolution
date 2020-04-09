@@ -23,6 +23,7 @@ import java.util.regex.PatternSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DNBOProxy.DNBOProxyException;
@@ -258,7 +259,26 @@ public class TokenUtils
       String msisdn) throws GetOfferException
   {
     // check if we can call this PS
-    // TODO
+    int maximumPresentationsPeriodDays = presentationStrategy.getMaximumPresentationsPeriodDays();
+    Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumPresentationsPeriodDays, Deployment.getBaseTimeZone());
+    List<Date> presentationDates = token.getPresentationDates();
+    List<Date> newPresentationDates = new ArrayList<>();
+    for (Date date : presentationDates)
+      {
+        if (date.after(earliestDateToKeep))
+          {
+            newPresentationDates.add(date);
+          }
+      }
+    int nbPresentationSoFar = newPresentationDates.size();
+    int nbPresentationMax = presentationStrategy.getMaximumPresentations();
+    if (nbPresentationSoFar >= nbPresentationMax)
+      {
+        returnedLog.append("token has been presented " + nbPresentationSoFar + " times in the past " + maximumPresentationsPeriodDays + " days, no more presentation allowed (max : " + nbPresentationMax + " )");
+        token.setPresentationDates(new ArrayList<>()); // indicates that bound has failed
+        return new ArrayList<>();
+      }
+    token.setPresentationDates(newPresentationDates);
     
     Set<String> salesChannelIDs = presentationStrategy.getSalesChannelIDs();
     // TODO : which sales channel to take ?
@@ -337,8 +357,8 @@ public static Collection<ProposedOfferDetails> getOffersWithScoringStrategy(Date
     CatalogCharacteristicService catalogCharacteristicService,
     ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader,
     ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
-    SegmentationDimensionService segmentationDimensionService, DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters, OfferService offerService, StringBuffer returnedLog,
-    String msisdn) throws GetOfferException
+    SegmentationDimensionService segmentationDimensionService, DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters,
+    OfferService offerService, StringBuffer returnedLog, String msisdn) throws GetOfferException
 {
   String logFragment;
     ScoringSegment selectedScoringSegment = getScoringSegment(scoringStrategy, subscriberProfile, subscriberGroupEpochReader);

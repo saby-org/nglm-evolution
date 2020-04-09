@@ -50,7 +50,7 @@ public class PresentationLog implements SubscriberStreamEvent
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("presentation_log");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("msisdn", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Schema.INT64_SCHEMA);
@@ -71,6 +71,7 @@ public class PresentationLog implements SubscriberStreamEvent
     schemaBuilder.field("balance", Schema.OPTIONAL_FLOAT64_SCHEMA);
     schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("presentationDates", SchemaBuilder.array(Timestamp.SCHEMA).defaultValue(new ArrayList<Date>()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -114,6 +115,7 @@ public class PresentationLog implements SubscriberStreamEvent
   private Double balance;
   private String moduleID;
   private String featureID;
+  private List<Date> presentationDates;
 
   /****************************************
   *
@@ -141,6 +143,8 @@ public class PresentationLog implements SubscriberStreamEvent
   public Double getBalance() { return balance; }
   public String getModuleID() { return moduleID; }
   public String getFeatureID() { return featureID; }
+  public List<Date> getPresentationDates() { return presentationDates;}
+  public void setPresentationDates(List<Date> presentationDates) { this.presentationDates = presentationDates; }
 
   /*****************************************
   *
@@ -148,7 +152,7 @@ public class PresentationLog implements SubscriberStreamEvent
   *
   *****************************************/
 
-  public PresentationLog(String msisdn, String subscriberID, Date eventDate, String callUniqueIdentifier, String channelID, String salesChannelID, String userID, String presentationToken, String presentationStrategyID, Integer transactionDurationMs, List<String> offerIDs, List<Double> offerScores, List<Integer> positions,   String controlGroupState, List<String> scoringStrategyIDs, String retailerMsisdn, Double rechargeAmount, Double balance, String moduleID, String featureID)
+  public PresentationLog(String msisdn, String subscriberID, Date eventDate, String callUniqueIdentifier, String channelID, String salesChannelID, String userID, String presentationToken, String presentationStrategyID, Integer transactionDurationMs, List<String> offerIDs, List<Double> offerScores, List<Integer> positions,   String controlGroupState, List<String> scoringStrategyIDs, String retailerMsisdn, Double rechargeAmount, Double balance, String moduleID, String featureID, List<Date> presentationDates)
   {
     this.msisdn = msisdn;
     this.subscriberID = subscriberID;
@@ -170,6 +174,7 @@ public class PresentationLog implements SubscriberStreamEvent
     this.balance = balance;
     this.moduleID = moduleID;
     this.featureID = featureID;
+    this.presentationDates = presentationDates;
 }
 
   /*****************************************
@@ -204,6 +209,7 @@ public class PresentationLog implements SubscriberStreamEvent
     this.balance = JSONUtilities.decodeDouble(jsonRoot, "balance", false);
     this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
     this.featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
+    this.presentationDates = new ArrayList<>();
   }
 
   /*****************************************
@@ -318,6 +324,7 @@ public class PresentationLog implements SubscriberStreamEvent
     struct.put("balance", presentationLog.getBalance());
     struct.put("moduleID", presentationLog.getModuleID());
     struct.put("featureID", presentationLog.getFeatureID());
+    struct.put("presentationDates", presentationLog.getPresentationDates());
    return struct;
   }
 
@@ -368,11 +375,12 @@ public class PresentationLog implements SubscriberStreamEvent
     Double balance = valueStruct.getFloat64("balance");
     String moduleID = (schemaVersion >= 2) ? valueStruct.getString("moduleID") : null;
     String featureID = (schemaVersion >= 2) ? valueStruct.getString("featureID") : null;
+    List<Date> presentationDates = (schemaVersion >= 3) ? (List<Date>) valueStruct.get("presentationDates") : new ArrayList<Date>();
 
     //
     //  return
     //
 
-    return new PresentationLog(msisdn, subscriberID, eventDate, callUniqueIdentifier, channelID, salesChannelID, userID, presentationToken, presentationStrategyID, transactionDurationMs, offerIDs, offerScores, positions, controlGroupState, scoringStrategyIDs, retailerMsisdn, rechargeAmount, balance, moduleID, featureID);
+    return new PresentationLog(msisdn, subscriberID, eventDate, callUniqueIdentifier, channelID, salesChannelID, userID, presentationToken, presentationStrategyID, transactionDurationMs, offerIDs, offerScores, positions, controlGroupState, scoringStrategyIDs, retailerMsisdn, rechargeAmount, balance, moduleID, featureID, presentationDates);
   }
 }

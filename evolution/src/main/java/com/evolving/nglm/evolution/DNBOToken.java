@@ -53,6 +53,7 @@ public class DNBOToken extends Token
     schemaBuilder.field("presentedOfferIDs", SchemaBuilder.array(Schema.STRING_SCHEMA));
     schemaBuilder.field("presentedOffersSalesChannel", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("acceptedOfferID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("presentationDates", SchemaBuilder.array(Timestamp.SCHEMA).defaultValue(new ArrayList<Date>()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -82,6 +83,7 @@ public class DNBOToken extends Token
   private List<String> presentedOfferIDs;       // list of offersIDs presented to the subscriber, in the same order they were presented.
   private String presentedOffersSalesChannel;
   private String acceptedOfferID;               // offer that has been accepted  if any, null otherwise.
+  private List<Date> presentationDates;
 
   /****************************************
   *
@@ -100,6 +102,7 @@ public class DNBOToken extends Token
   public List<String> getPresentedOfferIDs() { return presentedOfferIDs; }
   public String getPresentedOffersSalesChannel() { return presentedOffersSalesChannel; }
   public String getAcceptedOfferID() { return acceptedOfferID; }
+  public List<Date> getPresentationDates() { return presentationDates;}
 
   //
   //  setters
@@ -112,6 +115,7 @@ public class DNBOToken extends Token
   public void setPresentedOfferIDs(List<String> presentedOfferIDs) { this.presentedOfferIDs = presentedOfferIDs; }
   public void setPresentedOffersSalesChannel(String presentedOffersSalesChannel) { this.presentedOffersSalesChannel = presentedOffersSalesChannel; }
   public void setAcceptedOfferID(String acceptedOfferID) { this.acceptedOfferID = acceptedOfferID; }
+  public void setPresentationDates(List<Date> presentationDates) { this.presentationDates = presentationDates; }
 
   /*****************************************
   *
@@ -123,7 +127,7 @@ public class DNBOToken extends Token
                    Date redeemedDate, Date tokenExpirationDate, int boundedCount, String eventID,
                    String subscriberID, String tokenTypeID, String moduleID, Integer featureID,
                    String presentationStrategyID, List<String> scoringStrategyIDs, boolean isAutoBound, boolean isAutoRedeemed,
-                   List<String> presentedOfferIDs, String presentedOffersSalesChannel, String acceptedOfferID) {
+                   List<String> presentedOfferIDs, String presentedOffersSalesChannel, String acceptedOfferID, List<Date> presentationDates) {
     super(tokenCode, tokenStatus, creationDate, boundedDate, redeemedDate, tokenExpirationDate,
           boundedCount, eventID, subscriberID, tokenTypeID, moduleID, featureID);
     this.presentationStrategyID = presentationStrategyID;
@@ -133,6 +137,7 @@ public class DNBOToken extends Token
     this.presentedOfferIDs = presentedOfferIDs;
     this.presentedOffersSalesChannel = presentedOffersSalesChannel;
     this.acceptedOfferID = acceptedOfferID;
+    this.presentationDates = presentationDates;
   }
 
   /*****************************************
@@ -160,7 +165,9 @@ public class DNBOToken extends Token
          false,                                                           // isAutoRedeemed
          new ArrayList<String>(),                                         // presentedOfferIDs
          null,                                                            // presentedOffersSalesChannel
-         null);                                                           // acceptedOfferID
+         null,                                                            // acceptedOfferID
+         new ArrayList<Date>()                                            // presentationDates
+       );
   }
 
   /*****************************************
@@ -169,7 +176,7 @@ public class DNBOToken extends Token
   *
   *****************************************/
 
-  protected DNBOToken(SchemaAndValue schemaAndValue, String presentationStrategyID, List<String> scoringStrategyIDs, boolean isAutoBound, boolean isAutoRedeemed, List<String> presentedOfferIDs, String presentedOffersSalesChannel, String acceptedOfferID)
+  protected DNBOToken(SchemaAndValue schemaAndValue, String presentationStrategyID, List<String> scoringStrategyIDs, boolean isAutoBound, boolean isAutoRedeemed, List<String> presentedOfferIDs, String presentedOffersSalesChannel, String acceptedOfferID, List<Date> presentationDates)
   {
     super(schemaAndValue);
     this.presentationStrategyID = presentationStrategyID;
@@ -179,6 +186,7 @@ public class DNBOToken extends Token
     this.presentedOfferIDs = presentedOfferIDs;
     this.presentedOffersSalesChannel = presentedOffersSalesChannel;
     this.acceptedOfferID = acceptedOfferID;
+    this.presentationDates = presentationDates;
   }
 
   /*****************************************
@@ -199,6 +207,7 @@ public class DNBOToken extends Token
     struct.put("presentedOfferIDs", dnboToken.getPresentedOfferIDs());
     struct.put("presentedOffersSalesChannel", dnboToken.getPresentedOffersSalesChannel());
     struct.put("acceptedOfferID", dnboToken.getAcceptedOfferID());
+    struct.put("presentationDates", dnboToken.getPresentationDates());
     return struct;
   }
 
@@ -230,7 +239,8 @@ public class DNBOToken extends Token
     List<String> presentedOfferIDs = (List<String>) valueStruct.get("presentedOfferIDs");
     String presentedOffersSalesChannel = (schemaVersion >= 3) ? (String) valueStruct.get("presentedOffersSalesChannel") : null;
     String acceptedOfferID = valueStruct.getString("acceptedOfferID");
-
+    List<Date> presentationDates = (schemaVersion >= 4) ? (List<Date>) valueStruct.get("presentationDates") : new ArrayList<Date>();
+    
     //
     // validate
     //
@@ -239,6 +249,6 @@ public class DNBOToken extends Token
     // return
     //
 
-    return new DNBOToken(schemaAndValue, presentationStrategyID, scoringStrategyIDs, isAutoBound, isAutoRedeemed, presentedOfferIDs, presentedOffersSalesChannel, acceptedOfferID);
+    return new DNBOToken(schemaAndValue, presentationStrategyID, scoringStrategyIDs, isAutoBound, isAutoRedeemed, presentedOfferIDs, presentedOffersSalesChannel, acceptedOfferID, presentationDates);
   }
 }

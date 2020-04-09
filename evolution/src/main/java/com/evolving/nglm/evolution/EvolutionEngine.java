@@ -3975,21 +3975,25 @@ public class EvolutionEngine
                 subscriberStoredToken.setTokenExpirationDate(defaultDNBOTokenType.getExpirationDate(eventDate));
                 subscriberStateUpdated = true;
               }
-            if (subscriberStoredToken.getBoundDate() == null || subscriberStoredToken.getBoundDate().before(eventDate))
+            List<Date> presentationDates = presentationLog.getPresentationDates();
+            if (presentationDates != null && !presentationDates.isEmpty()) // if empty : bound has failed
               {
-                subscriberStoredToken.setBoundDate(eventDate);
+                subscriberStoredToken.setPresentationDates(presentationDates);
                 subscriberStateUpdated = true;
-              }
-            int boundCount = subscriberStoredToken.getBoundCount();
-            Integer maxNumberofPlaysInt = defaultDNBOTokenType.getMaxNumberOfPlays();
-            int maxNumberofPlays = (maxNumberofPlaysInt == null) ? Integer.MAX_VALUE : maxNumberofPlaysInt.intValue();
-            if (boundCount < maxNumberofPlays)
-              {
-                subscriberStoredToken.setBoundCount(boundCount+1); // no concurrency issue as a given subscriber is always handled by the same partition/evolution engine instance, sequentially
-                subscriberStoredToken.setPresentedOfferIDs(presentationLog.getOfferIDs()); // replace whatever was there
-                String salesChannelID = presentationLog.getSalesChannelID();
-                subscriberStoredToken.setPresentedOffersSalesChannel(salesChannelID); // replace whatever was there
-                subscriberStateUpdated = true;
+                if (subscriberStoredToken.getBoundDate() == null || subscriberStoredToken.getBoundDate().before(eventDate))
+                  {
+                    subscriberStoredToken.setBoundDate(eventDate);
+                  }
+                int boundCount = subscriberStoredToken.getBoundCount();
+                Integer maxNumberofPlaysInt = defaultDNBOTokenType.getMaxNumberOfPlays();
+                int maxNumberofPlays = (maxNumberofPlaysInt == null) ? Integer.MAX_VALUE : maxNumberofPlaysInt.intValue();
+                if (boundCount < maxNumberofPlays)
+                  {
+                    subscriberStoredToken.setBoundCount(boundCount+1); // no concurrency issue as a given subscriber is always handled by the same partition/evolution engine instance, sequentially
+                    subscriberStoredToken.setPresentedOfferIDs(presentationLog.getOfferIDs()); // replace whatever was there
+                    String salesChannelID = presentationLog.getSalesChannelID();
+                    subscriberStoredToken.setPresentedOffersSalesChannel(salesChannelID); // replace whatever was there
+                  }
               }
           }
         else if(evolutionEvent instanceof AcceptanceLog)
