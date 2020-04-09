@@ -258,11 +258,11 @@ public class ReportEsReader
             if (searchHits != null)
               {
                 // log.info("searchResponse = " + searchResponse.toString());
-                log.info("getFailedShards = " + searchResponse.getFailedShards());
-                log.info("getSkippedShards = " + searchResponse.getSkippedShards());
-                log.info("getTotalShards = " + searchResponse.getTotalShards());
-                log.info("getTook = " + searchResponse.getTook());
-                log.info("searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
+                log.trace("getFailedShards = " + searchResponse.getFailedShards());
+                log.trace("getSkippedShards = " + searchResponse.getSkippedShards());
+                log.trace("getTotalShards = " + searchResponse.getTotalShards());
+                log.trace("getTook = " + searchResponse.getTook());
+                log.info("for " + indicesToRead + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
               }
             boolean alreadyTraced = false;
             while (searchHits != null && searchHits.length > 0)
