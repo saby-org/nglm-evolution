@@ -889,7 +889,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeytraffic- -H'
         "properties" : {
             "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
             "period" : { "type" : "long" },
-            "filter.journeyID" : { "type" : "keyword" },
+            "filter.journey" : { "type" : "keyword" },
             "filter.node" : { "type" : "keyword" },
             "filter.status" : { "type" : "keyword" },
             "count" : { "type" : "integer" }
@@ -905,7 +905,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeyrewards- -H'
         "properties" : {
             "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
             "period" : { "type" : "long" },
-            "filter.journeyID" : { "type" : "keyword" },
+            "filter.journey" : { "type" : "keyword" },
             "count" : { "type" : "integer" }
           }
       }
