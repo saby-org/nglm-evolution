@@ -366,7 +366,8 @@ public class JourneyHistory
     RewardHistory history = null;
     if(deliveryRequest instanceof CommodityDeliveryRequest) {
       CommodityDeliveryRequest request = (CommodityDeliveryRequest) deliveryRequest;
-      history = new RewardHistory(request.getProviderName(), request.getCommodityName(), request.getAmount(), request.getDeliveryDate());
+      String deliverableName = (request.getCommodityName() != null)? request.getCommodityName() : request.getCommodityID();
+      history = new RewardHistory(request.getProviderName(), deliverableName, request.getAmount(), request.getDeliveryDate());
     } 
     // Special case for offers. 
     // PurchaseFulfillmentRequest are not managed by the CommodityManager (which is a proxy for a lot of requests)
