@@ -259,6 +259,11 @@ public class ReportManager implements Watcher
                   log.error("Unexpected issue, UTF-8 does not seem to exist "+e.getLocalizedMessage(), e);
                   reportManagerStatistics.incrementFailureCount();
                 }
+                catch (Exception e)
+                {
+                  log.error("Unexpected issue " + e.getLocalizedMessage(), e);
+                  reportManagerStatistics.incrementFailureCount();
+                }
                 finally 
                 {
                   log.info("Deleting control "+controlFile);
@@ -269,6 +274,11 @@ public class ReportManager implements Watcher
                   catch (KeeperException | InterruptedException e) 
                   {
                     log.info("Issue deleting control : "+e.getLocalizedMessage(), e);
+                  }
+                  catch (Exception e)
+                  {
+                    log.error("Unexpected issue " + e.getLocalizedMessage(), e);
+                    reportManagerStatistics.incrementFailureCount();
                   }
                   finally 
                   {
@@ -281,6 +291,11 @@ public class ReportManager implements Watcher
                     catch (KeeperException | InterruptedException e)
                     {
                       log.info("Issue deleting lock : "+e.getLocalizedMessage(), e);
+                    }
+                    catch (Exception e)
+                    {
+                      log.error("Unexpected issue " + e.getLocalizedMessage(), e);
+                      reportManagerStatistics.incrementFailureCount();
                     }
                   }
                 }
