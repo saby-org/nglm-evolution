@@ -278,6 +278,7 @@ public class TokenUtils
         token.setPresentationDates(new ArrayList<>()); // indicates that bound has failed
         return new ArrayList<>();
       }
+    newPresentationDates.add(now);
     token.setPresentationDates(newPresentationDates);
     
     Set<String> salesChannelIDs = presentationStrategy.getSalesChannelIDs();
