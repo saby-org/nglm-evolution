@@ -183,6 +183,8 @@ public class DNBOUtils
       DNBOToken token = new DNBOToken(tokenCode, subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID(), tokenType);
       token.setModuleID(Module.Journey_Manager.getExternalRepresentation()); // featureID is set by evolution engine (to journeyID)
       token.setPresentationStrategyID(presentationStrategy.getPresentationStrategyID());
+      // TODO : which sales channel to use ?
+      token.setPresentedOffersSalesChannel(presentationStrategy.getSalesChannelIDs().iterator().next());
       token.setCreationDate(evolutionEventContext.now());
 
       /*****************************************
