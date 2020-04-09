@@ -1059,7 +1059,7 @@ public class Journey extends GUIManagedObject
 
     Map<String,CriterionField> contextVariablesAndParameters = Journey.processContextVariableNodes(contextVariableNodes, templateParameters);
     this.contextVariables = new HashMap<String,CriterionField>();
-    this.journeyParameters = new HashMap<String,CriterionField>(this.templateParameters);
+    this.journeyParameters = new LinkedHashMap<String,CriterionField>(this.templateParameters);
     for (CriterionField contextVariable : contextVariablesAndParameters.values())
       {
         switch (contextVariable.getVariableType())
