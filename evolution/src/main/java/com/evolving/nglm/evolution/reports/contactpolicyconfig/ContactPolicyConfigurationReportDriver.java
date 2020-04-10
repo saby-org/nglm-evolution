@@ -49,7 +49,7 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
     segmentContactPolicyService = new SegmentContactPolicyService(kafka, "contactPolicyConfigReportDriver-segmentcontactpolicyservice-" + apiProcessKey, Deployment.getSegmentContactPolicyTopic(), false);
     segmentContactPolicyService.start();
 
-    journeyObjectiveService = new JourneyObjectiveService(kafka, "contactPolicyConfigReportDriver-journeyobjectiveservice-" + apiProcessKey, Deployment.getSegmentationDimensionTopic(), false);
+    journeyObjectiveService = new JourneyObjectiveService(kafka, "contactPolicyConfigReportDriver-journeyobjectiveservice-" + apiProcessKey, Deployment.getJourneyObjectiveTopic(), false);
     journeyObjectiveService.start();
 
     File file = new File(csvFilename+".zip");
@@ -85,7 +85,7 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
                       
                       StringBuilder sbLimits = new StringBuilder();
                       String limits = null;
-                      if(channel.getMessageLimits() != null) {
+                      if(channel.getMessageLimits() != null && !(channel.getMessageLimits().isEmpty())) {
                         for(MessageLimits limit : channel.getMessageLimits()) {
                           sbLimits.append(limit.getMaxMessages()).append(" per ").append(limit.getDuration()).append(" ").append(limit.getTimeUnit()).append(",");
                         }
@@ -148,9 +148,18 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
   {
     Map<String, Object> result = new LinkedHashMap<>();
     result.put("policyId", jsonObject.get("id").toString());
-    result.put("policyName", jsonObject.get("display").toString());    
-    result.put("description", jsonObject.get("description").toString());
+    result.put("policyName", jsonObject.get("display").toString());
+    if (jsonObject.get("description") != null)
+      {
+        result.put("description", jsonObject.get("description").toString());
+      }
+    else
+      {
+        result.put("description", "");
+      }
+
     result.put("active", jsonObject.get("active").toString());
+  
     
     StringBuilder sbSegments = new StringBuilder();
     String segments = null;
