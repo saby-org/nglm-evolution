@@ -71,7 +71,7 @@ public class PresentationLog implements SubscriberStreamEvent
     schemaBuilder.field("balance", Schema.OPTIONAL_FLOAT64_SCHEMA);
     schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("presentationDates", SchemaBuilder.array(Timestamp.SCHEMA).defaultValue(new ArrayList<Date>()).schema());
+    schemaBuilder.field("presentationDates", SchemaBuilder.array(Timestamp.SCHEMA).optional().schema());
     schema = schemaBuilder.build();
   };
 
@@ -144,7 +144,6 @@ public class PresentationLog implements SubscriberStreamEvent
   public String getModuleID() { return moduleID; }
   public String getFeatureID() { return featureID; }
   public List<Date> getPresentationDates() { return presentationDates;}
-  public void setPresentationDates(List<Date> presentationDates) { this.presentationDates = presentationDates; }
 
   /*****************************************
   *
@@ -203,13 +202,33 @@ public class PresentationLog implements SubscriberStreamEvent
     this.offerScores = decodeOfferScores(JSONUtilities.decodeJSONArray(jsonRoot, "offerScores", true));
     this.positions = decodePositions(JSONUtilities.decodeJSONArray(jsonRoot, "positions", true));
     this.controlGroupState = JSONUtilities.decodeString(jsonRoot, "controlGroupState", true);
-    this.scoringStrategyIDs = decodeScoringStrategyIDs(JSONUtilities.decodeJSONArray(jsonRoot, "scoringStrategyIDs", true));
+    this.scoringStrategyIDs = decodeScoringStrategyIDs(JSONUtilities.decodeJSONArray(jsonRoot, "scoringStrategyIDs", false));
     this.retailerMsisdn = JSONUtilities.decodeString(jsonRoot, "retailerMsisdn", false);
     this.rechargeAmount = JSONUtilities.decodeDouble(jsonRoot, "rechargeAmount", false);
     this.balance = JSONUtilities.decodeDouble(jsonRoot, "balance", false);
     this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
     this.featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
-    this.presentationDates = new ArrayList<>();
+    this.presentationDates = decodePresentationDates(JSONUtilities.decodeJSONArray(jsonRoot, "presentationDates", false));
+  }
+
+  /*****************************************
+  *
+  *  decodePresentationDates
+  *
+  *****************************************/
+
+  private List<Date> decodePresentationDates(JSONArray jsonArray)
+  {
+    List<Date> dates = new ArrayList<>();
+    if (jsonArray != null)
+      {
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            String date = (String) jsonArray.get(i);
+            dates.add(GUIManagedObject.parseDateField(date));
+          }
+      }
+    return dates;
   }
 
   /*****************************************
