@@ -205,7 +205,7 @@ public class OfferReportDriver extends ReportDriver
                     if (guiManagedObject != null && guiManagedObject instanceof OfferObjective)
                       {
                         OfferObjective offerObjective = (OfferObjective) guiManagedObject;
-                        outputJSON.put("objectiveName", offerObjective.getOfferObjectiveName());
+                        outputJSON.put("objectiveName", offerObjective.getOfferObjectiveDisplay());
                         if (offer != null)
                           {
                             List<Map<String, Object>> characteristicsJSON = new ArrayList<>();

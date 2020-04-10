@@ -358,8 +358,12 @@ public class ReportUtils {
   //
   public static void format(StringBuilder sb, String s)
   {
-    // Surround s with double quotes, and escape double quotes inside it
-    sb.append("\"").append(s.replaceAll("\"", Matcher.quoteReplacement("\\\""))).append("\"");
+    String fieldSurrounder = Deployment.getReportManagerFieldSurrounder();
+    // Surround s with fieldSurrounder, and escape fieldSurrounder inside it
+    if (fieldSurrounder.isEmpty())
+        sb.append(s);
+    else
+        sb.append(fieldSurrounder).append(s.replace(fieldSurrounder, "\\" + fieldSurrounder)).append(fieldSurrounder);
   }
 
   //
@@ -367,7 +371,8 @@ public class ReportUtils {
   //
   public static void format(StringBuilder sb)
   {
-    sb.append("\"\"");
+    String fieldSurrounder = Deployment.getReportManagerFieldSurrounder();
+    if (!fieldSurrounder.isEmpty()) sb.append(fieldSurrounder).append(fieldSurrounder);
   }
 
   //
