@@ -30,7 +30,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 public class PresentationLog implements SubscriberStreamEvent
@@ -343,10 +345,19 @@ public class PresentationLog implements SubscriberStreamEvent
     struct.put("balance", presentationLog.getBalance());
     struct.put("moduleID", presentationLog.getModuleID());
     struct.put("featureID", presentationLog.getFeatureID());
-    struct.put("presentationDates", presentationLog.getPresentationDates());
+    struct.put("presentationDates", packPresentationDates(presentationLog.getPresentationDates()));
    return struct;
   }
 
+  private static List<Object> packPresentationDates(List<Date> presentationDates)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (Date date : presentationDates)
+      {
+        result.add(date.getTime());
+      }
+    return result;
+  }
   //
   //  subscriberStreamEventPack
   //
@@ -394,7 +405,7 @@ public class PresentationLog implements SubscriberStreamEvent
     Double balance = valueStruct.getFloat64("balance");
     String moduleID = (schemaVersion >= 2) ? valueStruct.getString("moduleID") : null;
     String featureID = (schemaVersion >= 2) ? valueStruct.getString("featureID") : null;
-    List<Date> presentationDates = (schemaVersion >= 3) ? (List<Date>) valueStruct.get("presentationDates") : new ArrayList<Date>();
+    List<Date> presentationDates = (schemaVersion >= 3) ? unpackPresentationDates(valueStruct.get("presentationDates")) : new ArrayList<Date>();
 
     //
     //  return
@@ -402,4 +413,21 @@ public class PresentationLog implements SubscriberStreamEvent
 
     return new PresentationLog(msisdn, subscriberID, eventDate, callUniqueIdentifier, channelID, salesChannelID, userID, presentationToken, presentationStrategyID, transactionDurationMs, offerIDs, offerScores, positions, controlGroupState, scoringStrategyIDs, retailerMsisdn, rechargeAmount, balance, moduleID, featureID, presentationDates);
   }
+  
+  /*****************************************
+  *
+  *  unpackPresentationDates
+  *
+  *****************************************/
+
+  private static List<Date> unpackPresentationDates(Object value)
+  {
+    List<Date> result = new ArrayList<>();
+    for (Long date : (List<Long>) value)
+      {
+        result.add(new Date(date));
+      }
+    return result;
+  }
+  
 }
