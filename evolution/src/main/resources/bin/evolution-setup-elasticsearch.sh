@@ -1159,21 +1159,6 @@ echo
 #
 # rl: This mapping is not used at the moment
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeys -H'Content-Type: application/json' -d'
-  {
-    "index_patterns": ["mapping_journeys"],
-    "mappings" : {
-        "properties" : {
-            "journeyID" : { "type" : "keyword" },
-            "journeyName" : { "type" : "keyword" },
-            "journeyActive" : { "type" : "boolean" }
-          }
-      }
-  }'
-echo
-#
-# rl: This mapping is not used at the moment
-#
 curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_saleschannels -H'Content-Type: application/json' -d'
   {
     "index_patterns": ["mapping_saleschannels"],
