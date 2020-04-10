@@ -158,6 +158,7 @@ public class OfferReportDriver extends ReportDriver
       }
       
       offerFields.put("offerDescription", recordJson.get("description"));
+      
       {
         List<Map<String, Object>> outputJSON = new ArrayList<>();
         JSONObject obj = (JSONObject) recordJson.get("offerCharacteristics");
@@ -190,13 +191,15 @@ public class OfferReportDriver extends ReportDriver
           }
         offerFields.put("offerCharacteristics", ReportUtils.formatJSON(outputJSON));
       }
+      
       {
         JSONArray elements = (JSONArray) recordJson.get("offerObjectives");
-        Map<String, Object> outputJSON = new LinkedHashMap<>(); // to preserve order when displaying
+        List<Map<String, Object>> outputJSON = new ArrayList<>(); // to preserve order when displaying
         if (elements != null)
           {
             for (int i = 0; i < elements.size(); i++)
               {
+                Map<String, Object> objectivesJSON = new LinkedHashMap<>(); // to preserve order when displaying
                 JSONObject element = (JSONObject) elements.get(i);
                 if (element != null)
                   {
@@ -205,7 +208,7 @@ public class OfferReportDriver extends ReportDriver
                     if (guiManagedObject != null && guiManagedObject instanceof OfferObjective)
                       {
                         OfferObjective offerObjective = (OfferObjective) guiManagedObject;
-                        outputJSON.put("objectiveName", offerObjective.getOfferObjectiveDisplay());
+                        objectivesJSON.put("objectiveName", offerObjective.getOfferObjectiveDisplay());
                         if (offer != null)
                           {
                             List<Map<String, Object>> characteristicsJSON = new ArrayList<>();
@@ -226,8 +229,9 @@ public class OfferReportDriver extends ReportDriver
                                       }
                                   }
                               }
-                            outputJSON.put("characteristics", characteristicsJSON);
+                            objectivesJSON.put("characteristics", characteristicsJSON);
                           }
+                        outputJSON.add(objectivesJSON);
                       }
                   }
               }
@@ -240,13 +244,6 @@ public class OfferReportDriver extends ReportDriver
       offerFields.put("endDate", ReportsCommonCode.parseDate(standardDateFormats, (String) recordJson.get("effectiveEndDate")));      
       offerFields.put("availableStock", recordJson.get("presentationStock"));
       offerFields.put("availableStockThreshold", recordJson.get("presentationStockAlertThreshold"));
-
-      // TEMP fix for BLK : reformat date with correct template.
-      
-     
-      
-      // end of TEMP fix for BLK
-    
 
       {
         List<Map<String, Object>> outputJSON = new ArrayList<>();
