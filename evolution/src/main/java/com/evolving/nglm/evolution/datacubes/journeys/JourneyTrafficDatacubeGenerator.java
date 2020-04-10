@@ -119,7 +119,7 @@ public class JourneyTrafficDatacubeGenerator extends DatacubeGenerator
     //
     // Special dimension with all, for Grafana 
     //
-    filters.put(FILTER_STRATUM_PREFIX + "Global", "");
+    filters.put(FILTER_STRATUM_PREFIX + "Global", " ");
     
     //
     // subscriberStratum dimensions

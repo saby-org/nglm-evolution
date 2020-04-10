@@ -1171,7 +1171,6 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeys -H'Content-
       }
   }'
 echo
-
 #
 # rl: This mapping is not used at the moment
 #
