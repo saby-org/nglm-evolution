@@ -10,6 +10,18 @@ jmr-api-<_KEY_>:
     JmrSettings__ApiElasticsearchUrl: "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>/"
     TZ: <_DEPLOYMENT_TIMEZONE_>
     JMR_API_PORT: <_PORT_>
+    JmrSettings__EnableApprovalMode: '<_JMRSETTINGS_ENABLEAPPROVALMODE_>'
+    JmrSettings__StartWithoutObjective: '<_JMRSETTINGS_STARTWITHOUTOBJECTIVE_>'
+    JmrSettings__StartWithoutObjectiveContactPolicy: '<_JMRSETTINGS_STARTWITHOUTOBJECTIVECONTACTPOLICY_>'
+    JmrSettings__RaiseAlarmWhenStartWithoutObjective: '<_JMRSETTINGS_RAISEALARMWHENSTARTWITHOUTOBJECTIVE_>'
+    JmrSettings__RaiseAlarmWhenStartWithoutObjectiveContactPolicy: '<_JMRSETTINGS_RAISEALARMWHENSTARTWITHOUTOBJECTIVECONTACTPOLICY_>'
+    JmrSettings__ByPassContactPolicyIds: '<_JMRSETTINGS__BYPASSCONTACTPOLICYIDS_>'
+    JmrSettings__JMRSenderEmail: '<_JMRSETTINGS_JMRSENDEREMAIL_>'
+    JmrSettings__JMRSenderName: '<_JMRSETTINGS_JMRSENDERNAME_>'
+    JmrSettings__CallBackURLAfterApproveCampain: 'http://<_GUI_JMR_API_SERVER_HOST_>:<_PORT_>/api/campaigns/startAfterApprove'
+    JmrSettings__CallBackURLAfterApproveJourney: 'http://<_GUI_JMR_API_SERVER_HOST_>:<_PORT_>/api/journeys/startAfterApprove'
+    JmrSettings__CallBackURLAfterApproveBulkCampaign: 'http://<_GUI_JMR_API_SERVER_HOST_>:<_PORT_>/api/bulkCampaigns/startAfterApprove'
+    Logging__LogLevel__Default: '<_GUI_LOGGING__LOGLEVEL__DEFAULT_>'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/jmr-api-<_KEY_>/mnt
