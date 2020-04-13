@@ -2289,17 +2289,41 @@ public abstract class Expression
       int mm = Integer.parseInt(args[1]);
       int ss = Integer.parseInt(args[2]);
       
-      Calendar c = SystemTime.getCalendar();
-      c.setTime(SystemTime.getCurrentTime());
-      c.set(Calendar.HOUR_OF_DAY, hh);
-      c.set(Calendar.MINUTE, mm);
-      c.set(Calendar.SECOND, ss);
-      Date finalDateTime = evaluateDateAddFunction(c.getTime(), number, timeUnit, baseTimeUnit, roundDown);
+      switch (timeUnit)
+      {
+        case Hour:
+          hh = hh + number.intValue();
+          break;
+          
+        case Minute:
+          mm = mm + number.intValue();
+          break;
+          
+        case Second:
+          ss = ss + number.intValue();
+          break;
+          
+        default:
+          throw new ExpressionEvaluationException();
+      }
       
+      /*
+       * Calendar c = SystemTime.getCalendar();
+       * c.setTime(SystemTime.getCurrentTime()); c.set(Calendar.HOUR_OF_DAY, hh);
+       * c.set(Calendar.MINUTE, mm); c.set(Calendar.SECOND, ss); Date finalDateTime =
+       * evaluateDateAddFunction(c.getTime(), number, timeUnit, baseTimeUnit,
+       * roundDown);
+       * 
+       * StringBuilder timeBuilder = new StringBuilder();
+       * timeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.HOUR_OF_DAY,
+       * com.evolving.nglm.core.Deployment.getBaseTimeZone())).append(":");
+       * timeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.MINUTE,
+       * com.evolving.nglm.core.Deployment.getBaseTimeZone())).append(":");
+       * timeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.SECOND,
+       * com.evolving.nglm.core.Deployment.getBaseTimeZone()));
+       */
       StringBuilder timeBuilder = new StringBuilder();
-      timeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.HOUR_OF_DAY, com.evolving.nglm.core.Deployment.getBaseTimeZone())).append(":");
-      timeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.MINUTE, com.evolving.nglm.core.Deployment.getBaseTimeZone())).append(":");
-      timeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.SECOND, com.evolving.nglm.core.Deployment.getBaseTimeZone()));
+      timeBuilder.append(hh).append(":").append(mm).append(":").append(ss);
       return timeBuilder.toString(); 
     }
     

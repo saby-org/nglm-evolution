@@ -953,8 +953,9 @@ public class EvaluationCriterion
           case TimeCriterion:
             {
               log.info("RAJ K TimeCriterion - criterionFieldValue {} - evaluatedArgument {} ", criterionFieldValue, evaluatedArgument);
-              criterionFieldValue = getCurrentDateFromTime((String) criterionFieldValue);
-              evaluatedArgument = getCurrentDateFromTime((String) evaluatedArgument);
+              Date now = SystemTime.getCurrentTime();
+              criterionFieldValue = getCurrentDateFromTime(now, (String) criterionFieldValue);
+              evaluatedArgument = getCurrentDateFromTime(now, (String) evaluatedArgument);
               log.info("RAJ K TimeCriterion - convertedDate criterionFieldValue {} - evaluatedArgument {} ", criterionFieldValue, evaluatedArgument);
             }
           }
@@ -1162,7 +1163,7 @@ public class EvaluationCriterion
   // getCurrentDateFromTime
   //
   
-  private Date getCurrentDateFromTime(String arg)
+  private Date getCurrentDateFromTime(final Date now, String arg)
   {
     String[] args = ((String) arg).trim().split(":");
     if (args.length != 3) throw new ExpressionEvaluationException();
@@ -1170,7 +1171,7 @@ public class EvaluationCriterion
     int mm = Integer.parseInt(args[1]);
     int ss = Integer.parseInt(args[2]);
     Calendar c = SystemTime.getCalendar();
-    c.setTime(SystemTime.getCurrentTime());
+    c.setTime(now);
     c.set(Calendar.HOUR_OF_DAY, hh);
     c.set(Calendar.MINUTE, mm);
     c.set(Calendar.SECOND, ss);
