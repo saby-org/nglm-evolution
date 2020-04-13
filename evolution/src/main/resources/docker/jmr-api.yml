@@ -21,7 +21,7 @@ jmr-api-<_KEY_>:
     JmrSettings__CallBackURLAfterApproveCampain: 'http://<_GUI_JMR_API_SERVER_HOST_>:<_PORT_>/api/campaigns/startAfterApprove'
     JmrSettings__CallBackURLAfterApproveJourney: 'http://<_GUI_JMR_API_SERVER_HOST_>:<_PORT_>/api/journeys/startAfterApprove'
     JmrSettings__CallBackURLAfterApproveBulkCampaign: 'http://<_GUI_JMR_API_SERVER_HOST_>:<_PORT_>/api/bulkCampaigns/startAfterApprove'
-    Logging__LogLevel__Default: '<_GUI_LOGGING__LOGLEVEL__DEFAULT_>'
+    Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/jmr-api-<_KEY_>/mnt

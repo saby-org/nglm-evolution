@@ -33,7 +33,6 @@ do
       docker pull ${env.DOCKER_REGISTRY}stg.api:${gui-stg.version}
       docker pull ${env.DOCKER_REGISTRY}stg.web:${gui-stg.version}
       docker pull ${env.DOCKER_REGISTRY}sbm.api:${gui-sbm.version}
-      docker pull ${env.DOCKER_REGISTRY}csrmockup:${gui-csrmockup.version}
       docker pull ${env.DOCKER_REGISTRY}sbm.web:${gui-sbm.version}
       docker pull ${env.DOCKER_REGISTRY}lpm.web:${gui-lpm.version}
       docker pull ${env.DOCKER_REGISTRY}lpm.api:${gui-lpm.version}

@@ -12,6 +12,7 @@ csr-api-<_KEY_>:
     DNBOSettings__DNBOEngineSettings__ChannelId: <_OPC_WEB_CALLING_CHANNEL_ID_>
     TZ: <_DEPLOYMENT_TIMEZONE_>
     CSR_API_PORT: <_PORT_>
+    Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/csr-api-<_KEY_>/mnt

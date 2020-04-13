@@ -1016,17 +1016,6 @@ do
 done
 
 #
-#  csrmockup
-#
-
-if [ "$GUI_USE_CSR_MOCKUP" = "true" ]; then
-
-   cat $DEPLOY_ROOT/docker/csrmockup.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
-   echo >> $DEPLOY_ROOT/stack/stack-gui.yml
-
-fi   
-
-#
 #  postamble
 #
 
