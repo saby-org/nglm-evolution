@@ -351,7 +351,7 @@ public class TokenUtils
     return res;
   }
   
-public static Collection<ProposedOfferDetails> getOffersWithScoringStrategy(Date now, String salesChannelID,
+  public static Collection<ProposedOfferDetails> getOffersWithScoringStrategy(Date now, String salesChannelID,
     SubscriberProfile subscriberProfile, ScoringStrategy scoringStrategy,
     ProductService productService, ProductTypeService productTypeService,
     VoucherService voucherService, VoucherTypeService voucherTypeService,
@@ -360,8 +360,8 @@ public static Collection<ProposedOfferDetails> getOffersWithScoringStrategy(Date
     ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
     SegmentationDimensionService segmentationDimensionService, DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters,
     OfferService offerService, StringBuffer returnedLog, String msisdn) throws GetOfferException
-{
-  String logFragment;
+  {
+    String logFragment;
     ScoringSegment selectedScoringSegment = getScoringSegment(scoringStrategy, subscriberProfile, subscriberGroupEpochReader);
     logFragment = "getOffers " + scoringStrategy.getScoringStrategyID() + " Selected ScoringSegment for " + msisdn + " " + selectedScoringSegment;
     returnedLog.append(logFragment+", ");
@@ -370,7 +370,7 @@ public static Collection<ProposedOfferDetails> getOffersWithScoringStrategy(Date
       log.debug(logFragment);
     }
 
-    Set<Offer> offersForAlgo = getOffersToOptimize(selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile, offerService, subscriberGroupEpochReader);
+    Set<Offer> offersForAlgo = getOffersToOptimize(now, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile, offerService, subscriberGroupEpochReader);
 
     OfferOptimizationAlgorithm algo = selectedScoringSegment.getOfferOptimizationAlgorithm();
     if (algo == null)
@@ -475,7 +475,7 @@ public static Collection<ProposedOfferDetails> getOffersWithScoringStrategy(Date
     return offerAvailabilityFromPropensityAlgo;
   }
   
-  private static Set<Offer> getOffersToOptimize(Set<String> catalogObjectiveIDs,
+  private static Set<Offer> getOffersToOptimize(Date now, Set<String> catalogObjectiveIDs,
       SubscriberProfile subscriberProfile, OfferService offerService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     // Browse all offers:
@@ -484,29 +484,89 @@ public static Collection<ProposedOfferDetails> getOffersWithScoringStrategy(Date
     // Return a set of offers that can be optimised
     Collection<Offer> offers = offerService.getActiveOffers(Calendar.getInstance().getTime());
     Set<Offer> result = new HashSet<>();
-    for (String currentSplitObjectiveID : catalogObjectiveIDs)
+    List<Token> tokens = subscriberProfile.getTokens();
+    for (Offer offer : offers)
     {
-      log.trace("currentSplitObjectiveID : "+currentSplitObjectiveID);
-      for (Offer currentOffer : offers)
-      {
-        for (OfferObjectiveInstance currentOfferObjective : currentOffer.getOfferObjectives())
+      boolean nextOffer = false;
+      
+      String maximumPresentationsStr = (String) offer.getJSONRepresentation().get("maximumPresentations");
+      int maximumPresentations = Integer.MAX_VALUE;  // default value
+      if (maximumPresentationsStr != null && !maximumPresentationsStr.isEmpty())
         {
-          log.trace("    offerID : "+currentOffer.getOfferID()+" offerObjectiveID : "+currentOfferObjective.getOfferObjectiveID());
-          if (currentOfferObjective.getOfferObjectiveID().equals(currentSplitObjectiveID))
+          try 
           {
-            // this offer is a good candidate for the moment, let's check the profile
-            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
-            if (currentOffer.evaluateProfileCriteria(evaluationRequest))
+            maximumPresentations = Integer.parseInt(maximumPresentationsStr);
+          } catch (NumberFormatException  e) {
+            log.info("maximumPresentations in offer is not a number : " + maximumPresentationsStr);
+          }
+        }
+
+      String maximumPresentationsPeriodDaysStr = (String) offer.getJSONRepresentation().get("maximumPresentationsPeriodDays");
+      int maximumPresentationsPeriodDays = 365;  // default value
+      if (maximumPresentationsPeriodDaysStr != null && !maximumPresentationsPeriodDaysStr.isEmpty())
+        {
+          try 
+          {
+            maximumPresentationsPeriodDays = Integer.parseInt(maximumPresentationsPeriodDaysStr);
+          } catch (NumberFormatException  e) {
+            log.info("maximumPresentationsPeriodDays in offer is not a number : " + maximumPresentationsPeriodDaysStr);
+          }
+          log.info("Found a value for maximumPresentationsPeriodDays in offer "+offer.getOfferID()+" : " + maximumPresentationsPeriodDaysStr +
+              ", yet it may not be enforced because we compare this to the number of presentations period defined in the presentation strategy");
+        }
+      Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumPresentationsPeriodDays, Deployment.getBaseTimeZone());
+
+      for (String catalogObjectiveID : catalogObjectiveIDs)
+      {
+        log.trace("catalogObjectiveID : "+catalogObjectiveID);
+        for (OfferObjectiveInstance offerObjective : offer.getOfferObjectives())
+        {
+          log.trace("    offerID : "+offer.getOfferID()+" offerObjectiveID : "+offerObjective.getOfferObjectiveID());
+          if (offerObjective.getOfferObjectiveID().equals(catalogObjectiveID))
+          {
+            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
+            if (offer.evaluateProfileCriteria(evaluationRequest))
             {
-              log.trace("        add offer : "+currentOffer.getOfferID());
-              result.add(currentOffer);
+              // check if we can still present this offer
+              int nbPresentations = 0;
+              for (Token token : tokens)
+                {
+                  if (token instanceof DNBOToken)
+                    {
+                      DNBOToken dnboToken = (DNBOToken) token;
+                      // Here we forget to count  some presentations : the one before the last, because we only memorise the last list
+                      if (dnboToken.getPresentedOfferIDs().contains(offer.getOfferID()))
+                        {
+                          for (Date date : dnboToken.getPresentationDates())
+                            {
+                              if (date.after(earliestDateToKeep))
+                                {
+                                  nbPresentations++;
+                                }
+                            }
+                        }
+                    }
+                }
+              if (nbPresentations < maximumPresentations-1)
+                {
+                  log.trace("add offer : "+offer.getOfferID());
+                  result.add(offer);
+                  nextOffer = true; // do not consider this offer again
+                  break;
+                }
+              else
+                {
+                  log.info("offer " + offer.getOfferID() + " has been presented " + nbPresentations + " times in the past " + maximumPresentationsPeriodDays + " days, skip it (max : " + maximumPresentations + " )");
+                }
             }
           }
         }
+        if (nextOffer) break;
       }
     }
     return result;
   }
+  
   private static ScoringSegment getScoringSegment(ScoringStrategy strategy, SubscriberProfile subscriberProfile,
       ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader) throws GetOfferException
   {
