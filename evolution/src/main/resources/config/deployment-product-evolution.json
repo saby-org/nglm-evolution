@@ -277,7 +277,6 @@
   "supportedTimeUnits" :
     [ 
       { "id" : "instant", "display" : "Instant" },
-      { "id" : "second",  "display" : "Second" },
       { "id" : "minute",  "display" : "Minute" },
       { "id" : "hour",    "display" : "Hour" },
       { "id" : "day",     "display" : "Day" },
