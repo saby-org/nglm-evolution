@@ -752,7 +752,7 @@ public class EvaluationCriterion
 
   public boolean evaluate(SubscriberEvaluationRequest evaluationRequest)
   {
-    boolean rajLog = (getCriterionOperator() == CriterionOperator.GreaterThanOrEqualOperator);
+    boolean rajLog = true;//(getCriterionOperator() == CriterionOperator.GreaterThanOrEqualOperator);
     if (rajLog) log.info("RAJ K evaluate ()");
     /*****************************************
     *
