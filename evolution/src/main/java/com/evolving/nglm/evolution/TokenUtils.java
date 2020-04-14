@@ -489,32 +489,13 @@ public class TokenUtils
     {
       boolean nextOffer = false;
       
-      String maximumPresentationsStr = (String) offer.getJSONRepresentation().get("maximumPresentations");
-      int maximumPresentations = Integer.MAX_VALUE;  // default value
-      if (maximumPresentationsStr != null && !maximumPresentationsStr.isEmpty())
-        {
-          try 
-          {
-            maximumPresentations = Integer.parseInt(maximumPresentationsStr);
-          } catch (NumberFormatException  e) {
-            log.info("maximumPresentations in offer is not a number : " + maximumPresentationsStr);
-          }
-        }
+      Long maximumPresentationsStr = (Long) offer.getJSONRepresentation().get("maximumPresentations");
+      long maximumPresentations = maximumPresentationsStr != null ? maximumPresentationsStr : Long.MAX_VALUE;  // default value
 
-      String maximumPresentationsPeriodDaysStr = (String) offer.getJSONRepresentation().get("maximumPresentationsPeriodDays");
-      int maximumPresentationsPeriodDays = 365;  // default value
-      if (maximumPresentationsPeriodDaysStr != null && !maximumPresentationsPeriodDaysStr.isEmpty())
-        {
-          try 
-          {
-            maximumPresentationsPeriodDays = Integer.parseInt(maximumPresentationsPeriodDaysStr);
-          } catch (NumberFormatException  e) {
-            log.info("maximumPresentationsPeriodDays in offer is not a number : " + maximumPresentationsPeriodDaysStr);
-          }
-          log.info("Found a value for maximumPresentationsPeriodDays in offer "+offer.getOfferID()+" : " + maximumPresentationsPeriodDaysStr +
-              ", yet it may not be enforced because we compare this to the number of presentations period defined in the presentation strategy");
-        }
-      Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumPresentationsPeriodDays, Deployment.getBaseTimeZone());
+      Long maximumPresentationsPeriodDaysStr = (Long) offer.getJSONRepresentation().get("maximumPresentationsPeriodDays");
+      long maximumPresentationsPeriodDays = maximumPresentationsPeriodDaysStr != null ? maximumPresentationsPeriodDaysStr : 365L;  // default value
+      
+      Date earliestDateToKeep = RLMDateUtils.addDays(now, -((int)maximumPresentationsPeriodDays), Deployment.getBaseTimeZone());
 
       for (String catalogObjectiveID : catalogObjectiveIDs)
       {
@@ -528,7 +509,7 @@ public class TokenUtils
             if (offer.evaluateProfileCriteria(evaluationRequest))
             {
               // check if we can still present this offer
-              int nbPresentations = 0;
+              long nbPresentations = 0;
               for (Token token : tokens)
                 {
                   if (token instanceof DNBOToken)

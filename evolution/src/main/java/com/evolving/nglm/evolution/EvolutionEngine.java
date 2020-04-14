@@ -4728,7 +4728,7 @@ public class EvolutionEngine
                 //  evaluate
                 //
                 log.info("MK "+evolutionEvent.getClass().getSimpleName()+" "+journeyLink.getTransitionCriteria());
-                if (evolutionEvent instanceof ProfileChangeEvent) { log.info("MK "+((ProfileChangeEvent)evolutionEvent).getOldValue("profilechange.old.subscriber.status")+" "+((ProfileChangeEvent)evolutionEvent).getOldValue("profilechange.new.subscriber.status"));
+                if (evolutionEvent instanceof ProfileChangeEvent) { log.info("MK "+((ProfileChangeEvent)evolutionEvent).getOldValue("profilechange.old.subscriber.status")+" "+((ProfileChangeEvent)evolutionEvent).getNewValue("profilechange.new.subscriber.status"));}
                 if (EvaluationCriterion.evaluateCriteria(evaluationRequest, journeyLink.getTransitionCriteria()))
                   {
                     firedLink = journeyLink;

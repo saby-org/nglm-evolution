@@ -21184,11 +21184,12 @@ public class GUIManager
               StringBuffer returnedLog = new StringBuffer();
               double rangeValue = 0; // Not significant
               DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
+              SubscriberEvaluationRequest request = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
 
               // Allocate offers for this subscriber, and associate them in the token
               // Here we have no saleschannel (we pass null), this means only the first salesChannelsAndPrices of the offer will be used and returned.  
               Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(
-                  now, subscriberStoredToken, null,
+                  now, subscriberStoredToken, request,
                   subscriberProfile, presentationStrategy,
                   productService, productTypeService, voucherService, voucherTypeService,
                   catalogCharacteristicService,
