@@ -29,6 +29,7 @@ import com.evolving.nglm.evolution.Token.TokenStatus;
 
 public class DNBOToken extends Token
 {
+
   /*****************************************
   *
   * schema
@@ -251,4 +252,17 @@ public class DNBOToken extends Token
 
     return new DNBOToken(schemaAndValue, presentationStrategyID, scoringStrategyIDs, isAutoBound, isAutoRedeemed, presentedOfferIDs, presentedOffersSalesChannel, acceptedOfferID, presentationDates);
   }
+  
+  @Override
+  public String toString()
+  {
+    return "DNBOToken [" + (presentationStrategyID != null ? "presentationStrategyID=" + presentationStrategyID + ", " : "")
+        + (scoringStrategyIDs != null ? "scoringStrategyIDs=" + scoringStrategyIDs + ", " : "")
+        + "isAutoBound=" + isAutoBound + ", isAutoRedeemed=" + isAutoRedeemed + ", "
+        + (presentedOfferIDs != null ? "presentedOfferIDs=" + presentedOfferIDs + ", " : "")
+        + (presentedOffersSalesChannel != null ? "presentedOffersSalesChannel=" + presentedOffersSalesChannel + ", " : "")
+        + (acceptedOfferID != null ? "acceptedOfferID=" + acceptedOfferID + ", " : "")
+        + (presentationDates != null ? "presentationDates=" + presentationDates : "") + "]";
+  }
+
 }

@@ -509,7 +509,7 @@ public class TokenUtils
             if (offer.evaluateProfileCriteria(evaluationRequest))
             {
               // check if we can still present this offer
-              long nbPresentations = 0;
+              long nbPresentations = -1; // -1 because need to ignore the current presentation (has already been added to dnboToken.getPresentationDates())
               for (Token token : tokens)
                 {
                   if (token instanceof DNBOToken)
