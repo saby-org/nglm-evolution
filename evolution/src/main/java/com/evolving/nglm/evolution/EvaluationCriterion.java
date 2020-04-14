@@ -769,7 +769,7 @@ public class EvaluationCriterion
     ****************************************/
 
     Object criterionFieldValue = criterionField.retrieveNormalized(evaluationRequest);
-    if (rajLog) log.info("RAJ K criterionFieldValue {}", criterionFieldValue);
+    log.info("RAJ K criterionFieldValue {}", criterionFieldValue);
 
     /****************************************
     *
@@ -948,7 +948,7 @@ public class EvaluationCriterion
                       break;
                   }
               }
-              break;
+            break;
               
           case TimeCriterion:
             {
