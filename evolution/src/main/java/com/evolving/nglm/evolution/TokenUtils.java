@@ -515,7 +515,7 @@ public class TokenUtils
                   if (token instanceof DNBOToken)
                     {
                       DNBOToken dnboToken = (DNBOToken) token;
-                      // Here we forget to count  some presentations : the one before the last, because we only memorise the last list
+                      // Here we forget to count some presentations : the one before the last, because we only memorise the last list
                       if (dnboToken.getPresentedOfferIDs().contains(offer.getOfferID()))
                         {
                           for (Date date : dnboToken.getPresentationDates())
@@ -528,7 +528,7 @@ public class TokenUtils
                         }
                     }
                 }
-              if (nbPresentations < maximumPresentations-1)
+              if (nbPresentations < maximumPresentations)
                 {
                   log.trace("add offer : "+offer.getOfferID());
                   result.add(offer);
