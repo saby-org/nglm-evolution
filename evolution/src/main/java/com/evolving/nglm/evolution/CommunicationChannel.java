@@ -55,6 +55,11 @@ public class CommunicationChannel extends GUIManagedObject
     int toolboxWidth;
     boolean allowGuiTemplate;
     boolean allowInLineTemplate;
+    boolean isGeneric;
+    String campaignGUINodeSectionID;
+    String journeyGUINodeSectionID;
+    String workflowGUINodeSectionID;
+    
     
     
 
@@ -79,6 +84,10 @@ public class CommunicationChannel extends GUIManagedObject
     public int getToolboxWidth() { return toolboxWidth; }
     public boolean allowGuiTemplate() { return allowGuiTemplate; }
     public boolean allowInLineTemplate() { return allowInLineTemplate; }  
+    public boolean isGeneric() { return isGeneric; }
+    public String getCampaignGUINodeSectionID() { return campaignGUINodeSectionID; }
+    public String getJourneyGUINodeSectionID() { return journeyGUINodeSectionID; }
+    public String getWorkflowGUINodeSectionID() { return workflowGUINodeSectionID; }
     
     /*****************************************
     *
@@ -160,6 +169,16 @@ public class CommunicationChannel extends GUIManagedObject
         }
       this.allowGuiTemplate =  JSONUtilities.decodeBoolean(jsonRoot, "allowGuiTemplate", Boolean.TRUE);
       this.allowInLineTemplate =  JSONUtilities.decodeBoolean(jsonRoot, "allowInLineTemplate", Boolean.FALSE);
+      this.isGeneric =  JSONUtilities.decodeBoolean(jsonRoot, "isGeneric", Boolean.FALSE);
+      this.journeyGUINodeSectionID = JSONUtilities.decodeString(jsonRoot, "journeyGUINodeSectionID", false);
+      this.workflowGUINodeSectionID = JSONUtilities.decodeString(jsonRoot, "workflowGUINodeSectionID", false);
+      this.campaignGUINodeSectionID = JSONUtilities.decodeString(jsonRoot, "campaignGUINodeSectionID", false);
+     
+      
+    }
+    
+    public String getToolboxID() {
+      return "NotifChannel-" + this.getID();
     }
 
     /*****************************************

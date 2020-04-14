@@ -2854,7 +2854,7 @@ public class Deployment
           
           // Add generated Node Types: 
           // * Generic Notification Manager
-          String[] notificationNodeTypesAsString = NotificationManager.getNotificationNodeTypes();
+          ArrayList<String> notificationNodeTypesAsString = NotificationManager.getNotificationNodeTypes();
           for(String current : notificationNodeTypesAsString) {
             try {
               JSONObject jsonNodeTypeRoot = (JSONObject) (new JSONParser()).parse(current);
@@ -2884,6 +2884,32 @@ public class Deployment
               ToolboxSection journeyToolboxSection = new ToolboxSection(journeyToolboxSectionValueJSON);
               journeyToolbox.put(journeyToolboxSection.getID(), journeyToolboxSection);
             }
+          
+          // Iterate over the communication channels and, for generic ones, let enrich, if needed the journey toolbox
+          for(CommunicationChannel cc : getCommunicationChannels().values()) 
+            {
+            if(cc.isGeneric() && cc.getJourneyGUINodeSectionID() != null) 
+              {
+                ToolboxSection section = journeyToolbox.get(cc.getJourneyGUINodeSectionID());
+                if(section == null) {
+                  log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getJourneyGUINodeSectionID() + " for communicationChannel " + cc.getID());
+                }
+                else {
+                  JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
+                  if(items != null) {
+                    JSONObject item = new JSONObject();
+                    item.put(cc.getToolboxID(), cc.getName());
+                    // ensure this box effectively exists
+                    if(getNodeTypes().get(cc.getToolboxID()) != null) {
+                      items.add(item);
+                    } 
+                    else {
+                      log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                    }
+                  }
+                }
+              }
+            }
         }
       catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
         {
@@ -2903,6 +2929,32 @@ public class Deployment
               ToolboxSection campaignToolboxSection = new ToolboxSection(campaignToolboxSectionValueJSON);
               campaignToolbox.put(campaignToolboxSection.getID(), campaignToolboxSection);
             }
+          
+          // Iterate over the communication channels and, for generic ones, let enrich, if needed the campaign toolbox
+          for(CommunicationChannel cc : getCommunicationChannels().values()) 
+            {
+            if(cc.isGeneric() && cc.getCampaignGUINodeSectionID() != null) 
+              {
+                ToolboxSection section = campaignToolbox.get(cc.getCampaignGUINodeSectionID());
+                if(section == null) {
+                  log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getCampaignGUINodeSectionID() + " for communicationChannel " + cc.getID());
+                }
+                else {
+                  JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
+                  if(items != null) {
+                    JSONObject item = new JSONObject();
+                    item.put(cc.getToolboxID(), cc.getName());
+                    // ensure this box effectively exists
+                    if(getNodeTypes().get(cc.getToolboxID()) != null) {
+                      items.add(item);
+                    } 
+                    else {
+                      log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                    }
+                  }
+                }
+              }
+            }
         }
       catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
         {
@@ -2921,6 +2973,32 @@ public class Deployment
               JSONObject workflowToolboxSectionValueJSON = (JSONObject) workflowToolboxSectionValues.get(i);
               ToolboxSection workflowToolboxSection = new ToolboxSection(workflowToolboxSectionValueJSON);
               workflowToolbox.put(workflowToolboxSection.getID(), workflowToolboxSection);
+            }
+          
+          // Iterate over the communication channels and, for generic ones, let enrich, if needed the workflow toolbox
+          for(CommunicationChannel cc : getCommunicationChannels().values()) 
+            {
+            if(cc.isGeneric() && cc.getWorkflowGUINodeSectionID() != null) 
+              {
+                ToolboxSection section = workflowToolbox.get(cc.getWorkflowGUINodeSectionID());
+                if(section == null) {
+                  log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getWorkflowGUINodeSectionID() + " for communicationChannel " + cc.getID());
+                }
+                else {
+                  JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
+                  if(items != null) {
+                    JSONObject item = new JSONObject();
+                    item.put(cc.getToolboxID(), cc.getName());
+                    // ensure this box effectively exists
+                    if(getNodeTypes().get(cc.getToolboxID()) != null) {
+                      items.add(item);
+                    } 
+                    else {
+                      log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                    }
+                  }
+                }
+              }
             }
         }
       catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)

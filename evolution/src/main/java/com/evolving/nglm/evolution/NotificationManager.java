@@ -951,7 +951,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
     manager.run();
     
   }
-  public static String[] getNotificationNodeTypes()
+  public static ArrayList<String> getNotificationNodeTypes()
   {
     
 //    {
@@ -1015,9 +1015,10 @@ public class NotificationManager extends DeliveryManager implements Runnable
 //        }
 //     },
 
+    ArrayList<String> result =  new ArrayList<>();
     for(CommunicationChannel current : Deployment.getCommunicationChannels().values()) {
       ToolBoxBuilder tb = new ToolBoxBuilder(
-          "NotifChannel-" + current.getID(), current.getName(), current.getDisplay(), current.getIcon(), current.getToolboxHeight(), current.getToolboxWidth(), OutputType.Static);
+          current.getToolboxID(), current.getName(), current.getDisplay(), current.getIcon(), current.getToolboxHeight(), current.getToolboxWidth(), OutputType.Static);
       
       tb.addOutputConnector(new OutputConnectorBuilder("delivered", "Delivered/Sent")
           .addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'delivered', 'acknowledged' ]"))));
@@ -1068,9 +1069,10 @@ public class NotificationManager extends DeliveryManager implements Runnable
           .addManagerClassConfigurationField("channelID", current.getID())
           .addManagerClassConfigurationField("moduleID", "1")
           ); 
+      result.add(tb.build(0));
     }
     
-    return null;
+    return result;
   }
 }
   

@@ -3083,7 +3083,6 @@ public class GUIManager
                   jsonResponse = processRemoveDialogTemplate(userID, jsonRoot);
                   break;
 
-
                 case getFulfillmentProviders:
                   jsonResponse = processGetFulfillmentProviders(userID, jsonRoot);
                   break;
