@@ -604,7 +604,6 @@ public abstract class CriterionFieldRetriever
         result = "SATURDAY";
         break;
     }
-    log.info("getDay(" + today + ") returns {}", result.toLowerCase()); 
     return result.toLowerCase();
   }
   

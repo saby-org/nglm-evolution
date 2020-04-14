@@ -564,8 +564,9 @@ public abstract class Expression
             break;
             
           case TimeExpression:
+            
             //
-            // RAJ K TO DO
+            // 
             //
             
             break;
@@ -1342,7 +1343,6 @@ public abstract class Expression
 
     private void typeCheckTimeConstantFunction()
     {
-      log.info("RAJ K typeCheckTimeConstantFunction()");
       /****************************************
       *
       *  arguments
@@ -1784,7 +1784,6 @@ public abstract class Expression
     
     private void typeCheckDateAddOrConstantFunction(TimeUnit baseTimeUnit)
     {
-      log.info("RAJ K typeCheckDateAddOrConstantFunction () enter");
       /****************************************
       *
       *  arguments
@@ -1901,7 +1900,6 @@ public abstract class Expression
 
       setTagFormat(arg1.getTagFormat());
       setTagMaxLength(arg1.getTagMaxLength());
-      log.info("RAJ K typeCheckDateAddOrConstantFunction () exit");
     }
 
     /*****************************************
@@ -2151,7 +2149,6 @@ public abstract class Expression
 
     private String evaluateTimeConstantFunction(String arg)
     {
-      log.info("RAJ K evaluateTimeConstantFunction() arg {}", arg); 
       /*****************************************
       *
       *  parse argument
@@ -2282,7 +2279,6 @@ public abstract class Expression
     
     private String evaluateTimeAddFunction(String time, Number number, TimeUnit timeUnit, TimeUnit baseTimeUnit, boolean roundDown)
     {
-      log.info("RAJ K evaluateTimeAddFunction() time {}, number {}, timeUnit {} ", time, number, timeUnit); 
       String[] args = time.trim().split(":");
       if (args.length != 3) throw new ExpressionEvaluationException();
       int hh = Integer.parseInt(args[0]);
@@ -2306,22 +2302,6 @@ public abstract class Expression
         default:
           throw new ExpressionEvaluationException();
       }
-      
-      /*
-       * Calendar c = SystemTime.getCalendar();
-       * c.setTime(SystemTime.getCurrentTime()); c.set(Calendar.HOUR_OF_DAY, hh);
-       * c.set(Calendar.MINUTE, mm); c.set(Calendar.SECOND, ss); Date finalDateTime =
-       * evaluateDateAddFunction(c.getTime(), number, timeUnit, baseTimeUnit,
-       * roundDown);
-       * 
-       * StringBuilder timeBuilder = new StringBuilder();
-       * timeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.HOUR_OF_DAY,
-       * com.evolving.nglm.core.Deployment.getBaseTimeZone())).append(":");
-       * timeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.MINUTE,
-       * com.evolving.nglm.core.Deployment.getBaseTimeZone())).append(":");
-       * timeBuilder.append(RLMDateUtils.getField(finalDateTime, Calendar.SECOND,
-       * com.evolving.nglm.core.Deployment.getBaseTimeZone()));
-       */
       StringBuilder timeBuilder = new StringBuilder();
       timeBuilder.append(hh).append(":").append(mm).append(":").append(ss);
       return timeBuilder.toString(); 
@@ -2334,11 +2314,9 @@ public abstract class Expression
     
     private Date evaluateDateAddOrConstantFunction(Date dateAddDate, Date strictScheduleDate, Number waitDuration, TimeUnit timeUnit, TimeUnit baseTimeUnit, boolean roundDown)
     {
-      log.info("RAJ K evaluateDateAddOrConstantFunction() dateAddDate {}, strictScheduleDate {}, waitDuration {}, timeUnit {} ", dateAddDate, strictScheduleDate, waitDuration, timeUnit); 
       boolean dateBasedWait = strictScheduleDate != null;
       boolean timeBasedWait = waitDuration != null && timeUnit != TimeUnit.Unknown;
       boolean dateAndTimeBasedWait = dateBasedWait && timeBasedWait;
-      log.info("RAJ K dateBasedWait {}, timeBasedWait {}, dateAndTimeBasedWait {}", dateBasedWait, timeBasedWait, dateAndTimeBasedWait);
       
       //
       //  1970
@@ -2349,7 +2327,6 @@ public abstract class Expression
       if (dateAndTimeBasedWait)
         {
           Date timeBasedDate = evaluateDateAddFunction(dateAddDate, waitDuration, timeUnit, baseTimeUnit, roundDown);
-          log.info("RAJ K dateAndTimeBasedWait - timeBasedDate {}, strictScheduleDate {}", timeBasedDate, strictScheduleDate);
           if (timeBasedDate.after(strictScheduleDate)) result = strictScheduleDate;
           else result = timeBasedDate;
         }
@@ -2361,7 +2338,6 @@ public abstract class Expression
         {
           result = evaluateDateAddFunction(dateAddDate, waitDuration, timeUnit, baseTimeUnit, roundDown);
         }
-      log.info("RAJ K evaluateDateAddOrConstantFunction() result {}", result);
       return result;
       
     }
