@@ -23,10 +23,12 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -663,7 +665,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
       }
     return result;
   }
-  
+
   /*****************************************
   *
   *  prepareJourneyStatusSummary
@@ -707,4 +709,48 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
       }
     return result;
   }
+  
+  
+  @Override
+  public String toString()
+  {
+    final int maxLen = 10;
+    return "JourneyStatistic [" + (journeyStatisticID != null ? "journeyStatisticID="
+    + journeyStatisticID + ", " : "") 
+        + (journeyInstanceID != null ? "journeyInstanceID=" + journeyInstanceID + ", " : "")
+        + (journeyID != null ? "journeyID=" + journeyID + ", " : "")
+        + (subscriberID != null ? "subscriberID=" + subscriberID + ", " : "") 
+        + (transitionDate != null ? "transitionDate=" + transitionDate + ", " : "") 
+        + (linkID != null ? "linkID=" + linkID + ", " : "")
+        + (fromNodeID != null ? "fromNodeID=" + fromNodeID + ", " : "") 
+        + (toNodeID != null ? "toNodeID=" + toNodeID + ", " : "")
+        + (deliveryRequestID != null ? "deliveryRequestID=" + deliveryRequestID + ", " : "")
+        + (sample != null ? "sample=" + sample + ", " : "") + "markNotified=" + markNotified 
+        + ", markConverted=" + markConverted + ", statusNotified=" + statusNotified 
+        + ", statusConverted=" + statusConverted + ", "
+        + (statusTargetGroup != null ? "statusTargetGroup=" + statusTargetGroup + ", " : "") 
+        + (statusControlGroup != null ? "statusControlGroup=" + statusControlGroup + ", " : "") 
+        + (statusUniversalControlGroup != null ? "statusUniversalControlGroup=" + statusUniversalControlGroup + ", " : "") 
+        + "journeyComplete=" + journeyComplete + ", " 
+        + (journeyNodeHistory != null ? "journeyNodeHistory=" + toString(journeyNodeHistory, maxLen) + ", " : "")
+        + (journeyStatusHistory != null ? "journeyStatusHistory=" + toString(journeyStatusHistory, maxLen) + ", " : "") 
+        + (journeyRewardHistory != null ? "journeyRewardHistory=" + toString(journeyRewardHistory, maxLen) + ", " : "") 
+        + (subscriberStratum != null ? "subscriberStratum=" + toString(subscriberStratum.entrySet(), maxLen) : "") + "]";
+  }
+
+  private String toString(Collection<?> collection, int maxLen)
+  {
+    StringBuilder builder = new StringBuilder();
+    builder.append("[");
+    int i = 0;
+    for (Iterator<?> iterator = collection.iterator(); iterator.hasNext() && i < maxLen; i++)
+      {
+        if (i > 0)
+          builder.append(", ");
+        builder.append(iterator.next());
+      }
+    builder.append("]");
+    return builder.toString();
+  }
+
 }
