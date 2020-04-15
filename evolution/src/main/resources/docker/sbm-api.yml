@@ -10,6 +10,7 @@ sbm-api-<_KEY_>:
     SBMSettings__ApiElasticsearchUrl: "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>/"
     TZ: <_DEPLOYMENT_TIMEZONE_>
     SBM_API_PORT: <_PORT_>
+    Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/sbm-api-<_KEY_>/mnt

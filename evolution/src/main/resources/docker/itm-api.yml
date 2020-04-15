@@ -10,6 +10,7 @@ itm-api-<_KEY_>:
     ItmSettings__TriggerNameStartWith : ''
     TZ: <_DEPLOYMENT_TIMEZONE_>
     ITM_API_PORT: <_PORT_>
+    Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/itm-api-<_KEY_>/mnt
