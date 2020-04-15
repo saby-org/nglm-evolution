@@ -2068,7 +2068,7 @@ public class ThirdPartyManager
                   Boolean statusControlGroup = subsLatestStatistic.getControlGroupStatus();
                   Boolean statusUniversalControlGroup = subsLatestStatistic.getUniversalControlGroupStatus();
                   boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
-                  SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
+                  SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
 
                   if (customerStatus != null)
                     {
@@ -2358,7 +2358,7 @@ public class ThirdPartyManager
                   Boolean statusControlGroup = subsLatestStatistic.getControlGroupStatus();
                   Boolean statusUniversalControlGroup = subsLatestStatistic.getUniversalControlGroupStatus();
                   boolean campaignComplete = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> campaignStat.getJourneyComplete()).count() > 0L ;
-                  SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(campaignComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
+                  SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
 
                   if (customerStatus != null)
                     {
