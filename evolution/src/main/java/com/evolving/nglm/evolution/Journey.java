@@ -6,6 +6,9 @@
 
 package com.evolving.nglm.evolution;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -28,6 +31,15 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -39,6 +51,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -431,44 +444,57 @@ public class Journey extends GUIManagedObject
   //
   //  base
   //
-
-  public static SubscriberJourneyStatus getSubscriberJourneyStatus(boolean journeyComplete, boolean statusConverted, boolean statusNotified, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup)
+  public static SubscriberJourneyStatus getSubscriberJourneyStatus(boolean statusConverted, boolean statusNotified, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup)
   {
-    boolean controlGroupNodeExited = statusTargetGroup == Boolean.TRUE || statusControlGroup == Boolean.TRUE || statusUniversalControlGroup == Boolean.TRUE;
-    
-    if (! controlGroupNodeExited && ! statusNotified && ! statusConverted)
-      return SubscriberJourneyStatus.Entered;
-    else if (! controlGroupNodeExited && ! statusNotified && statusConverted)
-      return SubscriberJourneyStatus.ConvertedNotNotified;
-    else if (! controlGroupNodeExited && statusNotified && ! statusConverted)
-      return SubscriberJourneyStatus.Notified;
-    else if (! controlGroupNodeExited && statusNotified && statusConverted)
-      return SubscriberJourneyStatus.ConvertedNotified;
-    else if (controlGroupNodeExited && statusTargetGroup == Boolean.TRUE && statusNotified && ! statusConverted)
-      return SubscriberJourneyStatus.Notified;
-    else if (controlGroupNodeExited && statusTargetGroup == Boolean.TRUE && statusNotified && statusConverted)
-      return SubscriberJourneyStatus.ConvertedNotified;
-    else if (controlGroupNodeExited && statusTargetGroup == Boolean.TRUE)
-      return SubscriberJourneyStatus.Targeted;
-    else if (controlGroupNodeExited && statusControlGroup == Boolean.TRUE && ! statusConverted)
-      return SubscriberJourneyStatus.ControlGroup;
-    else if (controlGroupNodeExited && statusUniversalControlGroup == Boolean.TRUE && ! statusConverted)
-      return SubscriberJourneyStatus.UniversalControlGroup;
-    else if (controlGroupNodeExited && statusControlGroup == Boolean.TRUE && statusConverted)
-      return SubscriberJourneyStatus.ControlGroupConverted;
-    else if (controlGroupNodeExited && statusUniversalControlGroup == Boolean.TRUE && statusConverted)
-      return SubscriberJourneyStatus.UniversalControlGroupConverted;
-    else
-      return SubscriberJourneyStatus.Unknown;
+  // Non UCG
+  if (statusUniversalControlGroup == null || statusUniversalControlGroup == Boolean.FALSE)
+  {
+    // Non CG
+    if (statusControlGroup == null || statusControlGroup == Boolean.FALSE) {
+      // Status not updated yet
+      if (! statusNotified && ! statusConverted) {
+        if (statusTargetGroup == null || statusTargetGroup == Boolean.FALSE)
+          return SubscriberJourneyStatus.Entered;
+        else
+          return SubscriberJourneyStatus.Targeted;
+      }
+      // Status updated
+      else {
+        if (! statusConverted)
+          return SubscriberJourneyStatus.Notified;
+        else {
+          if (! statusNotified)
+            return SubscriberJourneyStatus.ConvertedNotNotified;
+          else
+            return SubscriberJourneyStatus.ConvertedNotified;
+        }
+      }
+    }
+    // CG
+    else {
+      if (! statusConverted)
+        return SubscriberJourneyStatus.ControlGroup;
+      else
+        return SubscriberJourneyStatus.ControlGroupConverted; 
+    }
   }
-
+  // UCG
+  else
+  {
+    if (! statusConverted)
+      return SubscriberJourneyStatus.UniversalControlGroup;
+    else
+      return SubscriberJourneyStatus.UniversalControlGroupConverted;
+  }
+}
+  
   //
   //  journeyStatistic
   //
 
   public static SubscriberJourneyStatus getSubscriberJourneyStatus(JourneyStatistic journeyStatistic)
   {
-    return getSubscriberJourneyStatus(journeyStatistic.getJourneyComplete(), journeyStatistic.getStatusConverted(), journeyStatistic.getStatusNotified(), journeyStatistic.getStatusTargetGroup(), journeyStatistic.getStatusControlGroup(), journeyStatistic.getStatusUniversalControlGroup());
+    return getSubscriberJourneyStatus(journeyStatistic.getStatusConverted(), journeyStatistic.getStatusNotified(), journeyStatistic.getStatusTargetGroup(), journeyStatistic.getStatusControlGroup(), journeyStatistic.getStatusUniversalControlGroup());
   }
 
   //
@@ -477,22 +503,13 @@ public class Journey extends GUIManagedObject
 
   public static SubscriberJourneyStatus getSubscriberJourneyStatus(JourneyState journeyState)
   {
-    boolean journeyComplete = journeyState.getJourneyExitDate() != null;
     boolean statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
     boolean statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
     Boolean statusTargetGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
     Boolean statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
     Boolean statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
     
-    //
-    // re-check
-    //
-    
-    if (statusTargetGroup == Boolean.TRUE) statusControlGroup = statusUniversalControlGroup = !statusTargetGroup;
-    if (statusControlGroup == Boolean.TRUE) statusTargetGroup = statusUniversalControlGroup = !statusControlGroup;
-    if (statusUniversalControlGroup == Boolean.TRUE) statusTargetGroup = statusControlGroup = !statusUniversalControlGroup;
-    
-    return getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
+    return getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
   }
 
   //
@@ -501,7 +518,7 @@ public class Journey extends GUIManagedObject
 
   public static SubscriberJourneyStatus getSubscriberJourneyStatus(StatusHistory statusHistory)
   {
-    return getSubscriberJourneyStatus(statusHistory.getJourneyComplete(), statusHistory.getStatusConverted(), statusHistory.getStatusNotified(), statusHistory.getStatusTargetGroup(), statusHistory.getStatusControlGroup(), statusHistory.getStatusUniversalControlGroup());
+    return getSubscriberJourneyStatus(statusHistory.getStatusConverted(), statusHistory.getStatusNotified(), statusHistory.getStatusTargetGroup(), statusHistory.getStatusControlGroup(), statusHistory.getStatusUniversalControlGroup());
   }
   
   /*****************************************
@@ -1046,7 +1063,7 @@ public class Journey extends GUIManagedObject
 
     Map<String,CriterionField> contextVariablesAndParameters = Journey.processContextVariableNodes(contextVariableNodes, templateParameters);
     this.contextVariables = new HashMap<String,CriterionField>();
-    this.journeyParameters = new HashMap<String,CriterionField>(this.templateParameters);
+    this.journeyParameters = new LinkedHashMap<String,CriterionField>(this.templateParameters);
     for (CriterionField contextVariable : contextVariablesAndParameters.values())
       {
         switch (contextVariable.getVariableType())
@@ -2340,6 +2357,33 @@ public class Journey extends GUIManagedObject
   
   /*****************************************
   *
+  *  processEvaluateProfileCriteria
+  *
+  *****************************************/
+  //
+  // construct query
+  //
+  public static BoolQueryBuilder processEvaluateProfileCriteriaGetQuery(List<EvaluationCriterion> criteriaList) throws CriterionException {
+    BoolQueryBuilder query = QueryBuilders.boolQuery();
+    for (EvaluationCriterion evaluationCriterion : criteriaList)
+      {
+        query = query.filter(evaluationCriterion.esQuery());
+      }
+    
+    return query;
+  }
+  
+  //
+  // execute query
+  //
+  public static long processEvaluateProfileCriteriaExecuteQuery(BoolQueryBuilder query, RestHighLevelClient elasticsearch) throws IOException {
+    SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(query).size(0));
+    SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+    return searchResponse.getHits().getTotalHits().value;
+  }
+  
+  /*****************************************
+  *
   *  isExpressionValuedParameterValue
   *
   *****************************************/
@@ -3299,13 +3343,19 @@ public class Journey extends GUIManagedObject
       switch (journeyLink.getLinkName())
         {
           case "targetGroup":
-            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName(), Boolean.TRUE);            
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName(), Boolean.TRUE);
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName(), Boolean.FALSE);
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName(), Boolean.FALSE);
             break;
           case "controlGroup":
-            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName(), Boolean.TRUE);            
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName(), Boolean.TRUE);
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName(), Boolean.FALSE);
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName(), Boolean.FALSE);
             break;
           case "universalControlGroup":
-            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName(), Boolean.TRUE);            
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName(), Boolean.TRUE);
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName(), Boolean.FALSE);
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName(), Boolean.FALSE);
             break;
         }
       return Collections.<Action>singletonList(contextUpdate);

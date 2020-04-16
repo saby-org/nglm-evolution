@@ -9,6 +9,7 @@ opr-api-<_KEY_>:
     OprSettings__KibanaUrl: "http://<_MONITORING_HOST_IP_>:<_KIBANA_PORT_>/"
     TZ: <_DEPLOYMENT_TIMEZONE_>
     OPR_API_PORT: <_PORT_>
+    Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/opr-api-<_KEY_>/mnt

@@ -23,26 +23,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -7540,11 +7522,7 @@ public class GUIManager
     BoolQueryBuilder query = null;
     try
       {
-        query = QueryBuilders.boolQuery();
-        for (EvaluationCriterion evaluationCriterion : criteriaList)
-          {
-            query = query.filter(evaluationCriterion.esQuery());
-          }
+        query = Journey.processEvaluateProfileCriteriaGetQuery(criteriaList);
       }
     catch (CriterionException e)
       {
@@ -7575,9 +7553,7 @@ public class GUIManager
     long result;
     try
       {
-        SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(query).size(0));
-        SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
-        result = searchResponse.getHits().getTotalHits().value;
+        result = Journey.processEvaluateProfileCriteriaExecuteQuery(query, elasticsearch);
       }
     catch (IOException e)
       {
@@ -16123,7 +16099,7 @@ public class GUIManager
                         Boolean statusControlGroup = subsLatestStatistic.getControlGroupStatus();
                         Boolean statusUniversalControlGroup = subsLatestStatistic.getUniversalControlGroupStatus();
                         boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
-                        SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
+                        SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
 
                         if (customerStatus != null)
                           {
@@ -16139,7 +16115,7 @@ public class GUIManager
                         Map<String, Object> journeyResponseMap = new HashMap<String, Object>();
                         journeyResponseMap.put("journeyID", storeJourney.getJourneyID());
                         journeyResponseMap.put("journeyName", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("display"));
-                        journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));
+                        journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));     // @rl: maybe generateJSON only once?
                         journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
                         journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
                         journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
@@ -16420,7 +16396,7 @@ public class GUIManager
                         Boolean statusControlGroup = subsLatestStatistic.getControlGroupStatus();
                         Boolean statusUniversalControlGroup = subsLatestStatistic.getUniversalControlGroupStatus();
                         boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
-                        SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
+                        SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
                         
                         if (customerStatus != null)
                           {
@@ -21612,7 +21588,7 @@ public class GUIManager
         else
           {
             purchaseResponse = purchaseOffer(true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer);
-            response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService));
+            response.put("offer",purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService));
           }
       }
    }
@@ -25079,7 +25055,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     //  resolve
     //
 
-    List<JSONObject>  resolvedParameters = new ArrayList<JSONObject>();
+    List<JSONObject>  resolvedParameters = new LinkedList<>();
     JSONArray parameters = JSONUtilities.decodeJSONArray(journeyJSON, "journeyParameters", new JSONArray());
     for (int i=0; i<parameters.size(); i++)
       {

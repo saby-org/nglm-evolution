@@ -11,6 +11,7 @@ import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.ReferenceDataReader;
 
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -152,7 +153,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
 
       Map<String,Object> documentMap = new HashMap<String,Object>();
       documentMap.put("subscriberID", subscriberProfile.getSubscriberID());
-      documentMap.put("evaluationDate", now);
+      documentMap.put("evaluationDate", now); // @rl TODO: has the exact same content as lastUpdateDate, wrong date format (no timezone), is it used somewhere ? Purpose seems to be the date of evaluation of every metricHistory. Keep only one, maybe remove this one, if not used ?
       documentMap.put("evolutionSubscriberStatus", (subscriberProfile.getEvolutionSubscriberStatus() != null) ? subscriberProfile.getEvolutionSubscriberStatus().getExternalRepresentation() : null);
       documentMap.put("previousEvolutionSubscriberStatus", (subscriberProfile.getPreviousEvolutionSubscriberStatus() != null) ? subscriberProfile.getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
       documentMap.put("evolutionSubscriberStatusChangeDate", subscriberProfile.getEvolutionSubscriberStatusChangeDate());
@@ -166,7 +167,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("pointBalances", subscriberProfile.getPointsBalanceJSON());
       documentMap.put("vouchers", subscriberProfile.getVouchersJSON());
       documentMap.put("subscriberJourneys", subscriberProfile.getSubscriberJourneysJSON());
-      documentMap.put("lastUpdateDate", now);
+      documentMap.put("lastUpdateDate", DatacubeGenerator.TIMESTAMP_FORMAT.format(now));
       addToDocumentMap(documentMap, subscriberProfile, now);
       
       //

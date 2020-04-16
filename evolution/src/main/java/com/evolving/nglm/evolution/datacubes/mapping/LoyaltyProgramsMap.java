@@ -15,18 +15,16 @@ public class LoyaltyProgramsMap extends GUIManagedObjectMap<LoyaltyProgramPoints
 
   /*****************************************
   *
-  *  data
+  * Properties
   *
   *****************************************/
-  
   private LoyaltyProgramService service;
   
   /*****************************************
   *
-  *  constructor
+  * Constructor
   *
   *****************************************/
-  
   public LoyaltyProgramsMap(LoyaltyProgramService service) {
     super(LoyaltyProgramPoints.class);
     this.service = service;
@@ -34,19 +32,17 @@ public class LoyaltyProgramsMap extends GUIManagedObjectMap<LoyaltyProgramPoints
   
   /*****************************************
   *
-  *  getCollection
+  * GUIManagedObjectMap implementation
   *
   *****************************************/
-  
   // TODO: for the moment, we also retrieve archived objects
   protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredLoyaltyPrograms(true); }
   
   /*****************************************
   *
-  *  accessors
+  * Getters
   *
   *****************************************/  
-  
   public String getRewardPointsID(String id, String fieldName)
   {
     LoyaltyProgramPoints result = this.guiManagedObjects.get(id);
@@ -56,7 +52,7 @@ public class LoyaltyProgramsMap extends GUIManagedObjectMap<LoyaltyProgramPoints
       }
     else
       {
-        logWarningOnlyOnce("Unable to retrieve "+fieldName+".rewardsID for "+fieldName+".id: " + id);
+        logWarningOnlyOnce("Unable to retrieve reward name for " + fieldName + " id: " + id);
         return null; // When missing, return null
       }
   }

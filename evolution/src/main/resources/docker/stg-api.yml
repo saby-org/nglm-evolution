@@ -8,6 +8,7 @@ stg-api-<_KEY_>:
     ConnectionStrings__StgConnection: 'Server=<_MYSQL_GUI_SERVER_HOST_>;Port=<_MYSQL_GUI_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
     TZ: <_DEPLOYMENT_TIMEZONE_>
     STG_API_PORT: <_PORT_>
+    Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/stg-api-<_KEY_>/mnt

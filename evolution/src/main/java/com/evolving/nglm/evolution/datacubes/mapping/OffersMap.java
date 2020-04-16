@@ -15,18 +15,16 @@ public class OffersMap extends GUIManagedObjectMap<Offer>
 
   /*****************************************
   *
-  *  data
+  * Properties
   *
   *****************************************/
-  
   private OfferService service;
   
   /*****************************************
   *
-  *  constructor
+  * Constructor
   *
   *****************************************/
-  
   public OffersMap(OfferService service) {
     super(Offer.class);
     this.service = service;
@@ -34,10 +32,9 @@ public class OffersMap extends GUIManagedObjectMap<Offer>
   
   /*****************************************
   *
-  *  getCollection
+  * GUIManagedObjectMap implementation
   *
   *****************************************/
-  
   // TODO: for the moment, we also retrieve archived objects
   protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredOffers(true); }
 }
