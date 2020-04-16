@@ -21020,7 +21020,7 @@ public class GUIManager
                   tokenStream = tokenStream.filter(token -> tokenStatusForStreams.equalsIgnoreCase(token.getTokenStatus().getExternalRepresentation()));
                 }
               tokensJson = tokenStream
-                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, offerObjectiveService, loyaltyProgramService))
+                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService))
                   .collect(Collectors.toList());
             }
 
@@ -21211,6 +21211,7 @@ public class GUIManager
                   String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
                   int transactionDurationMs = 0; // TODO
                   String callUniqueIdentifier = ""; 
+                  String tokenTypeID = subscriberStoredToken.getTokenTypeID();
 
                   PresentationLog presentationLog = new PresentationLog(
                       subscriberID, subscriberID, now, 
@@ -21218,8 +21219,8 @@ public class GUIManager
                       tokenCode, 
                       presentationStrategyID, transactionDurationMs, 
                       presentedOfferIDs, presentedOfferScores, positions, 
-                      controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID
-                      );
+                      controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, tokenTypeID
+                    );
 
                   //
                   //  submit to kafka
@@ -21254,7 +21255,7 @@ public class GUIManager
            *  decorate and response
            *
            *****************************************/
-          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, offerObjectiveService, loyaltyProgramService);
+          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService);
           response.put("responseCode", "ok");
         }
     }
@@ -21417,7 +21418,8 @@ public class GUIManager
 
           String msisdn = subscriberID; // TODO check this
           String presentationStrategyID = subscriberStoredToken.getPresentationStrategyID();
-
+          String tokenTypeID = subscriberStoredToken.getTokenTypeID();
+          
           // TODO BEGIN Following fields are currently not used in EvolutionEngine, might need to be set later
           String callUniqueIdentifier = ""; 
           String controlGroupState = "controlGroupState";
@@ -21433,7 +21435,7 @@ public class GUIManager
               callUniqueIdentifier, channelID, salesChannelID,
               userID, tokenCode,
               presentationStrategyID, transactionDurationMs,
-              controlGroupState, offerID, fulfilledDate, position, actionCall, moduleID, featureID);
+              controlGroupState, offerID, fulfilledDate, position, actionCall, moduleID, featureID, tokenTypeID);
 
           //
           //  submit to kafka

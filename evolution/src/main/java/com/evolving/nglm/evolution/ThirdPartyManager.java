@@ -3639,6 +3639,8 @@ public class ThirdPartyManager
                   scoringStrategyIDs.add(strategyID);
                 }
               String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
+              String tokenTypeID = subscriberStoredToken.getTokenTypeID();
+
               int transactionDurationMs = 0; // TODO
               PresentationLog presentationLog = new PresentationLog(
                   subscriberID, subscriberID, now, 
@@ -3646,7 +3648,7 @@ public class ThirdPartyManager
                   tokenCode, 
                   presentationStrategyID, transactionDurationMs, 
                   presentedOfferIDs, presentedOfferScores, positions, 
-                  controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID
+                  controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, tokenTypeID
                   );
 
               //
@@ -3682,7 +3684,7 @@ public class ThirdPartyManager
        *  decorate and response
        *
        *****************************************/
-      response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, offerObjectiveService, loyaltyProgramService);
+      response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService);
       response.putAll(resolveAllSubscriberIDs(subscriberProfile));
       response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
       response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
@@ -3844,13 +3846,14 @@ public class ThirdPartyManager
       
       Date fulfilledDate = now;
       String userID = JSONUtilities.decodeString(jsonRoot, "loginName", true);
+      String tokenTypeID = subscriberStoredToken.getTokenTypeID();
       
       AcceptanceLog acceptanceLog = new AcceptanceLog(
           msisdn, subscriberID, now, 
           callUniqueIdentifier, channelID, salesChannelID,
           userID, tokenCode,
           presentationStrategyID, transactionDurationMs,
-          controlGroupState, offerID, fulfilledDate, position, actionCall, moduleID, featureID);
+          controlGroupState, offerID, fulfilledDate, position, actionCall, moduleID, featureID, tokenTypeID);
       
       //
       //  submit to kafka
@@ -4302,7 +4305,7 @@ public class ThirdPartyManager
               tokenStream = tokenStream.filter(token -> tokenStatusForStreams.equalsIgnoreCase(token.getTokenStatus().getExternalRepresentation()));
             }
           tokensJson = tokenStream
-              .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, offerObjectiveService, loyaltyProgramService))
+              .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService))
               .collect(Collectors.toList());
         }
 
