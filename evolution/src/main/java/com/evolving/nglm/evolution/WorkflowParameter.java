@@ -142,7 +142,7 @@ public class WorkflowParameter
     for (int i=0; i<jsonArray.size(); i++)
       {
         JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
-        String parameterID = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
+        String parameterID = JSONUtilities.decodeString(parameterJSON, "name", true);
         CriterionField parameter = workflow.getJourneyParameters().get(parameterID);
         if (parameter == null) throw new GUIManagerException("unknown workflow parameter", parameterID);
         if (! Journey.isExpressionValuedParameterValue(parameterJSON))
