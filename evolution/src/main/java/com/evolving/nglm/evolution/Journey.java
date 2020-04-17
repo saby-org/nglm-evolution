@@ -286,6 +286,7 @@ public class Journey extends GUIManagedObject
   public boolean getAppendInclusionLists() { return appendInclusionLists; }
   public boolean getAppendExclusionLists() { return appendExclusionLists; }
   public JourneyStatus getApproval() {return JourneyStatus.Unknown == approval ? JourneyStatus.Pending : approval; }
+  public void setApproval(JourneyStatus approval) { this.approval = approval; }
 
   //
   //  package protected

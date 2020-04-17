@@ -5391,6 +5391,10 @@ public class GUIManager
 
         Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService, approval);
 
+        if(GUIManagedObjectType.Workflow.equals(objectType)) {
+          journey.setApproval(JourneyStatus.StartedApproved);
+        }
+        
         /*****************************************
         *
         *  store
