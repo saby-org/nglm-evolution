@@ -23,9 +23,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
@@ -33,6 +35,8 @@ import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.management.relation.RelationService;
 
 import com.evolving.nglm.core.*;
 import org.apache.http.HttpHost;
@@ -193,8 +197,6 @@ public class ThirdPartyManager
     getLoyaltyProgram(12),
     getLoyaltyProgramList(13),
     getOffersList(14),
-    getActiveOffer(15),
-    getActiveOffers(16),
     getCustomerAvailableCampaigns(17),
     updateCustomer(18),
     updateCustomerParent(19),
@@ -478,8 +480,6 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/getLoyaltyProgram", new APIHandler(API.getLoyaltyProgram));
       restServer.createContext("/nglm-thirdpartymanager/getLoyaltyProgramList", new APIHandler(API.getLoyaltyProgramList));
       restServer.createContext("/nglm-thirdpartymanager/getOffersList", new APIHandler(API.getOffersList));
-      restServer.createContext("/nglm-thirdpartymanager/getActiveOffer", new APIHandler(API.getActiveOffer));
-      restServer.createContext("/nglm-thirdpartymanager/getActiveOffers", new APIHandler(API.getActiveOffers));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerAvailableCampaigns", new APIHandler(API.getCustomerAvailableCampaigns));
       restServer.createContext("/nglm-thirdpartymanager/updateCustomer", new APIHandler(API.updateCustomer));
       restServer.createContext("/nglm-thirdpartymanager/updateCustomerParent", new APIHandler(API.updateCustomerParent));
@@ -786,12 +786,6 @@ public class ThirdPartyManager
               break;
             case getOffersList:
               jsonResponse = processGetOffersList(jsonRoot);
-              break;
-            case getActiveOffer:
-              jsonResponse = processGetActiveOffer(jsonRoot);
-              break;
-            case getActiveOffers:
-              jsonResponse = processGetActiveOffers(jsonRoot);
               break;
             case getCustomerAvailableCampaigns:
               jsonResponse = processGetCustomerAvailableCampaigns(jsonRoot);
@@ -2093,7 +2087,7 @@ public class ThirdPartyManager
                   journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
                   journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
                   journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate()!=null?getDateString(subsLatestStatistic.getJourneyExitDate()):"");
-                  journeyResponseMap.put("campaignState", journeyService.getJourneyStatus(storeJourney).getExternalRepresentation());
+                  journeyResponseMap.put("journeyState", journeyService.getJourneyStatus(storeJourney).getExternalRepresentation());
                   List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
                   for (JourneyObjectiveInstance journeyObjectiveInstance : storeJourney.getJourneyObjectiveInstances())
                     {
@@ -2966,96 +2960,6 @@ public class ThirdPartyManager
 
   /*****************************************
    *
-   *  processGetActiveOffer
-   *
-   *****************************************/
-
-  private JSONObject processGetActiveOffer(JSONObject jsonRoot) throws ThirdPartyManagerException
-  {
-    /****************************************
-     *
-     *  response
-     *
-     ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-     *
-     *  argument
-     *
-     ****************************************/
-
-    String offerID = readString(jsonRoot, "id", true);
-
-    /*****************************************
-     *
-     *  retrieve offer
-     *
-     *****************************************/
-
-    Offer offer = offerService.getActiveOffer(offerID, SystemTime.getCurrentTime());
-
-    /*****************************************
-     *
-     *  decorate and response
-     *
-     *****************************************/
-
-    if (offer == null)
-      {
-        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.OFFER_NOT_FOUND.getGenericResponseCode());
-        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.OFFER_NOT_FOUND.getGenericResponseMessage());
-        return JSONUtilities.encodeObject(response);
-      }
-    else 
-      {
-        response.put("offer", ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, productService, voucherService));
-        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
-        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
-        return JSONUtilities.encodeObject(response);
-      }
-  }
-
-  /*****************************************
-   *
-   *  processGetActiveOffers
-   *
-   *****************************************/
-
-  private JSONObject processGetActiveOffers(JSONObject jsonRoot)
-  {
-    /****************************************
-     *
-     *  response
-     *
-     ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-     *
-     *  retrieve offer
-     *
-     *****************************************/
-
-    Collection<Offer> offers = offerService.getActiveOffers(SystemTime.getCurrentTime());
-
-    /*****************************************
-     *
-     *  decorate and response
-     *
-     *****************************************/
-
-    List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, productService, voucherService)).collect(Collectors.toList());
-    response.put("offers", JSONUtilities.encodeArray(offersJson));
-    response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
-    response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-   *
    *  processGetCustomerAvailableCampaigns
    *
    *****************************************/
@@ -3275,9 +3179,10 @@ public class ThirdPartyManager
     *
     ****************************************/
 
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String relationshipID = JSONUtilities.decodeString(jsonRoot, "relationshipID", true);
-    String newParentCustomerID = JSONUtilities.decodeString(jsonRoot, "newParentCustomerID", true);
+    String subscriberID = resolveSubscriberID(jsonRoot);
+
+    String relationshipDisplay = JSONUtilities.decodeString(jsonRoot, "relationship", true);
+    String newParentSubscriberID = resolveParentSubscriberID(jsonRoot);
 
     /*****************************************
     *
@@ -3286,11 +3191,13 @@ public class ThirdPartyManager
     *****************************************/
       
     boolean isRelationshipSupported = false;
+    String relationshipID = null;
     for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
       {
-        if (supportedRelationship.getID().equals(relationshipID))
+        if (supportedRelationship.getDisplay().equals(relationshipDisplay))
           {
             isRelationshipSupported = true;
+            relationshipID = supportedRelationship.getID();
             break;
           }
       }
@@ -3302,8 +3209,6 @@ public class ThirdPartyManager
         return JSONUtilities.encodeObject(response);
       }
     
-    String subscriberID = customerID;
-    String newParentSubscriberID = newParentCustomerID;
     if (subscriberID == null)
       {
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
@@ -3431,12 +3336,21 @@ public class ThirdPartyManager
 
     String subscriberID = resolveSubscriberID(jsonRoot);
 
-    String relationshipID = JSONUtilities.decodeString(jsonRoot, "relationshipID", true);
+    String relationshipDisplay = JSONUtilities.decodeString(jsonRoot, "relationship", true);
 
     try
       {
         SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
         String previousParentSubscriberID = null;
+        String relationshipID = null;
+        for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+          {
+            if (supportedRelationship.getDisplay().equals(relationshipDisplay))
+              {
+                relationshipID = supportedRelationship.getID();
+                break;
+              }
+          }
         SubscriberRelatives relatives = subscriberProfile.getRelations().get(relationshipID);
         if(relatives != null) 
           {
@@ -4490,13 +4404,13 @@ public class ThirdPartyManager
     }
     
     Journey journey = null;
-    String campaignName = JSONUtilities.decodeString(jsonRoot, "campaignName", true);
+    String campaignDisplay = JSONUtilities.decodeString(jsonRoot, "campaign", true);
     Collection<Journey> allActiveJourneys = journeyService.getActiveJourneys(SystemTime.getCurrentTime());
     if(allActiveJourneys != null)
       {
         for(Journey activeJourney : allActiveJourneys)
           {
-            if(activeJourney.getJourneyName().equals(campaignName))
+            if(activeJourney.getGUIManagedObjectDisplay().equals(campaignDisplay))
               {
                 if(activeJourney.getTargetingType().equals(TargetingType.Manual))
                   {
@@ -4596,12 +4510,12 @@ public class ThirdPartyManager
     Date now = SystemTime.getCurrentTime();
 
     String voucherCode = readString(jsonRoot, "voucherCode", true);
-    String supplierName = readString(jsonRoot, "supplierName", true);
+    String supplierDisplay = readString(jsonRoot, "supplier", true);
     String customerID = readString(jsonRoot, CUSTOMER_ID, false);
 
     Supplier supplier=null;
     for(Supplier supplierConf:supplierService.getActiveSuppliers(now)){
-      if(supplierConf.getGUIManagedObjectDisplay().equals(supplierName)){
+      if(supplierConf.getGUIManagedObjectDisplay().equals(supplierDisplay)){
         supplier=supplierConf;
         break;
       }
@@ -4701,13 +4615,6 @@ public class ThirdPartyManager
               accessStatistics.updateGetLoyaltyProgramListCount(1);
               break;
 
-            case getActiveOffer:
-              accessStatistics.updateGetActiveOfferCount(1);
-              break;
-
-            case getActiveOffers:
-              accessStatistics.updateGetActiveOffersCount(1);
-              break;
             case validateVoucher:
               accessStatistics.updateValidateVoucherCount(1);
               break;
@@ -5091,6 +4998,80 @@ public class ThirdPartyManager
     // Returns a value, or an exception
     return subscriberID;
   }
+
+  /*****************************************
+  *
+  *  resolveParentSubscriberID
+  *
+  *****************************************/
+  
+  private String resolveParentSubscriberID(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+    // "customerID" parameter is mapped internally to subscriberID 
+    String subscriberID = JSONUtilities.decodeString(jsonRoot, "newParentCustomerID", false);
+    String alternateSubscriberID = null;
+    
+    // finds the first parameter in the input request that corresponds to an entry in alternateID[]
+    for (String id : Deployment.getAlternateIDs().keySet())
+      {
+        String param = JSONUtilities.decodeString(jsonRoot, "newParent"+id, false);
+        if (param != null)
+          {
+            try
+            {
+              alternateSubscriberID = subscriberIDService.getSubscriberID(id, param);
+              if (alternateSubscriberID == null)
+                {
+                  throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+                }
+              break;
+            } catch (SubscriberIDServiceException e)
+            {
+              log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", id, e.getMessage());
+            }
+          }
+      }
+    
+    if (subscriberID == null)
+      {
+        if (alternateSubscriberID == null)
+          {
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.MISSING_PARAMETERS);
+          }
+        subscriberID = alternateSubscriberID;
+      }
+    else if (alternateSubscriberID != null)
+      {
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE);
+      }
+    // Returns a value, or an exception
+    return subscriberID;
+  }
+  
+
+  /*****************************************
+  *
+  *  decodeStringIgnoreCase
+  *
+  *****************************************/
+  
+  public String decodeStringIgnoreCase(JSONObject jobj, String key) {
+    Iterator<String> iter = jobj.keySet().iterator();
+    while (iter.hasNext()) {
+        String key1 = iter.next();
+        if (key1.equalsIgnoreCase(key)) {
+          try
+          {
+            return (String) (jobj.get(key1));
+          }
+          catch (ClassCastException e)
+          {
+            throw new JSONUtilitiesException("value for key " + key + " is not a string", e);
+          }
+        }
+    }
+    return null;
+}
   
   /****************************************
   *
