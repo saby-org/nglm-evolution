@@ -52,6 +52,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -2168,6 +2169,11 @@ public class Journey extends GUIManagedObject
 
   public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters) throws GUIManagerException
   {
+    return processContextVariableNodes(contextVariableNodes, journeyParameters, null);
+  }
+
+  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, CriterionDataType expectedDataType) throws GUIManagerException
+  {
     /*****************************************
     *
     *  preparation
@@ -2179,7 +2185,10 @@ public class Journey extends GUIManagedObject
       {
         for (ContextVariable contextVariable : guiNode.getContextVariables())
           {
-            contextVariables.put(contextVariable, new Pair<CriterionContext,CriterionContext>(guiNode.getNodeOnlyCriterionContext(), guiNode.getNodeWithJourneyResultCriterionContext()));
+            if (expectedDataType == null || (contextVariable.getType().equals(expectedDataType)))
+              {
+                contextVariables.put(contextVariable, new Pair<CriterionContext,CriterionContext>(guiNode.getNodeOnlyCriterionContext(), guiNode.getNodeWithJourneyResultCriterionContext()));
+              }
           }
       }
 

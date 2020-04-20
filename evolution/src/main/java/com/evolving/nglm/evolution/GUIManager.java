@@ -4716,19 +4716,40 @@ public class GUIManager
     EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     Journey selectedJourney = (JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", false) != null) ? journeyService.getActiveJourney(JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", true), SystemTime.getCurrentTime()) : null;
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
-
+    boolean ignoreGroups = JSONUtilities.decodeBoolean(jsonRoot, "ignoreGroups", Boolean.FALSE); // if true, "groups" will be empty 
+    String nodeTypeParameterID = JSONUtilities.decodeString(jsonRoot, "nodeTypeParameterID", false);
+    
     /*****************************************
     *
     *  retrieve journey criterion fields
     *
     *****************************************/
+    HashMap<String,Object> response = new HashMap<String,Object>();
 
     List<JSONObject> journeyCriterionFields = Collections.<JSONObject>emptyList();
     List<JSONObject> groups = new ArrayList<>();
+    CriterionDataType expectedDataType = null;
+    
+    if (nodeTypeParameterID != null)
+      {
+        Map<String, CriterionField> parameters = journeyNodeType.getParameters();
+        if (parameters != null)
+          {
+            CriterionField criterionField = parameters.get(nodeTypeParameterID);
+            if (criterionField == null)
+              {
+                response.put("responseCode", "invalidRequest");
+                response.put("responseMessage", "could not find " + nodeTypeParameterID + " in nodeType with id " + JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
+                return JSONUtilities.encodeObject(response);
+              }
+            expectedDataType = criterionField.getFieldDataType();
+          }
+      }
+    
     if (journeyNodeType != null)
       {
-        CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, selectedJourney);
-        Map<String,List<JSONObject>> currentGroups = new HashMap<>();
+        CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters, expectedDataType), journeyNodeType, journeyNodeEvent, selectedJourney);
+        Map<String,List<JSONObject>> currentGroups = ignoreGroups ? null : new HashMap<>();
         Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
         
         //
@@ -4750,13 +4771,16 @@ public class GUIManager
         
         
         journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly, currentGroups);
-        for (String id : currentGroups.keySet())
+        if (!ignoreGroups)
           {
-            List<JSONObject> group = currentGroups.get(id);
-            HashMap<String,Object> groupJSON = new HashMap<String,Object>();
-            groupJSON.put("id", id);
-            groupJSON.put("value", JSONUtilities.encodeArray(group));
-            groups.add(JSONUtilities.encodeObject(groupJSON));
+            for (String id : currentGroups.keySet())
+              {
+                List<JSONObject> group = currentGroups.get(id);
+                HashMap<String,Object> groupJSON = new HashMap<String,Object>();
+                groupJSON.put("id", id);
+                groupJSON.put("value", JSONUtilities.encodeArray(group));
+                groups.add(JSONUtilities.encodeObject(groupJSON));
+              }
           }
       }
     
@@ -4766,7 +4790,6 @@ public class GUIManager
     *
     *****************************************/
 
-    HashMap<String,Object> response = new HashMap<String,Object>();
     if (journeyNodeType != null)
       {
         response.put("responseCode", "ok");

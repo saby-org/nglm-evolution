@@ -35,6 +35,9 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "nodeTypeID" : "121", "eventName" : "externalAggregates" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyCriterionFields; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "nodeTypeID" : "121", "eventName" : "externalAggregates" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyCriterionFieldIDs; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "nodeTypeID" : "121", "eventName" : "externalAggregates", "id" : "subscriber.status"  }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyCriterionField; echo
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "nodeTypeID" : "138", "ignoreGroups" : true, "nodeTypeParameterID" : "node.parameter.amount" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyCriterionFields; echo
+
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferCategories; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferProperties; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getScoringEngines; echo
