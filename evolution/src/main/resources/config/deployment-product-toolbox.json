@@ -1160,14 +1160,13 @@
         "color" : "#549D9F",
         "items" :
           [
+            { "id" : "137", "name" : "journey.status" },
+            { "id" : "301", "name" : "workflow" },
             { "id" : "133", "name" : "bonus.point.credit" },
             { "id" : "138", "name" : "bonus.point.debit" },
             { "id" : "135", "name" : "loyalty.opt-in" },
             { "id" : "139", "name" : "loyalty.opt-out" },
-            { "id" : "136", "name" : "purchase.offer" },
-            { "id" : "201", "name" : "earn.badge" },
-            { "id" : "301", "name" : "workflow" },
-            { "id" : "137", "name" : "journey.status" }
+            { "id" : "136", "name" : "purchase.offer" }
           ]
       },
       {
@@ -1234,13 +1233,12 @@
         "color" : "#549D9F",
         "items" :
           [
+            { "id" : "137", "name" : "journey.status" },
             { "id" : "133", "name" : "bonus.point.credit" },
             { "id" : "138", "name" : "bonus.point.debit" },
             { "id" : "135", "name" : "loyalty.opt-in" },
             { "id" : "139", "name" : "loyalty.opt-out" },
-            { "id" : "136", "name" : "purchase.offer" },
-            { "id" : "201", "name" : "earn.badge" },
-            { "id" : "137", "name" : "journey.status" }
+            { "id" : "136", "name" : "purchase.offer" }
           ]
       },
       {
