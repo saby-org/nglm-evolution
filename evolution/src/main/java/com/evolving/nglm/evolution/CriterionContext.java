@@ -6,15 +6,12 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.Journey.GUINode;
-
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.SystemTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -23,11 +20,13 @@ import org.apache.kafka.connect.data.Struct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class CriterionContext
 {
@@ -500,8 +499,12 @@ public class CriterionContext
   *  constructor -- journey node
   *
   *****************************************/
-
   public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent, Journey selectedJourney) throws GUIManagerException
+  {
+    this(journeyParameters, contextVariables, journeyNodeType, journeyEvent, selectedJourney, null);
+  }
+
+  public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent, Journey selectedJourney, CriterionDataType expectedDataType) throws GUIManagerException
   {
     /*****************************************
     *
@@ -593,12 +596,26 @@ public class CriterionContext
             this.additionalCriterionFields.put(evaluationWeekday.getID(), evaluationWeekday);
             this.additionalCriterionFields.put(evaluationTime.getID(), evaluationTime);
           }
+
+        if (expectedDataType != null)
+          {
+            // only keep criterion of this type
+            Map<String,CriterionField> newMap = new LinkedHashMap<String,CriterionField>();
+            for (Entry<String, CriterionField> entry : this.additionalCriterionFields.entrySet())
+              {
+                if (entry.getValue().getFieldDataType().equals(expectedDataType))
+                  {
+                    newMap.put(entry.getKey(), entry.getValue());
+                  }
+              }
+            this.additionalCriterionFields = newMap;
+          }
       }
   }
 
   /*****************************************
   *
-  *  construcxtor -- journey link
+  *  constructor -- journey link
   *
   *****************************************/
 

@@ -4716,7 +4716,7 @@ public class GUIManager
     EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     Journey selectedJourney = (JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", false) != null) ? journeyService.getActiveJourney(JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", true), SystemTime.getCurrentTime()) : null;
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
-    boolean ignoreGroups = JSONUtilities.decodeBoolean(jsonRoot, "ignoreGroups", Boolean.FALSE); // if true, "groups" will be empty 
+    boolean includeComparableFields = JSONUtilities.decodeBoolean(jsonRoot, "includeComparableFields", Boolean.TRUE); 
     String nodeTypeParameterID = JSONUtilities.decodeString(jsonRoot, "nodeTypeParameterID", false);
     
     /*****************************************
@@ -4748,8 +4748,8 @@ public class GUIManager
     
     if (journeyNodeType != null)
       {
-        CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters, expectedDataType), journeyNodeType, journeyNodeEvent, selectedJourney);
-        Map<String,List<JSONObject>> currentGroups = ignoreGroups ? null : new HashMap<>();
+        CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters, expectedDataType), journeyNodeType, journeyNodeEvent, selectedJourney, expectedDataType);
+        Map<String,List<JSONObject>> currentGroups = includeComparableFields ? new HashMap<>() : null;
         Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
         
         //
@@ -4771,7 +4771,7 @@ public class GUIManager
         
         
         journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly, currentGroups);
-        if (!ignoreGroups)
+        if (!includeComparableFields)
           {
             for (String id : currentGroups.keySet())
               {
@@ -22662,8 +22662,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
   {
     return processCriterionFields(baseCriterionFields, tagsOnly, null);
   }
-
   private List<JSONObject> processCriterionFields(Map<String,CriterionField> baseCriterionFields, boolean tagsOnly, Map<String, List<JSONObject>> currentGroups)
+  {
+    return processCriterionFields(baseCriterionFields, tagsOnly, currentGroups, null);
+  }
+  private List<JSONObject> processCriterionFields(Map<String,CriterionField> baseCriterionFields, boolean tagsOnly, Map<String, List<JSONObject>> currentGroups, CriterionDataType expectedDataType)
   {
     /*****************************************
     *
@@ -22675,20 +22678,23 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     Map<String,CriterionField> criterionFields = new LinkedHashMap<String,CriterionField>();
     for (CriterionField criterionField : baseCriterionFields.values())
       {
-        switch (criterionField.getFieldDataType())
+        if (expectedDataType == null || expectedDataType.equals(criterionField.getFieldDataType()))
           {
-            case IntegerCriterion:
-            case DoubleCriterion:
-            case StringCriterion:
-            case BooleanCriterion:
-            case TimeCriterion:
-            case DateCriterion:
-              criterionFields.put(criterionField.getID(), criterionField);
-              break;
+            switch (criterionField.getFieldDataType())
+            {
+              case IntegerCriterion:
+              case DoubleCriterion:
+              case StringCriterion:
+              case BooleanCriterion:
+              case TimeCriterion:
+              case DateCriterion:
+                criterionFields.put(criterionField.getID(), criterionField);
+                break;
 
-            case StringSetCriterion:
-              if (! tagsOnly) criterionFields.put(criterionField.getID(), criterionField);
-              break;
+              case StringSetCriterion:
+                if (! tagsOnly) criterionFields.put(criterionField.getID(), criterionField);
+                break;
+            }
           }
       }
 
@@ -22760,18 +22766,21 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             criterionFieldJSON.remove("includedOperators");
             criterionFieldJSON.remove("excludedOperators");
 
-            //
-            //  evaluate comparable fields
-            //
-
-            List<CriterionField> defaultComparableFields = defaultFieldsForResolvedType.get(resolvedFieldTypes.get(criterionField.getID()));
-            List<JSONObject> singleton = evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, true);
-
-            // TODO next line to be removed later when GUI handles the new "singletonComparableFieldsGroup" field
-            criterionFieldJSON.put("singletonComparableFields", singleton);
             
             if (currentGroups != null)
               {
+
+                //
+                //  evaluate comparable fields
+                //
+
+                List<CriterionField> defaultComparableFields = defaultFieldsForResolvedType.get(resolvedFieldTypes.get(criterionField.getID()));
+
+                List<JSONObject> singleton = evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, true);
+
+                // TODO next line to be removed later when GUI handles the new "singletonComparableFieldsGroup" field
+                criterionFieldJSON.put("singletonComparableFields", singleton);
+
                 // known group ?
                 String groupID = null;
                 for (String existingGroupID : currentGroups.keySet())
@@ -22792,8 +22801,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     nextGroupID++;
                   }
                 criterionFieldJSON.put("singletonComparableFieldsGroup", groupID);
+                criterionFieldJSON.put("setValuedComparableFields", evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, false));
               }
-            criterionFieldJSON.put("setValuedComparableFields", evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, false));
+            
             criterionFieldJSON.remove("includedComparableFields");
             criterionFieldJSON.remove("excludedComparableFields");
 
