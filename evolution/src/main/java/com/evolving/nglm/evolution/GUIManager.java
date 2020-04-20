@@ -4771,7 +4771,7 @@ public class GUIManager
         
         
         journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly, currentGroups);
-        if (!includeComparableFields)
+        if (includeComparableFields)
           {
             for (String id : currentGroups.keySet())
               {
