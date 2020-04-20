@@ -94,17 +94,15 @@ public class CustomerPointDetailsCsvWriter implements ReportCsvFactory
                         loyaltyComputedFields.put("pointName", storedPoint.getDisplay());
                         loyaltyComputedFields.put("pointBalance", getBalance(now, balances));
 
-                        StringBuilder validity = new StringBuilder();
-                        String pointValidity = null;
+                        List<Map<String, Object>> outputJSON = new ArrayList<>();
                         for (Entry<Date, Integer> balance : balances.entrySet())
                           {
-                            validity.append("(").append(balance.getValue()).append(",").append(ReportsCommonCode.getDateString(balance.getKey())).append("),");
+                            Map<String, Object> validityJSON = new LinkedHashMap<>(); // to preserve order when displaying
+                            validityJSON.put("quantity", balance.getValue());
+                            validityJSON.put("validityDate", ReportsCommonCode.getDateString(balance.getKey()));
+                            outputJSON.add(validityJSON);
                           }
-                        if (validity.toString().length() > 0)
-                          {
-                            pointValidity = "[" + validity.toString().substring(0, validity.toString().length() - 1) + "]";
-                          }
-                        loyaltyComputedFields.put("pointValidity", pointValidity);
+                        loyaltyComputedFields.put("pointValidity", ReportUtils.formatJSON(outputJSON));
 
                         // store subscriber information + point information
                         LinkedHashMap<String, Object> fullFields = new LinkedHashMap<String, Object>();

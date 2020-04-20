@@ -209,6 +209,7 @@ public class Deployment
   private static String reportManagerStreamsTempDir;
   private static String reportManagerTopicsCreationProperties;
   private static String reportManagerCsvSeparator;
+  private static String reportManagerFieldSurrounder;
   private static String uploadedFileSeparator;
   private static CustomerMetaData customerMetaData = null;
   private static String APIresponseDateFormat;
@@ -448,6 +449,7 @@ public class Deployment
   public static String getReportManagerDateFormat() { return reportManagerDateFormat; }
   public static String getReportManagerFileExtension() { return reportManagerFileExtension; }
   public static String getReportManagerCsvSeparator() { return reportManagerCsvSeparator; }
+  public static String getReportManagerFieldSurrounder() { return reportManagerFieldSurrounder; }
   public static String getUploadedFileSeparator() { return uploadedFileSeparator; }
   public static String getReportManagerStreamsTempDir() { return reportManagerStreamsTempDir; }
   public static String getReportManagerTopicsCreationProperties() { return reportManagerTopicsCreationProperties; }
@@ -2961,12 +2963,13 @@ public class Deployment
           if (reportManager != null)
             {
               reportManagerZookeeperDir = JSONUtilities.decodeString(reportManager, "reportManagerZookeeperDir", true);
-              reportManagerOutputPath = JSONUtilities.decodeString(reportManager, "reportManagerOutputPath", false);
-              reportManagerDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerDateFormat", false);
-              reportManagerFileExtension = JSONUtilities.decodeString(reportManager, "reportManagerFileExtension", false);
-              reportManagerCsvSeparator = JSONUtilities.decodeString(reportManager, "reportManagerCsvSeparator", false);
-              reportManagerStreamsTempDir = JSONUtilities.decodeString(reportManager, "reportManagerStreamsTempDir", false);
-              reportManagerTopicsCreationProperties = JSONUtilities.decodeString(reportManager, "reportManagerTopicsCreationProperties", false);
+              reportManagerOutputPath = JSONUtilities.decodeString(reportManager, "reportManagerOutputPath", "/app/reports");
+              reportManagerDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerDateFormat", "yyyy-MM-dd_HH-mm-ss_SSSS");
+              reportManagerFileExtension = JSONUtilities.decodeString(reportManager, "reportManagerFileExtension", "csv");
+              reportManagerCsvSeparator = JSONUtilities.decodeString(reportManager, "reportManagerCsvSeparator", ";");
+              reportManagerFieldSurrounder = JSONUtilities.decodeString(reportManager, "reportManagerFieldSurrounder", "'");
+              reportManagerStreamsTempDir = JSONUtilities.decodeString(reportManager, "reportManagerStreamsTempDir", System.getProperty("java.io.tmpdir"));
+              reportManagerTopicsCreationProperties = JSONUtilities.decodeString(reportManager, "reportManagerTopicsCreationProperties", "cleanup.policy=delete segment.bytes=52428800 retention.ms=86400000");
             }
           else
             {
@@ -2975,8 +2978,14 @@ public class Deployment
               reportManagerDateFormat = "yyyy-MM-dd_HH-mm-ss_SSSS";
               reportManagerFileExtension = "csv";
               reportManagerCsvSeparator = ";";
+              reportManagerFieldSurrounder = "'";
               reportManagerStreamsTempDir = System.getProperty("java.io.tmpdir");
               reportManagerTopicsCreationProperties = "cleanup.policy=delete segment.bytes=52428800 retention.ms=86400000";
+            }
+          if (reportManagerFieldSurrounder.length() > 1)
+            {
+              log.warn("reportManagerFieldSurrounder is not a single character, this would lead to errors in the reports, truncating, please fix this : " + reportManagerFieldSurrounder);
+              reportManagerFieldSurrounder = reportManagerFieldSurrounder.substring(0, 1);
             }
         }
       catch (JSONUtilitiesException e)
