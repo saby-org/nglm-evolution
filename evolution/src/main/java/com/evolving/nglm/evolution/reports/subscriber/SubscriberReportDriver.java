@@ -8,6 +8,10 @@ package com.evolving.nglm.evolution.reports.subscriber;
 
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportUtils;
+import com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportObjects;
+import com.evolving.nglm.evolution.reports.notification.NotificationReportProcessor;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,8 +31,8 @@ public class SubscriberReportDriver extends ReportDriver{
     	log.debug("Processing Subscriber Report with "+report.getName());
     	String topic = super.getTopicPrefix(report.getName());
     	String esIndexSubscriber = "subscriberprofile";
-        String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
-        int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
+      String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
+      int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
     	log.debug("PHASE 1 : read ElasticSearch");
 		SubscriberReportESReader.main(new String[]{
 			topic, kafka, zookeeper, elasticSearch, esIndexSubscriber, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit
@@ -39,8 +43,8 @@ public class SubscriberReportDriver extends ReportDriver{
 		SubscriberReportCsvWriter.main(new String[]{
 				kafka, topic, csvFilename
 		});
-	    log.debug("Finished with Subscriber Report");
-		
+		ReportUtils.cleanupTopics(topic);
+	  log.debug("Finished with Subscriber Report");
 	}
 
 }

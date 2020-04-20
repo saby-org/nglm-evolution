@@ -2,6 +2,10 @@ package com.evolving.nglm.evolution.reports.notification;
 
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportUtils;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportProcessor;
+import com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportObjects;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +48,7 @@ public class NotificationReportDriver extends ReportDriver{
         NotificationReportCsvWriter.main(new String[]{
             kafka, topic2, csvFilename
         });
+        ReportUtils.cleanupTopics(topic1, topic2, JourneyCustomerStatesReportObjects.APPLICATION_ID_PREFIX, appIdPrefix, NotificationReportProcessor.STORENAME);
         log.debug("Finished with BDR Report");
-
   }
 }

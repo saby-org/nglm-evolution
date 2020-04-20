@@ -8,6 +8,8 @@ package com.evolving.nglm.evolution.reports.token;
 
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +41,8 @@ public class TokenReportDriver extends ReportDriver{
 		TokenReportCsvWriter.main(new String[]{
 				kafka, topic, csvFilename
 		});
-	    log.debug("Finished with Token Report");
-		
+    ReportUtils.cleanupTopics(topic);
+	  log.debug("Finished with Token Report");
 	}
 
 }

@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution.reports;
 
 import static com.evolving.nglm.evolution.reports.ReportUtils.d;
 
+import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.SystemTime;
 
 import java.io.IOException;
@@ -99,6 +100,7 @@ public class ReportEsReader
   private String esNode;
   private LinkedHashMap<String, QueryBuilder> esIndex;
   private String elasticKey;
+  private boolean onlyKeepAlternateIDs;
 
   /**
    * Create a {@code ReportEsReader} instance.
@@ -124,19 +126,25 @@ public class ReportEsReader
    * @param esIndex
    *          a hashmap with each index to read and the associated query
    */
-  public ReportEsReader(String elasticKey, String topicName, String kafkaNodeList, String kzHostList, String esNode, LinkedHashMap<String, QueryBuilder> esIndex)
+  public ReportEsReader(String elasticKey, String topicName, String kafkaNodeList, String kzHostList, String esNode, LinkedHashMap<String, QueryBuilder> esIndex, boolean onlyKeepAlternateIDs)
   {
     this.elasticKey = elasticKey;
     this.topicName = topicName;
     this.kafkaNodeList = kafkaNodeList;
     this.kzHostList = kzHostList;
     this.esNode = esNode;
+    this.onlyKeepAlternateIDs = onlyKeepAlternateIDs;
     // convert index names to lower case, because this is what ElasticSearch expects
     this.esIndex = new LinkedHashMap<>();
     for (Entry<String, QueryBuilder> elem : esIndex.entrySet())
       {
         this.esIndex.put(elem.getKey().toLowerCase(), elem.getValue());
       }
+  }
+
+  public ReportEsReader(String elasticKey, String topicName, String kafkaNodeList, String kzHostList, String esNode, LinkedHashMap<String, QueryBuilder> esIndex)
+  {
+    this(elasticKey, topicName, kafkaNodeList, kzHostList, esNode, esIndex, false);
   }
 
   public enum PERIOD
@@ -286,7 +294,29 @@ public class ReportEsReader
                       {
                         // Need to be extended to support other types of attributes, currently only int and String
                         key = (res instanceof Integer) ? Integer.toString((Integer) res) : (String) res;
-                        ReportElement re = new ReportElement(i, sourceMap);
+                        
+                        Map<String, Object> miniSourceMap = sourceMap;
+                        if (onlyKeepAlternateIDs && (i == (esIndex.size()-1))) // subscriber index is always last
+                          {
+                            // size optimize : only keep what is needed for the join later
+                            miniSourceMap = new HashMap<>();
+                            miniSourceMap.put(elasticKey, sourceMap.get(elasticKey));
+                            for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+                              {
+                                String name = alternateID.getName();
+                                log.trace("Only keep "+name);
+                                if (sourceMap.get(name) == null)
+                                  {
+                                    log.trace("Unexpected : no value for " + name);
+                                  }
+                                else
+                                  {
+                                    miniSourceMap.put(name, sourceMap.get(name));
+                                  }
+                              }
+                          }
+                        
+                        ReportElement re = new ReportElement(i, miniSourceMap);
                         log.trace("Sending record k=" + key + ", v=" + re);
                         ProducerRecord<String, ReportElement> record = new ProducerRecord<>(topicName, key, re);
                         producerReportElement.send(record, (mdata, e) -> {
