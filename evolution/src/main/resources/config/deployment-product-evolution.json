@@ -853,14 +853,14 @@
       "display"             : "Journey Customer States Report",
       "description"         : "Description of the Journey Customer States Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportDriver",
-      "availableScheduling" : [ "hourly", "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "subscriberReport",
       "display"             : "Subscriber Report",
       "description"         : "Description of the Subscriber Report",
       "class"               : "com.evolving.nglm.evolution.reports.subscriber.SubscriberReportDriver",
-      "availableScheduling" : [ "hourly", "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "BDRReport",
@@ -946,8 +946,8 @@
       "display"             : "Token Report",
       "description"         : "Description of the characteristics of the token",
       "class"               : "com.evolving.nglm.evolution.reports.token.TokenReportDriver",
-      "availableScheduling" : [ "hourly", "daily", "weekly", "monthly" ],
-      "effectiveScheduling" : [ "hourly", "monthly" ]
+      "availableScheduling" : [ "daily", "weekly", "monthly" ],
+      "effectiveScheduling" : [ "monthly" ]
     },
     {
       "name"                : "offersAllocatedToTokens",
