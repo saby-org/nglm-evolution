@@ -573,11 +573,11 @@ public class GUIManager
   private static Method externalAPIMethodJourneyDeactivated;
   private ZookeeperUniqueKeyServer zuks;
   private KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
-
+  private int httpTimeout = Deployment.getPurchaseTimeoutMs();
+  
   private static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   private static final String FILE_REQUEST = "file"; 
   private static final String FILE_UPLOAD_META_DATA= "fileUploadMetaData"; 
-  private int httpTimeout = 5000;
 
   //
   //  context
