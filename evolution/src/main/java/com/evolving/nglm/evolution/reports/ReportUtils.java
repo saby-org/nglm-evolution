@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution.reports;
 
 import java.text.NumberFormat;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +21,11 @@ import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.ZkConnection;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
@@ -315,6 +319,37 @@ public class ReportUtils {
 	    topicConfiguration.put("cleanup.policy", "compact");
 	    createTopic(topicName, topicConfiguration, kzHostList);
 	}
+	
+  public static void cleanupTopics(String topic1) 
+  {
+    deleteTopic(topic1);
+  }
+	
+	public static void cleanupTopics(String topic1, String topic2, String appIdPrefix1, String appIdPrefix2, String appIdSuffix) 
+	{
+	  deleteTopic(topic1);
+	  deleteTopic(topic2);
+	  String streamsStoreTopic = appIdPrefix1 + appIdPrefix2 + "-" + appIdSuffix + "-changelog";
+	  deleteTopic(streamsStoreTopic);
+	}
+	
+	public static void deleteTopic(String topicName) {
+    Properties adminClientConfig = new Properties();
+    adminClientConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, System.getProperty("broker.servers"));
+    AdminClient adminClient = AdminClient.create(adminClientConfig);
+    Map<String, String> configs = new HashMap<>();
+    log.info("Deleting topic "+topicName);
+    try
+    {
+      DeleteTopicsResult result = adminClient.deleteTopics(Collections.singleton(topicName));
+      for (KafkaFuture<Void> future : result.values().values())
+        future.get();
+    }
+  catch (InterruptedException | ExecutionException e)
+    {
+      log.error("Problem when deleting topic " + topicName + " : " + e.getLocalizedMessage());
+    }
+}
 
 	/**
 	 * "pretty-print" method for logging purposes.

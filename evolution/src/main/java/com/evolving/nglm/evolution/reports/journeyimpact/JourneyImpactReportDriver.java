@@ -2,6 +2,10 @@ package com.evolving.nglm.evolution.reports.journeyimpact;
 
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportUtils;
+import com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportObjects;
+import com.evolving.nglm.evolution.reports.odr.ODRReportProcessor;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +55,7 @@ public class JourneyImpactReportDriver extends ReportDriver {
       JourneyImpactReportCsvWriter.main(new String[]{
           kafka, topic2, csvFilename
       });
+      ReportUtils.cleanupTopics(topic1, topic2, JourneyCustomerStatesReportObjects.APPLICATION_ID_PREFIX, appIdPrefix, JourneyImpactReportProcessor.STORENAME);
       log.debug("Finished with Journey Impact Report");
       
   }

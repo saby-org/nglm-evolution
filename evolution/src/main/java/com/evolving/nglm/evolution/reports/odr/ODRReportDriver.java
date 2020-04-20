@@ -4,7 +4,10 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportProcessor;
+import com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportObjects;
 
 import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
@@ -53,6 +56,7 @@ public class ODRReportDriver extends ReportDriver
 
     log.debug("PHASE 3 : write csv file ");
     ODRReportCsvWriter.main(new String[] { kafka, topic2, csvFilename });
+    ReportUtils.cleanupTopics(topic1, topic2, JourneyCustomerStatesReportObjects.APPLICATION_ID_PREFIX, appIdPrefix, ODRReportProcessor.STORENAME);
     log.debug("Finished with ODR Report");
   }
 }

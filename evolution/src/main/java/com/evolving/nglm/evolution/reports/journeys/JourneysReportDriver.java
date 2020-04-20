@@ -2,6 +2,8 @@ package com.evolving.nglm.evolution.reports.journeys;
 
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,10 +27,6 @@ public class JourneysReportDriver extends ReportDriver{
         String topic1 = topicPrefix+"_a";
         String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
         int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-        String appIdPrefix = "JourneyAppId_"+System.currentTimeMillis();
-        log.debug("data for report : "
-                +topic1+" "+JOURNEY_ES_INDEX+" "+appIdPrefix);
-
         log.debug("PHASE 1 : read ElasticSearch");
         log.trace(topic1+","+kafka+","+zookeeper+","+elasticSearch+","+JOURNEY_ES_INDEX);
         JourneysReportESReader.main(new String[]{
@@ -40,8 +38,8 @@ public class JourneysReportDriver extends ReportDriver{
         JourneysReportCsvWriter.main(new String[]{
                 kafka, topic1, csvFilename
         });
+        ReportUtils.cleanupTopics(topic1);
         log.debug("Finished with Journeys Report");
-        
     }
 
 }

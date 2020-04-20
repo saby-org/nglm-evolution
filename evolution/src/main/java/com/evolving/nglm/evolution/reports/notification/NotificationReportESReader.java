@@ -80,7 +80,7 @@ public class NotificationReportESReader
     esIndexWithQuery.put(esIndexNotifList.toString(), QueryBuilders.matchAllQuery());
     esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
 
-    ReportEsReader reportEsReader = new ReportEsReader("subscriberID", topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery);
+    ReportEsReader reportEsReader = new ReportEsReader("subscriberID", topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery, true);
 
     reportEsReader.start();
     log.info("Finished NotificationReportESReader");
