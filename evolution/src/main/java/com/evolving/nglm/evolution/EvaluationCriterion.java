@@ -20,6 +20,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SystemTime;
 
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -109,6 +110,7 @@ public class EvaluationCriterion
     StringCriterion("string"),
     BooleanCriterion("boolean"),
     DateCriterion("date"),
+    TimeCriterion("time"),
     StringSetCriterion("stringSet"),
     
     //
@@ -427,6 +429,18 @@ public class EvaluationCriterion
                   }
                 break;
                 
+              case TimeCriterion:
+                switch (argumentType)
+                  {
+                    case TimeExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
+                
               default:
                 validCombination = false;
                 break;
@@ -457,6 +471,18 @@ public class EvaluationCriterion
                 switch (argumentType)
                   {
                     case DateExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
+                
+              case TimeCriterion:
+                switch (argumentType)
+                  {
+                    case TimeExpression:
                       validCombination = true;
                       break;
                     default:
@@ -909,9 +935,17 @@ public class EvaluationCriterion
                       break;
                   }
               }
+            break;
+              
+          case TimeCriterion:
+            {
+              Date now = SystemTime.getCurrentTime();
+              criterionFieldValue = getCurrentDateFromTime(now, (String) criterionFieldValue);
+              evaluatedArgument = getCurrentDateFromTime(now, (String) evaluatedArgument);
+            }
           }
       }
-        
+    
     /****************************************
     *
     *  evaluate
@@ -949,6 +983,8 @@ public class EvaluationCriterion
               case DoubleCriterion:
                 result = traceCondition(evaluationRequest, ((Double) criterionFieldValue).compareTo((Double) evaluatedArgument) > 0, criterionFieldValue, evaluatedArgument);
                 break;
+                
+              case TimeCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) > 0, criterionFieldValue, evaluatedArgument);
                 if (referencesEvaluationDate) evaluationRequest.getNextEvaluationDates().add((Date) evaluatedArgument);
@@ -965,6 +1001,8 @@ public class EvaluationCriterion
               case DoubleCriterion:
                 result = traceCondition(evaluationRequest, ((Double) criterionFieldValue).compareTo((Double) evaluatedArgument) >= 0, criterionFieldValue, evaluatedArgument);
                 break;
+                
+              case TimeCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) >= 0, criterionFieldValue, evaluatedArgument);
                 if (referencesEvaluationDate) evaluationRequest.getNextEvaluationDates().add((Date) evaluatedArgument);
@@ -981,6 +1019,8 @@ public class EvaluationCriterion
               case DoubleCriterion:
                 result = traceCondition(evaluationRequest, ((Double) criterionFieldValue).compareTo((Double) evaluatedArgument) < 0, criterionFieldValue, evaluatedArgument);
                 break;
+              
+              case TimeCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) < 0, criterionFieldValue, evaluatedArgument);
                 break;
@@ -996,6 +1036,8 @@ public class EvaluationCriterion
               case DoubleCriterion:
                 result = traceCondition(evaluationRequest, ((Double) criterionFieldValue).compareTo((Double) evaluatedArgument) <= 0, criterionFieldValue, evaluatedArgument);
                 break;
+                
+              case TimeCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) <= 0, criterionFieldValue, evaluatedArgument);
                 break;
@@ -1098,10 +1140,29 @@ public class EvaluationCriterion
     *  return
     *
     ****************************************/
-
+    
     return result;
   }
   
+  //
+  // getCurrentDateFromTime
+  //
+  
+  private Date getCurrentDateFromTime(final Date now, String arg)
+  {
+    String[] args = ((String) arg).trim().split(":");
+    if (args.length != 3) throw new ExpressionEvaluationException();
+    int hh = Integer.parseInt(args[0]);
+    int mm = Integer.parseInt(args[1]);
+    int ss = Integer.parseInt(args[2]);
+    Calendar c = SystemTime.getCalendar();
+    c.setTime(now);
+    c.set(Calendar.HOUR_OF_DAY, hh);
+    c.set(Calendar.MINUTE, mm);
+    c.set(Calendar.SECOND, ss);
+    return c.getTime();
+  }
+
   /*****************************************
   *
   *  evaluateCriteria
@@ -1395,6 +1456,9 @@ public class EvaluationCriterion
           script.append("def left = new ArrayList(); left.addAll(doc." + esField + "); ");
           break;
           
+        case TimeCriterion:
+          throw new UnsupportedOperationException("timeCriterion is not supported");
+          
         default:
           script.append("def left = (doc." + esField + ".size() != 0) ? doc." + esField + "?.value : null; ");
           break;
@@ -1459,7 +1523,9 @@ public class EvaluationCriterion
               case DateCriterion:
                 script.append("return (left != null) ? left.isAfter(right) : false; ");
                 break;
-
+              case TimeCriterion:
+                throw new UnsupportedOperationException("timeCriterion is not supported");
+                
               default:
                 script.append("return (left != null) ? left > right : false; ");
                 break;
@@ -1473,6 +1539,9 @@ public class EvaluationCriterion
                 script.append("return (left != null) ? !left.isBefore(right) : true; ");
                 break;
 
+              case TimeCriterion:
+                throw new UnsupportedOperationException("timeCriterion is not supported");
+                
               default:
                 script.append("return (left != null) ? left >= right : false; ");
                 break;
@@ -1486,6 +1555,9 @@ public class EvaluationCriterion
                 script.append("return (left != null) ? left.isBefore(right) : false; ");
                 break;
 
+              case TimeCriterion:
+                throw new UnsupportedOperationException("timeCriterion is not supported");
+                
               default:
                 script.append("return (left != null) ? left < right : false; ");
                 break;
@@ -1498,7 +1570,10 @@ public class EvaluationCriterion
               case DateCriterion:
                 script.append("return (left != null) ? !left.isAfter(right) : true; ");
                 break;
-
+                
+              case TimeCriterion:
+                throw new UnsupportedOperationException("timeCriterion is not supported");
+                
               default:
                 script.append("return (left != null) ? left <= right : false; ");
                 break;
@@ -2017,6 +2092,12 @@ public class EvaluationCriterion
         case BooleanExpression:
           value = ((Boolean) (argument.evaluate(null, null))).toString();
           break;
+          
+        case TimeExpression:
+          
+          //
+          //  to do (not now)
+          //
           
         default:
           throw new CriterionException("datatype not yet implemented : " + expectedType);

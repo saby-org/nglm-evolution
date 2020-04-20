@@ -481,6 +481,8 @@ public class ContextVariable
                   case OpaqueReferenceExpression:
                     this.type = ((ReferenceExpression) expression).getCriterionDataType();
                     break;
+                    
+                  case TimeExpression:
                   default:
                     throw new GUIManagerException("unsupported context variable type", expression.getType().toString());
                 }

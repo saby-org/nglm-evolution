@@ -46,7 +46,7 @@
         "outputType"       : "static",
         "outputConnectors" : 
           [ 
-            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.duration, node.parameter.unit)" } } ] }
+            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAddOrConstant(node.entryDate, node.parameter.schedule, node.parameter.duration, node.parameter.unit)" } } ] }
           ],
         "parameters"       :
           [
@@ -56,9 +56,9 @@
               "dataType" : "integer", 
               "width" : "50%", 
               "multiple" : false, 
-              "mandatory" : true,
+              "mandatory" : false,
               "availableValues" : null,
-              "defaultValue" : null
+              "defaultValue" : 0
             },
             { 
               "id" : "node.parameter.unit",     
@@ -66,7 +66,7 @@
               "dataType" : "string",  
               "width" : "50%", 
               "multiple" : false, 
-              "mandatory" : true, 
+              "mandatory" : false, 
               "availableValues" : 
                 [
                   { "id" : "minute", "display" : "Minutes" },
@@ -76,37 +76,64 @@
                   { "id" : "month",  "display" : "Months" }
                 ],
               "defaultValue" : null
-            }
-          ]
-      },
-
-      {
-        "id"               : "104",
-        "name"             : "schedule",
-        "display"          : "Schedule",
-        "icon"             : "jmr_components/styles/images/objects/1-2-schedule.png",
-        "color"            : "#c72285", 
-        "height"           : 70,
-        "width"            : 70,
-        "enableCycle"      : true,
-        "outputType"       : "static",
-        "outputConnectors" : 
-          [ 
-            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "node.parameter.schedule" } } ] }
-          ],
-        "parameters"       :
-          [
+            },
             { 
               "id" : "node.parameter.schedule", 
               "display" : "Wait Until", 
               "dataType" : "date", 
-              "width" : "50%", 
+              "width" : "100%", 
               "multiple" : false, 
-              "mandatory" : true,
+              "mandatory" : false,
               "availableValues" : null,
               "defaultValue" : null
             }
           ]
+      },
+      
+      {
+        "id"                     : "104",
+        "name"                   : "schedule",
+        "display"                : "Schedule",
+        "icon"                   : "jmr_components/styles/images/objects/1-2-schedule.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "scheduleNode"			 : true,
+        "allowContextVariables"  : false,
+        "outputType"             : "dynamic",
+        "outputConnectors"       :
+        [
+          { "name" : "other", "display" : "Other", "evaluationPriority" : "last", "transitionCriteria" : [ ] }
+        ],
+        "parameters"             : [ ],
+        "dynamicOutputConnector" :
+        {
+          "outputConnectorName" : "link.parameter.outputconnectorname",
+          "parameters"             :
+          [
+            {
+              "id" : "link.parameter.outputconnectorname",
+              "display" : "Selection Name",
+              "dataType" : "string",
+              "width" : "100%",
+              "multiple" : false,
+              "mandatory" : true,
+              "availableValues" : null,
+              "defaultValue" : null
+            },
+            {
+              "id" : "link.parameter.profilecriteria",
+              "display" : "Profile Criteria",
+              "dataType" : "evaluationCriteria",
+              "width" : "100%",
+              "multiple" : true,
+              "mandatory" : true,
+              "availableValues" : null,
+              "defaultValue" : [ ]
+            }
+          ],
+          "transitionCriteria" : [ ],
+          "additionalCriteria" : "link.parameter.profilecriteria"
+        }
       }, 
 
       {
@@ -478,11 +505,22 @@
               "defaultValue" : null
             },
             { 
+              "id" : "node.parameter.validity.period.quantity",
+              "display" : "Period quantity", 
+              "dataType" : "integer", 
+              "multiple" : false,
+              "mandatory" : false,
+              "width"     : "50%",
+              "availableValues" : null,
+              "defaultValue" : null
+            },
+            { 
               "id" : "node.parameter.validity.period.type",
               "display" : "Period type", 
               "dataType" : "string", 
               "multiple" : false,
               "mandatory" : false,
+              "width"     : "50%",
               "availableValues" : [
                   { "id" : "minute", "display" : "Minutes" },
                   { "id" : "hour",   "display" : "Hours" },
@@ -491,15 +529,6 @@
                   { "id" : "month",  "display" : "Months" },
                   { "id" : "year",  "display" : "Years" }
               ], 
-              "defaultValue" : null
-            },
-            { 
-              "id" : "node.parameter.validity.period.quantity",
-              "display" : "Period quantity", 
-              "dataType" : "integer", 
-              "multiple" : false,
-              "mandatory" : false,
-              "availableValues" : null,
               "defaultValue" : null
             }
           ],

@@ -239,6 +239,24 @@
           ]
       },
       {
+        "id" : "time",
+        "operators" : 
+          [ 
+            { "id" : "is null",     "display" : "is not known",        "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "is not null", "display" : "is known",            "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "==",          "display" : "equals",              "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "<>",          "display" : "is not equal to",     "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : "<",           "display" : "is before",           "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : "<=",          "display" : "is on or before",     "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : ">",           "display" : "is after",            "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : ">=",          "display" : "is on or after",      "argumentRequired" : true,    "argumentSet" : false }
+          ],
+       "formats" :
+          [
+            { "format" : "{INDEX}", "display" : "standard" }
+          ]
+      },
+      {
         "id" : "stringSet",
         "operators" : 
           [ 

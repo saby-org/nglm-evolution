@@ -28,6 +28,7 @@ public class EvolutionUtilities
   public enum TimeUnit
   {
     Instant("instant", "MILLIS"),
+    Second("second", "SECONDS"),
     Minute("minute", "MINUTES"),
     Hour("hour", "HOURS"),
     Day("day", "DAYS"),

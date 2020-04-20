@@ -29,6 +29,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.Expression.ExpressionFunction;
 
 /*****************************************
@@ -121,6 +122,7 @@ public abstract class Expression
     StringExpression,
     BooleanExpression,
     DateExpression,
+    TimeExpression,
     IntegerSetExpression,
     StringSetExpression,
     EmptySetExpression,
@@ -153,7 +155,10 @@ public abstract class Expression
   public enum ExpressionFunction
   {
     DateConstantFunction("dateConstant"),
+    TimeConstantFunction("timeConstant"),
+    TimeAddFunction("timeAdd"),
     DateAddFunction("dateAdd"),
+    DateAddOrConstantFunction("dateAddOrConstant"),
     RoundFunction("round"),
     RoundUpFunction("roundUp"),
     RoundDownFunction("roundDown"),
@@ -375,6 +380,7 @@ public abstract class Expression
             script.append("def right_" + getNodeID() + " = new ArrayList(); ");
             break;
 
+          case TimeExpression:
           default:
             throw new CriterionException("invalid criterionField datatype for esQuery");
         }
@@ -438,6 +444,9 @@ public abstract class Expression
             break;
           case DateCriterion:
             setType(ExpressionDataType.DateExpression);
+            break;
+          case TimeCriterion:
+            setType(ExpressionDataType.TimeExpression);
             break;
           case StringSetCriterion:
             setType(ExpressionDataType.StringSetExpression);
@@ -553,6 +562,14 @@ public abstract class Expression
                   break;
               }
             break;
+            
+          case TimeExpression:
+            
+            //
+            // 
+            //
+            
+            break;
         }
 
       //
@@ -614,7 +631,8 @@ public abstract class Expression
             script.append(EvaluationCriterion.constructDateTruncateESScript(getNodeID(), "rightRaw", "tempRight", baseTimeUnit));
             script.append("right_" + getNodeID() + " =  tempRight; } ");
             break;
-
+            
+          case TimeExpression:
           default:
             throw new CriterionException("invalid criterionField datatype for esQuery");
         }
@@ -1207,9 +1225,21 @@ public abstract class Expression
           case DateConstantFunction:
             typeCheckDateConstantFunction(baseTimeUnit);
             break;
+            
+          case TimeConstantFunction:
+            typeCheckTimeConstantFunction();
+            break;
+            
+          case TimeAddFunction:
+            typeCheckTimeAddFunction(baseTimeUnit);
+            break;
 
           case DateAddFunction:
             typeCheckDateAddFunction(baseTimeUnit);
+            break;
+            
+          case DateAddOrConstantFunction:
+            typeCheckDateAddOrConstantFunction(baseTimeUnit);
             break;
             
           case RoundFunction:
@@ -1303,6 +1333,71 @@ public abstract class Expression
       ****************************************/
       
       setType(ExpressionDataType.DateExpression);
+    }
+    
+    /*****************************************
+    *
+    *  typeCheckTimeConstantFunction
+    *
+    *****************************************/
+
+    private void typeCheckTimeConstantFunction()
+    {
+      /****************************************
+      *
+      *  arguments
+      *
+      ****************************************/
+      
+      //
+      //  validate number of arguments
+      //
+      
+      if (arguments.size() != 1) throw new ExpressionTypeCheckException("type exception");
+
+      //
+      //  arguments
+      //
+      
+      Expression arg1 = (arguments.size() > 0) ? arguments.get(0) : null;
+
+      //
+      //  validate arg1
+      //
+      
+      switch (arg1.getType())
+        {
+          case StringExpression:
+            if (! arg1.isConstant()) throw new ExpressionTypeCheckException("type exception");
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+      
+      /****************************************
+      *
+      *  constant evaluation
+      *
+      ****************************************/
+      
+      String arg1_value = (String) arg1.evaluate(null, TimeUnit.Unknown);
+      try
+        {
+          preevaluatedResult = evaluateTimeConstantFunction(arg1_value);
+        }
+      catch (ExpressionEvaluationException e)
+        {
+          throw new ExpressionTypeCheckException("type exception");
+        }
+      
+      /****************************************
+      *
+      *  type
+      *
+      ****************************************/
+      
+      setType(ExpressionDataType.TimeExpression);
     }
 
     /*****************************************
@@ -1569,6 +1664,243 @@ public abstract class Expression
       setTagFormat(arg1.getTagFormat());
       setTagMaxLength(arg1.getTagMaxLength());
     }
+    
+    /*****************************************
+    *
+    *  typeCheckTimeAddFunction
+    *
+    *****************************************/
+
+    private void typeCheckTimeAddFunction(TimeUnit baseTimeUnit)
+    {
+      /****************************************
+      *
+      *  arguments
+      *
+      ****************************************/
+      
+      //
+      //  validate number of arguments
+      //
+      
+      if (arguments.size() != 3) throw new ExpressionTypeCheckException("type exception");
+
+      //
+      //  arguments
+      //
+      
+      Expression arg1 = (arguments.size() > 0) ? arguments.get(0) : null;
+      Expression arg2 = (arguments.size() > 1) ? arguments.get(1) : null;
+      Expression arg3 = (arguments.size() > 2) ? arguments.get(2) : null;
+      
+      //
+      //  validate arg1
+      //
+      
+      switch (arg1.getType())
+        {
+          case TimeExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+
+      //
+      //  validate arg2
+      //
+      
+      switch (arg2.getType())
+        {
+          case IntegerExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+
+      //
+      //  validate arg3
+      //
+      
+      switch (arg3.getType())
+        {
+          case StringExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+
+      //
+      //  validate baseTimeUnit
+      //
+
+      switch (baseTimeUnit)
+        {
+          case Unknown:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+      
+      /****************************************
+      *
+      *  constant evaluation
+      *
+      ****************************************/
+
+      if (arg3.isConstant())
+        {
+          String arg3Value = (String) arg3.evaluate(null, TimeUnit.Unknown);
+          switch (TimeUnit.fromExternalRepresentation(arg3Value))
+            {
+              case Instant:
+              case Unknown:
+                throw new ExpressionTypeCheckException("type exception");
+            }
+        }
+
+      /****************************************
+      *
+      *  type
+      *
+      ****************************************/
+      
+      setType(ExpressionDataType.TimeExpression);
+
+      /*****************************************
+      *
+      *  tagFormat/tagMaxLength
+      *
+      *****************************************/
+
+      setTagFormat(arg1.getTagFormat());
+      setTagMaxLength(arg1.getTagMaxLength());
+    }
+    
+    //
+    //  typeCheckDateAddOrConstantFunction
+    //
+    
+    
+    private void typeCheckDateAddOrConstantFunction(TimeUnit baseTimeUnit)
+    {
+      /****************************************
+      *
+      *  arguments
+      *
+      ****************************************/
+      
+      //
+      //  validate number of arguments
+      //
+      
+      if (arguments.size() != 4) throw new ExpressionTypeCheckException("type exception");
+
+      //
+      //  arguments
+      //
+      
+      Expression arg1 = (arguments.size() > 0) ? arguments.get(0) : null;
+      Expression arg2 = (arguments.size() > 1) ? arguments.get(1) : null;
+      Expression arg3 = (arguments.size() > 2) ? arguments.get(2) : null;
+      Expression arg4 = (arguments.size() > 3) ? arguments.get(3) : null;
+
+      //
+      //  validate arg1
+      //
+      
+      switch (arg1.getType())
+        {
+          case DateExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+      
+      //
+      //  validate arg2
+      //
+      
+      switch (arg2.getType())
+        {
+          case DateExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+
+      //
+      //  validate arg3
+      //
+      
+      switch (arg3.getType())
+        {
+          case IntegerExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+
+      //
+      //  validate arg4
+      //
+      
+      switch (arg4.getType())
+        {
+          case StringExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+      
+      //
+      //  validate baseTimeUnit
+      //
+
+      switch (baseTimeUnit)
+        {
+          case Unknown:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+      
+      /****************************************
+      *
+      *  constant evaluation
+      *
+      ****************************************/
+
+      if (arg4.isConstant())
+        {
+          String arg4Value = (String) arg4.evaluate(null, TimeUnit.Unknown);
+          switch (TimeUnit.fromExternalRepresentation(arg4Value))
+          {
+            case Instant:
+            case Unknown:
+              throw new ExpressionTypeCheckException("type exception");
+          }
+        }
+
+      /****************************************
+      *
+      *  type
+      *
+      ****************************************/
+      
+      setType(ExpressionDataType.DateExpression);
+
+      /*****************************************
+      *
+      *  tagFormat/tagMaxLength
+      *
+      *****************************************/
+
+      setTagFormat(arg1.getTagFormat());
+      setTagMaxLength(arg1.getTagMaxLength());
+    }
 
     /*****************************************
     *
@@ -1594,15 +1926,56 @@ public abstract class Expression
 
     @Override protected Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit)
     {
+      Object result = null;
+      boolean expressionNullExceptionOccoured = false;
+      ExpressionNullException expressionNullException = null;
+      
       /*****************************************
       *
       *  evaluate arguments
       *
       *****************************************/
-
-      Object arg1Value = (arguments.size() > 0) ? arguments.get(0).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
-      Object arg2Value = (arguments.size() > 1) ? arguments.get(1).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
-      Object arg3Value = (arguments.size() > 2) ? arguments.get(2).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+      
+      Object arg1Value = null;
+      Object arg2Value = null;
+      Object arg3Value = null;
+      Object arg4Value = null;
+      try
+        {
+          arg1Value = (arguments.size() > 0) ? arguments.get(0).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+        } 
+      catch (ExpressionNullException e)
+        {
+          expressionNullExceptionOccoured = true;
+          expressionNullException = e;
+        }
+      try
+        {
+          arg2Value = (arguments.size() > 1) ? arguments.get(1).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+        } 
+      catch (ExpressionNullException e)
+        {
+          expressionNullExceptionOccoured = true;
+          expressionNullException = e;
+        }
+      try
+        {
+          arg3Value = (arguments.size() > 2) ? arguments.get(2).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+        } 
+      catch (ExpressionNullException e)
+        {
+          expressionNullExceptionOccoured = true;
+          expressionNullException = e;
+        }
+      try
+        {
+          arg4Value = (arguments.size() > 3) ? arguments.get(3).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+        } 
+      catch (ExpressionNullException e)
+        {
+          expressionNullExceptionOccoured = true;
+          expressionNullException = e;
+        }
 
       /*****************************************
       *
@@ -1610,27 +1983,47 @@ public abstract class Expression
       *
       *****************************************/
 
-      Object result;
       switch (function)
         {
           case DateConstantFunction:
             result = preevaluatedResult;
             break;
+            
+          case TimeConstantFunction:
+            if (expressionNullExceptionOccoured) throw expressionNullException;
+            result = evaluateTimeConstantFunction((String) arg1Value);
+            break;
+            
+          case TimeAddFunction:
+            if (expressionNullExceptionOccoured) throw expressionNullException;
+            result = evaluateTimeAddFunction((String) arg1Value, (Number) arg2Value, TimeUnit.fromExternalRepresentation((String) arg3Value), baseTimeUnit, false);
+            break;
+            
           case DateAddFunction:
             // TODO : don't do roundDown for now, not sure why we could need this
+            if (expressionNullExceptionOccoured) throw expressionNullException;
             result = evaluateDateAddFunction((Date) arg1Value, (Number) arg2Value, TimeUnit.fromExternalRepresentation((String) arg3Value), baseTimeUnit, false);
             break;
+            
+          case DateAddOrConstantFunction:
+            result = evaluateDateAddOrConstantFunction((Date) arg1Value, (Date) arg2Value, (Number) arg3Value, TimeUnit.fromExternalRepresentation((String) arg4Value), baseTimeUnit, false);
+            break;
+            
           case RoundFunction:
           case RoundUpFunction:
           case RoundDownFunction:
+            if (expressionNullExceptionOccoured) throw expressionNullException;
             result = evaluateRoundFunction((Double) arg1Value, function);
             break;
+            
           case DaysUntilFunction:
           case MonthsUntilFunction:
           case DaysSinceFunction:
           case MonthsSinceFunction:
+            if (expressionNullExceptionOccoured) throw expressionNullException;
             result = evaluateUntilFunction((Date) arg1Value, function);
             break;
+            
           default:
             throw new ExpressionEvaluationException();
         }
@@ -1747,6 +2140,36 @@ public abstract class Expression
 
       return date;
     }
+    
+    /*****************************************
+    *
+    *  evaluateTimeConstantFunction
+    *
+    *****************************************/
+
+    private String evaluateTimeConstantFunction(String arg)
+    {
+      /*****************************************
+      *
+      *  parse argument
+      *
+      *****************************************/
+      
+      String[] args = arg.trim().split(":");
+      if (args.length != 3) 
+        {
+          log.error("invalid expression argument for timeConstant, found " + arg + " expected in HH:mm:ss"); 
+          throw new ExpressionEvaluationException();
+        }
+
+      /*****************************************
+      *
+      *  return
+      *
+      *****************************************/
+
+      return arg;
+    }
 
     /*****************************************
     *
@@ -1849,6 +2272,75 @@ public abstract class Expression
       
       return date;
     }
+    
+    //
+    //  evaluateTimeAddFunction
+    //
+    
+    private String evaluateTimeAddFunction(String time, Number number, TimeUnit timeUnit, TimeUnit baseTimeUnit, boolean roundDown)
+    {
+      String[] args = time.trim().split(":");
+      if (args.length != 3) throw new ExpressionEvaluationException();
+      int hh = Integer.parseInt(args[0]);
+      int mm = Integer.parseInt(args[1]);
+      int ss = Integer.parseInt(args[2]);
+      
+      switch (timeUnit)
+      {
+        case Hour:
+          hh = hh + number.intValue();
+          break;
+          
+        case Minute:
+          mm = mm + number.intValue();
+          break;
+          
+        case Second:
+          ss = ss + number.intValue();
+          break;
+          
+        default:
+          throw new ExpressionEvaluationException();
+      }
+      StringBuilder timeBuilder = new StringBuilder();
+      timeBuilder.append(hh).append(":").append(mm).append(":").append(ss);
+      return timeBuilder.toString(); 
+    }
+    
+    
+    //
+    //  evaluateDateAddOrConstantFunction
+    //
+    
+    private Date evaluateDateAddOrConstantFunction(Date dateAddDate, Date strictScheduleDate, Number waitDuration, TimeUnit timeUnit, TimeUnit baseTimeUnit, boolean roundDown)
+    {
+      boolean dateBasedWait = strictScheduleDate != null;
+      boolean timeBasedWait = waitDuration != null && timeUnit != TimeUnit.Unknown;
+      boolean dateAndTimeBasedWait = dateBasedWait && timeBasedWait;
+      
+      //
+      //  1970
+      //
+      
+      Date result = new Date(0L);
+      
+      if (dateAndTimeBasedWait)
+        {
+          Date timeBasedDate = evaluateDateAddFunction(dateAddDate, waitDuration, timeUnit, baseTimeUnit, roundDown);
+          if (timeBasedDate.after(strictScheduleDate)) result = strictScheduleDate;
+          else result = timeBasedDate;
+        }
+      else if (dateBasedWait)
+        {
+          result = strictScheduleDate;
+        }
+      else if (timeBasedWait)
+        {
+          result = evaluateDateAddFunction(dateAddDate, waitDuration, timeUnit, baseTimeUnit, roundDown);
+        }
+      return result;
+      
+    }
 
     /*****************************************
     *
@@ -1917,6 +2409,8 @@ public abstract class Expression
             esQueryDateAddFunction(script, baseTimeUnit);
             break;
             
+          case TimeConstantFunction:
+          case TimeAddFunction:
           default:
             throw new ExpressionEvaluationException();
         }

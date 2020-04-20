@@ -4729,7 +4729,27 @@ public class GUIManager
       {
         CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, selectedJourney);
         Map<String,List<JSONObject>> currentGroups = new HashMap<>();
-        journeyCriterionFields = processCriterionFields(criterionContext.getCriterionFields(), tagsOnly, currentGroups);
+        Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
+        
+        //
+        //  intersect and put only Evaluation week Day and Time (if schedule node)
+        //
+        
+        if (journeyNodeType.getScheduleNode())
+          {
+            CriterionField evaluationWkDay = unprocessedCriterionFields.get(CriterionContext.EVALUATION_WK_DAY_ID);
+            CriterionField evaluationTime = unprocessedCriterionFields.get(CriterionContext.EVALUATION_TIME_ID);
+            CriterionField evaluationMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_MONTH_ID);
+            CriterionField evaluationDayOfMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_DAY_OF_MONTH_ID);
+            unprocessedCriterionFields.clear();
+            if (evaluationWkDay != null) unprocessedCriterionFields.put(evaluationWkDay.getID(), evaluationWkDay);
+            if (evaluationTime != null) unprocessedCriterionFields.put(evaluationTime.getID(), evaluationTime);
+            if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
+            if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
+          }
+        
+        
+        journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly, currentGroups);
         for (String id : currentGroups.keySet())
           {
             List<JSONObject> group = currentGroups.get(id);
@@ -4792,7 +4812,27 @@ public class GUIManager
     if (journeyNodeType != null)
       {
         CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, selectedJourney);
-        journeyCriterionFields = processCriterionFields(criterionContext.getCriterionFields(), tagsOnly);
+        
+        Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
+        
+        //
+        //  intersect and put only Evaluation week Day and Time (if schedule node)
+        //
+        
+        if (journeyNodeType.getScheduleNode())
+          {
+            CriterionField evaluationWkDay = unprocessedCriterionFields.get(CriterionContext.EVALUATION_WK_DAY_ID);
+            CriterionField evaluationTime = unprocessedCriterionFields.get(CriterionContext.EVALUATION_TIME_ID);
+            CriterionField evaluationMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_MONTH_ID);
+            CriterionField evaluationDayOfMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_DAY_OF_MONTH_ID);
+            unprocessedCriterionFields.clear();
+            if (evaluationWkDay != null) unprocessedCriterionFields.put(evaluationWkDay.getID(), evaluationWkDay);
+            if (evaluationTime != null) unprocessedCriterionFields.put(evaluationTime.getID(), evaluationTime);
+            if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
+            if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
+          }
+        
+        journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly);
       }
 
     /*****************************************
@@ -4871,7 +4911,28 @@ public class GUIManager
         if (journeyNodeType != null)
           {
             CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, selectedJourney);
-            journeyCriterionFields = processCriterionFields(criterionContext.getCriterionFields(), false);
+            
+            Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
+            
+            //
+            //  intersect and put only Evaluation week Day and Time (if schedule node)
+            //
+            
+            if (journeyNodeType.getScheduleNode())
+              {
+
+                CriterionField evaluationWkDay = unprocessedCriterionFields.get(CriterionContext.EVALUATION_WK_DAY_ID);
+                CriterionField evaluationTime = unprocessedCriterionFields.get(CriterionContext.EVALUATION_TIME_ID);
+                CriterionField evaluationMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_MONTH_ID);
+                CriterionField evaluationDayOfMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_DAY_OF_MONTH_ID);
+                unprocessedCriterionFields.clear();
+                if (evaluationWkDay != null) unprocessedCriterionFields.put(evaluationWkDay.getID(), evaluationWkDay);
+                if (evaluationTime != null) unprocessedCriterionFields.put(evaluationTime.getID(), evaluationTime);
+                if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
+                if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
+              }
+            
+            journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, false);
           }
 
         /*****************************************
@@ -22597,6 +22658,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             case DoubleCriterion:
             case StringCriterion:
             case BooleanCriterion:
+            case TimeCriterion:
             case DateCriterion:
               criterionFields.put(criterionField.getID(), criterionField);
               break;
@@ -23846,7 +23908,35 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
                   availableValue.put("id", target.getGUIManagedObjectID());
                   availableValue.put("display", target.getGUIManagedObjectDisplay());
-                  result.add(JSONUtilities.encodeObject(availableValue));                  
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+        case "weekDays":
+          if (includeDynamic)
+            {
+              List<String> weekDays = new LinkedList<String>();
+              weekDays.add("Sunday"); weekDays.add("Monday"); weekDays.add("Tuesday"); weekDays.add("Wednesday"); weekDays.add("Thursday"); weekDays.add("Friday"); weekDays.add("Saturday");
+              for (String weekDay : weekDays)
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", weekDay.toLowerCase());
+                  availableValue.put("display", weekDay);
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+        case "months":
+          if (includeDynamic)
+            {
+              List<String> months = new LinkedList<String>();
+              months.add("January"); months.add("February"); months.add("March"); months.add("April"); months.add("May"); months.add("June"); months.add("July"); months.add("August"); months.add("September"); months.add("October"); months.add("November"); months.add("December");
+              for (String month : months)
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", month.toLowerCase());
+                  availableValue.put("display", month);
+                  result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }
           break;

@@ -1822,6 +1822,10 @@ public class Journey extends GUIManagedObject
               case DateCriterion:
                 boundParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                 break;
+                
+              case TimeCriterion:
+                boundParameters.put(parameterName, JSONUtilities.decodeString(parameterJSON, "value", false));
+                break;
 
               case StringSetCriterion:
                 Set<String> stringSetValue = new HashSet<String>();
@@ -1928,6 +1932,18 @@ public class Journey extends GUIManagedObject
                 switch (parameterExpressionValue.getType())
                   {
                   case DateExpression:
+                    validCombination = true;
+                    break;
+                  default:
+                    validCombination = false;
+                    break;
+                  }
+                break;
+                
+              case TimeCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                  case TimeExpression:
                     validCombination = true;
                     break;
                   default:
@@ -2313,6 +2329,7 @@ public class Journey extends GUIManagedObject
                         }
                       break;
 
+                    case TimeCriterion:
                     default:
                       throw new GUIManagerException("bad data type", criterionField.getFieldDataType().getExternalRepresentation());
                   }
@@ -2555,6 +2572,10 @@ public class Journey extends GUIManagedObject
                 nodeParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                 break;
                 
+              case TimeCriterion:
+                nodeParameters.put(parameterName, JSONUtilities.decodeString(parameterJSON, "value", false));
+                break;
+                
               case StringSetCriterion:
                 Set<String> stringSetValue = new HashSet<String>();
                 JSONArray stringSetArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
@@ -2770,6 +2791,18 @@ public class Journey extends GUIManagedObject
                       break;
                   }
                 break;
+                
+              case TimeCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                    case TimeExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
 
 
               case EvaluationCriteriaParameter:
@@ -2968,6 +3001,10 @@ public class Journey extends GUIManagedObject
               case DateCriterion:
                 outputConnectorParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                 break;
+                
+              case TimeCriterion:
+                outputConnectorParameters.put(parameterName, JSONUtilities.decodeString(parameterJSON, "value", false));
+                break;
 
               case StringSetCriterion:
                 Set<String> stringSetValue = new HashSet<String>();
@@ -3133,6 +3170,18 @@ public class Journey extends GUIManagedObject
                 switch (parameterExpressionValue.getType())
                   {
                     case DateExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
+                
+              case TimeCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                    case TimeExpression:
                       validCombination = true;
                       break;
                     default:
