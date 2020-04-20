@@ -58,7 +58,6 @@ public class BDRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(moduleName);
     headerFieldsOrder.add(featureDisplay);
     headerFieldsOrder.add(deliverableDisplay);
-    headerFieldsOrder.add(subscriberID);
     headerFieldsOrder.add(customerID);
     headerFieldsOrder.add(deliverableExpirationDate);
     headerFieldsOrder.add(eventDatetime);
@@ -70,6 +69,10 @@ public class BDRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(deliveryRequestID);
     headerFieldsOrder.add(originatingDeliveryRequestID);
     headerFieldsOrder.add(eventID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+      {
+        headerFieldsOrder.add(alternateID.getName());
+      }
   }
 
   /**
@@ -226,6 +229,8 @@ public class BDRReportCsvWriter implements ReportCsvFactory
                 String feature_display = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
                 result.put(featureDisplay, feature_display);
                 result.put(moduleName, module.toString());
+                result.put(featureId, bdrFields.get(featureId));
+                result.put(moduleId, bdrFields.get(moduleId));
 
                 // bdrFields.remove(featureId);
                 // bdrFields.remove(moduleId);
@@ -429,13 +434,12 @@ public class BDRReportCsvWriter implements ReportCsvFactory
             // Compute featureName and ModuleName from ID
             if (bdrFields.containsKey(moduleId) && bdrFields.containsKey(featureId))
               {
-                Module module = Module
-                    .fromExternalRepresentation(String.valueOf(bdrFields.get(moduleId)));
-                String feature_display = DeliveryRequest.getFeatureDisplay(module,
-                    String.valueOf(bdrFields.get(featureId).toString()), journeyService, offerService,
-                    loyaltyProgramService);                
-                bdrRecs.put(featureDisplay, feature_display);
+                Module module = Module.fromExternalRepresentation(String.valueOf(bdrFields.get(moduleId)));
+                String featureDis = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);                
+                bdrRecs.put(featureDisplay, featureDis);
                 bdrRecs.put(moduleName, module.toString());
+                bdrRecs.put(featureId, bdrFields.get(featureId));
+                bdrRecs.put(moduleId, bdrFields.get(moduleId));
 
                 // bdrFields.remove(featureId);
                 // bdrFields.remove(moduleId);
