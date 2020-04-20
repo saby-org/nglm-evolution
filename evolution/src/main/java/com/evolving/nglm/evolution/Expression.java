@@ -725,7 +725,9 @@ public abstract class Expression
                   break;
 
                 case ModuloOperator:
-                  if (leftArgument.getType() != ExpressionDataType.IntegerExpression) throw new ExpressionTypeCheckException("type exception");
+                  // temp fix : we allow "float % int" as a workaround, in case we are called with "arpu % 3"...
+                  if (leftArgument.getType() != ExpressionDataType.IntegerExpression && 
+                      leftArgument.getType() != ExpressionDataType.DoubleExpression) throw new ExpressionTypeCheckException("type exception");
                   switch (rightArgument.getType())
                     {
                       case IntegerExpression:
