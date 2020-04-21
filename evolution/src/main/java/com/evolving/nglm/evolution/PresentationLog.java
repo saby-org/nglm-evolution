@@ -74,7 +74,7 @@ public class PresentationLog implements SubscriberStreamEvent
     schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("presentationDates", SchemaBuilder.array(Timestamp.SCHEMA).optional().schema());
-    schemaBuilder.field("token", DNBOToken.schema());
+    schemaBuilder.field("token", DNBOToken.serde().optionalSchema());
     schema = schemaBuilder.build();
   };
 

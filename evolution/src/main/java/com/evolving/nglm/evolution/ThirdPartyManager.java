@@ -3505,20 +3505,32 @@ public class ThirdPartyManager
          return JSONUtilities.encodeObject(response);          
        }
 
-     String callingChannelID = null;
-     for (CallingChannel callingChannel : callingChannelService.getActiveCallingChannels(now))
+     CallingChannel callingChannel = null;
+     if (callingChannelDisplay != null)
        {
-         if (callingChannel.getGUIManagedObjectDisplay().equals(callingChannelDisplay))
+         String callingChannelID = null;
+         for (CallingChannel callingChannelLoop : callingChannelService.getActiveCallingChannels(now))
            {
-             callingChannelID = callingChannel.getGUIManagedObjectID();
-             break;
+             if (callingChannelLoop.getGUIManagedObjectDisplay().equals(callingChannelDisplay))
+               {
+                 callingChannelID = callingChannelLoop.getGUIManagedObjectID();
+                 break;
+               }
            }
-       }
-     if (callingChannelID == null)
-       {
-         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericResponseCode());
-         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericResponseMessage());
-         return JSONUtilities.encodeObject(response);          
+         if (callingChannelID == null)
+           {
+             response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericResponseCode());
+             response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericResponseMessage());
+             return JSONUtilities.encodeObject(response);          
+           }
+         callingChannel = callingChannelService.getActiveCallingChannel(callingChannelID, now);
+         if (callingChannel == null)
+           {
+             log.error(RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericDescription()+" unknown id : "+callingChannelID);
+             response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericResponseCode());
+             response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericResponseMessage());
+             return JSONUtilities.encodeObject(response);          
+           }
        }
 
      PresentationStrategy presentationStrategy = presentationStrategyService.getActivePresentationStrategy(presentationStrategyID, now);
@@ -3536,15 +3548,6 @@ public class ThirdPartyManager
          log.error(RESTAPIGenericReturnCodes.INVALID_TOKEN_TYPE.getGenericDescription()+" unknown id : "+tokenTypeID);
          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.INVALID_TOKEN_TYPE.getGenericResponseCode());
          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.INVALID_TOKEN_TYPE.getGenericResponseMessage());
-         return JSONUtilities.encodeObject(response);          
-       }
-
-     CallingChannel callingChannel = callingChannelService.getActiveCallingChannel(callingChannelID, now);
-     if (callingChannel == null)
-       {
-         log.error(RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericDescription()+" unknown id : "+callingChannelID);
-         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericResponseCode());
-         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericResponseMessage());
          return JSONUtilities.encodeObject(response);          
        }
 
