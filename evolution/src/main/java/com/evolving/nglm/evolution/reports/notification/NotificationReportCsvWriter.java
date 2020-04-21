@@ -50,6 +50,10 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(moduleName);
     headerFieldsOrder.add(featureDisplay);
     headerFieldsOrder.add(customerID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+      {
+        headerFieldsOrder.add(alternateID.getName());
+      }
     headerFieldsOrder.add(creationDate);
     headerFieldsOrder.add(deliveryDate);
     headerFieldsOrder.add(originatingDeliveryRequestID);
@@ -59,10 +63,6 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(returnCode);
     headerFieldsOrder.add(returnCodeDetails);
     headerFieldsOrder.add(source);
-    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-      {
-        headerFieldsOrder.add(alternateID.getName());
-      }
   }
 
   /**

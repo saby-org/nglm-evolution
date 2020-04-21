@@ -65,6 +65,10 @@ public class ODRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(voucherPartnerID);
     headerFieldsOrder.add(salesChannelDisplay);
     headerFieldsOrder.add(customerID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+      {
+        headerFieldsOrder.add(alternateID.getName());
+      }
     headerFieldsOrder.add(offerContent);
     headerFieldsOrder.add(eventDatetime);
     headerFieldsOrder.add(originatingDeliveryRequestID);
@@ -79,10 +83,6 @@ public class ODRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(voucherCode);
     headerFieldsOrder.add(returnCode);
     headerFieldsOrder.add(returnCodeDetails);
-    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-      {
-        headerFieldsOrder.add(alternateID.getName());
-      }
   }
   
   

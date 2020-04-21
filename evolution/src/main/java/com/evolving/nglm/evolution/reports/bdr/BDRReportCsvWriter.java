@@ -59,6 +59,10 @@ public class BDRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(featureDisplay);
     headerFieldsOrder.add(deliverableDisplay);
     headerFieldsOrder.add(customerID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+      {
+        headerFieldsOrder.add(alternateID.getName());
+      }
     headerFieldsOrder.add(deliverableExpirationDate);
     headerFieldsOrder.add(eventDatetime);
     headerFieldsOrder.add(operation);
@@ -69,10 +73,6 @@ public class BDRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(deliveryRequestID);
     headerFieldsOrder.add(originatingDeliveryRequestID);
     headerFieldsOrder.add(eventID);
-    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-      {
-        headerFieldsOrder.add(alternateID.getName());
-      }
   }
 
   /**
