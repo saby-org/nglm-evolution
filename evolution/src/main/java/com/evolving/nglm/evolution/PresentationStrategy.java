@@ -191,7 +191,7 @@ public class PresentationStrategy extends GUIManagedObject
     Integer maximumPresentationsPeriodDays = valueStruct.getInt32("maximumPresentationsPeriodDays");
     PositionSet setA = PositionSet.unpack(new SchemaAndValue(schema.field("setA").schema(), valueStruct.get("setA")));
     PositionSet setB = PositionSet.unpack(new SchemaAndValue(schema.field("setB").schema(), valueStruct.get("setB")));
-    
+  
     //
     //  return
     //
