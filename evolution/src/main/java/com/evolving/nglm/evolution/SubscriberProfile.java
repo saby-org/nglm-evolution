@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -344,10 +345,10 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   //  getSegmentNames (set of segment name)
   //
 
-  public Set<String> getSegmentNames(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public JSONArray getSegmentNames(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
-    Date evaluationDate = SystemTime.getCurrentTime();
-    Set<String> result = new HashSet<String>();
+    Date evaluationDate = SystemTime.getCurrentTime();    
+    JSONArray result = new JSONArray();
     for (Pair<String,String> groupID : segments.keySet())
       {
         String dimensionID = groupID.getFirstElement();
@@ -357,20 +358,29 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
           {
             if(segmentationDimension.getTargetingType().equals(SegmentationDimensionTargetingType.FILE))
               {
+                Map<String, String> segmentMap = new LinkedHashMap<String, String>();
                 // In case of File based segmentation, let consider the file is not to be used anymore until the new file 
                 // has been handled. So apply epoc coherency test.
                 int epoch = segments.get(groupID);
                 if (epoch == (subscriberGroupEpochReader.get(dimensionID) != null ? subscriberGroupEpochReader.get(dimensionID).getEpoch() : 0))
                   {
                     Segment segment = segmentationDimensionService.getSegment(segmentID);
-                    result.add(GUIManager.normalizeSegmentName(segmentationDimension.getSegmentationDimensionName() + "." + segment.getName()));
+                    segmentMap.put("Segment" , segment.getName());
+                    segmentMap.put("Dimension" , segmentationDimension.getSegmentationDimensionDisplay());                                                          
+                    result.add(segmentMap);
+                    
                 }
               }
             else
               {
+                Map<String, String> segmentMap = new LinkedHashMap<String, String>();
                 // If not file targeting, let try to retrieve the good segment...
                 Segment segment = segmentationDimensionService.getSegment(segmentID);
-                if(segment != null) {result.add(GUIManager.normalizeSegmentName(segmentationDimension.getSegmentationDimensionName() + "." + segment.getName()));}                
+                if(segment != null) {
+                  segmentMap.put("Segment" , segment.getName());
+                  segmentMap.put("Dimension" , segmentationDimension.getSegmentationDimensionDisplay());                  
+                  result.add(segmentMap);
+                }                
               }
           }
       }
@@ -915,7 +925,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     generalDetailsPresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
     generalDetailsPresentation.put("evolutionSubscriberStatusChangeDate", getDateString(getEvolutionSubscriberStatusChangeDate()));
     generalDetailsPresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
-    generalDetailsPresentation.put("segments", JSONUtilities.encodeArray(new ArrayList<String>(getSegmentNames(segmentationDimensionService, subscriberGroupEpochReader))));
+    generalDetailsPresentation.put("segments", JSONUtilities.encodeArray(getSegmentNames(segmentationDimensionService, subscriberGroupEpochReader)));
     generalDetailsPresentation.put("loyaltyPrograms", JSONUtilities.encodeArray(loyaltyProgramsPresentation));
     generalDetailsPresentation.put("targets", JSONUtilities.encodeArray(new ArrayList<String>(getTargetNames(targetService, subscriberGroupEpochReader))));
     generalDetailsPresentation.put("relations", JSONUtilities.encodeArray(hierarchyRelations));
@@ -973,7 +983,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     generalDetailsPresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
     generalDetailsPresentation.put("evolutionSubscriberStatusChangeDate", getDateString(getEvolutionSubscriberStatusChangeDate()));
     generalDetailsPresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
-    generalDetailsPresentation.put("segments", JSONUtilities.encodeArray(new ArrayList<String>(getSegmentNames(segmentationDimensionService, subscriberGroupEpochReader))));
+    generalDetailsPresentation.put("segments", JSONUtilities.encodeArray(getSegmentNames(segmentationDimensionService, subscriberGroupEpochReader)));
     generalDetailsPresentation.put("language", getLanguage());
 
     //
