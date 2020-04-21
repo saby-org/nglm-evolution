@@ -29,6 +29,15 @@ public class ProposedOfferDetails implements Comparable<ProposedOfferDetails>
     return offerId;
   }
 
+  @Override
+  public String toString()
+  {
+    return "ProposedOfferDetails ["
+        + (offerId != null ? "offerId=" + offerId + ", " : "") 
+        + (salesChannelId != null ? "salesChannelId=" + salesChannelId + ", " : "") 
+        + "offerScore=" + offerScore + ", offerRank=" + offerRank + "]";
+  }
+
   public void setOfferId(String offerId)
   {
     this.offerId = offerId;

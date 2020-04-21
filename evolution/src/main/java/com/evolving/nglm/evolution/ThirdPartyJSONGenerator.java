@@ -262,7 +262,7 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService) 
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, CallingChannel callingChannel) 
   {
     Date now = SystemTime.getCurrentTime();
     HashMap<String, Object> tokenMap = new HashMap<String, Object>();
@@ -301,13 +301,13 @@ public class ThirdPartyJSONGenerator
         ArrayList<Object> presentedOffersList = new ArrayList<>();
         for (String offerID : dnboToken.getPresentedOfferIDs())
           {
-            presentedOffersList.add(JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now)));
+            presentedOffersList.add(JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now, callingChannel)));
           }
         tokenMap.put("presentedOffers", JSONUtilities.encodeArray(presentedOffersList));
         tokenMap.put("presentedOffersSalesChannel", dnboToken.getPresentedOffersSalesChannel());
         
         String offerID = dnboToken.getAcceptedOfferID();
-        tokenMap.put("acceptedOffer", JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now)));
+        tokenMap.put("acceptedOffer", JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now, callingChannel)));
       }
     return JSONUtilities.encodeObject(tokenMap);
   }
@@ -342,7 +342,7 @@ public class ThirdPartyJSONGenerator
     return scoringStrategyMap;
   }
   
-  private static HashMap<String, Object> buildOfferElement(String offerID, OfferService offerService, OfferObjectiveService offerObjectiveService, Date now) {
+  private static HashMap<String, Object> buildOfferElement(String offerID, OfferService offerService, OfferObjectiveService offerObjectiveService, Date now, CallingChannel callingChannel) {
     HashMap<String, Object> offerMap = new HashMap<String, Object>();
     offerMap.put("id", offerID);
     if (offerID == null)
@@ -353,6 +353,39 @@ public class ThirdPartyJSONGenerator
       {
         Offer offer = offerService.getActiveOffer(offerID, now);
         offerMap.put("name", (offer == null) ? "unknown offer" : offer.getDisplay());
+        JSONObject offerJSON = offer.getJSONRepresentation();
+        if (callingChannel != null && offerJSON != null)
+          {
+            // Add more elements, based on what's in the channel
+            JSONObject jsonRoot = callingChannel.getJSONRepresentation();
+            if (jsonRoot != null)
+              {
+                JSONArray offerProperties = JSONUtilities.decodeJSONArray(jsonRoot, "offerProperties", false);
+                if (offerProperties != null)
+                  {
+                    for (int i=0; i<offerProperties.size(); i++)
+                      {
+                        JSONObject offerPropertyJSON = (JSONObject) offerProperties.get(i);
+                        if (offerPropertyJSON != null)
+                          {
+                            boolean presentOffers = JSONUtilities.decodeBoolean(jsonRoot, "presentOffers", Boolean.TRUE);
+                            if (presentOffers)
+                              {
+                                String offerPropertyName = JSONUtilities.decodeString(offerPropertyJSON, "offerPropertyName", false);
+                                if (offerPropertyName != null)
+                                  {
+                                    Object offerProperty = offerJSON.get(offerPropertyName);
+                                    if (offerProperty != null)
+                                      {
+                                         offerMap.put(offerPropertyName, offerProperty);
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+          }
       }
     return offerMap;
   }
