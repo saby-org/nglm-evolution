@@ -3675,7 +3675,8 @@ public class ThirdPartyManager
       *
       *****************************************/
      response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(newToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, callingChannel);
-     response.put("responseCode", "ok");
+     response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+     response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
    }
    catch (SubscriberProfileServiceException e) 
    {
