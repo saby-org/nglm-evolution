@@ -92,7 +92,7 @@ public class EvolutionEngineEventDeclaration
     this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
     this.eventRule = EventRule.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "eventRule", "standard"));
     this.eventClassName = JSONUtilities.decodeString(jsonRoot, "eventClass", this.eventRule != EventRule.Internal);
-    this.eventTopic = JSONUtilities.decodeString(jsonRoot, "eventTopic", this.eventRule != EventRule.Internal);
+    this.eventTopic = JSONUtilities.decodeString(jsonRoot, "eventTopic", false); // topic can be null
     this.eventCriterionFields = decodeEventCriterionFields(JSONUtilities.decodeJSONArray(jsonRoot, "eventCriterionFields", false));
 
     //

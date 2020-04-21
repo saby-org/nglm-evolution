@@ -55,6 +55,7 @@ public class NodeType extends DeploymentManagedObject
 
   private boolean startNode;
   private boolean endNode;
+  private boolean scheduleNode;
   private boolean enableCycle;
   private boolean allowContextVariables;
   private OutputType outputType;
@@ -70,6 +71,7 @@ public class NodeType extends DeploymentManagedObject
 
   public boolean getStartNode() { return startNode; }
   public boolean getEndNode() { return endNode; }
+  public boolean getScheduleNode() { return scheduleNode; }
   public boolean getEnableCycle() { return enableCycle; }
   public boolean getAllowContextVariables() { return allowContextVariables; }
   public OutputType getOutputType() { return  outputType; }
@@ -97,6 +99,7 @@ public class NodeType extends DeploymentManagedObject
 
     this.startNode = JSONUtilities.decodeBoolean(jsonRoot, "startNode", Boolean.FALSE);
     this.endNode = JSONUtilities.decodeBoolean(jsonRoot, "endNode", Boolean.FALSE);
+    this.scheduleNode = JSONUtilities.decodeBoolean(jsonRoot, "scheduleNode", Boolean.FALSE);
     this.enableCycle = JSONUtilities.decodeBoolean(jsonRoot, "enableCycle", Boolean.FALSE);
     this.allowContextVariables = JSONUtilities.decodeBoolean(jsonRoot, "allowContextVariables", Boolean.FALSE);
     this.outputType = OutputType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "outputType", true));

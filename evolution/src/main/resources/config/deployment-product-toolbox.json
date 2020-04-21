@@ -46,7 +46,7 @@
         "outputType"       : "static",
         "outputConnectors" : 
           [ 
-            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, node.parameter.duration, node.parameter.unit)" } } ] }
+            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAddOrConstant(node.entryDate, node.parameter.schedule, node.parameter.duration, node.parameter.unit)" } } ] }
           ],
         "parameters"       :
           [
@@ -56,9 +56,9 @@
               "dataType" : "integer", 
               "width" : "50%", 
               "multiple" : false, 
-              "mandatory" : true,
+              "mandatory" : false,
               "availableValues" : null,
-              "defaultValue" : null
+              "defaultValue" : 0
             },
             { 
               "id" : "node.parameter.unit",     
@@ -66,7 +66,7 @@
               "dataType" : "string",  
               "width" : "50%", 
               "multiple" : false, 
-              "mandatory" : true, 
+              "mandatory" : false, 
               "availableValues" : 
                 [
                   { "id" : "minute", "display" : "Minutes" },
@@ -76,37 +76,64 @@
                   { "id" : "month",  "display" : "Months" }
                 ],
               "defaultValue" : null
-            }
-          ]
-      },
-
-      {
-        "id"               : "104",
-        "name"             : "schedule",
-        "display"          : "Schedule",
-        "icon"             : "jmr_components/styles/images/objects/1-2-schedule.png",
-        "color"            : "#c72285", 
-        "height"           : 70,
-        "width"            : 70,
-        "enableCycle"      : true,
-        "outputType"       : "static",
-        "outputConnectors" : 
-          [ 
-            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "node.parameter.schedule" } } ] }
-          ],
-        "parameters"       :
-          [
+            },
             { 
               "id" : "node.parameter.schedule", 
               "display" : "Wait Until", 
               "dataType" : "date", 
-              "width" : "50%", 
+              "width" : "100%", 
               "multiple" : false, 
-              "mandatory" : true,
+              "mandatory" : false,
               "availableValues" : null,
               "defaultValue" : null
             }
           ]
+      },
+      
+      {
+        "id"                     : "104",
+        "name"                   : "schedule",
+        "display"                : "Schedule",
+        "icon"                   : "jmr_components/styles/images/objects/1-2-schedule.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "scheduleNode"			 : true,
+        "allowContextVariables"  : false,
+        "outputType"             : "dynamic",
+        "outputConnectors"       :
+        [
+          { "name" : "other", "display" : "Other", "evaluationPriority" : "last", "transitionCriteria" : [ ] }
+        ],
+        "parameters"             : [ ],
+        "dynamicOutputConnector" :
+        {
+          "outputConnectorName" : "link.parameter.outputconnectorname",
+          "parameters"             :
+          [
+            {
+              "id" : "link.parameter.outputconnectorname",
+              "display" : "Selection Name",
+              "dataType" : "string",
+              "width" : "100%",
+              "multiple" : false,
+              "mandatory" : true,
+              "availableValues" : null,
+              "defaultValue" : null
+            },
+            {
+              "id" : "link.parameter.profilecriteria",
+              "display" : "Profile Criteria",
+              "dataType" : "evaluationCriteria",
+              "width" : "100%",
+              "multiple" : true,
+              "mandatory" : true,
+              "availableValues" : null,
+              "defaultValue" : [ ]
+            }
+          ],
+          "transitionCriteria" : [ ],
+          "additionalCriteria" : "link.parameter.profilecriteria"
+        }
       }, 
 
       {
@@ -290,7 +317,7 @@
         "id"                     : "125",
         "name"                   : "event.multi.selection",
         "display"                : "Event Multi-Selection",
-        "icon"                   : "jmr_components/styles/images/objects/event-selection.png",
+        "icon"                   : "jmr_components/styles/images/objects/multi-event-selection.png",
         "height"                 : 70,
         "width"                  : 70,
         "enableCycle"            : true,
@@ -379,7 +406,7 @@
         "id"                     : "131",
         "name"                   : "enter.campaign",
         "display"                : "Enter Campaign",
-        "icon"                   : "jmr_components/styles/images/objects/5-2-bonus.png",
+        "icon"                   : "jmr_components/styles/images/objects/campaign.png",
         "height"                 : 70,
         "width"                  : 70,
         "enableCycle"            : true,
@@ -412,7 +439,7 @@
         "id"                     : "132",
         "name"                   : "enter.journey",
         "display"                : "Enter Sub-Journey",
-        "icon"                   : "jmr_components/styles/images/objects/5-2-bonus.png",
+        "icon"                   : "jmr_components/styles/images/objects/sub-journey.png",
         "height"                 : 70,
         "width"                  : 70,
         "enableCycle"            : true,
@@ -478,11 +505,22 @@
               "defaultValue" : null
             },
             { 
+              "id" : "node.parameter.validity.period.quantity",
+              "display" : "Period quantity", 
+              "dataType" : "integer", 
+              "multiple" : false,
+              "mandatory" : false,
+              "width"     : "50%",
+              "availableValues" : null,
+              "defaultValue" : null
+            },
+            { 
               "id" : "node.parameter.validity.period.type",
               "display" : "Period type", 
               "dataType" : "string", 
               "multiple" : false,
               "mandatory" : false,
+              "width"     : "50%",
               "availableValues" : [
                   { "id" : "minute", "display" : "Minutes" },
                   { "id" : "hour",   "display" : "Hours" },
@@ -491,15 +529,6 @@
                   { "id" : "month",  "display" : "Months" },
                   { "id" : "year",  "display" : "Years" }
               ], 
-              "defaultValue" : null
-            },
-            { 
-              "id" : "node.parameter.validity.period.quantity",
-              "display" : "Period quantity", 
-              "dataType" : "integer", 
-              "multiple" : false,
-              "mandatory" : false,
-              "availableValues" : null,
               "defaultValue" : null
             }
           ],
@@ -1034,7 +1063,7 @@
         "id"                     : "301",
         "name"                   : "enter.workflow",
         "display"                : "Enter Workflow",
-        "icon"                   : "jmr_components/styles/images/objects/5-2-bonus.png",
+        "icon"                   : "jmr_components/styles/images/objects/workflow.png",
         "height"                 : 70,
         "width"                  : 70,
         "enableCycle"            : false,
@@ -1160,14 +1189,13 @@
         "color" : "#549D9F",
         "items" :
           [
+            { "id" : "137", "name" : "journey.status" },
+            { "id" : "301", "name" : "workflow" },
             { "id" : "133", "name" : "bonus.point.credit" },
             { "id" : "138", "name" : "bonus.point.debit" },
             { "id" : "135", "name" : "loyalty.opt-in" },
             { "id" : "139", "name" : "loyalty.opt-out" },
-            { "id" : "136", "name" : "purchase.offer" },
-            { "id" : "201", "name" : "earn.badge" },
-            { "id" : "301", "name" : "workflow" },
-            { "id" : "137", "name" : "journey.status" }
+            { "id" : "136", "name" : "purchase.offer" }
           ]
       },
       {
@@ -1234,13 +1262,12 @@
         "color" : "#549D9F",
         "items" :
           [
+            { "id" : "137", "name" : "journey.status" },
             { "id" : "133", "name" : "bonus.point.credit" },
             { "id" : "138", "name" : "bonus.point.debit" },
             { "id" : "135", "name" : "loyalty.opt-in" },
             { "id" : "139", "name" : "loyalty.opt-out" },
-            { "id" : "136", "name" : "purchase.offer" },
-            { "id" : "201", "name" : "earn.badge" },
-            { "id" : "137", "name" : "journey.status" }
+            { "id" : "136", "name" : "purchase.offer" }
           ]
       },
       {

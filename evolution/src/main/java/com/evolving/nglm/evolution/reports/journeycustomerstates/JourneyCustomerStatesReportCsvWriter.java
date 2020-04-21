@@ -165,11 +165,13 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
                 journeyInfo.put("endDate",          ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
 
                 List<String> rewardHistory = (List<String>) journeyStats.get("rewardHistory");
-                StringBuilder sbHistory = new StringBuilder();
+                List<Map<String, Object>> outputJSON = new ArrayList<>();
+
                 if (rewardHistory != null && !rewardHistory.isEmpty())
                   {
                     for (String status : rewardHistory)
                       {
+                        Map<String, Object> historyJSON = new LinkedHashMap<>(); // to preserve order when displaying
                         String[] split = status.split(";");
                         String rewardID = null;
                         String amount   = null;
@@ -180,16 +182,13 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
                             amount   = split[1];
                             date     = decodeDate(split, 2);
                           }
-                        sbHistory.append("(").append(rewardID).append(",").append(amount).append(",").append(ReportsCommonCode.getDateString(date)).append("),");
+                        historyJSON.put("reward", rewardID);
+                        historyJSON.put("quantity", amount);
+                        historyJSON.put("date", ReportsCommonCode.getDateString(date));
+                        outputJSON.add(historyJSON);
                       }
                   }
-
-                String history = null;
-                if (sbHistory.length() > 0)
-                  {
-                    history = sbHistory.toString().substring(0, sbHistory.toString().length() - 1);
-                  }
-                journeyInfo.put("rewards", history);
+                journeyInfo.put("rewards", ReportUtils.formatJSON(outputJSON));
 
                 //
                 // result

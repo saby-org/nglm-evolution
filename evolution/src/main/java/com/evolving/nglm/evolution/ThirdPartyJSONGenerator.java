@@ -262,7 +262,7 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService) 
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService) 
   {
     Date now = SystemTime.getCurrentTime();
     HashMap<String, Object> tokenMap = new HashMap<String, Object>();
@@ -294,9 +294,12 @@ public class ThirdPartyJSONGenerator
         ArrayList<Object> scoringStrategiesList = new ArrayList<>();
         for (String scoringStrategyID : dnboToken.getScoringStrategyIDs())
           {
-            scoringStrategiesList.add(JSONUtilities.encodeObject(buildStrategyElement(scoringStrategyID, scoringStrategyService, now)));
+            scoringStrategiesList.add(JSONUtilities.encodeObject(buildScoringStrategyElement(scoringStrategyID, scoringStrategyService, now)));
           }
         tokenMap.put("scoringStrategies", JSONUtilities.encodeArray(scoringStrategiesList));        
+        
+        String presentationStrategyID = dnboToken.getPresentationStrategyID();
+        tokenMap.put("presentationStrategy", JSONUtilities.encodeObject(buildPresentationStrategyElement(presentationStrategyID, presentationStrategyService, now)));
         
         ArrayList<Object> presentedOffersList = new ArrayList<>();
         for (String offerID : dnboToken.getPresentedOfferIDs())
@@ -312,7 +315,22 @@ public class ThirdPartyJSONGenerator
     return JSONUtilities.encodeObject(tokenMap);
   }
   
-  private static HashMap<String, Object> buildStrategyElement(String scoringStrategyID, ScoringStrategyService scoringStrategyService, Date now) {
+  private static HashMap<String, Object> buildPresentationStrategyElement(String presentationStrategyID, PresentationStrategyService presentationStrategyService, Date now) {
+    HashMap<String, Object> presentationStrategyMap = new HashMap<String, Object>();
+    presentationStrategyMap.put("id", presentationStrategyID);
+    if (presentationStrategyID == null)
+      {
+        presentationStrategyMap.put("name",null);
+      }
+    else
+      {
+        PresentationStrategy scoringStrategy = presentationStrategyService.getActivePresentationStrategy(presentationStrategyID, now);
+        presentationStrategyMap.put("name", (scoringStrategy == null) ? "unknown presentation strategy" : scoringStrategy.getGUIManagedObjectDisplay());
+      }
+    return presentationStrategyMap;
+  }
+  
+  private static HashMap<String, Object> buildScoringStrategyElement(String scoringStrategyID, ScoringStrategyService scoringStrategyService, Date now) {
     HashMap<String, Object> scoringStrategyMap = new HashMap<String, Object>();
     scoringStrategyMap.put("id", scoringStrategyID);
     if (scoringStrategyID == null)

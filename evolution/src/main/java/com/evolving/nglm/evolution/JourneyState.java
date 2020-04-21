@@ -39,7 +39,7 @@ public class JourneyState
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_state");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(4));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(5));
     schemaBuilder.field("callingJourneyRequest", JourneyRequest.serde().optionalSchema());
     schemaBuilder.field("journeyInstanceID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
@@ -55,6 +55,7 @@ public class JourneyState
     schemaBuilder.field("journeyNodeEntryDate", Timestamp.SCHEMA);
     schemaBuilder.field("journeyOutstandingDeliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("journeyHistory", JourneyHistory.schema());
+    schemaBuilder.field("journeyEndDate", Timestamp.builder().optional().schema());
     schema = schemaBuilder.build();
   };
 
@@ -92,6 +93,7 @@ public class JourneyState
   private Date journeyNodeEntryDate;
   private String journeyOutstandingDeliveryRequestID;
   private JourneyHistory journeyHistory;
+  private Date journeyEndDate;
 
   /*****************************************
   *
@@ -114,6 +116,8 @@ public class JourneyState
   public Date getJourneyNodeEntryDate() { return journeyNodeEntryDate; }
   public String getJourneyOutstandingDeliveryRequestID() { return journeyOutstandingDeliveryRequestID; }
   public JourneyHistory getJourneyHistory() { return journeyHistory; }
+  public Date getJourneyEndDate() { return journeyEndDate; }
+  
 
   /*****************************************
   *
@@ -149,6 +153,7 @@ public class JourneyState
     this.journeyNodeEntryDate = journeyEntryDate;
     this.journeyOutstandingDeliveryRequestID = null;    
     this.journeyHistory = journeyHistory;
+    this.journeyEndDate = journey.getEffectiveEndDate();
   }
 
   /*****************************************
@@ -157,7 +162,7 @@ public class JourneyState
   *
   *****************************************/
 
-  public JourneyState(String journeyInstanceID, JourneyRequest callingJourneyRequest, String journeyID, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, JourneyHistory journeyHistory)
+  public JourneyState(String journeyInstanceID, JourneyRequest callingJourneyRequest, String journeyID, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, JourneyHistory journeyHistory, Date journeyEndDate)
   {
     this.callingJourneyRequest = callingJourneyRequest;
     this.journeyInstanceID = journeyInstanceID;
@@ -174,6 +179,7 @@ public class JourneyState
     this.journeyNodeEntryDate = journeyNodeEntryDate;
     this.journeyOutstandingDeliveryRequestID = journeyOutstandingDeliveryRequestID;
     this.journeyHistory = journeyHistory;
+    this.journeyEndDate = journeyEndDate;
   }
 
   /*****************************************
@@ -199,6 +205,7 @@ public class JourneyState
     this.journeyNodeEntryDate = journeyState.getJourneyNodeEntryDate();
     this.journeyOutstandingDeliveryRequestID = journeyState.getJourneyOutstandingDeliveryRequestID();
     this.journeyHistory = journeyState.getJourneyHistory();
+    this.journeyEndDate = journeyState.getJourneyEndDate();
   }
 
   /*****************************************
@@ -226,6 +233,7 @@ public class JourneyState
     struct.put("journeyNodeEntryDate", journeyState.getJourneyNodeEntryDate());
     struct.put("journeyOutstandingDeliveryRequestID", journeyState.getJourneyOutstandingDeliveryRequestID());
     struct.put("journeyHistory", JourneyHistory.serde().pack(journeyState.getJourneyHistory()));
+    struct.put("journeyEndDate", journeyState.getJourneyEndDate());
     return struct;
   }
   
@@ -265,12 +273,13 @@ public class JourneyState
     Date journeyNodeEntryDate = (Date) valueStruct.get("journeyNodeEntryDate");
     String journeyOutstandingDeliveryRequestID = valueStruct.getString("journeyOutstandingDeliveryRequestID");
     JourneyHistory journeyHistory = JourneyHistory.serde().unpack(new SchemaAndValue(schema.field("journeyHistory").schema(), valueStruct.get("journeyHistory")));
+    Date journeyEndDate = (schemaVersion >= 5) ? (Date) valueStruct.get("journeyEndDate") : new Date();
     
     //
     //  return
     //
 
-    return new JourneyState(journeyInstanceID, callingJourneyRequest, journeyID, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, journeyHistory);
+    return new JourneyState(journeyInstanceID, callingJourneyRequest, journeyID, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, journeyHistory, journeyEndDate);
   }
   @Override
   public String toString()

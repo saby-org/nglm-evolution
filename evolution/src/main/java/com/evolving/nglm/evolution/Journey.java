@@ -52,6 +52,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -286,6 +287,7 @@ public class Journey extends GUIManagedObject
   public boolean getAppendInclusionLists() { return appendInclusionLists; }
   public boolean getAppendExclusionLists() { return appendExclusionLists; }
   public JourneyStatus getApproval() {return JourneyStatus.Unknown == approval ? JourneyStatus.Pending : approval; }
+  public void setApproval(JourneyStatus approval) { this.approval = approval; }
 
   //
   //  package protected
@@ -1821,6 +1823,10 @@ public class Journey extends GUIManagedObject
               case DateCriterion:
                 boundParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                 break;
+                
+              case TimeCriterion:
+                boundParameters.put(parameterName, JSONUtilities.decodeString(parameterJSON, "value", false));
+                break;
 
               case StringSetCriterion:
                 Set<String> stringSetValue = new HashSet<String>();
@@ -1927,6 +1933,18 @@ public class Journey extends GUIManagedObject
                 switch (parameterExpressionValue.getType())
                   {
                   case DateExpression:
+                    validCombination = true;
+                    break;
+                  default:
+                    validCombination = false;
+                    break;
+                  }
+                break;
+                
+              case TimeCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                  case TimeExpression:
                     validCombination = true;
                     break;
                   default:
@@ -2151,6 +2169,11 @@ public class Journey extends GUIManagedObject
 
   public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters) throws GUIManagerException
   {
+    return processContextVariableNodes(contextVariableNodes, journeyParameters, null);
+  }
+
+  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, CriterionDataType expectedDataType) throws GUIManagerException
+  {
     /*****************************************
     *
     *  preparation
@@ -2162,7 +2185,10 @@ public class Journey extends GUIManagedObject
       {
         for (ContextVariable contextVariable : guiNode.getContextVariables())
           {
-            contextVariables.put(contextVariable, new Pair<CriterionContext,CriterionContext>(guiNode.getNodeOnlyCriterionContext(), guiNode.getNodeWithJourneyResultCriterionContext()));
+            if (expectedDataType == null || (contextVariable.getType().equals(expectedDataType)))
+              {
+                contextVariables.put(contextVariable, new Pair<CriterionContext,CriterionContext>(guiNode.getNodeOnlyCriterionContext(), guiNode.getNodeWithJourneyResultCriterionContext()));
+              }
           }
       }
 
@@ -2312,6 +2338,7 @@ public class Journey extends GUIManagedObject
                         }
                       break;
 
+                    case TimeCriterion:
                     default:
                       throw new GUIManagerException("bad data type", criterionField.getFieldDataType().getExternalRepresentation());
                   }
@@ -2554,6 +2581,10 @@ public class Journey extends GUIManagedObject
                 nodeParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                 break;
                 
+              case TimeCriterion:
+                nodeParameters.put(parameterName, JSONUtilities.decodeString(parameterJSON, "value", false));
+                break;
+                
               case StringSetCriterion:
                 Set<String> stringSetValue = new HashSet<String>();
                 JSONArray stringSetArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
@@ -2599,9 +2630,13 @@ public class Journey extends GUIManagedObject
           switch (parameter.getFieldDataType())
             {
               case WorkflowParameter:
-                String workflowID = JSONUtilities.decodeString((JSONObject) parameterJSON.get("value"), "workflowID", true);
-                workflow = journeyService.getActiveJourney(workflowID, SystemTime.getCurrentTime());
-                if (workflow == null) throw new GUIManagerException("unknown workflow", workflowID);
+
+                if((JSONObject) parameterJSON.get("value") != null)
+                  {
+                    String workflowID = JSONUtilities.decodeString((JSONObject) parameterJSON.get("value"), "workflowID", true);
+                    workflow = journeyService.getActiveJourney(workflowID, SystemTime.getCurrentTime());                    
+                    if (workflow == null) throw new GUIManagerException("unknown workflow", workflowID);
+                  }
                 break;
             }
         }
@@ -2758,6 +2793,18 @@ public class Journey extends GUIManagedObject
                 switch (parameterExpressionValue.getType())
                   {
                     case DateExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
+                
+              case TimeCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                    case TimeExpression:
                       validCombination = true;
                       break;
                     default:
@@ -2963,6 +3010,10 @@ public class Journey extends GUIManagedObject
               case DateCriterion:
                 outputConnectorParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                 break;
+                
+              case TimeCriterion:
+                outputConnectorParameters.put(parameterName, JSONUtilities.decodeString(parameterJSON, "value", false));
+                break;
 
               case StringSetCriterion:
                 Set<String> stringSetValue = new HashSet<String>();
@@ -3128,6 +3179,18 @@ public class Journey extends GUIManagedObject
                 switch (parameterExpressionValue.getType())
                   {
                     case DateExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
+                
+              case TimeCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                    case TimeExpression:
                       validCombination = true;
                       break;
                     default:
