@@ -21225,26 +21225,18 @@ public class GUIManager
             }
 
           DNBOToken subscriberStoredToken = (DNBOToken) subscriberToken;
-          List<String> sss = subscriberStoredToken.getScoringStrategyIDs();
-          if (sss == null)
+          String presentationStrategyID = subscriberStoredToken.getPresentationStrategyID();
+          if (presentationStrategyID == null)
             {
               String str = "Bad strategy : null value";
               log.error(str);
               response.put("responseCode", str);
               return JSONUtilities.encodeObject(response);
             }
-          if (sss.size() == 0)
+          PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
+          if (presentationStrategy == null)
             {
-              String str = "Bad strategy : empty list";
-              log.error(str);
-              response.put("responseCode", str);
-              return JSONUtilities.encodeObject(response);
-            }
-          String strategyID = sss.get(0); // MK : not sure why we could have >1, only consider first one
-          ScoringStrategy scoringStrategy = (ScoringStrategy) scoringStrategyService.getStoredScoringStrategy(strategyID);
-          if (scoringStrategy == null)
-            {
-              String str = "Bad strategy : unknown id : "+strategyID;
+              String str = "Bad strategy : unknown id : "+presentationStrategyID;
               log.error(str);
               response.put("responseCode", str);
               generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str);
@@ -21256,14 +21248,16 @@ public class GUIManager
               StringBuffer returnedLog = new StringBuffer();
               double rangeValue = 0; // Not significant
               DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
+              SubscriberEvaluationRequest request = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
 
               // Allocate offers for this subscriber, and associate them in the token
               // Here we have no saleschannel (we pass null), this means only the first salesChannelsAndPrices of the offer will be used and returned.  
               Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(
-                  now, null,
-                  subscriberProfile, scoringStrategy,
+                  now, subscriberStoredToken, request,
+                  subscriberProfile, presentationStrategy,
                   productService, productTypeService, voucherService, voucherTypeService,
                   catalogCharacteristicService,
+                  scoringStrategyService,
                   propensityDataReader,
                   subscriberGroupEpochReader,
                   segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
@@ -21278,7 +21272,6 @@ public class GUIManager
                   // Send a PresentationLog to EvolutionEngine
 
                   String channelID = "channelID";
-                  String presentationStrategyID = strategyID; // HACK, see above
                   String controlGroupState = "controlGroupState";
                   String featureID = (userID != null) ? userID : "1"; // for PTT tests, never happens when called by browser
                   String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation(); 
@@ -21294,7 +21287,8 @@ public class GUIManager
                       positions.add(new Integer(position));
                       position++;
                       presentedOfferScores.add(1.0);
-                      scoringStrategyIDs.add(strategyID);
+                      // scoring strategy not used anymore
+                      // scoringStrategyIDs.add(strategyID);
                     }
                   String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
                   int transactionDurationMs = 0; // TODO
@@ -21306,7 +21300,7 @@ public class GUIManager
                       tokenCode, 
                       presentationStrategyID, transactionDurationMs, 
                       presentedOfferIDs, presentedOfferScores, positions, 
-                      controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID
+                      controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, subscriberStoredToken.getPresentationDates()
                       );
 
                   //
