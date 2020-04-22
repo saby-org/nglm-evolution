@@ -22772,8 +22772,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
                 List<JSONObject> singleton = evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, true);
 
+                
+                
+                
+                
+                
                 // TODO next line to be removed later when GUI handles the new "singletonComparableFieldsGroup" field
-                criterionFieldJSON.put("singletonComparableFields", singleton);
+                // criterionFieldJSON.put("singletonComparableFields", singleton);
 
                 // known group ?
                 String groupID = null;
