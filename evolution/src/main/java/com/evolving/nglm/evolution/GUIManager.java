@@ -19767,17 +19767,22 @@ public class GUIManager
     *****************************************/
 
     Deliverable searchedBonus = null;
-    for(GUIManagedObject storedDeliverable : deliverableService.getStoredDeliverables()){
-      if(storedDeliverable instanceof Deliverable && (((Deliverable) storedDeliverable).getDeliverableID().equals(bonusID))){
-        searchedBonus = (Deliverable)storedDeliverable;
+    for (GUIManagedObject storedDeliverable : deliverableService.getStoredDeliverables())
+      {
+        if (storedDeliverable instanceof Deliverable && bonusID.equals(((Deliverable) storedDeliverable).getExternalAccountID()))
+          {
+              searchedBonus = (Deliverable) storedDeliverable;
+              break;
+          }
       }
-    }
-    if(searchedBonus == null){
-      log.info("bonus " + bonusID + " not found");
-      response.put("responseCode", "BonusNotFound");
-      return JSONUtilities.encodeObject(response);
-    }
     
+    if (searchedBonus == null)
+      {
+        log.info("bonus " + bonusID + " not found");
+        response.put("responseCode", "BonusNotFound");
+        return JSONUtilities.encodeObject(response);
+      }
+
     /*****************************************
     *
     *  generate commodity delivery request
