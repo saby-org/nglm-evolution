@@ -411,34 +411,38 @@ public class ThirdPartyJSONGenerator
                                           if (sc.getSalesChannelIDs() != null && sc.getSalesChannelIDs().contains(salesChannel))
                                             {
                                               Map<String, Object> salesChannelJSON = new LinkedHashMap<>(); // to preserve order when displaying
-                                              OfferPrice offerPrice = sc.getPrice();
-                                              long amount = offerPrice.getAmount();
-                                              String paymentMeanID = offerPrice.getPaymentMeanID();
                                               String paymentMean = "";
-                                              String currencyID = offerPrice.getSupportedCurrencyID();
                                               String currency = "";
-                                              GUIManagedObject paymentMeanObject = paymentMeanService.getStoredPaymentMean(paymentMeanID);
-                                              if (paymentMeanObject != null && (paymentMeanObject instanceof PaymentMean))
+                                              long amount = 0;
+                                              OfferPrice offerPrice = sc.getPrice(); // Can be null for free offer
+                                              if (offerPrice != null)
                                                 {
-                                                  paymentMean = ((PaymentMean) paymentMeanObject).getDisplay();
-                                                }
-                                              if (currencyID != null)
-                                                {
-                                                  for (SupportedCurrency supportedCurrency : Deployment.getSupportedCurrencies().values())
+                                                  amount = offerPrice.getAmount();
+                                                  String paymentMeanID = offerPrice.getPaymentMeanID();
+                                                  String currencyID = offerPrice.getSupportedCurrencyID();
+                                                  GUIManagedObject paymentMeanObject = paymentMeanService.getStoredPaymentMean(paymentMeanID);
+                                                  if (paymentMeanObject != null && (paymentMeanObject instanceof PaymentMean))
                                                     {
-                                                      JSONObject supportedCurrencyJSON = supportedCurrency.getJSONRepresentation();
-                                                      if (supportedCurrencyJSON != null && currencyID.equals(supportedCurrencyJSON.get("id")))
+                                                      paymentMean = ((PaymentMean) paymentMeanObject).getDisplay();
+                                                    }
+                                                  if (currencyID != null)
+                                                    {
+                                                      for (SupportedCurrency supportedCurrency : Deployment.getSupportedCurrencies().values())
                                                         {
-                                                          currency = "" + supportedCurrencyJSON.get("display");
-                                                          break;
+                                                          JSONObject supportedCurrencyJSON = supportedCurrency.getJSONRepresentation();
+                                                          if (supportedCurrencyJSON != null && currencyID.equals(supportedCurrencyJSON.get("id")))
+                                                            {
+                                                              currency = "" + supportedCurrencyJSON.get("display");
+                                                              break;
+                                                            }
                                                         }
                                                     }
-                                                  salesChannelJSON.put("paymentMean", paymentMean);
-                                                  salesChannelJSON.put("amount", amount);
-                                                  salesChannelJSON.put("currency", currency);
-                                                  offerMap.put("price", salesChannelJSON);
-                                                  break;
                                                 }
+                                              salesChannelJSON.put("paymentMean", paymentMean);
+                                              salesChannelJSON.put("amount", amount);
+                                              salesChannelJSON.put("currency", currency);
+                                              offerMap.put("price", salesChannelJSON);
+                                              break;
                                             }
                                         }
                                       }
