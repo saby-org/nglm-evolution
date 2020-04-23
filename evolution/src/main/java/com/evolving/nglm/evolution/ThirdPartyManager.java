@@ -3444,7 +3444,11 @@ public class ThirdPartyManager
     ****************************************/
 
    String subscriberID = resolveSubscriberID(jsonRoot);
-   String presentationStrategyDisplay = JSONUtilities.decodeString(jsonRoot, "presentationStrategy", true);
+   
+   // one of the two must be there
+   String presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "presentationStrategyID", false);
+   String presentationStrategyDisplay = JSONUtilities.decodeString(jsonRoot, "presentationStrategy", false);
+
    String tokenTypeDisplay = JSONUtilities.decodeString(jsonRoot, "tokenType", true);
 
    // _allow_multiple_token_ indicates if the solution creates a new token if there is still one valid for this strategy
@@ -3473,19 +3477,36 @@ public class ThirdPartyManager
          return JSONUtilities.encodeObject(response);
        }
 
-     String presentationStrategyID = null;
-     for (PresentationStrategy presentationStrategy : presentationStrategyService.getActivePresentationStrategies(now))
+     if (presentationStrategyID != null)
        {
-         if (presentationStrategy.getGUIManagedObjectDisplay().equals(presentationStrategyDisplay))
+         if (presentationStrategyService.getActivePresentationStrategy(presentationStrategyID, now) == null)
            {
-             presentationStrategyID = presentationStrategy.getGUIManagedObjectID();
-             break;
+             response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode());
+             response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseMessage());
+             return JSONUtilities.encodeObject(response);          
            }
        }
-     if (presentationStrategyID == null)
+     else if (presentationStrategyDisplay != null)
        {
-         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode());
-         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseMessage());
+         for (PresentationStrategy presentationStrategy : presentationStrategyService.getActivePresentationStrategies(now))
+           {
+             if (presentationStrategy.getGUIManagedObjectDisplay().equals(presentationStrategyDisplay))
+               {
+                 presentationStrategyID = presentationStrategy.getGUIManagedObjectID();
+                 break;
+               }
+           }
+         if (presentationStrategyID == null)
+           {
+             response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode());
+             response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseMessage());
+             return JSONUtilities.encodeObject(response);          
+           }
+       }
+     else
+       {
+         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
+         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage());
          return JSONUtilities.encodeObject(response);          
        }
 
@@ -3558,7 +3579,7 @@ public class ThirdPartyManager
            {
              if (token instanceof DNBOToken && ((DNBOToken) token).getPresentationStrategyID().equals(presentationStrategyID))
                {
-                 response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, callingChannel);
+                 response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, callingChannel, null, paymentMeanService);
                  response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
                  response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
                  return JSONUtilities.encodeObject(response);
@@ -3674,7 +3695,7 @@ public class ThirdPartyManager
       *  decorate and response
       *
       *****************************************/
-     response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(newToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, callingChannel);
+     response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(newToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, callingChannel, presentedOffers, paymentMeanService);
      response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
      response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
    }
@@ -3893,7 +3914,7 @@ public class ThirdPartyManager
       *  decorate and response
       *
       *****************************************/
-     response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, null);
+     response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService);
      response.putAll(resolveAllSubscriberIDs(subscriberProfile));
      response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
      response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
@@ -4513,7 +4534,7 @@ public class ThirdPartyManager
               tokenStream = tokenStream.filter(token -> tokenStatusForStreams.equalsIgnoreCase(token.getTokenStatus().getExternalRepresentation()));
             }
           tokensJson = tokenStream
-              .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, null))
+              .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService))
               .collect(Collectors.toList());
         }
 
