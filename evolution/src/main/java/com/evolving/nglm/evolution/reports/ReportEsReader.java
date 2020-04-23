@@ -140,6 +140,7 @@ public class ReportEsReader
       {
         this.esIndex.put(elem.getKey().toLowerCase(), elem.getValue());
       }
+    log.info("Starting ES read with indexes : " + this.esIndex);
   }
 
   public ReportEsReader(String elasticKey, String topicName, String kafkaNodeList, String kzHostList, String esNode, LinkedHashMap<String, QueryBuilder> esIndex)
@@ -186,7 +187,7 @@ public class ReportEsReader
     String indexes = "";
     for (String s : esIndex.keySet())
       indexes += s + " ";
-    log.info("Reading data from ES in " + indexes + "indexes and writing to " + topicName + " topic.");
+    log.info("Reading data from ES in \"" + indexes + "\" indexes and writing to \"" + topicName + "\" topic.");
 
     ReportUtils.createTopic(topicName, kzHostList); // In case it does not exist
 
@@ -274,7 +275,7 @@ public class ReportEsReader
                 log.trace("getSkippedShards = " + searchResponse.getSkippedShards());
                 log.trace("getTotalShards = " + searchResponse.getTotalShards());
                 log.trace("getTook = " + searchResponse.getTook());
-                log.info("for " + indicesToRead + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
+                log.info("for " + Arrays.toString(indicesToRead) + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
               }
             boolean alreadyTraced1 = false;
             boolean alreadyTraced2 = false;
