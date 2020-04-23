@@ -45,7 +45,8 @@ public class LoyaltyProgramCustomerStatesESReader
         kafkaNodeList,
         kzHostList,
         esNode,
-        esIndexWithQuery
+        esIndexWithQuery,
+        true
         );
 
     reportEsReader.start();

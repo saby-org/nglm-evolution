@@ -24,7 +24,7 @@ public class JourneysReportDriver extends ReportDriver{
         log.debug("Processing Journeys Report with "+report.getName());
         String topicPrefix = super.getTopicPrefix(report.getName());
         
-        String topic1 = topicPrefix+"_a";
+        String topic1 = topicPrefix+"-a";
         String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
         int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
         log.debug("PHASE 1 : read ElasticSearch");

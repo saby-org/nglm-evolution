@@ -356,7 +356,15 @@ public class ReportManager implements Watcher
       Class<ReportDriver> reportClass = (Class<ReportDriver>) Class.forName(report.getReportClass());
       Constructor<ReportDriver> cons = reportClass.getConstructor();
       ReportDriver rd = cons.newInstance((Object[]) null);
-      rd.produceReport(report, zkHostList, brokerServers, esNode, csvFilename, params);
+      try
+      {
+        rd.produceReport(report, zkHostList, brokerServers, esNode, csvFilename, params);
+      }
+      catch (Exception e)
+      {
+        // handle any kind of exception that can happen during generating the report, and do not crash the container
+        log.error("Exception processing report " + reportName + " : " + e);
+      }
       log.trace("---> Finished report "+reportName);
     }
     catch (ClassNotFoundException e)

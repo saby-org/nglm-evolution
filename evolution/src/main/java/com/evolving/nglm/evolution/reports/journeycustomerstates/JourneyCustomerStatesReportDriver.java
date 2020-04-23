@@ -13,8 +13,8 @@ import java.util.concurrent.TimeUnit;
 public class JourneyCustomerStatesReportDriver extends ReportDriver {
 
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatesReportDriver.class);
-  public static final String SUBSCRIBER_ES_INDEX = "subscriberprofile";
   public static final String JOURNEY_ES_INDEX = "journeystatistic-";
+  public static final String SUBSCRIBER_ES_INDEX = "subscriberprofile";
 	  
 	@Override
 	public void produceReport(
@@ -27,15 +27,14 @@ public class JourneyCustomerStatesReportDriver extends ReportDriver {
 		
     	log.debug("Processing Journey Customer States Report with "+report+" and "+params);
     	String topicPrefix = super.getTopicPrefix(report.getName());
-    	String topic1 = topicPrefix+"_a";
-    	String topic2 = topicPrefix+"_b";
+    	String topic1 = topicPrefix+"-a";
+    	String topic2 = topicPrefix+"-b";
         String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
         int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
     	// We add a random number to make sure each instance of this report starts from scratch
     	// If we need to parallelise this phase, remove the random number.
-    	String appIdPrefix = "JourneyAppId_"+System.currentTimeMillis();
-    	log.debug("data for report : "
-    			+topic1+" "+topic2+JOURNEY_ES_INDEX+" "+appIdPrefix);
+      String appIdPrefix = report.getName() + "_" + getTopicPrefixDate();
+    	log.debug("data for report : "+topic1+" "+topic2+JOURNEY_ES_INDEX+" "+appIdPrefix);
 
     	log.debug("PHASE 1 : read ElasticSearch");
     	log.trace(topic1+","+kafka+","+zookeeper+","+elasticSearch+","+JOURNEY_ES_INDEX+","+SUBSCRIBER_ES_INDEX);
@@ -54,7 +53,7 @@ public class JourneyCustomerStatesReportDriver extends ReportDriver {
 		JourneyCustomerStatesReportCsvWriter.main(new String[]{
 				kafka, topic2, csvFilename
 		});
-    ReportUtils.cleanupTopics(topic1, topic2, JourneyCustomerStatesReportObjects.APPLICATION_ID_PREFIX, appIdPrefix, JourneyCustomerStatesReportProcessor.STORENAME);
+    ReportUtils.cleanupTopics(topic1, topic2, ReportUtils.APPLICATION_ID_PREFIX, appIdPrefix, JourneyCustomerStatesReportProcessor.STORENAME);
 	  log.debug("Finished with Journey Customer States Report");
 		
 	}

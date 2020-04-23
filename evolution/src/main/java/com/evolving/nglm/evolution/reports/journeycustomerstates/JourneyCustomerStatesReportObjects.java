@@ -18,7 +18,6 @@ public class JourneyCustomerStatesReportObjects {
 	public static final int INDEX_CUSTOMER = 0;
 	public static final int INDEX_JOURNEY = 1;
 	
-	public static final String APPLICATION_ID_PREFIX = "1-evol-appid-";
 	public static final String CLIENTID_PREFIX = "client-journeys-";
 
 	public static final String KEY_STR = "subscriberID"; // Must exist in schemas of both indexes.

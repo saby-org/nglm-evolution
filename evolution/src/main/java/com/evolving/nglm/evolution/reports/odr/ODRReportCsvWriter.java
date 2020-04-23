@@ -59,13 +59,16 @@ public class ODRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(featureId);
     headerFieldsOrder.add(moduleName);
     headerFieldsOrder.add(featureDisplay);
-    headerFieldsOrder.add(subscriberID);
     headerFieldsOrder.add(offerID);
     headerFieldsOrder.add(offerDisplay);
     headerFieldsOrder.add(salesChannelID);
     headerFieldsOrder.add(voucherPartnerID);
     headerFieldsOrder.add(salesChannelDisplay);
     headerFieldsOrder.add(customerID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+      {
+        headerFieldsOrder.add(alternateID.getName());
+      }
     headerFieldsOrder.add(offerContent);
     headerFieldsOrder.add(eventDatetime);
     headerFieldsOrder.add(originatingDeliveryRequestID);
@@ -162,7 +165,8 @@ public class ODRReportCsvWriter implements ReportCsvFactory
             Module module = Module.fromExternalRepresentation(String.valueOf(odrFields.get(moduleId)));
             String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(odrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
             result.put(featureDisplay, feature);
-            result.put(moduleName, module.toString());           
+            result.put(moduleName, module.toString());
+            
 
            // odrFields.remove(featureId);
             //odrFields.remove(moduleId);
@@ -362,7 +366,9 @@ public class ODRReportCsvWriter implements ReportCsvFactory
               Module module = Module.fromExternalRepresentation(String.valueOf(odrFields.get(moduleId)));
               String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(odrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
               oderRecs.put(featureDisplay, feature);
-              oderRecs.put(moduleName, module.toString());           
+              oderRecs.put(moduleName, module.toString());
+              oderRecs.put(featureId, odrFields.get(featureId));
+              oderRecs.put(moduleId, odrFields.get(moduleId));
 
              // odrFields.remove(featureId);
               //odrFields.remove(moduleId);

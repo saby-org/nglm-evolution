@@ -74,7 +74,7 @@ public class NotificationReportESReader
         firstEntry = false;
       }
 
-    log.info("Reading data from ES in (" + esIndexNotifList.toString() + ")  index and writing to " + topicName + " topic.");
+    log.info("Reading data from ES in (" + esIndexNotifList.toString() + ") and " + esIndexCustomer + " indexes and writing to " + topicName + " topic.");
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexNotifList.toString(), QueryBuilders.matchAllQuery());

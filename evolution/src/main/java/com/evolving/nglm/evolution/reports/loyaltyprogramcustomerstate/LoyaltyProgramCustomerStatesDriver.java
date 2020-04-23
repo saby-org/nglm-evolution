@@ -20,12 +20,10 @@ public class LoyaltyProgramCustomerStatesDriver extends ReportDriver
     log.debug("Processing LoyaltyProgramCustomerStates Report with "+report.getName());
     String topicPrefix = super.getTopicPrefix(report.getName());
     
-    String topic1 = topicPrefix+"_a";
+    String topic1 = topicPrefix+"-a";
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-    String appIdPrefix = "JourneyAppId_"+System.currentTimeMillis();
-    log.debug("data for report : "
-            +topic1+" "+SUBSCRIBER_ES_INDEX+" "+appIdPrefix);
+    log.debug("data for report : " +topic1+" "+SUBSCRIBER_ES_INDEX);
 
     log.debug("PHASE 1 : read ElasticSearch");
     log.trace(topic1+","+kafka+","+zookeeper+","+elasticSearch+","+SUBSCRIBER_ES_INDEX);

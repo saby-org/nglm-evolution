@@ -104,8 +104,8 @@ public class JourneyCustomerStatisticsReportProcessor implements ReportProcessor
                         log.trace("Got k="+k+" v="+v+" agg="+agg);
                         ReportElement re = new ReportElement(agg);
                         final int indexJourneyStat = 0;
-                        final int indexSubscriber = 1;
-                        final int indexJourneyMetric = 2;
+                        final int indexJourneyMetric = 1;
+                        final int indexSubscriber = 2;
                         if (v.type == indexJourneyStat) {
                           Map<String, Object> journeyStatV = v.fields.get(indexJourneyStat);
                           if (re.fields.get(indexJourneyStat) == null)
@@ -310,7 +310,7 @@ public class JourneyCustomerStatisticsReportProcessor implements ReportProcessor
         String instNbStr   = args[5];
         
         int instanceNb = Integer.parseInt(instNbStr);
-        String appId = JourneyCustomerStatesReportObjects.APPLICATION_ID_PREFIX+appIdSuffix;
+        String appId = ReportUtils.APPLICATION_ID_PREFIX+appIdSuffix;
 
         ReportProcessorFactory reportFactory = new JourneyCustomerStatisticsReportProcessor();
         ReportProcessor reportProcessor = new ReportProcessor(

@@ -55,6 +55,8 @@ import scala.collection.Set;
  */
 public class ReportUtils {
 
+  public static final String APPLICATION_ID_PREFIX = "Reports_";
+
 	private static final Logger log = LoggerFactory.getLogger(ReportUtils.class);
 
 	/**
@@ -518,5 +520,6 @@ public class ReportUtils {
     String res = JSONUtilities.encodeObject(json).toString();
     return res;
   }
+
   
 }
