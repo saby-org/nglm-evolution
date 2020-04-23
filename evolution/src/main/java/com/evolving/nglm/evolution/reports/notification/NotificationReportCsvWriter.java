@@ -49,8 +49,11 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(featureId);
     headerFieldsOrder.add(moduleName);
     headerFieldsOrder.add(featureDisplay);
-    headerFieldsOrder.add(subscriberID);
     headerFieldsOrder.add(customerID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+      {
+        headerFieldsOrder.add(alternateID.getName());
+      }
     headerFieldsOrder.add(creationDate);
     headerFieldsOrder.add(deliveryDate);
     headerFieldsOrder.add(originatingDeliveryRequestID);
@@ -426,6 +429,8 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
                 String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(notifFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
                 notifRecs.put(featureDisplay, feature);
                 notifRecs.put(moduleName, module.toString());
+                notifRecs.put(featureId, notifFields.get(featureId));
+                notifRecs.put(moduleId, notifFields.get(moduleId));
 
                 notifFields.remove(featureId);
                 notifFields.remove(moduleId);

@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import org.json.simple.JSONObject;
@@ -122,5 +123,26 @@ public abstract class ActionManager
   public interface Action
   {
     public ActionType getActionType();
+  }
+  
+  
+  /*****************************************
+  *
+  *  utils
+  *
+  *****************************************/
+  
+  public static String extractWorkflowFeatureID(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, String deliveryRequestSource)
+  {
+    Journey sourceJourney = (Journey) evolutionEventContext.getJourneyService().getStoredJourney(deliveryRequestSource);
+    if(sourceJourney != null && sourceJourney.getGUIManagedObjectType() == GUIManagedObjectType.Workflow)
+      {
+        if(subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getCallingJourneyRequest() != null)
+          {
+            deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getCallingJourneyRequest().getDeliveryRequestSource();
+          }
+        
+      }
+    return deliveryRequestSource;
   }
 }

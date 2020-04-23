@@ -4,7 +4,6 @@ import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportProcessor;
-import com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportObjects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,13 +23,13 @@ public class NotificationReportDriver extends ReportDriver{
       String[] params) {
         log.debug("Processing Subscriber Report with "+report.getName());
         String topicPrefix = super.getTopicPrefix(report.getName());
-        String topic1 = topicPrefix+"_a";
-        String topic2 = topicPrefix+"_b";
+        String topic1 = topicPrefix+"-a";
+        String topic2 = topicPrefix+"-b";
         String esIndexNotif = "detailedrecords_messages-";
         String esIndexCustomer = "subscriberprofile";
         String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
         int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-        String appIdPrefix = "NotifAppId_"+System.currentTimeMillis();
+        String appIdPrefix = report.getName() + "_" + getTopicPrefixDate();
         
         log.debug("PHASE 1 : read ElasticSearch");
         NotificationReportESReader.main(new String[]{
@@ -48,7 +47,7 @@ public class NotificationReportDriver extends ReportDriver{
         NotificationReportCsvWriter.main(new String[]{
             kafka, topic2, csvFilename
         });
-        ReportUtils.cleanupTopics(topic1, topic2, JourneyCustomerStatesReportObjects.APPLICATION_ID_PREFIX, appIdPrefix, NotificationReportProcessor.STORENAME);
+        ReportUtils.cleanupTopics(topic1, topic2, ReportUtils.APPLICATION_ID_PREFIX, appIdPrefix, NotificationReportProcessor.STORENAME);
         log.debug("Finished with BDR Report");
   }
 }

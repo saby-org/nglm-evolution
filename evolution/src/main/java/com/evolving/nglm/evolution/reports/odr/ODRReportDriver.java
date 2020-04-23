@@ -7,7 +7,6 @@ import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportProcessor;
-import com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportObjects;
 
 import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
@@ -27,11 +26,11 @@ public class ODRReportDriver extends ReportDriver
   {
     log.debug("Processing Subscriber Report with " + report.getName());
     String topicPrefix = super.getTopicPrefix(report.getName());
-    String topic1 = topicPrefix + "_a";
-    String topic2 = topicPrefix + "_b";
+    String topic1 = topicPrefix + "-a";
+    String topic2 = topicPrefix + "-b";
     String esIndexOdr = "detailedrecords_offers-";
     String esIndexCustomer = "subscriberprofile";
-    String appIdPrefix = "ODRAppId_" + System.currentTimeMillis();
+    String appIdPrefix = report.getName() + "_" + getTopicPrefixDate();
 
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
@@ -56,7 +55,7 @@ public class ODRReportDriver extends ReportDriver
 
     log.debug("PHASE 3 : write csv file ");
     ODRReportCsvWriter.main(new String[] { kafka, topic2, csvFilename });
-    ReportUtils.cleanupTopics(topic1, topic2, JourneyCustomerStatesReportObjects.APPLICATION_ID_PREFIX, appIdPrefix, ODRReportProcessor.STORENAME);
+    ReportUtils.cleanupTopics(topic1, topic2, ReportUtils.APPLICATION_ID_PREFIX, appIdPrefix, ODRReportProcessor.STORENAME);
     log.debug("Finished with ODR Report");
   }
 }

@@ -552,6 +552,8 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
       *****************************************/
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      
       EmptyFulfillmentOperation operation = this.operation;
 
       /*****************************************

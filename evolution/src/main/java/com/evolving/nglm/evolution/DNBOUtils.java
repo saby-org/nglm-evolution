@@ -77,7 +77,9 @@ public class DNBOUtils
     int featureID = 0;
     try
     {
-      featureID = Integer.parseInt(subscriberEvaluationRequest.getJourneyState().getJourneyID());
+      String featureIDString = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      featureIDString = ActionManager.extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, featureIDString);
+      featureID = Integer.parseInt(featureIDString);
     }
     catch (NumberFormatException e)
     {
@@ -327,6 +329,8 @@ public class DNBOUtils
       String offerID = "invalid-offerID";
       String salesChannelID = "invalid-salesChannelID";
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      
       int quantity = 1;
       // create an invalid purchase, so that the journey node uses "failed" connector
       PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "", "");
