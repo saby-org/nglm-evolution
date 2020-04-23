@@ -677,6 +677,8 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       *****************************************/
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      
       String email = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getEmail();
       String language = subscriberEvaluationRequest.getLanguage();
       MailTemplate baseTemplate = (MailTemplate) emailMessage.resolveTemplate(evolutionEventContext);

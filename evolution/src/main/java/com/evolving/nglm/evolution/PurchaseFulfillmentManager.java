@@ -2685,6 +2685,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *****************************************/
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
 
       /*****************************************
       *
