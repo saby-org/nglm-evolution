@@ -43,8 +43,8 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
 
     log.info("We got " + key + " " + re);
     Map<String, Object> journeyStats = re.fields.get(0);
-    Map<String, Object> subscriberFieldsMap = re.fields.get(1);
-    Map<String, Object> journeyMetric = re.fields.get(2);
+    Map<String, Object> journeyMetric = re.fields.get(1);
+    Map<String, Object> subscriberFieldsMap = re.fields.get(2);
     for (Object subscriberFieldsObj : subscriberFieldsMap.values()) // we don't care about the keys
       {
         Map<String, Object> subscriberFields = (Map<String, Object>) subscriberFieldsObj;

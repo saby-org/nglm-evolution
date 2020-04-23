@@ -3,7 +3,6 @@ package com.evolving.nglm.evolution.reports.bdr;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
-import com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportObjects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,14 +22,14 @@ public class BDRReportDriver extends ReportDriver{
       String[] params) {
         log.debug("Processing Subscriber Report with "+report.getName());
         String topicPrefix = super.getTopicPrefix(report.getName());
-        String topic1 = topicPrefix+"_a";
-        String topic2 = topicPrefix+"_b";
+        String topic1 = topicPrefix+"-a";
+        String topic2 = topicPrefix+"-b";
         String esIndexBdr = "detailedrecords_bonuses-";
         String esIndexCustomer = "subscriberprofile";
         log.debug("PHASE 1 : read ElasticSearch");
         String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
         int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-        String appIdPrefix = "BDRAppId_"+System.currentTimeMillis();
+        String appIdPrefix = report.getName() + "_" + getTopicPrefixDate();
         BDRReportESReader.main(new String[]{
             topic1, kafka, zookeeper, elasticSearch, esIndexBdr, esIndexCustomer, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit 
         });         
@@ -46,7 +45,7 @@ public class BDRReportDriver extends ReportDriver{
         BDRReportCsvWriter.main(new String[]{
             kafka, topic2, csvFilename
         });
-        ReportUtils.cleanupTopics(topic1, topic2, JourneyCustomerStatesReportObjects.APPLICATION_ID_PREFIX, appIdPrefix, BDRReportProcessor.STORENAME);
+        ReportUtils.cleanupTopics(topic1, topic2, ReportUtils.APPLICATION_ID_PREFIX, appIdPrefix, BDRReportProcessor.STORENAME);
         log.debug("Finished with BDR Report");
 
   }

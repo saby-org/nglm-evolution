@@ -252,7 +252,11 @@ public class ReportEsReader
             //  indicesToRead is blank?
             //
             
-            if (indicesToRead == null || indicesToRead.length == 0) continue;
+            if (indicesToRead == null || indicesToRead.length == 0)
+              {
+                i++;
+                continue;
+              }
             
             searchRequest.indices(indicesToRead);
             searchRequest.source().size(getScrollSize());
@@ -272,7 +276,8 @@ public class ReportEsReader
                 log.trace("getTook = " + searchResponse.getTook());
                 log.info("for " + indicesToRead + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
               }
-            boolean alreadyTraced = false;
+            boolean alreadyTraced1 = false;
+            boolean alreadyTraced2 = false;
             while (searchHits != null && searchHits.length > 0)
               {
                 log.debug("got " + searchHits.length + " hits");
@@ -284,10 +289,10 @@ public class ReportEsReader
                     Object res = sourceMap.get(elasticKey);
                     if (res == null)
                       {
-                        if (!alreadyTraced)
+                        if (!alreadyTraced1)
                           {
                             log.warn("unexpected, null key while reading " + Arrays.stream(indicesToRead).map(s -> "\""+s+"\"").collect(Collectors.toList()) + " sourceMap=" + sourceMap);
-                            alreadyTraced = true;
+                            alreadyTraced1 = true;
                           }
                       }
                     else
@@ -299,15 +304,20 @@ public class ReportEsReader
                         if (onlyKeepAlternateIDs && (i == (esIndex.size()-1))) // subscriber index is always last
                           {
                             // size optimize : only keep what is needed for the join later
+                            if (!alreadyTraced2)
+                              {
+                                log.info("Keeping only alternate IDs");
+                                alreadyTraced2 = true;
+                              }
                             miniSourceMap = new HashMap<>();
                             miniSourceMap.put(elasticKey, sourceMap.get(elasticKey));
                             for (AlternateID alternateID : Deployment.getAlternateIDs().values())
                               {
                                 String name = alternateID.getName();
-                                log.trace("Only keep "+name);
+                                log.trace("Only keep alternateID " + name);
                                 if (sourceMap.get(name) == null)
                                   {
-                                    log.trace("Unexpected : no value for " + name);
+                                    log.trace("Unexpected : no value for alternateID " + name);
                                   }
                                 else
                                   {

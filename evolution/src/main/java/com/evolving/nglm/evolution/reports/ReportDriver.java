@@ -45,20 +45,29 @@ public abstract class ReportDriver {
 	 * @param reportName
 	 * @return
 	 */
-	public String getTopicPrefix(String reportName) {
-		final String DateFormat = "yyyyMMdd_HHmmss";
-		String topicPrefix = reportName;
-		String topicSuffix = "";
-    	try {
-    		SimpleDateFormat sdf = new SimpleDateFormat(DateFormat);
-    		topicSuffix = sdf.format(SystemTime.getCurrentTime());
-    	} catch (IllegalArgumentException e) {
-    		log.error(DateFormat+" is invalid, using default "+e.getLocalizedMessage());
-    		topicSuffix = ""+System.currentTimeMillis();
-		}
-    	String topic = topicPrefix + "_" + topicSuffix;
-    	log.debug("topic : "+topic);
+	public String getTopicPrefix(String reportName)
+	{
+   	String topic = ReportUtils.APPLICATION_ID_PREFIX + reportName + "_" + getTopicPrefixDate();
+   	log.debug("topic : "+topic);
 		return topic;
 	}
+	
+  public String getTopicPrefixDate()
+  {
+    final String DateFormat = "yyyyMMdd_HHmmss";
+    String topicSuffix = "";
+      try
+      {
+        SimpleDateFormat sdf = new SimpleDateFormat(DateFormat);
+        topicSuffix = sdf.format(SystemTime.getCurrentTime());
+      }
+      catch (IllegalArgumentException e)
+      {
+        log.error(DateFormat+" is invalid, using default "+e.getLocalizedMessage());
+        topicSuffix = ""+System.currentTimeMillis();
+    }
+    return topicSuffix;
+  }
+	
 }
 
