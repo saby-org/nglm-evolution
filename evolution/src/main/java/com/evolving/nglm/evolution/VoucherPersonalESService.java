@@ -60,7 +60,7 @@ public class VoucherPersonalESService{
       this.cacheCleaner.scheduleAtFixedRate(new TimerTask() {
         @Override
         public void run() {
-          log.info("VoucherPersonalESService-cacheCleaner : start execution");
+          if(log.isDebugEnabled()) log.debug("VoucherPersonalESService-cacheCleaner : start execution");
           // we just try get back slowly to 0 if no more concurrency
           threadsPosition.forEach((thread,position)->{
             Integer newPosition=position>0?position-1:0;
@@ -70,7 +70,7 @@ public class VoucherPersonalESService{
           // we just clear the "zero stock cache"
           if(log.isDebugEnabled()) log.debug("VoucherPersonalESService-cacheCleaner : clearing zeroStockVoucherIdCached, size was "+zeroStockVoucherIdCached.size());
           zeroStockVoucherIdCached.clear();
-          log.info("VoucherPersonalESService-cacheCleaner : finish execution");
+          if(log.isDebugEnabled()) log.debug("VoucherPersonalESService-cacheCleaner : finish execution");
         }
       },cacheCleanerFrequencyInMilliSec,cacheCleanerFrequencyInMilliSec);
     }

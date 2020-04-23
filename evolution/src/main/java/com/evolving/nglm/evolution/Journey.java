@@ -7,8 +7,6 @@
 package com.evolving.nglm.evolution;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -56,8 +54,9 @@ import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
+import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
-public class Journey extends GUIManagedObject
+public class Journey extends GUIManagedObject implements StockableItem
 {
   /*****************************************
   *
@@ -191,7 +190,7 @@ public class Journey extends GUIManagedObject
   //  schema
   //
 
-  private static int currentSchemaVersion = 5;
+  private static int currentSchemaVersion = 6;
   private static Schema schema = null;
   static
   {
@@ -216,6 +215,7 @@ public class Journey extends GUIManagedObject
     schemaBuilder.field("appendInclusionLists", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("appendExclusionLists", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("approval", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("maxNoOfCustomers", Schema.OPTIONAL_INT32_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -255,6 +255,7 @@ public class Journey extends GUIManagedObject
   private boolean appendInclusionLists;
   private boolean appendExclusionLists;
   private JourneyStatus approval;
+  private Integer maxNoOfCustomers;
 
   /****************************************
   *
@@ -287,6 +288,10 @@ public class Journey extends GUIManagedObject
   public boolean getAppendExclusionLists() { return appendExclusionLists; }
   public JourneyStatus getApproval() {return JourneyStatus.Unknown == approval ? JourneyStatus.Pending : approval; }
   public void setApproval(JourneyStatus approval) { this.approval = approval; }
+  public Integer getMaxNoOfCustomers(){return maxNoOfCustomers;}
+  // journey customers limit implemented thanks to stocks :
+  @Override public String getStockableItemID() { return "maxNoOfCustomers-journey-"+getJourneyID(); }
+  @Override public Integer getStock() { return getMaxNoOfCustomers(); }
 
   //
   //  package protected
@@ -560,7 +565,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, JourneyStatus approval)
+  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, JourneyStatus approval, Integer maxNoOfCustomers)
   {
     super(schemaAndValue);
     this.effectiveEntryPeriodEndDate = effectiveEntryPeriodEndDate;
@@ -580,6 +585,7 @@ public class Journey extends GUIManagedObject
     this.appendInclusionLists = appendInclusionLists;
     this.appendExclusionLists = appendExclusionLists;
     this.approval = approval;
+    this.maxNoOfCustomers = maxNoOfCustomers;
   }
 
   /*****************************************
@@ -610,6 +616,7 @@ public class Journey extends GUIManagedObject
     struct.put("appendInclusionLists", journey.getAppendInclusionLists());
     struct.put("appendExclusionLists", journey.getAppendExclusionLists());
     struct.put("approval", journey.getApproval().getExternalRepresentation());
+    struct.put("maxNoOfCustomers", journey.getMaxNoOfCustomers());
     return struct;
   }
 
@@ -753,6 +760,7 @@ public class Journey extends GUIManagedObject
     boolean appendInclusionLists = (schemaVersion >= 3) ? valueStruct.getBoolean("appendInclusionLists") : false;
     boolean appendExclusionLists = (schemaVersion >= 3) ? valueStruct.getBoolean("appendExclusionLists") : false;
     JourneyStatus approval = (schemaVersion >= 5) ? JourneyStatus.fromExternalRepresentation(valueStruct.getString("approval")) : JourneyStatus.Pending;
+    Integer maxNoOfCustomers = (schemaVersion >=6) ? valueStruct.getInt32("maxNoOfCustomers") : null;
 
     /*****************************************
     *
@@ -814,7 +822,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, approval);
+    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, approval, maxNoOfCustomers);
   }
   
   /*****************************************
@@ -1055,6 +1063,17 @@ public class Journey extends GUIManagedObject
     Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.templateParameters, Collections.<String,CriterionField>emptyMap(), true, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
     this.approval = approval;
+    // by now GUI send String, to ask change to be cleaner
+    //this.maxNoOfCustomers = JSONUtilities.decodeInteger(jsonRoot,"maxNoOfCustomers",null);
+    this.maxNoOfCustomers=null;
+    String maxNoOfCustomersString = JSONUtilities.decodeString(jsonRoot,"maxNoOfCustomers",null);
+    if(maxNoOfCustomersString!=null){
+      try{
+        this.maxNoOfCustomers=Integer.parseInt(maxNoOfCustomersString);
+      }catch (NumberFormatException ex){
+        throw new GUIManagerException("maxNoOfCustomers has bad field value",maxNoOfCustomersString);
+      }
+    }
 
     /*****************************************
     *
@@ -1100,6 +1119,8 @@ public class Journey extends GUIManagedObject
     *  validate
     *
     *****************************************/
+
+    if(this.maxNoOfCustomers!=null && this.maxNoOfCustomers<0) throw new GUIManagerException("maxNoOfCustomers has bad field value", this.maxNoOfCustomers+"");
 
     //
     //  autoTargeting and parameters
