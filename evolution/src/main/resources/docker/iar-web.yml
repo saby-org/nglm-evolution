@@ -6,6 +6,8 @@ iar-web-<_KEY_>:
     iar_api_server_path_for_upload_files: "http://<_GUI_IAR_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_IAR_API_SERVER_PORT_>/api/file/flowupload"
     IAR_URL_ELASTICSEARCH_PATH: "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>"
     IAR_URL_KIBANA_PATH: "http://<_MONITORING_HOST_IP_>:<_KIBANA_PORT_>"
+    IAR_URL_GRAFANA_PATH: "<_IAR_URL_GRAFANA_PATH_>"
+    IAR_URL_OTHERWEB_PATH: "<_IAR_URL_OTHERWEB_PATH_>"
     TZ: <_DEPLOYMENT_TIMEZONE_>
     IAR_WEB_PORT: <_PORT_>
   deploy:

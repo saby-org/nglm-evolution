@@ -41,7 +41,8 @@ public class CustomerPointDetailsESReader
         kafkaNodeList,
         kzHostList,
         esNode,
-        esIndexWithQuery
+        esIndexWithQuery,
+        true
         );
 
     reportEsReader.start();

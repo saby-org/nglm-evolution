@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
@@ -1554,7 +1555,11 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       *
       *****************************************/
 
+      // retrieve the featureID that is the origin of this delivery request:
+      // - If the Journey related to JourneyState is not a Workflow, then featureID = JourneyState.getID
+      // - if the Journey related to JourneyState is a Workflown then we must extract the original featureID from the origial delivery Request that created the workflow instance
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
 
       // if external accountID needed (really for veon rewardManager here so far, but might worth having something generic for IN)
       String externalSubscriberID = null;
@@ -1582,5 +1587,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
       return Collections.<Action>singletonList(request);
     }
+
+
   }
 }

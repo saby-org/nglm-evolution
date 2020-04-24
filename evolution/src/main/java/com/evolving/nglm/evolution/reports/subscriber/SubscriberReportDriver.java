@@ -29,7 +29,7 @@ public class SubscriberReportDriver extends ReportDriver{
 			String csvFilename,
 			String[] params) {
     	log.debug("Processing Subscriber Report with "+report.getName());
-    	String topic = super.getTopicPrefix(report.getName());
+    	String topic = super.getTopicPrefix(report.getName()) + "-a";
     	String esIndexSubscriber = "subscriberprofile";
       String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
       int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
