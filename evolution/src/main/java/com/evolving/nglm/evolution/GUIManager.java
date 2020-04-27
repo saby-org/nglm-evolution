@@ -22,6 +22,8 @@ import java.lang.invoke.SwitchPoint;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -625,6 +627,15 @@ public class GUIManager
 
   public static void main(String[] args) throws Exception
   {
+    ClassLoader cl = ClassLoader.getSystemClassLoader();
+
+    URL[] urls = ((URLClassLoader)cl).getURLs();
+
+    for(URL url: urls){
+      System.out.println(url.getFile());
+    }
+
+    
     NGLMRuntime.initialize(true);
     GUIManager guiManager = new GUIManager();
     guiManager.start(args);

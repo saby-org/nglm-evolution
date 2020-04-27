@@ -2898,7 +2898,8 @@ public class Deployment
                   JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
                   if(items != null) {
                     JSONObject item = new JSONObject();
-                    item.put(cc.getToolboxID(), cc.getName());
+                    item.put("id", cc.getToolboxID());
+                    item.put("name", cc.getName());
                     // ensure this box effectively exists
                     if(getNodeTypes().get(cc.getToolboxID()) != null) {
                       items.add(item);
@@ -2907,6 +2908,7 @@ public class Deployment
                       log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
                     }
                   }
+                  section.getJSONRepresentation().put("items", items);
                 }
               }
             }
@@ -2943,15 +2945,17 @@ public class Deployment
                   JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
                   if(items != null) {
                     JSONObject item = new JSONObject();
-                    item.put(cc.getToolboxID(), cc.getName());
+                    item.put("id", cc.getToolboxID());
+                    item.put("name", cc.getName());
                     // ensure this box effectively exists
                     if(getNodeTypes().get(cc.getToolboxID()) != null) {
                       items.add(item);
                     } 
                     else {
                       log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
-                    }
+                    }                    
                   }
+                  section.getJSONRepresentation().put("items", items);
                 }
               }
             }
@@ -2988,7 +2992,8 @@ public class Deployment
                   JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
                   if(items != null) {
                     JSONObject item = new JSONObject();
-                    item.put(cc.getToolboxID(), cc.getName());
+                    item.put("id", cc.getToolboxID());
+                    item.put("name", cc.getName());
                     // ensure this box effectively exists
                     if(getNodeTypes().get(cc.getToolboxID()) != null) {
                       items.add(item);
@@ -2997,6 +3002,7 @@ public class Deployment
                       log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
                     }
                   }
+                  section.getJSONRepresentation().put("items", items);
                 }
               }
             }
