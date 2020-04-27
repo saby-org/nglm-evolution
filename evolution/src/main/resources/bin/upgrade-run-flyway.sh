@@ -21,7 +21,7 @@
 
 echo
 
-flyway --version
+flyway -v
 
 echo
 
