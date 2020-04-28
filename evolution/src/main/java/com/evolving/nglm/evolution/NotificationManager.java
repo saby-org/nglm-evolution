@@ -1039,12 +1039,12 @@ public class NotificationManager extends DeliveryManager implements Runnable
       
       // node.parameter.fromaddress
       tb.addParameter(new ParameterBuilder("node.parameter.fromaddress", "From Address", CriterionDataType.StringCriterion, false, true, null)
-          .addAvailableValue(new AvailableValueDynamicBuilder("#dialog_template_" + current.getID() + "#")));
+          .addAvailableValue(new AvailableValueDynamicBuilder("#dialog_source_address_" + current.getID() + "#")));
      
       // if the configuration of the communication channel allows the use the templates that are created from template GUI, let add the following parameter:
       if(current.allowGuiTemplate()) {
         tb.addParameter(new ParameterBuilder("node.parameter.dialog_template", "Message Template", CriterionDataType.StringCriterion, false, false, null)
-          .addAvailableValue(new AvailableValueDynamicBuilder("#dialog_source_address_" + current.getID() + "#")));
+          .addAvailableValue(new AvailableValueDynamicBuilder("#dialog_template_" + current.getID() + "#")));
       }
       if(current.allowInLineTemplate()) {
         if(current.getJSONRepresentation().get("parameters" ) != null) {

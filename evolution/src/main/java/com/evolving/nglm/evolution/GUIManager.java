@@ -14556,7 +14556,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
-    template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate) ? template : null;
+    template = (template != null && (template.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate || template.getGUIManagedObjectType() == GUIManagedObjectType.DialogTemplate)) ? template : null;
     JSONObject templateJSON = subscriberMessageTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
 
     /*****************************************
