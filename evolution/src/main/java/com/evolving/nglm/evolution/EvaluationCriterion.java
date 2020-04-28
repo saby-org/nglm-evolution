@@ -7,7 +7,6 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionContext;
 import com.evolving.nglm.evolution.Expression.ExpressionDataType;
@@ -19,59 +18,43 @@ import com.evolving.nglm.evolution.Expression.ExpressionTypeCheckException;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
 
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
 import org.apache.lucene.search.join.ScoreMode;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
-
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TimeZone;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -1201,6 +1184,33 @@ public class EvaluationCriterion
         result = result && criterion.evaluate(evaluationRequest);
       }
     return result;
+  }
+  
+  /*****************************************
+  *
+  *  esCountMatchCriteria
+  *
+  *****************************************/
+  //
+  // construct query
+  //
+  public static BoolQueryBuilder esCountMatchCriteriaGetQuery(List<EvaluationCriterion> criteriaList) throws CriterionException {
+    BoolQueryBuilder query = QueryBuilders.boolQuery();
+    for (EvaluationCriterion evaluationCriterion : criteriaList)
+      {
+        query = query.filter(evaluationCriterion.esQuery());
+      }
+    
+    return query;
+  }
+  
+  //
+  // execute query
+  //
+  public static long esCountMatchCriteriaExecuteQuery(BoolQueryBuilder query, RestHighLevelClient elasticsearch) throws IOException {
+    SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(query).size(0));
+    SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+    return searchResponse.getHits().getTotalHits().value;
   }
 
   /*****************************************

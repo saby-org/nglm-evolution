@@ -5479,6 +5479,11 @@ public class GUIManager
           journey.setApproval(JourneyStatus.StartedApproved);
         }
         
+        //
+        // Update targetCount
+        //
+        journey.setTargetCount(elasticsearch);
+        
         /*****************************************
         *
         *  store
@@ -6161,6 +6166,11 @@ public class GUIManager
 
         Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
 
+        //
+        // Update targetCount
+        //
+        bulkCampaign.setTargetCount(elasticsearch);
+        
         /*****************************************
         *
         *  store
@@ -7610,7 +7620,7 @@ public class GUIManager
     BoolQueryBuilder query = null;
     try
       {
-        query = Journey.processEvaluateProfileCriteriaGetQuery(criteriaList);
+        query = EvaluationCriterion.esCountMatchCriteriaGetQuery(criteriaList);
       }
     catch (CriterionException e)
       {
@@ -7641,7 +7651,7 @@ public class GUIManager
     long result;
     try
       {
-        result = Journey.processEvaluateProfileCriteriaExecuteQuery(query, elasticsearch);
+        result = EvaluationCriterion.esCountMatchCriteriaExecuteQuery(query, elasticsearch);
       }
     catch (IOException e)
       {
