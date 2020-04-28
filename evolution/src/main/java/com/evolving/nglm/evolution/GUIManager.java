@@ -1163,7 +1163,7 @@ public class GUIManager
     //  reports
     //
 
-    if (reportService.getStoredReports().size() == 0)
+    // Always update reports with initialReports. So when we upgrade, scheduling is updated (EVPRO-244)
       {
         try
           {
