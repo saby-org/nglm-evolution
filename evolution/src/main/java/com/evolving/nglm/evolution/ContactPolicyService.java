@@ -212,7 +212,7 @@ public class ContactPolicyService extends GUIService
   *
   ***************************************/
   
-  public List<String> getAllSegmentNamesUsingContactPolicy(String contactPolicyID, SegmentContactPolicyService segmentContactPolicyService)
+  public List<String> getAllSegmentIDsUsingContactPolicy(String contactPolicyID, SegmentContactPolicyService segmentContactPolicyService)
   {
     List<String> result = new ArrayList<String>();
     for(GUIManagedObject guiManagedObject : segmentContactPolicyService.getStoredGUIManagedObjects())
