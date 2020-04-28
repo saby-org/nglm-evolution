@@ -161,28 +161,17 @@ public class ContextVariable
     this.validated = false;
     this.expression = null;
     this.type = CriterionDataType.Unknown;
-    String valueTypeFromJSON = JSONUtilities.decodeString(jsonValue, "valueType", false);
-    if(valueTypeFromJSON != null && valueTypeFromJSON.indexOf(".") > -1) {
-      // gotten a valueType from GUI with possible values: 
-      //      parameter.integer
-      //      parameter.double
-      //      parameter.date
-      //      parameter.time
-      //      parameter.string
-      //
-      //      fixed.integer
-      //      fixed.double
-      //      fixed.date
-      //      fixed.time
-      //      fixed.string
-      //
-      //      complex.integer
-      //      complex.double
-      //      complex.date
-      //      complex.time
-      //      complex.string
-      //      complex.boolean
-      this.type = CriterionDataType.fromExternalRepresentation(valueTypeFromJSON.substring(valueTypeFromJSON.indexOf(".")+1, valueTypeFromJSON.length()));
+    String expressionTypeFromJSON = JSONUtilities.decodeString(jsonValue, "expressionType", false);
+    if(expressionTypeFromJSON != null) {
+      
+      // gotten a expressionType from GUI with possible values: 
+      //      integer
+      //      double
+      //      date
+      //      time
+      //      string
+      
+      this.type = CriterionDataType.fromExternalRepresentation(expressionTypeFromJSON);
     }
     
     this.id = generateID(this.name);
