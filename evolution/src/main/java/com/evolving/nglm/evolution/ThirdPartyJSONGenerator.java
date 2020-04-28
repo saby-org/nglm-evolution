@@ -12,6 +12,8 @@ import java.util.stream.Collectors;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
@@ -19,9 +21,12 @@ import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 
+import kafka.log.Log;
+
 public class ThirdPartyJSONGenerator 
 {
-  
+  private static final Logger log = LoggerFactory.getLogger(ThirdPartyJSONGenerator.class);
+
   /*****************************************
   *
   *  generateLoyaltyProgramJSONForThirdParty
@@ -361,11 +366,11 @@ public class ThirdPartyJSONGenerator
         JSONObject offerJSON = offer.getJSONRepresentation();
         if (callingChannel != null && offerJSON != null)
           {
-            // Add more elements, based on what's in the channel
-            JSONObject jsonRoot = callingChannel.getJSONRepresentation();
-            if (jsonRoot != null)
+            // Add more elements to offerMap, based on what's in the channel
+            JSONObject callingChannelJSON = callingChannel.getJSONRepresentation();
+            if (callingChannelJSON != null)
               {
-                JSONArray offerProperties = JSONUtilities.decodeJSONArray(jsonRoot, "offerProperties", false);
+                JSONArray offerProperties = JSONUtilities.decodeJSONArray(callingChannelJSON, "offerProperties", false);
                 if (offerProperties != null)
                   {
                     for (int i=0; i<offerProperties.size(); i++)
@@ -373,7 +378,7 @@ public class ThirdPartyJSONGenerator
                         JSONObject offerPropertyJSON = (JSONObject) offerProperties.get(i);
                         if (offerPropertyJSON != null)
                           {
-                            boolean presentOffers = JSONUtilities.decodeBoolean(jsonRoot, "presentOffers", Boolean.TRUE);
+                            boolean presentOffers = JSONUtilities.decodeBoolean(offerPropertyJSON, "presentOffers", Boolean.TRUE);
                             if (presentOffers)
                               {
                                 String offerPropertyName = JSONUtilities.decodeString(offerPropertyJSON, "offerPropertyName", false);
@@ -451,7 +456,65 @@ public class ThirdPartyJSONGenerator
                                         Object offerProperty = offerJSON.get(offerPropertyName);
                                         if (offerProperty != null)
                                           {
+                                            log.info("Adding " + offerPropertyName + " -> " + offerProperty);
                                             offerMap.put(offerPropertyName, offerProperty);
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  }
+                // build an array of what's in the offer to speed up processing
+                Map<String,Object>offerPropertiesMap = new HashMap<>();
+
+                JSONObject offerCharacteristics = JSONUtilities.decodeJSONObject(offerJSON, "offerCharacteristics", false);
+                if (offerCharacteristics != null)
+                  {
+                    JSONArray languageProperties = JSONUtilities.decodeJSONArray(offerCharacteristics, "languageProperties", false);
+                    if (languageProperties != null)
+                      {
+                        // take 1st language. What if we have more than 1 ?
+                        JSONObject languagePropertiesJSON = (JSONObject) languageProperties.get(0);
+                        if (languagePropertiesJSON != null)
+                          {
+                            JSONArray properties = JSONUtilities.decodeJSONArray(languagePropertiesJSON, "properties", false);
+                            if (properties != null)
+                              {
+                                for (int i=0; i<properties.size(); i++)
+                                  {
+                                    JSONObject propertiesJSON = (JSONObject) properties.get(i);
+                                    if (propertiesJSON != null)
+                                      {
+                                        String catalogCharacteristicName = JSONUtilities.decodeString(propertiesJSON, "catalogCharacteristicName", false);
+                                        if (catalogCharacteristicName != null)
+                                          {
+                                            Object value = propertiesJSON.get("value");
+                                            offerPropertiesMap.put(catalogCharacteristicName, value);
+                                          }
+                                      }
+                                  }
+                              }
+                            if (!offerPropertiesMap.isEmpty())
+                              {
+                                JSONArray catalogCharacteristics = JSONUtilities.decodeJSONArray(callingChannelJSON, "catalogCharacteristics", false);
+                                if (catalogCharacteristics != null)
+                                  {
+                                    for (int i=0; i<catalogCharacteristics.size(); i++)
+                                      {
+                                        JSONObject catalogCharacteristicsJSON = (JSONObject) catalogCharacteristics.get(i);
+                                        if (catalogCharacteristicsJSON != null)
+                                          {
+                                            boolean presentOffers = JSONUtilities.decodeBoolean(catalogCharacteristicsJSON, "presentOffers", Boolean.TRUE);
+                                            if (presentOffers)
+                                              {
+                                                String catalogCharacteristicName = JSONUtilities.decodeString(catalogCharacteristicsJSON, "catalogCharacteristicName", false);
+                                                if (catalogCharacteristicName != null) 
+                                                  {
+                                                    Object offerProperty = offerPropertiesMap.get(catalogCharacteristicName);
+                                                    offerMap.put(catalogCharacteristicName, offerProperty);
+                                                  }
+                                              }
                                           }
                                       }
                                   }

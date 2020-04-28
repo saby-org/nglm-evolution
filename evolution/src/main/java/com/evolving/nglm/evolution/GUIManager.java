@@ -909,7 +909,7 @@ public class GUIManager
     loyaltyProgramService.registerListener(dynamicEventDeclarationsListener);
 
     try {
-      long waiting = 30;
+      long waiting = 60;
       log.info("Waiting " + waiting + " seconds for schema registry to start");
       Thread.sleep(waiting*1_000l);
     } catch (InterruptedException e) {}
