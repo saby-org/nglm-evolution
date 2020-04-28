@@ -33,19 +33,6 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
   private final String subscriberID = "subscriberID";
   private final String customerID = "customerID";
 
-  /**
-   * This methods writes a single {@link ReportElement} to the report (csv file).
-   * 
-   * @throws IOException
-   *           in case anything goes wrong while writing to the report.
-   */
-  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException
-  {
-    //
-    //
-    //
-  }
-  
   public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
 

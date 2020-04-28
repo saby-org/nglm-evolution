@@ -67,10 +67,10 @@ public class TokenReportCsvWriter implements ReportCsvFactory
    * @throws IOException in case anything goes wrong while writing to the
    * report.
    */
-  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException
+  public boolean dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
     if (re.type == ReportElement.MARKER) // We will find markers in the topic
-      return;
+      return true;
     log.trace("We got " + key + " " + re);
 
     LinkedHashMap<String, Object> result = new LinkedHashMap<>();
@@ -284,8 +284,8 @@ public class TokenReportCsvWriter implements ReportCsvFactory
           {
             log.error("unable to process request", e.getMessage());
           }
-
       }
+    return addHeaders;
   }
 
   /****************************************

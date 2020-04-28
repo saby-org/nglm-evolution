@@ -35,9 +35,9 @@ public class JourneysReportCsvWriter implements ReportCsvFactory
    * This methods writes a single {@link ReportElement} to the report (csv file).
    * @throws IOException in case anything goes wrong while writing to the report.
    */
-  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException {
+  public boolean dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException {
     if (re.type == ReportElement.MARKER) // We will find markers in the topic
-      return;
+      return true;
 
     log.trace("We got "+key+" "+re);
     Map<String, Object> journeyStats = re.fields.get(0);
@@ -45,7 +45,7 @@ public class JourneysReportCsvWriter implements ReportCsvFactory
       String journeyID = journeyStats.get("journeyID").toString();
       
       if (!alreadyProcessedJourneysIDs.add(journeyID))
-          return;  // skip this journey as we already produced a report line for it
+          return true;  // skip this journey as we already produced a report line for it
       
       GUIManagedObject guiOb = journeyService.getStoredJourney(journeyID);
       if(guiOb instanceof Journey) {
@@ -112,6 +112,7 @@ public class JourneysReportCsvWriter implements ReportCsvFactory
         if(addHeaders){
           headerFieldsOrder.clear();
           addHeaders(writer, journeyInfo, 1);
+          addHeaders = false;
         }
         String line = ReportUtils.formatResult(journeyInfo);
         log.trace("Writing to csv file : "+line);
@@ -119,6 +120,7 @@ public class JourneysReportCsvWriter implements ReportCsvFactory
         writer.write("\n".getBytes());
       }
     }
+    return addHeaders;
   }
 
   public static void main(String[] args) {

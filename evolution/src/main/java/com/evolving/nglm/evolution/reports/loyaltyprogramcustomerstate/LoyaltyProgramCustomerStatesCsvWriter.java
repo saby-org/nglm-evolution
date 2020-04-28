@@ -28,10 +28,10 @@ public class LoyaltyProgramCustomerStatesCsvWriter implements ReportCsvFactory
   private final static String customerID = "customerID";
 
   @Override
-  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException
+  public boolean dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
     if (re.type == ReportElement.MARKER) // We will find markers in the topic
-      return;
+      return true;
 
     List<Map<String, Object>> records = new ArrayList<Map<String, Object>>();
 
@@ -51,12 +51,12 @@ public class LoyaltyProgramCustomerStatesCsvWriter implements ReportCsvFactory
               {
                 if (subscriberFields.get("loyaltyPrograms") == null)
                   {
-                    return;
+                    return true;
                   }
                 List<Map<String, Object>> loyaltyProgramsArray = (List<Map<String, Object>>) subscriberFields.get("loyaltyPrograms");
                 if (loyaltyProgramsArray.isEmpty())
                   {
-                    return;
+                    return true;
                   }
                 subscriberComputedFields.put(customerID, subscriberID);
                 for (AlternateID alternateID : Deployment.getAlternateIDs().values())
@@ -187,6 +187,7 @@ public class LoyaltyProgramCustomerStatesCsvWriter implements ReportCsvFactory
           {
             headerFieldsOrder.clear();
             addHeaders(writer, records.get(0), 1);
+            addHeaders = false;
           }
 
         for (Map<String, Object> record : records)
@@ -204,6 +205,7 @@ public class LoyaltyProgramCustomerStatesCsvWriter implements ReportCsvFactory
               }
           }
       }
+    return addHeaders;
   }
 
   public static void main(String[] args) {
