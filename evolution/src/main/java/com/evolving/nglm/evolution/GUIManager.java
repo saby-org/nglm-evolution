@@ -1163,22 +1163,40 @@ public class GUIManager
     //  reports
     //
 
-    // Always update reports with initialReports. So when we upgrade, scheduling is updated (EVPRO-244)
-      {
-        try
-          {
-            JSONArray initialReportsJSONArray = Deployment.getInitialReportsJSONArray();
-            for (int i=0; i<initialReportsJSONArray.size(); i++)
-              {
-                JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
-                processPutReport("0", reportJSON);
-              }
-          }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
-          }
-      }
+    // Always update reports with initialReports. When we upgrade, new effectiveScheduling is merged with existing one (EVPRO-244)
+    try
+    {
+      Date now = SystemTime.getCurrentTime();
+      Collection<Report> existingReports = reportService.getActiveReports(now);
+      JSONArray initialReportsJSONArray = Deployment.getInitialReportsJSONArray();
+      for (int i=0; i<initialReportsJSONArray.size(); i++)
+        {
+          JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
+          String name = JSONUtilities.decodeString(reportJSON, "name", false);
+          if (name != null)
+            {
+              for (Report report : existingReports)
+                {
+                  if (name.equals(report.getGUIManagedObjectName()))
+                    {
+                      // this report already exists (same name), use same ID to replace it
+                      String reportID = report.getGUIManagedObjectID();
+                      if (reportID != null)
+                        {
+                          reportJSON.put("id", reportID);
+                        }
+                      break;
+                    }
+                }
+            }
+          processPutReport("0", reportJSON); // this will patch the report, if it already exists
+        }
+    }
+    catch (JSONUtilitiesException e)
+    {
+      throw new ServerRuntimeException("deployment", e);
+    }
+
 
     //
     //  calling channels
@@ -8501,6 +8519,12 @@ public class GUIManager
                 }
               }
             }
+            
+            // merge existing scheduling with new one
+            JSONArray oldEffectiveSchedulingJSONArray = JSONUtilities.encodeArray(existingRept.getEffectiveScheduling());
+            JSONArray newEffectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EFFECTIVE_SCHEDULING, false);
+            newEffectiveSchedulingJSONArray.addAll(oldEffectiveSchedulingJSONArray);
+            jsonRoot.put(Report.EFFECTIVE_SCHEDULING, newEffectiveSchedulingJSONArray);
           }
       }
 
