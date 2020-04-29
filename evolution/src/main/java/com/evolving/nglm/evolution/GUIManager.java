@@ -8522,13 +8522,24 @@ public class GUIManager
             }
             
             // merge new effective scheduling with existing one
-            JSONArray oldEffectiveSchedulingJSONArray = JSONUtilities.encodeArray(existingRept.getEffectiveScheduling().stream().map(schedule->schedule.toString()).collect(Collectors.toList()));
+            List<String> oldEffectiveScheduling = existingRept.getEffectiveScheduling().stream().map(schedule->schedule.getExternalRepresentation()).collect(Collectors.toList());
             JSONArray newEffectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EFFECTIVE_SCHEDULING, false);
+            log.info("Scheduling for " + existingRept.getName() + " old: " + oldEffectiveScheduling + " new: " + newEffectiveSchedulingJSONArray);
+            JSONArray oldEffectiveSchedulingJSONArray = null;
             if (newEffectiveSchedulingJSONArray != null)
               {
-                log.info("Scheduling for " + existingRept.getName() + " old: " + oldEffectiveSchedulingJSONArray + " new: " + newEffectiveSchedulingJSONArray);
-                oldEffectiveSchedulingJSONArray.addAll(newEffectiveSchedulingJSONArray);
+                oldEffectiveScheduling.addAll(newEffectiveSchedulingJSONArray);
+                // convert case
+                List<String> oldEffectiveSchedulingLC = oldEffectiveScheduling.stream().map(s -> s.toLowerCase()).collect(Collectors.toList());
+                // remove duplicates
+                List<String> oldEffectiveSchedulingWithoutDuplicates = new ArrayList<>(new LinkedHashSet<>(oldEffectiveSchedulingLC));
+                oldEffectiveSchedulingJSONArray = JSONUtilities.encodeArray(oldEffectiveSchedulingWithoutDuplicates);
               }
+            else
+              {
+                oldEffectiveSchedulingJSONArray = JSONUtilities.encodeArray(oldEffectiveScheduling);
+              }
+            log.info("Scheduling merged as " + oldEffectiveSchedulingJSONArray);
             jsonRoot.put(Report.EFFECTIVE_SCHEDULING, oldEffectiveSchedulingJSONArray);
           }
       }
