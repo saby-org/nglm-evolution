@@ -1185,6 +1185,7 @@ public class GUIManager
                         {
                           reportJSON.put("id", reportID);
                         }
+                      log.info("Report " + name + " (id " + reportID + " ) is upgraded");
                       break;
                     }
                 }
@@ -8520,11 +8521,12 @@ public class GUIManager
               }
             }
             
-            // merge existing scheduling with new one
+            // merge new effective scheduling with existing one
             JSONArray oldEffectiveSchedulingJSONArray = JSONUtilities.encodeArray(existingRept.getEffectiveScheduling());
             JSONArray newEffectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EFFECTIVE_SCHEDULING, false);
-            newEffectiveSchedulingJSONArray.addAll(oldEffectiveSchedulingJSONArray);
-            jsonRoot.put(Report.EFFECTIVE_SCHEDULING, newEffectiveSchedulingJSONArray);
+            log.info("Scheduling for " + existingRept.getName() + " old: " + oldEffectiveSchedulingJSONArray + " new: " + newEffectiveSchedulingJSONArray);
+            oldEffectiveSchedulingJSONArray.addAll(newEffectiveSchedulingJSONArray);
+            jsonRoot.put(Report.EFFECTIVE_SCHEDULING, oldEffectiveSchedulingJSONArray);
           }
       }
 
