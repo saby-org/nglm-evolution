@@ -8522,7 +8522,7 @@ public class GUIManager
             }
             
             // merge new effective scheduling with existing one
-            JSONArray oldEffectiveSchedulingJSONArray = JSONUtilities.encodeArray(existingRept.getEffectiveScheduling());
+            JSONArray oldEffectiveSchedulingJSONArray = JSONUtilities.encodeArray(existingRept.getEffectiveScheduling().stream().map(schedule->schedule.toString()).collect(Collectors.toList()));
             JSONArray newEffectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EFFECTIVE_SCHEDULING, false);
             if (newEffectiveSchedulingJSONArray != null)
               {
