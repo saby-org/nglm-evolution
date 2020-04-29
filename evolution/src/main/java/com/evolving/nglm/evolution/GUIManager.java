@@ -1173,24 +1173,24 @@ public class GUIManager
         {
           JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
           String name = JSONUtilities.decodeString(reportJSON, "name", false);
+          boolean create = true;
           if (name != null)
             {
               for (Report report : existingReports)
                 {
                   if (name.equals(report.getGUIManagedObjectName()))
                     {
-                      // this report already exists (same name), use same ID to replace it
-                      String reportID = report.getGUIManagedObjectID();
-                      if (reportID != null)
-                        {
-                          reportJSON.put("id", reportID);
-                        }
-                      log.info("Report " + name + " (id " + reportID + " ) is upgraded");
+                      // this report already exists (same name), do not create it
+                      create = false;
+                      log.info("Report " + name + " (id " + report.getReportID() + " ) already exists, do not create");
                       break;
                     }
                 }
             }
-          processPutReport("0", reportJSON); // this will patch the report, if it already exists
+          if (create)
+          {
+            processPutReport("0", reportJSON); // this will patch the report, if it already exists
+          }
         }
     }
     catch (JSONUtilitiesException e)
@@ -1399,28 +1399,6 @@ public class GUIManager
               {
                 JSONObject offerObjectiveJSON = (JSONObject) initialOfferObjectivesJSONArray.get(i);
                 processPutOfferObjective("0", offerObjectiveJSON);
-              }
-          }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
-          }
-
-      }
-
-    //
-    //  reports
-    //
-
-    if (reportService.getStoredReports().size() == 0)
-      {
-        try
-          {
-            JSONArray initialReportsJSONArray = Deployment.getInitialReportsJSONArray();
-            for (int i=0; i<initialReportsJSONArray.size(); i++)
-              {
-                JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
-                processPutReport("0", reportJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -8520,27 +8498,6 @@ public class GUIManager
                 }
               }
             }
-            
-            // merge new effective scheduling with existing one
-            List<String> oldEffectiveScheduling = existingRept.getEffectiveScheduling().stream().map(schedule->schedule.getExternalRepresentation()).collect(Collectors.toList());
-            JSONArray newEffectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EFFECTIVE_SCHEDULING, false);
-            log.info("Scheduling for " + existingRept.getName() + " old: " + oldEffectiveScheduling + " new: " + newEffectiveSchedulingJSONArray);
-            JSONArray oldEffectiveSchedulingJSONArray = null;
-            if (newEffectiveSchedulingJSONArray != null)
-              {
-                oldEffectiveScheduling.addAll(newEffectiveSchedulingJSONArray);
-                // convert case
-                List<String> oldEffectiveSchedulingLC = oldEffectiveScheduling.stream().map(s -> s.toLowerCase()).collect(Collectors.toList());
-                // remove duplicates
-                List<String> oldEffectiveSchedulingWithoutDuplicates = new ArrayList<>(new LinkedHashSet<>(oldEffectiveSchedulingLC));
-                oldEffectiveSchedulingJSONArray = JSONUtilities.encodeArray(oldEffectiveSchedulingWithoutDuplicates);
-              }
-            else
-              {
-                oldEffectiveSchedulingJSONArray = JSONUtilities.encodeArray(oldEffectiveScheduling);
-              }
-            log.info("Scheduling merged as " + oldEffectiveSchedulingJSONArray);
-            jsonRoot.put(Report.EFFECTIVE_SCHEDULING, oldEffectiveSchedulingJSONArray);
           }
       }
 
