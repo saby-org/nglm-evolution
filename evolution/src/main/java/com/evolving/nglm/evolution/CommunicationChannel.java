@@ -6,20 +6,12 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.Journey.JourneyStatus;
 import com.evolving.nglm.evolution.NotificationDailyWindows.DailyWindow;
 
-import org.apache.kafka.connect.data.Field;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -27,7 +19,6 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,7 +40,7 @@ public class CommunicationChannel extends GUIManagedObject
     NotificationDailyWindows notificationDailyWindows;
     Map<String,CriterionField> parameters = new HashMap<String, CriterionField>();
     String notificationPluginClass;
-    ParameterMap notificationPluginConfiguration = new ParameterMap(); 
+    JSONObject notificationPluginConfiguration; 
     String icon;
     int toolboxHeight;
     int toolboxWidth;
@@ -78,7 +69,7 @@ public class CommunicationChannel extends GUIManagedObject
     public NotificationDailyWindows getNotificationDailyWindows() { return notificationDailyWindows; }
     public Map<String,CriterionField> getParameters() { return parameters; }
     public String getNotificationPluginClass() { return notificationPluginClass; }
-    public ParameterMap getNotificationPluginConfiguration() { return notificationPluginConfiguration; }
+    public JSONObject getNotificationPluginConfiguration() { return notificationPluginConfiguration; }
     public String getIcon() { return icon; }
     public int getToolboxHeight() { return toolboxHeight; }
     public int getToolboxWidth() { return toolboxWidth; }
@@ -167,13 +158,21 @@ public class CommunicationChannel extends GUIManagedObject
           CriterionField parameter = new CriterionField(parameterJSON);
           this.parameters.put(parameter.getID(), parameter);
         }
+      
+      this.isGeneric =  JSONUtilities.decodeBoolean(jsonRoot, "isGeneric", Boolean.FALSE);
+      
+      this.notificationPluginConfiguration = (JSONObject)jsonRoot.get("notificationPluginConfiguration");
+      this.notificationPluginClass = JSONUtilities.decodeString(jsonRoot, "notificationPluginClass", isGeneric /* Mandatory only if this is a generic channel*/);
+      this.icon = JSONUtilities.decodeString(jsonRoot, "icon", false);
+      this.toolboxHeight = JSONUtilities.decodeInteger(jsonRoot, "toolboxHeight", 70);
+      this.toolboxWidth = JSONUtilities.decodeInteger(jsonRoot, "toolboxWidth", 70);
+      
       this.allowGuiTemplate =  JSONUtilities.decodeBoolean(jsonRoot, "allowGuiTemplate", Boolean.TRUE);
       this.allowInLineTemplate =  JSONUtilities.decodeBoolean(jsonRoot, "allowInLineTemplate", Boolean.FALSE);
       this.isGeneric =  JSONUtilities.decodeBoolean(jsonRoot, "isGeneric", Boolean.FALSE);
       this.journeyGUINodeSectionID = JSONUtilities.decodeString(jsonRoot, "journeyGUINodeSectionID", false);
       this.workflowGUINodeSectionID = JSONUtilities.decodeString(jsonRoot, "workflowGUINodeSectionID", false);
       this.campaignGUINodeSectionID = JSONUtilities.decodeString(jsonRoot, "campaignGUINodeSectionID", false);
-     
       
     }
     

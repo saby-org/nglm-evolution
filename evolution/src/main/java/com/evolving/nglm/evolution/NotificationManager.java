@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
@@ -37,244 +36,280 @@ import com.evolving.nglm.evolution.toolbox.OutputConnectorBuilder;
 import com.evolving.nglm.evolution.toolbox.ParameterBuilder;
 import com.evolving.nglm.evolution.toolbox.ToolBoxBuilder;
 import com.evolving.nglm.evolution.toolbox.TransitionCriteriaBuilder;
-import com.google.gson.JsonArray;
 
 public class NotificationManager extends DeliveryManager implements Runnable
 {
   /*****************************************
-  *
-  *  enum - status
-  *
-  *****************************************/
+   *
+   * enum - status
+   *
+   *****************************************/
 
   public enum MessageStatus
   {
-    PENDING(10),
-    SENT(1),
-    NO_CUSTOMER_LANGUAGE(701),
-    NO_CUSTOMER_CHANNEL(702),
-    DELIVERED(0),
-    EXPIRED(707),
-    ERROR(706),
-    UNDELIVERABLE(703),
-    INVALID(704),
-    QUEUE_FULL(705),
-    RESCHEDULE(709),
-    UNKNOWN(999);
+    PENDING(10), SENT(1), NO_CUSTOMER_LANGUAGE(701), NO_CUSTOMER_CHANNEL(702), DELIVERED(0), EXPIRED(707), ERROR(706), UNDELIVERABLE(703), INVALID(704), QUEUE_FULL(705), RESCHEDULE(709), UNKNOWN(999);
+
     private Integer returncode;
-    private MessageStatus(Integer returncode) { this.returncode = returncode; }
-    public Integer getReturnCode() { return returncode; }
-    public static MessageStatus fromReturnCode(Integer externalRepresentation) { for (MessageStatus enumeratedValue : MessageStatus.values()) { if (enumeratedValue.getReturnCode().equals(externalRepresentation)) return enumeratedValue; } return UNKNOWN; }
+
+    private MessageStatus(Integer returncode)
+      {
+        this.returncode = returncode;
+      }
+
+    public Integer getReturnCode()
+    {
+      return returncode;
+    }
+
+    public static MessageStatus fromReturnCode(Integer externalRepresentation)
+    {
+      for (MessageStatus enumeratedValue : MessageStatus.values())
+        {
+          if (enumeratedValue.getReturnCode().equals(externalRepresentation)) return enumeratedValue;
+        }
+      return UNKNOWN;
+    }
   }
 
   /*****************************************
-  *
-  *  conversion method
-  *
-  *****************************************/
+   *
+   * conversion method
+   *
+   *****************************************/
 
-  public DeliveryStatus getMessageStatus (MessageStatus status)
+  public DeliveryStatus getMessageStatus(MessageStatus status)
   {
-    switch(status)
+    switch (status)
       {
-        case PENDING:
-          return DeliveryStatus.Pending;
-        case SENT:
-          return DeliveryStatus.Delivered;
-        case RESCHEDULE:
-          return DeliveryStatus.Reschedule;
-        case NO_CUSTOMER_LANGUAGE:
-        case NO_CUSTOMER_CHANNEL:
-        case ERROR:
-        case UNDELIVERABLE:
-        case INVALID:
-        case QUEUE_FULL:
-        default:
-          return DeliveryStatus.Failed;
+      case PENDING:
+        return DeliveryStatus.Pending;
+      case SENT:
+        return DeliveryStatus.Delivered;
+      case RESCHEDULE:
+        return DeliveryStatus.Reschedule;
+      case NO_CUSTOMER_LANGUAGE:
+      case NO_CUSTOMER_CHANNEL:
+      case ERROR:
+      case UNDELIVERABLE:
+      case INVALID:
+      case QUEUE_FULL:
+      default:
+        return DeliveryStatus.Failed;
       }
   }
 
   /*****************************************
-  *
-  *  configuration
-  *
-  *****************************************/
+   *
+   * configuration
+   *
+   *****************************************/
 
-  private int threadNumber = 5;   //TODO : make this configurable
+  private int threadNumber = 5; // TODO : make this configurable
   private ArrayList<Thread> threads = new ArrayList<Thread>();
-  private NotificationInterface notification;
+  private String channelsString; // List of Channels as a key for stats
+  private Map<String, NotificationInterface> pluginInstances = new HashMap();
   private NotificationStatistics stats = null;
   private static String applicationID = "deliverymanager-notificationmanager";
-  public String pluginName;
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
-    private CommunicationChannelBlackoutService blackoutService;
+  private CommunicationChannelBlackoutService blackoutService;
   private ContactPolicyProcessor contactPolicyProcessor;
 
   //
-  //  logger
+  // logger
   //
 
   private static final Logger log = LoggerFactory.getLogger(NotificationManager.class);
 
   /*****************************************
-  *
-  *  accessors
-  *
-  *****************************************/
+   *
+   * accessors
+   *
+   *****************************************/
 
-  public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
-  public CommunicationChannelBlackoutService getBlackoutService() { return blackoutService; }
-
-  /*****************************************
-  *
-  *  constructor
-  *
-  *****************************************/
-
-  public NotificationManager(String deliveryManagerKey, String pluginName)
+  public SubscriberMessageTemplateService getSubscriberMessageTemplateService()
   {
-    //
-    //  superclass
-    //
+    return subscriberMessageTemplateService;
+  }
 
-    super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), NotificationManagerRequest.serde, Deployment.getDeliveryManagers().get(pluginName));
-
-    //
-    //  service
-    //
-
-    subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "notificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
-    subscriberMessageTemplateService.start();
-
-    //
-    //  blackoutService
-    //
-        
-    blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "notificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
-    blackoutService.start();
-
-    //
-    //  contact policy processor
-    //
-    contactPolicyProcessor = new ContactPolicyProcessor("notificationmanager-communicationchannel",deliveryManagerKey);
-
-    //
-    //  manager
-    //
-
-    
-    //
-    // TODO get the channel configuration and instanciate all plugins to be called by the working thread on incoming request
-    //
-
-    
-//    this.pluginName = pluginName;
-//    
-//    String pluginClassName = JSONUtilities.decodeString(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "notificationPluginClass", true);
-//    log.info("NotificationManager: plugin instanciation : pluginClassName = "+pluginClassName);
-//
-//    JSONObject pluginConfiguration = JSONUtilities.decodeJSONObject(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "notificationPluginConfiguration", true);
-//    log.info("NotificationManager: plugin instanciation : pluginConfiguration = "+pluginConfiguration);
-//
-//    try
-//      {
-//        notification = (NotificationInterface) (Class.forName(pluginClassName).newInstance());
-//        notification.init(this, pluginConfiguration, pluginName);
-//      }
-//    catch (InstantiationException | IllegalAccessException | IllegalArgumentException e)
-//      {
-//        log.error("NotificationManager: could not create new instance of class " + pluginClassName, e);
-//        throw new RuntimeException("NotificationManager: could not create new instance of class " + pluginClassName, e);
-//      }
-//    catch (ClassNotFoundException e)
-//      {
-//        log.error("NotificationManager: could not find class " + pluginClassName, e);
-//        throw new RuntimeException("NotificationManager: could not find class " + pluginClassName, e);
-//      }
-
-    //
-    // statistics
-    //
-    
-    try{
-      stats = new NotificationStatistics(applicationID, pluginName);
-    }catch(Exception e){
-      log.error("NotificationManager: could not load statistics ", e);
-      throw new RuntimeException("NotificationManager: could not load statistics  ", e);
-    }
-    
-    //
-    //  threads
-    //
-
-    for(int i = 0; i < threadNumber; i++)
-      {
-        threads.add(new Thread(this, "NotificationManagerThread_"+i));
-      }
-
-    //
-    //  startDelivery
-    //
-
-    startDelivery();
+  public CommunicationChannelBlackoutService getBlackoutService()
+  {
+    return blackoutService;
   }
 
   /*****************************************
-  *
-  *  class NotificationManagerRequest
-  *
-  *****************************************/
+   *
+   * constructor
+   *
+   *****************************************/
+
+  public NotificationManager(String deliveryManagerKey, String channelsString)
+    {
+      //
+      // superclass
+      //
+
+      super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), NotificationManagerRequest.serde, Deployment.getDeliveryManagers().get("notificationManager"));
+
+      //
+      // service
+      //
+
+      subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "notificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
+      subscriberMessageTemplateService.start();
+
+      //
+      // blackoutService
+      //
+
+      blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "notificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
+      blackoutService.start();
+
+      //
+      // contact policy processor
+      //
+      contactPolicyProcessor = new ContactPolicyProcessor("notificationmanager-communicationchannel", deliveryManagerKey);
+
+      //
+      // manager
+      //
+
+      this.channelsString = channelsString;
+      ArrayList<String> channels = new ArrayList<>();
+      if (channelsString != null)
+        {
+          for (String channel : channelsString.split("."))
+            {
+              channels.add(channel);
+            }
+        }
+
+      for (String channelName : channels)
+        {
+          log.info("NotificationManager: Instanciate communication channel " + channelName);
+          Map<String, CommunicationChannel> configuredChannels = Deployment.getCommunicationChannels();
+          for (CommunicationChannel cc : configuredChannels.values())
+            {
+              if (cc.getName().equals(channelName))
+                {
+                  // this channel's plugin must be initialized
+                  try
+                    {
+                      NotificationInterface pluginInstance = (NotificationInterface) (Class.forName(cc.getNotificationPluginClass()).newInstance());
+                      pluginInstance.init(cc.getNotificationPluginConfiguration());
+                      pluginInstances.put(cc.getID(), (NotificationInterface) (Class.forName(cc.getNotificationPluginClass()).newInstance()));
+                    }
+                  catch (InstantiationException | IllegalAccessException | IllegalArgumentException e)
+                    {
+                      log.error("NotificationManager: could not create new instance of class " + cc.getNotificationPluginClass(), e);
+                      throw new RuntimeException("NotificationManager: could not create new instance of class " + cc.getNotificationPluginClass(), e);
+                    }
+                  catch (ClassNotFoundException e)
+                    {
+                      log.error("NotificationManager: could not find class " + cc.getNotificationPluginClass(), e);
+                      throw new RuntimeException("NotificationManager: could not find class " + cc.getNotificationPluginClass(), e);
+                    }
+                }
+            }
+        }
+
+      //
+      // statistics
+      //
+
+      try
+        {
+          stats = new NotificationStatistics(applicationID, channelsString);
+        }
+      catch (Exception e)
+        {
+          log.error("NotificationManager: could not load statistics ", e);
+          throw new RuntimeException("NotificationManager: could not load statistics  ", e);
+        }
+
+      //
+      // threads
+      //
+
+      for (int i = 0; i < threadNumber; i++)
+        {
+          threads.add(new Thread(this, "NotificationManagerThread_" + i));
+        }
+
+      //
+      // startDelivery
+      //
+
+      startDelivery();
+    }
+
+  /*****************************************
+   *
+   * class NotificationManagerRequest
+   *
+   *****************************************/
 
   public static class NotificationManagerRequest extends DeliveryRequest implements MessageDelivery
   {
     /*****************************************
-    *
-    *  schema
-    *
-    *****************************************/
+     *
+     * schema
+     *
+     *****************************************/
 
     //
-    //  schema
+    // schema
     //
 
     private static Schema schema = null;
     static
-    {
-      SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-      schemaBuilder.name("service_notification_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
-      for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-      schemaBuilder.field("destination", Schema.STRING_SCHEMA);
-      schemaBuilder.field("language", Schema.STRING_SCHEMA);
-      schemaBuilder.field("templateID", Schema.STRING_SCHEMA);
-      schemaBuilder.field("tags", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).name("notification_tags").schema());
-      schemaBuilder.field("confirmationExpected", Schema.BOOLEAN_SCHEMA);
-      schemaBuilder.field("restricted", Schema.BOOLEAN_SCHEMA);
-      schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
-      schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("channelID", Schema.STRING_SCHEMA);
-      schema = schemaBuilder.build();
-    };
+      {
+        SchemaBuilder schemaBuilder = SchemaBuilder.struct();
+        schemaBuilder.name("service_notification_request");
+        schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 1));
+        for (Field field : commonSchema().fields())
+          schemaBuilder.field(field.name(), field.schema());
+        schemaBuilder.field("destination", Schema.STRING_SCHEMA);
+        schemaBuilder.field("language", Schema.STRING_SCHEMA);
+        schemaBuilder.field("templateID", Schema.STRING_SCHEMA);
+        schemaBuilder.field("tags", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).name("notification_tags").schema());
+        schemaBuilder.field("confirmationExpected", Schema.BOOLEAN_SCHEMA);
+        schemaBuilder.field("restricted", Schema.BOOLEAN_SCHEMA);
+        schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
+        schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
+        schemaBuilder.field("channelID", Schema.STRING_SCHEMA);
+        schema = schemaBuilder.build();
+      };
 
     //
-    //  serde
+    // serde
     //
 
     private static ConnectSerde<NotificationManagerRequest> serde = new ConnectSerde<NotificationManagerRequest>(schema, false, NotificationManagerRequest.class, NotificationManagerRequest::pack, NotificationManagerRequest::unpack);
 
     //
-    //  accessor
+    // accessor
     //
 
-    public static Schema schema() { return schema; }
-    public static ConnectSerde<NotificationManagerRequest> serde() { return serde; }
-    public Schema subscriberStreamEventSchema() { return schema(); }
+    public static Schema schema()
+    {
+      return schema;
+    }
+
+    public static ConnectSerde<NotificationManagerRequest> serde()
+    {
+      return serde;
+    }
+
+    public Schema subscriberStreamEventSchema()
+    {
+      return schema();
+    }
 
     /*****************************************
-    *
-    *  data
-    *
-    *****************************************/
+     *
+     * data
+     *
+     *****************************************/
 
     private String destination;
     private String language;
@@ -288,51 +323,132 @@ public class NotificationManager extends DeliveryManager implements Runnable
     private String channelID;
 
     //
-    //  accessors
+    // accessors
     //
 
-    public String getDestination() { return destination; }
-    public String getLanguage() { return language; }
-    public String getTemplateID() { return templateID; }
-    public Map<String, List<String>> getTags() { return tags; }
-    public boolean getConfirmationExpected() { return confirmationExpected; }
-    public boolean getRestricted() { return restricted; }
-    public MessageStatus getMessageStatus() { return status; }
-    public int getReturnCode() { return returnCode; }
-    public String getReturnCodeDetails() { return returnCodeDetails; }
-    public String getChannelID() { return channelID; }
+    public String getDestination()
+    {
+      return destination;
+    }
+
+    public String getLanguage()
+    {
+      return language;
+    }
+
+    public String getTemplateID()
+    {
+      return templateID;
+    }
+
+    public Map<String, List<String>> getTags()
+    {
+      return tags;
+    }
+
+    public boolean getConfirmationExpected()
+    {
+      return confirmationExpected;
+    }
+
+    public boolean getRestricted()
+    {
+      return restricted;
+    }
+
+    public MessageStatus getMessageStatus()
+    {
+      return status;
+    }
+
+    public int getReturnCode()
+    {
+      return returnCode;
+    }
+
+    public String getReturnCodeDetails()
+    {
+      return returnCodeDetails;
+    }
+
+    public String getChannelID()
+    {
+      return channelID;
+    }
 
     //
-    //  abstract
+    // abstract
     //
 
-    @Override public ActivityType getActivityType() { return ActivityType.Messages; }
+    @Override
+    public ActivityType getActivityType()
+    {
+      return ActivityType.Messages;
+    }
 
     //
-    //  setters
+    // setters
     //
 
-    public void setConfirmationExpected(boolean confirmationExpected) { this.confirmationExpected = confirmationExpected; }
-    public void setRestricted(boolean restricted) { this.restricted = restricted; }
-    public void setMessageStatus(MessageStatus status) { this.status = status; }
-    public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
-    public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
-    public void setChannelID(String channelID) { this.channelID = channelID; }
-    
+    public void setConfirmationExpected(boolean confirmationExpected)
+    {
+      this.confirmationExpected = confirmationExpected;
+    }
+
+    public void setRestricted(boolean restricted)
+    {
+      this.restricted = restricted;
+    }
+
+    public void setMessageStatus(MessageStatus status)
+    {
+      this.status = status;
+    }
+
+    public void setReturnCode(Integer returnCode)
+    {
+      this.returnCode = returnCode;
+    }
+
+    public void setReturnCodeDetails(String returnCodeDetails)
+    {
+      this.returnCodeDetails = returnCodeDetails;
+    }
+
+    public void setChannelID(String channelID)
+    {
+      this.channelID = channelID;
+    }
+
     //
-    //  message delivery accessors
+    // message delivery accessors
     //
 
-    public int getMessageDeliveryReturnCode() { return getReturnCode(); }
-    public String getMessageDeliveryReturnCodeDetails() { return getReturnCodeDetails(); }
-    public String getMessageDeliveryOrigin() { return ""; }
-    public String getMessageDeliveryMessageId() { return getEventID(); }
+    public int getMessageDeliveryReturnCode()
+    {
+      return getReturnCode();
+    }
+
+    public String getMessageDeliveryReturnCodeDetails()
+    {
+      return getReturnCodeDetails();
+    }
+
+    public String getMessageDeliveryOrigin()
+    {
+      return "";
+    }
+
+    public String getMessageDeliveryMessageId()
+    {
+      return getEventID();
+    }
 
     /*****************************************
-    *
-    *  getMessage
-    *
-    *****************************************/
+     *
+     * getMessage
+     *
+     *****************************************/
 
     public String getMessage(String messageField, SubscriberMessageTemplateService subscriberMessageTemplateService)
     {
@@ -343,23 +459,23 @@ public class NotificationManager extends DeliveryManager implements Runnable
     }
 
     /*****************************************
-    *
-    *  constructor
-    *
-    *****************************************/
+     *
+     * constructor
+     *
+     *****************************************/
 
     public NotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags, String channelID)
-    {
-      super(context, deliveryType, deliveryRequestSource);
-      this.destination = destination;
-      this.language = language;
-      this.templateID = templateID;
-      this.tags = tags;
-      this.status = MessageStatus.PENDING;
-      this.returnCode = status.getReturnCode();
-      this.returnCodeDetails = null;
-      this.channelID = channelID;
-    }
+      {
+        super(context, deliveryType, deliveryRequestSource);
+        this.destination = destination;
+        this.language = language;
+        this.templateID = templateID;
+        this.tags = tags;
+        this.status = MessageStatus.PENDING;
+        this.returnCode = status.getReturnCode();
+        this.returnCodeDetails = null;
+        this.channelID = channelID;
+      }
 
 //    /*****************************************
 //    *
@@ -381,17 +497,17 @@ public class NotificationManager extends DeliveryManager implements Runnable
 //    }
 
     /*****************************************
-    *
-    *  decodeMessageTags
-    *
-    *****************************************/
+     *
+     * decodeMessageTags
+     *
+     *****************************************/
 
-    private Map<String, List<String>> decodeTags(JSONArray jsonArray) //TODO SCH : A TESTER !!! !!! !!! !!! !!! !!! !!! !!! !!! 
+    private Map<String, List<String>> decodeTags(JSONArray jsonArray) // TODO SCH : A TESTER !!! !!! !!! !!! !!! !!! !!! !!! !!!
     {
       Map<String, List<String>> tags = new HashMap<String, List<String>>();
       if (jsonArray != null)
         {
-          for (int i=0; i<jsonArray.size(); i++)
+          for (int i = 0; i < jsonArray.size(); i++)
             {
               JSONObject messageTagJSON = (JSONObject) jsonArray.get(i);
               String messageField = JSONUtilities.decodeString(messageTagJSON, "messageField", true);
@@ -400,57 +516,56 @@ public class NotificationManager extends DeliveryManager implements Runnable
             }
         }
       return tags;
-    
-      
+
     }
 
     /*****************************************
-    *
-    *  constructor -- unpack
-    *
-    *****************************************/
+     *
+     * constructor -- unpack
+     *
+     *****************************************/
 
     private NotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails, String channelID)
-    {
-      super(schemaAndValue);
-      this.destination = destination;
-      this.language = language;
-      this.templateID = templateID;
-      this.tags = tags;
-      this.confirmationExpected = confirmationExpected;
-      this.restricted = restricted;
-      this.status = status;
-      this.returnCode = status.getReturnCode();
-      this.returnCodeDetails = returnCodeDetails;
-      this.channelID = channelID;
-    }
+      {
+        super(schemaAndValue);
+        this.destination = destination;
+        this.language = language;
+        this.templateID = templateID;
+        this.tags = tags;
+        this.confirmationExpected = confirmationExpected;
+        this.restricted = restricted;
+        this.status = status;
+        this.returnCode = status.getReturnCode();
+        this.returnCodeDetails = returnCodeDetails;
+        this.channelID = channelID;
+      }
 
     /*****************************************
-    *
-    *  constructor -- copy
-    *
-    *****************************************/
+     *
+     * constructor -- copy
+     *
+     *****************************************/
 
     private NotificationManagerRequest(NotificationManagerRequest NotificationManagerRequest)
-    {
-      super(NotificationManagerRequest);
-      this.destination = NotificationManagerRequest.getDestination();
-      this.language = NotificationManagerRequest.getLanguage();
-      this.templateID = NotificationManagerRequest.getTemplateID();
-      this.tags = NotificationManagerRequest.getTags();
-      this.confirmationExpected = NotificationManagerRequest.getConfirmationExpected();
-      this.restricted = NotificationManagerRequest.getRestricted();
-      this.status = NotificationManagerRequest.getMessageStatus();
-      this.returnCode = NotificationManagerRequest.getReturnCode();
-      this.returnCodeDetails = NotificationManagerRequest.getReturnCodeDetails();
-      this.channelID = NotificationManagerRequest.getChannelID();
-    }
+      {
+        super(NotificationManagerRequest);
+        this.destination = NotificationManagerRequest.getDestination();
+        this.language = NotificationManagerRequest.getLanguage();
+        this.templateID = NotificationManagerRequest.getTemplateID();
+        this.tags = NotificationManagerRequest.getTags();
+        this.confirmationExpected = NotificationManagerRequest.getConfirmationExpected();
+        this.restricted = NotificationManagerRequest.getRestricted();
+        this.status = NotificationManagerRequest.getMessageStatus();
+        this.returnCode = NotificationManagerRequest.getReturnCode();
+        this.returnCodeDetails = NotificationManagerRequest.getReturnCodeDetails();
+        this.channelID = NotificationManagerRequest.getChannelID();
+      }
 
     /*****************************************
-    *
-    *  copy
-    *
-    *****************************************/
+     *
+     * copy
+     *
+     *****************************************/
 
     public NotificationManagerRequest copy()
     {
@@ -458,10 +573,10 @@ public class NotificationManager extends DeliveryManager implements Runnable
     }
 
     /*****************************************
-    *
-    *  pack
-    *
-    *****************************************/
+     *
+     * pack
+     *
+     *****************************************/
 
     public static Object pack(Object value)
     {
@@ -471,7 +586,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       struct.put("destination", notificationRequest.getDestination());
       struct.put("language", notificationRequest.getLanguage());
       struct.put("templateID", notificationRequest.getTemplateID());
-      struct.put("tags", notificationRequest.getTags()); 
+      struct.put("tags", notificationRequest.getTags());
       struct.put("confirmationExpected", notificationRequest.getConfirmationExpected());
       struct.put("restricted", notificationRequest.getRestricted());
       struct.put("returnCode", notificationRequest.getReturnCode());
@@ -479,23 +594,26 @@ public class NotificationManager extends DeliveryManager implements Runnable
       struct.put("channelID", notificationRequest.getChannelID());
       return struct;
     }
-    
+
     //
-    //  subscriberStreamEventPack
+    // subscriberStreamEventPack
     //
-    
-    public Object subscriberStreamEventPack(Object value) { return pack(value); }
+
+    public Object subscriberStreamEventPack(Object value)
+    {
+      return pack(value);
+    }
 
     /*****************************************
-    *
-    *  unpack
-    *
-    *****************************************/
+     *
+     * unpack
+     *
+     *****************************************/
 
     public static NotificationManagerRequest unpack(SchemaAndValue schemaAndValue)
     {
       //
-      //  data
+      // data
       //
 
       Schema schema = schemaAndValue.schema();
@@ -503,7 +621,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
       //
-      //  unpack
+      // unpack
       //
 
       Struct valueStruct = (Struct) value;
@@ -517,14 +635,14 @@ public class NotificationManager extends DeliveryManager implements Runnable
       String returnCodeDetails = valueStruct.getString("returnCodeDetails");
       String channelID = valueStruct.getString("channelID");
       MessageStatus status = MessageStatus.fromReturnCode(returnCode);
-      
+
       //
-      //  return
+      // return
       //
 
       return new NotificationManagerRequest(schemaAndValue, destination, language, templateID, tags, confirmationExpected, restricted, status, returnCodeDetails, channelID);
     }
-    
+
 //    /*****************************************
 //    *
 //    *  unpackTags
@@ -557,18 +675,19 @@ public class NotificationManager extends DeliveryManager implements Runnable
 //
 //      return result;
 //    }
-    
+
     /****************************************
-    *
-    *  presentation utilities
-    *
-    ****************************************/
-    
+     *
+     * presentation utilities
+     *
+     ****************************************/
+
     //
-    //  addFieldsForGUIPresentation
+    // addFieldsForGUIPresentation
     //
 
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
+    @Override
+    public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
     {
       Module module = Module.fromExternalRepresentation(getModuleID());
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
@@ -583,12 +702,13 @@ public class NotificationManager extends DeliveryManager implements Runnable
       guiPresentationMap.put(NOTIFICATION_CHANNEL, getChannelID());
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
-    
+
     //
-    //  addFieldsForThirdPartyPresentation
+    // addFieldsForThirdPartyPresentation
     //
 
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
+    @Override
+    public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
     {
       Module module = Module.fromExternalRepresentation(getModuleID());
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
@@ -603,87 +723,85 @@ public class NotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, getChannelID());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
-	
-	public void resetDeliveryRequestAfterReSchedule()
+
+    public void resetDeliveryRequestAfterReSchedule()
     {
       this.setReturnCode(MessageStatus.PENDING.getReturnCode());
       this.setMessageStatus(MessageStatus.PENDING);
-      
-    }   
 
-    
+    }
+
     @Override
     public String toString()
     {
       return "NotificationManagerRequest [destination=" + destination + ", language=" + language + ", templateID=" + templateID + ", tags=" + tags + ", confirmationExpected=" + confirmationExpected + ", restricted=" + restricted + ", status=" + status + ", returnCode=" + returnCode + ", returnCodeDetails=" + returnCodeDetails + ", channelID=" + channelID + "]";
-    } 
-    
-
+    }
 
   }
 
   /*****************************************
-  *
-  *  class ActionManager
-  *
-  *****************************************/
+   *
+   * class ActionManager
+   *
+   *****************************************/
 
   public static class ActionManager extends com.evolving.nglm.evolution.ActionManager
   {
     /*****************************************
-    *
-    *  data
-    *
-    *****************************************/
+     *
+     * data
+     *
+     *****************************************/
 
     private String deliveryType;
     private String moduleID;
     private String channelID;
 
     /*****************************************
-    *
-    *  constructor
-    *
-    *****************************************/
+     *
+     * constructor
+     *
+     *****************************************/
 
     public ActionManager(JSONObject configuration) throws GUIManagerException
-    {
-      super(configuration);
-      this.deliveryType = "notificationmanager";
-      this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
-      this.channelID = JSONUtilities.decodeString(configuration, "channelID", true);
-    }
+      {
+        super(configuration);
+        this.deliveryType = "notificationmanager";
+        this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
+        this.channelID = JSONUtilities.decodeString(configuration, "channelID", true);
+      }
 
     /*****************************************
-    *
-    *  execute
-    *
-    *****************************************/
+     *
+     * execute
+     *
+     *****************************************/
 
-    @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    @Override
+    public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
-      
+
       /*****************************************
-      *
-      *  now
-      *
-      *****************************************/
+       *
+       * now
+       *
+       *****************************************/
 
       Date now = SystemTime.getCurrentTime();
-      
-      /*****************************************
-      *
-      *  parameters
-      *
-      *****************************************/
-
-      String templateID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.dialog_template");
 
       /*****************************************
-      *
-      *  get DialogTemplate
-      *
-      *****************************************/
+       *
+       * parameters
+       *
+       *****************************************/
+
+      String templateID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest, "node.parameter.dialog_template");
+
+      /*****************************************
+       *
+       * get DialogTemplate
+       *
+       *****************************************/
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       String language = subscriberEvaluationRequest.getLanguage();
@@ -694,39 +812,39 @@ public class NotificationManager extends DeliveryManager implements Runnable
       String destAddress = null;
 
       //
-      //  messages
+      // messages
       //
 
       Map<String, List<String>> tags = null;
       if (template != null)
         {
           //
-          //  get communicationChannel
+          // get communicationChannel
           //
-          
+
           CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(template.getCommunicationChannelID());
-          
+
           //
-          //  get dest address
+          // get dest address
           //
-          
+
           CriterionField criterionField = Deployment.getProfileCriterionFields().get(communicationChannel.getProfileAddressField());
           destAddress = (String) criterionField.retrieveNormalized(subscriberEvaluationRequest);
-          
+
           //
-          //  get dialogMessageTags
+          // get dialogMessageTags
           //
-          
+
 //          log.info(" ===================================");
 //          log.info("destAddress = "+destAddress);
 
           tags = new HashMap<String, List<String>>();
-          for(String messageField : template.getDialogMessageFields().keySet()){
-            DialogMessage dialogMessage = template.getDialogMessage(messageField);
-            List<String> dialogMessageTags = (dialogMessage != null) ? dialogMessage.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
-            tags.put(messageField, dialogMessageTags);
-            
-            
+          for (String messageField : template.getDialogMessageFields().keySet())
+            {
+              DialogMessage dialogMessage = template.getDialogMessage(messageField);
+              List<String> dialogMessageTags = (dialogMessage != null) ? dialogMessage.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
+              tags.put(messageField, dialogMessageTags);
+
 //            log.info("  ------------------------");
 //            log.info("template.getDialogMessageFields contains :");
 //            for(String m : template.getDialogMessageFields()){log.info("     - "+m);}
@@ -741,8 +859,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
 //            log.info("found dialogMessage = "+dialogMessage+" (SHOULD NOT BE NULL !!!)");
 //            log.info("dialogMessageTags = "+dialogMessageTags+" ("+dialogMessageTags.size()+" elements)");
 
-            
-          }
+            }
 //          log.info(" ===================================");
         }
       else
@@ -751,10 +868,10 @@ public class NotificationManager extends DeliveryManager implements Runnable
         }
 
       /*****************************************
-      *
-      *  request
-      *
-      *****************************************/
+       *
+       * request
+       *
+       *****************************************/
 
       NotificationManagerRequest request = null;
       if (destAddress != null)
@@ -770,20 +887,20 @@ public class NotificationManager extends DeliveryManager implements Runnable
         }
 
       /*****************************************
-      *
-      *  return
-      *
-      *****************************************/
+       *
+       * return
+       *
+       *****************************************/
 
       return Collections.<Action>singletonList(request);
     }
   }
 
   /*****************************************
-  *
-  *  run
-  *
-  *****************************************/
+   *
+   * run
+   *
+   *****************************************/
 
   public void run()
   {
@@ -791,7 +908,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       {
         /*****************************************
          *
-         *  nextRequest
+         * nextRequest
          *
          *****************************************/
 
@@ -800,7 +917,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
 
         log.info("NotificationManagerRequest run deliveryRequest" + deliveryRequest);
 
-        NotificationManagerRequest dialogRequest = (NotificationManagerRequest)deliveryRequest;
+        NotificationManagerRequest dialogRequest = (NotificationManagerRequest) deliveryRequest;
 //        DialogTemplate DialogTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
 //        
 //        if (DialogTemplate != null) 
@@ -837,49 +954,50 @@ public class NotificationManager extends DeliveryManager implements Runnable
   }
 
   /*****************************************
-  *
-  *  updateDeliveryRequest
-  *
-  *****************************************/
+   *
+   * updateDeliveryRequest
+   *
+   *****************************************/
 
   public void updateDeliveryRequest(DeliveryRequest deliveryRequest)
   {
-    log.info("NotificationManager.updateDeliveryRequest(deliveryRequest="+deliveryRequest+")");
+    log.info("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
     updateRequest(deliveryRequest);
   }
 
   /*****************************************
-  *
-  *  completeDeliveryRequest
-  *
-  *****************************************/
+   *
+   * completeDeliveryRequest
+   *
+   *****************************************/
 
   public void completeDeliveryRequest(DeliveryRequest deliveryRequest)
   {
-    log.info("NotificationManager.updateDeliveryRequest(deliveryRequest="+deliveryRequest+")");
+    log.info("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
     completeRequest(deliveryRequest);
-    stats.updateMessageCount(pluginName, 1, deliveryRequest.getDeliveryStatus());
+    stats.updateMessageCount(channelsString, 1, deliveryRequest.getDeliveryStatus());
   }
 
   /*****************************************
-  *
-  *  submitCorrelatorUpdateDeliveryRequest
-  *
-  *****************************************/
+   *
+   * submitCorrelatorUpdateDeliveryRequest
+   *
+   *****************************************/
 
   public void submitCorrelatorUpdateDeliveryRequest(String correlator, JSONObject correlatorUpdate)
   {
-    log.info("NotificationManager.submitCorrelatorUpdateDeliveryRequest(correlator="+correlator+", correlatorUpdate="+correlatorUpdate.toJSONString()+")");
+    log.info("NotificationManager.submitCorrelatorUpdateDeliveryRequest(correlator=" + correlator + ", correlatorUpdate=" + correlatorUpdate.toJSONString() + ")");
     submitCorrelatorUpdate(correlator, correlatorUpdate);
   }
 
   /*****************************************
-  *
-  *  processCorrelatorUpdate
-  *
-  *****************************************/
+   *
+   * processCorrelatorUpdate
+   *
+   *****************************************/
 
-  @Override protected void processCorrelatorUpdate(DeliveryRequest deliveryRequest, JSONObject correlatorUpdate)
+  @Override
+  protected void processCorrelatorUpdate(DeliveryRequest deliveryRequest, JSONObject correlatorUpdate)
   {
     int result = JSONUtilities.decodeInteger(correlatorUpdate, "result", true);
     NotificationManagerRequest dialogRequest = (NotificationManagerRequest) deliveryRequest;
@@ -894,66 +1012,68 @@ public class NotificationManager extends DeliveryManager implements Runnable
 
   /*****************************************
    *
-   *  filterRequest
-   *  verify contact policy rules
+   * filterRequest verify contact policy rules
    *
    *****************************************/
 
-  @Override public boolean filterRequest(DeliveryRequest request)
+  @Override
+  public boolean filterRequest(DeliveryRequest request)
   {
-    return false; //contactPolicyProcessor.ensureContactPolicy(request,this,log);
+    return false; // contactPolicyProcessor.ensureContactPolicy(request,this,log);
   }
 
   /*****************************************
-  *
-  *  shutdown
-  *
-  *****************************************/
+   *
+   * shutdown
+   *
+   *****************************************/
 
-  @Override protected void shutdown()
+  @Override
+  protected void shutdown()
   {
     log.info("NotificationManager:  shutdown");
   }
 
   /*****************************************
-  *
-  *  main
-  *
-  *****************************************/
+   *
+   * main
+   *
+   *****************************************/
 
   public static void main(String[] args)
   {
     log.info("NotificationManager: recieved " + args.length + " args");
-    for(String arg : args)
+    for (String arg : args)
       {
         log.info("NotificationManager: arg " + arg);
       }
 
     //
-    //  configuration
+    // configuration
     //
 
     String deliveryManagerKey = args[0];
-    String pluginName = args[1];
+    String listOfChannels = args[1]; // Point separated by example: sms.sms_flash.email.pushapp
 
     //
-    //  instance  
+    // instance
     //
 
     log.info("NotificationManager: configuration " + Deployment.getDeliveryManagers());
 
-    NotificationManager manager = new NotificationManager(deliveryManagerKey, pluginName);
+    NotificationManager manager = new NotificationManager(deliveryManagerKey, listOfChannels);
 
     //
-    //  run
+    // run
     //
 
     manager.run();
-    
+
   }
+
   public static ArrayList<String> getNotificationNodeTypes()
   {
-    
+
 //    {
 //      "id"                     : "143",
 //      "name"                   : "appPush",
@@ -1015,64 +1135,56 @@ public class NotificationManager extends DeliveryManager implements Runnable
 //        }
 //     },
 
-    ArrayList<String> result =  new ArrayList<>();
-    for(CommunicationChannel current : Deployment.getCommunicationChannels().values()) {
-      ToolBoxBuilder tb = new ToolBoxBuilder(
-          current.getToolboxID(), current.getName(), current.getDisplay(), current.getIcon(), current.getToolboxHeight(), current.getToolboxWidth(), OutputType.Static);
-      
-      tb.addOutputConnector(new OutputConnectorBuilder("delivered", "Delivered/Sent")
-          .addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'delivered', 'acknowledged' ]"))));
-      tb.addOutputConnector(new OutputConnectorBuilder("failed", "Failed")
-          .addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'failed', 'indeterminate', 'failedTimeout' ]"))));
-      tb.addOutputConnector(new OutputConnectorBuilder("timeout", "Timeout")
-          .addTransitionCriteria(new TransitionCriteriaBuilder("evaluation.date", CriterionOperator.GreaterThanOrEqualOperator, new ArgumentBuilder("dateAdd(node.entryDate, 1, 'minute')").setTimeUnit(TimeUnit.Instant))));
-      tb.addOutputConnector(new OutputConnectorBuilder("unknown", "UnknownAppID")
-          .addTransitionCriteria(new TransitionCriteriaBuilder("subscriber.appID", CriterionOperator.IsNullOperator, null)));
-      
-      // add manually all parameters common to any notification : contact type, from address
-      // node.parameter.contacttype
-      ParameterBuilder parameterBuilder = new ParameterBuilder("node.parameter.contacttype", "Contact Type", CriterionDataType.StringCriterion, false, true, null);
-      for(ContactType currentContactType : ContactType.values()) {
-        parameterBuilder.addAvailableValue(new AvailableValueStaticStringBuilder(currentContactType.name(), currentContactType.getExternalRepresentation()));
-      }      
-      tb.addParameter(parameterBuilder);
-      
-      // node.parameter.fromaddress
-      tb.addParameter(new ParameterBuilder("node.parameter.fromaddress", "From Address", CriterionDataType.StringCriterion, false, true, null)
-          .addAvailableValue(new AvailableValueDynamicBuilder("#dialog_source_address_" + current.getID() + "#")));
-     
-      // if the configuration of the communication channel allows the use the templates that are created from template GUI, let add the following parameter:
-      if(current.allowGuiTemplate()) {
-        tb.addParameter(new ParameterBuilder("node.parameter.dialog_template", "Message Template", CriterionDataType.StringCriterion, false, false, null)
-          .addAvailableValue(new AvailableValueDynamicBuilder("#dialog_template_" + current.getID() + "#")));
+    ArrayList<String> result = new ArrayList<>();
+    for (CommunicationChannel current : Deployment.getCommunicationChannels().values())
+      {
+        ToolBoxBuilder tb = new ToolBoxBuilder(current.getToolboxID(), current.getName(), current.getDisplay(), current.getIcon(), current.getToolboxHeight(), current.getToolboxWidth(), OutputType.Static);
+
+        tb.addOutputConnector(new OutputConnectorBuilder("delivered", "Delivered/Sent").addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'delivered', 'acknowledged' ]"))));
+        tb.addOutputConnector(new OutputConnectorBuilder("failed", "Failed").addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'failed', 'indeterminate', 'failedTimeout' ]"))));
+        tb.addOutputConnector(new OutputConnectorBuilder("timeout", "Timeout").addTransitionCriteria(new TransitionCriteriaBuilder("evaluation.date", CriterionOperator.GreaterThanOrEqualOperator, new ArgumentBuilder("dateAdd(node.entryDate, 1, 'minute')").setTimeUnit(TimeUnit.Instant))));
+        tb.addOutputConnector(new OutputConnectorBuilder("unknown", "UnknownAppID").addTransitionCriteria(new TransitionCriteriaBuilder("subscriber.appID", CriterionOperator.IsNullOperator, null)));
+
+        // add manually all parameters common to any notification : contact type, from
+        // address
+        // node.parameter.contacttype
+        ParameterBuilder parameterBuilder = new ParameterBuilder("node.parameter.contacttype", "Contact Type", CriterionDataType.StringCriterion, false, true, null);
+        for (ContactType currentContactType : ContactType.values())
+          {
+            parameterBuilder.addAvailableValue(new AvailableValueStaticStringBuilder(currentContactType.name(), currentContactType.getExternalRepresentation()));
+          }
+        tb.addParameter(parameterBuilder);
+
+        // node.parameter.fromaddress
+        tb.addParameter(new ParameterBuilder("node.parameter.fromaddress", "From Address", CriterionDataType.StringCriterion, false, true, null).addAvailableValue(new AvailableValueDynamicBuilder("#dialog_source_address_" + current.getID() + "#")));
+
+        // if the configuration of the communication channel allows the use the
+        // templates that are created from template GUI, let add the following
+        // parameter:
+        if (current.allowGuiTemplate())
+          {
+            tb.addParameter(new ParameterBuilder("node.parameter.dialog_template", "Message Template", CriterionDataType.StringCriterion, false, false, null).addAvailableValue(new AvailableValueDynamicBuilder("#dialog_template_" + current.getID() + "#")));
+          }
+        if (current.allowInLineTemplate())
+          {
+            if (current.getJSONRepresentation().get("parameters") != null)
+              {
+                JSONArray paramsJSON = JSONUtilities.decodeJSONArray(current.getJSONRepresentation(), "parameters");
+                for (int i = 0; i < paramsJSON.size(); i++)
+                  {
+                    JSONObject cp = (JSONObject) paramsJSON.get(i);
+                    parameterBuilder = new ParameterBuilder(JSONUtilities.decodeString(cp, "id"), JSONUtilities.decodeString(cp, "display"), CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(cp, "dataType")), JSONUtilities.decodeBoolean(cp, "multiple"), JSONUtilities.decodeBoolean(cp, "mandatory"), cp.get("defaultValue"));
+                    tb.addParameter(parameterBuilder);
+                    // TODO EVPRO-146 Available Values
+                  }
+              }
+          }
+
+        // Action:
+        tb.setAction(new ActionBuilder("com.evolving.nglm.evolution.NotificationManager$ActionManager").addManagerClassConfigurationField("channelID", current.getID()).addManagerClassConfigurationField("moduleID", "1"));
+        result.add(tb.build(0));
       }
-      if(current.allowInLineTemplate()) {
-        if(current.getJSONRepresentation().get("parameters" ) != null) {
-          JSONArray paramsJSON = JSONUtilities.decodeJSONArray(current.getJSONRepresentation(), "parameters");
-          for(int i=0; i<paramsJSON.size(); i++)
-            {
-              JSONObject cp = (JSONObject)paramsJSON.get(i);
-              parameterBuilder = new ParameterBuilder(
-                  JSONUtilities.decodeString(cp, "id"), 
-                  JSONUtilities.decodeString(cp, "display"), 
-                  CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(cp, "outputType")), 
-                  JSONUtilities.decodeBoolean(cp, "multiple"), 
-                  JSONUtilities.decodeBoolean(cp, "mandatory"),
-                  cp.get("defaultValue"));
-              // TODO EVPRO-146 Available Values
-            }
-        }
-      }
-      
-      // Action:
-      tb.setAction(new ActionBuilder("com.evolving.nglm.evolution.NotificationManager$ActionManager")
-          .addManagerClassConfigurationField("channelID", current.getID())
-          .addManagerClassConfigurationField("moduleID", "1")
-          ); 
-      result.add(tb.build(0));
-    }
-    
+
     return result;
   }
 }
-  

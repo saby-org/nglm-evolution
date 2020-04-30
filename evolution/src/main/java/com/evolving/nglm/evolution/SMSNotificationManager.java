@@ -607,7 +607,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       super(configuration);
       this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
       this.deliveryType = JSONUtilities.decodeString(configuration, "deliveryType", true);
-      this.isFlashSMS = JSONUtilities.decodeBoolean(configuration, "isFlashSMS", false);
+      this.isFlashSMS = JSONUtilities.decodeBoolean(configuration, "isFlashSMS", false) != null ? JSONUtilities.decodeBoolean(configuration, "isFlashSMS", false) : false;
     }
 
     /*****************************************
