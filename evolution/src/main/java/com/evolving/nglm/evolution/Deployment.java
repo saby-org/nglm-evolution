@@ -240,6 +240,7 @@ public class Deployment
   private static String dailyReportCronEntryString;
   private static String weeklyReportCronEntryString;
   private static String monthlyReportCronEntryString;
+  private static boolean enableEvaluateTargetRandomness;
 
 
   // conf for voucher
@@ -494,6 +495,7 @@ public class Deployment
   public static String getDailyReportCronEntryString() { return dailyReportCronEntryString; }
   public static String getWeeklyReportCronEntryString() { return weeklyReportCronEntryString; }
   public static String getMonthlyReportCronEntryString() { return monthlyReportCronEntryString; }
+  public static boolean getEnableEvaluateTargetRandomness() { return enableEvaluateTargetRandomness; }
   
   // addProfileCriterionField
   //
@@ -3184,7 +3186,20 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
-      
+
+
+      //
+      //  enableProfileSegmentChange
+      //
+
+      try
+      {
+        enableEvaluateTargetRandomness = JSONUtilities.decodeBoolean(jsonRoot, "enableEvaluateTargetRandomness", Boolean.FALSE);
+      }
+      catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
     }
 
   /*****************************************
