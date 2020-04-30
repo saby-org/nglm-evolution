@@ -6536,9 +6536,7 @@ public class GUIManager
         Object previousValue = jsonRoot.put("journeyID", campaignID);
         if (previousValue != null) 
           {
-            response.put("responseCode", RESTAPIGenericReturnCodes.MALFORMED_REQUEST.getGenericResponseCode());
-            response.put("responseMessage", RESTAPIGenericReturnCodes.MALFORMED_REQUEST.getGenericResponseMessage() 
-                + "-{both fields campaignID and journeyID must not be filled at the same time}");
+            response.put("responseCode", RESTAPIGenericReturnCodes.MALFORMED_REQUEST.getGenericResponseMessage() + "-{both fields campaignID and journeyID must not be filled at the same time}");
             return JSONUtilities.encodeObject(response);
           }
       }
@@ -6582,9 +6580,7 @@ public class GUIManager
       }
     else
       {
-        response.put("responseCode", RESTAPIGenericReturnCodes.CAMPAIGN_NOT_FOUND.getGenericResponseCode());
-        response.put("responseMessage", RESTAPIGenericReturnCodes.CAMPAIGN_NOT_FOUND.getGenericResponseMessage() 
-            + "-{could not find any journey (campaign) with the specified journeyID (campaignID)}");
+        response.put("responseCode", RESTAPIGenericReturnCodes.CAMPAIGN_NOT_FOUND.getGenericResponseMessage() + "-{could not find any journey (campaign) with the specified journeyID (campaignID)}");
         return JSONUtilities.encodeObject(response);
       }
     
@@ -6594,8 +6590,7 @@ public class GUIManager
     *
     *****************************************/
     
-    response.put("responseCode", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
-    response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+    response.put("responseCode", "ok");
     response.put("journeyNodeCount", JSONUtilities.encodeObject(result));
     return JSONUtilities.encodeObject(response);
   }  
@@ -17614,8 +17609,7 @@ public class GUIManager
     
     if(!isRelationshipSupported)
       {
-        response.put("responseCode", RESTAPIGenericReturnCodes.RELATIONSHIP_NOT_FOUND.getGenericResponseCode());
-        response.put("responseMessage", RESTAPIGenericReturnCodes.RELATIONSHIP_NOT_FOUND.getGenericResponseMessage());
+        response.put("responseCode", RESTAPIGenericReturnCodes.RELATIONSHIP_NOT_FOUND.getGenericResponseMessage());
         return JSONUtilities.encodeObject(response);
       }
 
@@ -17629,23 +17623,17 @@ public class GUIManager
     String newParentSubscriberID = resolveSubscriberID(newParentCustomerID);
     if (subscriberID == null)
       {
-        response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
-        response.put("responseMessage", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage()
-            + "-{specified customerID do not relate to any customer}");
+        response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage() + "-{specified customerID do not relate to any customer}");
         return JSONUtilities.encodeObject(response);
       } 
     else if (newParentSubscriberID == null)
       {
-        response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
-        response.put("responseMessage", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage()
-            + "-{specified newParentCustomerID do not relate to any customer}");
+        response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage() + "-{specified newParentCustomerID do not relate to any customer}");
         return JSONUtilities.encodeObject(response);
       } 
     else if (subscriberID.equals(newParentSubscriberID))
       {
-        response.put("responseCode", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
-        response.put("responseMessage", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage()
-            + "-{a customer cannot be its own parent}");
+        response.put("responseCode", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + "-{a customer cannot be its own parent}");
         return JSONUtilities.encodeObject(response);
       }
 
@@ -17713,8 +17701,7 @@ public class GUIManager
             kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
           }
 
-        response.put("responseCode", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
-        response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+        response.put("responseCode", "ok");
       } 
     catch (SubscriberProfileServiceException e)
       {
@@ -17764,9 +17751,7 @@ public class GUIManager
     String subscriberID = resolveSubscriberID(customerID);
     if (subscriberID == null)
       {
-        response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
-        response.put("responseMessage", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage()
-            + "-{specified customerID do not relate to any customer}");
+        response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage() + "-{specified customerID do not relate to any customer}");
         return JSONUtilities.encodeObject(response);
       }
     
@@ -17814,8 +17799,7 @@ public class GUIManager
           }
 
 
-        response.put("responseCode", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
-        response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+        response.put("responseCode", "ok");
       } 
     catch (SubscriberProfileServiceException e)
       {
