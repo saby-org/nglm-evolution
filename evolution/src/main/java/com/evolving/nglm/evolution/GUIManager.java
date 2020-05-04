@@ -16610,7 +16610,7 @@ public class GUIManager
      ****************************************/
 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", false);
+    String bonusDisplay = JSONUtilities.decodeString(jsonRoot, "bonusDisplay", false);
 
     /*****************************************
      *
@@ -16619,15 +16619,15 @@ public class GUIManager
      *****************************************/
 
     Point searchedPoint = null;
-    if(bonusName != null && !bonusName.isEmpty())
+    if(bonusDisplay != null && !bonusDisplay.isEmpty())
       {
         for(GUIManagedObject storedPoint : pointService.getStoredPoints()){
-          if(storedPoint instanceof Point && (((Point) storedPoint).getPointName().equals(bonusName))){
+          if(storedPoint instanceof Point && (((Point) storedPoint).getDisplay().equals(bonusDisplay))){
             searchedPoint = (Point)storedPoint;
           }
         }
         if(searchedPoint == null){
-          log.info("bonus with name '"+bonusName+"' not found");
+          log.info("bonus with display '"+bonusDisplay+"' not found");
           response.put("responseCode", "BonusNotFound");
           return JSONUtilities.encodeObject(response);
         }
@@ -19826,7 +19826,7 @@ public class GUIManager
     ****************************************/
 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", true);
+    String bonusID = JSONUtilities.decodeString(jsonRoot, "bonusID", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
     
@@ -19852,12 +19852,12 @@ public class GUIManager
 
     PaymentMean searchedBonus = null;
     for(GUIManagedObject storedPaymentMean : paymentMeanService.getStoredPaymentMeans()){
-      if(storedPaymentMean instanceof PaymentMean && (((PaymentMean) storedPaymentMean).getPaymentMeanName().equals(bonusName))){
+      if(storedPaymentMean instanceof PaymentMean && (((PaymentMean) storedPaymentMean).getPaymentMeanID().equals(bonusID))){
         searchedBonus = (PaymentMean)storedPaymentMean;
       }
     }
     if(searchedBonus == null){
-      log.info("bonus with name '"+bonusName+"' not found");
+      log.info("bonus with ID '"+bonusID+"' not found");
       response.put("responseCode", "BonusNotFound");
       return JSONUtilities.encodeObject(response);
     }
