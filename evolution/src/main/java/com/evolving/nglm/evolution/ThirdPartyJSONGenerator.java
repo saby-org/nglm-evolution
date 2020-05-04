@@ -25,6 +25,7 @@ import kafka.log.Log;
 
 public class ThirdPartyJSONGenerator 
 {
+  private static final String UNKNOWN_OFFER = "unknown offer";
   private static final Logger log = LoggerFactory.getLogger(ThirdPartyJSONGenerator.class);
 
   /*****************************************
@@ -357,162 +358,169 @@ public class ThirdPartyJSONGenerator
     offerMap.put("id", offerID);
     if (offerID == null)
       {
-        offerMap.put("name",null);
+        offerMap.put("name",UNKNOWN_OFFER);
       }
     else
       {
         Offer offer = offerService.getActiveOffer(offerID, now);
-        offerMap.put("name", (offer == null) ? "unknown offer" : offer.getDisplay());
-        JSONObject offerJSON = offer.getJSONRepresentation();
-        if (callingChannel != null && offerJSON != null)
+        if (offer == null)
           {
-            // Add more elements to offerMap, based on what's in the channel
-            JSONObject callingChannelJSON = callingChannel.getJSONRepresentation();
-            if (callingChannelJSON != null)
+            offerMap.put("name", UNKNOWN_OFFER); 
+          }
+        else
+          {
+            offerMap.put("name", offer.getDisplay());
+            JSONObject offerJSON = offer.getJSONRepresentation();
+            if (callingChannel != null && offerJSON != null)
               {
-                JSONArray offerProperties = JSONUtilities.decodeJSONArray(callingChannelJSON, "offerProperties", false);
-                if (offerProperties != null)
+                // Add more elements to offerMap, based on what's in the channel
+                JSONObject callingChannelJSON = callingChannel.getJSONRepresentation();
+                if (callingChannelJSON != null)
                   {
-                    for (int i=0; i<offerProperties.size(); i++)
+                    JSONArray offerProperties = JSONUtilities.decodeJSONArray(callingChannelJSON, "offerProperties", false);
+                    if (offerProperties != null)
                       {
-                        JSONObject offerPropertyJSON = (JSONObject) offerProperties.get(i);
-                        if (offerPropertyJSON != null)
+                        for (int i=0; i<offerProperties.size(); i++)
                           {
-                            boolean presentOffers = JSONUtilities.decodeBoolean(offerPropertyJSON, "presentOffers", Boolean.TRUE);
-                            if (presentOffers)
+                            JSONObject offerPropertyJSON = (JSONObject) offerProperties.get(i);
+                            if (offerPropertyJSON != null)
                               {
-                                String offerPropertyName = JSONUtilities.decodeString(offerPropertyJSON, "offerPropertyName", false);
-                                if (offerPropertyName != null) 
+                                boolean presentOffers = JSONUtilities.decodeBoolean(offerPropertyJSON, "presentOffers", Boolean.TRUE);
+                                if (presentOffers)
                                   {
-                                    if ("offerScore".equals(offerPropertyName) && presentedOffers != null)
+                                    String offerPropertyName = JSONUtilities.decodeString(offerPropertyJSON, "offerPropertyName", false);
+                                    if (offerPropertyName != null) 
                                       {
-                                        for (ProposedOfferDetails presentedOffer : presentedOffers)
+                                        if ("offerScore".equals(offerPropertyName) && presentedOffers != null)
                                           {
-                                            if (offerID.equals(presentedOffer.getOfferId()))
-                                                {
-                                                  offerMap.put("offerScore", presentedOffer.getOfferScore());
-                                                  break;
-                                                }
-                                          }
-                                      }
-                                    else if ("offerRank".equals(offerPropertyName) && presentedOffers != null)
-                                      {
-                                        int rank=1;
-                                        for (ProposedOfferDetails presentedOffer : presentedOffers)
-                                          {
-                                            if (offerID.equals(presentedOffer.getOfferId()))
+                                            for (ProposedOfferDetails presentedOffer : presentedOffers)
                                               {
-                                                offerMap.put("offerRank", rank);
-                                                break;
+                                                if (offerID.equals(presentedOffer.getOfferId()))
+                                                  {
+                                                    offerMap.put("offerScore", presentedOffer.getOfferScore());
+                                                    break;
+                                                  }
                                               }
-                                            rank++;
                                           }
-                                      }
-                                    else if ("price".equals(offerPropertyName))
-                                      {
-                                        String salesChannel = dnboToken.getPresentedOffersSalesChannel();
-                                        for (OfferSalesChannelsAndPrice sc : offer.getOfferSalesChannelsAndPrices())
-                                        {
-                                          if (sc.getSalesChannelIDs() != null && sc.getSalesChannelIDs().contains(salesChannel))
-                                            {
-                                              Map<String, Object> salesChannelJSON = new LinkedHashMap<>(); // to preserve order when displaying
-                                              String paymentMean = "";
-                                              String currency = "";
-                                              long amount = 0;
-                                              OfferPrice offerPrice = sc.getPrice(); // Can be null for free offer
-                                              if (offerPrice != null)
-                                                {
-                                                  amount = offerPrice.getAmount();
-                                                  String paymentMeanID = offerPrice.getPaymentMeanID();
-                                                  String currencyID = offerPrice.getSupportedCurrencyID();
-                                                  GUIManagedObject paymentMeanObject = paymentMeanService.getStoredPaymentMean(paymentMeanID);
-                                                  if (paymentMeanObject != null && (paymentMeanObject instanceof PaymentMean))
-                                                    {
-                                                      paymentMean = ((PaymentMean) paymentMeanObject).getDisplay();
-                                                    }
-                                                  if (currencyID != null)
-                                                    {
-                                                      for (SupportedCurrency supportedCurrency : Deployment.getSupportedCurrencies().values())
-                                                        {
-                                                          JSONObject supportedCurrencyJSON = supportedCurrency.getJSONRepresentation();
-                                                          if (supportedCurrencyJSON != null && currencyID.equals(supportedCurrencyJSON.get("id")))
-                                                            {
-                                                              currency = "" + supportedCurrencyJSON.get("display");
-                                                              break;
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                              salesChannelJSON.put("paymentMean", paymentMean);
-                                              salesChannelJSON.put("amount", amount);
-                                              salesChannelJSON.put("currency", currency);
-                                              offerMap.put("price", salesChannelJSON);
-                                              break;
-                                            }
-                                        }
-                                      }
-                                    else
-                                      {
-                                        Object offerProperty = offerJSON.get(offerPropertyName);
-                                        if (offerProperty != null)
+                                        else if ("offerRank".equals(offerPropertyName) && presentedOffers != null)
                                           {
-                                            log.info("Adding " + offerPropertyName + " -> " + offerProperty);
-                                            offerMap.put(offerPropertyName, offerProperty);
+                                            int rank=1;
+                                            for (ProposedOfferDetails presentedOffer : presentedOffers)
+                                              {
+                                                if (offerID.equals(presentedOffer.getOfferId()))
+                                                  {
+                                                    offerMap.put("offerRank", rank);
+                                                    break;
+                                                  }
+                                                rank++;
+                                              }
+                                          }
+                                        else if ("price".equals(offerPropertyName))
+                                          {
+                                            String salesChannel = dnboToken.getPresentedOffersSalesChannel();
+                                            for (OfferSalesChannelsAndPrice sc : offer.getOfferSalesChannelsAndPrices())
+                                              {
+                                                if (sc.getSalesChannelIDs() != null && sc.getSalesChannelIDs().contains(salesChannel))
+                                                  {
+                                                    Map<String, Object> salesChannelJSON = new LinkedHashMap<>(); // to preserve order when displaying
+                                                    String paymentMean = "";
+                                                    String currency = "";
+                                                    long amount = 0;
+                                                    OfferPrice offerPrice = sc.getPrice(); // Can be null for free offer
+                                                    if (offerPrice != null)
+                                                      {
+                                                        amount = offerPrice.getAmount();
+                                                        String paymentMeanID = offerPrice.getPaymentMeanID();
+                                                        String currencyID = offerPrice.getSupportedCurrencyID();
+                                                        GUIManagedObject paymentMeanObject = paymentMeanService.getStoredPaymentMean(paymentMeanID);
+                                                        if (paymentMeanObject != null && (paymentMeanObject instanceof PaymentMean))
+                                                          {
+                                                            paymentMean = ((PaymentMean) paymentMeanObject).getDisplay();
+                                                          }
+                                                        if (currencyID != null)
+                                                          {
+                                                            for (SupportedCurrency supportedCurrency : Deployment.getSupportedCurrencies().values())
+                                                              {
+                                                                JSONObject supportedCurrencyJSON = supportedCurrency.getJSONRepresentation();
+                                                                if (supportedCurrencyJSON != null && currencyID.equals(supportedCurrencyJSON.get("id")))
+                                                                  {
+                                                                    currency = "" + supportedCurrencyJSON.get("display");
+                                                                    break;
+                                                                  }
+                                                              }
+                                                          }
+                                                      }
+                                                    salesChannelJSON.put("paymentMean", paymentMean);
+                                                    salesChannelJSON.put("amount", amount);
+                                                    salesChannelJSON.put("currency", currency);
+                                                    offerMap.put("price", salesChannelJSON);
+                                                    break;
+                                                  }
+                                              }
+                                          }
+                                        else
+                                          {
+                                            Object offerProperty = offerJSON.get(offerPropertyName);
+                                            if (offerProperty != null)
+                                              {
+                                                log.info("Adding " + offerPropertyName + " -> " + offerProperty);
+                                                offerMap.put(offerPropertyName, offerProperty);
+                                              }
                                           }
                                       }
                                   }
                               }
                           }
                       }
-                  }
-                // build an array of what's in the offer to speed up processing
-                Map<String,Object>offerPropertiesMap = new HashMap<>();
+                    // build an array of what's in the offer to speed up processing
+                    Map<String,Object>offerPropertiesMap = new HashMap<>();
 
-                JSONObject offerCharacteristics = JSONUtilities.decodeJSONObject(offerJSON, "offerCharacteristics", false);
-                if (offerCharacteristics != null)
-                  {
-                    JSONArray languageProperties = JSONUtilities.decodeJSONArray(offerCharacteristics, "languageProperties", false);
-                    if (languageProperties != null)
+                    JSONObject offerCharacteristics = JSONUtilities.decodeJSONObject(offerJSON, "offerCharacteristics", false);
+                    if (offerCharacteristics != null)
                       {
-                        // take 1st language. What if we have more than 1 ?
-                        JSONObject languagePropertiesJSON = (JSONObject) languageProperties.get(0);
-                        if (languagePropertiesJSON != null)
+                        JSONArray languageProperties = JSONUtilities.decodeJSONArray(offerCharacteristics, "languageProperties", false);
+                        if (languageProperties != null)
                           {
-                            JSONArray properties = JSONUtilities.decodeJSONArray(languagePropertiesJSON, "properties", false);
-                            if (properties != null)
+                            // take 1st language. What if we have more than 1 ?
+                            JSONObject languagePropertiesJSON = (JSONObject) languageProperties.get(0);
+                            if (languagePropertiesJSON != null)
                               {
-                                for (int i=0; i<properties.size(); i++)
+                                JSONArray properties = JSONUtilities.decodeJSONArray(languagePropertiesJSON, "properties", false);
+                                if (properties != null)
                                   {
-                                    JSONObject propertiesJSON = (JSONObject) properties.get(i);
-                                    if (propertiesJSON != null)
+                                    for (int i=0; i<properties.size(); i++)
                                       {
-                                        String catalogCharacteristicName = JSONUtilities.decodeString(propertiesJSON, "catalogCharacteristicName", false);
-                                        if (catalogCharacteristicName != null)
+                                        JSONObject propertiesJSON = (JSONObject) properties.get(i);
+                                        if (propertiesJSON != null)
                                           {
-                                            Object value = propertiesJSON.get("value");
-                                            offerPropertiesMap.put(catalogCharacteristicName, value);
+                                            String catalogCharacteristicName = JSONUtilities.decodeString(propertiesJSON, "catalogCharacteristicName", false);
+                                            if (catalogCharacteristicName != null)
+                                              {
+                                                Object value = propertiesJSON.get("value");
+                                                offerPropertiesMap.put(catalogCharacteristicName, value);
+                                              }
                                           }
                                       }
                                   }
-                              }
-                            if (!offerPropertiesMap.isEmpty())
-                              {
-                                JSONArray catalogCharacteristics = JSONUtilities.decodeJSONArray(callingChannelJSON, "catalogCharacteristics", false);
-                                if (catalogCharacteristics != null)
+                                if (!offerPropertiesMap.isEmpty())
                                   {
-                                    for (int i=0; i<catalogCharacteristics.size(); i++)
+                                    JSONArray catalogCharacteristics = JSONUtilities.decodeJSONArray(callingChannelJSON, "catalogCharacteristics", false);
+                                    if (catalogCharacteristics != null)
                                       {
-                                        JSONObject catalogCharacteristicsJSON = (JSONObject) catalogCharacteristics.get(i);
-                                        if (catalogCharacteristicsJSON != null)
+                                        for (int i=0; i<catalogCharacteristics.size(); i++)
                                           {
-                                            boolean presentOffers = JSONUtilities.decodeBoolean(catalogCharacteristicsJSON, "presentOffers", Boolean.TRUE);
-                                            if (presentOffers)
+                                            JSONObject catalogCharacteristicsJSON = (JSONObject) catalogCharacteristics.get(i);
+                                            if (catalogCharacteristicsJSON != null)
                                               {
-                                                String catalogCharacteristicName = JSONUtilities.decodeString(catalogCharacteristicsJSON, "catalogCharacteristicName", false);
-                                                if (catalogCharacteristicName != null) 
+                                                boolean presentOffers = JSONUtilities.decodeBoolean(catalogCharacteristicsJSON, "presentOffers", Boolean.TRUE);
+                                                if (presentOffers)
                                                   {
-                                                    Object offerProperty = offerPropertiesMap.get(catalogCharacteristicName);
-                                                    offerMap.put(catalogCharacteristicName, offerProperty);
+                                                    String catalogCharacteristicName = JSONUtilities.decodeString(catalogCharacteristicsJSON, "catalogCharacteristicName", false);
+                                                    if (catalogCharacteristicName != null) 
+                                                      {
+                                                        Object offerProperty = offerPropertiesMap.get(catalogCharacteristicName);
+                                                        offerMap.put(catalogCharacteristicName, offerProperty);
+                                                      }
                                                   }
                                               }
                                           }
