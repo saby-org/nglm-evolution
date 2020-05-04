@@ -19851,12 +19851,15 @@ public class GUIManager
     *****************************************/
 
     Deliverable searchedBonus = null;
-    for(GUIManagedObject storedPoint : pointService.getStoredPoints()){
-      if(storedPoint instanceof Point && (((Point) storedPoint).getPointID().equals(bonusID))){
-        searchedBonus = (Deliverable)storedPoint;
-        break;
+    for (GUIManagedObject storedDeliverable : deliverableService.getStoredDeliverables())
+      {
+        if (storedDeliverable instanceof Deliverable && bonusID.equals(((Deliverable) storedDeliverable).getExternalAccountID()))
+          {
+              searchedBonus = (Deliverable) storedDeliverable;
+              break;
+          }
       }
-    }
+
     if(searchedBonus == null){
       log.info("bonus with ID '"+bonusID+"' not found");
       response.put("responseCode", "BonusNotFound");
