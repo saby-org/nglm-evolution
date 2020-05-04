@@ -19850,10 +19850,11 @@ public class GUIManager
     *
     *****************************************/
 
-    PaymentMean searchedBonus = null;
-    for(GUIManagedObject storedPaymentMean : paymentMeanService.getStoredPaymentMeans()){
-      if(storedPaymentMean instanceof PaymentMean && (((PaymentMean) storedPaymentMean).getPaymentMeanID().equals(bonusID))){
-        searchedBonus = (PaymentMean)storedPaymentMean;
+    Deliverable searchedBonus = null;
+    for(GUIManagedObject storedPoint : pointService.getStoredPoints()){
+      if(storedPoint instanceof Point && (((Point) storedPoint).getPointID().equals(bonusID))){
+        searchedBonus = (Deliverable)storedPoint;
+        break;
       }
     }
     if(searchedBonus == null){
@@ -19869,7 +19870,7 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
     
     /*****************************************
     *
