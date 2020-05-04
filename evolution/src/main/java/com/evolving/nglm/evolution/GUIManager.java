@@ -5273,7 +5273,7 @@ public class GUIManager
       {
         if (journey.getGUIManagedObjectType().equals(objectType) && (! externalOnly || ! journey.getInternalOnly()))
           {
-            JSONObject journeyInfo = journeyService.generateResponseJSON(journey, fullDetails, now);            
+            JSONObject journeyInfo = journeyService.generateResponseJSON(journey, fullDetails, now);
             int subscriberCount = 0;
             JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journey.getGUIManagedObjectID());
             if (journeyTrafficHistory != null && journeyTrafficHistory.getCurrentData() != null && journeyTrafficHistory.getCurrentData().getGlobal() != null)
