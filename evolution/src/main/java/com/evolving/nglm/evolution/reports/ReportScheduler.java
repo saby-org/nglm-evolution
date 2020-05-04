@@ -186,6 +186,7 @@ public class ReportScheduler {
   {
     NGLMRuntime.initialize(true);
     ReportScheduler rs = new ReportScheduler();
+    new LoggerInitialization().initLogger();
     rs.run();
   }
 

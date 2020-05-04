@@ -834,6 +834,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
 
   public static void main(String[] args)
   {
+    new LoggerInitialization().initLogger();
     log.info("SMSNotificationManager: recieved " + args.length + " args");
     for(String arg : args)
       {

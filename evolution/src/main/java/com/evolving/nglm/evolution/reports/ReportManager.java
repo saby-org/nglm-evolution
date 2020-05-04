@@ -393,6 +393,7 @@ public class ReportManager implements Watcher
 
   public static void main(String[] args) 
   {
+    new LoggerInitialization().initLogger();
     log.info("ReportManager: received " + args.length + " args");
     for(String arg : args)
       {

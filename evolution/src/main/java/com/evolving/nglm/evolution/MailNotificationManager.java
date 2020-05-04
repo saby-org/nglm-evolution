@@ -879,6 +879,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
 
   public static void main(String[] args)
   {
+    new LoggerInitialization().initLogger();
     log.info("MailNotificationManager: recieved " + args.length + " args");
     for(String arg : args)
       {

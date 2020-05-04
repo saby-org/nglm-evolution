@@ -1159,6 +1159,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
   public static void main(String[] args)
   {
+    new LoggerInitialization().initLogger();
     log.info("PurchaseFulfillmentManager: recieved " + args.length + " args :");
     for(int index = 0; index < args.length; index++){
       log.info("       args["+index+"] " + args[index]);
