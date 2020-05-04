@@ -73,7 +73,7 @@ fi
 
 TEMPFILE=/tmp/logfile.$$.xml
 
-$//g' > $TEMPFILECONTAINERID cat $LOGFILE | sed 's/
+docker exec -i $CONTAINERID cat $LOGFILE > ${TEMPFILE}
 if [ $? -ne 0 ]
 then
   echo "--> unexpected error : exiting"
@@ -94,7 +94,7 @@ then
   echo "--> unexpected error : exiting"
   exit 1
 fi
-docker exec -it $CONTAINERID cp ${LOGFILE}.tmp ${LOGFILE}
+docker exec -i $CONTAINERID cp ${LOGFILE}.tmp ${LOGFILE}
 if [ $? -ne 0 ]
 then
   echo "--> unexpected error : exiting"
