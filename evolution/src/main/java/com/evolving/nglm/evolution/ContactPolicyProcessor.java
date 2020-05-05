@@ -7,6 +7,10 @@ import org.slf4j.Logger;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * ContactPolicyProcessor class
+ * responsible for processing delivery request and validate if an request is blocked by any contact policy rule
+ */
 public class ContactPolicyProcessor
 {
 
@@ -57,12 +61,13 @@ public class ContactPolicyProcessor
 
   /*****************************************
    *
-   *  ensureContactPolicy
-   *  validate campaign contact policy based on current metric history
+   *  ensureContactPolicy validate campaign contact policy based on current metric history
+   * @param request DeliveryRequest that is evaluated
+   * @return boolean true if any contact policy rule meet for input delivery request
    *
    *****************************************/
 
-  public boolean ensureContactPolicy(DeliveryRequest request, DeliveryManager deliveryManager, Logger log)
+  public boolean ensureContactPolicy(DeliveryRequest request) throws ContactPolityProcessorException
   {
     Date now = SystemTime.getCurrentTime();
     boolean returnValue = false;
@@ -85,29 +90,26 @@ public class ContactPolicyProcessor
             if (this.evaluateChildParentsContactPolicies(channelId, journeyObjective, requestMetricHistory, now))
               {
                 returnValue = true;
-                request.setDeliveryStatus(DeliveryManager.DeliveryStatus.Failed);
-                //deliveryManager.completeRequest(request);
                 break;
               }
           }
       }
     catch (Exception ex)
       {
-        request.setDeliveryStatus(DeliveryManager.DeliveryStatus.Failed);
-        //deliveryManager.completeRequest(request);
-        log.warn("Exception processing contact policy campaignID=" + request.getFeatureID() + " subscriberID=" + request.getSubscriberID(), ex);
+        throw new ContactPolityProcessorException(ex);
       }
-    //finally
-    //  {
-    //    deliveryManager.completeRequest(request);
-    //  }
     return returnValue;
   }
 
   /*****************************************
    *
-   *  evaluateChildParentsContactPolicies
-   *  evaluate contact policies for JourneyObjective and it's parents
+   *  evaluateChildParentsContactPolicies evaluate contact policies for JourneyObjective and it's parents
+   *  When first contact policy rule is meet the method return true
+   * @param channelID specify the channelID
+   * @param journeyObjective the journey objective to be evaluated
+   * @param requestMetricHistory metric history that is evaluated
+   * @param evaluationDate specify the date for evaluation
+   * @return boolean. True if contact policy is meet
    *
    *****************************************/
 
@@ -126,8 +128,11 @@ public class ContactPolicyProcessor
 
   /*****************************************
    *
-   *  isBlockedByContactPolicy
-   *  validate each ContactPolicy for desired channelID is blocking or not
+   *  isBlockedByContactPolicy validate each ContactPolicy for desired channelID is blocking or not
+   * @param contactPolicyId specify the contact policyId
+   * @param channelID specify the channelId
+   * @param evaluationDate
+   * @param requestMetricHistory specify the MetricHistory to be evaluated
    *
    *****************************************/
 
@@ -185,6 +190,7 @@ public class ContactPolicyProcessor
   /*****************************************
    *
    *  class ContactPolityProcessorException
+   *  used to throw specific exception for contact policy
    *
    *****************************************/
 

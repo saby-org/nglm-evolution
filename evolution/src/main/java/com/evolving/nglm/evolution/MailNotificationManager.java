@@ -54,7 +54,6 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     INVALID(704),
     QUEUE_FULL(705),
     RESCHEDULE(709),
-    CONTACT_POLICY_LIMITATION(710),
     UNKNOWN(999);
     private Integer returncode;
     private MAILMessageStatus(Integer returncode) { this.returncode = returncode; }
@@ -104,7 +103,6 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private CommunicationChannelService communicationChannelService;
   private CommunicationChannelBlackoutService blackoutService;
-  private ContactPolicyProcessor contactPolicyProcessor;
 
   //
   //  logger
@@ -156,11 +154,6 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
         
     blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "mailnotificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
     blackoutService.start();
-
-    //
-    //  contact policy processor
-    //
-    contactPolicyProcessor = new ContactPolicyProcessor("mailnotificationmanager-communicationchannel",deliveryManagerKey);
 
     //
     //  manager
@@ -826,24 +819,6 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
   {
     log.info("MailNotificationManager.submitCorrelatorUpdateDeliveryRequest(correlator="+correlator+", correlatorUpdate="+correlatorUpdate.toJSONString()+")");
     submitCorrelatorUpdate(correlator, correlatorUpdate);
-  }
-
-  /*****************************************
-   *
-   *  filterRequest
-   *
-   ****************************************
-   * @param request*/
-  @Override public boolean filterRequest(DeliveryRequest request)
-  {
-    if(!((MailNotificationManagerRequest)request).getRestricted()) return false;
-    boolean blockedByContactPolicy = contactPolicyProcessor.ensureContactPolicy(request,this,log);
-    if(blockedByContactPolicy)
-      {
-        ((MailNotificationManagerRequest)request).setMessageStatus(MAILMessageStatus.CONTACT_POLICY_LIMITATION);
-        ((MailNotificationManagerRequest)request).setReturnCode(MAILMessageStatus.CONTACT_POLICY_LIMITATION.getReturnCode());
-      }
-    return blockedByContactPolicy;
   }
 
   /*****************************************

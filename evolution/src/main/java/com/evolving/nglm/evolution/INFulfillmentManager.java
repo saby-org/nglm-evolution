@@ -616,18 +616,6 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
   }
 
   /*****************************************
-   *
-   *  filterRequest
-   *  not needed for this class
-   *
-   ****************************************
-   * @param request*/
-  @Override public boolean filterRequest(DeliveryRequest request)
-  {
-    return false;
-  }
-
-  /*****************************************
   *
   *  processCorrelatorUpdate
   *

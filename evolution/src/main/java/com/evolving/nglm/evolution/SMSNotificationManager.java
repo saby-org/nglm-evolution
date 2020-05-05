@@ -54,7 +54,6 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     QUEUE_FULL(705),
     RESCHEDULE(709),
     THROTTLING(23),
-    CONTACT_POLICY_LIMITATION(710),
     UNKNOWN(999);
     private Integer returnCode;
     private SMSMessageStatus(Integer externalRepresentation) { this.returnCode = externalRepresentation; }
@@ -106,7 +105,6 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private CommunicationChannelService communicationChannelService;
   private CommunicationChannelBlackoutService blackoutService;
-  private ContactPolicyProcessor contactPolicyProcessor;
 
   //
   //  logger
@@ -167,11 +165,6 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
         
     blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "smsnotificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
     blackoutService.start();
-
-    //
-    //  contact policy processor
-    //
-    contactPolicyProcessor = new ContactPolicyProcessor("smsnotificationmanager-communicationchannel",deliveryManagerKey);
 
     //
     //  manager
@@ -780,24 +773,6 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
   {
     log.debug("SMSNotificationManager.submitCorrelatorUpdateDeliveryRequest(correlator="+correlator+", correlatorUpdate="+correlatorUpdate.toJSONString()+")");
     submitCorrelatorUpdate(correlator, correlatorUpdate);
-  }
-
-  /*****************************************
-   *
-   *  validate contact policy
-   *
-   *****************************************/
-
-  @Override protected boolean filterRequest(DeliveryRequest request)
-  {
-    if(!((SMSNotificationManagerRequest)request).getRestricted()) return false;
-    boolean blockedByContactPolicy = contactPolicyProcessor.ensureContactPolicy(request,this,log);
-    if(blockedByContactPolicy)
-    {
-      ((SMSNotificationManagerRequest)request).setMessageStatus(SMSMessageStatus.CONTACT_POLICY_LIMITATION);
-      ((SMSNotificationManagerRequest)request).setReturnCode(SMSMessageStatus.CONTACT_POLICY_LIMITATION.getReturnCode());
-    }
-    return blockedByContactPolicy;
   }
 
   /*****************************************

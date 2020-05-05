@@ -54,7 +54,6 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
     INVALID(704),
     QUEUE_FULL(705),
     RESCHEDULE(709),
-    CONTACT_POLICY_LIMITATION(710),
     UNKNOWN(999);
     private Integer returncode;
     private PushMessageStatus(Integer returncode) { this.returncode = returncode; }
@@ -104,7 +103,6 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private CommunicationChannelService communicationChannelService;
   private CommunicationChannelBlackoutService blackoutService;
-  private ContactPolicyProcessor contactPolicyProcessor;
 
   //
   //  logger
@@ -156,11 +154,6 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
         
     blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "pushnotificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
     blackoutService.start();
-
-    //
-    //  contact policy processor
-    //
-    contactPolicyProcessor = new ContactPolicyProcessor("pushnotificationmanager-communicationchannel",deliveryManagerKey);
 
     //
     //  manager
@@ -883,25 +876,6 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
         pushRequest.setDeliveryDate(SystemTime.getCurrentTime());
         completeRequest(pushRequest);
       }
-  }
-
-  /*****************************************
-   *
-   *  filterRequest
-   *  verify contact policy rules
-   *
-   *****************************************/
-
-  @Override public boolean filterRequest(DeliveryRequest request)
-  {
-    if(!((PushNotificationManagerRequest)request).getRestricted()) return false;
-    boolean blockedByContactPolicy = contactPolicyProcessor.ensureContactPolicy(request,this,log);
-    if(blockedByContactPolicy)
-      {
-        ((PushNotificationManagerRequest)request).setMessageStatus(PushMessageStatus.CONTACT_POLICY_LIMITATION.CONTACT_POLICY_LIMITATION);
-        ((PushNotificationManagerRequest)request).setReturnCode(PushMessageStatus.CONTACT_POLICY_LIMITATION.getReturnCode());
-      }
-    return blockedByContactPolicy;
   }
 
   /*****************************************
