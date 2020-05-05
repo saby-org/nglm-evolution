@@ -23951,6 +23951,19 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             }
           break;
           
+        case "returnCodes":
+          if (includeDynamic)
+            {
+              for (RESTAPIGenericReturnCodes returnCode : RESTAPIGenericReturnCodes.values())
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", returnCode.getGenericResponseCode());
+                  availableValue.put("display", returnCode.getGenericResponseMessage());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+
         default:
           boolean foundValue = false;
           if(includeDynamic)
