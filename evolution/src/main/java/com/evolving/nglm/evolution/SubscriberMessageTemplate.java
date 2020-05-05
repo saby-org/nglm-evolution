@@ -184,7 +184,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     SubscriberMessageTemplate result = null;
     if (subscriberMessageTemplate instanceof SMSTemplate) result = new SMSTemplate(readOnlyCopy, 0L, null);
     if (subscriberMessageTemplate instanceof MailTemplate) result = new MailTemplate(readOnlyCopy, 0L, null);
-//    if (subscriberMessageTemplate instanceof PushTemplate) result = new PushTemplate(communicationChannelService, readOnlyCopy, 0L, null);
+    if (subscriberMessageTemplate instanceof PushTemplate) result = new PushTemplate(readOnlyCopy, 0L, null);
     if (subscriberMessageTemplate instanceof DialogTemplate) result = new DialogTemplate(readOnlyCopy, 0L, null);
     if (result == null) throw new ServerRuntimeException("illegal subscriberMessageTemplate");
 
@@ -223,7 +223,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     SubscriberMessageTemplate result = null;
     if (subscriberMessage instanceof SMSMessage) result = new SMSTemplate(internalSubscriberMessageTemplate, 0L, null);
     if (subscriberMessage instanceof EmailMessage) result = new MailTemplate(internalSubscriberMessageTemplate, 0L, null);
-//    if (subscriberMessage instanceof PushMessage) result = new PushTemplate(communicationChannelService, internalSubscriberMessageTemplate, 0L, null);
+    if (subscriberMessage instanceof PushMessage) result = new PushTemplate(internalSubscriberMessageTemplate, 0L, null);
     if (subscriberMessage instanceof DialogMessageFromGUI) result = new DialogTemplate(internalSubscriberMessageTemplate, 0L, null);
     if (result == null) throw new ServerRuntimeException("illegal subscriberMessage");
 

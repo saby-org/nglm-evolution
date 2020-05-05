@@ -320,7 +320,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
 
     public String getMessage(String messageField, SubscriberMessageTemplateService subscriberMessageTemplateService)
     {
-      DialogTemplate pushTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      PushTemplate pushTemplate = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
       DialogMessage dialogMessage = (pushTemplate != null) ? pushTemplate.getDialogMessage(messageField) : null;
       String text = (dialogMessage != null) ? dialogMessage.resolve(language, tags.get(messageField)) : null;
       return text;
@@ -655,8 +655,8 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       String language = subscriberEvaluationRequest.getLanguage();
       SubscriberMessageTemplateService subscriberMessageTemplateService = evolutionEventContext.getSubscriberMessageTemplateService();
-      DialogTemplate baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(pushTemplateID, now);
-      DialogTemplate template = (baseTemplate != null) ? ((DialogTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext)) : null;
+      PushTemplate baseTemplate = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(pushTemplateID, now);
+      PushTemplate template = (baseTemplate != null) ? ((PushTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext)) : null;
 
       String destAddress = null;
 
@@ -726,7 +726,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
       PushNotificationManagerRequest request = null;
       if (destAddress != null)
         {
-          request = new PushNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags);
+          request = new PushNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getPushTemplateID(), tags);
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
           request.setNotificationHistory(evolutionEventContext.getSubscriberState().getNotificationHistory());
@@ -768,7 +768,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
         log.info("PushNotificationManagerRequest run deliveryRequest" + deliveryRequest);
 
         PushNotificationManagerRequest pushRequest = (PushNotificationManagerRequest)deliveryRequest;
-        DialogTemplate pushTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(pushRequest.getTemplateID(), now);
+        PushTemplate pushTemplate = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(pushRequest.getTemplateID(), now);
         
         if (pushTemplate != null) 
           {

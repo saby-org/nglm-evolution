@@ -1138,6 +1138,10 @@ public class NotificationManager extends DeliveryManager implements Runnable
     ArrayList<String> result = new ArrayList<>();
     for (CommunicationChannel current : Deployment.getCommunicationChannels().values())
       {
+        if(!current.isGeneric()) {
+          continue;
+        }
+        
         ToolBoxBuilder tb = new ToolBoxBuilder(current.getToolboxID(), current.getName(), current.getDisplay(), current.getIcon(), current.getToolboxHeight(), current.getToolboxWidth(), OutputType.Static);
 
         tb.addOutputConnector(new OutputConnectorBuilder("delivered", "Delivered/Sent").addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'delivered', 'acknowledged' ]"))));
