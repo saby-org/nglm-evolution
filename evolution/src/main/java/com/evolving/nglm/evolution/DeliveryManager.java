@@ -307,9 +307,8 @@ public abstract class DeliveryManager
         try
           {
             result = submitRequestQueue.take();
-            processContactPolicyForRequest(result);
             //if DeliveryStatus is BlockedByContactPolicy make result null and the next request from queue will be taken
-            if(result.getDeliveryStatus() == DeliveryStatus.BlockedByContactPolicy) result = null;
+            if(processRequestBlockedByContactPolicy(result)) result = null;
           }
         catch (InterruptedException e)
           {
@@ -1910,19 +1909,19 @@ public abstract class DeliveryManager
   /*****************************************
    *
    *  processContactPolicyForRequest is used to validate the request based on contact policy rule
-   *  If request is blocked by contact policy the completion of request is made inside of this method
+   *  delivery status and any information needed for blocking by contact policy is processed inside of method
    * @param request represent the delivery request to be evalued against contact policy rules.
-   *                If is blocked by contact policy request status will be changed in BlockedByContactPolicy
+   * @return boolean If request in blocked by an contact policy rule return true
    *
    *****************************************/
 
-  private void processContactPolicyForRequest(DeliveryRequest request)
+  private boolean processRequestBlockedByContactPolicy(DeliveryRequest request)
   {
+    boolean blockedByContactPolicy = false;
     //if request is not type of any of contact policy affected request types do nothing
     if(request instanceof SMSNotificationManager.SMSNotificationManagerRequest || request instanceof PushNotificationManager.PushNotificationManagerRequest || request instanceof MailNotificationManager.MailNotificationManagerRequest)
       {
         RESTAPIGenericReturnCodes returnCode = RESTAPIGenericReturnCodes.UNKNOWN;
-        boolean blockedByContactPolicy = false;
         try
           {
             blockedByContactPolicy = contactPolicyProcessor.ensureContactPolicy(request);
@@ -1958,6 +1957,7 @@ public abstract class DeliveryManager
             completeRequest(request);
           }
       }
+    return blockedByContactPolicy;
   }
 
   /*****************************************
