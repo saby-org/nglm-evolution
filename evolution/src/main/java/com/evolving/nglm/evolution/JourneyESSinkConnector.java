@@ -189,7 +189,7 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
           documentMap.put("timestamp", DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime())); // @rl: TODO TIMESTAMP_FORMAT in more generic class ? Elasticsearch client ?
 
         }
-      catch (GUIManagerException|SerializationException e)
+      catch (GUIManagerException|SerializationException|Expression.ExpressionParseException|Expression.ExpressionTypeCheckException e)
         {
         }
 
