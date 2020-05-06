@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.JobScheduler;
 import com.evolving.nglm.evolution.Report;
@@ -55,6 +56,12 @@ public class ReportScheduler {
     reportService.start();
     log.trace("ReportService started");
     reportScheduler = new JobScheduler("report");
+    
+    // EVPRO-266 process all existing reports
+    for (Report report : reportService.getActiveReports(SystemTime.getCurrentTime()))
+      {
+        scheduleReport(report);
+      }
 
     /*****************************************
     *
