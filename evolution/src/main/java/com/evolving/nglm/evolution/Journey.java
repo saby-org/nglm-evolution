@@ -43,7 +43,7 @@ import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
-import com.evolving.nglm.evolution.notification.NotificationGenericMessage;
+import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 
 public class Journey extends GUIManagedObject
 {
@@ -1843,12 +1843,13 @@ public class Journey extends GUIManagedObject
                 PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
                 boundParameters.put(parameterName, pushMessageValue);
                 break;
-
-              case NotificationStringParameter:
-              case NotificationHTMLStringParameter:
-                DialogMessage dialogMessage = new DialogMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value"), parameterName, "messageText", parameter.getMandatoryParameter(), criterionContext);
-                boundParameters.put(parameterName, dialogMessage);
-                break;
+              
+              /** The case with Dialog as boundParameters should never happen (and if, we will need to retrieve the communicationChannelID)
+              case Dialog:
+                NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
+                boundParameters.put(parameterName, templateParameters);
+                break; 
+              **/
 
               case WorkflowParameter:
                 WorkflowParameter workflowParameterValue = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);
@@ -1934,6 +1935,7 @@ public class Journey extends GUIManagedObject
               case PushMessageParameter:
               case NotificationStringParameter:
               case NotificationHTMLStringParameter:
+              case Dialog:
               case WorkflowParameter:
                 switch (parameterExpressionValue.getType())
                   {
@@ -1985,17 +1987,12 @@ public class Journey extends GUIManagedObject
         //  node parameters
         //
         String channelID = "NotGeneric"; // Generic Channel ID of this parameter 
-        ArrayList<DialogMessage> genericNotificationFields = new ArrayList<>();
         for (Object parameterValue : journeyNode.getNodeParameters().values())          {
-                        
-            if(parameterValue instanceof DialogMessage) {
-              // this is One field of a generic message, so let register it for later
-              genericNotificationFields.add((DialogMessage)parameterValue);
-              channelID = JSONUtilities.decodeString(journeyNode.getNodeType().getJSONRepresentation(), "communicationChannelID", true);
-            }
             
             if (parameterValue instanceof SubscriberMessage)
               {
+                NodeType nodeType = journeyNode.getNodeType();
+                channelID = JSONUtilities.decodeString(nodeType.getJSONRepresentation(), "communicationChannelID", true);
                 // This is for the management of Old channels.... hardcoded SMS, EMAIL and so on...
                 SubscriberMessage subscriberMessage = (SubscriberMessage) parameterValue;
                 if (subscriberMessage.getDialogMessages().size() > 0)
@@ -2013,16 +2010,10 @@ public class Journey extends GUIManagedObject
           {
             for (Object parameterValue : journeyLink.getLinkParameters().values())
               {
-                
-                if(parameterValue instanceof DialogMessage) {
-                  // this is One field of a generic message, so let register it for later
-                  genericNotificationFields.add((DialogMessage)parameterValue);
-                  NodeType nodeType = Deployment.getNodeTypes().get(journeyNode.getNodeType());
-                  channelID = JSONUtilities.decodeString(nodeType.getJSONRepresentation(), "communicationChannelID", true);
-                }
-                
                 if (parameterValue instanceof SubscriberMessage)
                   {
+                    NodeType nodeType = journeyNode.getNodeType();
+                    channelID = JSONUtilities.decodeString(nodeType.getJSONRepresentation(), "communicationChannelID", true);
                     SubscriberMessage subscriberMessage = (SubscriberMessage) parameterValue;
                     if (subscriberMessage.getDialogMessages().size() > 0)
                       {
@@ -2031,15 +2022,6 @@ public class Journey extends GUIManagedObject
                   }
               }
           }
-        
-        //
-        // build a NotificationGenericMessage if genericNotificationFields is not empty
-        //
-        
-        if(genericNotificationFields.size() > 0) {
-          NotificationGenericMessage genericMessage = new NotificationGenericMessage(genericNotificationFields);
-          result.add(new Pair(genericMessage, channelID));
-        }
         
       }
 
@@ -2660,10 +2642,19 @@ public class Journey extends GUIManagedObject
                 nodeParameters.put(parameterName, pushMessageValue);
                 break;
                 
-              case NotificationStringParameter:
-              case NotificationHTMLStringParameter:
-                DialogMessage dialogMessage = new DialogMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value"), parameterName, "messageText", parameter.getMandatoryParameter(), criterionContext);
-                nodeParameters.put(parameterName, dialogMessage);
+              case Dialog:
+                HashMap<String,Boolean> dialogMessageFieldsMandatory = new HashMap<String, Boolean>();
+                String communcationChannelID = JSONUtilities.decodeString(nodeType.getJSONRepresentation(), "communicationChannelID");
+                CommunicationChannel channel = Deployment.getCommunicationChannels().get(communcationChannelID);
+                for(CriterionField param : channel.getParameters().values()) {
+                  if(param.getFieldDataType().getExternalRepresentation().startsWith("template_")) {
+                    dialogMessageFieldsMandatory.put(param.getID(), param.getMandatoryParameter());
+                  }
+                }
+                JSONObject value = (JSONObject)parameterJSON.get("value");
+                JSONArray message = JSONUtilities.decodeJSONArray(value, "message");
+                NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
+                nodeParameters.put(parameterName, templateParameters);
                 break;
 
               case WorkflowParameter:
@@ -2775,6 +2766,7 @@ public class Journey extends GUIManagedObject
               case PushMessageParameter:
               case NotificationStringParameter:
               case NotificationHTMLStringParameter:
+              case Dialog:
               case WorkflowParameter:
                 switch (parameterExpressionValue.getType())
                   {
@@ -3038,10 +3030,17 @@ public class Journey extends GUIManagedObject
                 outputConnectorParameters.put(parameterName, pushMessageValue);
                 break;
                 
-              case NotificationStringParameter:
-              case NotificationHTMLStringParameter:
-                DialogMessage dialogMessage = new DialogMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value"), parameterName, "messageText", parameter.getMandatoryParameter(), criterionContext);
-                outputConnectorParameters.put(parameterName, dialogMessage);
+              case Dialog:
+                HashMap<String,Boolean> dialogMessageFieldsMandatory = new HashMap<String, Boolean>();
+                for(CriterionField param : nodeType.getParameters().values()) {
+                  if(param.getFieldDataType().getExternalRepresentation().startsWith("template_")) {
+                    dialogMessageFieldsMandatory.put(param.getID(), param.getMandatoryParameter());
+                  }
+                }
+                JSONObject value = (JSONObject)parameterJSON.get("value");
+                JSONArray message = JSONUtilities.decodeJSONArray(value, "message");
+                NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
+                outputConnectorParameters.put(parameterName, templateParameters);
                 break;
 
               case WorkflowParameter:
@@ -3153,6 +3152,7 @@ public class Journey extends GUIManagedObject
               case PushMessageParameter:
               case NotificationStringParameter:
               case NotificationHTMLStringParameter:
+              case Dialog:
               case WorkflowParameter:
                 switch (parameterExpressionValue.getType())
                   {

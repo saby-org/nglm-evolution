@@ -195,7 +195,7 @@ public class DialogTemplate extends SubscriberMessageTemplate
     *
     *****************************************/
     
-    this.communicationChannelID = JSONUtilities.decodeString(jsonRoot, "communicationChannelID", false);
+    this.communicationChannelID = JSONUtilities.decodeString(jsonRoot, "communicationChannelID", true);
 
     this.dialogMessageFields = new HashMap<String, Boolean>();
     Date now = SystemTime.getCurrentTime();

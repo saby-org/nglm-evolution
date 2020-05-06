@@ -1,28 +1,29 @@
 /*****************************************************************************
 *
-*  NotficationGenericMessage.java
+*  NotificationTemplateParameters.java
 *
 *****************************************************************************/
 
 package com.evolving.nglm.evolution.notification;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
+import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.CriterionContext;
-import com.evolving.nglm.evolution.DialogMessage;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberMessage;
 import com.evolving.nglm.evolution.SubscriberMessageTemplateService;
 
-public class NotificationGenericMessage extends SubscriberMessage
+public class NotificationTemplateParameters extends SubscriberMessage
 {
   /*****************************************
   *
@@ -38,7 +39,7 @@ public class NotificationGenericMessage extends SubscriberMessage
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("notification_generic_message");
+    schemaBuilder.name("notification_template_parameters");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schema = schemaBuilder.build();
@@ -48,17 +49,17 @@ public class NotificationGenericMessage extends SubscriberMessage
   //  serde
   //
 
-  private static ConnectSerde<NotificationGenericMessage> serde = new ConnectSerde<NotificationGenericMessage>(schema, false, NotificationGenericMessage.class, NotificationGenericMessage::pack, NotificationGenericMessage::unpack);
+  private static ConnectSerde<NotificationTemplateParameters> serde = new ConnectSerde<NotificationTemplateParameters>(schema, false, NotificationTemplateParameters.class, NotificationTemplateParameters::pack, NotificationTemplateParameters::unpack);
   public static Object pack(Object value) { return packCommon(schema, value); }
-  public static NotificationGenericMessage unpack(SchemaAndValue schemaAndValue) { return new NotificationGenericMessage(schemaAndValue); }
-  public NotificationGenericMessage(SchemaAndValue schemaAndValue) { super(schemaAndValue); }
+  public static NotificationTemplateParameters unpack(SchemaAndValue schemaAndValue) { return new NotificationTemplateParameters(schemaAndValue); }
+  public NotificationTemplateParameters(SchemaAndValue schemaAndValue) { super(schemaAndValue); }
 
   //
   //  accessor
   //
 
   public static Schema schema() { return schema; }
-  public static ConnectSerde<NotificationGenericMessage> serde() { return serde; }
+  public static ConnectSerde<NotificationTemplateParameters> serde() { return serde; }
 
   /*****************************************
   *
@@ -66,15 +67,11 @@ public class NotificationGenericMessage extends SubscriberMessage
   *
   *****************************************/
 
-  public NotificationGenericMessage(Object pushMessageJSON, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
+  public NotificationTemplateParameters(Object pushMessageJSON,  Map<String, Boolean> dialogMessageFieldsMandatory, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
   {
-    super(pushMessageJSON, new HashMap<String, Boolean>(), subscriberMessageTemplateService, criterionContext);
+    super(pushMessageJSON, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
     
   }
-  public NotificationGenericMessage(ArrayList<DialogMessage> genericNotificationFields)
-    {
-      super(genericNotificationFields);
-    }
   /*****************************************
   *
   *  toString
@@ -84,7 +81,7 @@ public class NotificationGenericMessage extends SubscriberMessage
   @Override
   public String toString()
   {
-    return "NotficationGenericMessage ["
+    return "NotificationTemplateParameters ["
         + "subscriberMessageTemplateID=" + getSubscriberMessageTemplateID() 
         + ", parameterTags()=" + getParameterTags() 
         + ", dialogMessages()=" + getDialogMessages() 

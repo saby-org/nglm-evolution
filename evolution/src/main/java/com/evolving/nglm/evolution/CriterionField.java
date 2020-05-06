@@ -228,8 +228,9 @@ public class CriterionField extends DeploymentManagedObject
             case SMSMessageParameter:
             case EmailMessageParameter:
             case PushMessageParameter:
-            case NotificationStringParameter:  
+            case NotificationStringParameter:
             case NotificationHTMLStringParameter:
+            case Dialog:
             case WorkflowParameter:
               break;
 

@@ -28,6 +28,7 @@ import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.NodeType.OutputType;
+import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.toolbox.ActionBuilder;
 import com.evolving.nglm.evolution.toolbox.ArgumentBuilder;
 import com.evolving.nglm.evolution.toolbox.AvailableValueDynamicBuilder;
@@ -795,7 +796,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
        *
        *****************************************/
 
-      String templateID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest, "node.parameter.dialog_template");
+      NotificationTemplateParameters templateID = (NotificationTemplateParameters) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest, "node.parameter.dialog_template");
 
       /*****************************************
        *
@@ -806,7 +807,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       String language = subscriberEvaluationRequest.getLanguage();
       SubscriberMessageTemplateService subscriberMessageTemplateService = evolutionEventContext.getSubscriberMessageTemplateService();
-      DialogTemplate baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, now);
+      DialogTemplate baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID.getSubscriberMessageTemplateID(), now);
       DialogTemplate template = (baseTemplate != null) ? ((DialogTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext)) : null;
 
       String destAddress = null;
@@ -1144,7 +1145,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
         
         ToolBoxBuilder tb = new ToolBoxBuilder(current.getToolboxID(), current.getName(), current.getDisplay(), current.getIcon(), current.getToolboxHeight(), current.getToolboxWidth(), OutputType.Static);
 
-        //tb.addFlatStringField("communicationChannelID", current.getID());
+        tb.addFlatStringField("communicationChannelID", current.getID());
         tb.addOutputConnector(new OutputConnectorBuilder("delivered", "Delivered/Sent").addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'delivered', 'acknowledged' ]"))));
         tb.addOutputConnector(new OutputConnectorBuilder("failed", "Failed").addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'failed', 'indeterminate', 'failedTimeout' ]"))));
         tb.addOutputConnector(new OutputConnectorBuilder("timeout", "Timeout").addTransitionCriteria(new TransitionCriteriaBuilder("evaluation.date", CriterionOperator.GreaterThanOrEqualOperator, new ArgumentBuilder("dateAdd(node.entryDate, 1, 'minute')").setTimeUnit(TimeUnit.Instant))));
@@ -1172,20 +1173,23 @@ public class NotificationManager extends DeliveryManager implements Runnable
             templateParameter.addFlatStringField("communicationChannelID", current.getID());
             tb.addParameter(templateParameter);
           }
-//        if (current.allowInLineTemplate())
-//          {
-//            if (current.getJSONRepresentation().get("parameters") != null)
-//              {
-//                JSONArray paramsJSON = JSONUtilities.decodeJSONArray(current.getJSONRepresentation(), "parameters");
-//                for (int i = 0; i < paramsJSON.size(); i++)
-//                  {
-//                    JSONObject cp = (JSONObject) paramsJSON.get(i);
-//                    parameterBuilder = new ParameterBuilder(JSONUtilities.decodeString(cp, "id"), JSONUtilities.decodeString(cp, "display"), CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(cp, "dataType")), JSONUtilities.decodeBoolean(cp, "multiple"), JSONUtilities.decodeBoolean(cp, "mandatory"), cp.get("defaultValue"));
-//                    tb.addParameter(parameterBuilder);
-//                    // TODO EVPRO-146 Available Values
-//                  }
-//              }
-//          }
+        if (current.getJSONRepresentation().get("parameters") != null)
+          {
+            JSONArray paramsJSON = JSONUtilities.decodeJSONArray(current.getJSONRepresentation(), "parameters");
+            for (int i = 0; i < paramsJSON.size(); i++)
+              {
+                JSONObject cp = (JSONObject) paramsJSON.get(i);
+                String dataType = JSONUtilities.decodeString(cp, "dataType");
+                if(dataType != null && dataType.startsWith("template_")) {
+                  // this parameter must not be put into the toolbox as the GUI will retrieve it directly from the channel definition
+                  continue;
+                }
+                parameterBuilder = new ParameterBuilder(JSONUtilities.decodeString(cp, "id"), JSONUtilities.decodeString(cp, "display"), CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(cp, "dataType")), JSONUtilities.decodeBoolean(cp, "multiple"), JSONUtilities.decodeBoolean(cp, "mandatory"), cp.get("defaultValue"));
+                tb.addParameter(parameterBuilder);
+                // TODO EVPRO-146 Available Values
+              }
+          }
+       
 
         // Action:
         tb.setAction(new ActionBuilder("com.evolving.nglm.evolution.NotificationManager$ActionManager").addManagerClassConfigurationField("channelID", current.getID()).addManagerClassConfigurationField("moduleID", "1"));

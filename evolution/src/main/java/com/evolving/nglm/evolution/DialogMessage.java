@@ -52,8 +52,7 @@ public class DialogMessage
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("dialog_message");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
-    schemaBuilder.field("notificationParameterName", SchemaBuilder.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("messageTextByLanguage", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).name("dialog_message_text").schema());
     schemaBuilder.field("contextTags", SchemaBuilder.array(CriterionField.schema()).defaultValue(new ArrayList<CriterionField>()).schema());
     schemaBuilder.field("parameterTags", SchemaBuilder.array(CriterionField.schema()).defaultValue(new ArrayList<CriterionField>()).schema());
@@ -80,7 +79,7 @@ public class DialogMessage
   *  data
   *
   *****************************************/
-  private String notificationParameterName = null; // the name of the parameter represented by this DialogMessage 
+
   private Map<String,String> messageTextByLanguage = new HashMap<String,String>();
   private List<CriterionField> contextTags = new ArrayList<CriterionField>();
   private List<CriterionField> parameterTags = new ArrayList<CriterionField>();
@@ -91,7 +90,7 @@ public class DialogMessage
   *  accessors
   *
   *****************************************/
-  public String getNotificationParameterName() { return notificationParameterName; }
+
   public Map<String,String> getMessageTextByLanguage() { return messageTextByLanguage; }
   public List<CriterionField> getContextTags() { return contextTags; }
   public List<CriterionField> getParameterTags() { return parameterTags; }
@@ -103,10 +102,9 @@ public class DialogMessage
   *
   *****************************************/
 
-  public DialogMessage(JSONArray messagesJSON, String notificationParameterName, String messageTextAttribute, boolean mandatory, CriterionContext criterionContext) throws GUIManagerException
+  public DialogMessage(JSONArray messagesJSON, String messageTextAttribute, boolean mandatory, CriterionContext criterionContext) throws GUIManagerException
   {
     Map<CriterionField,String> tagReplacements = new HashMap<CriterionField,String>();
-    this.notificationParameterName = notificationParameterName;
     for (int i=0; i<messagesJSON.size(); i++)
       {
         /*****************************************
@@ -237,9 +235,8 @@ public class DialogMessage
   *
   *****************************************/
 
-  private DialogMessage(String notificationParameterName, Map<String,String> messageTextByLanguage, List<CriterionField> contextTags, List<CriterionField> parameterTags, List<CriterionField> allTags)
+  private DialogMessage(Map<String,String> messageTextByLanguage, List<CriterionField> contextTags, List<CriterionField> parameterTags, List<CriterionField> allTags)
   {
-    this.notificationParameterName = notificationParameterName;
     this.messageTextByLanguage = messageTextByLanguage;
     this.contextTags = contextTags;
     this.parameterTags = parameterTags;
@@ -254,7 +251,6 @@ public class DialogMessage
 
   public DialogMessage(DialogMessage dialogMessage)
   {
-    this.notificationParameterName = dialogMessage.getNotificationParameterName();
     this.messageTextByLanguage = new HashMap<String,String>(dialogMessage.getMessageTextByLanguage());
     this.contextTags = new ArrayList<CriterionField>(dialogMessage.getContextTags());
     this.parameterTags = new ArrayList<CriterionField>(dialogMessage.getParameterTags());
@@ -271,7 +267,6 @@ public class DialogMessage
   {
     DialogMessage dialogMessage = (DialogMessage) value;
     Struct struct = new Struct(schema);
-    struct.put("notificationParameterName", dialogMessage.getNotificationParameterName());
     struct.put("messageTextByLanguage", dialogMessage.getMessageTextByLanguage());
     struct.put("contextTags", packTags(dialogMessage.getContextTags()));
     struct.put("parameterTags", packTags(dialogMessage.getParameterTags()));
@@ -320,13 +315,12 @@ public class DialogMessage
     List<CriterionField> contextTags = (schemaVersion >= 2) ? unpackTags(schema.field("contextTags").schema(), (List<Object>) valueStruct.get("contextTags")) : unpackTags(schema.field("tags").schema(), (List<Object>) valueStruct.get("tags"));
     List<CriterionField> parameterTags = (schemaVersion >= 2) ? unpackTags(schema.field("parameterTags").schema(), (List<Object>) valueStruct.get("parameterTags")) : new ArrayList<CriterionField>();
     List<CriterionField> allTags = (schemaVersion >= 2) ? unpackTags(schema.field("allTags").schema(), (List<Object>) valueStruct.get("allTags")) : unpackTags(schema.field("tags").schema(), (List<Object>) valueStruct.get("tags"));
-    String notificationParameterName = (schemaVersion >= 3) ? valueStruct.getString("notificationParameterName") : "not filled";
 
     //
     //  return
     //
 
-    return new DialogMessage(notificationParameterName, messageTextByLanguage, contextTags, parameterTags, allTags);
+    return new DialogMessage(messageTextByLanguage, contextTags, parameterTags, allTags);
   }
 
   /*****************************************

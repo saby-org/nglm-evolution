@@ -117,10 +117,11 @@ public abstract class SubscriberMessage
         
         parameterTags = decodeParameterTags(JSONUtilities.decodeJSONArray(messageJSON, "parameterTags", new JSONArray()), subscriberMessageTemplate, criterionContext);
       }
-
+    
     /*****************************************
     *
-    *  case 2:  subscriberMessageJSON is a hard-coded message
+    *  case 2:  subscriberMessageJSON: in case of OLD SMS inline messages and Generic inLine messages
+    *          
     *
     *****************************************/
     
@@ -131,7 +132,7 @@ public abstract class SubscriberMessage
         //
 
         JSONArray messagesJSON = (JSONArray) subscriberMessageJSON;
-
+        
         //
         //  messageText
         //
@@ -140,19 +141,11 @@ public abstract class SubscriberMessage
         for (String dialogMessageField : dialogMessageFields.keySet())
           {
             boolean mandatory = dialogMessageFields.get(dialogMessageField);
-            dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, dialogMessageField, mandatory, criterionContext));
+            dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, mandatory, criterionContext));
           }
       }
   }
-  
-  
-  public SubscriberMessage(ArrayList<DialogMessage> genericNotificationFields)
-  {
-    this.dialogMessages = new HashMap<>();
-    for(DialogMessage notificationField : genericNotificationFields) {
-      dialogMessages.put(notificationField.getNotificationParameterName(), notificationField);
-    }
-  }
+
 
   /*****************************************
   *

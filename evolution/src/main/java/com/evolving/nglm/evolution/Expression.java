@@ -446,8 +446,9 @@ public abstract class Expression
           case SMSMessageParameter:
           case EmailMessageParameter:
           case PushMessageParameter:
-          case NotificationStringParameter:  
+          case NotificationStringParameter:
           case NotificationHTMLStringParameter:
+          case Dialog:
           case WorkflowParameter:
             setType(ExpressionDataType.OpaqueReferenceExpression);
             break;
