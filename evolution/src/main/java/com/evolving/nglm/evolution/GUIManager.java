@@ -6074,12 +6074,7 @@ public class GUIManager
     String userIdentifier = JSONUtilities.decodeString(jsonRoot, "userID", "");
     String userName = JSONUtilities.decodeString(jsonRoot, "userName", "");
     boolean active = JSONUtilities.decodeBoolean(jsonRoot, "active", Boolean.FALSE);
-    JSONArray bulkCampaignJourneyObjectives = JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", true);
-    JSONObject bulkCampaignStory = new JSONObject();
-    if (jsonRoot.get("story") != null) {
-       bulkCampaignStory = JSONUtilities.decodeJSONObject(jsonRoot, "story", true);
-    }
-    
+    JSONArray bulkCampaignJourneyObjectives = JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", true);    
     
     /*****************************************
     *
@@ -6152,8 +6147,7 @@ public class GUIManager
         campaignJSONRepresentation.put("userID", userIdentifier);
         campaignJSONRepresentation.put("userName", userName);
         campaignJSONRepresentation.put("active", active);
-        campaignJSONRepresentation.put("journeyObjectives", bulkCampaignJourneyObjectives);
-        campaignJSONRepresentation.put("story", bulkCampaignStory);
+        campaignJSONRepresentation.put("journeyObjectives", bulkCampaignJourneyObjectives);       
 
         //
         //  campaignJSON
