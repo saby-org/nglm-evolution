@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -188,7 +189,7 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
           documentMap.put("timestamp", DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime())); // @rl: TODO TIMESTAMP_FORMAT in more generic class ? Elasticsearch client ?
 
         }
-      catch (GUIManagerException e)
+      catch (GUIManagerException|SerializationException e)
         {
         }
 
