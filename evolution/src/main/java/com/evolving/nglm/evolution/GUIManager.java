@@ -53,6 +53,7 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.zookeeper.ZooKeeper;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
@@ -7653,7 +7654,7 @@ public class GUIManager
       {
         result = EvaluationCriterion.esCountMatchCriteriaExecuteQuery(query, elasticsearch);
       }
-    catch (IOException e)
+    catch (IOException|ElasticsearchStatusException e)
       {
         //
         //  log

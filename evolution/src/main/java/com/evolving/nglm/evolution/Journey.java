@@ -31,6 +31,7 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.json.simple.JSONArray;
@@ -567,7 +568,7 @@ public class Journey extends GUIManagedObject implements StockableItem
         BoolQueryBuilder query = EvaluationCriterion.esCountMatchCriteriaGetQuery(targetingCriteria);
         return EvaluationCriterion.esCountMatchCriteriaExecuteQuery(query, elasticsearch);
       }
-    catch (CriterionException|IOException e)
+    catch (CriterionException|IOException|ElasticsearchStatusException e)
       {
         StringWriter stackTraceWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stackTraceWriter, true));

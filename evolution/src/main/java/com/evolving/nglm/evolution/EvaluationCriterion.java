@@ -26,6 +26,7 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.lucene.search.join.ScoreMode;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -1207,7 +1208,7 @@ public class EvaluationCriterion
   //
   // execute query
   //
-  public static long esCountMatchCriteriaExecuteQuery(BoolQueryBuilder query, RestHighLevelClient elasticsearch) throws IOException {
+  public static long esCountMatchCriteriaExecuteQuery(BoolQueryBuilder query, RestHighLevelClient elasticsearch) throws IOException, ElasticsearchStatusException {
     SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(query).size(0));
     SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
     return searchResponse.getHits().getTotalHits().value;
