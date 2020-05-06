@@ -1144,6 +1144,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
         
         ToolBoxBuilder tb = new ToolBoxBuilder(current.getToolboxID(), current.getName(), current.getDisplay(), current.getIcon(), current.getToolboxHeight(), current.getToolboxWidth(), OutputType.Static);
 
+        //tb.addFlatStringField("communicationChannelID", current.getID());
         tb.addOutputConnector(new OutputConnectorBuilder("delivered", "Delivered/Sent").addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'delivered', 'acknowledged' ]"))));
         tb.addOutputConnector(new OutputConnectorBuilder("failed", "Failed").addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'failed', 'indeterminate', 'failedTimeout' ]"))));
         tb.addOutputConnector(new OutputConnectorBuilder("timeout", "Timeout").addTransitionCriteria(new TransitionCriteriaBuilder("evaluation.date", CriterionOperator.GreaterThanOrEqualOperator, new ArgumentBuilder("dateAdd(node.entryDate, 1, 'minute')").setTimeUnit(TimeUnit.Instant))));
@@ -1167,22 +1168,24 @@ public class NotificationManager extends DeliveryManager implements Runnable
         // parameter:
         if (current.allowGuiTemplate())
           {
-            tb.addParameter(new ParameterBuilder("node.parameter.dialog_template", "Message Template", CriterionDataType.StringCriterion, false, false, null).addAvailableValue(new AvailableValueDynamicBuilder("#dialog_template_" + current.getID() + "#")));
+            ParameterBuilder templateParameter = new ParameterBuilder("node.parameter.dialog_template", "Message Template", CriterionDataType.Dialog, false, false, null).addAvailableValue(new AvailableValueDynamicBuilder("#dialog_template_" + current.getID() + "#"));
+            templateParameter.addFlatStringField("communicationChannelID", current.getID());
+            tb.addParameter(templateParameter);
           }
-        if (current.allowInLineTemplate())
-          {
-            if (current.getJSONRepresentation().get("parameters") != null)
-              {
-                JSONArray paramsJSON = JSONUtilities.decodeJSONArray(current.getJSONRepresentation(), "parameters");
-                for (int i = 0; i < paramsJSON.size(); i++)
-                  {
-                    JSONObject cp = (JSONObject) paramsJSON.get(i);
-                    parameterBuilder = new ParameterBuilder(JSONUtilities.decodeString(cp, "id"), JSONUtilities.decodeString(cp, "display"), CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(cp, "dataType")), JSONUtilities.decodeBoolean(cp, "multiple"), JSONUtilities.decodeBoolean(cp, "mandatory"), cp.get("defaultValue"));
-                    tb.addParameter(parameterBuilder);
-                    // TODO EVPRO-146 Available Values
-                  }
-              }
-          }
+//        if (current.allowInLineTemplate())
+//          {
+//            if (current.getJSONRepresentation().get("parameters") != null)
+//              {
+//                JSONArray paramsJSON = JSONUtilities.decodeJSONArray(current.getJSONRepresentation(), "parameters");
+//                for (int i = 0; i < paramsJSON.size(); i++)
+//                  {
+//                    JSONObject cp = (JSONObject) paramsJSON.get(i);
+//                    parameterBuilder = new ParameterBuilder(JSONUtilities.decodeString(cp, "id"), JSONUtilities.decodeString(cp, "display"), CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(cp, "dataType")), JSONUtilities.decodeBoolean(cp, "multiple"), JSONUtilities.decodeBoolean(cp, "mandatory"), cp.get("defaultValue"));
+//                    tb.addParameter(parameterBuilder);
+//                    // TODO EVPRO-146 Available Values
+//                  }
+//              }
+//          }
 
         // Action:
         tb.setAction(new ActionBuilder("com.evolving.nglm.evolution.NotificationManager$ActionManager").addManagerClassConfigurationField("channelID", current.getID()).addManagerClassConfigurationField("moduleID", "1"));

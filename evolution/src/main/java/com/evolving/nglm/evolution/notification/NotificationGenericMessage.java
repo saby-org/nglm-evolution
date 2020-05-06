@@ -1,11 +1,12 @@
 /*****************************************************************************
 *
-*  DialogMessageFromGUI.java
+*  NotficationGenericMessage.java
 *
 *****************************************************************************/
 
-package com.evolving.nglm.evolution;
+package com.evolving.nglm.evolution.notification;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.apache.kafka.connect.data.Field;
@@ -15,9 +16,13 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.CriterionContext;
+import com.evolving.nglm.evolution.DialogMessage;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.SubscriberMessage;
+import com.evolving.nglm.evolution.SubscriberMessageTemplateService;
 
-public class DialogMessageFromGUI extends SubscriberMessage
+public class NotificationGenericMessage extends SubscriberMessage
 {
   /*****************************************
   *
@@ -33,7 +38,7 @@ public class DialogMessageFromGUI extends SubscriberMessage
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("dialog_message_from_gui");
+    schemaBuilder.name("notification_generic_message");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schema = schemaBuilder.build();
@@ -43,17 +48,17 @@ public class DialogMessageFromGUI extends SubscriberMessage
   //  serde
   //
 
-  private static ConnectSerde<DialogMessageFromGUI> serde = new ConnectSerde<DialogMessageFromGUI>(schema, false, DialogMessageFromGUI.class, DialogMessageFromGUI::pack, DialogMessageFromGUI::unpack);
+  private static ConnectSerde<NotificationGenericMessage> serde = new ConnectSerde<NotificationGenericMessage>(schema, false, NotificationGenericMessage.class, NotificationGenericMessage::pack, NotificationGenericMessage::unpack);
   public static Object pack(Object value) { return packCommon(schema, value); }
-  public static DialogMessageFromGUI unpack(SchemaAndValue schemaAndValue) { return new DialogMessageFromGUI(schemaAndValue); }
-  public DialogMessageFromGUI(SchemaAndValue schemaAndValue) { super(schemaAndValue); }
+  public static NotificationGenericMessage unpack(SchemaAndValue schemaAndValue) { return new NotificationGenericMessage(schemaAndValue); }
+  public NotificationGenericMessage(SchemaAndValue schemaAndValue) { super(schemaAndValue); }
 
   //
   //  accessor
   //
 
   public static Schema schema() { return schema; }
-  public static ConnectSerde<DialogMessageFromGUI> serde() { return serde; }
+  public static ConnectSerde<NotificationGenericMessage> serde() { return serde; }
 
   /*****************************************
   *
@@ -61,11 +66,15 @@ public class DialogMessageFromGUI extends SubscriberMessage
   *
   *****************************************/
 
-  public DialogMessageFromGUI(Object dialogMessageJSON, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
+  public NotificationGenericMessage(Object pushMessageJSON, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
   {
-    super(dialogMessageJSON, new HashMap<String, Boolean>(), subscriberMessageTemplateService, criterionContext);
+    super(pushMessageJSON, new HashMap<String, Boolean>(), subscriberMessageTemplateService, criterionContext);
     
   }
+  public NotificationGenericMessage(ArrayList<DialogMessage> genericNotificationFields)
+    {
+      super(genericNotificationFields);
+    }
   /*****************************************
   *
   *  toString
@@ -75,7 +84,7 @@ public class DialogMessageFromGUI extends SubscriberMessage
   @Override
   public String toString()
   {
-    return "DialogMessageFromGUI ["
+    return "NotficationGenericMessage ["
         + "subscriberMessageTemplateID=" + getSubscriberMessageTemplateID() 
         + ", parameterTags()=" + getParameterTags() 
         + ", dialogMessages()=" + getDialogMessages() 

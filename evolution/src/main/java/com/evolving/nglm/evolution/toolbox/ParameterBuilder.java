@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution.toolbox;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 
 public class ParameterBuilder
@@ -25,6 +26,7 @@ public class ParameterBuilder
   private boolean mandatory = false;
   private ArrayList<AvailableValueBuilder> availableValues = null;
   private String defaultValue = null; 
+  private ArrayList<Pair<String, String>> flatStringFields = new ArrayList<>();
   
   public ParameterBuilder(String id, String display, CriterionDataType dataType, boolean multiple, boolean mandatory, Object defaultValue) {
     this.id = id;
@@ -40,6 +42,11 @@ public class ParameterBuilder
       availableValues = new ArrayList<>();      
     }
     availableValues.add(availableValue);
+    return this;
+  }
+  
+  public ParameterBuilder addFlatStringField(String key, String value) {
+    this.flatStringFields.add(new Pair(key, value));
     return this;
   }
   
@@ -67,6 +74,9 @@ public class ParameterBuilder
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 2) + "\"dataType\" : \"" + dataType.getExternalRepresentation() + "\",\n");
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 2) + "\"multiple\" : " + multiple + ",\n");
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 2) + "\"mandatory\" : " + mandatory + ",\n");
+    for(Pair<String, String> flatField : flatStringFields) {
+      sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 2) + "\"" + flatField.getFirstElement() + "\" : \"" + flatField.getSecondElement() + "\",\n");
+    }
     
     
     if(availableValues != null) {
@@ -88,6 +98,7 @@ public class ParameterBuilder
     }
     
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 2) + "\"defaultValue\" : " + defaultValue + "\n");
+    
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 1) + "}");
     return sb.toString();    
   }

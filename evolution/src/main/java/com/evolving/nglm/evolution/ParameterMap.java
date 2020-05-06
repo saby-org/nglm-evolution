@@ -41,7 +41,7 @@ public class ParameterMap extends HashMap<String,Object>
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("parameter_map");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(4));
     schemaBuilder.field("nullParameters", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("emptySetParameters", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("emptyListParameters", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
@@ -54,6 +54,7 @@ public class ParameterMap extends HashMap<String,Object>
     schemaBuilder.field("stringSetParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,SchemaBuilder.array(Schema.STRING_SCHEMA)).name("parameter_map_stringsets").schema());
     schemaBuilder.field("integerSetParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,SchemaBuilder.array(Schema.INT32_SCHEMA)).name("parameter_map_integersets").schema());
     schemaBuilder.field("evaluationCriteriaParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(EvaluationCriterion.schema())).name("parameter_map_criteria").schema());
+    schemaBuilder.field("notificationParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, DialogMessage.schema()).name("parameter_map_notification").schema());
     schemaBuilder.field("smsMessageParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, SMSMessage.schema()).name("parameter_map_sms").schema());
     schemaBuilder.field("emailMessageParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, EmailMessage.schema()).name("parameter_map_email").schema());
     schemaBuilder.field("pushMessageParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, PushMessage.schema()).name("parameter_map_push").schema());
@@ -143,6 +144,7 @@ public class ParameterMap extends HashMap<String,Object>
     Map<String,List<String>> stringSetParameters = new HashMap<String,List<String>>();
     Map<String,List<Integer>> integerSetParameters = new HashMap<String,List<Integer>>();
     Map<String,List<EvaluationCriterion>> evaluationCriteriaParameters = new HashMap<String,List<EvaluationCriterion>>();
+    Map<String,DialogMessage> notificationParameters = new HashMap<String,DialogMessage>();
     Map<String,SMSMessage> smsMessageParameters = new HashMap<String,SMSMessage>();
     Map<String,EmailMessage> emailMessageParameters = new HashMap<String,EmailMessage>();
     Map<String,PushMessage> pushMessageParameters = new HashMap<String,PushMessage>();
@@ -180,6 +182,8 @@ public class ParameterMap extends HashMap<String,Object>
           integerSetParameters.put(key, new ArrayList<Integer>((Set<Integer>) parameterValue));
         else if (parameterValue instanceof List && ((List) parameterValue).iterator().next() instanceof EvaluationCriterion)
           evaluationCriteriaParameters.put(key, new ArrayList<EvaluationCriterion>((List<EvaluationCriterion>) parameterValue));
+        else if (parameterValue instanceof DialogMessage)
+          notificationParameters.put(key, (DialogMessage) parameterValue);
         else if (parameterValue instanceof SMSMessage)
           smsMessageParameters.put(key, (SMSMessage) parameterValue);
         else if (parameterValue instanceof EmailMessage)
@@ -212,6 +216,7 @@ public class ParameterMap extends HashMap<String,Object>
     struct.put("stringSetParameters", stringSetParameters);
     struct.put("integerSetParameters", integerSetParameters);
     struct.put("evaluationCriteriaParameters", packEvaluationCriteriaParameters(evaluationCriteriaParameters));
+    struct.put("notificationParameters", packNotificationParameters(notificationParameters));
     struct.put("smsMessageParameters", packSMSMessageParameters(smsMessageParameters));
     struct.put("emailMessageParameters", packEmailMessageParameters(emailMessageParameters));
     struct.put("pushMessageParameters", packPushMessageParameters(pushMessageParameters));
@@ -245,6 +250,22 @@ public class ParameterMap extends HashMap<String,Object>
             packedEvaluationCriteria.add(EvaluationCriterion.pack(evaluationCriterion));
           }
         result.put(parameterName, packedEvaluationCriteria);
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  packNotificationParameters
+  *
+  *****************************************/
+
+  private static Map<String,Object> packNotificationParameters(Map<String,DialogMessage> notificationParameters)
+  {
+    Map<String,Object> result = new HashMap<String,Object>();
+    for (String parameterName : notificationParameters.keySet())
+      {
+        result.put(parameterName, DialogMessage.pack(notificationParameters.get(parameterName)));
       }
     return result;
   }
@@ -366,6 +387,7 @@ public class ParameterMap extends HashMap<String,Object>
     Map<String,List<String>> stringSetParameters = (Map<String,List<String>>) valueStruct.get("stringSetParameters");
     Map<String,List<Integer>> integerSetParameters = (Map<String,List<Integer>>) valueStruct.get("integerSetParameters");
     Map<String,List<EvaluationCriterion>> evaluationCriteriaParameters = unpackEvaluationCriteriaParameters(schema.field("evaluationCriteriaParameters").schema(), (Map<String,List<Object>>) valueStruct.get("evaluationCriteriaParameters"));
+    Map<String,DialogMessage> notificationParameters = (schemaVersion >= 4) ? unpackNotificationParameters(schema.field("notificationParameters").schema(), (Map<String,Object>) valueStruct.get("notificationParameters")) : new HashMap<>();
     Map<String,SMSMessage> smsMessageParameters = unpackSMSMessageParameters(schema.field("smsMessageParameters").schema(), (Map<String,Object>) valueStruct.get("smsMessageParameters"));
     Map<String,EmailMessage> emailMessageParameters = unpackEmailMessageParameters(schema.field("emailMessageParameters").schema(), (Map<String,Object>) valueStruct.get("emailMessageParameters"));
     Map<String,PushMessage> pushMessageParameters = unpackPushMessageParameters(schema.field("pushMessageParameters").schema(), (Map<String,Object>) valueStruct.get("pushMessageParameters"));
@@ -391,6 +413,7 @@ public class ParameterMap extends HashMap<String,Object>
     for (String key : stringSetParameters.keySet()) result.put(key,new HashSet<String>(stringSetParameters.get(key)));
     for (String key : integerSetParameters.keySet()) result.put(key,new HashSet<Integer>(integerSetParameters.get(key)));
     for (String key : evaluationCriteriaParameters.keySet()) result.put(key,new ArrayList<EvaluationCriterion>(evaluationCriteriaParameters.get(key)));
+    for (String key : notificationParameters.keySet()) result.put(key,notificationParameters.get(key));
     for (String key : smsMessageParameters.keySet()) result.put(key,smsMessageParameters.get(key));
     for (String key : emailMessageParameters.keySet()) result.put(key,emailMessageParameters.get(key));
     for (String key : pushMessageParameters.keySet()) result.put(key,pushMessageParameters.get(key));
@@ -435,6 +458,37 @@ public class ParameterMap extends HashMap<String,Object>
             evaluationCriteria.add(evaluationCriterion);
           }
         result.put(key, evaluationCriteria);
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  unpackNotificationParameters
+  *
+  *****************************************/
+
+  public static Map<String,DialogMessage> unpackNotificationParameters(Schema schema, Map<String,Object> value)
+  {
+    //
+    //  get schema
+    //
+
+    Schema notificationSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    Map<String,DialogMessage> result = new HashMap<String,DialogMessage>();
+    for (String key : value.keySet())
+      {
+        result.put(key, DialogMessage.unpack(new SchemaAndValue(notificationSchema, value.get(key))));
       }
 
     //

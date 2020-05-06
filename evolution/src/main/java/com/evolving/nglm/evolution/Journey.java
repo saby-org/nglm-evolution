@@ -43,6 +43,7 @@ import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
+import com.evolving.nglm.evolution.notification.NotificationGenericMessage;
 
 public class Journey extends GUIManagedObject
 {
@@ -1545,10 +1546,12 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    Set<SubscriberMessage> hardcodedSubscriberMessages = retrieveHardcodedSubscriberMessages(this);
-    Set<SubscriberMessage> existingHardcodedSubscriberMessages = (existingJourney != null) ? retrieveHardcodedSubscriberMessages(existingJourney) : new HashSet<SubscriberMessage>();
-    for (SubscriberMessage subscriberMessage : hardcodedSubscriberMessages)
+    Set<Pair<SubscriberMessage, String>> hardcodedSubscriberMessages = retrieveHardcodedSubscriberMessages(this);
+    Set<Pair<SubscriberMessage, String>> existingHardcodedSubscriberMessages = (existingJourney != null) ? retrieveHardcodedSubscriberMessages(existingJourney) : new HashSet<Pair<SubscriberMessage, String>>();
+    for (Pair<SubscriberMessage, String> subscriberMessagePair : hardcodedSubscriberMessages)
       {
+        SubscriberMessage subscriberMessage = subscriberMessagePair.getFirstElement();
+        
         //
         //  validate -- no parameterTags  
         //
@@ -1563,8 +1566,9 @@ public class Journey extends GUIManagedObject
         //
 
         SubscriberMessage matchingSubscriberMessage = null;
-        for (SubscriberMessage existingSubscriberMessage : existingHardcodedSubscriberMessages)
+        for (Pair<SubscriberMessage, String> existingSubscriberMessagePair : existingHardcodedSubscriberMessages)
           {
+            SubscriberMessage existingSubscriberMessage = existingSubscriberMessagePair.getFirstElement();
             if (Objects.equals(subscriberMessage.getDialogMessages(), existingSubscriberMessage.getDialogMessages()))
               {
                 matchingSubscriberMessage = existingSubscriberMessage;
@@ -1578,7 +1582,7 @@ public class Journey extends GUIManagedObject
 
         if (matchingSubscriberMessage == null)
           {
-            SubscriberMessageTemplate internalSubscriberMessageTemplate = SubscriberMessageTemplate.newInternalTemplate(subscriberMessage, subscriberMessageTemplateService);
+            SubscriberMessageTemplate internalSubscriberMessageTemplate = SubscriberMessageTemplate.newInternalTemplate(subscriberMessagePair.getSecondElement(), subscriberMessage, subscriberMessageTemplateService);
             subscriberMessage.setSubscriberMessageTemplateID(internalSubscriberMessageTemplate.getSubscriberMessageTemplateID());
             subscriberMessageTemplateService.putSubscriberMessageTemplate(internalSubscriberMessageTemplate, true, null);
           }
@@ -1840,9 +1844,10 @@ public class Journey extends GUIManagedObject
                 boundParameters.put(parameterName, pushMessageValue);
                 break;
 
-              case DialogMessageParameter:
-                DialogMessageFromGUI dialogMessageValue = new DialogMessageFromGUI(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
-                boundParameters.put(parameterName, dialogMessageValue);
+              case NotificationStringParameter:
+              case NotificationHTMLStringParameter:
+                DialogMessage dialogMessage = new DialogMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value"), parameterName, "messageText", parameter.getMandatoryParameter(), criterionContext);
+                boundParameters.put(parameterName, dialogMessage);
                 break;
 
               case WorkflowParameter:
@@ -1927,7 +1932,8 @@ public class Journey extends GUIManagedObject
               case SMSMessageParameter:
               case EmailMessageParameter:
               case PushMessageParameter:
-              case DialogMessageParameter:
+              case NotificationStringParameter:
+              case NotificationHTMLStringParameter:
               case WorkflowParameter:
                 switch (parameterExpressionValue.getType())
                   {
@@ -1962,29 +1968,39 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  private static Set<SubscriberMessage> retrieveHardcodedSubscriberMessages(Journey journey)
+  private static Set<Pair<SubscriberMessage, String>> /*Element / ChannelId*/retrieveHardcodedSubscriberMessages(Journey journey)
   {
+    
+    // TODO THIS CODE IS SHITTY: Has to be refactored when hardcoded SMS MAIL and PUSH is removed from the system 
     /*****************************************
     *
     *  node/link parameters
     *
     *****************************************/
 
-    Set<SubscriberMessage> result = new HashSet<SubscriberMessage>();
+    Set<Pair<SubscriberMessage, String>> result = new HashSet();
     for (JourneyNode journeyNode : journey.getJourneyNodes().values())
       {
         //
         //  node parameters
         //
-
-        for (Object parameterValue : journeyNode.getNodeParameters().values())
-          {
+        String channelID = "NotGeneric"; // Generic Channel ID of this parameter 
+        ArrayList<DialogMessage> genericNotificationFields = new ArrayList<>();
+        for (Object parameterValue : journeyNode.getNodeParameters().values())          {
+                        
+            if(parameterValue instanceof DialogMessage) {
+              // this is One field of a generic message, so let register it for later
+              genericNotificationFields.add((DialogMessage)parameterValue);
+              channelID = JSONUtilities.decodeString(journeyNode.getNodeType().getJSONRepresentation(), "communicationChannelID", true);
+            }
+            
             if (parameterValue instanceof SubscriberMessage)
               {
+                // This is for the management of Old channels.... hardcoded SMS, EMAIL and so on...
                 SubscriberMessage subscriberMessage = (SubscriberMessage) parameterValue;
                 if (subscriberMessage.getDialogMessages().size() > 0)
                   {
-                    result.add(subscriberMessage);
+                    result.add(new Pair(subscriberMessage, channelID));
                   }
               }
           }
@@ -1997,16 +2013,34 @@ public class Journey extends GUIManagedObject
           {
             for (Object parameterValue : journeyLink.getLinkParameters().values())
               {
+                
+                if(parameterValue instanceof DialogMessage) {
+                  // this is One field of a generic message, so let register it for later
+                  genericNotificationFields.add((DialogMessage)parameterValue);
+                  NodeType nodeType = Deployment.getNodeTypes().get(journeyNode.getNodeType());
+                  channelID = JSONUtilities.decodeString(nodeType.getJSONRepresentation(), "communicationChannelID", true);
+                }
+                
                 if (parameterValue instanceof SubscriberMessage)
                   {
                     SubscriberMessage subscriberMessage = (SubscriberMessage) parameterValue;
                     if (subscriberMessage.getDialogMessages().size() > 0)
                       {
-                        result.add(subscriberMessage);
+                        result.add(new Pair(subscriberMessage, channelID));
                       }
                   }
               }
           }
+        
+        //
+        // build a NotificationGenericMessage if genericNotificationFields is not empty
+        //
+        
+        if(genericNotificationFields.size() > 0) {
+          NotificationGenericMessage genericMessage = new NotificationGenericMessage(genericNotificationFields);
+          result.add(new Pair(genericMessage, channelID));
+        }
+        
       }
 
     /*****************************************
@@ -2022,7 +2056,7 @@ public class Journey extends GUIManagedObject
             SubscriberMessage subscriberMessage = (SubscriberMessage) parameterValue;
             if (subscriberMessage.getDialogMessages().size() > 0)
               {
-                result.add(subscriberMessage);
+                result.add(new Pair(subscriberMessage, null));
               }
           }
       }
@@ -2626,9 +2660,10 @@ public class Journey extends GUIManagedObject
                 nodeParameters.put(parameterName, pushMessageValue);
                 break;
                 
-              case DialogMessageParameter:
-                DialogMessageFromGUI dialogMessageValue = new DialogMessageFromGUI(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
-                nodeParameters.put(parameterName, dialogMessageValue);
+              case NotificationStringParameter:
+              case NotificationHTMLStringParameter:
+                DialogMessage dialogMessage = new DialogMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value"), parameterName, "messageText", parameter.getMandatoryParameter(), criterionContext);
+                nodeParameters.put(parameterName, dialogMessage);
                 break;
 
               case WorkflowParameter:
@@ -2738,7 +2773,8 @@ public class Journey extends GUIManagedObject
               case SMSMessageParameter:
               case EmailMessageParameter:
               case PushMessageParameter:
-              case DialogMessageParameter:
+              case NotificationStringParameter:
+              case NotificationHTMLStringParameter:
               case WorkflowParameter:
                 switch (parameterExpressionValue.getType())
                   {
@@ -3002,9 +3038,10 @@ public class Journey extends GUIManagedObject
                 outputConnectorParameters.put(parameterName, pushMessageValue);
                 break;
                 
-              case DialogMessageParameter:
-                DialogMessageFromGUI dialogMessageValue = new DialogMessageFromGUI(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
-                outputConnectorParameters.put(parameterName, dialogMessageValue);
+              case NotificationStringParameter:
+              case NotificationHTMLStringParameter:
+                DialogMessage dialogMessage = new DialogMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value"), parameterName, "messageText", parameter.getMandatoryParameter(), criterionContext);
+                outputConnectorParameters.put(parameterName, dialogMessage);
                 break;
 
               case WorkflowParameter:
@@ -3114,7 +3151,8 @@ public class Journey extends GUIManagedObject
               case SMSMessageParameter:
               case EmailMessageParameter:
               case PushMessageParameter:
-              case DialogMessageParameter:
+              case NotificationStringParameter:
+              case NotificationHTMLStringParameter:
               case WorkflowParameter:
                 switch (parameterExpressionValue.getType())
                   {

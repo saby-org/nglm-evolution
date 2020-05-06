@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -139,9 +140,18 @@ public abstract class SubscriberMessage
         for (String dialogMessageField : dialogMessageFields.keySet())
           {
             boolean mandatory = dialogMessageFields.get(dialogMessageField);
-            dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, mandatory, criterionContext));
+            dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, dialogMessageField, mandatory, criterionContext));
           }
       }
+  }
+  
+  
+  public SubscriberMessage(ArrayList<DialogMessage> genericNotificationFields)
+  {
+    this.dialogMessages = new HashMap<>();
+    for(DialogMessage notificationField : genericNotificationFields) {
+      dialogMessages.put(notificationField.getNotificationParameterName(), notificationField);
+    }
   }
 
   /*****************************************
@@ -249,6 +259,7 @@ public abstract class SubscriberMessage
     this.subscriberMessageTemplateID = subscriberMessageTemplateID;
     this.parameterTags = parameterTags;
   }
+
 
   /*****************************************
   *

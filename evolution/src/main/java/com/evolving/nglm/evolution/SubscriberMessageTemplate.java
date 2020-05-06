@@ -28,6 +28,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.notification.NotificationGenericMessage;
 
 public abstract class SubscriberMessageTemplate extends GUIManagedObject
 {
@@ -150,7 +151,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
         for (String dialogMessageField : getDialogMessageFields().keySet())
           {
             boolean mandatory = getDialogMessageFields().get(dialogMessageField);
-            this.dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, mandatory, CriterionContext.DynamicProfile));
+            this.dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, dialogMessageField, mandatory, CriterionContext.DynamicProfile));
           }
       }
   }
@@ -201,7 +202,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  public static SubscriberMessageTemplate newInternalTemplate(SubscriberMessage subscriberMessage, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+  public static SubscriberMessageTemplate newInternalTemplate(String communicationChannelID, SubscriberMessage subscriberMessage, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
   {
     //
     //  construct JSON representation
@@ -215,6 +216,9 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     internalSubscriberMessageTemplate.put("internalOnly", true);
     internalSubscriberMessageTemplate.put("active", true);
     internalSubscriberMessageTemplate.put("message", new JSONArray());
+    if(communicationChannelID != null) {
+      internalSubscriberMessageTemplate.put("communicationChannelID", communicationChannelID);
+    }
 
     //
     //  new template
@@ -224,7 +228,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     if (subscriberMessage instanceof SMSMessage) result = new SMSTemplate(internalSubscriberMessageTemplate, 0L, null);
     if (subscriberMessage instanceof EmailMessage) result = new MailTemplate(internalSubscriberMessageTemplate, 0L, null);
     if (subscriberMessage instanceof PushMessage) result = new PushTemplate(internalSubscriberMessageTemplate, 0L, null);
-    if (subscriberMessage instanceof DialogMessageFromGUI) result = new DialogTemplate(internalSubscriberMessageTemplate, 0L, null);
+    if (subscriberMessage instanceof NotificationGenericMessage) result = new DialogTemplate(internalSubscriberMessageTemplate, 0L, null);
     if (result == null) throw new ServerRuntimeException("illegal subscriberMessage");
 
     //

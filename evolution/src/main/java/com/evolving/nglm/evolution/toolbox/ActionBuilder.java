@@ -42,7 +42,7 @@ public class ActionBuilder implements ToolBoxBuilderInterface
     // { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" }
     StringBuilder sb = new StringBuilder();
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber+1) + "{\n");
-    sb.append(ToolBoxUtils.getIndentation(indentationTabNumber+2) + "\"actionManagerClass\" : \"" + actionManagerClass + "\",\n");
+    sb.append(ToolBoxUtils.getIndentation(indentationTabNumber+2) + "\"actionManagerClass\" : \"" + actionManagerClass + "\"");
     if(managerClassConfiguration.size() > 0) {
       sb.append(",\n");
       for(Iterator<Map.Entry<String, String>> it = managerClassConfiguration.entrySet().iterator(); it.hasNext();) {

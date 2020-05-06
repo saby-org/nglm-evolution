@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution.toolbox;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.evolution.NodeType.OutputType;
 
 public class ToolBoxBuilder implements ToolBoxBuilderInterface
@@ -17,6 +18,7 @@ public class ToolBoxBuilder implements ToolBoxBuilderInterface
   private ArrayList<OutputConnectorBuilder> outputConnectors = new ArrayList<>();
   private ArrayList<ParameterBuilder> parameters = new ArrayList<>();
   private ActionBuilder action = null;
+  private ArrayList<Pair<String,String>> flatStringFields = new ArrayList<>();
       
   public ToolBoxBuilder(String id, String name, String display, String icon, int height, int width, OutputType outputType) {
     this.id = id;
@@ -42,6 +44,11 @@ public class ToolBoxBuilder implements ToolBoxBuilderInterface
     this.action = action;
     return this;
   }
+  
+  public ToolBoxBuilder addFlatStringField(String key, String value) {
+    this.flatStringFields.add(new Pair(key, value));
+    return this;
+  }
 
   @Override
   public String build(Integer indentationTabNumber)
@@ -55,6 +62,10 @@ public class ToolBoxBuilder implements ToolBoxBuilderInterface
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 1) + "\"height\" : " + height + ",\n");
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 1) + "\"width\" : " + width + ",\n");
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 1) + "\"outputType\" : \"" + outputType.getExternalRepresentation() + "\",\n");
+
+    for(Pair<String, String> flatField : flatStringFields) {
+      sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 1) + "\"" + flatField.getFirstElement() + "\" : \"" + flatField.getSecondElement() + "\",\n");
+    }
     
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 1) + "\"outputConnectors\" : [\n");
     for(Iterator<OutputConnectorBuilder> it = outputConnectors.iterator(); it.hasNext();) {
@@ -85,7 +96,9 @@ public class ToolBoxBuilder implements ToolBoxBuilderInterface
       sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 1) + ",\n");
       sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 1) + "\"action\" : \n" + action.build(indentationTabNumber + 1) + "\n");
     }  
+    
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber) + "}");
+    
     
     return sb.toString();   
   }

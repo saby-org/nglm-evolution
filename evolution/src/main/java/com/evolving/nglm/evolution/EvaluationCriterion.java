@@ -116,13 +116,20 @@ public class EvaluationCriterion
     //
 
     EvaluationCriteriaParameter("evaluationCriteria"),
+    WorkflowParameter("workflow"),
+    
+    //
+    // only notification parameters (hardcoded sms, email and push, and generic types)
+    // 
+    
     SMSMessageParameter("smsMessage"),
     EmailMessageParameter("emailMessage"),
     PushMessageParameter("pushMessage"),
-    DialogMessageParameter("dialogMessage"),
-    WorkflowParameter("workflow"),
-    HTMLStringParameter("html_string"),
-    MultiStringParameter("multi_string"),
+    
+    Dialog("dialog"),
+
+    NotificationStringParameter("template_string"),
+    NotificationHTMLStringParameter("template_html_string"),
 
     //
     //  only for criterionArguments
