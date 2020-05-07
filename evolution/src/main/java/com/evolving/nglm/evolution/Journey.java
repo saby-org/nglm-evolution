@@ -33,6 +33,8 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.core.CountRequest;
+import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -2425,9 +2427,9 @@ public class Journey extends GUIManagedObject implements StockableItem
   // execute query
   //
   public static long processEvaluateProfileCriteriaExecuteQuery(BoolQueryBuilder query, RestHighLevelClient elasticsearch) throws IOException {
-    SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(query).size(0));
-    SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
-    return searchResponse.getHits().getTotalHits().value;
+    CountRequest countRequest = new CountRequest("subscriberprofile").query(query);
+    CountResponse countResponse = elasticsearch.count(countRequest, RequestOptions.DEFAULT);
+    return countResponse.getCount();
   }
   
   /*****************************************
