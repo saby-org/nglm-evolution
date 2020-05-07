@@ -918,6 +918,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
 
   public static void main(String[] args)
   {
+    new LoggerInitialization().initLogger();
     log.info("PushNotificationManager: recieved " + args.length + " args");
     for(String arg : args)
       {

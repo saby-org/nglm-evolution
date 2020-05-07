@@ -36,6 +36,7 @@ import com.evolving.nglm.evolution.CriterionContext;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.DynamicCriterionFieldService;
 import com.evolving.nglm.evolution.GUIManagedObject;
+import com.evolving.nglm.evolution.LoggerInitialization;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.ReportService;
 import com.evolving.nglm.evolution.ReportService.ReportListener;
@@ -393,6 +394,7 @@ public class ReportManager implements Watcher
 
   public static void main(String[] args) 
   {
+    new LoggerInitialization().initLogger();
     log.info("ReportManager: received " + args.length + " args");
     for(String arg : args)
       {

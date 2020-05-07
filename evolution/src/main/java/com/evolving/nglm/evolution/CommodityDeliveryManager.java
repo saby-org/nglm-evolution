@@ -1212,6 +1212,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
   public static void main(String[] args)
   {
+    new LoggerInitialization().initLogger();
     log.info("CommodityDeliveryManager: recieved " + args.length + " args :");
     for(int index = 0; index < args.length; index++){
       log.info("       args["+index+"] " + args[index]);

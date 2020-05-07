@@ -244,6 +244,7 @@ public class ThirdPartyManager
   {
     NGLMRuntime.initialize(true);
     ThirdPartyManager thirdPartyManager = new ThirdPartyManager();
+    new LoggerInitialization().initLogger();
     thirdPartyManager.start(args);
   }
 

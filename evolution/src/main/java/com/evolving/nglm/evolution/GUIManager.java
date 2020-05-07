@@ -603,6 +603,7 @@ public class GUIManager
   {
     NGLMRuntime.initialize(true);
     GUIManager guiManager = new GUIManager();
+    new LoggerInitialization().initLogger();
     guiManager.start(args);
   }
 

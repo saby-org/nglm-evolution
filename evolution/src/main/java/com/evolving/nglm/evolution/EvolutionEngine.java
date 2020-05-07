@@ -234,6 +234,7 @@ public class EvolutionEngine
   {
     NGLMRuntime.initialize(true);
     EvolutionEngine evolutionEngine = new EvolutionEngine();
+    new LoggerInitialization().initLogger();
     evolutionEngine.start(args);
   }
 
