@@ -16610,7 +16610,7 @@ public class GUIManager
      ****************************************/
 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", false);
+    String bonusDisplay = JSONUtilities.decodeString(jsonRoot, "bonusDisplay", false);
 
     /*****************************************
      *
@@ -16619,15 +16619,15 @@ public class GUIManager
      *****************************************/
 
     Point searchedPoint = null;
-    if(bonusName != null && !bonusName.isEmpty())
+    if(bonusDisplay != null && !bonusDisplay.isEmpty())
       {
         for(GUIManagedObject storedPoint : pointService.getStoredPoints()){
-          if(storedPoint instanceof Point && (((Point) storedPoint).getPointName().equals(bonusName))){
+          if(storedPoint instanceof Point && (((Point) storedPoint).getDisplay().equals(bonusDisplay))){
             searchedPoint = (Point)storedPoint;
           }
         }
         if(searchedPoint == null){
-          log.info("bonus with name '"+bonusName+"' not found");
+          log.info("bonus with display '"+bonusDisplay+"' not found");
           response.put("responseCode", "BonusNotFound");
           return JSONUtilities.encodeObject(response);
         }
@@ -16671,7 +16671,8 @@ public class GUIManager
                 {
                   HashMap<String, Object> pointPresentation = new HashMap<String,Object>();
                   PointBalance pointBalance = pointBalances.get(pointID);
-                  pointPresentation.put("pointName", point.getDisplay());
+                  pointPresentation.put("pointID", pointID);
+                  pointPresentation.put("pointDisplay", point.getDisplay());
                   pointPresentation.put("balance", pointBalance.getBalance(now));
                   pointPresentation.put("earned", pointBalance.getEarnedHistory().getAllTimeBucket());
                   pointPresentation.put("expired", pointBalance.getExpiredHistory().getAllTimeBucket());
@@ -19741,7 +19742,7 @@ public class GUIManager
     ****************************************/
 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", true);
+    String bonusID = JSONUtilities.decodeString(jsonRoot, "bonusID", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
     
@@ -19766,17 +19767,22 @@ public class GUIManager
     *****************************************/
 
     Deliverable searchedBonus = null;
-    for(GUIManagedObject storedDeliverable : deliverableService.getStoredDeliverables()){
-      if(storedDeliverable instanceof Deliverable && (((Deliverable) storedDeliverable).getDeliverableName().equals(bonusName))){
-        searchedBonus = (Deliverable)storedDeliverable;
+    for (GUIManagedObject storedDeliverable : deliverableService.getStoredDeliverables())
+      {
+        if (storedDeliverable instanceof Deliverable && bonusID.equals(((Deliverable) storedDeliverable).getExternalAccountID()))
+          {
+              searchedBonus = (Deliverable) storedDeliverable;
+              break;
+          }
       }
-    }
-    if(searchedBonus == null){
-      log.info("bonus with name '"+bonusName+"' not found");
-      response.put("responseCode", "BonusNotFound");
-      return JSONUtilities.encodeObject(response);
-    }
     
+    if (searchedBonus == null)
+      {
+        log.info("bonus " + bonusID + " not found");
+        response.put("responseCode", "BonusNotFound");
+        return JSONUtilities.encodeObject(response);
+      }
+
     /*****************************************
     *
     *  generate commodity delivery request
@@ -19820,7 +19826,7 @@ public class GUIManager
     ****************************************/
 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", true);
+    String bonusID = JSONUtilities.decodeString(jsonRoot, "bonusID", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
     
@@ -19844,14 +19850,18 @@ public class GUIManager
     *
     *****************************************/
 
-    PaymentMean searchedBonus = null;
-    for(GUIManagedObject storedPaymentMean : paymentMeanService.getStoredPaymentMeans()){
-      if(storedPaymentMean instanceof PaymentMean && (((PaymentMean) storedPaymentMean).getPaymentMeanName().equals(bonusName))){
-        searchedBonus = (PaymentMean)storedPaymentMean;
+    Deliverable searchedBonus = null;
+    for (GUIManagedObject storedDeliverable : deliverableService.getStoredDeliverables())
+      {
+        if (storedDeliverable instanceof Deliverable && bonusID.equals(((Deliverable) storedDeliverable).getExternalAccountID()))
+          {
+              searchedBonus = (Deliverable) storedDeliverable;
+              break;
+          }
       }
-    }
+
     if(searchedBonus == null){
-      log.info("bonus with name '"+bonusName+"' not found");
+      log.info("bonus with ID '"+bonusID+"' not found");
       response.put("responseCode", "BonusNotFound");
       return JSONUtilities.encodeObject(response);
     }
@@ -19863,7 +19873,7 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
     
     /*****************************************
     *
@@ -21108,7 +21118,7 @@ public class GUIManager
                   tokenStream = tokenStream.filter(token -> tokenStatusForStreams.equalsIgnoreCase(token.getTokenStatus().getExternalRepresentation()));
                 }
               tokensJson = tokenStream
-                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService))
+                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService))
                   .collect(Collectors.toList());
             }
 
@@ -21293,6 +21303,7 @@ public class GUIManager
                   String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
                   int transactionDurationMs = 0; // TODO
                   String callUniqueIdentifier = ""; 
+                  String tokenTypeID = subscriberStoredToken.getTokenTypeID();
 
                   PresentationLog presentationLog = new PresentationLog(
                       subscriberID, subscriberID, now, 
@@ -21300,8 +21311,13 @@ public class GUIManager
                       tokenCode, 
                       presentationStrategyID, transactionDurationMs, 
                       presentedOfferIDs, presentedOfferScores, positions, 
+<<<<<<< HEAD
                       controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, subscriberStoredToken.getPresentationDates()
                       );
+=======
+                      controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, tokenTypeID
+                    );
+>>>>>>> EVPRO-53
 
                   //
                   //  submit to kafka
@@ -21336,7 +21352,11 @@ public class GUIManager
            *  decorate and response
            *
            *****************************************/
+<<<<<<< HEAD
           response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService);
+=======
+          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService);
+>>>>>>> EVPRO-53
           response.put("responseCode", "ok");
         }
     }
@@ -21499,7 +21519,8 @@ public class GUIManager
 
           String msisdn = subscriberID; // TODO check this
           String presentationStrategyID = subscriberStoredToken.getPresentationStrategyID();
-
+          String tokenTypeID = subscriberStoredToken.getTokenTypeID();
+          
           // TODO BEGIN Following fields are currently not used in EvolutionEngine, might need to be set later
           String callUniqueIdentifier = ""; 
           String controlGroupState = "controlGroupState";
@@ -21515,7 +21536,7 @@ public class GUIManager
               callUniqueIdentifier, channelID, salesChannelID,
               userID, tokenCode,
               presentationStrategyID, transactionDurationMs,
-              controlGroupState, offerID, fulfilledDate, position, actionCall, moduleID, featureID);
+              controlGroupState, offerID, fulfilledDate, position, actionCall, moduleID, featureID, tokenTypeID);
 
           //
           //  submit to kafka
@@ -22760,6 +22781,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             criterionFieldJSON.remove("includedOperators");
             criterionFieldJSON.remove("excludedOperators");
 
+<<<<<<< HEAD
             //
             //  evaluate comparable fields
             //
@@ -22769,6 +22791,18 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               {
 
                 List<CriterionField> defaultComparableFields = defaultFieldsForResolvedType.get(resolvedFieldTypes.get(criterionField.getID()));
+=======
+            
+            if (currentGroups != null)
+              {
+
+                //
+                //  evaluate comparable fields
+                //
+
+                List<CriterionField> defaultComparableFields = defaultFieldsForResolvedType.get(resolvedFieldTypes.get(criterionField.getID()));
+
+>>>>>>> EVPRO-53
                 List<JSONObject> singleton = evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, true);
 
                 // TODO next line to be removed later when GUI handles the new "singletonComparableFieldsGroup" field

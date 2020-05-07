@@ -262,7 +262,7 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService) 
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService) 
   {
     Date now = SystemTime.getCurrentTime();
     HashMap<String, Object> tokenMap = new HashMap<String, Object>();
@@ -275,7 +275,10 @@ public class ThirdPartyJSONGenerator
     tokenMap.put("boundCount", token.getBoundCount());
     //tokenMap.put("eventID", token.getEventID());
     //tokenMap.put("subscriberID", token.getSubscriberID());
-    tokenMap.put("tokenTypeID", token.getTokenTypeID());
+    String tokenTypeID = token.getTokenTypeID();
+    tokenMap.put("tokenTypeID", tokenTypeID);
+    TokenType tokenType = tokenTypeService.getActiveTokenType(tokenTypeID, now);
+    tokenMap.put("tokenTypeDisplay", tokenType != null ? tokenType.getGUIManagedObjectDisplay() : "unknownTokenType");
     Module module = Module.fromExternalRepresentation(token.getModuleID());
     tokenMap.put("moduleName", module.toString());
     Integer featureID = token.getFeatureID();
@@ -307,7 +310,14 @@ public class ThirdPartyJSONGenerator
         tokenMap.put("presentedOffersSalesChannel", dnboToken.getPresentedOffersSalesChannel());
         
         String offerID = dnboToken.getAcceptedOfferID();
-        tokenMap.put("acceptedOffer", JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now)));
+        if (offerID == null)
+          {
+            tokenMap.put("acceptedOffer", null);
+          }
+        else
+          {
+            tokenMap.put("acceptedOffer", JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now)));
+          }
       }
     return JSONUtilities.encodeObject(tokenMap);
   }

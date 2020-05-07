@@ -7,6 +7,10 @@ import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportProcessor;
+<<<<<<< HEAD
+=======
+import com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportObjects;
+>>>>>>> EVPRO-53
 
 import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
