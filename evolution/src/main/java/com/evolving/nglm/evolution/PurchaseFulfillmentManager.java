@@ -1126,18 +1126,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   }
 
   /*****************************************
-   *
-   *  filterRequest
-   *  no needed in this class
-   *
-   ****************************************
-   * @param request*/
-  @Override public boolean filterRequest(DeliveryRequest request)
-  {
-    return false;
-  }
-
-  /*****************************************
   *
   *  shutdown
   *

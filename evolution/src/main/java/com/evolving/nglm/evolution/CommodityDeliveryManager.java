@@ -1155,11 +1155,6 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
   }
 
-  @Override public boolean filterRequest(DeliveryRequest request)
-  {
-    return false;
-  }
-
   /*****************************************
   *
   *  shutdown

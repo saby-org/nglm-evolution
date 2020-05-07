@@ -89,7 +89,9 @@ public enum RESTAPIGenericReturnCodes
   NO_CUSTOMER_CHANNEL(702, "NO_CUSTOMER_CHANNEL", "Missing customer communication channel for this message"),
   UNDELIVERABLE(703, "UNDELIVERABLE", "Undeliverable message"),
   INVALID(704, "INVALID", "Invalid message"),
-  QUEUE_FULL(705, "QUEUE_FULL", "Message queue full"),  
+  QUEUE_FULL(705, "QUEUE_FULL", "Message queue full"),
+  BLOCKED_BY_CONTACT_POLICY(710,"BLOCKED_BY_CONTACT_POLICY","Message is blocked by contact policy rules"),
+  CONTACT_POLICY_EVALUATION_ERROR(711,"CONTACT_POLICY_EVALUATION_ERROR","Contact policy rules validation failed"),
   UNKNOWN(-1, "UNKNOWN", "UNKNOWN");
   
   private int genericResponseCode;
