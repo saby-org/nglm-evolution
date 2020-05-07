@@ -246,6 +246,8 @@
                     <include>bin/fakein-run.sh</include>
                     <include>bin/kafka-lag-exporter-run.sh</include>
                     <include>config/deployment-*.json</include>
+                    <include>config/grafana-*.json</include>
+                    <include>config/grafana-*.yml</include>
                     <include>config/kafka-lag-exporter.conf</include>
                     <include>config/kafka-lag-exporter-logback.xml</include>
                     <include>config/log4j-evolution.properties</include>

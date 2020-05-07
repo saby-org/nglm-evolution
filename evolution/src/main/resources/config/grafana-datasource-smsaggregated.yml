@@ -1,0 +1,12 @@
+apiVersion: 1
+
+datasources:
+- name: SMSAggregated
+  org_id: 1
+  type: elasticsearch
+  access: proxy
+  database: "msgg_indicators_log"
+  url: 'http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>'
+  jsonData:
+    timeField: "date"
+    esVersion: 70
