@@ -3869,6 +3869,7 @@ public class EvolutionEngine
         int featureID = 0;
         List<Token> subscriberTokens = subscriberProfile.getTokens();
         String tokenTypeID = null;
+        DNBOToken presentationLogToken = null;
 
         //
         // Retrieve the token-code we are looking for, from the event log.
@@ -3880,6 +3881,7 @@ public class EvolutionEngine
             moduleID = ((PresentationLog)evolutionEvent).getModuleID();
             featureIDStr = ((PresentationLog)evolutionEvent).getFeatureID();
             tokenTypeID = ((PresentationLog)evolutionEvent).getTokenTypeID();
+            presentationLogToken = ((PresentationLog) evolutionEvent).getToken();
           }
         else if (evolutionEvent instanceof AcceptanceLog)
           {
@@ -3964,17 +3966,21 @@ public class EvolutionEngine
               }
           }
 
-        //
-        // We start by creating a new token if it does not exist in Evolution (if it has been created by an outside system)
-        //
-
         if (subscriberStoredToken == null)
           {
-            subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
+            if (presentationLogToken == null)
+              {
+                // We start by creating a new token if it does not exist in Evolution (if it has been created by an outside system)
+                subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
+              }
+            else
+              {
+                subscriberStoredToken = presentationLogToken;
+              }
             subscriberTokens.add(subscriberStoredToken);
             subscriberStoredToken.setFeatureID(featureID);
             subscriberStoredToken.setModuleID(moduleID);
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), "", eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName(), moduleID, 0));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), "", eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName(), moduleID, featureID));
             subscriberStateUpdated = true;
           }
 

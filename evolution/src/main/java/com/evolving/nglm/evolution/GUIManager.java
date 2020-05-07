@@ -108,6 +108,7 @@ import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
+import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
@@ -907,6 +908,12 @@ public class GUIManager
       }      
     };
     loyaltyProgramService.registerListener(dynamicEventDeclarationsListener);
+
+    try {
+      long waiting = 60;
+      log.info("Waiting " + waiting + " seconds for schema registry to start");
+      Thread.sleep(waiting*1_000l);
+    } catch (InterruptedException e) {}
 
     /*****************************************
     *
@@ -3430,7 +3437,7 @@ public class GUIManager
                 case getEffectiveSystemTime:
                   jsonResponse = processGetEffectiveSystemTime(userID, jsonRoot);
                   break;
-                  
+
                 case getCustomerNBOs:
                   jsonResponse = processGetCustomerNBOs(userID, jsonRoot);
                   break;
@@ -21147,7 +21154,6 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
-
   /*****************************************
    *
    *  processGetCustomerNBOs
@@ -21312,8 +21318,9 @@ public class GUIManager
                       tokenCode, 
                       presentationStrategyID, transactionDurationMs, 
                       presentedOfferIDs, presentedOfferScores, positions, 
-                      controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, subscriberStoredToken.getPresentationDates(), tokenTypeID
-                    );
+                      controlGroupState, scoringStrategyIDs, null, null, null,
+                      moduleID, featureID, subscriberStoredToken.getPresentationDates(), tokenTypeID, null
+                      );
 
                   //
                   //  submit to kafka
