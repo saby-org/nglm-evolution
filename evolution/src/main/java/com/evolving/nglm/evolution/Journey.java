@@ -7,6 +7,8 @@
 package com.evolving.nglm.evolution;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -29,17 +31,11 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.FieldSortBuilder;
-import org.elasticsearch.search.sort.SortOrder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -560,6 +556,41 @@ public class Journey extends GUIManagedObject implements StockableItem
   public boolean evaluateEligibilityCriteria(SubscriberEvaluationRequest evaluationRequest)
   {
     return EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityCriteria);
+  }
+  
+  /*****************************************
+  *
+  *  targetCount
+  *
+  *****************************************/
+  private long evaluateTargetCount(RestHighLevelClient elasticsearch) 
+  {
+    try
+      {
+        BoolQueryBuilder query = EvaluationCriterion.esCountMatchCriteriaGetQuery(targetingCriteria);
+        return EvaluationCriterion.esCountMatchCriteriaExecuteQuery(query, elasticsearch);
+      }
+    catch (CriterionException|IOException|ElasticsearchStatusException e)
+      {
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("evaluateTargetCount: {}", stackTraceWriter.toString());
+
+        return 0;
+      }
+  }
+  
+  //
+  // targetCount is not store inside the object, only inside the JSON representation to be used by the GUI
+  //
+  // Like description, it is not used inside the system, only put at creation and pushed in Elasticsearch
+  // mapping_journeys index in order to be visible for the GUI (Grafana).
+  //
+  public void setTargetCount(RestHighLevelClient elasticsearch)
+  {
+    if(this.getTargetingType() == TargetingType.Target) {
+      this.getJSONRepresentation().put("targetCount", new Long(this.evaluateTargetCount(elasticsearch)) );
+    }
   }
   
   /*****************************************
@@ -2403,33 +2434,6 @@ public class Journey extends GUIManagedObject implements StockableItem
     *****************************************/
     
     return contextVariableFields;
-  }
-  
-  /*****************************************
-  *
-  *  processEvaluateProfileCriteria
-  *
-  *****************************************/
-  //
-  // construct query
-  //
-  public static BoolQueryBuilder processEvaluateProfileCriteriaGetQuery(List<EvaluationCriterion> criteriaList) throws CriterionException {
-    BoolQueryBuilder query = QueryBuilders.boolQuery();
-    for (EvaluationCriterion evaluationCriterion : criteriaList)
-      {
-        query = query.filter(evaluationCriterion.esQuery());
-      }
-    
-    return query;
-  }
-  
-  //
-  // execute query
-  //
-  public static long processEvaluateProfileCriteriaExecuteQuery(BoolQueryBuilder query, RestHighLevelClient elasticsearch) throws IOException {
-    CountRequest countRequest = new CountRequest("subscriberprofile").query(query);
-    CountResponse countResponse = elasticsearch.count(countRequest, RequestOptions.DEFAULT);
-    return countResponse.getCount();
   }
   
   /*****************************************
