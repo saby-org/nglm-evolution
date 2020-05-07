@@ -7,6 +7,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.evolving.nglm.core.JSONUtilities;
@@ -691,11 +692,33 @@ public class VoucherService extends GUIService {
     }
 
     while (zookeeper == null || zookeeper.getState() != ZooKeeper.States.CONNECTED) {
+
+      if(zookeeper!=null){
+        log.info("looping in ensureZookeeperConnected while zookeeper not null "+zookeeper.getState().toString());
+        try {
+          zookeeper.close();
+        } catch (InterruptedException e) {
+          log.info("exception while closing ",e);
+        }
+      }
+
       try {
-        zookeeper = new ZooKeeper(Deployment.getZookeeperConnect(), 3000,event->{return;}, false);
+        CountDownLatch connectionWait = new CountDownLatch(1);
+        zookeeper = new ZooKeeper(Deployment.getZookeeperConnect(), 3000,
+          event->{
+            log.info("zookeeper connection event received : "+event.getState());
+            if(event.getState()== Watcher.Event.KeeperState.SyncConnected){
+              connectionWait.countDown();
+            }
+          }
+          , false);
+          connectionWait.await();
+      } catch (InterruptedException e) {
+        // normal notify on connectionWait
       } catch (IOException e) {
         log.info("could not create zookeeper client using "+Deployment.getZookeeperConnect());
       }
+
     }
 
   }

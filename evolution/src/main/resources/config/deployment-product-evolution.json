@@ -1110,7 +1110,8 @@
     
     "subscriberProfileDatacubeMetrics" : [],
     
-    "enableProfileSegmentChange" : true
+    "enableProfileSegmentChange" : true,
+    "enableEvaluateTargetRandomness" : false
      
     
     
