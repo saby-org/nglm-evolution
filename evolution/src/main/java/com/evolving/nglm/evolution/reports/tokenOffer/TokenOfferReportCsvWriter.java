@@ -62,34 +62,16 @@ public class TokenOfferReportCsvWriter implements ReportCsvFactory
    * @throws IOException in case anything goes wrong while writing to the
    * report.
    */
-  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException
+  public boolean dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
     if (re.type == ReportElement.MARKER) // We will find markers in the topic
-      return;
+      return true;
     log.trace("We got " + key + " " + re);
 
     LinkedHashMap<String, Object> result = new LinkedHashMap<>();
     Map<String, Object> elasticFields = re.fields.get(TokenOfferReportObjects.index_Subscriber);
-
-    /*
-     * Map<String,CriterionField> presentationCriterionFields = new
-     * LinkedHashMap<String,CriterionField>(); presentationCriterionFields =
-     * com.evolving.nglm.evolution.Deployment.getPresentationCriterionFields();
-     * for(String keySet : presentationCriterionFields.keySet() ) {
-     * log.info("The key set" + keySet); }
-     */
-
     if (elasticFields != null)
       {
-        /*
-         * if (elasticFields.get(subscriberID) != null) { result.put(customerID,
-         * elasticFields.get(subscriberID)); for (AlternateID alternateID :
-         * Deployment.getAlternateIDs().values()) { if
-         * (elasticFields.get(alternateID.getESField()) != null) { Object
-         * alternateId = elasticFields.get(alternateID.getESField());
-         * result.put(alternateID.getName(), alternateId); } } }
-         */
-
         try
           {
 
@@ -140,6 +122,7 @@ public class TokenOfferReportCsvWriter implements ReportCsvFactory
                             if (addHeaders)
                               {
                                 addHeaders(writer, result.keySet(), 1);
+                                addHeaders = false;
                               }
 
                             String line = ReportUtils.formatResult(result);
@@ -176,6 +159,7 @@ public class TokenOfferReportCsvWriter implements ReportCsvFactory
                                 if (addHeaders)
                                   {
                                     addHeaders(writer, result.keySet(), 1);
+                                    addHeaders = false;
                                   }
                                 String line = ReportUtils.formatResult(result);
                                 log.trace("Writing to csv file : " + line);
@@ -251,6 +235,7 @@ public class TokenOfferReportCsvWriter implements ReportCsvFactory
                                     if (addHeaders)
                                       {
                                         addHeaders(writer, result.keySet(), 1);
+                                        addHeaders = false;
                                       }
                                     String line = ReportUtils.formatResult(result);
                                     log.trace("Writing to csv file : " + line);
@@ -344,6 +329,7 @@ public class TokenOfferReportCsvWriter implements ReportCsvFactory
                             if (addHeaders)
                               {
                                 addHeaders(writer, result.keySet(), 1);
+                                addHeaders = false;
                               }
                             String line = ReportUtils.formatResult(result);
                             log.trace("Writing to csv file : " + line);
@@ -376,6 +362,7 @@ public class TokenOfferReportCsvWriter implements ReportCsvFactory
                             if (addHeaders)
                               {
                                 addHeaders(writer, result.keySet(), 1);
+                                addHeaders = false;
                               }
                             String line = ReportUtils.formatResult(result);
                             log.trace("Writing to csv file : " + line);
@@ -391,8 +378,8 @@ public class TokenOfferReportCsvWriter implements ReportCsvFactory
           {
             log.error("unable to process request", e.getMessage());
           }
-
       }
+    return addHeaders;
   }
 
   /****************************************

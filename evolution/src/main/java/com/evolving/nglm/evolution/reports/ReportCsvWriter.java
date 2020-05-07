@@ -184,8 +184,7 @@ public class ReportCsvWriter
                 String key = record.key();
                 nbRecords++;
                 ReportElement re = record.value();
-                reportFactory.dumpElementToCsv(key, re, writer, addHeader);
-                addHeader = false;
+                addHeader &= reportFactory.dumpElementToCsv(key, re, writer, addHeader);
               }
             writer.flush();
             while (true)
