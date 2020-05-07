@@ -21312,13 +21312,8 @@ public class GUIManager
                       tokenCode, 
                       presentationStrategyID, transactionDurationMs, 
                       presentedOfferIDs, presentedOfferScores, positions, 
-<<<<<<< HEAD
-                      controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, subscriberStoredToken.getPresentationDates()
-                      );
-=======
-                      controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, tokenTypeID
+                      controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, subscriberStoredToken.getPresentationDates(), tokenTypeID
                     );
->>>>>>> EVPRO-53
 
                   //
                   //  submit to kafka
@@ -21353,11 +21348,7 @@ public class GUIManager
            *  decorate and response
            *
            *****************************************/
-<<<<<<< HEAD
-          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService);
-=======
           response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService);
->>>>>>> EVPRO-53
           response.put("responseCode", "ok");
         }
     }
@@ -22782,7 +22773,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             criterionFieldJSON.remove("includedOperators");
             criterionFieldJSON.remove("excludedOperators");
 
-<<<<<<< HEAD
             //
             //  evaluate comparable fields
             //
@@ -22792,18 +22782,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               {
 
                 List<CriterionField> defaultComparableFields = defaultFieldsForResolvedType.get(resolvedFieldTypes.get(criterionField.getID()));
-=======
-            
-            if (currentGroups != null)
-              {
-
-                //
-                //  evaluate comparable fields
-                //
-
-                List<CriterionField> defaultComparableFields = defaultFieldsForResolvedType.get(resolvedFieldTypes.get(criterionField.getID()));
-
->>>>>>> EVPRO-53
                 List<JSONObject> singleton = evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, true);
 
                 // TODO next line to be removed later when GUI handles the new "singletonComparableFieldsGroup" field

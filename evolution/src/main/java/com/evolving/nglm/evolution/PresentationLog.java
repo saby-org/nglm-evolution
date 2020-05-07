@@ -18,23 +18,10 @@ import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-<<<<<<< HEAD
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-=======
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
-import com.rii.utilities.JSONUtilities;
->>>>>>> EVPRO-53
 
 public class PresentationLog implements SubscriberStreamEvent
 {

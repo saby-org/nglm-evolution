@@ -1,25 +1,13 @@
 package com.evolving.nglm.evolution.reports.odr;
 
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Report;
-import com.evolving.nglm.evolution.reports.ReportDriver;
-import com.evolving.nglm.evolution.reports.ReportUtils;
-import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
-import com.evolving.nglm.evolution.reports.bdr.BDRReportProcessor;
-<<<<<<< HEAD
-=======
-import com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportObjects;
->>>>>>> EVPRO-53
+import java.util.concurrent.TimeUnit;
 
-import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDate;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
+import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportUtils;
 
 public class ODRReportDriver extends ReportDriver
 {

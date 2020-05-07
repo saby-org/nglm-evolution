@@ -1,18 +1,13 @@
 package com.evolving.nglm.evolution.reports.journeyimpact;
 
-import com.evolving.nglm.evolution.Report;
-import com.evolving.nglm.evolution.reports.ReportDriver;
-import com.evolving.nglm.evolution.reports.ReportUtils;
-<<<<<<< HEAD
-=======
-import com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportObjects;
->>>>>>> EVPRO-53
-import com.evolving.nglm.evolution.reports.odr.ODRReportProcessor;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.TimeUnit;
+import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportUtils;
 
 public class JourneyImpactReportDriver extends ReportDriver {
 
