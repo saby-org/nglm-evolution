@@ -1171,22 +1171,41 @@ public class GUIManager
     //  reports
     //
 
-    if (reportService.getStoredReports().size() == 0)
-      {
-        try
+    // Always update reports with initialReports. When we upgrade, new effectiveScheduling is merged with existing one (EVPRO-244)
+    try
+    {
+      Date now = SystemTime.getCurrentTime();
+      Collection<Report> existingReports = reportService.getActiveReports(now);
+      JSONArray initialReportsJSONArray = Deployment.getInitialReportsJSONArray();
+      for (int i=0; i<initialReportsJSONArray.size(); i++)
+        {
+          JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
+          String name = JSONUtilities.decodeString(reportJSON, "name", false);
+          boolean create = true;
+          if (name != null)
+            {
+              for (Report report : existingReports)
+                {
+                  if (name.equals(report.getGUIManagedObjectName()))
+                    {
+                      // this report already exists (same name), do not create it
+                      create = false;
+                      log.info("Report " + name + " (id " + report.getReportID() + " ) already exists, do not create");
+                      break;
+                    }
+                }
+            }
+          if (create)
           {
-            JSONArray initialReportsJSONArray = Deployment.getInitialReportsJSONArray();
-            for (int i=0; i<initialReportsJSONArray.size(); i++)
-              {
-                JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
-                processPutReport("0", reportJSON);
-              }
+            processPutReport("0", reportJSON); // this will patch the report, if it already exists
           }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
-          }
-      }
+        }
+    }
+    catch (JSONUtilitiesException e)
+    {
+      throw new ServerRuntimeException("deployment", e);
+    }
+
 
     //
     //  calling channels
@@ -1388,28 +1407,6 @@ public class GUIManager
               {
                 JSONObject offerObjectiveJSON = (JSONObject) initialOfferObjectivesJSONArray.get(i);
                 processPutOfferObjective("0", offerObjectiveJSON);
-              }
-          }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
-          }
-
-      }
-
-    //
-    //  reports
-    //
-
-    if (reportService.getStoredReports().size() == 0)
-      {
-        try
-          {
-            JSONArray initialReportsJSONArray = Deployment.getInitialReportsJSONArray();
-            for (int i=0; i<initialReportsJSONArray.size(); i++)
-              {
-                JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
-                processPutReport("0", reportJSON);
               }
           }
         catch (JSONUtilitiesException e)
