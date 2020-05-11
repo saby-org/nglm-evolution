@@ -5,7 +5,7 @@ echo "**************************************************************************
 echo
 
 declare -a containers
-for name in `docker ps --format '{{.Names}}' | grep -v ev-gui_ | sort`
+for name in `docker ps --format '{{.Names}}' | grep -v ${DOCKER_STACK}-gui_ | sort`
 do
   containers+=($name)
 done
@@ -42,23 +42,23 @@ fi
 
 CONTAINERID=`docker ps --format '{{.ID}}' -f "Name=$CONTAINERNAME"`
 
-if [[ "$CONTAINERNAME" =~ ^ev-guimanager_guimanager ]]; then
+if [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-guimanager_guimanager ]]; then
   FILE=guimanager
-elif [[ "$CONTAINERNAME" =~ ^ev-evolutionengine_evolutionengine ]]; then
+elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-evolutionengine_evolutionengine ]]; then
   FILE=evolutionengine
-elif [[ "$CONTAINERNAME" =~ ^ev-thirdpartymanager_thirdpartymanager ]]; then
+elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-thirdpartymanager_thirdpartymanager ]]; then
   FILE=thirdpartyevent
-elif [[ "$CONTAINERNAME" =~ ^ev-notificationmanagermail_notificationmail ]]; then
+elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-notificationmanagermail_notificationmail ]]; then
   FILE=mail
-elif [[ "$CONTAINERNAME" =~ ^ev-notificationmanagersms_notificationsms ]]; then
+elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-notificationmanagersms_notificationsms ]]; then
   FILE=sms
-elif [[ "$CONTAINERNAME" =~ ^ev-notificationmanagerpush_notificationpush ]]; then
+elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-notificationmanagerpush_notificationpush ]]; then
   FILE=push
-elif [[ "$CONTAINERNAME" =~ ^ev-commoditydeliverymanager_commoditydeliverymanager ]]; then
+elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-commoditydeliverymanager_commoditydeliverymanager ]]; then
   FILE=comoditydelivery
-elif [[ "$CONTAINERNAME" =~ ^ev-infulfillmentmanager_infulfillmentmanager ]]; then
+elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-infulfillmentmanager_infulfillmentmanager ]]; then
   FILE=infulfillment
-elif [[ "$CONTAINERNAME" =~ ^ev-purchasefulfillmentmanager_purchasemanager ]]; then
+elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-purchasefulfillmentmanager_purchasemanager ]]; then
   FILE=purchasefulfillment
 else
   FILE=generic
