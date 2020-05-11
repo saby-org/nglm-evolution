@@ -209,7 +209,10 @@ public class DialogTemplate extends SubscriberMessageTemplate
         for(String communicationChannelParameter : communicationChannel.getParameters().keySet())
           {
             CriterionField criterionField = communicationChannel.getParameters().get(communicationChannelParameter);
-            dialogMessageFields.put(communicationChannelParameter, criterionField.getMandatoryParameter()); 
+            if(criterionField.getFieldDataType().getExternalRepresentation().startsWith("template_")) {
+              // only intereseted by parameters specific to templates, so of type template_XXX
+              dialogMessageFields.put(communicationChannelParameter, criterionField.getMandatoryParameter());
+            }
           }
       }
   }

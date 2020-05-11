@@ -792,12 +792,14 @@ public class NotificationManager extends DeliveryManager implements Runnable
 
       /*****************************************
        *
-       * parameters
+       * template parameters
        *
        *****************************************/
 
-      NotificationTemplateParameters templateID = (NotificationTemplateParameters) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest, "node.parameter.dialog_template");
-
+      NotificationTemplateParameters templateParameters = (NotificationTemplateParameters) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest, "node.parameter.dialog_template");
+      // templateParameters contains only field specific to a template, by example sms.body, but no isFlashSMS
+      
+      
       /*****************************************
        *
        * get DialogTemplate
@@ -807,7 +809,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       String language = subscriberEvaluationRequest.getLanguage();
       SubscriberMessageTemplateService subscriberMessageTemplateService = evolutionEventContext.getSubscriberMessageTemplateService();
-      DialogTemplate baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID.getSubscriberMessageTemplateID(), now);
+      DialogTemplate baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateParameters.getSubscriberMessageTemplateID(), now);
       DialogTemplate template = (baseTemplate != null) ? ((DialogTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext)) : null;
 
       String destAddress = null;

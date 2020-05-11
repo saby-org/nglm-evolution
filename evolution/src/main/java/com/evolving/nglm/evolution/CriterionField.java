@@ -324,9 +324,11 @@ public class CriterionField extends DeploymentManagedObject
   *
   *****************************************/
 
-  public CriterionField(String tagName) throws GUIManagerException
+  public CriterionField(String tagName, String tagJourneyNodeParameterName) throws GUIManagerException
   {
     this(generateCriterionField(tagName));
+    // add a field into the JSONrepresenation only to know which field to retrive when a Tag is NOT a classical criterion field but a parameter (cf macros in JSON templates)
+    this.getJSONRepresentation().put("tagJourneyNodeParameterName", tagJourneyNodeParameterName);
   }
 
   //
@@ -349,7 +351,7 @@ public class CriterionField extends DeploymentManagedObject
   //  generateTagID
   //
 
-  private static String generateTagID(String name)
+  public static String generateTagID(String name)
   {
     //
     //  initialize result

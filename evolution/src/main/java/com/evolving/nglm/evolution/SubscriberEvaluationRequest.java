@@ -12,7 +12,9 @@ import com.evolving.nglm.core.SubscriberStreamEvent;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -35,6 +37,7 @@ public class SubscriberEvaluationRequest
   private SortedSet<Date> nextEvaluationDates;
   private ParameterMap evaluationVariables;
   private List<String> traceDetails;
+  private HashMap<String, String> miscData = new HashMap(); // for data provided in special cases (like tags...)
 
   /*****************************************
   *
@@ -96,6 +99,7 @@ public class SubscriberEvaluationRequest
   public List<String> getTraceDetails() { return traceDetails; }
   public SortedSet<Date> getNextEvaluationDates() { return nextEvaluationDates; }
   public boolean getSubscriberTraceEnabled() { return subscriberProfile.getSubscriberTraceEnabled(); }
+  public Map<String, String> getMiscData() { return miscData; }
   
   /*****************************************
   *

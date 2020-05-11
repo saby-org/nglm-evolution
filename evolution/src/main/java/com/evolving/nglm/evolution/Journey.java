@@ -1992,12 +1992,12 @@ public class Journey extends GUIManagedObject
             if (parameterValue instanceof SubscriberMessage)
               {
                 NodeType nodeType = journeyNode.getNodeType();
-                channelID = JSONUtilities.decodeString(nodeType.getJSONRepresentation(), "communicationChannelID", true);
+                channelID = JSONUtilities.decodeString(nodeType.getJSONRepresentation(), "communicationChannelID", false); // false because old channels don't provide this information
                 // This is for the management of Old channels.... hardcoded SMS, EMAIL and so on...
                 SubscriberMessage subscriberMessage = (SubscriberMessage) parameterValue;
                 if (subscriberMessage.getDialogMessages().size() > 0)
                   {
-                    result.add(new Pair(subscriberMessage, channelID));
+                    result.add(new Pair(subscriberMessage, channelID != null ? channelID : "UnknownChannelID"));
                   }
               }
           }
@@ -2017,7 +2017,7 @@ public class Journey extends GUIManagedObject
                     SubscriberMessage subscriberMessage = (SubscriberMessage) parameterValue;
                     if (subscriberMessage.getDialogMessages().size() > 0)
                       {
-                        result.add(new Pair(subscriberMessage, channelID));
+                        result.add(new Pair(subscriberMessage, channelID != null ? channelID : "UnknownChannelID"));
                       }
                   }
               }
@@ -2038,7 +2038,7 @@ public class Journey extends GUIManagedObject
             SubscriberMessage subscriberMessage = (SubscriberMessage) parameterValue;
             if (subscriberMessage.getDialogMessages().size() > 0)
               {
-                result.add(new Pair(subscriberMessage, null));
+                result.add(new Pair(subscriberMessage, "UnknownChannelID-BoundParameter"));
               }
           }
       }
@@ -2653,8 +2653,47 @@ public class Journey extends GUIManagedObject
                 }
                 JSONObject value = (JSONObject)parameterJSON.get("value");
                 JSONArray message = JSONUtilities.decodeJSONArray(value, "message");
-                NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
-                nodeParameters.put(parameterName, templateParameters);
+                // in case of TemplateID reference:
+                //{
+                //  "parameterName": "node.parameter.dialog_template",
+                //  "value": {
+                //      "macros": [
+                //          {
+                //              "campaignValue": "subscriber.email",
+                //              "templateValue": "emailAddress"
+                //          }
+                //      ],
+                //      "templateID": "17"
+                //  }
+                // 
+                // In case of InLine template:
+                // {
+                //  "parameterName": "node.parameter.dialog_template",
+                //  "value": {
+                //      "message": [
+                //          {
+                //              "node.parameter.subject": "subj",
+                //              "languageID": "1",
+                //              "node.parameter.body": "<!DOCTYPE html>\n<html>\n<head>\n</head>\n<body>\n<p>html 2{Campaign Name}</p>\n<p>si inca unu {mama}&nbsp;nu are mere</p>\n</body>\n</html>"
+                //          },
+                //          {
+                //              "node.parameter.subject": "sagsgsa",
+                //              "languageID": "3",
+                //              "node.parameter.body": "<!DOCTYPE html>\n<html>\n<head>\n</head>\n<body>\n<p>html 2{Campaign Name}</p>\n<p>si inca unu {mama}&nbsp;nu are mere</p>\n</body>\n</html>"
+                //          }
+                //      ]
+                //   }
+                // }
+                if(message != null) {                
+                  // case InLine Template
+                  NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
+                  nodeParameters.put(parameterName, templateParameters);
+                }
+                else {
+                  // case referenced Template
+                  NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(value, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
+                  nodeParameters.put(parameterName, templateParameters);
+                }
                 break;
 
               case WorkflowParameter:
@@ -3029,19 +3068,21 @@ public class Journey extends GUIManagedObject
                 PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
                 outputConnectorParameters.put(parameterName, pushMessageValue);
                 break;
+
                 
-              case Dialog:
-                HashMap<String,Boolean> dialogMessageFieldsMandatory = new HashMap<String, Boolean>();
-                for(CriterionField param : nodeType.getParameters().values()) {
-                  if(param.getFieldDataType().getExternalRepresentation().startsWith("template_")) {
-                    dialogMessageFieldsMandatory.put(param.getID(), param.getMandatoryParameter());
-                  }
-                }
-                JSONObject value = (JSONObject)parameterJSON.get("value");
-                JSONArray message = JSONUtilities.decodeJSONArray(value, "message");
-                NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
-                outputConnectorParameters.put(parameterName, templateParameters);
-                break;
+// I keep the code in case of... But it should never be used as Dialog type should be only for DependentNodeParameters                
+//              case Dialog:
+//                HashMap<String,Boolean> dialogMessageFieldsMandatory = new HashMap<String, Boolean>();
+//                for(CriterionField param : nodeType.getParameters().values()) {
+//                  if(param.getFieldDataType().getExternalRepresentation().startsWith("template_")) {
+//                    dialogMessageFieldsMandatory.put(param.getID(), param.getMandatoryParameter());
+//                  }
+//                }
+//                JSONObject value = (JSONObject)parameterJSON.get("value");
+//                JSONArray message = JSONUtilities.decodeJSONArray(value, "message");
+//                NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
+//                outputConnectorParameters.put(parameterName, templateParameters);
+//                break;
 
               case WorkflowParameter:
                 WorkflowParameter workflowParameter = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);

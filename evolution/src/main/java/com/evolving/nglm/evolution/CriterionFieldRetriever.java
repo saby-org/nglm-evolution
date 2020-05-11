@@ -66,7 +66,10 @@ public abstract class CriterionFieldRetriever
   public static Object getJourneyEntryDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getJourneyState().getJourneyEntryDate(); }
   public static Object getJourneyParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluateParameter(evaluationRequest, evaluationRequest.getJourneyState().getJourneyParameters().get(fieldName)); }
   public static Object getJourneyNodeEntryDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getJourneyState().getJourneyNodeEntryDate(); }
-  public static Object getJourneyNodeParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluateParameter(evaluationRequest, evaluationRequest.getJourneyNode().getNodeParameters().get(fieldName)); }
+  public static Object getJourneyNodeParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) { 
+    ParameterMap parameters = evaluationRequest.getJourneyNode().getNodeParameters();
+    return evaluateParameter(evaluationRequest, parameters.get(fieldName)); 
+    }
   public static Object getJourneyLinkParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluateParameter(evaluationRequest, evaluationRequest.getJourneyLink().getLinkParameters().get(fieldName)); }
   public static Object getActionAttribute(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluateParameter(evaluationRequest, evaluationRequest.getJourneyState().getJourneyActionManagerContext().get(fieldName)); }
 
@@ -74,7 +77,22 @@ public abstract class CriterionFieldRetriever
   //  subscriberMessages
   //
 
-  public static Object getSubscriberMessageParameterTag(SubscriberEvaluationRequest evaluationRequest, String fieldName) {  return evaluateParameter(evaluationRequest, ((SubscriberMessage) CriterionFieldRetriever.getJourneyNodeParameter(evaluationRequest,"node.parameter.message")).getParameterTags().get(fieldName)); }
+  public static Object getSubscriberMessageParameterTag(SubscriberEvaluationRequest evaluationRequest, String fieldName) {
+    
+    String tagJourneyNodeParameterName = evaluationRequest.getMiscData().get("tagJourneyNodeParameterName");
+    if(tagJourneyNodeParameterName == null) {
+      tagJourneyNodeParameterName = "node.parameter.message"; // compatibility with OLD SMS
+    }
+    // OLD Way to retrieve subscriberMessage
+    SubscriberMessage subscriberMessage = (SubscriberMessage) CriterionFieldRetriever.getJourneyNodeParameter(evaluationRequest, tagJourneyNodeParameterName);
+    if(subscriberMessage == null) {
+      // GENERIC WAY to retrieve subscriberMessage
+      subscriberMessage = (SubscriberMessage) CriterionFieldRetriever.getJourneyNodeParameter(evaluationRequest, "node.parameter.dialog_template");
+    }
+    SimpleParameterMap parameterMap = subscriberMessage.getParameterTags();
+
+    return evaluateParameter(evaluationRequest, parameterMap.get(fieldName)); 
+    }
   
   //
   //  simple

@@ -124,6 +124,30 @@ public class ParameterExpression
         throw new GUIManagerException(e);
       }
   }
+  
+  public ParameterExpression(String expression, String timeUnit, CriterionContext criterionContext) throws GUIManagerException
+  {
+    //
+    //  basic fields
+    //
+
+    this.criterionContext = criterionContext;
+    this.expressionString = expression;
+    this.baseTimeUnit = TimeUnit.fromExternalRepresentation(timeUnit != null ? timeUnit : "(unknown)");
+
+    //
+    //  parse
+    //
+
+    try
+      {
+        parseParameterExpression();
+      }
+    catch (ExpressionParseException|ExpressionTypeCheckException e)
+      {
+        throw new GUIManagerException(e);
+      }
+  }
 
   /*****************************************
   *

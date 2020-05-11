@@ -162,7 +162,7 @@ public class DialogMessage
               boolean parameterTag = false;
               if (criterionField == null)
                 {
-                  criterionField = new CriterionField(criterionFieldName);
+                  criterionField = new CriterionField(criterionFieldName, messageTextAttribute);
                   parameterTag = true;
                 }
 
@@ -520,6 +520,7 @@ public class DialogMessage
         //  retrieve value
         //
         
+        subscriberEvaluationRequest.getMiscData().put("tagJourneyNodeParameterName", (String)tag.getJSONRepresentation().get("tagJourneyNodeParameterName"));
         Object tagValue = tag.retrieve(subscriberEvaluationRequest);
 
         //

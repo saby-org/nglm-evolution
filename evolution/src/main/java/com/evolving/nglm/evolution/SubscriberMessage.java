@@ -115,7 +115,7 @@ public abstract class SubscriberMessage
         //  parameterTags
         //
         
-        parameterTags = decodeParameterTags(JSONUtilities.decodeJSONArray(messageJSON, "parameterTags", new JSONArray()), subscriberMessageTemplate, criterionContext);
+        parameterTags = decodeParameterTags(JSONUtilities.decodeJSONArray(messageJSON, "macros", new JSONArray()), subscriberMessageTemplate, criterionContext);
       }
     
     /*****************************************
@@ -177,15 +177,30 @@ public abstract class SubscriberMessage
     for (int i=0; i<jsonArray.size(); i++)
       {
         JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
-        String parameterID = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
+        String parameterID = JSONUtilities.decodeString(parameterJSON, "templateValue", true);
+        parameterID = CriterionField.generateTagID(parameterID);
         CriterionField parameter = parameterTagsByID.get(parameterID);
         if (parameter == null) throw new GUIManagerException("unknown parameterTag", parameterID);
+        
         if (! Journey.isExpressionValuedParameterValue(parameterJSON))
           {
             switch (parameter.getFieldDataType())
               {
                 case StringCriterion:
-                  parameterTags.put(parameterID, JSONUtilities.decodeString(parameterJSON, "value", false));
+                  
+                  // parameter value is either a GUI entered String, either the reference to a criterion Field
+                  String parameterValue = JSONUtilities.decodeString(parameterJSON, "campaignValue", false);
+                  
+                  // check if the value refers a criterion or a simple String...
+                  CriterionField tagCriterionField = criterionContext.getCriterionFields().get(parameterValue);
+                  
+                  if(tagCriterionField != null) {
+                    ParameterExpression parameterExpression = new ParameterExpression(parameterValue, null, criterionContext);
+                    parameterTags.put(parameterID, parameterExpression);
+                  }
+                  else {
+                    parameterTags.put(parameterID, JSONUtilities.decodeString(parameterJSON, "campaignValue", false));
+                  }
                   break;
 
                 default:
