@@ -115,7 +115,7 @@ public class DNBOUtils
     // returns TokenChange if error, otherwise 5 elements
     protected Object[] handleToken(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, String action)
     {
-      log.info("ActionManagerDNBO.handleToken() method call");
+      log.debug("ActionManagerDNBO.handleToken() method call");
     	
       /*****************************************
       *
@@ -138,7 +138,7 @@ public class DNBOUtils
           return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, "", action, str))};
         }
 
-      log.info("ActionManagerDNBO.handleToken() strategy valid");
+      log.debug("ActionManagerDNBO.handleToken() strategy valid");
 
       /*****************************************
       *
@@ -153,7 +153,7 @@ public class DNBOUtils
           return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, "", action, str))};
         }
 
-      log.info("ActionManagerDNBO.handleToken() tokenType valid");
+      log.debug("ActionManagerDNBO.handleToken() tokenType valid");
 
       /*****************************************
       *
