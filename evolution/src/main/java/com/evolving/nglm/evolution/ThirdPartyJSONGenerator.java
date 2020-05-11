@@ -162,11 +162,15 @@ public class ThirdPartyJSONGenerator
   private static JSONArray  getOfferObjectivesJson(Offer offer, OfferObjectiveService offerObjectiveService)
   {
     List<JSONObject> offerObjectives = new ArrayList<JSONObject>();
-    if(offer.getOfferObjectives() != null)
+    if (offer != null && offer.getOfferObjectives() != null)
       {
         for (OfferObjectiveInstance instance : offer.getOfferObjectives())
           {
-            offerObjectives.add(offerObjectiveService.getStoredOfferObjective(instance.getOfferObjectiveID()).getJSONRepresentation());
+            GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(instance.getOfferObjectiveID());
+            if (offerObjective != null)
+              {
+                offerObjectives.add(offerObjective.getJSONRepresentation());
+              }
           }
       }
     return JSONUtilities.encodeArray(offerObjectives);
