@@ -717,7 +717,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
           break;
           
         case Customer_Care:
-          featureName = "Customer_Care-its temp"; //To DO
+          featureName = featureId; // this is the userID
           break;
 
         case Unknown:
@@ -776,7 +776,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
           break;
           
         case Customer_Care:
-          featureDisplay = "Customer_Care-its temp"; //To DO
+          featureDisplay = featureId; // this is the userID
           break;
 
         case Unknown:

@@ -3578,15 +3578,22 @@ public class ThirdPartyManager
        {
          for (Token token : subscriberProfile.getTokens())
            {
-             if (token instanceof DNBOToken && ((DNBOToken) token).getPresentationStrategyID().equals(presentationStrategyID))
+             if (token != null && token instanceof DNBOToken)
                {
-                 response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, callingChannel, null, paymentMeanService);
-                 response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
-                 response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
-                 return JSONUtilities.encodeObject(response);
+                 DNBOToken dnboToken = (DNBOToken) token;
+                 if (presentationStrategyID.equals(dnboToken.getPresentationStrategyID()))
+                   {
+                     TokenStatus status = dnboToken.getTokenStatus();
+                     if (status != null && (status.equals(TokenStatus.New) || status.equals(TokenStatus.Bound)) && !token.getTokenExpirationDate().before(now))
+                       {
+                         response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, callingChannel, null, paymentMeanService);
+                         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+                         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+                         return JSONUtilities.encodeObject(response);
+                       }
+                   }
                }
-           }
-       }
+           }}
 
      DNBOToken newToken = TokenUtils.generateTokenCode(subscriberProfile, tokenType);
      if (newToken == null)
