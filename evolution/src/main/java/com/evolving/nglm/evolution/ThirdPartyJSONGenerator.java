@@ -481,7 +481,7 @@ public class ThirdPartyJSONGenerator
                                             Object offerProperty = offerJSON.get(offerPropertyName);
                                             if (offerProperty != null)
                                               {
-                                                log.info("Adding " + offerPropertyName + " -> " + offerProperty);
+                                                log.debug("Adding property " + offerPropertyName + " : " + offerProperty);
                                                 offerMap.put(offerPropertyName, offerProperty);
                                               }
                                           }
