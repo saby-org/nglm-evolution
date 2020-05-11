@@ -3593,7 +3593,8 @@ public class ThirdPartyManager
                        }
                    }
                }
-           }}
+           }
+         }
 
      DNBOToken newToken = TokenUtils.generateTokenCode(subscriberProfile, tokenType);
      if (newToken == null)
