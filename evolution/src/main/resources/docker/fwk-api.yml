@@ -25,6 +25,7 @@ fwk-api-<_KEY_>:
     Email__Smtp__Password: '<_FWKSETTINGS_EMAIL_SMTP_PASSWORD_>'
     Email__Smtp__EnableSsl: '<_FWKSETTINGS_EMAIL_SMTP_ENABLESSL_>'
     Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
+    FwkSettings__WebCallbackUrl: '<_FWKSETTINGS_WEBCALLBACKURL_>'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/fwk-api-<_KEY_>/mnt
