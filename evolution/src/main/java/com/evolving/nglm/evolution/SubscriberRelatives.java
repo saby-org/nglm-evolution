@@ -163,8 +163,8 @@ public class SubscriberRelatives
                     parentJson.put(alternateID.getID(), alternateIDValue);
                   }
               }
-            json.put("parentDetails", JSONUtilities.encodeObject(parentJson));
           }
+        json.put("parentDetails", JSONUtilities.encodeObject(parentJson));
       } 
     catch (SubscriberProfileServiceException e)
       {
