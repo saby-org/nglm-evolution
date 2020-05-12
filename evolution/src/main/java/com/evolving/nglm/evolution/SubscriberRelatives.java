@@ -149,19 +149,22 @@ public class SubscriberRelatives
     try
       {
         SubscriberProfile parentProfile = subscriberProfileService.getSubscriberProfile(getParentSubscriberID());
-        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(parentProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
-        parentJson.put("subscriberID", getParentSubscriberID());
-        for (String id : Deployment.getAlternateIDs().keySet())
+        if (parentProfile != null)
           {
-            AlternateID alternateID = Deployment.getAlternateIDs().get(id);
-            CriterionField criterionField = Deployment.getProfileCriterionFields().get(alternateID.getProfileCriterionField());
-            if (criterionField != null)
+            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(parentProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
+            parentJson.put("subscriberID", getParentSubscriberID());
+            for (String id : Deployment.getAlternateIDs().keySet())
               {
-                String alternateIDValue = (String) criterionField.retrieve(evaluationRequest);
-                parentJson.put(alternateID.getID(), alternateIDValue);
+                AlternateID alternateID = Deployment.getAlternateIDs().get(id);
+                CriterionField criterionField = Deployment.getProfileCriterionFields().get(alternateID.getProfileCriterionField());
+                if (criterionField != null)
+                  {
+                    String alternateIDValue = (String) criterionField.retrieve(evaluationRequest);
+                    parentJson.put(alternateID.getID(), alternateIDValue);
+                  }
               }
+            json.put("parentDetails", JSONUtilities.encodeObject(parentJson));
           }
-        json.put("parentDetails", JSONUtilities.encodeObject(parentJson));
       } 
     catch (SubscriberProfileServiceException e)
       {
