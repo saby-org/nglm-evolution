@@ -208,7 +208,9 @@ public class Deployment
   private static String reportManagerDateFormat;
   private static String reportManagerFileExtension;
   private static String reportManagerStreamsTempDir;
+  private static String reportManagerTopicsCreationProperties;
   private static String reportManagerCsvSeparator;
+  private static String reportManagerFieldSurrounder;
   private static String uploadedFileSeparator;
   private static CustomerMetaData customerMetaData = null;
   private static String APIresponseDateFormat;
@@ -232,12 +234,14 @@ public class Deployment
   private static String sourceAddressTopic;
   private static boolean autoApproveGuiObjects;
   private static Map<String,String> deliveryTypeCommunicationChannelIDMap = new LinkedHashMap<>();
+  private static int purchaseTimeoutMs;
   private static String voucherChangeRequestTopic;
   private static String voucherChangeResponseTopic;
   private static String hourlyReportCronEntryString;
   private static String dailyReportCronEntryString;
   private static String weeklyReportCronEntryString;
   private static String monthlyReportCronEntryString;
+  private static boolean enableEvaluateTargetRandomness;
 
 
   // conf for voucher
@@ -447,8 +451,10 @@ public class Deployment
   public static String getReportManagerDateFormat() { return reportManagerDateFormat; }
   public static String getReportManagerFileExtension() { return reportManagerFileExtension; }
   public static String getReportManagerCsvSeparator() { return reportManagerCsvSeparator; }
+  public static String getReportManagerFieldSurrounder() { return reportManagerFieldSurrounder; }
   public static String getUploadedFileSeparator() { return uploadedFileSeparator; }
   public static String getReportManagerStreamsTempDir() { return reportManagerStreamsTempDir; }
+  public static String getReportManagerTopicsCreationProperties() { return reportManagerTopicsCreationProperties; }
   public static CustomerMetaData getCustomerMetaData() { return customerMetaData; }
   public static String getAPIresponseDateFormat() { return APIresponseDateFormat; }
   public static String getUploadedFileTopic() { return uploadedFileTopic; }
@@ -470,6 +476,7 @@ public class Deployment
   public static String getElasticSearchDateFormat() { return elasticSearchDateFormat; }
   public static int getElasticSearchScrollSize() {return elasticSearchScrollSize; }
   public static int getMaxPollIntervalMs() {return maxPollIntervalMs; }
+  public static int getPurchaseTimeoutMs() {return purchaseTimeoutMs; }
   public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
   public static String getSourceAddressTopic() { return sourceAddressTopic; }
   public static boolean getAutoApproveGuiObjects() { return autoApproveGuiObjects; }
@@ -489,6 +496,7 @@ public class Deployment
   public static String getDailyReportCronEntryString() { return dailyReportCronEntryString; }
   public static String getWeeklyReportCronEntryString() { return weeklyReportCronEntryString; }
   public static String getMonthlyReportCronEntryString() { return monthlyReportCronEntryString; }
+  public static boolean getEnableEvaluateTargetRandomness() { return enableEvaluateTargetRandomness; }
   
   // addProfileCriterionField
   //
@@ -1050,6 +1058,18 @@ public class Deployment
       try
         {
           maxPollIntervalMs = JSONUtilities.decodeInteger(jsonRoot, "maxPollIntervalMs", 30000);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      // purchaseTimeoutMs
+      //
+      try
+        {
+          purchaseTimeoutMs = JSONUtilities.decodeInteger(jsonRoot, "purchaseTimeoutMs", 15000);
         }
       catch (JSONUtilitiesException e)
         {
@@ -3073,11 +3093,13 @@ public class Deployment
           if (reportManager != null)
             {
               reportManagerZookeeperDir = JSONUtilities.decodeString(reportManager, "reportManagerZookeeperDir", true);
-              reportManagerOutputPath = JSONUtilities.decodeString(reportManager, "reportManagerOutputPath", false);
-              reportManagerDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerDateFormat", false);
-              reportManagerFileExtension = JSONUtilities.decodeString(reportManager, "reportManagerFileExtension", false);
-              reportManagerCsvSeparator = JSONUtilities.decodeString(reportManager, "reportManagerCsvSeparator", false);
-              reportManagerStreamsTempDir = JSONUtilities.decodeString(reportManager, "reportManagerStreamsTempDir", false);
+              reportManagerOutputPath = JSONUtilities.decodeString(reportManager, "reportManagerOutputPath", "/app/reports");
+              reportManagerDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerDateFormat", "yyyy-MM-dd_HH-mm-ss_SSSS");
+              reportManagerFileExtension = JSONUtilities.decodeString(reportManager, "reportManagerFileExtension", "csv");
+              reportManagerCsvSeparator = JSONUtilities.decodeString(reportManager, "reportManagerCsvSeparator", ";");
+              reportManagerFieldSurrounder = JSONUtilities.decodeString(reportManager, "reportManagerFieldSurrounder", "'");
+              reportManagerStreamsTempDir = JSONUtilities.decodeString(reportManager, "reportManagerStreamsTempDir", System.getProperty("java.io.tmpdir"));
+              reportManagerTopicsCreationProperties = JSONUtilities.decodeString(reportManager, "reportManagerTopicsCreationProperties", "cleanup.policy=delete segment.bytes=52428800 retention.ms=86400000");
             }
           else
             {
@@ -3086,7 +3108,14 @@ public class Deployment
               reportManagerDateFormat = "yyyy-MM-dd_HH-mm-ss_SSSS";
               reportManagerFileExtension = "csv";
               reportManagerCsvSeparator = ";";
+              reportManagerFieldSurrounder = "'";
               reportManagerStreamsTempDir = System.getProperty("java.io.tmpdir");
+              reportManagerTopicsCreationProperties = "cleanup.policy=delete segment.bytes=52428800 retention.ms=86400000";
+            }
+          if (reportManagerFieldSurrounder.length() > 1)
+            {
+              log.warn("reportManagerFieldSurrounder is not a single character, this would lead to errors in the reports, truncating, please fix this : " + reportManagerFieldSurrounder);
+              reportManagerFieldSurrounder = reportManagerFieldSurrounder.substring(0, 1);
             }
         }
       catch (JSONUtilitiesException e)
@@ -3271,7 +3300,20 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
-      
+
+
+      //
+      //  enableProfileSegmentChange
+      //
+
+      try
+      {
+        enableEvaluateTargetRandomness = JSONUtilities.decodeBoolean(jsonRoot, "enableEvaluateTargetRandomness", Boolean.FALSE);
+      }
+      catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
     }
 
   /*****************************************

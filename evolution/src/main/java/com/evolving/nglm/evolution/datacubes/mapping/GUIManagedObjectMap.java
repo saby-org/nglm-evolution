@@ -18,14 +18,18 @@ public abstract class GUIManagedObjectMap<T extends GUIManagedObject>
   
   /*****************************************
   *
-  *  data
+  * Properties
   *
   *****************************************/
-  
   private Class<T> typeOfT;
   protected Map<String, T> guiManagedObjects;
   private Set<String> warnings; // TODO: factorize with ESObjectList later 
-  
+
+  /*****************************************
+  *
+  * Constructor
+  *
+  *****************************************/
   public GUIManagedObjectMap(Class<T> typeOfT) 
   {
     this.typeOfT = typeOfT;
@@ -34,21 +38,24 @@ public abstract class GUIManagedObjectMap<T extends GUIManagedObject>
 
   /*****************************************
   *
-  *  accessors
+  * Implementation
   *
   *****************************************/
-  
   protected abstract Collection<GUIManagedObject> getCollection();
-  
+
+  /*****************************************
+  *
+  * Accessors
+  *
+  *****************************************/
   public Set<String> keySet() { return this.guiManagedObjects.keySet(); }
   public T get(String id) { return this.guiManagedObjects.get(id); }
   
   /*****************************************
   *
-  *  reset
+  * reset
   *
   *****************************************/
-  
   protected void reset() 
   {
     this.guiManagedObjects = new HashMap<String, T>(); 
@@ -57,10 +64,9 @@ public abstract class GUIManagedObjectMap<T extends GUIManagedObject>
   
   /*****************************************
   *
-  *  logWarningOnlyOnce
+  * logWarningOnlyOnce
   *
   *****************************************/
-
   protected void logWarningOnlyOnce(String msg)
   {
     if(!this.warnings.contains(msg))
@@ -72,10 +78,9 @@ public abstract class GUIManagedObjectMap<T extends GUIManagedObject>
   
   /*****************************************
   *
-  *  update
+  * update
   *
   *****************************************/
-  
   public void update() 
   {
     this.reset();
@@ -95,21 +100,20 @@ public abstract class GUIManagedObjectMap<T extends GUIManagedObject>
 
   /*****************************************
   *
-  *  getDisplay
+  * getDisplay
   *
   *****************************************/
-  
   public String getDisplay(String id, String fieldName)
   {
     T result = this.guiManagedObjects.get(id);
-    if(result != null)
+    if(result != null && result.getGUIManagedObjectDisplay() != null)
       {
         return result.getGUIManagedObjectDisplay();
       }
     else
       {
-        logWarningOnlyOnce("Unable to retrieve " + fieldName + ".display for " + fieldName + ".id: " + id);
-        return id; // When missing, return the ID by default.
+        logWarningOnlyOnce("Unable to retrieve display for " + fieldName + " id: " + id);
+        return id; // When missing, return default.
       }
   }
 }

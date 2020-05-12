@@ -361,18 +361,23 @@ public class JourneyHistory
    * 
    * @return RewardHistory if a reward has been added in reward history, null otherwise
    */
-  public RewardHistory addRewardInformation(DeliveryRequest deliveryRequest) 
+  public RewardHistory addRewardInformation(DeliveryRequest deliveryRequest, DeliverableService deliverableService, Date now)
   {
     RewardHistory history = null;
     if(deliveryRequest instanceof CommodityDeliveryRequest) {
       CommodityDeliveryRequest request = (CommodityDeliveryRequest) deliveryRequest;
-      history = new RewardHistory(request.getProviderName(), request.getCommodityID(), request.getAmount(), request.getDeliveryDate());
+      
+      // This part was based on addFieldsForGUIPresentation of CommodityDeliveryManager class, this could be factorized.
+      Deliverable deliverable = deliverableService.getActiveDeliverable(request.getCommodityID(), now);
+      String deliverableDisplay = deliverable != null ? deliverable.getGUIManagedObjectDisplay() : request.getCommodityID();
+      
+      history = new RewardHistory(deliverableDisplay, request.getAmount(), request.getDeliveryDate());
     } 
     // Special case for offers. 
     // PurchaseFulfillmentRequest are not managed by the CommodityManager (which is a proxy for a lot of requests)
     else if(deliveryRequest instanceof PurchaseFulfillmentRequest) {
       PurchaseFulfillmentRequest request = (PurchaseFulfillmentRequest) deliveryRequest;
-      history = new RewardHistory(request.getDeliveryType(), "offer-"+request.getOfferDisplay(), request.getQuantity(), request.getDeliveryDate());
+      history = new RewardHistory(request.getOfferDisplay(), request.getQuantity(), request.getDeliveryDate());
     }
     
     if(history != null) {
@@ -644,7 +649,7 @@ public class JourneyHistory
     *  constructor -- unpack
     *
     *****************************************/
-    private RewardHistory(String rewardName, int amount, Date rewardDate)
+    public RewardHistory(String rewardName, int amount, Date rewardDate)
     {
       this.rewardName = rewardName;
       this.amount = amount;
@@ -692,18 +697,6 @@ public class JourneyHistory
     public String toString()
     {
       return rewardName + ";" + amount + ";" + rewardDate.getTime();
-    }    
-    
-    /*****************************************
-    *
-    *  constructor
-    *
-    *****************************************/
-    public RewardHistory(String deliverableType, String deliverableName, int amount, Date rewardDate)
-    {
-      this.rewardName = deliverableName + '(' + deliverableType + ')';
-      this.amount = amount;
-      this.rewardDate = rewardDate;
     }
   }
   

@@ -21,7 +21,7 @@
 
 echo
 
-flyway --version
+flyway -v
 
 echo
 
@@ -97,8 +97,9 @@ do
 
   DB_UP=1
   while [[ $DB_UP != 0 ]]; do
+  	FLYWAY_INFO_OUTPUT=`flyway info -url=$THE_URL -user=$THE_USER -password=$THE_PASS -driver=$THE_DRIVER -locations=filesystem:$LOCATION`
     echo " -- Checking NGLM db '$DB_NAME'..."
-    if [[ 0 -lt `flyway info -url=$THE_URL -user=$THE_USER -password=$THE_PASS -driver=$THE_DRIVER -locations=filesystem:$LOCATION | grep 'Installed On' | wc -l` ]]; then
+    if [[ 0 -lt `echo "$FLYWAY_INFO_OUTPUT" | grep 'Installed On' | wc -l` ]]; then
       echo " -- NGLM db '$DB_NAME' is up!"
       ((DB_UP--))
     else
@@ -107,7 +108,8 @@ do
   done
 
   echo
-  flyway info -url=$THE_URL -user=$THE_USER -password=$THE_PASS -driver=$THE_DRIVER -locations=filesystem:$LOCATION
+  echo "$FLYWAY_INFO_OUTPUT"
+  # flyway info -url=$THE_URL -user=$THE_USER -password=$THE_PASS -driver=$THE_DRIVER -locations=filesystem:$LOCATION
   echo
 
   flyway migrate -url=$THE_URL -user=$THE_USER -password=$THE_PASS -driver=$THE_DRIVER -locations=filesystem:$LOCATION

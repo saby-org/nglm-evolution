@@ -221,6 +221,7 @@ public class EvolutionEngine
   private static HttpServer internalServer;
   private static HttpClient httpClient;
   private static ExclusionInclusionTargetService exclusionInclusionTargetService;
+  private static StockMonitor stockService;
 
   /****************************************
   *
@@ -232,6 +233,7 @@ public class EvolutionEngine
   {
     NGLMRuntime.initialize(true);
     EvolutionEngine evolutionEngine = new EvolutionEngine();
+    new LoggerInitialization().initLogger();
     evolutionEngine.start(args);
   }
 
@@ -511,6 +513,13 @@ public class EvolutionEngine
     exclusionInclusionTargetService.start();
     
     //
+    // stockService, used to apply campaign max number of customers limit
+    //
+
+    stockService = new StockMonitor("evolutionengine-stockservice-" + evolutionEngineKey, journeyService);
+    stockService.start();
+
+    //
     //  subscriberGroupEpochReader
     //
 
@@ -768,23 +777,32 @@ public class EvolutionEngine
     for (EvolutionEngineEventDeclaration evolutionEngineEventDeclaration : Deployment.getEvolutionEngineEvents().values())
       {
         KStream<StringKey, ? extends SubscriberStreamEvent> evolutionEngineEventStream;
-        switch (evolutionEngineEventDeclaration.getEventRule())
+        if (evolutionEngineEventTopics.get(evolutionEngineEventDeclaration) != null)
           {
-            case All:
-              evolutionEngineEventStream = builder.stream(evolutionEngineEventTopics.get(evolutionEngineEventDeclaration), Consumed.with(stringKeySerde, evolutionEngineEventSerdes.get(evolutionEngineEventDeclaration)));
-              standardEvolutionEngineEventStreams.add(evolutionEngineEventStream);
-              extendedProfileEvolutionEngineEventStreams.add(evolutionEngineEventStream);
-              break;
+            switch (evolutionEngineEventDeclaration.getEventRule())
+              {
+                case All:
+                  evolutionEngineEventStream = builder.stream(
+                      evolutionEngineEventTopics.get(evolutionEngineEventDeclaration),
+                      Consumed.with(stringKeySerde, evolutionEngineEventSerdes.get(evolutionEngineEventDeclaration)));
+                  standardEvolutionEngineEventStreams.add(evolutionEngineEventStream);
+                  extendedProfileEvolutionEngineEventStreams.add(evolutionEngineEventStream);
+                  break;
 
-            case Standard:
-              evolutionEngineEventStream = builder.stream(evolutionEngineEventTopics.get(evolutionEngineEventDeclaration), Consumed.with(stringKeySerde, evolutionEngineEventSerdes.get(evolutionEngineEventDeclaration)));
-              standardEvolutionEngineEventStreams.add(evolutionEngineEventStream);
-              break;
+                case Standard:
+                  evolutionEngineEventStream = builder.stream(
+                      evolutionEngineEventTopics.get(evolutionEngineEventDeclaration),
+                      Consumed.with(stringKeySerde, evolutionEngineEventSerdes.get(evolutionEngineEventDeclaration)));
+                  standardEvolutionEngineEventStreams.add(evolutionEngineEventStream);
+                  break;
 
-            case Extended:
-              evolutionEngineEventStream = builder.stream(evolutionEngineEventTopics.get(evolutionEngineEventDeclaration), Consumed.with(stringKeySerde, evolutionEngineEventSerdes.get(evolutionEngineEventDeclaration)));
-              extendedProfileEvolutionEngineEventStreams.add(evolutionEngineEventStream);
-              break;
+                case Extended:
+                  evolutionEngineEventStream = builder.stream(
+                      evolutionEngineEventTopics.get(evolutionEngineEventDeclaration),
+                      Consumed.with(stringKeySerde, evolutionEngineEventSerdes.get(evolutionEngineEventDeclaration)));
+                  extendedProfileEvolutionEngineEventStreams.add(evolutionEngineEventStream);
+                  break;
+              }
           }
       }
 
@@ -1343,7 +1361,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, propensityDataReader,subscriberProfileServer, internalServer));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, propensityDataReader,subscriberProfileServer, internalServer, stockService));
 
     /*****************************************
     *
@@ -1573,12 +1591,13 @@ public class EvolutionEngine
     private ExclusionInclusionTargetService exclusionInclusionTargetService;
     private HttpServer subscriberProfileServer;
     private HttpServer internalServer;
+    private StockMonitor stockService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, HttpServer subscriberProfileServer, HttpServer internalServer)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, HttpServer subscriberProfileServer, HttpServer internalServer, StockMonitor stockService)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
@@ -1610,6 +1629,7 @@ public class EvolutionEngine
       this.propensityDataReader = propensityDataReader; 
       this.subscriberProfileServer = subscriberProfileServer;
       this.internalServer = internalServer;
+      this.stockService = stockService;
     }
 
     //
@@ -1660,6 +1680,7 @@ public class EvolutionEngine
       timerService.stop();
       pointService.stop();
       exclusionInclusionTargetService.stop();
+      stockService.close();
 
       //
       //  rest server
@@ -1710,7 +1731,7 @@ public class EvolutionEngine
     SubscriberState subscriberState = (currentSubscriberState != null) ? new SubscriberState(currentSubscriberState) : new SubscriberState(evolutionEvent.getSubscriberID());
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
-    EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, propensityDataReader, uniqueKeyServer, SystemTime.getCurrentTime());
+    EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, propensityDataReader, uniqueKeyServer, SystemTime.getCurrentTime());
     boolean subscriberStateUpdated = (currentSubscriberState != null) ? false : true;
 
     /*****************************************
@@ -3104,11 +3125,16 @@ public class EvolutionEngine
       MessageDelivery messageDelivery = (MessageDelivery)evolutionEvent;
       if(messageDelivery.getMessageDeliveryDeliveryStatus() == DeliveryStatus.Delivered)
         {
-          MetricHistory channelMetricHistory = context.getSubscriberState().getNotificationHistory().stream().filter(p -> p.getFirstElement().equals(Deployment.getDeliveryTypeCommunicationChannelIDMap().get(((DeliveryRequest)messageDelivery).getDeliveryType()))).collect(Collectors.toList()).get(0).getSecondElement();
-          Date messageDeliveryDate = RLMDateUtils.truncate(messageDelivery.getMessageDeliveryEventDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-          //long messageCount = channelMetricHistory.getValue(messageDeliveryDate, messageDeliveryDate).longValue() + 1;
-          //this update should be called increment for metric history.
-          channelMetricHistory.update(messageDeliveryDate,1);
+          try {
+            MetricHistory channelMetricHistory = context.getSubscriberState().getNotificationHistory().stream().filter(p -> p.getFirstElement().equals(Deployment.getDeliveryTypeCommunicationChannelIDMap().get(((DeliveryRequest)messageDelivery).getDeliveryType()))).collect(Collectors.toList()).get(0).getSecondElement();
+            Date messageDeliveryDate = RLMDateUtils.truncate(messageDelivery.getMessageDeliveryEventDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+            //long messageCount = channelMetricHistory.getValue(messageDeliveryDate, messageDeliveryDate).longValue() + 1;
+            //this update should be called increment for metric history.
+            channelMetricHistory.update(messageDeliveryDate,1);
+          }
+          catch(Exception e) {
+            log.warn("CATCHED Exception " + e.getClass().getName() + " while updating channelMetricHistory", e);
+          }
         }
     }
 
@@ -3834,13 +3860,8 @@ public class EvolutionEngine
         String featureIDStr = null;
         int featureID = 0;
         List<Token> subscriberTokens = subscriberProfile.getTokens();
-        DNBOToken subscriberStoredToken = null;
-        TokenType defaultDNBOTokenType = tokenTypeService.getActiveTokenType("external", SystemTime.getCurrentTime());
-        if (defaultDNBOTokenType == null)
-          {
-            log.error("Could not find any default token type for external token. Check your configuration.");
-            return false;
-          }
+        String tokenTypeID = null;
+        DNBOToken presentationLogToken = null;
 
         //
         // Retrieve the token-code we are looking for, from the event log.
@@ -3851,12 +3872,27 @@ public class EvolutionEngine
             eventTokenCode = ((PresentationLog) evolutionEvent).getPresentationToken();
             moduleID = ((PresentationLog)evolutionEvent).getModuleID();
             featureIDStr = ((PresentationLog)evolutionEvent).getFeatureID();
+            tokenTypeID = ((PresentationLog)evolutionEvent).getTokenTypeID();
+            presentationLogToken = ((PresentationLog) evolutionEvent).getToken();
           }
         else if (evolutionEvent instanceof AcceptanceLog)
           {
             eventTokenCode = ((AcceptanceLog) evolutionEvent).getPresentationToken();
             moduleID = ((AcceptanceLog)evolutionEvent).getModuleID();
             featureIDStr = ((AcceptanceLog)evolutionEvent).getFeatureID();
+            tokenTypeID = ((AcceptanceLog)evolutionEvent).getTokenTypeID();
+          }
+
+        DNBOToken subscriberStoredToken = null;
+        if (tokenTypeID == null)
+          {
+            tokenTypeID = "external"; // predefined tokenTypeID for tokens created externally
+          }
+        TokenType defaultDNBOTokenType = tokenTypeService.getActiveTokenType(tokenTypeID, SystemTime.getCurrentTime());
+        if (defaultDNBOTokenType == null)
+          {
+            log.error("Could not find token type with ID " + tokenTypeID + " Check your configuration.");
+            return false;
           }
 
         try
@@ -3922,17 +3958,21 @@ public class EvolutionEngine
               }
           }
 
-        //
-        // We start by creating a new token if it does not exist in Evolution (if it has been created by an outside system)
-        //
-
         if (subscriberStoredToken == null)
           {
-            subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
+            if (presentationLogToken == null)
+              {
+                // We start by creating a new token if it does not exist in Evolution (if it has been created by an outside system)
+                subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
+              }
+            else
+              {
+                subscriberStoredToken = presentationLogToken;
+              }
             subscriberTokens.add(subscriberStoredToken);
             subscriberStoredToken.setFeatureID(featureID);
             subscriberStoredToken.setModuleID(moduleID);
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), "", eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName(), moduleID, 0));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), "", eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName(), moduleID, featureID));
             subscriberStateUpdated = true;
           }
 
@@ -3962,21 +4002,25 @@ public class EvolutionEngine
                 subscriberStoredToken.setTokenExpirationDate(defaultDNBOTokenType.getExpirationDate(eventDate));
                 subscriberStateUpdated = true;
               }
-            if (subscriberStoredToken.getBoundDate() == null || subscriberStoredToken.getBoundDate().before(eventDate))
+            List<Date> presentationDates = presentationLog.getPresentationDates();
+            if (presentationDates != null && !presentationDates.isEmpty()) // if empty : bound has failed
               {
-                subscriberStoredToken.setBoundDate(eventDate);
+                subscriberStoredToken.setPresentationDates(presentationDates);
                 subscriberStateUpdated = true;
-              }
-            int boundCount = subscriberStoredToken.getBoundCount();
-            Integer maxNumberofPlaysInt = defaultDNBOTokenType.getMaxNumberOfPlays();
-            int maxNumberofPlays = (maxNumberofPlaysInt == null) ? Integer.MAX_VALUE : maxNumberofPlaysInt.intValue();
-            if (boundCount < maxNumberofPlays)
-              {
-                subscriberStoredToken.setBoundCount(boundCount+1); // no concurrency issue as a given subscriber is always handled by the same partition/evolution engine instance, sequentially
-                subscriberStoredToken.setPresentedOfferIDs(presentationLog.getOfferIDs()); // replace whatever was there
-                String salesChannelID = presentationLog.getSalesChannelID();
-                subscriberStoredToken.setPresentedOffersSalesChannel(salesChannelID); // replace whatever was there
-                subscriberStateUpdated = true;
+                if (subscriberStoredToken.getBoundDate() == null || subscriberStoredToken.getBoundDate().before(eventDate))
+                  {
+                    subscriberStoredToken.setBoundDate(eventDate);
+                  }
+                int boundCount = subscriberStoredToken.getBoundCount();
+                Integer maxNumberofPlaysInt = defaultDNBOTokenType.getMaxNumberOfPlays();
+                int maxNumberofPlays = (maxNumberofPlaysInt == null) ? Integer.MAX_VALUE : maxNumberofPlaysInt.intValue();
+                if (boundCount < maxNumberofPlays)
+                  {
+                    subscriberStoredToken.setBoundCount(boundCount+1); // no concurrency issue as a given subscriber is always handled by the same partition/evolution engine instance, sequentially
+                    subscriberStoredToken.setPresentedOfferIDs(presentationLog.getOfferIDs()); // replace whatever was there
+                    String salesChannelID = presentationLog.getSalesChannelID();
+                    subscriberStoredToken.setPresentedOffersSalesChannel(salesChannelID); // replace whatever was there
+                  }
               }
           }
         else if(evolutionEvent instanceof AcceptanceLog)
@@ -4137,8 +4181,11 @@ public class EvolutionEngine
 
             if (! permittedSimultaneousJourneys.containsKey(journeyObjective))
               {
+                if (log.isTraceEnabled()) log.trace("init permittedSimultaneousJourneys put " + journeyObjective.getJourneyObjectiveName() + ":" + journeyObjective.getEffectiveTargetingLimitMaxSimultaneous());
                 permittedSimultaneousJourneys.put(journeyObjective, journeyObjective.getEffectiveTargetingLimitMaxSimultaneous());
+                if (log.isTraceEnabled()) log.trace("init permittedWaitingPeriod put " + journeyObjective.getJourneyObjectiveName() + ": static TRUE");
                 permittedWaitingPeriod.put(journeyObjective, Boolean.TRUE);
+                if (log.isTraceEnabled()) log.trace("init permittedSlidingWindowJourneys put " + journeyObjective.getJourneyObjectiveName() + ":" + journeyObjective.getEffectiveTargetingLimitMaxOccurrence());
                 permittedSlidingWindowJourneys.put(journeyObjective, journeyObjective.getEffectiveTargetingLimitMaxOccurrence());
               }
 
@@ -4146,9 +4193,21 @@ public class EvolutionEngine
             //  update
             //
 
-            if (activeJourney) permittedSimultaneousJourneys.put(journeyObjective, permittedSimultaneousJourneys.get(journeyObjective) - 1);
-            if (activeJourney || journeyState.getJourneyExitDate().compareTo(journeyObjective.getEffectiveWaitingPeriodEndDate(now)) >= 0) permittedWaitingPeriod.put(journeyObjective, Boolean.FALSE);
-            if (activeJourney || journeyState.getJourneyExitDate().compareTo(journeyObjective.getEffectiveSlidingWindowStartDate(now)) >= 0) permittedSlidingWindowJourneys.put(journeyObjective, permittedSlidingWindowJourneys.get(journeyObjective) - 1);
+            if (activeJourney)
+              {
+                if (log.isTraceEnabled()) log.trace("permittedSimultaneousJourneys put " + journeyObjective.getJourneyObjectiveName() + ":" + (permittedSimultaneousJourneys.get(journeyObjective) - 1));
+                permittedSimultaneousJourneys.put(journeyObjective, permittedSimultaneousJourneys.get(journeyObjective) - 1);
+              }
+            if (journeyObjective.getEffectiveTargetingLimitMaxSimultaneous()==1 && (activeJourney || journeyState.getJourneyExitDate().compareTo(journeyObjective.getEffectiveWaitingPeriodEndDate(now)) >= 0))
+              {
+                if (log.isTraceEnabled()) log.trace("permittedWaitingPeriod put " + journeyObjective.getJourneyObjectiveName() + ": static FALSE");
+                permittedWaitingPeriod.put(journeyObjective, Boolean.FALSE);
+              }
+            if (activeJourney || journeyState.getJourneyExitDate().compareTo(journeyObjective.getEffectiveSlidingWindowStartDate(now)) >= 0)
+              {
+                if (log.isTraceEnabled()) log.trace("permittedSlidingWindowJourneys put " + journeyObjective.getJourneyObjectiveName() + ":" + (permittedSlidingWindowJourneys.get(journeyObjective) - 1));
+                permittedSlidingWindowJourneys.put(journeyObjective, permittedSlidingWindowJourneys.get(journeyObjective) - 1);
+              }
           }
       }
 
@@ -4160,7 +4219,19 @@ public class EvolutionEngine
     for (JourneyObjective journeyObjective : permittedSimultaneousJourneys.keySet())
       {
         permittedJourneys.put(journeyObjective, Math.max(Math.min(permittedSimultaneousJourneys.get(journeyObjective), permittedSlidingWindowJourneys.get(journeyObjective)), 0));
-        if (permittedWaitingPeriod.get(journeyObjective) == Boolean.FALSE) permittedJourneys.put(journeyObjective, 0);
+        if (permittedWaitingPeriod.get(journeyObjective) == Boolean.FALSE){
+            if (log.isTraceEnabled()) log.trace("permittedJourneys put " + journeyObjective.getJourneyObjectiveName() + ": static 0");
+            permittedJourneys.put(journeyObjective, 0);
+        }
+      }
+
+    // log final numbers computation of journeys allowed per journey objectives
+    if (log.isDebugEnabled())
+      {
+        for(Entry<JourneyObjective,Integer> entry:permittedJourneys.entrySet())
+          {
+            log.debug("permittedJourneys : " + entry.getKey().getJourneyObjectiveName() + ":" + entry.getValue());
+          }
       }
 
     /*****************************************
@@ -4238,6 +4309,7 @@ public class EvolutionEngine
             *****************************************/
 
             boolean enterJourney = true;
+            boolean journeyMaxNumberOfCustomersReserved = false;
 
             /*****************************************
             *
@@ -4399,6 +4471,26 @@ public class EvolutionEngine
                           break;
                       }
                   }
+
+                  /*********************************************
+                  *
+                  *  pass max number of customers in journey
+                  *
+                  **********************************************/
+
+                  if (enterJourney)
+                    {
+                      if (!stockService.reserve(journey,1))
+                        {
+                          enterJourney = false;
+                          context.subscriberTrace("NotEligible: max number of customers {0}", journey.getJourneyID());
+                        }
+                      else
+                        {
+                          journeyMaxNumberOfCustomersReserved=true;
+                        }
+
+                    }
               }
             /*****************************************
             *
@@ -4441,6 +4533,15 @@ public class EvolutionEngine
                 *  enterJourney -- all journeys
                 *
                 *****************************************/
+
+                //
+                // confirm "stock reservation" (journey max number of customers limits)
+                //
+
+                if(journeyMaxNumberOfCustomersReserved)
+                  {
+                    stockService.confirmReservation(journey,1);
+                  }
 
                 JourneyHistory journeyHistory = new JourneyHistory(journey.getJourneyID());
                 JourneyState journeyState = new JourneyState(context, journey, journeyRequest, boundParameters, SystemTime.getCurrentTime(), journeyHistory);
@@ -4506,7 +4607,19 @@ public class EvolutionEngine
                     journeyRequest.setEligible(true);
                   }
               }
-            
+            else
+              {
+
+                //
+                // rollback the "stock reservation" (journey max number of customers limits)
+                //
+
+                if(journeyMaxNumberOfCustomersReserved)
+                  {
+                    stockService.voidReservation(journey,1);
+                  }
+              }
+
             /*****************************************
             *
             *  journey response  -- called journey
@@ -4672,7 +4785,7 @@ public class EvolutionEngine
             DeliveryRequest deliveryResponse = (DeliveryRequest) evolutionEvent;
             if (Objects.equals(deliveryResponse.getModuleID(), DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && Objects.equals(deliveryResponse.getFeatureID(), journeyState.getJourneyID()))
               {
-                RewardHistory lastRewards = journeyState.getJourneyHistory().addRewardInformation(deliveryResponse);
+                RewardHistory lastRewards = journeyState.getJourneyHistory().addRewardInformation(deliveryResponse, deliverableService, now);
                 if (lastRewards != null)
                   {
                     subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, new RewardHistory(lastRewards), journeyState.getJourneyID()));
@@ -4710,7 +4823,6 @@ public class EvolutionEngine
                 //
                 //  evaluate
                 //
-
                 if (EvaluationCriterion.evaluateCriteria(evaluationRequest, journeyLink.getTransitionCriteria()))
                   {
                     firedLink = journeyLink;
@@ -4976,16 +5088,16 @@ public class EvolutionEngine
                                   switch (token.getTokenStatus())
                                   {
                                     case New:
-                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID));
+                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, "JourneyToken"));
                                       break;
                                     case Bound: // must record the token creation
-                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID));
-                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID));
+                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, "JourneyNBO"));
+                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID, "JourneyNBO"));
                                       break;
                                     case Redeemed: // must record the token creation & allocation
-                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID));
-                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID));
-                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getRedeemedDate(), TokenChange.REDEEM, token, featureID));
+                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, "JourneyBestOffer"));
+                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID, "JourneyBestOffer"));
+                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getRedeemedDate(), TokenChange.REDEEM, token, featureID, "JourneyBestOffer"));
                                       break;
                                     case Expired :
                                       // TODO
@@ -4998,7 +5110,6 @@ public class EvolutionEngine
 
                                 case TokenChange:
                                   TokenChange tokenChange = (TokenChange) action;
-                                  tokenChange.setOrigin("Journey");
                                   subscriberState.getTokenChanges().add(tokenChange);
                                   break;
                                   
@@ -5212,6 +5323,8 @@ public class EvolutionEngine
                         case DateCriterion:
                           journeyResults.put(Journey.generateJourneyResultID(journey, contextVariable), journeyState.getJourneyParameters().get(contextVariable.getID()));
                           break;
+                        case TimeCriterion:
+                          throw new RuntimeException("unsupported contextVariable field datatype " + contextVariable.getFieldDataType());
                       }
                   }
                 journeyResponse.setJourneyResults(journeyResults);
@@ -5307,9 +5420,9 @@ public class EvolutionEngine
     return subscriberStateUpdated;
   }
 
-  private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String action, Token token, int journeyID)
+  private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String action, Token token, int journeyID, String origin)
   {
-    return new TokenChange(subscriberId, eventDateTime, "", token.getTokenCode(), action, "OK", "Journey", Module.Journey_Manager, journeyID);
+    return new TokenChange(subscriberId, eventDateTime, "", token.getTokenCode(), action, "OK", origin, Module.Journey_Manager, journeyID);
   }
 
   /****************************************
@@ -6251,6 +6364,7 @@ public class EvolutionEngine
     private SubscriberState subscriberState;
     private ExtendedSubscriberProfile extendedSubscriberProfile;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+    private JourneyService journeyService;
     private SubscriberMessageTemplateService subscriberMessageTemplateService;
     private DeliverableService deliverableService;
     private SegmentationDimensionService segmentationDimensionService;
@@ -6280,11 +6394,12 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    public EvolutionEventContext(SubscriberState subscriberState, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
+    public EvolutionEventContext(SubscriberState subscriberState, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
     {
       this.subscriberState = subscriberState;
       this.extendedSubscriberProfile = extendedSubscriberProfile;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
+      this.journeyService = journeyService;
       this.subscriberMessageTemplateService = subscriberMessageTemplateService;
       this.deliverableService = deliverableService;
       this.segmentationDimensionService = segmentationDimensionService;
@@ -6316,6 +6431,7 @@ public class EvolutionEngine
     public SubscriberState getSubscriberState() { return subscriberState; }
     public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
     public ReferenceDataReader<String,SubscriberGroupEpoch> getSubscriberGroupEpochReader() { return subscriberGroupEpochReader; }
+    public JourneyService getJourneyService() { return journeyService; }
     public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
     public DeliverableService getDeliverableService() { return deliverableService; }
     public SegmentationDimensionService getSegmentationDimensionService() { return segmentationDimensionService; }
@@ -7137,6 +7253,8 @@ public class EvolutionEngine
       *****************************************/
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      
       String journeyID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.journey");
 
       /*****************************************
@@ -7191,6 +7309,8 @@ public class EvolutionEngine
       *****************************************/
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      
       WorkflowParameter workflowParameter = (WorkflowParameter) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.workflow");
 
       /*****************************************
@@ -7302,6 +7422,8 @@ public class EvolutionEngine
       *****************************************/
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      
       String loyaltyProgramID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.loyaltyProgramId");
 
       /*****************************************

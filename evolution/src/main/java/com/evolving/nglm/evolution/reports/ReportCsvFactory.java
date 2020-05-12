@@ -35,15 +35,10 @@ public interface ReportCsvFactory
    * @throws IOException
    *           When an error related to filesystem access occurs.
    */
-  void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeader) throws IOException;
-  default void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
-  {
-   
-  }
+  default boolean dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeader) throws IOException {return false;}
+  
+  default void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)  {}
 
-  default Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement)
-  {
-    return null;
-  }
+  default Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement) {return null;}
 
 }

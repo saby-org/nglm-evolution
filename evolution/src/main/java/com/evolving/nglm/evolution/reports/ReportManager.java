@@ -36,6 +36,7 @@ import com.evolving.nglm.evolution.CriterionContext;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.DynamicCriterionFieldService;
 import com.evolving.nglm.evolution.GUIManagedObject;
+import com.evolving.nglm.evolution.LoggerInitialization;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.ReportService;
 import com.evolving.nglm.evolution.ReportService.ReportListener;
@@ -63,6 +64,10 @@ public class ReportManager implements Watcher
   private static final Logger log = LoggerFactory.getLogger(ReportManager.class);
   private static ReportManagerStatistics reportManagerStatistics;
   private ReportService reportService;
+  
+  public static short replicationFactor;
+  public static int nbPartitions;
+  public static int standbyReplicas;
 
   /**
    * Used by ReportScheduler to launch reports.
@@ -142,12 +147,12 @@ public class ReportManager implements Watcher
   *****************************************/
   
   private void createZKNode(String znode, boolean canExist) {
-    log.debug("Trying to create znode "	+ znode
-        + " (" + (canExist?"may":"must not")+" already exist)");
+    log.info("Trying to create znode "	+ znode + " (" + (canExist?"may":"must not")+" already exist)");
     try
     {
       zk.create(znode, "".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-    } catch (KeeperException e)
+    }
+    catch (KeeperException e)
     {
       if (canExist && (e.code() == KeeperException.Code.NODEEXISTS)) 
         {
@@ -157,7 +162,8 @@ public class ReportManager implements Watcher
         {
           log.info("Got "+e.getLocalizedMessage());
         }
-    } catch (InterruptedException e)
+    }
+    catch (InterruptedException e)
     {
       log.info("Got "+e.getLocalizedMessage(), e);
     }
@@ -174,7 +180,8 @@ public class ReportManager implements Watcher
           List<String> children = zk.getChildren(controlDir, this); // get the children and renew watch
           processChildren(children);
         }
-    } catch (KeeperException | InterruptedException e)
+    }
+    catch (KeeperException | InterruptedException e)
     {
       log.error("Error processing report", e);
     }
@@ -191,24 +198,21 @@ public class ReportManager implements Watcher
     if (!children.isEmpty())
       {
         Collections.sort(children); // we are getting an unsorted list
-        for (String child : children) {
+        for (String child : children)
+          {
           String controlFile = controlDir + File.separator + child;
           String lockFile = lockDir + File.separator + child;
-          log.trace("Checking if lock file exists : "+lockFile);
+          log.trace("Checking if lock exists : "+lockFile);
           if (zk.exists(lockFile, false) == null) 
             {
               log.trace("Processing entry "+child+" with znodes "+controlFile+" and "+lockFile);
               try
               {
-                log.trace("Trying to create lock file "+lockFile);
-                zk.create(
-                    lockFile,
-                    dfrm.format(SystemTime.getCurrentTime()).getBytes(), 
-                    Ids.OPEN_ACL_UNSAFE,
-                    CreateMode.EPHEMERAL);
+                log.trace("Trying to create lock "+lockFile);
+                zk.create(lockFile, dfrm.format(SystemTime.getCurrentTime()).getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
                 try 
                 {
-                  log.trace("Lock file "+lockFile+" successfully created");
+                  log.trace("Lock "+lockFile+" successfully created");
                   Stat stat = null;
                   Charset utf8Charset = Charset.forName("UTF-8");
                   byte[] d = zk.getData(controlFile, false, stat);
@@ -245,41 +249,52 @@ public class ReportManager implements Watcher
                       handleReport(reportName, report, restOfLine);
                       reportManagerStatistics.incrementReportCount();
                     }
-                } catch (KeeperException | InterruptedException | NoSuchElementException e)
+                }
+                catch (KeeperException | InterruptedException | NoSuchElementException e)
                 {
                   log.error("Issue while reading from control node "+e.getLocalizedMessage(), e);
                   reportManagerStatistics.incrementFailureCount();
-                } catch (IllegalCharsetNameException e)
+                }
+                catch (IllegalCharsetNameException e)
                 {
                   log.error("Unexpected issue, UTF-8 does not seem to exist "+e.getLocalizedMessage(), e);
                   reportManagerStatistics.incrementFailureCount();
-                } finally 
+                }
+                catch (Exception e) // this is OK because we trace the root cause, and we'll fix it
                 {
+                  log.error("Unexpected issue " + e.getLocalizedMessage(), e);
+                  reportManagerStatistics.incrementFailureCount();
+                }
+                finally 
+                {
+                  log.info("Deleting control "+controlFile);
                   try
                   {
-                    log.trace("Deleting control file "+controlFile);
                     zk.delete(controlFile, -1);
-                  } catch (KeeperException | InterruptedException e) 
-                  {
-                    log.trace("Issue deleting control file : "+e.getLocalizedMessage(), e);
                   }
-                  try 
+                  catch (KeeperException | InterruptedException e) 
                   {
-                    log.trace("Deleting lock file "+lockFile);
-                    zk.delete(lockFile, -1);
-                    log.trace("Both files deleted");
-                  } catch (KeeperException | InterruptedException e)
+                    log.info("Issue deleting control : "+e.getLocalizedMessage(), e);
+                  }
+                  finally 
                   {
-                    log.trace("Issue deleting lock file : "+e.getLocalizedMessage(), e);
+                    log.info("Deleting lock "+lockFile);
+                    try 
+                    {
+                      zk.delete(lockFile, -1);
+                      log.info("Both files deleted");
+                    }
+                    catch (KeeperException | InterruptedException e)
+                    {
+                      log.info("Issue deleting lock : "+e.getLocalizedMessage(), e);
+                    }
                   }
                 }
-              } catch (KeeperException | InterruptedException ignore)
+              }
+              catch (KeeperException | InterruptedException ignore)
               {
-                // even so we check the existence of a lock,
-                // it could have been created in the mean time
-                // making create fail. We catch and ignore it.
-                log.trace("Failed to create lock file, this is OK "
-                    +lockFile+ ":"+ignore.getLocalizedMessage(), ignore);
+                // even so we check the existence of a lock, it could have been created in the mean time making create fail. We catch and ignore it.
+                log.trace("Failed to create lock file, this is OK " +lockFile+ ":"+ignore.getLocalizedMessage(), ignore);
               } 
             } 
           else 
@@ -342,17 +357,28 @@ public class ReportManager implements Watcher
       Class<ReportDriver> reportClass = (Class<ReportDriver>) Class.forName(report.getReportClass());
       Constructor<ReportDriver> cons = reportClass.getConstructor();
       ReportDriver rd = cons.newInstance((Object[]) null);
-      rd.produceReport(report, zkHostList, brokerServers, esNode, csvFilename, params);
+      try
+      {
+        rd.produceReport(report, zkHostList, brokerServers, esNode, csvFilename, params);
+      }
+      catch (Exception e)
+      {
+        // handle any kind of exception that can happen during generating the report, and do not crash the container
+        log.error("Exception processing report " + reportName + " : " + e);
+      }
       log.trace("---> Finished report "+reportName);
-    } catch (ClassNotFoundException e)
+    }
+    catch (ClassNotFoundException e)
     {
       log.error("Undefined class name "+e.getLocalizedMessage(), e);
       reportManagerStatistics.incrementFailureCount();
-    } catch (NoSuchMethodException e)
+    }
+    catch (NoSuchMethodException e)
     {
       log.error("Undefined method "+e.getLocalizedMessage(), e);
       reportManagerStatistics.incrementFailureCount();
-    } catch (SecurityException|InstantiationException|IllegalAccessException|
+    }
+    catch (SecurityException|InstantiationException|IllegalAccessException|
         IllegalArgumentException|InvocationTargetException e) 
     {
       log.error("Error : "+e.getLocalizedMessage(), e);
@@ -368,18 +394,23 @@ public class ReportManager implements Watcher
 
   public static void main(String[] args) 
   {
+    new LoggerInitialization().initLogger();
     log.info("ReportManager: received " + args.length + " args");
     for(String arg : args)
       {
         log.info("ReportManager main : arg " + arg);
       }
-    if (args.length < 2) 
+    if (args.length < 5) 
       {
-        log.error("Usage : ReportManager BrokerServers ESNode");
+        log.error("Usage : ReportManager BrokerServers ESNode replication partitions standby");
         System.exit(1);
       }
     brokerServers = args[0];
     esNode        = args[1];
+    replicationFactor = Short.parseShort(args[2]);
+    nbPartitions = Integer.parseInt(args[3]);
+    standbyReplicas = Integer.parseInt(args[4]);
+    
     zkHostList = Deployment.getZookeeperConnect();
     try 
     {
@@ -393,7 +424,8 @@ public class ReportManager implements Watcher
             Thread.sleep(Long.MAX_VALUE);
           } catch (InterruptedException ignore) {}
         }
-    } catch (Exception e)
+    }
+    catch (Exception e)
     {
       log.info("Issue in Zookeeper : "+e.getLocalizedMessage(), e);
     }

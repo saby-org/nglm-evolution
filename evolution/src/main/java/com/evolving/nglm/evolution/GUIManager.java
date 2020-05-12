@@ -25,26 +25,8 @@ import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -73,6 +55,7 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.zookeeper.ZooKeeper;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
@@ -128,6 +111,7 @@ import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
+import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
@@ -599,11 +583,11 @@ public class GUIManager
   private static Method externalAPIMethodJourneyDeactivated;
   private ZookeeperUniqueKeyServer zuks;
   private KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
-
+  private int httpTimeout = Deployment.getPurchaseTimeoutMs();
+  
   private static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   private static final String FILE_REQUEST = "file"; 
   private static final String FILE_UPLOAD_META_DATA= "fileUploadMetaData"; 
-  private int httpTimeout = 5000;
 
   //
   //  context
@@ -638,6 +622,7 @@ public class GUIManager
     
     NGLMRuntime.initialize(true);
     GUIManager guiManager = new GUIManager();
+    new LoggerInitialization().initLogger();
     guiManager.start(args);
   }
 
@@ -852,6 +837,7 @@ public class GUIManager
           }
       }
     };
+    //TODO: very bad dégeulasse implémentation : (dépendence du CriterionContext.initialize(dynamicCriterionFieldService) avec JourneyService)
     dynamicCriterionFieldService = new DynamicCriterionFieldService(bootstrapServers, "guimanager-dynamiccriterionfieldservice-"+apiProcessKey, dynamicCriterionFieldTopic, true);
     CriterionContext.initialize(dynamicCriterionFieldService);
     journeyService = new JourneyService(bootstrapServers, "guimanager-journeyservice-" + apiProcessKey, journeyTopic, true, journeyListener);
@@ -939,6 +925,12 @@ public class GUIManager
       }      
     };
     loyaltyProgramService.registerListener(dynamicEventDeclarationsListener);
+
+    try {
+      long waiting = 60;
+      log.info("Waiting " + waiting + " seconds for schema registry to start");
+      Thread.sleep(waiting*1_000l);
+    } catch (InterruptedException e) {}
 
     /*****************************************
     *
@@ -1196,22 +1188,41 @@ public class GUIManager
     //  reports
     //
 
-    if (reportService.getStoredReports().size() == 0)
-      {
-        try
+    // Always update reports with initialReports. When we upgrade, new effectiveScheduling is merged with existing one (EVPRO-244)
+    try
+    {
+      Date now = SystemTime.getCurrentTime();
+      Collection<Report> existingReports = reportService.getActiveReports(now);
+      JSONArray initialReportsJSONArray = Deployment.getInitialReportsJSONArray();
+      for (int i=0; i<initialReportsJSONArray.size(); i++)
+        {
+          JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
+          String name = JSONUtilities.decodeString(reportJSON, "name", false);
+          boolean create = true;
+          if (name != null)
+            {
+              for (Report report : existingReports)
+                {
+                  if (name.equals(report.getGUIManagedObjectName()))
+                    {
+                      // this report already exists (same name), do not create it
+                      create = false;
+                      log.info("Report " + name + " (id " + report.getReportID() + " ) already exists, do not create");
+                      break;
+                    }
+                }
+            }
+          if (create)
           {
-            JSONArray initialReportsJSONArray = Deployment.getInitialReportsJSONArray();
-            for (int i=0; i<initialReportsJSONArray.size(); i++)
-              {
-                JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
-                processPutReport("0", reportJSON);
-              }
+            processPutReport("0", reportJSON); // this will patch the report, if it already exists
           }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
-          }
-      }
+        }
+    }
+    catch (JSONUtilitiesException e)
+    {
+      throw new ServerRuntimeException("deployment", e);
+    }
+
 
     //
     //  calling channels
@@ -1395,28 +1406,6 @@ public class GUIManager
               {
                 JSONObject offerObjectiveJSON = (JSONObject) initialOfferObjectivesJSONArray.get(i);
                 processPutOfferObjective("0", offerObjectiveJSON);
-              }
-          }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
-          }
-
-      }
-
-    //
-    //  reports
-    //
-
-    if (reportService.getStoredReports().size() == 0)
-      {
-        try
-          {
-            JSONArray initialReportsJSONArray = Deployment.getInitialReportsJSONArray();
-            for (int i=0; i<initialReportsJSONArray.size(); i++)
-              {
-                JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
-                processPutReport("0", reportJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -3461,7 +3450,7 @@ public class GUIManager
                 case getEffectiveSystemTime:
                   jsonResponse = processGetEffectiveSystemTime(userID, jsonRoot);
                   break;
-                  
+
                 case getCustomerNBOs:
                   jsonResponse = processGetCustomerNBOs(userID, jsonRoot);
                   break;
@@ -4748,27 +4737,71 @@ public class GUIManager
     EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     Journey selectedJourney = (JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", false) != null) ? journeyService.getActiveJourney(JSONUtilities.decodeString(jsonRoot, "selectedJourneyID", true), SystemTime.getCurrentTime()) : null;
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
-
+    boolean includeComparableFields = JSONUtilities.decodeBoolean(jsonRoot, "includeComparableFields", Boolean.TRUE); 
+    String nodeTypeParameterID = JSONUtilities.decodeString(jsonRoot, "nodeTypeParameterID", false);
+    
     /*****************************************
     *
     *  retrieve journey criterion fields
     *
     *****************************************/
+    HashMap<String,Object> response = new HashMap<String,Object>();
 
     List<JSONObject> journeyCriterionFields = Collections.<JSONObject>emptyList();
     List<JSONObject> groups = new ArrayList<>();
+    CriterionDataType expectedDataType = null;
+    
+    if (nodeTypeParameterID != null)
+      {
+        Map<String, CriterionField> parameters = journeyNodeType.getParameters();
+        if (parameters != null)
+          {
+            CriterionField criterionField = parameters.get(nodeTypeParameterID);
+            if (criterionField == null)
+              {
+                response.put("responseCode", "invalidRequest");
+                response.put("responseMessage", "could not find " + nodeTypeParameterID + " in nodeType with id " + JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
+                return JSONUtilities.encodeObject(response);
+              }
+            expectedDataType = criterionField.getFieldDataType();
+          }
+      }
+    
     if (journeyNodeType != null)
       {
-        CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, selectedJourney);
-        Map<String,List<JSONObject>> currentGroups = new HashMap<>();
-        journeyCriterionFields = processCriterionFields(criterionContext.getCriterionFields(), tagsOnly, currentGroups);
-        for (String id : currentGroups.keySet())
+        CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters, expectedDataType), journeyNodeType, journeyNodeEvent, selectedJourney, expectedDataType);
+        Map<String,List<JSONObject>> currentGroups = includeComparableFields ? new HashMap<>() : null;
+        Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
+        
+        //
+        //  intersect and put only Evaluation week Day and Time (if schedule node)
+        //
+        
+        if (journeyNodeType.getScheduleNode())
           {
-            List<JSONObject> group = currentGroups.get(id);
-            HashMap<String,Object> groupJSON = new HashMap<String,Object>();
-            groupJSON.put("id", id);
-            groupJSON.put("value", JSONUtilities.encodeArray(group));
-            groups.add(JSONUtilities.encodeObject(groupJSON));
+            CriterionField evaluationWkDay = unprocessedCriterionFields.get(CriterionContext.EVALUATION_WK_DAY_ID);
+            CriterionField evaluationTime = unprocessedCriterionFields.get(CriterionContext.EVALUATION_TIME_ID);
+            CriterionField evaluationMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_MONTH_ID);
+            CriterionField evaluationDayOfMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_DAY_OF_MONTH_ID);
+            unprocessedCriterionFields.clear();
+            if (evaluationWkDay != null) unprocessedCriterionFields.put(evaluationWkDay.getID(), evaluationWkDay);
+            if (evaluationTime != null) unprocessedCriterionFields.put(evaluationTime.getID(), evaluationTime);
+            if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
+            if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
+          }
+        
+        
+        journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly, currentGroups);
+        if (includeComparableFields)
+          {
+            for (String id : currentGroups.keySet())
+              {
+                List<JSONObject> group = currentGroups.get(id);
+                HashMap<String,Object> groupJSON = new HashMap<String,Object>();
+                groupJSON.put("id", id);
+                groupJSON.put("value", JSONUtilities.encodeArray(group));
+                groups.add(JSONUtilities.encodeObject(groupJSON));
+              }
           }
       }
     
@@ -4778,7 +4811,6 @@ public class GUIManager
     *
     *****************************************/
 
-    HashMap<String,Object> response = new HashMap<String,Object>();
     if (journeyNodeType != null)
       {
         response.put("responseCode", "ok");
@@ -4824,7 +4856,27 @@ public class GUIManager
     if (journeyNodeType != null)
       {
         CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, selectedJourney);
-        journeyCriterionFields = processCriterionFields(criterionContext.getCriterionFields(), tagsOnly);
+        
+        Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
+        
+        //
+        //  intersect and put only Evaluation week Day and Time (if schedule node)
+        //
+        
+        if (journeyNodeType.getScheduleNode())
+          {
+            CriterionField evaluationWkDay = unprocessedCriterionFields.get(CriterionContext.EVALUATION_WK_DAY_ID);
+            CriterionField evaluationTime = unprocessedCriterionFields.get(CriterionContext.EVALUATION_TIME_ID);
+            CriterionField evaluationMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_MONTH_ID);
+            CriterionField evaluationDayOfMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_DAY_OF_MONTH_ID);
+            unprocessedCriterionFields.clear();
+            if (evaluationWkDay != null) unprocessedCriterionFields.put(evaluationWkDay.getID(), evaluationWkDay);
+            if (evaluationTime != null) unprocessedCriterionFields.put(evaluationTime.getID(), evaluationTime);
+            if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
+            if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
+          }
+        
+        journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly);
       }
 
     /*****************************************
@@ -4903,7 +4955,28 @@ public class GUIManager
         if (journeyNodeType != null)
           {
             CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, selectedJourney);
-            journeyCriterionFields = processCriterionFields(criterionContext.getCriterionFields(), false);
+            
+            Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
+            
+            //
+            //  intersect and put only Evaluation week Day and Time (if schedule node)
+            //
+            
+            if (journeyNodeType.getScheduleNode())
+              {
+
+                CriterionField evaluationWkDay = unprocessedCriterionFields.get(CriterionContext.EVALUATION_WK_DAY_ID);
+                CriterionField evaluationTime = unprocessedCriterionFields.get(CriterionContext.EVALUATION_TIME_ID);
+                CriterionField evaluationMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_MONTH_ID);
+                CriterionField evaluationDayOfMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_DAY_OF_MONTH_ID);
+                unprocessedCriterionFields.clear();
+                if (evaluationWkDay != null) unprocessedCriterionFields.put(evaluationWkDay.getID(), evaluationWkDay);
+                if (evaluationTime != null) unprocessedCriterionFields.put(evaluationTime.getID(), evaluationTime);
+                if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
+                if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
+              }
+            
+            journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, false);
           }
 
         /*****************************************
@@ -5423,6 +5496,15 @@ public class GUIManager
 
         Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, approval);
 
+        if(GUIManagedObjectType.Workflow.equals(objectType)) {
+          journey.setApproval(JourneyStatus.StartedApproved);
+        }
+        
+        //
+        // Update targetCount
+        //
+        journey.setTargetCount(elasticsearch);
+        
         /*****************************************
         *
         *  store
@@ -6018,6 +6100,8 @@ public class GUIManager
     String userIdentifier = JSONUtilities.decodeString(jsonRoot, "userID", "");
     String userName = JSONUtilities.decodeString(jsonRoot, "userName", "");
     boolean active = JSONUtilities.decodeBoolean(jsonRoot, "active", Boolean.FALSE);
+    JSONArray bulkCampaignJourneyObjectives = JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", true);
+    JSONObject bulkCampaignStory = JSONUtilities.decodeJSONObject(jsonRoot, "story", true);
     
     /*****************************************
     *
@@ -6090,6 +6174,8 @@ public class GUIManager
         campaignJSONRepresentation.put("userID", userIdentifier);
         campaignJSONRepresentation.put("userName", userName);
         campaignJSONRepresentation.put("active", active);
+        campaignJSONRepresentation.put("journeyObjectives", bulkCampaignJourneyObjectives); 
+        campaignJSONRepresentation.put("story", bulkCampaignStory);
 
         //
         //  campaignJSON
@@ -6105,6 +6191,11 @@ public class GUIManager
 
         Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
 
+        //
+        // Update targetCount
+        //
+        bulkCampaign.setTargetCount(elasticsearch);
+        
         /*****************************************
         *
         *  store
@@ -7554,11 +7645,7 @@ public class GUIManager
     BoolQueryBuilder query = null;
     try
       {
-        query = QueryBuilders.boolQuery();
-        for (EvaluationCriterion evaluationCriterion : criteriaList)
-          {
-            query = query.filter(evaluationCriterion.esQuery());
-          }
+        query = EvaluationCriterion.esCountMatchCriteriaGetQuery(criteriaList);
       }
     catch (CriterionException e)
       {
@@ -7589,11 +7676,9 @@ public class GUIManager
     long result;
     try
       {
-        SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(query).size(0));
-        SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
-        result = searchResponse.getHits().getTotalHits().value;
+        result = EvaluationCriterion.esCountMatchCriteriaExecuteQuery(query, elasticsearch);
       }
-    catch (IOException e)
+    catch (IOException|ElasticsearchStatusException e)
       {
         //
         //  log
@@ -16450,7 +16535,7 @@ public class GUIManager
                         Boolean statusControlGroup = subsLatestStatistic.getControlGroupStatus();
                         Boolean statusUniversalControlGroup = subsLatestStatistic.getUniversalControlGroupStatus();
                         boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
-                        SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
+                        SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
 
                         if (customerStatus != null)
                           {
@@ -16466,7 +16551,7 @@ public class GUIManager
                         Map<String, Object> journeyResponseMap = new HashMap<String, Object>();
                         journeyResponseMap.put("journeyID", storeJourney.getJourneyID());
                         journeyResponseMap.put("journeyName", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("display"));
-                        journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));
+                        journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));     // @rl: maybe generateJSON only once?
                         journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
                         journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
                         journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
@@ -16747,7 +16832,7 @@ public class GUIManager
                         Boolean statusControlGroup = subsLatestStatistic.getControlGroupStatus();
                         Boolean statusUniversalControlGroup = subsLatestStatistic.getUniversalControlGroupStatus();
                         boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
-                        SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
+                        SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
                         
                         if (customerStatus != null)
                           {
@@ -16873,7 +16958,7 @@ public class GUIManager
      ****************************************/
 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", false);
+    String bonusDisplay = JSONUtilities.decodeString(jsonRoot, "bonusDisplay", false);
 
     /*****************************************
      *
@@ -16882,15 +16967,15 @@ public class GUIManager
      *****************************************/
 
     Point searchedPoint = null;
-    if(bonusName != null && !bonusName.isEmpty())
+    if(bonusDisplay != null && !bonusDisplay.isEmpty())
       {
         for(GUIManagedObject storedPoint : pointService.getStoredPoints()){
-          if(storedPoint instanceof Point && (((Point) storedPoint).getPointName().equals(bonusName))){
+          if(storedPoint instanceof Point && (((Point) storedPoint).getDisplay().equals(bonusDisplay))){
             searchedPoint = (Point)storedPoint;
           }
         }
         if(searchedPoint == null){
-          log.info("bonus with name '"+bonusName+"' not found");
+          log.info("bonus with display '"+bonusDisplay+"' not found");
           response.put("responseCode", "BonusNotFound");
           return JSONUtilities.encodeObject(response);
         }
@@ -16934,7 +17019,8 @@ public class GUIManager
                 {
                   HashMap<String, Object> pointPresentation = new HashMap<String,Object>();
                   PointBalance pointBalance = pointBalances.get(pointID);
-                  pointPresentation.put("pointName", point.getDisplay());
+                  pointPresentation.put("pointID", pointID);
+                  pointPresentation.put("pointDisplay", point.getDisplay());
                   pointPresentation.put("balance", pointBalance.getBalance(now));
                   pointPresentation.put("earned", pointBalance.getEarnedHistory().getAllTimeBucket());
                   pointPresentation.put("expired", pointBalance.getExpiredHistory().getAllTimeBucket());
@@ -19815,7 +19901,7 @@ public class GUIManager
     ****************************************/
 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", true);
+    String bonusID = JSONUtilities.decodeString(jsonRoot, "bonusID", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
     
@@ -19840,17 +19926,22 @@ public class GUIManager
     *****************************************/
 
     Deliverable searchedBonus = null;
-    for(GUIManagedObject storedDeliverable : deliverableService.getStoredDeliverables()){
-      if(storedDeliverable instanceof Deliverable && (((Deliverable) storedDeliverable).getDeliverableName().equals(bonusName))){
-        searchedBonus = (Deliverable)storedDeliverable;
+    for (GUIManagedObject storedDeliverable : deliverableService.getStoredDeliverables())
+      {
+        if (storedDeliverable instanceof Deliverable && bonusID.equals(((Deliverable) storedDeliverable).getExternalAccountID()))
+          {
+              searchedBonus = (Deliverable) storedDeliverable;
+              break;
+          }
       }
-    }
-    if(searchedBonus == null){
-      log.info("bonus with name '"+bonusName+"' not found");
-      response.put("responseCode", "BonusNotFound");
-      return JSONUtilities.encodeObject(response);
-    }
     
+    if (searchedBonus == null)
+      {
+        log.info("bonus " + bonusID + " not found");
+        response.put("responseCode", "BonusNotFound");
+        return JSONUtilities.encodeObject(response);
+      }
+
     /*****************************************
     *
     *  generate commodity delivery request
@@ -19894,7 +19985,7 @@ public class GUIManager
     ****************************************/
 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", true);
+    String bonusID = JSONUtilities.decodeString(jsonRoot, "bonusID", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
     
@@ -19918,14 +20009,18 @@ public class GUIManager
     *
     *****************************************/
 
-    PaymentMean searchedBonus = null;
-    for(GUIManagedObject storedPaymentMean : paymentMeanService.getStoredPaymentMeans()){
-      if(storedPaymentMean instanceof PaymentMean && (((PaymentMean) storedPaymentMean).getPaymentMeanName().equals(bonusName))){
-        searchedBonus = (PaymentMean)storedPaymentMean;
+    Deliverable searchedBonus = null;
+    for (GUIManagedObject storedDeliverable : deliverableService.getStoredDeliverables())
+      {
+        if (storedDeliverable instanceof Deliverable && bonusID.equals(((Deliverable) storedDeliverable).getExternalAccountID()))
+          {
+              searchedBonus = (Deliverable) storedDeliverable;
+              break;
+          }
       }
-    }
+
     if(searchedBonus == null){
-      log.info("bonus with name '"+bonusName+"' not found");
+      log.info("bonus with ID '"+bonusID+"' not found");
       response.put("responseCode", "BonusNotFound");
       return JSONUtilities.encodeObject(response);
     }
@@ -19937,7 +20032,7 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
     
     /*****************************************
     *
@@ -21182,7 +21277,7 @@ public class GUIManager
                   tokenStream = tokenStream.filter(token -> tokenStatusForStreams.equalsIgnoreCase(token.getTokenStatus().getExternalRepresentation()));
                 }
               tokensJson = tokenStream
-                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, offerObjectiveService, loyaltyProgramService))
+                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService))
                   .collect(Collectors.toList());
             }
 
@@ -21209,7 +21304,6 @@ public class GUIManager
 
     return JSONUtilities.encodeObject(response);
   }
-
 
   /*****************************************
    *
@@ -21299,26 +21393,18 @@ public class GUIManager
             }
 
           DNBOToken subscriberStoredToken = (DNBOToken) subscriberToken;
-          List<String> sss = subscriberStoredToken.getScoringStrategyIDs();
-          if (sss == null)
+          String presentationStrategyID = subscriberStoredToken.getPresentationStrategyID();
+          if (presentationStrategyID == null)
             {
               String str = "Bad strategy : null value";
               log.error(str);
               response.put("responseCode", str);
               return JSONUtilities.encodeObject(response);
             }
-          if (sss.size() == 0)
+          PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
+          if (presentationStrategy == null)
             {
-              String str = "Bad strategy : empty list";
-              log.error(str);
-              response.put("responseCode", str);
-              return JSONUtilities.encodeObject(response);
-            }
-          String strategyID = sss.get(0); // MK : not sure why we could have >1, only consider first one
-          ScoringStrategy scoringStrategy = (ScoringStrategy) scoringStrategyService.getStoredScoringStrategy(strategyID);
-          if (scoringStrategy == null)
-            {
-              String str = "Bad strategy : unknown id : "+strategyID;
+              String str = "Bad strategy : unknown id : "+presentationStrategyID;
               log.error(str);
               response.put("responseCode", str);
               generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str);
@@ -21330,14 +21416,16 @@ public class GUIManager
               StringBuffer returnedLog = new StringBuffer();
               double rangeValue = 0; // Not significant
               DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
+              SubscriberEvaluationRequest request = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
 
               // Allocate offers for this subscriber, and associate them in the token
               // Here we have no saleschannel (we pass null), this means only the first salesChannelsAndPrices of the offer will be used and returned.  
               Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(
-                  now, null,
-                  subscriberProfile, scoringStrategy,
+                  now, subscriberStoredToken, request,
+                  subscriberProfile, presentationStrategy,
                   productService, productTypeService, voucherService, voucherTypeService,
                   catalogCharacteristicService,
+                  scoringStrategyService,
                   propensityDataReader,
                   subscriberGroupEpochReader,
                   segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
@@ -21352,7 +21440,6 @@ public class GUIManager
                   // Send a PresentationLog to EvolutionEngine
 
                   String channelID = "channelID";
-                  String presentationStrategyID = strategyID; // HACK, see above
                   String controlGroupState = "controlGroupState";
                   String featureID = (userID != null) ? userID : "1"; // for PTT tests, never happens when called by browser
                   String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation(); 
@@ -21368,11 +21455,13 @@ public class GUIManager
                       positions.add(new Integer(position));
                       position++;
                       presentedOfferScores.add(1.0);
-                      scoringStrategyIDs.add(strategyID);
+                      // scoring strategy not used anymore
+                      // scoringStrategyIDs.add(strategyID);
                     }
                   String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
                   int transactionDurationMs = 0; // TODO
                   String callUniqueIdentifier = ""; 
+                  String tokenTypeID = subscriberStoredToken.getTokenTypeID();
 
                   PresentationLog presentationLog = new PresentationLog(
                       subscriberID, subscriberID, now, 
@@ -21380,7 +21469,8 @@ public class GUIManager
                       tokenCode, 
                       presentationStrategyID, transactionDurationMs, 
                       presentedOfferIDs, presentedOfferScores, positions, 
-                      controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID
+                      controlGroupState, scoringStrategyIDs, null, null, null,
+                      moduleID, featureID, subscriberStoredToken.getPresentationDates(), tokenTypeID, null
                       );
 
                   //
@@ -21416,7 +21506,7 @@ public class GUIManager
            *  decorate and response
            *
            *****************************************/
-          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, offerObjectiveService, loyaltyProgramService);
+          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService);
           response.put("responseCode", "ok");
         }
     }
@@ -21579,7 +21669,8 @@ public class GUIManager
 
           String msisdn = subscriberID; // TODO check this
           String presentationStrategyID = subscriberStoredToken.getPresentationStrategyID();
-
+          String tokenTypeID = subscriberStoredToken.getTokenTypeID();
+          
           // TODO BEGIN Following fields are currently not used in EvolutionEngine, might need to be set later
           String callUniqueIdentifier = ""; 
           String controlGroupState = "controlGroupState";
@@ -21595,7 +21686,7 @@ public class GUIManager
               callUniqueIdentifier, channelID, salesChannelID,
               userID, tokenCode,
               presentationStrategyID, transactionDurationMs,
-              controlGroupState, offerID, fulfilledDate, position, actionCall, moduleID, featureID);
+              controlGroupState, offerID, fulfilledDate, position, actionCall, moduleID, featureID, tokenTypeID);
 
           //
           //  submit to kafka
@@ -21750,7 +21841,7 @@ public class GUIManager
         else
           {
             purchaseResponse = purchaseOffer(true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer);
-            response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService));
+            response.put("offer",purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService));
           }
       }
    }
@@ -22736,8 +22827,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
   {
     return processCriterionFields(baseCriterionFields, tagsOnly, null);
   }
-
   private List<JSONObject> processCriterionFields(Map<String,CriterionField> baseCriterionFields, boolean tagsOnly, Map<String, List<JSONObject>> currentGroups)
+  {
+    return processCriterionFields(baseCriterionFields, tagsOnly, currentGroups, null);
+  }
+  private List<JSONObject> processCriterionFields(Map<String,CriterionField> baseCriterionFields, boolean tagsOnly, Map<String, List<JSONObject>> currentGroups, CriterionDataType expectedDataType)
   {
     /*****************************************
     *
@@ -22749,19 +22843,23 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     Map<String,CriterionField> criterionFields = new LinkedHashMap<String,CriterionField>();
     for (CriterionField criterionField : baseCriterionFields.values())
       {
-        switch (criterionField.getFieldDataType())
+        if (expectedDataType == null || expectedDataType.equals(criterionField.getFieldDataType()))
           {
-            case IntegerCriterion:
-            case DoubleCriterion:
-            case StringCriterion:
-            case BooleanCriterion:
-            case DateCriterion:
-              criterionFields.put(criterionField.getID(), criterionField);
-              break;
+            switch (criterionField.getFieldDataType())
+            {
+              case IntegerCriterion:
+              case DoubleCriterion:
+              case StringCriterion:
+              case BooleanCriterion:
+              case TimeCriterion:
+              case DateCriterion:
+                criterionFields.put(criterionField.getID(), criterionField);
+                break;
 
-            case StringSetCriterion:
-              if (! tagsOnly) criterionFields.put(criterionField.getID(), criterionField);
-              break;
+              case StringSetCriterion:
+                if (! tagsOnly) criterionFields.put(criterionField.getID(), criterionField);
+                break;
+            }
           }
       }
 
@@ -22837,14 +22935,21 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             //  evaluate comparable fields
             //
 
-            List<CriterionField> defaultComparableFields = defaultFieldsForResolvedType.get(resolvedFieldTypes.get(criterionField.getID()));
-            List<JSONObject> singleton = evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, true);
-
-            // TODO next line to be removed later when GUI handles the new "singletonComparableFieldsGroup" field
-            criterionFieldJSON.put("singletonComparableFields", singleton);
-            
+           
             if (currentGroups != null)
               {
+
+                List<CriterionField> defaultComparableFields = defaultFieldsForResolvedType.get(resolvedFieldTypes.get(criterionField.getID()));
+                List<JSONObject> singleton = evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, true);
+
+                
+                
+                
+                
+                
+                // TODO next line to be removed later when GUI handles the new "singletonComparableFieldsGroup" field
+                // criterionFieldJSON.put("singletonComparableFields", singleton);
+
                 // known group ?
                 String groupID = null;
                 for (String existingGroupID : currentGroups.keySet())
@@ -22865,8 +22970,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     nextGroupID++;
                   }
                 criterionFieldJSON.put("singletonComparableFieldsGroup", groupID);
+                criterionFieldJSON.put("setValuedComparableFields", evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, false));
               }
-            criterionFieldJSON.put("setValuedComparableFields", evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, false));
+            
             criterionFieldJSON.remove("includedComparableFields");
             criterionFieldJSON.remove("excludedComparableFields");
 
@@ -24031,7 +24137,35 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
                   availableValue.put("id", target.getGUIManagedObjectID());
                   availableValue.put("display", target.getGUIManagedObjectDisplay());
-                  result.add(JSONUtilities.encodeObject(availableValue));                  
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+        case "weekDays":
+          if (includeDynamic)
+            {
+              List<String> weekDays = new LinkedList<String>();
+              weekDays.add("Sunday"); weekDays.add("Monday"); weekDays.add("Tuesday"); weekDays.add("Wednesday"); weekDays.add("Thursday"); weekDays.add("Friday"); weekDays.add("Saturday");
+              for (String weekDay : weekDays)
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", weekDay.toLowerCase());
+                  availableValue.put("display", weekDay);
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+        case "months":
+          if (includeDynamic)
+            {
+              List<String> months = new LinkedList<String>();
+              months.add("January"); months.add("February"); months.add("March"); months.add("April"); months.add("May"); months.add("June"); months.add("July"); months.add("August"); months.add("September"); months.add("October"); months.add("November"); months.add("December");
+              for (String month : months)
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", month.toLowerCase());
+                  availableValue.put("display", month);
+                  result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }
           break;
@@ -25277,7 +25411,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     //  resolve
     //
 
-    List<JSONObject>  resolvedParameters = new ArrayList<JSONObject>();
+    List<JSONObject>  resolvedParameters = new LinkedList<>();
     JSONArray parameters = JSONUtilities.decodeJSONArray(journeyJSON, "journeyParameters", new JSONArray());
     for (int i=0; i<parameters.size(); i++)
       {

@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution.reports;
 
 import static com.evolving.nglm.evolution.reports.ReportUtils.d;
 
+import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.SystemTime;
 
 import java.io.IOException;
@@ -99,6 +100,7 @@ public class ReportEsReader
   private String esNode;
   private LinkedHashMap<String, QueryBuilder> esIndex;
   private String elasticKey;
+  private boolean onlyKeepAlternateIDs;
 
   /**
    * Create a {@code ReportEsReader} instance.
@@ -124,19 +126,26 @@ public class ReportEsReader
    * @param esIndex
    *          a hashmap with each index to read and the associated query
    */
-  public ReportEsReader(String elasticKey, String topicName, String kafkaNodeList, String kzHostList, String esNode, LinkedHashMap<String, QueryBuilder> esIndex)
+  public ReportEsReader(String elasticKey, String topicName, String kafkaNodeList, String kzHostList, String esNode, LinkedHashMap<String, QueryBuilder> esIndex, boolean onlyKeepAlternateIDs)
   {
     this.elasticKey = elasticKey;
     this.topicName = topicName;
     this.kafkaNodeList = kafkaNodeList;
     this.kzHostList = kzHostList;
     this.esNode = esNode;
+    this.onlyKeepAlternateIDs = onlyKeepAlternateIDs;
     // convert index names to lower case, because this is what ElasticSearch expects
     this.esIndex = new LinkedHashMap<>();
     for (Entry<String, QueryBuilder> elem : esIndex.entrySet())
       {
         this.esIndex.put(elem.getKey().toLowerCase(), elem.getValue());
       }
+    log.info("Starting ES read with indexes : " + this.esIndex);
+  }
+
+  public ReportEsReader(String elasticKey, String topicName, String kafkaNodeList, String kzHostList, String esNode, LinkedHashMap<String, QueryBuilder> esIndex)
+  {
+    this(elasticKey, topicName, kafkaNodeList, kzHostList, esNode, esIndex, false);
   }
 
   public enum PERIOD
@@ -178,7 +187,7 @@ public class ReportEsReader
     String indexes = "";
     for (String s : esIndex.keySet())
       indexes += s + " ";
-    log.info("Reading data from ES in " + indexes + "indexes and writing to " + topicName + " topic.");
+    log.info("Reading data from ES in \"" + indexes + "\" indexes and writing to \"" + topicName + "\" topic.");
 
     ReportUtils.createTopic(topicName, kzHostList); // In case it does not exist
 
@@ -244,7 +253,11 @@ public class ReportEsReader
             //  indicesToRead is blank?
             //
             
-            if (indicesToRead == null || indicesToRead.length == 0) continue;
+            if (indicesToRead == null || indicesToRead.length == 0)
+              {
+                i++;
+                continue;
+              }
             
             searchRequest.indices(indicesToRead);
             searchRequest.source().size(getScrollSize());
@@ -258,13 +271,14 @@ public class ReportEsReader
             if (searchHits != null)
               {
                 // log.info("searchResponse = " + searchResponse.toString());
-                log.info("getFailedShards = " + searchResponse.getFailedShards());
-                log.info("getSkippedShards = " + searchResponse.getSkippedShards());
-                log.info("getTotalShards = " + searchResponse.getTotalShards());
-                log.info("getTook = " + searchResponse.getTook());
-                log.info("searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
+                log.trace("getFailedShards = " + searchResponse.getFailedShards());
+                log.trace("getSkippedShards = " + searchResponse.getSkippedShards());
+                log.trace("getTotalShards = " + searchResponse.getTotalShards());
+                log.trace("getTook = " + searchResponse.getTook());
+                log.info("for " + Arrays.toString(indicesToRead) + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
               }
-            boolean alreadyTraced = false;
+            boolean alreadyTraced1 = false;
+            boolean alreadyTraced2 = false;
             while (searchHits != null && searchHits.length > 0)
               {
                 log.debug("got " + searchHits.length + " hits");
@@ -276,17 +290,45 @@ public class ReportEsReader
                     Object res = sourceMap.get(elasticKey);
                     if (res == null)
                       {
-                        if (!alreadyTraced)
+                        if (!alreadyTraced1)
                           {
                             log.warn("unexpected, null key while reading " + Arrays.stream(indicesToRead).map(s -> "\""+s+"\"").collect(Collectors.toList()) + " sourceMap=" + sourceMap);
-                            alreadyTraced = true;
+                            alreadyTraced1 = true;
                           }
                       }
                     else
                       {
                         // Need to be extended to support other types of attributes, currently only int and String
                         key = (res instanceof Integer) ? Integer.toString((Integer) res) : (String) res;
-                        ReportElement re = new ReportElement(i, sourceMap);
+                        
+                        Map<String, Object> miniSourceMap = sourceMap;
+                        if (onlyKeepAlternateIDs && (i == (esIndex.size()-1))) // subscriber index is always last
+                          {
+                            // size optimize : only keep what is needed for the join later
+                            if (!alreadyTraced2)
+                              {
+                                log.info("Keeping only alternate IDs");
+                                alreadyTraced2 = true;
+                              }
+                            miniSourceMap = new HashMap<>();
+                            miniSourceMap.put(elasticKey, sourceMap.get(elasticKey));
+                            miniSourceMap.put("pointBalances", sourceMap.get("pointBalances")); // keep this (for Customer Point Details report)
+                            for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+                              {
+                                String name = alternateID.getName();
+                                log.trace("Only keep alternateID " + name);
+                                if (sourceMap.get(name) == null)
+                                  {
+                                    log.trace("Unexpected : no value for alternateID " + name);
+                                  }
+                                else
+                                  {
+                                    miniSourceMap.put(name, sourceMap.get(name));
+                                  }
+                              }
+                          }
+                        
+                        ReportElement re = new ReportElement(i, miniSourceMap);
                         log.trace("Sending record k=" + key + ", v=" + re);
                         ProducerRecord<String, ReportElement> record = new ProducerRecord<>(topicName, key, re);
                         producerReportElement.send(record, (mdata, e) -> {

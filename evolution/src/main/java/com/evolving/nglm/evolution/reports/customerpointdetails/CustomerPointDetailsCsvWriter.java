@@ -28,10 +28,10 @@ public class CustomerPointDetailsCsvWriter implements ReportCsvFactory
   private static PointService pointService;
 
   @Override
-  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException
+  public boolean dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
     if (re.type == ReportElement.MARKER) // We will find markers in the topic
-      return;
+      return true;
 
     log.trace("We got "+key+" "+re);
     Map<String, Object> subscriberFields = re.fields.get(0);
@@ -94,17 +94,15 @@ public class CustomerPointDetailsCsvWriter implements ReportCsvFactory
                         loyaltyComputedFields.put("pointName", storedPoint.getDisplay());
                         loyaltyComputedFields.put("pointBalance", getBalance(now, balances));
 
-                        StringBuilder validity = new StringBuilder();
-                        String pointValidity = null;
+                        List<Map<String, Object>> outputJSON = new ArrayList<>();
                         for (Entry<Date, Integer> balance : balances.entrySet())
                           {
-                            validity.append("(").append(balance.getValue()).append(",").append(ReportsCommonCode.getDateString(balance.getKey())).append("),");
+                            Map<String, Object> validityJSON = new LinkedHashMap<>(); // to preserve order when displaying
+                            validityJSON.put("quantity", balance.getValue());
+                            validityJSON.put("validityDate", ReportsCommonCode.getDateString(balance.getKey()));
+                            outputJSON.add(validityJSON);
                           }
-                        if (validity.toString().length() > 0)
-                          {
-                            pointValidity = "[" + validity.toString().substring(0, validity.toString().length() - 1) + "]";
-                          }
-                        loyaltyComputedFields.put("pointValidity", pointValidity);
+                        loyaltyComputedFields.put("pointValidity", ReportUtils.formatJSON(outputJSON));
 
                         // store subscriber information + point information
                         LinkedHashMap<String, Object> fullFields = new LinkedHashMap<String, Object>();
@@ -117,7 +115,7 @@ public class CustomerPointDetailsCsvWriter implements ReportCsvFactory
             }
           else
             {
-              return;
+              return true;
             }
         }
         catch (Exception e){
@@ -145,8 +143,8 @@ public class CustomerPointDetailsCsvWriter implements ReportCsvFactory
             log.trace("Empty line => not writing");
           }
       }      
-      
     }
+    return addHeaders;
   }
 
   public static void main(String[] args) {

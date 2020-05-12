@@ -7,7 +7,6 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionContext;
 import com.evolving.nglm.evolution.Expression.ExpressionDataType;
@@ -19,58 +18,44 @@ import com.evolving.nglm.evolution.Expression.ExpressionTypeCheckException;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SystemTime;
 
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
 import org.apache.lucene.search.join.ScoreMode;
+import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
-
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TimeZone;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -109,6 +94,7 @@ public class EvaluationCriterion
     StringCriterion("string"),
     BooleanCriterion("boolean"),
     DateCriterion("date"),
+    TimeCriterion("time"),
     StringSetCriterion("stringSet"),
     
     //
@@ -437,6 +423,18 @@ public class EvaluationCriterion
                   }
                 break;
                 
+              case TimeCriterion:
+                switch (argumentType)
+                  {
+                    case TimeExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
+                
               default:
                 validCombination = false;
                 break;
@@ -467,6 +465,18 @@ public class EvaluationCriterion
                 switch (argumentType)
                   {
                     case DateExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
+                
+              case TimeCriterion:
+                switch (argumentType)
+                  {
+                    case TimeExpression:
                       validCombination = true;
                       break;
                     default:
@@ -749,29 +759,26 @@ public class EvaluationCriterion
     *  retrieve fieldValue
     *
     ****************************************/
-
-    Object criterionFieldValue = criterionField.retrieveNormalized(evaluationRequest);
-
-    /****************************************
-    *
-    *  evaluate argument
-    *
-    ****************************************/
-
-    ExpressionDataType argumentType = (argument != null) ? argument.getType() : ExpressionDataType.NoArgument;
+    Object criterionFieldValue = null;
     Object evaluatedArgument = null;
+    ExpressionDataType argumentType = null;
     try
-      {
+      {        
+        criterionFieldValue = criterionField.retrieveNormalized(evaluationRequest);
+    
+        /****************************************
+        *
+        *  evaluate argument
+        *
+        ****************************************/    
+        argumentType = (argument != null) ? argument.getType() : ExpressionDataType.NoArgument;        
         evaluatedArgument = (argument != null) ? argument.evaluateExpression(evaluationRequest, argumentBaseTimeUnit) : null;
       }
-    catch (ExpressionEvaluationException|ArithmeticException e)
+    catch (Exception e)
       {
         if (log.isDebugEnabled())
           {
-            log.debug("invalid argument {}", argumentExpression);
-            StringWriter stackTraceWriter = new StringWriter();
-            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-            log.debug(stackTraceWriter.toString());
+            log.info("EvaluationCriterion.evaluate Exception " + e.getClass().getName() + " while evaluating criterionField {} and argumentExpression {}", criterionField, argumentExpression);
           }
         evaluationRequest.subscriberTrace("FalseCondition : invalid argument {0}", argumentExpression);
         return false;
@@ -922,9 +929,17 @@ public class EvaluationCriterion
                       break;
                   }
               }
+            break;
+              
+          case TimeCriterion:
+            {
+              Date now = SystemTime.getCurrentTime();
+              criterionFieldValue = getCurrentDateFromTime(now, (String) criterionFieldValue);
+              evaluatedArgument = getCurrentDateFromTime(now, (String) evaluatedArgument);
+            }
           }
       }
-        
+    
     /****************************************
     *
     *  evaluate
@@ -962,6 +977,8 @@ public class EvaluationCriterion
               case DoubleCriterion:
                 result = traceCondition(evaluationRequest, ((Double) criterionFieldValue).compareTo((Double) evaluatedArgument) > 0, criterionFieldValue, evaluatedArgument);
                 break;
+                
+              case TimeCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) > 0, criterionFieldValue, evaluatedArgument);
                 if (referencesEvaluationDate) evaluationRequest.getNextEvaluationDates().add((Date) evaluatedArgument);
@@ -978,6 +995,8 @@ public class EvaluationCriterion
               case DoubleCriterion:
                 result = traceCondition(evaluationRequest, ((Double) criterionFieldValue).compareTo((Double) evaluatedArgument) >= 0, criterionFieldValue, evaluatedArgument);
                 break;
+                
+              case TimeCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) >= 0, criterionFieldValue, evaluatedArgument);
                 if (referencesEvaluationDate) evaluationRequest.getNextEvaluationDates().add((Date) evaluatedArgument);
@@ -994,6 +1013,8 @@ public class EvaluationCriterion
               case DoubleCriterion:
                 result = traceCondition(evaluationRequest, ((Double) criterionFieldValue).compareTo((Double) evaluatedArgument) < 0, criterionFieldValue, evaluatedArgument);
                 break;
+              
+              case TimeCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) < 0, criterionFieldValue, evaluatedArgument);
                 break;
@@ -1009,6 +1030,8 @@ public class EvaluationCriterion
               case DoubleCriterion:
                 result = traceCondition(evaluationRequest, ((Double) criterionFieldValue).compareTo((Double) evaluatedArgument) <= 0, criterionFieldValue, evaluatedArgument);
                 break;
+                
+              case TimeCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) <= 0, criterionFieldValue, evaluatedArgument);
                 break;
@@ -1111,10 +1134,29 @@ public class EvaluationCriterion
     *  return
     *
     ****************************************/
-
+    
     return result;
   }
   
+  //
+  // getCurrentDateFromTime
+  //
+  
+  private Date getCurrentDateFromTime(final Date now, String arg)
+  {
+    String[] args = ((String) arg).trim().split(":");
+    if (args.length != 3) throw new ExpressionEvaluationException();
+    int hh = Integer.parseInt(args[0]);
+    int mm = Integer.parseInt(args[1]);
+    int ss = Integer.parseInt(args[2]);
+    Calendar c = SystemTime.getCalendar();
+    c.setTime(now);
+    c.set(Calendar.HOUR_OF_DAY, hh);
+    c.set(Calendar.MINUTE, mm);
+    c.set(Calendar.SECOND, ss);
+    return c.getTime();
+  }
+
   /*****************************************
   *
   *  evaluateCriteria
@@ -1153,6 +1195,33 @@ public class EvaluationCriterion
         result = result && criterion.evaluate(evaluationRequest);
       }
     return result;
+  }
+  
+  /*****************************************
+  *
+  *  esCountMatchCriteria
+  *
+  *****************************************/
+  //
+  // construct query
+  //
+  public static BoolQueryBuilder esCountMatchCriteriaGetQuery(List<EvaluationCriterion> criteriaList) throws CriterionException {
+    BoolQueryBuilder query = QueryBuilders.boolQuery();
+    for (EvaluationCriterion evaluationCriterion : criteriaList)
+      {
+        query = query.filter(evaluationCriterion.esQuery());
+      }
+    
+    return query;
+  }
+  
+  //
+  // execute query
+  //
+  public static long esCountMatchCriteriaExecuteQuery(BoolQueryBuilder query, RestHighLevelClient elasticsearch) throws IOException, ElasticsearchStatusException {
+    SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(query).size(0));
+    SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+    return searchResponse.getHits().getTotalHits().value;
   }
 
   /*****************************************
@@ -1408,6 +1477,9 @@ public class EvaluationCriterion
           script.append("def left = new ArrayList(); left.addAll(doc." + esField + "); ");
           break;
           
+        case TimeCriterion:
+          throw new UnsupportedOperationException("timeCriterion is not supported");
+          
         default:
           script.append("def left = (doc." + esField + ".size() != 0) ? doc." + esField + "?.value : null; ");
           break;
@@ -1472,7 +1544,9 @@ public class EvaluationCriterion
               case DateCriterion:
                 script.append("return (left != null) ? left.isAfter(right) : false; ");
                 break;
-
+              case TimeCriterion:
+                throw new UnsupportedOperationException("timeCriterion is not supported");
+                
               default:
                 script.append("return (left != null) ? left > right : false; ");
                 break;
@@ -1486,6 +1560,9 @@ public class EvaluationCriterion
                 script.append("return (left != null) ? !left.isBefore(right) : true; ");
                 break;
 
+              case TimeCriterion:
+                throw new UnsupportedOperationException("timeCriterion is not supported");
+                
               default:
                 script.append("return (left != null) ? left >= right : false; ");
                 break;
@@ -1499,6 +1576,9 @@ public class EvaluationCriterion
                 script.append("return (left != null) ? left.isBefore(right) : false; ");
                 break;
 
+              case TimeCriterion:
+                throw new UnsupportedOperationException("timeCriterion is not supported");
+                
               default:
                 script.append("return (left != null) ? left < right : false; ");
                 break;
@@ -1511,7 +1591,10 @@ public class EvaluationCriterion
               case DateCriterion:
                 script.append("return (left != null) ? !left.isAfter(right) : true; ");
                 break;
-
+                
+              case TimeCriterion:
+                throw new UnsupportedOperationException("timeCriterion is not supported");
+                
               default:
                 script.append("return (left != null) ? left <= right : false; ");
                 break;
@@ -2030,6 +2113,12 @@ public class EvaluationCriterion
         case BooleanExpression:
           value = ((Boolean) (argument.evaluate(null, null))).toString();
           break;
+          
+        case TimeExpression:
+          
+          //
+          //  to do (not now)
+          //
           
         default:
           throw new CriterionException("datatype not yet implemented : " + expectedType);

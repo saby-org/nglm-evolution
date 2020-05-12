@@ -1,11 +1,13 @@
 package com.evolving.nglm.evolution.reports.journeyimpact;
 
-import com.evolving.nglm.evolution.Report;
-import com.evolving.nglm.evolution.reports.ReportDriver;
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.TimeUnit;
+import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.ReportUtils;
 
 public class JourneyImpactReportDriver extends ReportDriver {
 
@@ -24,13 +26,13 @@ public class JourneyImpactReportDriver extends ReportDriver {
       
       log.debug("Processing Journey Impact Report with "+report+" and "+params);
       String topicPrefix = super.getTopicPrefix(report.getName());
-      String topic1 = topicPrefix+"_a";
-      String topic2 = topicPrefix+"_b";
+      String topic1 = topicPrefix+"-a";
+      String topic2 = topicPrefix+"-b";
       String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
       int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
       // We add a random number to make sure each instance of this report starts from scratch
       // If we need to parallelise this phase, remove the random number.
-      String appIdPrefix = "JourneyAppId_"+System.currentTimeMillis();
+      String appIdPrefix = report.getName() + "_" + getTopicPrefixDate();
       log.debug("data for report : "
           +topic1+" "+topic2+" "+JOURNEY_STATS_ES_INDEX+" "+JOURNEY_METRIC_ES_INDEX+" "+appIdPrefix);
 
@@ -51,6 +53,7 @@ public class JourneyImpactReportDriver extends ReportDriver {
       JourneyImpactReportCsvWriter.main(new String[]{
           kafka, topic2, csvFilename
       });
+      ReportUtils.cleanupTopics(topic1, topic2, ReportUtils.APPLICATION_ID_PREFIX, appIdPrefix, JourneyImpactReportProcessor.STORENAME);
       log.debug("Finished with Journey Impact Report");
       
   }

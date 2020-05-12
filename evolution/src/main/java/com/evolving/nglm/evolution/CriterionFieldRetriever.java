@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
@@ -13,6 +14,7 @@ import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -58,12 +60,25 @@ public abstract class CriterionFieldRetriever
   public static Object getTrue(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return Boolean.TRUE; }
   public static Object getFalse(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return Boolean.FALSE; }
   public static Object getUnsupportedField(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return null; }
+  public static Object getEvaluationWeekDay(SubscriberEvaluationRequest evaluationRequest, String fieldName) { int weekDay = RLMDateUtils.getField(evaluationRequest.getEvaluationDate(), Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone()); Set<String> evaluationWeekDay = new HashSet<String>(); evaluationWeekDay.add(getDay(weekDay)); return evaluationWeekDay; }
+  public static Object getEvaluationMonth(SubscriberEvaluationRequest evaluationRequest, String fieldName) { int month = RLMDateUtils.getField(evaluationRequest.getEvaluationDate(), Calendar.MONTH, Deployment.getBaseTimeZone()); Set<String> evaluationMonth = new HashSet<String>(); evaluationMonth.add(getMonth(month)); return evaluationMonth; }
+  public static Object getEvaluationDayOfMonth(SubscriberEvaluationRequest evaluationRequest, String fieldName) {  int dayOfMonth = RLMDateUtils.getField(evaluationRequest.getEvaluationDate(), Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone()); return dayOfMonth; }
+  public static Object getEvaluationTime(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
+  { 
+    Date evaluationDate = evaluationRequest.getEvaluationDate();
+    StringBuilder evaluationTimeBuilder = new StringBuilder();
+    evaluationTimeBuilder.append(RLMDateUtils.getField(evaluationDate, Calendar.HOUR_OF_DAY, com.evolving.nglm.core.Deployment.getBaseTimeZone())).append(":");
+    evaluationTimeBuilder.append(RLMDateUtils.getField(evaluationDate, Calendar.MINUTE, com.evolving.nglm.core.Deployment.getBaseTimeZone())).append(":");
+    evaluationTimeBuilder.append(RLMDateUtils.getField(evaluationDate, Calendar.SECOND, com.evolving.nglm.core.Deployment.getBaseTimeZone()));
+    return evaluationTimeBuilder.toString(); 
+  }
 
   //
   //  journey
   //
 
   public static Object getJourneyEntryDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getJourneyState().getJourneyEntryDate(); }
+  public static Object getJourneyEndDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getJourneyState().getJourneyEndDate(); }
   public static Object getJourneyParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluateParameter(evaluationRequest, evaluationRequest.getJourneyState().getJourneyParameters().get(fieldName)); }
   public static Object getJourneyNodeEntryDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getJourneyState().getJourneyNodeEntryDate(); }
   public static Object getJourneyNodeParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) { 
@@ -572,5 +587,94 @@ public abstract class CriterionFieldRetriever
         result = expression.evaluateExpression(evaluationRequest, baseTimeUnit);
       }
     return result;
+  }
+  
+  /*****************************************
+  *
+  *  getDay
+  *
+  *****************************************/
+  
+  private static String getDay(int today)
+  {
+    String result = null;
+    
+    switch(today)
+    {
+      case Calendar.SUNDAY:
+        result = "SUNDAY";
+        break;
+      case Calendar.MONDAY:
+        result = "MONDAY";
+        break;
+      case Calendar.TUESDAY:
+        result = "TUESDAY";
+        break;
+      case Calendar.WEDNESDAY:
+        result = "WEDNESDAY";
+        break;
+      case Calendar.THURSDAY:
+        result = "THURSDAY";
+        break;
+      case Calendar.FRIDAY:
+        result = "FRIDAY";
+        break;
+      case Calendar.SATURDAY:
+        result = "SATURDAY";
+        break;
+    }
+    return result.toLowerCase();
+  }
+  
+  /*****************************************
+  *
+  *  getMonth
+  *
+  *****************************************/
+  
+  private static String getMonth(int today)
+  {
+    String result = null;
+    
+    switch(today)
+    {
+      case Calendar.JANUARY:
+        result = "JANUARY";
+        break;
+      case Calendar.FEBRUARY:
+        result = "FEBRUARY";
+        break;
+      case Calendar.MARCH:
+        result = "MARCH";
+        break;
+      case Calendar.APRIL:
+        result = "APRIL";
+        break;
+      case Calendar.MAY:
+        result = "MAY";
+        break;
+      case Calendar.JUNE:
+        result = "JUNE";
+        break;
+      case Calendar.JULY:
+        result = "JULY";
+        break;
+      case Calendar.AUGUST:
+        result = "AUGUST";
+        break;
+      case Calendar.SEPTEMBER:
+        result = "SEPTEMBER";
+        break;
+      case Calendar.OCTOBER:
+        result = "OCTOBER";
+        break;
+      case Calendar.NOVEMBER:
+        result = "NOVEMBER";
+        break;
+      case Calendar.DECEMBER:
+        result = "DECEMBER";
+        break;
+    }
+    return result.toLowerCase();
   }
 }

@@ -45,7 +45,7 @@ public class BDRReportProcessor implements ReportProcessorFactory {
 
     private static final Logger log = LoggerFactory.getLogger(BDRReportProcessor.class);
 
-    final static String STORENAME = "evol-store";
+    final public static String STORENAME = "evol-store";
     private String kafkaNode;
     private String topicOut;
 
@@ -293,7 +293,7 @@ public class BDRReportProcessor implements ReportProcessorFactory {
         String instNbStr   = args[5];
         
         int instanceNb = Integer.parseInt(instNbStr);
-        String appId = JourneyCustomerStatesReportObjects.APPLICATION_ID_PREFIX+appIdSuffix;
+        String appId = ReportUtils.APPLICATION_ID_PREFIX+appIdSuffix;
 
         ReportProcessorFactory reportFactory = new BDRReportProcessor();
         ReportProcessor reportProcessor = new ReportProcessor(

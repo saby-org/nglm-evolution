@@ -6,15 +6,12 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.Journey.GUINode;
-
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.SystemTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -23,11 +20,13 @@ import org.apache.kafka.connect.data.Struct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class CriterionContext
 {
@@ -64,6 +63,10 @@ public class CriterionContext
   public static final CriterionContext DynamicProfile = new CriterionContext(CriterionContextType.DynamicProfile);
   public static final CriterionContext FullDynamicProfile = new CriterionContext(CriterionContextType.FullDynamicProfile);
   public static final CriterionContext Presentation = new CriterionContext(CriterionContextType.Presentation);
+  public static final String EVALUATION_WK_DAY_ID = "evaluation.weekday";
+  public static final String EVALUATION_TIME_ID = "evaluation.time";
+  public static final String EVALUATION_MONTH_ID = "evaluation.month";
+  public static final String EVALUATION_DAY_OF_MONTH_ID = "evaluation.dayofmonth";
 
   /*****************************************
   *
@@ -82,6 +85,10 @@ public class CriterionContext
   //
 
   private static CriterionField evaluationDate;
+  private static CriterionField evaluationWeekday;
+  private static CriterionField evaluationTime;
+  private static CriterionField evaluationMonth;
+  private static CriterionField evaluationDayOfMonth;
   private static CriterionField evaluationEventName;
   private static CriterionField internalRandom100;
   private static CriterionField internalFalse;
@@ -107,7 +114,89 @@ public class CriterionContext
       {
         throw new ServerRuntimeException(e);
       }
+    
+    //
+    //  evaluationWeekday
+    //
 
+    try
+      {
+        Map<String,Object> evaluationWeekdayJSON = new LinkedHashMap<String,Object>();
+        evaluationWeekdayJSON.put("id", EVALUATION_WK_DAY_ID);
+        evaluationWeekdayJSON.put("display", "Evaluation Day Of Week");
+        evaluationWeekdayJSON.put("dataType", "stringSet");
+        evaluationWeekdayJSON.put("retriever", "getEvaluationWeekDay");
+        ArrayList<String> availableValues = new ArrayList<>(); availableValues.add("#weekDays#");
+        evaluationWeekdayJSON.put("availableValues", JSONUtilities.encodeArray(availableValues));
+        evaluationWeekdayJSON.put("internalOnly", false);
+        evaluationWeekday  = new CriterionField(JSONUtilities.encodeObject(evaluationWeekdayJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
+    //
+    //  evaluationTime
+    //
+
+    try
+      {
+        Map<String,Object> evaluationTimeJSON = new LinkedHashMap<String,Object>();
+        evaluationTimeJSON.put("id", EVALUATION_TIME_ID);
+        evaluationTimeJSON.put("display", "Evaluation Time");
+        evaluationTimeJSON.put("dataType", "time");
+        evaluationTimeJSON.put("retriever", "getEvaluationTime");
+        evaluationTimeJSON.put("internalOnly", false);
+        evaluationTime  = new CriterionField(JSONUtilities.encodeObject(evaluationTimeJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
+    //
+    //  evaluationMonth
+    //
+
+    try
+      {
+        Map<String,Object> evaluationMonthJSON = new LinkedHashMap<String,Object>();
+        evaluationMonthJSON.put("id", EVALUATION_MONTH_ID);
+        evaluationMonthJSON.put("display", "Evaluation Month");
+        evaluationMonthJSON.put("dataType", "stringSet");
+        evaluationMonthJSON.put("retriever", "getEvaluationMonth");
+        ArrayList<String> availableValues = new ArrayList<>(); availableValues.add("#months#");
+        evaluationMonthJSON.put("availableValues", JSONUtilities.encodeArray(availableValues));
+        evaluationMonthJSON.put("internalOnly", false);
+        evaluationMonth  = new CriterionField(JSONUtilities.encodeObject(evaluationMonthJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
+    //
+    //  evaluationDayOfMonth
+    //
+
+    try
+      {
+        Map<String,Object> evaluationDayOfMonthJSON = new LinkedHashMap<String,Object>();
+        evaluationDayOfMonthJSON.put("id", EVALUATION_DAY_OF_MONTH_ID);
+        evaluationDayOfMonthJSON.put("display", "Evaluation Day Of Month");
+        evaluationDayOfMonthJSON.put("dataType", "integer");
+        evaluationDayOfMonthJSON.put("retriever", "getEvaluationDayOfMonth");
+        evaluationDayOfMonthJSON.put("minValue", new Integer(1));
+        evaluationDayOfMonthJSON.put("maxValue", new Integer(31));
+        evaluationDayOfMonthJSON.put("internalOnly", false);
+        evaluationDayOfMonth  = new CriterionField(JSONUtilities.encodeObject(evaluationDayOfMonthJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
     //
     //  evaluationEventName
     //
@@ -198,6 +287,7 @@ public class CriterionContext
   private static CriterionField nodeEntryDate;
   private static CriterionField journeyActionDeliveryStatus;
   private static CriterionField journeyActionJourneyStatus;
+  private static CriterionField journeyEndDate;
   static
   {
     //
@@ -213,6 +303,25 @@ public class CriterionContext
         journeyEntryDateJSON.put("retriever", "getJourneyEntryDate");
         journeyEntryDateJSON.put("internalOnly", false);
         journeyEntryDate  = new CriterionField(JSONUtilities.encodeObject(journeyEntryDateJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
+    //
+    //  journeyEndDate
+    //
+
+    try
+      {
+        Map<String,Object> journeyEndDateJSON = new LinkedHashMap<String,Object>();
+        journeyEndDateJSON.put("id", "journey.endDate");
+        journeyEndDateJSON.put("display", "journey.endDate");
+        journeyEndDateJSON.put("dataType", "date");
+        journeyEndDateJSON.put("retriever", "getJourneyEndDate");
+        journeyEndDateJSON.put("internalOnly", false);
+        journeyEndDate  = new CriterionField(JSONUtilities.encodeObject(journeyEndDateJSON));
       }
     catch (GUIManagerException e)
       {
@@ -364,6 +473,7 @@ public class CriterionContext
     this.criterionContextType = CriterionContextType.Journey;
     this.additionalCriterionFields = new LinkedHashMap<String,CriterionField>();
     this.additionalCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
+    this.additionalCriterionFields.put(journeyEndDate.getID(), journeyEndDate);
     this.additionalCriterionFields.putAll(journeyParameters);
     for (CriterionField contextVariable : contextVariables.values())
       {
@@ -389,8 +499,12 @@ public class CriterionContext
   *  constructor -- journey node
   *
   *****************************************/
-
   public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent, Journey selectedJourney) throws GUIManagerException
+  {
+    this(journeyParameters, contextVariables, journeyNodeType, journeyEvent, selectedJourney, null);
+  }
+
+  public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent, Journey selectedJourney, CriterionDataType expectedDataType) throws GUIManagerException
   {
     /*****************************************
     *
@@ -414,6 +528,7 @@ public class CriterionContext
         //
 
         this.additionalCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
+        this.additionalCriterionFields.put(journeyEndDate.getID(), journeyEndDate);
 
         //
         //  journey parameters
@@ -471,12 +586,36 @@ public class CriterionContext
                 this.additionalCriterionFields.put(resultFieldID, new CriterionField(resultFieldID, selectedJourney, contextVariable));
               }
           }
+        
+        //
+        //  scheduleNode
+        //
+        
+        if (journeyNodeType.getScheduleNode())
+          {
+            this.additionalCriterionFields.put(evaluationWeekday.getID(), evaluationWeekday);
+            this.additionalCriterionFields.put(evaluationTime.getID(), evaluationTime);
+          }
+
+        if (expectedDataType != null)
+          {
+            // only keep criterion of this type
+            Map<String,CriterionField> newMap = new LinkedHashMap<String,CriterionField>();
+            for (Entry<String, CriterionField> entry : this.additionalCriterionFields.entrySet())
+              {
+                if (entry.getValue().getFieldDataType().equals(expectedDataType))
+                  {
+                    newMap.put(entry.getKey(), entry.getValue());
+                  }
+              }
+            this.additionalCriterionFields = newMap;
+          }
       }
   }
 
   /*****************************************
   *
-  *  construcxtor -- journey link
+  *  constructor -- journey link
   *
   *****************************************/
 
@@ -616,6 +755,8 @@ public class CriterionContext
           result.put(internalRandom100.getID(), internalRandom100);
           result.put(internalFalse.getID(), internalFalse);
           result.put(internalTargets.getID(), internalTargets);
+          result.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
+          result.put(evaluationMonth.getID(), evaluationMonth);
           result.putAll(Deployment.getProfileCriterionFields());
           break;
 

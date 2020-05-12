@@ -3,10 +3,12 @@ package com.evolving.nglm.evolution;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Serde;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.BiPredicate;
@@ -83,6 +85,16 @@ public class KafkaResponseListenerService<K,V> {
     synchronized (this){
       // consume all partitions of the topic
       Set<TopicPartition> partitions = new HashSet<>();
+      List<PartitionInfo> partitionInfos=null;
+      while(partitionInfos==null){
+        try{
+          partitionInfos=kafkaConsumer.partitionsFor(this.topic, Duration.ofSeconds(5));
+        }catch (org.apache.kafka.common.errors.TimeoutException e){
+          // a kafka broker might just be down, consumer.partitionsFor() can ends up timeout trying on this one
+          log.warn("timeout while getting topic partitions", e.getMessage());
+        }catch (WakeupException e){
+        }
+      }
       for(PartitionInfo partitionInfo:kafkaConsumer.partitionsFor(topic)){
         partitions.add(new TopicPartition(topic, partitionInfo.partition()));
       }

@@ -161,6 +161,19 @@ public class ContextVariable
     this.validated = false;
     this.expression = null;
     this.type = CriterionDataType.Unknown;
+    String expressionTypeFromJSON = JSONUtilities.decodeString(jsonValue, "expressionType", false);
+    if(expressionTypeFromJSON != null) {
+      
+      // gotten a expressionType from GUI with possible values: 
+      //      integer
+      //      double
+      //      date
+      //      time
+      //      string
+      
+      this.type = CriterionDataType.fromExternalRepresentation(expressionTypeFromJSON);
+    }
+    
     this.id = generateID(this.name);
   }
 
@@ -457,6 +470,8 @@ public class ContextVariable
                   case OpaqueReferenceExpression:
                     this.type = ((ReferenceExpression) expression).getCriterionDataType();
                     break;
+                    
+                  case TimeExpression:
                   default:
                     throw new GUIManagerException("unsupported context variable type", expression.getType().toString());
                 }

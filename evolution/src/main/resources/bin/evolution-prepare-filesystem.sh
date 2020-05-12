@@ -36,8 +36,11 @@ ssh $MASTER_SWARM_HOST "
 
 ssh $GUIMANAGER_HOST "
    mkdir -p $NGLM_UPLOADED
-   mkdir -p $NGLM_REPORTS
+   mkdir -p $NGLM_REPORTS  
 "
+cat $DEPLOY_ROOT/config/logger/log4j-guimanager.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-guimanager-001.xml
+scp $DEPLOY_ROOT/config/logger/log4j-guimanager-001.xml $GUIMANAGER_HOST:$NGLM_CONFIG_LOGS/log4j-guimanager.xml
+rm -f $DEPLOY_ROOT/config/logger/log4j-guimanager-001.xml
 
 #
 #  prometheus runtime volume(s)
@@ -60,9 +63,13 @@ do
    export INTERNAL_PORT=`echo $TUPLE | cut -d: -f4`
    export MONITORING_PORT=`echo $TUPLE | cut -d: -f5`
    export DEBUG_PORT=`echo $TUPLE | cut -d: -f6`
+   cat $DEPLOY_ROOT/config/logger/log4j-evolutionengine.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-evolutionengine-$KEY.xml
+   scp $DEPLOY_ROOT/config/logger/log4j-evolutionengine-$KEY.xml $HOST:$NGLM_CONFIG_LOGS/log4j-evolutionengine-$KEY.xml
+   rm -f $DEPLOY_ROOT/config/logger/log4j-evolutionengine-$KEY.xml
+
    ssh $HOST "
-      mkdir -p $NGLM_STREAMS_RUNTIME/streams-evolutionengine-$KEY
-   "
+      mkdir -p $NGLM_STREAMS_RUNTIME/streams-evolutionengine-$KEY      
+   "   
 done
 
 #
@@ -110,10 +117,124 @@ do
    export MONITORING_PORT=`echo $TUPLE | cut -d: -f4`
    export THREADPOOL_SIZE=`echo $TUPLE | cut -d: -f5`
    export DEBUG_PORT=`echo $TUPLE | cut -d: -f6`
-   #
-   # nothing to prepare
-   #
-done
+   cat $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent-$KEY.xml
+   scp $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent-$KEY.xml $HOST:$NGLM_CONFIG_LOGS/log4j-thirdpartyevent-$KEY.xml
+   rm -f $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent-$KEY.xml
+ done
+
+ #
+ #  infulfillmentmanager
+ #
+
+if [ "$INFULFILLMENTMANAGER_ENABLED" = "true" ]; then 
+
+  for TUPLE in $INFULFILLMENTMANAGER_CONFIGURATION
+  do
+     export KEY=`echo $TUPLE | cut -d: -f1`
+     export HOST=`echo $TUPLE | cut -d: -f2`
+
+     cat $DEPLOY_ROOT/config/logger/log4j-infulfillment.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-infulfillment-$KEY.xml
+     scp $DEPLOY_ROOT/config/logger/log4j-infulfillment-$KEY.xml $HOST:$NGLM_CONFIG_LOGS/log4j-infulfillment-$KEY.xml
+     rm -f $DEPLOY_ROOT/config/logger/log4j-infulfillment-$KEY.xml
+
+  done
+
+fi 
+
+#
+#  commoditydeliverymanager
+#
+
+if [ "$COMMODITYDELIVERYMANAGER_ENABLED" = "true" ]; then
+
+  for TUPLE in $COMMODITYDELIVERYMANAGER_CONFIGURATION
+  do
+     export KEY=`echo $TUPLE | cut -d: -f1`
+     export HOST=`echo $TUPLE | cut -d: -f2`
+
+     cat $DEPLOY_ROOT/config/logger/log4j-commoditydelivery.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-commoditydelivery-$KEY.xml
+     scp $DEPLOY_ROOT/config/logger/log4j-commoditydelivery-$KEY.xml $HOST:$NGLM_CONFIG_LOGS/log4j-commoditydelivery-$KEY.xml
+     rm -f $DEPLOY_ROOT/config/logger/log4j-commoditydelivery-$KEY.xml
+
+  done
+
+fi
+
+#
+#  purchasefulfillmentmanager
+#
+
+if [ "$PURCHASEFULFILLMENTMANAGER_ENABLED" = "true" ]; then
+
+  for TUPLE in $PURCHASEFULFILLMENTMANAGER_CONFIGURATION
+  do
+     export KEY=`echo $TUPLE | cut -d: -f1`
+     export HOST=`echo $TUPLE | cut -d: -f2`
+
+     cat $DEPLOY_ROOT/config/logger/log4j-purchasefulfillment.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-purchasefulfillment-$KEY.xml
+     scp $DEPLOY_ROOT/config/logger/log4j-purchasefulfillment-$KEY.xml $HOST:$NGLM_CONFIG_LOGS/log4j-purchasefulfillment-$KEY.xml
+     rm -f $DEPLOY_ROOT/config/logger/log4j-purchasefulfillment-$KEY.xml
+
+  done
+
+fi
+
+#
+#  notificationmanagersms
+#
+
+if [ "$NOTIFICATIONMANAGER_SMS_ENABLED" = "true" ]; then
+
+  for TUPLE in $NOTIFICATIONMANAGER_SMS_CONFIGURATION
+  do
+     export KEY=`echo $TUPLE | cut -d: -f1`
+     export HOST=`echo $TUPLE | cut -d: -f2`
+     
+     cat $DEPLOY_ROOT/config/logger/log4j-sms.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-sms-$KEY.xml
+     scp $DEPLOY_ROOT/config/logger/log4j-sms-$KEY.xml $HOST:$NGLM_CONFIG_LOGS/log4j-sms-$KEY.xml
+     rm -f $DEPLOY_ROOT/config/logger/log4j-sms-$KEY.xml
+     
+  done
+  
+fi
+
+#
+#  notificationmanagermail
+#
+
+if [ "$NOTIFICATIONMANAGER_MAIL_ENABLED" = "true" ]; then
+
+  for TUPLE in $NOTIFICATIONMANAGER_MAIL_CONFIGURATION
+  do
+     export KEY=`echo $TUPLE | cut -d: -f1`
+     export HOST=`echo $TUPLE | cut -d: -f2`
+
+     cat $DEPLOY_ROOT/config/logger/log4j-mail.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-mail-$KEY.xml
+     scp $DEPLOY_ROOT/config/logger/log4j-mail-$KEY.xml $HOST:$NGLM_CONFIG_LOGS/log4j-mail-$KEY.xml
+     rm -f $DEPLOY_ROOT/config/logger/log4j-mail-$KEY.xml
+
+  done
+
+fi
+
+#
+#  notificationmanagerpush
+#
+
+if [ "$NOTIFICATIONMANAGER_PUSH_ENABLED" = "true" ]; then
+
+  for TUPLE in $NOTIFICATIONMANAGER_PUSH_CONFIGURATION
+  do
+     export KEY=`echo $TUPLE | cut -d: -f1`
+     export HOST=`echo $TUPLE | cut -d: -f2`
+
+     cat $DEPLOY_ROOT/config/logger/log4j-push.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-push-$KEY.xml
+     scp $DEPLOY_ROOT/config/logger/log4j-push-$KEY.xml $HOST:$NGLM_CONFIG_LOGS/log4j-push-$KEY.xml
+     rm -f $DEPLOY_ROOT/config/logger/log4j-push-$KEY.xml
+
+  done
+
+fi
 
 #
 #  dnboproxy

@@ -6,6 +6,9 @@
 
 package com.evolving.nglm.evolution;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -28,6 +31,11 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
+import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.core.CountRequest;
+import org.elasticsearch.client.core.CountResponse;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -39,13 +47,16 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
+import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
-public class Journey extends GUIManagedObject
+public class Journey extends GUIManagedObject implements StockableItem
 {
   /*****************************************
   *
@@ -179,7 +190,7 @@ public class Journey extends GUIManagedObject
   //  schema
   //
 
-  private static int currentSchemaVersion = 5;
+  private static int currentSchemaVersion = 6;
   private static Schema schema = null;
   static
   {
@@ -204,6 +215,7 @@ public class Journey extends GUIManagedObject
     schemaBuilder.field("appendInclusionLists", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("appendExclusionLists", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("approval", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("maxNoOfCustomers", Schema.OPTIONAL_INT32_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -243,6 +255,7 @@ public class Journey extends GUIManagedObject
   private boolean appendInclusionLists;
   private boolean appendExclusionLists;
   private JourneyStatus approval;
+  private Integer maxNoOfCustomers;
 
   /****************************************
   *
@@ -274,6 +287,11 @@ public class Journey extends GUIManagedObject
   public boolean getAppendInclusionLists() { return appendInclusionLists; }
   public boolean getAppendExclusionLists() { return appendExclusionLists; }
   public JourneyStatus getApproval() {return JourneyStatus.Unknown == approval ? JourneyStatus.Pending : approval; }
+  public void setApproval(JourneyStatus approval) { this.approval = approval; }
+  public Integer getMaxNoOfCustomers(){return maxNoOfCustomers;}
+  // journey customers limit implemented thanks to stocks :
+  @Override public String getStockableItemID() { return "maxNoOfCustomers-journey-"+getJourneyID(); }
+  @Override public Integer getStock() { return getMaxNoOfCustomers(); }
 
   //
   //  package protected
@@ -432,44 +450,57 @@ public class Journey extends GUIManagedObject
   //
   //  base
   //
-
-  public static SubscriberJourneyStatus getSubscriberJourneyStatus(boolean journeyComplete, boolean statusConverted, boolean statusNotified, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup)
+  public static SubscriberJourneyStatus getSubscriberJourneyStatus(boolean statusConverted, boolean statusNotified, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup)
   {
-    boolean controlGroupNodeExited = statusTargetGroup == Boolean.TRUE || statusControlGroup == Boolean.TRUE || statusUniversalControlGroup == Boolean.TRUE;
-    
-    if (! controlGroupNodeExited && ! statusNotified && ! statusConverted)
-      return SubscriberJourneyStatus.Entered;
-    else if (! controlGroupNodeExited && ! statusNotified && statusConverted)
-      return SubscriberJourneyStatus.ConvertedNotNotified;
-    else if (! controlGroupNodeExited && statusNotified && ! statusConverted)
-      return SubscriberJourneyStatus.Notified;
-    else if (! controlGroupNodeExited && statusNotified && statusConverted)
-      return SubscriberJourneyStatus.ConvertedNotified;
-    else if (controlGroupNodeExited && statusTargetGroup == Boolean.TRUE && statusNotified && ! statusConverted)
-      return SubscriberJourneyStatus.Notified;
-    else if (controlGroupNodeExited && statusTargetGroup == Boolean.TRUE && statusNotified && statusConverted)
-      return SubscriberJourneyStatus.ConvertedNotified;
-    else if (controlGroupNodeExited && statusTargetGroup == Boolean.TRUE)
-      return SubscriberJourneyStatus.Targeted;
-    else if (controlGroupNodeExited && statusControlGroup == Boolean.TRUE && ! statusConverted)
-      return SubscriberJourneyStatus.ControlGroup;
-    else if (controlGroupNodeExited && statusUniversalControlGroup == Boolean.TRUE && ! statusConverted)
-      return SubscriberJourneyStatus.UniversalControlGroup;
-    else if (controlGroupNodeExited && statusControlGroup == Boolean.TRUE && statusConverted)
-      return SubscriberJourneyStatus.ControlGroupConverted;
-    else if (controlGroupNodeExited && statusUniversalControlGroup == Boolean.TRUE && statusConverted)
-      return SubscriberJourneyStatus.UniversalControlGroupConverted;
-    else
-      return SubscriberJourneyStatus.Unknown;
+  // Non UCG
+  if (statusUniversalControlGroup == null || statusUniversalControlGroup == Boolean.FALSE)
+  {
+    // Non CG
+    if (statusControlGroup == null || statusControlGroup == Boolean.FALSE) {
+      // Status not updated yet
+      if (! statusNotified && ! statusConverted) {
+        if (statusTargetGroup == null || statusTargetGroup == Boolean.FALSE)
+          return SubscriberJourneyStatus.Entered;
+        else
+          return SubscriberJourneyStatus.Targeted;
+      }
+      // Status updated
+      else {
+        if (! statusConverted)
+          return SubscriberJourneyStatus.Notified;
+        else {
+          if (! statusNotified)
+            return SubscriberJourneyStatus.ConvertedNotNotified;
+          else
+            return SubscriberJourneyStatus.ConvertedNotified;
+        }
+      }
+    }
+    // CG
+    else {
+      if (! statusConverted)
+        return SubscriberJourneyStatus.ControlGroup;
+      else
+        return SubscriberJourneyStatus.ControlGroupConverted; 
+    }
   }
-
+  // UCG
+  else
+  {
+    if (! statusConverted)
+      return SubscriberJourneyStatus.UniversalControlGroup;
+    else
+      return SubscriberJourneyStatus.UniversalControlGroupConverted;
+  }
+}
+  
   //
   //  journeyStatistic
   //
 
   public static SubscriberJourneyStatus getSubscriberJourneyStatus(JourneyStatistic journeyStatistic)
   {
-    return getSubscriberJourneyStatus(journeyStatistic.getJourneyComplete(), journeyStatistic.getStatusConverted(), journeyStatistic.getStatusNotified(), journeyStatistic.getStatusTargetGroup(), journeyStatistic.getStatusControlGroup(), journeyStatistic.getStatusUniversalControlGroup());
+    return getSubscriberJourneyStatus(journeyStatistic.getStatusConverted(), journeyStatistic.getStatusNotified(), journeyStatistic.getStatusTargetGroup(), journeyStatistic.getStatusControlGroup(), journeyStatistic.getStatusUniversalControlGroup());
   }
 
   //
@@ -478,22 +509,13 @@ public class Journey extends GUIManagedObject
 
   public static SubscriberJourneyStatus getSubscriberJourneyStatus(JourneyState journeyState)
   {
-    boolean journeyComplete = journeyState.getJourneyExitDate() != null;
     boolean statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
     boolean statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
     Boolean statusTargetGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName()) : null;
     Boolean statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : null;
     Boolean statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : null;
     
-    //
-    // re-check
-    //
-    
-    if (statusTargetGroup == Boolean.TRUE) statusControlGroup = statusUniversalControlGroup = !statusTargetGroup;
-    if (statusControlGroup == Boolean.TRUE) statusTargetGroup = statusUniversalControlGroup = !statusControlGroup;
-    if (statusUniversalControlGroup == Boolean.TRUE) statusTargetGroup = statusControlGroup = !statusUniversalControlGroup;
-    
-    return getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
+    return getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
   }
 
   //
@@ -502,7 +524,7 @@ public class Journey extends GUIManagedObject
 
   public static SubscriberJourneyStatus getSubscriberJourneyStatus(StatusHistory statusHistory)
   {
-    return getSubscriberJourneyStatus(statusHistory.getJourneyComplete(), statusHistory.getStatusConverted(), statusHistory.getStatusNotified(), statusHistory.getStatusTargetGroup(), statusHistory.getStatusControlGroup(), statusHistory.getStatusUniversalControlGroup());
+    return getSubscriberJourneyStatus(statusHistory.getStatusConverted(), statusHistory.getStatusNotified(), statusHistory.getStatusTargetGroup(), statusHistory.getStatusControlGroup(), statusHistory.getStatusUniversalControlGroup());
   }
   
   /*****************************************
@@ -539,11 +561,46 @@ public class Journey extends GUIManagedObject
   
   /*****************************************
   *
+  *  targetCount
+  *
+  *****************************************/
+  private long evaluateTargetCount(RestHighLevelClient elasticsearch) 
+  {
+    try
+      {
+        BoolQueryBuilder query = EvaluationCriterion.esCountMatchCriteriaGetQuery(targetingCriteria);
+        return EvaluationCriterion.esCountMatchCriteriaExecuteQuery(query, elasticsearch);
+      }
+    catch (CriterionException|IOException|ElasticsearchStatusException e)
+      {
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("evaluateTargetCount: {}", stackTraceWriter.toString());
+
+        return 0;
+      }
+  }
+  
+  //
+  // targetCount is not store inside the object, only inside the JSON representation to be used by the GUI
+  //
+  // Like description, it is not used inside the system, only put at creation and pushed in Elasticsearch
+  // mapping_journeys index in order to be visible for the GUI (Grafana).
+  //
+  public void setTargetCount(RestHighLevelClient elasticsearch)
+  {
+    if(this.getTargetingType() == TargetingType.Target) {
+      this.getJSONRepresentation().put("targetCount", new Long(this.evaluateTargetCount(elasticsearch)) );
+    }
+  }
+  
+  /*****************************************
+  *
   *  constructor -- unpack
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, JourneyStatus approval)
+  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, JourneyStatus approval, Integer maxNoOfCustomers)
   {
     super(schemaAndValue);
     this.effectiveEntryPeriodEndDate = effectiveEntryPeriodEndDate;
@@ -563,6 +620,7 @@ public class Journey extends GUIManagedObject
     this.appendInclusionLists = appendInclusionLists;
     this.appendExclusionLists = appendExclusionLists;
     this.approval = approval;
+    this.maxNoOfCustomers = maxNoOfCustomers;
   }
 
   /*****************************************
@@ -593,6 +651,7 @@ public class Journey extends GUIManagedObject
     struct.put("appendInclusionLists", journey.getAppendInclusionLists());
     struct.put("appendExclusionLists", journey.getAppendExclusionLists());
     struct.put("approval", journey.getApproval().getExternalRepresentation());
+    struct.put("maxNoOfCustomers", journey.getMaxNoOfCustomers());
     return struct;
   }
 
@@ -736,6 +795,7 @@ public class Journey extends GUIManagedObject
     boolean appendInclusionLists = (schemaVersion >= 3) ? valueStruct.getBoolean("appendInclusionLists") : false;
     boolean appendExclusionLists = (schemaVersion >= 3) ? valueStruct.getBoolean("appendExclusionLists") : false;
     JourneyStatus approval = (schemaVersion >= 5) ? JourneyStatus.fromExternalRepresentation(valueStruct.getString("approval")) : JourneyStatus.Pending;
+    Integer maxNoOfCustomers = (schemaVersion >=6) ? valueStruct.getInt32("maxNoOfCustomers") : null;
 
     /*****************************************
     *
@@ -797,7 +857,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, approval);
+    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, approval, maxNoOfCustomers);
   }
   
   /*****************************************
@@ -1038,6 +1098,17 @@ public class Journey extends GUIManagedObject
     Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.templateParameters, Collections.<String,CriterionField>emptyMap(), true, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
     this.approval = approval;
+    // by now GUI send String, to ask change to be cleaner
+    //this.maxNoOfCustomers = JSONUtilities.decodeInteger(jsonRoot,"maxNoOfCustomers",null);
+    this.maxNoOfCustomers=null;
+    String maxNoOfCustomersString = JSONUtilities.decodeString(jsonRoot,"maxNoOfCustomers",null);
+    if(maxNoOfCustomersString!=null){
+      try{
+        this.maxNoOfCustomers=Integer.parseInt(maxNoOfCustomersString);
+      }catch (NumberFormatException ex){
+        throw new GUIManagerException("maxNoOfCustomers has bad field value",maxNoOfCustomersString);
+      }
+    }
 
     /*****************************************
     *
@@ -1047,7 +1118,7 @@ public class Journey extends GUIManagedObject
 
     Map<String,CriterionField> contextVariablesAndParameters = Journey.processContextVariableNodes(contextVariableNodes, templateParameters);
     this.contextVariables = new HashMap<String,CriterionField>();
-    this.journeyParameters = new HashMap<String,CriterionField>(this.templateParameters);
+    this.journeyParameters = new LinkedHashMap<String,CriterionField>(this.templateParameters);
     for (CriterionField contextVariable : contextVariablesAndParameters.values())
       {
         switch (contextVariable.getVariableType())
@@ -1083,6 +1154,8 @@ public class Journey extends GUIManagedObject
     *  validate
     *
     *****************************************/
+
+    if(this.maxNoOfCustomers!=null && this.maxNoOfCustomers<0) throw new GUIManagerException("maxNoOfCustomers has bad field value", this.maxNoOfCustomers+"");
 
     //
     //  autoTargeting and parameters
@@ -1808,6 +1881,10 @@ public class Journey extends GUIManagedObject
               case DateCriterion:
                 boundParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                 break;
+                
+              case TimeCriterion:
+                boundParameters.put(parameterName, JSONUtilities.decodeString(parameterJSON, "value", false));
+                break;
 
               case StringSetCriterion:
                 Set<String> stringSetValue = new HashSet<String>();
@@ -1921,6 +1998,18 @@ public class Journey extends GUIManagedObject
                 switch (parameterExpressionValue.getType())
                   {
                   case DateExpression:
+                    validCombination = true;
+                    break;
+                  default:
+                    validCombination = false;
+                    break;
+                  }
+                break;
+                
+              case TimeCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                  case TimeExpression:
                     validCombination = true;
                     break;
                   default:
@@ -2156,6 +2245,11 @@ public class Journey extends GUIManagedObject
 
   public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters) throws GUIManagerException
   {
+    return processContextVariableNodes(contextVariableNodes, journeyParameters, null);
+  }
+
+  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters, CriterionDataType expectedDataType) throws GUIManagerException
+  {
     /*****************************************
     *
     *  preparation
@@ -2167,7 +2261,10 @@ public class Journey extends GUIManagedObject
       {
         for (ContextVariable contextVariable : guiNode.getContextVariables())
           {
-            contextVariables.put(contextVariable, new Pair<CriterionContext,CriterionContext>(guiNode.getNodeOnlyCriterionContext(), guiNode.getNodeWithJourneyResultCriterionContext()));
+            if (expectedDataType == null || (contextVariable.getType().equals(expectedDataType)))
+              {
+                contextVariables.put(contextVariable, new Pair<CriterionContext,CriterionContext>(guiNode.getNodeOnlyCriterionContext(), guiNode.getNodeWithJourneyResultCriterionContext()));
+              }
           }
       }
 
@@ -2317,6 +2414,7 @@ public class Journey extends GUIManagedObject
                         }
                       break;
 
+                    case TimeCriterion:
                     default:
                       throw new GUIManagerException("bad data type", criterionField.getFieldDataType().getExternalRepresentation());
                   }
@@ -2532,6 +2630,10 @@ public class Journey extends GUIManagedObject
                 nodeParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                 break;
                 
+              case TimeCriterion:
+                nodeParameters.put(parameterName, JSONUtilities.decodeString(parameterJSON, "value", false));
+                break;
+                
               case StringSetCriterion:
                 Set<String> stringSetValue = new HashSet<String>();
                 JSONArray stringSetArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
@@ -2577,9 +2679,13 @@ public class Journey extends GUIManagedObject
           switch (parameter.getFieldDataType())
             {
               case WorkflowParameter:
-                String workflowID = JSONUtilities.decodeString((JSONObject) parameterJSON.get("value"), "workflowID", true);
-                workflow = journeyService.getActiveJourney(workflowID, SystemTime.getCurrentTime());
-                if (workflow == null) throw new GUIManagerException("unknown workflow", workflowID);
+
+                if((JSONObject) parameterJSON.get("value") != null)
+                  {
+                    String workflowID = JSONUtilities.decodeString((JSONObject) parameterJSON.get("value"), "workflowID", true);
+                    workflow = journeyService.getActiveJourney(workflowID, SystemTime.getCurrentTime());                    
+                    if (workflow == null) throw new GUIManagerException("unknown workflow", workflowID);
+                  }
                 break;
             }
         }
@@ -2797,6 +2903,18 @@ public class Journey extends GUIManagedObject
                       break;
                   }
                 break;
+                
+              case TimeCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                    case TimeExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
 
 
               case EvaluationCriteriaParameter:
@@ -2998,6 +3116,10 @@ public class Journey extends GUIManagedObject
               case DateCriterion:
                 outputConnectorParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                 break;
+                
+              case TimeCriterion:
+                outputConnectorParameters.put(parameterName, JSONUtilities.decodeString(parameterJSON, "value", false));
+                break;
 
               case StringSetCriterion:
                 Set<String> stringSetValue = new HashSet<String>();
@@ -3178,6 +3300,18 @@ public class Journey extends GUIManagedObject
                 switch (parameterExpressionValue.getType())
                   {
                     case DateExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
+                
+              case TimeCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                    case TimeExpression:
                       validCombination = true;
                       break;
                     default:
@@ -3396,13 +3530,19 @@ public class Journey extends GUIManagedObject
       switch (journeyLink.getLinkName())
         {
           case "targetGroup":
-            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName(), Boolean.TRUE);            
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName(), Boolean.TRUE);
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName(), Boolean.FALSE);
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName(), Boolean.FALSE);
             break;
           case "controlGroup":
-            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName(), Boolean.TRUE);            
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName(), Boolean.TRUE);
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName(), Boolean.FALSE);
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName(), Boolean.FALSE);
             break;
           case "universalControlGroup":
-            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName(), Boolean.TRUE);            
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName(), Boolean.TRUE);
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusTargetGroup.getJourneyParameterName(), Boolean.FALSE);
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName(), Boolean.FALSE);
             break;
         }
       return Collections.<Action>singletonList(contextUpdate);

@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
   private ContactPolicyService contactPolicyService;
   private SegmentContactPolicyService segmentContactPolicyService;
   private JourneyObjectiveService journeyObjectiveService;
+  private SegmentationDimensionService segmentationDimensionService;
   private boolean addHeaders=true;
 
   @Override
@@ -49,8 +51,11 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
     segmentContactPolicyService = new SegmentContactPolicyService(kafka, "contactPolicyConfigReportDriver-segmentcontactpolicyservice-" + apiProcessKey, Deployment.getSegmentContactPolicyTopic(), false);
     segmentContactPolicyService.start();
 
-    journeyObjectiveService = new JourneyObjectiveService(kafka, "contactPolicyConfigReportDriver-journeyobjectiveservice-" + apiProcessKey, Deployment.getSegmentationDimensionTopic(), false);
+    journeyObjectiveService = new JourneyObjectiveService(kafka, "contactPolicyConfigReportDriver-journeyobjectiveservice-" + apiProcessKey, Deployment.getJourneyObjectiveTopic(), false);
     journeyObjectiveService.start();
+    
+    segmentationDimensionService = new SegmentationDimensionService(kafka, "contactPolicyConfigReportDriver-segmentationDimensionservice-" + apiProcessKey, Deployment.getSegmentationDimensionTopic(), false);
+    segmentationDimensionService.start();
 
     File file = new File(csvFilename+".zip");
     FileOutputStream fos;
@@ -74,7 +79,12 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
                 {
                   ContactPolicy contactPolicy = (ContactPolicy) guiManagedObject;
                   JSONObject contactPolicyJSON = contactPolicyService.generateResponseJSON(guiManagedObject, true, SystemTime.getCurrentTime());
-                  List<String> segmentNames = contactPolicyService.getAllSegmentNamesUsingContactPolicy(contactPolicy.getContactPolicyID(), segmentContactPolicyService);
+                  List<String> segmentIDs = contactPolicyService.getAllSegmentIDsUsingContactPolicy(contactPolicy.getContactPolicyID(), segmentContactPolicyService);
+                  List<String> segmentNames = new ArrayList<>();
+                  for(String segmentID :segmentIDs) {
+                    Segment segment = segmentationDimensionService.getSegment(segmentID);
+                    segmentNames.add(segment.getName());
+                  }
                   List<String> journeyObjectives = contactPolicyService.getAllJourneyObjectiveNamesUsingContactPolicy(contactPolicy.getContactPolicyID(), journeyObjectiveService);
                   contactPolicyJSON.put("segmentNames", JSONUtilities.encodeArray(segmentNames));
                   contactPolicyJSON.put("journeyObjectiveNames", JSONUtilities.encodeArray(journeyObjectives));
@@ -85,7 +95,7 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
                       
                       StringBuilder sbLimits = new StringBuilder();
                       String limits = null;
-                      if(channel.getMessageLimits() != null) {
+                      if(channel.getMessageLimits() != null && !(channel.getMessageLimits().isEmpty())) {
                         for(MessageLimits limit : channel.getMessageLimits()) {
                           sbLimits.append(limit.getMaxMessages()).append(" per ").append(limit.getDuration()).append(" ").append(limit.getTimeUnit()).append(",");
                         }
@@ -148,9 +158,18 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
   {
     Map<String, Object> result = new LinkedHashMap<>();
     result.put("policyId", jsonObject.get("id").toString());
-    result.put("policyName", jsonObject.get("display").toString());    
-    result.put("description", jsonObject.get("description").toString());
+    result.put("policyName", jsonObject.get("display").toString());
+    if (jsonObject.get("description") != null)
+      {
+        result.put("description", jsonObject.get("description").toString());
+      }
+    else
+      {
+        result.put("description", "");
+      }
+
     result.put("active", jsonObject.get("active").toString());
+  
     
     StringBuilder sbSegments = new StringBuilder();
     String segments = null;

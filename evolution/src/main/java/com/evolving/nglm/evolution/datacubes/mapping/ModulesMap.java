@@ -7,12 +7,22 @@ import com.evolving.nglm.evolution.datacubes.mapping.ModuleInformation.ModuleFea
 public class ModulesMap extends ESObjectList<ModuleInformation>
 {
   public static final String ESIndex = "mapping_modules";
-  
+
+  /*****************************************
+  *
+  * Constructor
+  *
+  *****************************************/
   public ModulesMap() 
   {
     super(ESIndex);
   }
 
+  /*****************************************
+  *
+  * ESObjectList implementation
+  *
+  *****************************************/
   @Override
   protected void updateMapping(Map<String, Object> row)
   {
@@ -21,10 +31,9 @@ public class ModulesMap extends ESObjectList<ModuleInformation>
 
   /*****************************************
   *
-  *  getters
+  * Getters
   *
   *****************************************/
-  
   public String getDisplay(String id, String fieldName)
   {
     ModuleInformation result = this.mapping.get(id);
@@ -34,8 +43,8 @@ public class ModulesMap extends ESObjectList<ModuleInformation>
       }
     else
       {
-        logWarningOnlyOnce("Unable to retrieve "+fieldName+".display for "+fieldName+".id: " + id);
-        return id; // When missing, return the ID by default.
+        logWarningOnlyOnce("Unable to retrieve display for "+fieldName+" id: " + id);
+        return id; // When missing, return default.
       }
   }
   
@@ -48,8 +57,8 @@ public class ModulesMap extends ESObjectList<ModuleInformation>
       }
     else
       {
-        logWarningOnlyOnce("Unable to retrieve "+fieldName+".feature for "+fieldName+".id: " + id);
-        return ModuleFeature.None; // When missing, return None by default.
+        logWarningOnlyOnce("Unable to retrieve feature for " + fieldName + " id: " + id);
+        return ModuleFeature.None; // When missing, return default.
       }
   }
 }

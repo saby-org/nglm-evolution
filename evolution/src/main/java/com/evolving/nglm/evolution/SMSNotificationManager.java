@@ -104,7 +104,6 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
   public String pluginName;
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private CommunicationChannelBlackoutService blackoutService;
-  private ContactPolicyProcessor contactPolicyProcessor;
 
   //
   //  logger
@@ -157,11 +156,6 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
         
     blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "smsnotificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
     blackoutService.start();
-
-    //
-    //  contact policy processor
-    //
-    contactPolicyProcessor = new ContactPolicyProcessor("smsnotificationmanager-communicationchannel",deliveryManagerKey);
 
     //
     //  manager
@@ -555,6 +549,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
     {
       Module module = Module.fromExternalRepresentation(getModuleID());
+      thirdPartyPresentationMap.put(DELIVERYSTATUS, getMessageStatus().toString()); // replace value set by the superclass 
       thirdPartyPresentationMap.put(EVENTID, null);
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
       thirdPartyPresentationMap.put(MODULENAME, module.toString());
@@ -643,6 +638,8 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       *****************************************/
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      
       String msisdn = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getMSISDN();
       String language = subscriberEvaluationRequest.getLanguage();
       SMSTemplate baseTemplate = (SMSTemplate) smsMessage.resolveTemplate(evolutionEventContext);
@@ -780,17 +777,6 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
   }
 
   /*****************************************
-   *
-   *  validate contact policy
-   *
-   *****************************************/
-
-  @Override protected boolean filterRequest(DeliveryRequest request)
-  {
-    return false; //contactPolicyProcessor.ensureContactPolicy(request,this,log);
-  }
-
-  /*****************************************
   *
   *  processCorrelatorUpdate
   *
@@ -829,6 +815,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
 
   public static void main(String[] args)
   {
+    new LoggerInitialization().initLogger();
     log.info("SMSNotificationManager: recieved " + args.length + " args");
     for(String arg : args)
       {

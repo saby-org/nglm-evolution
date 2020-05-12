@@ -102,7 +102,6 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
   public String pluginName;
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private CommunicationChannelBlackoutService blackoutService;
-  private ContactPolicyProcessor contactPolicyProcessor;
 
   //
   //  logger
@@ -146,11 +145,6 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
         
     blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "mailnotificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
     blackoutService.start();
-
-    //
-    //  contact policy processor
-    //
-    contactPolicyProcessor = new ContactPolicyProcessor("mailnotificationmanager-communicationchannel",deliveryManagerKey);
 
     //
     //  manager
@@ -587,6 +581,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
     {
       Module module = Module.fromExternalRepresentation(getModuleID());
+      thirdPartyPresentationMap.put(DELIVERYSTATUS, getMessageStatus().toString()); // replace value set by the superclass 
       thirdPartyPresentationMap.put(EVENTID, null);
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
       thirdPartyPresentationMap.put(MODULENAME, module.toString());
@@ -668,6 +663,8 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       *****************************************/
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      
       String email = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getEmail();
       String language = subscriberEvaluationRequest.getLanguage();
       MailTemplate baseTemplate = (MailTemplate) emailMessage.resolveTemplate(evolutionEventContext);
@@ -819,17 +816,6 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
   }
 
   /*****************************************
-   *
-   *  filterRequest
-   *
-   ****************************************
-   * @param request*/
-  @Override public boolean filterRequest(DeliveryRequest request)
-  {
-    return false; //contactPolicyProcessor.ensureContactPolicy(request,this,log);
-  }
-
-  /*****************************************
   *
   *  processCorrelatorUpdate
   *
@@ -867,6 +853,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
 
   public static void main(String[] args)
   {
+    new LoggerInitialization().initLogger();
     log.info("MailNotificationManager: recieved " + args.length + " args");
     for(String arg : args)
       {

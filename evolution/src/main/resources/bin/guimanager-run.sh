@@ -59,7 +59,7 @@ case "${ENTRYPOINT}" in
     exec kafka-run-class -name guiManager -loggc com.evolving.nglm.evolution.GUIManager 001 $BROKER_SERVERS $GUIMANAGER_PORT $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT
     ;;
   "reportmanager")
-    exec kafka-run-class -name reportmanager -loggc com.evolving.nglm.evolution.reports.ReportManager $BROKER_SERVERS $MASTER_ESROUTER_SERVER
+    exec kafka-run-class -name reportmanager -loggc com.evolving.nglm.evolution.reports.ReportManager $BROKER_SERVERS $MASTER_ESROUTER_SERVER $KAFKA_REPLICATION_FACTOR $SUBSCRIBER_PARTITIONS $KAFKA_STREAMS_STANDBY_REPLICAS
     ;;
   "reportscheduler")
     exec kafka-run-class -name reportscheduler -loggc com.evolving.nglm.evolution.reports.ReportScheduler

@@ -27,12 +27,12 @@ public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput
   
   // static
   
-  public static String CREATE   = "Create";
-  public static String ALLOCATE = "Allocate";
-  public static String REDEEM   = "Redeem";
-  public static String RESEND   = "Resend";
-  public static String REFUSE   = "Refuse";
-  public static String EXTEND   = "Extend";
+  public static final String CREATE   = "Create";
+  public static final String ALLOCATE = "Allocate";
+  public static final String REDEEM   = "Redeem";
+  public static final String RESEND   = "Resend";
+  public static final String REFUSE   = "Refuse";
+  public static final String EXTEND   = "Extend";
   
   /*****************************************
   *

@@ -23,11 +23,8 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
-import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.state.KeyValueIterator;
-import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 
 import org.slf4j.Logger;
@@ -35,14 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Properties;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TimeZone;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -58,7 +48,7 @@ public class TimerService
   //  logger
   //
 
-  private static final Logger log = LoggerFactory.getLogger(EvolutionEngine.class);
+  private static final Logger log = LoggerFactory.getLogger(TimerService.class);
 
   //
   //  limites
@@ -904,6 +894,8 @@ public class TimerService
     NGLMRuntime.registerSystemTimeDependency(this);
     Date now = SystemTime.getCurrentTime();
     EvaluateTargets evaluateTargetsJob = null;
+    int nbOfExtraLoopToDo=0;
+    KeyValueIterator<StringKey,SubscriberState> subscriberStateStoreIterator = null;
     while (! stopRequested)
       {
         /*****************************************
@@ -918,6 +910,10 @@ public class TimerService
               {
                 try { evaluateTargetsJob = evaluateTargetsToProcess.poll(5L, TimeUnit.SECONDS); break; } catch (InterruptedException e) { }
               }
+          }
+        else
+          {
+            log.info("evaluateTargets job still to continue "+evaluateTargetsJob);
           }
 
         /*****************************************
@@ -936,6 +932,9 @@ public class TimerService
 
         if (evaluateTargetsJob != null)
           {
+
+            log.info("evaluateTargets job to do for "+evaluateTargetsJob);
+
             //
             //  waitForStreams
             //
@@ -958,14 +957,49 @@ public class TimerService
                 //  submit events
                 //
 
-                KeyValueIterator<StringKey,SubscriberState> subscriberStateStoreIterator = subscriberStateStore.all();
+                if (subscriberStateStoreIterator == null)
+                  {
+
+                    subscriberStateStoreIterator = subscriberStateStore.all();
+
+                    // no on going job, "randomness" activated (NOT RECOMMENDED REGARDING PERF)
+                    if(Deployment.getEnableEvaluateTargetRandomness() && nbOfExtraLoopToDo==0){
+                      // will have to do 2 loops over the statestore at least, if no new jobs coming in meanwhile
+                      nbOfExtraLoopToDo=1;
+                      // probably not optimized at all, but sounds like the only way to "randomize" which subscriber to start with (investigate maye the subscriberStateStore.range() call for better...)
+                      // the idea is to avoid that it is always the first subscriber in the statestore evaluate first and so always having the "limited" campaigns
+                      // NOTE however that I'm not sure at all if subscriberStateStore.all() always give a fixed ordering (only personal tests seems indicate it does)
+                      int totalSubs = (int)subscriberStateStore.approximateNumEntries();
+                      int skipXFirst = new Random().nextInt(totalSubs);
+                      log.info("evaluateTargets will skip the first "+skipXFirst+" subscribers from the around "+totalSubs+" this statestore instance contains for \"randomization\"");
+                      int reallySkiped=0;
+                      Long startTime = System.currentTimeMillis();
+                      for( int i=0 ; i<skipXFirst && subscriberStateStoreIterator.hasNext() ; i++) { reallySkiped++ ; subscriberStateStoreIterator.next(); }
+                      Long durationInMs = System.currentTimeMillis() - startTime;
+                      log.info("evaluateTargets skipped the first "+reallySkiped+" subscribers in "+durationInMs+" ms");
+                      // in case we skipped all....
+                      if(!subscriberStateStoreIterator.hasNext()){
+                        log.warn("evaluateTargets lost 1 entire loop for nothing... "+reallySkiped+" subscribers skipped in "+durationInMs+" ms");
+                        subscriberStateStoreIterator.close();
+                        subscriberStateStoreIterator=subscriberStateStore.all();
+                      }
+                    }
+
+                  }
+
+                Long startTime = System.currentTimeMillis();
+                int nbSubsEvaluated=0;
                 while (! stopRequested && ! evaluateTargetsJob.getAborted() && subscriberStateStoreIterator.hasNext())
                   {
+
                     //
                     //  subscriber state
                     //
 
                     SubscriberState subscriberState = subscriberStateStoreIterator.next().value;
+                    nbSubsEvaluated++;
+
+                    if(log.isTraceEnabled()) log.trace("evaluateTargets starting for subscriber "+subscriberState.getSubscriberID());
 
                     //
                     //  subscriber targets
@@ -1022,25 +1056,58 @@ public class TimerService
                     
                     if (match)
                       {
+                        if(log.isTraceEnabled()) log.trace("evaluateTargets match for subscriber "+subscriberState.getSubscriberID()+", generating an event");
                         TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), now);
                         kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getTimedEvaluationTopic(), stringKeySerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), new StringKey(scheduledEvaluation.getSubscriberID())), timedEvaluationSerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), scheduledEvaluation)));
                       }
+                    else
+                      {
+                        if(log.isTraceEnabled()) log.trace("evaluateTargets does not match for subscriber "+subscriberState.getSubscriberID());
+                      }
+
+                    if(! subscriberStateStoreIterator.hasNext() && ! evaluateTargetsJob.getAborted() && nbOfExtraLoopToDo>0)
+                      {
+                        // we need to to a fool loop again, we did not start from the start
+                        Long durationInMs = System.currentTimeMillis() - startTime;
+                        log.info("evaluateTargets first loop finish in "+durationInMs+" ms for "+nbSubsEvaluated+" subscribers evaluated, but still need to do "+nbOfExtraLoopToDo+" loop");
+                        subscriberStateStoreIterator.close();
+                        subscriberStateStoreIterator=subscriberStateStore.all();
+                        nbOfExtraLoopToDo--;
+                      }
+
                   }
+                Long durationInMs = System.currentTimeMillis() - startTime;
+                if(nbOfExtraLoopToDo>0) nbOfExtraLoopToDo--;
 
                 //
                 //  mark completed if finished successfully
                 //
 
-                if (! stopRequested && ! evaluateTargetsJob.getAborted() && ! subscriberStateStoreIterator.hasNext())
+                if (! stopRequested && ! evaluateTargetsJob.getAborted() && ! subscriberStateStoreIterator.hasNext() && nbOfExtraLoopToDo==0)
                   {
+                    log.info("evaluateTargets completed for "+evaluateTargetsJob+" in "+durationInMs+" ms for "+nbSubsEvaluated+" subscribers evaluated");
                     evaluateTargetsJob.markCompleted();
                   }
-                
+
+                // if we got new job, not closing state store iterator to continue where we were
+                if (evaluateTargetsJob.getAborted())
+                  {
+                    log.info("evaluateTargets aborted by new request for "+evaluateTargetsJob+" in "+durationInMs+" ms for "+nbSubsEvaluated+" subscribers evaluated");
+                    // if new job arrived, but not a full loop again to do, then we need one more
+                    if(nbOfExtraLoopToDo==0) nbOfExtraLoopToDo=1;
+                  }
+                // else we close it
+                else
+                  {
+                    log.info("evaluateTargets finished for "+evaluateTargetsJob+" in "+durationInMs+" ms for "+nbSubsEvaluated+" subscribers evaluated");
+                    subscriberStateStoreIterator.close();
+                    subscriberStateStoreIterator=null;
+                  }
+
                 //
                 //  finish job
                 //
-                
-                subscriberStateStoreIterator.close();
+
                 evaluateTargetsJob = null;
               }
             catch (InvalidStateStoreException e)

@@ -102,7 +102,6 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
   public String pluginName;
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private CommunicationChannelBlackoutService blackoutService;
-  private ContactPolicyProcessor contactPolicyProcessor;
 
   //
   //  logger
@@ -146,11 +145,6 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
         
     blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "pushnotificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
     blackoutService.start();
-
-    //
-    //  contact policy processor
-    //
-    contactPolicyProcessor = new ContactPolicyProcessor("pushnotificationmanager-communicationchannel",deliveryManagerKey);
 
     //
     //  manager
@@ -569,6 +563,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
     @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
     {
       Module module = Module.fromExternalRepresentation(getModuleID());
+      thirdPartyPresentationMap.put(DELIVERYSTATUS, getMessageStatus().toString()); // replace value set by the superclass 
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
       thirdPartyPresentationMap.put(EVENTID, null);
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
@@ -653,6 +648,8 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
       *****************************************/
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      
       String language = subscriberEvaluationRequest.getLanguage();
       SubscriberMessageTemplateService subscriberMessageTemplateService = evolutionEventContext.getSubscriberMessageTemplateService();
       PushTemplate baseTemplate = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(pushTemplateID, now);
@@ -875,18 +872,6 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
   }
 
   /*****************************************
-   *
-   *  filterRequest
-   *  verify contact policy rules
-   *
-   *****************************************/
-
-  @Override public boolean filterRequest(DeliveryRequest request)
-  {
-    return false; //contactPolicyProcessor.ensureContactPolicy(request,this,log);
-  }
-
-  /*****************************************
   *
   *  shutdown
   *
@@ -905,6 +890,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
 
   public static void main(String[] args)
   {
+    new LoggerInitialization().initLogger();
     log.info("PushNotificationManager: recieved " + args.length + " args");
     for(String arg : args)
       {

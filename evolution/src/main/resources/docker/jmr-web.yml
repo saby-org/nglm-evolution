@@ -6,6 +6,9 @@ jmr-web-<_KEY_>:
     jmr_fwk_api_server_path_for_upload_files: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/file/flowupload"
     TZ: <_DEPLOYMENT_TIMEZONE_>
     JMR_WEB_PORT: <_PORT_>
+    JMR_URL_ELASTICSEARCH_PATH: "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>"
+    JMR_URL_KIBANA_PATH: "http://<_MONITORING_HOST_IP_>:<_KIBANA_PORT_>"
+    TEST_ENVIRONMENT: '<_JMR_WEB_TEST_ENVIROMENT_>'
   deploy:
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>

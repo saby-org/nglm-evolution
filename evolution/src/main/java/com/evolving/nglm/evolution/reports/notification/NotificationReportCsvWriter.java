@@ -49,8 +49,11 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(featureId);
     headerFieldsOrder.add(moduleName);
     headerFieldsOrder.add(featureDisplay);
-    headerFieldsOrder.add(subscriberID);
     headerFieldsOrder.add(customerID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+      {
+        headerFieldsOrder.add(alternateID.getName());
+      }
     headerFieldsOrder.add(creationDate);
     headerFieldsOrder.add(deliveryDate);
     headerFieldsOrder.add(originatingDeliveryRequestID);
@@ -60,198 +63,6 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(returnCode);
     headerFieldsOrder.add(returnCodeDetails);
     headerFieldsOrder.add(source);
-  }
-
-  /**
-   * This methods writes a single {@link ReportElement} to the report (csv file).
-   * 
-   * @throws IOException
-   *           in case anything goes wrong while writing to the report.
-   */
-  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException
-  {
-    if (re.type == ReportElement.MARKER) // We will find markers in the topic
-      return;
-
-    log.trace("We got " + key + " " + re);
-    Map<String, Object> notifFieldsMap = re.fields.get(0);
-    Map<String, Object> subscriberFields = re.fields.get(1);
-    LinkedHashMap<String, Object> result = new LinkedHashMap<>();
-    for (Object notifFieldsObj : notifFieldsMap.values()) // we don't care about the keys
-      {
-        Map<String, Object> notifFields = (Map<String, Object>) notifFieldsObj;
-        if (notifFields != null && !notifFields.isEmpty() && subscriberFields != null && !subscriberFields.isEmpty())
-          {
-
-            if (notifFields.get(subscriberID) != null)
-              {
-                Object subscriberIDField = notifFields.get(subscriberID);
-                result.put(customerID, subscriberIDField);
-                notifFields.remove(subscriberID);
-              }
-            for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-              {
-                if (subscriberFields.get(alternateID.getESField()) != null)
-                  {
-                    Object alternateId = subscriberFields.get(alternateID.getESField());
-                    result.put(alternateID.getName(), alternateId);
-                  }
-              }
-
-            // Compute featureName and ModuleName from ID
-
-            if (notifFields.containsKey(creationDate))
-              {
-                if (notifFields.get(creationDate) != null)
-                  {
-                    Object creationDateObj = notifFields.get(creationDate);
-                    if (creationDateObj instanceof String)
-                      {
-                        String creationDateStr = (String) creationDateObj;
-                        // TEMP fix for BLK : reformat date with correct
-                        // template.
-                        // current format comes from ES and is :
-                        // 2020-04-20T09:51:38.953Z
-                        SimpleDateFormat parseSDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-                        try
-                          {
-                            Date date = parseSDF.parse(creationDateStr);
-                            result.put(creationDate, ReportsCommonCode.getDateString(date)); // replace
-                                                                                             // with
-                                                                                             // new
-                                                                                             // value
-                          } catch (ParseException e1)
-                          {
-                            // Could also be 2019-11-27 15:39:30.276+0100
-                            SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
-                            try
-                              {
-                                Date date = parseSDF2.parse(creationDateStr);
-                                result.put(creationDate, ReportsCommonCode.getDateString(date)); // replace
-                                                                                                 // with
-                                                                                                 // new
-                                                                                                 // value
-                              } catch (ParseException e2)
-                              {
-                                log.info("Unable to parse " + creationDateStr);
-                              }
-                          }
-
-                      } else
-                      {
-                        log.info(creationDate + " is of wrong type : " + creationDateObj.getClass().getName());
-                      }
-                  } else
-                  {
-                    result.put(creationDate, "");
-                  }
-              }
-
-            if (notifFields.containsKey(deliveryDate))
-              {
-                if (notifFields.get(deliveryDate) != null)
-                  {
-                    Object deliveryDateObj = notifFields.get(deliveryDate);
-                    if (deliveryDateObj instanceof String)
-                      {
-                        String deliveryDateStr = (String) deliveryDateObj;
-                        // TEMP fix for BLK : reformat date with correct
-                        // template.
-                        // current format comes from ES and is :
-                        // 2020-04-20T09:51:38.953Z
-                        SimpleDateFormat parseSDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-                        try
-                          {
-                            Date date = parseSDF.parse(deliveryDateStr);
-                            result.put(deliveryDate, ReportsCommonCode.getDateString(date)); // replace
-                                                                                             // with
-                                                                                             // new
-                                                                                             // value
-                          } catch (ParseException e1)
-                          {
-                            // Could also be 2019-11-27 15:39:30.276+0100
-                            SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
-                            try
-                              {
-                                Date date = parseSDF2.parse(deliveryDateStr);
-                                result.put(deliveryDate, ReportsCommonCode.getDateString(date)); // replace
-                                                                                                 // with
-                                                                                                 // new
-                                                                                                 // value
-                              } catch (ParseException e2)
-                              {
-                                log.info("Unable to parse " + deliveryDateStr);
-                              }
-                          }
-
-                      } else
-                      {
-                        log.info(deliveryDate + " is of wrong type : " + deliveryDateObj.getClass().getName());
-                      }
-                  } else
-                  {
-                    result.put(deliveryDate, "");
-                  }
-              }
-
-            if (notifFields.containsKey(originatingDeliveryRequestID))
-              {
-                result.put(originatingDeliveryRequestID, notifFields.get(originatingDeliveryRequestID));
-              }
-            if (notifFields.containsKey(deliveryRequestID))
-              {
-                result.put(deliveryRequestID, notifFields.get(deliveryRequestID));
-              }
-            if (notifFields.containsKey(deliveryStatus))
-              {
-                result.put(deliveryStatus, notifFields.get(deliveryStatus));
-              }
-            if (notifFields.containsKey(eventID))
-              {
-                result.put(eventID, notifFields.get(eventID));
-              }
-            if (notifFields.containsKey(moduleId) && notifFields.containsKey(featureId))
-              {
-                String moduleID = (String) notifFields.get(moduleId);
-                Module module = null;
-                if (moduleID != null)
-                  {
-                    module = Module.fromExternalRepresentation(moduleID);
-                  } else
-                  {
-                    module = Module.Unknown;
-                  }
-                String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(notifFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
-                result.put(featureDisplay, feature);
-                result.put(moduleName, module.toString());
-
-                notifFields.remove(featureId);
-                notifFields.remove(moduleId);
-              }
-            if (notifFields.containsKey(returnCode))
-              {
-                result.put(returnCode, notifFields.get(returnCode));
-              }
-            if (notifFields.get(returnCodeDetails) != null)
-              {
-                result.put(returnCodeDetails, notifFields.get(returnCodeDetails));
-              }
-            if (notifFields.containsKey(source))
-              {
-                result.put(source, notifFields.get(source));
-              }
-
-            if (addHeaders)
-              {
-                addHeaders(writer, headerFieldsOrder, 1);
-                addHeaders = false;
-              }
-            String line = ReportUtils.formatResult(headerFieldsOrder, result);
-            log.trace("Writing to csv file : " + line);
-            writer.write(line.getBytes());
-            writer.write("\n".getBytes());
-          }
-      }
   }
 
   @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
@@ -426,6 +237,8 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
                 String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(notifFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
                 notifRecs.put(featureDisplay, feature);
                 notifRecs.put(moduleName, module.toString());
+                notifRecs.put(featureId, notifFields.get(featureId));
+                notifRecs.put(moduleId, notifFields.get(moduleId));
 
                 notifFields.remove(featureId);
                 notifFields.remove(moduleId);

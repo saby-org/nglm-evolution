@@ -24,32 +24,24 @@ import org.slf4j.LoggerFactory;
 
 public abstract class ESObjectList<T>
 {  
-  /*****************************************
-  *
-  *  configuration
-  *
-  *****************************************/
-  
   protected static final Logger log = LoggerFactory.getLogger(ESObjectList.class);
   protected static final int BUCKETS_MAX_NBR = 10000;  // TODO: factorize in ES client later (with some generic ES calls)
   
   /*****************************************
   *
-  *  data
-  *  The purpose of the missing map is to raise only one warning message by missing IDs.
+  * Properties
+  * The purpose of the missing map is to raise only one warning message by missing IDs.
   *
   *****************************************/
-  
   protected final String mappingEsIndex;
   protected Map<String, T> mapping;             // (objectID,object)
   protected Set<String> warnings; // TODO: factorize with GUIManagerObjectList later 
 
   /*****************************************
   *
-  *  constructor
+  * Constructor
   *
   *****************************************/
-  
   public ESObjectList(String mappingEsIndex) 
   {
     this.mappingEsIndex = mappingEsIndex;
@@ -59,18 +51,16 @@ public abstract class ESObjectList<T>
 
   /*****************************************
   *
-  *  abstract
+  * Implementation
   *
   *****************************************/
-  
   protected abstract void updateMapping(Map<String, Object> row);
   
   /*****************************************
   *
-  *  reset mapping and warnings
+  * reset mapping and warnings
   *
   *****************************************/
-  
   private void reset() 
   {
     this.mapping = new HashMap<String, T>();
@@ -82,7 +72,6 @@ public abstract class ESObjectList<T>
   *  logWarningOnlyOnce
   *
   *****************************************/
-
   protected void logWarningOnlyOnce(String msg)
   {
     if(!this.warnings.contains(msg))
@@ -97,7 +86,6 @@ public abstract class ESObjectList<T>
   *  updateFromElasticsearch
   *
   *****************************************/
-  
   public void updateFromElasticsearch(RestHighLevelClient elasticsearch) throws ElasticsearchException, IOException, ClassCastException 
   {
     this.reset();

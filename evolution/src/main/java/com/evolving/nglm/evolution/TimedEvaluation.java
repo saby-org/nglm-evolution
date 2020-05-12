@@ -21,7 +21,7 @@ import org.apache.kafka.connect.data.Timestamp;
 import java.util.Date;
 import java.util.Objects;
 
-public class TimedEvaluation implements SubscriberStreamEvent, SubscriberStreamOutput, Comparable
+public class TimedEvaluation implements EvolutionEngineEvent, SubscriberStreamOutput, Comparable
 {
   /*****************************************
   *
@@ -254,5 +254,15 @@ public class TimedEvaluation implements SubscriberStreamEvent, SubscriberStreamO
   public String toString()
   {
     return "TimedEvaluation[" + subscriberID + "," + evaluationDate + (periodicEvaluation ? ", periodic" + (extendedSubscriberProfile != null ? ", extendedSubscriberProfile" : "") : "") + "]";
+  }
+  @Override
+  public String getEventName()
+  {
+    if (periodicEvaluation == true) {
+      return "dailyRoutine";
+    }
+    else {
+      return "TimeOutEvent";
+    }
   }
 }

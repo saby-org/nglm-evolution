@@ -35,6 +35,9 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "nodeTypeID" : "121", "eventName" : "externalAggregates" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyCriterionFields; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "nodeTypeID" : "121", "eventName" : "externalAggregates" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyCriterionFieldIDs; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "nodeTypeID" : "121", "eventName" : "externalAggregates", "id" : "subscriber.status"  }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyCriterionField; echo
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "nodeTypeID" : "138", "includeComparableFields" : false, "nodeTypeParameterID" : "node.parameter.amount", "selectedJourneyID" : "1102" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyCriterionFields; echo
+
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferCategories; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferProperties; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getScoringEngines; echo
@@ -254,7 +257,7 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "custo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerPoints; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "bonusName" : "BluePoints"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerPoints; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "bonusName" : "BluePoints", "quantity" : 9, "origin" : "from rest method"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/creditBonus; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "bonusID" : "BluePoints001", "quantity" : 9, "origin" : "from rest method"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/creditBonus; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "bonusName" : "BluePoints", "quantity" : 2, "origin" : "from rest method"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/debitBonus; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerLoyaltyPrograms; echo
@@ -390,20 +393,24 @@ curl -XPUT -H "Content-Type: application/json" http://<_MASTER_ELASTICSEARCH_SER
 --  thirdpartymanager
 --
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/ping/; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "id" : "001" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getActiveOffer/; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getActiveOffers/; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomer/; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerAvailableCampaigns/; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000" , "mainAccountBalance" : 9, "vendorName": "name" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/updateCustomer/; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerBDRs/; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerODRs/; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerMessages/; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000", "objectiveName":"objectiveName", "customerStatus":"ENTERED", "campaignStartDate":"2018-10-12", "campaignEndDate":"2019-10-12", "campaignState":"active" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerCampaigns/; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000", "objectiveName":"objectiveName", "customerStatus":"ENTERED", "journeyStartDate":"2018-10-12", "journeyEndDate":"2019-10-12", "journeyState":"active" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerJourneys/; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/ping; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerAvailableCampaigns; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000" , "mainAccountBalance" : 9, "vendorName": "name" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/updateCustomer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerBDRs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerODRs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerMessages; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000", "objectiveName":"objectiveName", "customerStatus":"ENTERED", "campaignStartDate":"2018-10-12", "campaignEndDate":"2019-10-12", "campaignState":"active" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerCampaigns; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000", "objectiveName":"objectiveName", "customerStatus":"ENTERED", "journeyStartDate":"2018-10-12", "journeyEndDate":"2019-10-12", "journeyState":"active" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerJourneys; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerCampaigns/; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerJourneys/; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000", "state" : "ACTIVE", "objectiveName":"objectiveName", "startDate" : "2018-10-12", "endDate" : "2020-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getOffersList/; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000", "state" : "ACTIVE", "objective":"objective1", "startDate" : "2018-10-12", "endDate" : "2020-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getOffersList; echo
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000", "offerID":"id1","salesChannel":"sc1","quantity":1,"origin":"origin" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/purchaseOffer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000", "offer":"MyOffer","salesChannel":"sc1","quantity":1,"origin":"origin" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/purchaseOffer; echo
+
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1,"loginName":"Administrator","password":"password","customerID":"19195551000","objective":"objectiveName","campaignState":"Started","customerStatus":"unnotified_converted", "campaignStartDate" : "2018-10-12", "campaignEndDate" : "2020-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerCampaigns; echo
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1,"loginName":"Administrator","password":"password","customerID":"19195551000","objective":"objectiveName","journeyState":"Started","customerStatus":"unnotified_converted", "journeyStartDate" : "2018-10-12", "journeyEndDate" : "2020-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerJourneys; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "loyaltyProgramID" : "1" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgram; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgramList; echo
@@ -419,11 +426,12 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginN
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "121", "tokenStatus":"Bounded" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getTokensCodesList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "121", "tokenCode" : "JM3MJ"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerNBOs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "121", "presentationStrategy":"PS1","tokenType":"external", "allowMultipleToken":false,"inboundChannel":"Customer Care"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerTokenAndNBO; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "121", "tokenCode" : "JM3MJ", "offerID":"200102"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/acceptOffer; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000", "loyaltyProgram" : "LP001" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/loyaltyProgramOptIn; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000", "loyaltyProgram" : "LP001" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/loyaltyProgramOptOut; echo
-
+ 
 --
 --  dnbo proxy
 --

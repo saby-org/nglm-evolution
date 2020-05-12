@@ -7,16 +7,25 @@
 package com.evolving.nglm.evolution.reports;
 
 import java.text.NumberFormat;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.ZkConnection;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.DeleteTopicsResult;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
@@ -28,6 +37,7 @@ import org.apache.kafka.streams.processor.TimestampExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.EvolutionSetup;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.evolution.Deployment;
 
@@ -44,6 +54,8 @@ import scala.collection.Set;
  *
  */
 public class ReportUtils {
+
+  public static final String APPLICATION_ID_PREFIX = "Reports_";
 
 	private static final Logger log = LoggerFactory.getLogger(ReportUtils.class);
 
@@ -96,11 +108,6 @@ public class ReportUtils {
 	 * Default number of messages fetched per poll() call from a topic in phase 3.
 	 */
 	public static final int DEFAULT_MAX_POLL_RECORDS_CONFIG = 1000;
-	
-	/**
-	 * Default number of partitions in created topics in all phases.
-	 */
-	public static final int DEFAULT_NB_PARTITIONS = 3;
 	
 	/**
 	 * Default CLIENT_ID string passed to the kafka Producer. 
@@ -268,66 +275,83 @@ public class ReportUtils {
 	}
 	
 	public static int getNbPartitions() {
-		int nbPartitions = DEFAULT_NB_PARTITIONS;
+		int nbPartitions = ReportManager.nbPartitions;
 		String nbPartitionsStr = System.getenv().get(ENV_NB_PARTITIONS);
-		if (nbPartitionsStr != null)
-			nbPartitions = Integer.parseInt(nbPartitionsStr);
-		log.debug("Using "+nbPartitions+" as clientId for Kafka producer");
+		if (nbPartitionsStr != null) nbPartitions = Integer.parseInt(nbPartitionsStr);
+		log.debug("Using "+nbPartitions);
 		return nbPartitions;
 	}
 	
 	static private void createTopic(String topicName, Properties prop, String kzHostList) {
-			log.info("Creating kafka topic "+topicName);
-	//		log.info("./bin/kafka-topics --create \n" + 
-	//				"          --zookeeper localhost:2181 \n" + 
-	//				"          --replication-factor 1 \n" + 
-	//				"          --partitions 1 \n" + 
-	//				"          --topic "+topic);
-	        ZkClient zkClient = null;
-	        ZkUtils zkUtils = null; 
-	        try {
-	            
-	            // If multiple zookeeper then -> String zookeeperHosts = "192.168.1.1:2181,192.168.1.2:2181";
-	            int sessionTimeOutInMs = 15 * 1000; // 15 secs
-	            int connectionTimeOutInMs = 10 * 1000; // 10 secs
+			Properties adminClientConfig = new Properties();
+	    adminClientConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, System.getProperty("broker.servers"));
+
+	    AdminClient adminClient = AdminClient.create(adminClientConfig);
+      int partitions = getNbPartitions();
+      short replicationFactor = ReportManager.replicationFactor;
+      
+      Pattern optionPattern = Pattern.compile("\\s*(\\S+)=(\\S+)");
+      String additionalParameters = Deployment.getReportManagerTopicsCreationProperties();
+      Map<String, String> configs = new HashMap<>();
+      Matcher optionMatcher = optionPattern.matcher(additionalParameters);
+      while (optionMatcher.find())
+        {
+          configs.put(optionMatcher.group(1), optionMatcher.group(2));
+        }
+
+      log.info("Creating topic "+topicName+" with "+partitions+" partitions and " + additionalParameters);
+      
+			try
+			{
+			  NewTopic topicToCreate = new NewTopic(topicName, partitions, replicationFactor).configs(configs);
+			  EvolutionSetup.createSingleTopic(adminClient, topicToCreate);
+      }
+    catch (InterruptedException | ExecutionException e)
+      {
+        log.error("Problem when creating topic " + topicName + " : " + e.getLocalizedMessage());
+      }
+	}
 	
-	            zkClient = new ZkClient(kzHostList, sessionTimeOutInMs, connectionTimeOutInMs, ZKStringSerializer$.MODULE$);
-	            zkUtils = new ZkUtils(zkClient, new ZkConnection(kzHostList), false);
-	
-	            int noOfPartitions = getNbPartitions();
-	            int noOfReplication = 1;
-	            log.info("Creating topic "+topicName+" with "+noOfPartitions+" partitions");
-	            AdminUtils.createTopic(zkUtils, topicName, noOfPartitions, noOfReplication, prop, RackAwareMode.Disabled$.MODULE$);
-	            scala.collection.Map<String, Properties> tc = AdminUtils.fetchAllTopicConfigs(zkUtils);
-	            Set<String> ks = tc.keySet();
-	            Iterator<String> iter = ks.iterator();
-	            for (; iter.hasNext();) {
-	            	String k = iter.next();
-	            	Option<Properties> p = tc.get(k);
-	            	Iterator<Properties> ir = p.iterator();
-	            	for (; ir.hasNext();) {
-	                	Properties p2 = ir.next();
-	            		log.trace("#### Config "+k+" "+p2);
-	            	}
-	            }
-	        } catch (TopicExistsException ex) {
-	            log.error(topicName+" already exists");
-	        } catch (Exception ex) {
-	            log.error("Got exception : "+ex.getLocalizedMessage());
-	        } finally {
-	            if (zkClient != null) {
-	                zkClient.close();
-	            }
-	        }
-	    }
 	public static void createTopic(String topicName, String kzHostList) {
 	    createTopic(topicName, new Properties(), kzHostList);
 	}
+	
 	public static void createTopicCompacted(String topicName, String kzHostList) {
 	    Properties topicConfiguration = new Properties();
 	    topicConfiguration.put("cleanup.policy", "compact");
 	    createTopic(topicName, topicConfiguration, kzHostList);
 	}
+	
+  public static void cleanupTopics(String topic1) 
+  {
+    deleteTopic(topic1);
+  }
+	
+	public static void cleanupTopics(String topic1, String topic2, String appIdPrefix1, String appIdPrefix2, String appIdSuffix) 
+	{
+	  deleteTopic(topic1);
+	  deleteTopic(topic2);
+	  String streamsStoreTopic = appIdPrefix1 + appIdPrefix2 + "-" + appIdSuffix + "-changelog";
+	  deleteTopic(streamsStoreTopic);
+	}
+	
+	public static void deleteTopic(String topicName) {
+    Properties adminClientConfig = new Properties();
+    adminClientConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, System.getProperty("broker.servers"));
+    AdminClient adminClient = AdminClient.create(adminClientConfig);
+    Map<String, String> configs = new HashMap<>();
+    log.info("Deleting topic "+topicName);
+    try
+    {
+      DeleteTopicsResult result = adminClient.deleteTopics(Collections.singleton(topicName));
+      for (KafkaFuture<Void> future : result.values().values())
+        future.get();
+    }
+  catch (InterruptedException | ExecutionException e)
+    {
+      log.error("Problem when deleting topic " + topicName + " : " + e.getLocalizedMessage());
+    }
+}
 
 	/**
 	 * "pretty-print" method for logging purposes.
@@ -371,8 +395,12 @@ public class ReportUtils {
   //
   public static void format(StringBuilder sb, String s)
   {
-    // Surround s with double quotes, and escape double quotes inside it
-    sb.append("\"").append(s.replaceAll("\"", Matcher.quoteReplacement("\\\""))).append("\"");
+    String fieldSurrounder = Deployment.getReportManagerFieldSurrounder();
+    // Surround s with fieldSurrounder, and escape fieldSurrounder inside it
+    if (fieldSurrounder.isEmpty())
+        sb.append(s);
+    else
+        sb.append(fieldSurrounder).append(s.replace(fieldSurrounder, "\\" + fieldSurrounder)).append(fieldSurrounder);
   }
 
   //
@@ -380,7 +408,8 @@ public class ReportUtils {
   //
   public static void format(StringBuilder sb)
   {
-    sb.append("\"\"");
+    String fieldSurrounder = Deployment.getReportManagerFieldSurrounder();
+    if (!fieldSurrounder.isEmpty()) sb.append(fieldSurrounder).append(fieldSurrounder);
   }
 
   //
@@ -491,5 +520,6 @@ public class ReportUtils {
     String res = JSONUtilities.encodeObject(json).toString();
     return res;
   }
+
   
 }

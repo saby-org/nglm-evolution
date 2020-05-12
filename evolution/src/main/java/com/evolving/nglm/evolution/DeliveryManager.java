@@ -85,6 +85,7 @@ public abstract class DeliveryManager
     FailedTimeout("failedtimeout"),
     Acknowledged("acknowledged"),
     Reschedule("reschedule"),
+    BlockedByContactPolicy("blockedbycontactpolicy"),
 
     /*****************************************
     *
@@ -147,11 +148,11 @@ public abstract class DeliveryManager
   //
 
   private static final Logger log = LoggerFactory.getLogger(DeliveryManager.class);
-  
+
   //
   //  configuration
   //
-  
+
   private String applicationID;
   private String deliveryManagerKey;
   private String bootstrapServers;
@@ -223,7 +224,12 @@ public abstract class DeliveryManager
   private Thread submitRequestWorkerThread = null;
   private Thread receiveCorrelatorUpdateWorkerThread = null;
   private Thread timeoutWorkerThread = null;
-  
+
+  //
+  //  internal processing
+  //
+  private ContactPolicyProcessor contactPolicyProcessor;
+
   /*****************************************
   *
   *  accessors
@@ -240,13 +246,6 @@ public abstract class DeliveryManager
   public int getRetries() { return retries; }
   public int getAcknowledgementTimeoutSeconds() { return acknowledgementTimeoutSeconds; }
   public int getCorrelatorUpdateTimeoutSeconds() { return correlatorUpdateTimeoutSeconds; }
-
-  /*****************************************
-   *
-   *  filterRequest
-   *
-   *****************************************/
-  protected abstract boolean filterRequest(DeliveryRequest request);
 
   //
   //  derived
@@ -308,10 +307,8 @@ public abstract class DeliveryManager
         try
           {
             result = submitRequestQueue.take();
-            if(this.filterRequest(result))
-              {
-                result = null;
-              }
+            //if DeliveryStatus is BlockedByContactPolicy make result null and the next request from queue will be taken
+            if(processRequestBlockedByContactPolicy(result)) result = null;
           }
         catch (InterruptedException e)
           {
@@ -344,7 +341,7 @@ public abstract class DeliveryManager
   *  completeRequest  (note:  runs on subclass thread "blocking" until complete)
   *
   *****************************************/
-  
+
   protected void completeRequest(DeliveryRequest deliveryRequest)
   {
     processCompleteRequest(deliveryRequest);
@@ -384,7 +381,7 @@ public abstract class DeliveryManager
     *****************************************/
 
     NGLMRuntime.initialize(true);
-    
+
     /*****************************************
     *
     *  validate -- TEMPORARY, DeliveryManagers dervied from DeliveryManager.java doe NOT support priority
@@ -407,7 +404,7 @@ public abstract class DeliveryManager
     *  configuration
     *
     *****************************************/
-        
+
     this.applicationID = applicationID;
     this.deliveryManagerKey = deliveryManagerKey;
     this.bootstrapServers = bootstrapServers;
@@ -436,9 +433,9 @@ public abstract class DeliveryManager
     *  shutdown hook
     *
     *****************************************/
-    
+
     NGLMRuntime.addShutdownHook(new ShutdownHook(this));
-    
+
     /*****************************************
     *
     *  request consumer
@@ -453,7 +450,7 @@ public abstract class DeliveryManager
     requestConsumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     requestConsumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     requestConsumer = new KafkaConsumer<>(requestConsumerProperties);
-    
+
     /*****************************************
     *
     *  routing consumer
@@ -481,7 +478,7 @@ public abstract class DeliveryManager
     kafkaProducerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
     kafkaProducerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
     kafkaProducer = new KafkaProducer<byte[], byte[]>(kafkaProducerProperties);
-    
+
     /*****************************************
     *
     *  submitRequestWorker
@@ -491,7 +488,7 @@ public abstract class DeliveryManager
     Runnable submitRequestWorker = new Runnable() { @Override public void run() { runSubmitRequestWorker(); } };
     submitRequestWorkerThread = new Thread(submitRequestWorker, applicationID + "-SubmitRequestWorker");
     submitRequestWorkerThread.start();
-    
+
     /*****************************************
     *
     *  receiveCorrelatorUpdate worker
@@ -511,6 +508,14 @@ public abstract class DeliveryManager
     Runnable timeoutWorker = new Runnable() { @Override public void run() { runTimeoutWorker(); } };
     timeoutWorkerThread = new Thread(timeoutWorker, applicationID + "-TimeoutWorker");
     timeoutWorkerThread.start();
+
+    /*****************************************
+     *
+     *  contact policy processor
+     *
+     *****************************************/
+
+    contactPolicyProcessor = new ContactPolicyProcessor("deliveryManager-communicationchannel", deliveryManagerKey);
   }
 
   /*****************************************
@@ -685,18 +690,18 @@ public abstract class DeliveryManager
     //
     //  initialize consumedOffsets
     //
-        
+
     boolean consumedAllAvailable = false;
     Map<TopicPartition,Long> consumedOffsets = new HashMap<TopicPartition,Long>();
     for (TopicPartition topicPartition : progressConsumer.assignment())
       {
         consumedOffsets.put(topicPartition, progressConsumer.position(topicPartition) - 1L);
       }
-    
+
     //
     //  read
     //
-        
+
     SortedMap<String,DeliveryRequest> restartRequests = new TreeMap<String,DeliveryRequest>();
     do
       {
@@ -1008,7 +1013,7 @@ public abstract class DeliveryManager
             //
             //  deliver
             //
-            
+
             submitDeliveryRequest(deliveryRequest, true, false);
           }
 
@@ -1044,7 +1049,7 @@ public abstract class DeliveryManager
             //
             //  deliver
             //
-            
+
             submitDeliveryRequest(deliveryRequest, false, true);
           }
 
@@ -1061,7 +1066,7 @@ public abstract class DeliveryManager
             //
 
             if (! managerStatus.isDeliveringRequests()) break;
-            
+
             //
             //  topicPartition
             //
@@ -1102,7 +1107,7 @@ public abstract class DeliveryManager
     *  in progress
     *
     ****************************************/
-    
+
     synchronized(this)
       {
         //
@@ -1113,11 +1118,11 @@ public abstract class DeliveryManager
           {
             return;
           }
-        
+
         //
         //  maxOutstandingRequests
         //
-        
+
         while (managerStatus.isDeliveringRequests() && waitingForAcknowledgement.size() >= maxOutstandingRequests)
           {
             try
@@ -1132,13 +1137,13 @@ public abstract class DeliveryManager
         //
         //  abort if no longer delivering
         //
-        
+
         if (! managerStatus.isDeliveringRequests())
           {
             return;
           }
       }
-    
+
     /****************************************
     *
     *  throttle
@@ -1148,7 +1153,7 @@ public abstract class DeliveryManager
     //
     //  wait
     //
-        
+
     NGLMRuntime.registerSystemTimeDependency(this);
     Date now = SystemTime.getCurrentTime();
     Date nextSubmitDate = RLMDateUtils.addMilliseconds(lastSubmitDate, millisecondsPerDelivery);
@@ -1171,7 +1176,7 @@ public abstract class DeliveryManager
     //
     //  abort if no longer delivering
     //
-        
+
     if (! managerStatus.isDeliveringRequests())
       {
         return;
@@ -1210,7 +1215,7 @@ public abstract class DeliveryManager
               }
           }
       }
-    
+
     /****************************************
     *
     *  commit request topic offsets
@@ -1231,13 +1236,13 @@ public abstract class DeliveryManager
               }
           }
       }
-    
+
     /*****************************************
     *
     *  move to next state
     *
     *****************************************/
-    
+
     synchronized (this)
       {
         //
@@ -1254,13 +1259,13 @@ public abstract class DeliveryManager
         deliveryRequest.setTimeout(timeout);
         scheduler.schedule(timeout, deliveryRequest);
       }
-    
+
     /****************************************
     *
     *  submit -- normal
     *
     ****************************************/
-    
+
     submitRequestQueue.add(deliveryRequest);
   }
 
@@ -1274,7 +1279,7 @@ public abstract class DeliveryManager
   {
     submitDeliveryRequest(deliveryRequest, restart, retry, null, null);
   }
-  
+
   /*****************************************
   *
   *  processUpdateRequest
@@ -1339,7 +1344,7 @@ public abstract class DeliveryManager
             *****************************************/
 
             DeliveryRequest deliveryRequestOnScheduler = waitingForAcknowledgement.get(deliveryRequest.getDeliveryRequestID());
-            if(deliveryRequestOnScheduler != null) 
+            if(deliveryRequestOnScheduler != null)
               {
                 deliveryRequestOnScheduler.setTimeout(null);
               }
@@ -1527,7 +1532,7 @@ public abstract class DeliveryManager
         if (retryRequired)
           {
             /*****************************************
-            *  
+            *
             *  setup for retry
             *
             *****************************************/
@@ -1899,6 +1904,60 @@ public abstract class DeliveryManager
             completeRequest(deliveryRequest);
           }
       }
+  }
+
+  /*****************************************
+   *
+   *  processContactPolicyForRequest is used to validate the request based on contact policy rule
+   *  delivery status and any information needed for blocking by contact policy is processed inside of method
+   * @param request represent the delivery request to be evalued against contact policy rules.
+   * @return boolean If request in blocked by an contact policy rule return true
+   *
+   *****************************************/
+
+  private boolean processRequestBlockedByContactPolicy(DeliveryRequest request)
+  {
+    boolean blockedByContactPolicy = false;
+    //if request is not type of any of contact policy affected request types do nothing
+    if(request instanceof SMSNotificationManager.SMSNotificationManagerRequest || request instanceof PushNotificationManager.PushNotificationManagerRequest || request instanceof MailNotificationManager.MailNotificationManagerRequest)
+      {
+        RESTAPIGenericReturnCodes returnCode = RESTAPIGenericReturnCodes.UNKNOWN;
+        try
+          {
+            blockedByContactPolicy = contactPolicyProcessor.ensureContactPolicy(request);
+            if (blockedByContactPolicy)
+              {
+                request.setDeliveryStatus(DeliveryStatus.Failed);
+                returnCode = RESTAPIGenericReturnCodes.BLOCKED_BY_CONTACT_POLICY;
+              }
+          }
+        catch (Exception ex)
+          {
+            blockedByContactPolicy = true;
+            request.setDeliveryStatus(DeliveryStatus.Failed);
+            returnCode = RESTAPIGenericReturnCodes.CONTACT_POLICY_EVALUATION_ERROR;
+            log.warn("Processing contact policy for " + request.getSubscriberID() + " failed", ex);
+          }
+        //because the return code is defined at each notification request type need to identify type cast and call setReturnCode
+        if (blockedByContactPolicy)
+          {
+            if (request instanceof SMSNotificationManager.SMSNotificationManagerRequest)
+              {
+                ((SMSNotificationManager.SMSNotificationManagerRequest) request).setReturnCode(returnCode.getGenericResponseCode());
+                ((SMSNotificationManager.SMSNotificationManagerRequest) request).setReturnCodeDetails(returnCode.toString());
+              } else if (request instanceof PushNotificationManager.PushNotificationManagerRequest)
+              {
+                ((PushNotificationManager.PushNotificationManagerRequest) request).setReturnCode(returnCode.getGenericResponseCode());
+                ((PushNotificationManager.PushNotificationManagerRequest) request).setReturnCodeDetails(returnCode.toString());
+              } else if (request instanceof MailNotificationManager.MailNotificationManagerRequest)
+              {
+                ((MailNotificationManager.MailNotificationManagerRequest) request).setReturnCode(returnCode.getGenericResponseCode());
+                ((MailNotificationManager.MailNotificationManagerRequest) request).setReturnCodeDetails(returnCode.toString());
+              }
+            completeRequest(request);
+          }
+      }
+    return blockedByContactPolicy;
   }
 
   /*****************************************

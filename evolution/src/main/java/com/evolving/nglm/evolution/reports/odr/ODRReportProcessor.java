@@ -288,7 +288,7 @@ public class ODRReportProcessor implements ReportProcessorFactory {
         String instNbStr   = args[5];
         
         int instanceNb = Integer.parseInt(instNbStr);
-        String appId = JourneyCustomerStatesReportObjects.APPLICATION_ID_PREFIX+appIdSuffix;
+        String appId = ReportUtils.APPLICATION_ID_PREFIX+appIdSuffix;
 
         ReportProcessorFactory reportFactory = new ODRReportProcessor();
         ReportProcessor reportProcessor = new ReportProcessor(

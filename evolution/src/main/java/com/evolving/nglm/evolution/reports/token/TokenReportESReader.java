@@ -46,7 +46,8 @@ public class TokenReportESReader {
               kafkaNodeList,
               kzHostList,
               esNode,
-              esIndexWithQuery
+              esIndexWithQuery,
+              true
           );
       
       reportEsReader.start();
