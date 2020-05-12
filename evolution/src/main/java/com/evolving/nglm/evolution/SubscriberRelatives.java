@@ -169,7 +169,7 @@ public class SubscriberRelatives
       {
         e.printStackTrace();
       }
-    json.put("parentDetails", JSONUtilities.encodeObject(parentJson));
+    json.put("parentDetails", parentJson.isEmpty() ? null : JSONUtilities.encodeObject(parentJson));
     
     //
     //  children
