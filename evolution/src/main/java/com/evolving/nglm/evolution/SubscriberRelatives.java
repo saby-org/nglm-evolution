@@ -148,19 +148,22 @@ public class SubscriberRelatives
     HashMap<String, Object> parentJson = new HashMap<String, Object>();
     try
       {
-        SubscriberProfile parentProfile = subscriberProfileService.getSubscriberProfile(getParentSubscriberID());
-        if (parentProfile != null)
+        if (getParentSubscriberID() != null && !getParentSubscriberID().isEmpty())
           {
-            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(parentProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
-            parentJson.put("subscriberID", getParentSubscriberID());
-            for (String id : Deployment.getAlternateIDs().keySet())
+            SubscriberProfile parentProfile = subscriberProfileService.getSubscriberProfile(getParentSubscriberID());
+            if (parentProfile != null)
               {
-                AlternateID alternateID = Deployment.getAlternateIDs().get(id);
-                CriterionField criterionField = Deployment.getProfileCriterionFields().get(alternateID.getProfileCriterionField());
-                if (criterionField != null)
+                parentJson.put("subscriberID", getParentSubscriberID());
+                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(parentProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
+                for (String id : Deployment.getAlternateIDs().keySet())
                   {
-                    String alternateIDValue = (String) criterionField.retrieve(evaluationRequest);
-                    parentJson.put(alternateID.getID(), alternateIDValue);
+                    AlternateID alternateID = Deployment.getAlternateIDs().get(id);
+                    CriterionField criterionField = Deployment.getProfileCriterionFields().get(alternateID.getProfileCriterionField());
+                    if (criterionField != null)
+                      {
+                        String alternateIDValue = (String) criterionField.retrieve(evaluationRequest);
+                        parentJson.put(alternateID.getID(), alternateIDValue);
+                      }
                   }
               }
           }
