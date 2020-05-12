@@ -278,6 +278,8 @@ public class NotificationManager extends DeliveryManager implements Runnable
         schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
         schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
         schemaBuilder.field("channelID", Schema.STRING_SCHEMA);
+        schemaBuilder.field("notificationParameters", ParameterMap.schema());
+        
         schema = schemaBuilder.build();
       };
 
@@ -322,6 +324,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
     private int returnCode;
     private String returnCodeDetails;
     private String channelID;
+    private ParameterMap notificationParameters;
 
     //
     // accessors
@@ -375,6 +378,11 @@ public class NotificationManager extends DeliveryManager implements Runnable
     public String getChannelID()
     {
       return channelID;
+    }
+    
+    public ParameterMap getNotificationParameters()
+    {
+      return notificationParameters;
     }
 
     //
@@ -465,7 +473,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
      *
      *****************************************/
 
-    public NotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags, String channelID)
+    public NotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags, String channelID, ParameterMap notificationParameters)
       {
         super(context, deliveryType, deliveryRequestSource);
         this.destination = destination;
@@ -476,6 +484,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
         this.returnCode = status.getReturnCode();
         this.returnCodeDetails = null;
         this.channelID = channelID;
+        this.notificationParameters = notificationParameters;
       }
 
 //    /*****************************************
@@ -526,7 +535,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
      *
      *****************************************/
 
-    private NotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails, String channelID)
+    private NotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails, String channelID, ParameterMap notificationParameters)
       {
         super(schemaAndValue);
         this.destination = destination;
@@ -539,6 +548,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
         this.returnCode = status.getReturnCode();
         this.returnCodeDetails = returnCodeDetails;
         this.channelID = channelID;
+        this.notificationParameters = notificationParameters;
       }
 
     /*****************************************
@@ -560,6 +570,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
         this.returnCode = NotificationManagerRequest.getReturnCode();
         this.returnCodeDetails = NotificationManagerRequest.getReturnCodeDetails();
         this.channelID = NotificationManagerRequest.getChannelID();
+        this.notificationParameters = NotificationManagerRequest.getNotificationParameters();
       }
 
     /*****************************************
@@ -593,6 +604,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       struct.put("returnCode", notificationRequest.getReturnCode());
       struct.put("returnCodeDetails", notificationRequest.getReturnCodeDetails());
       struct.put("channelID", notificationRequest.getChannelID());
+      struct.put("notificationParameters", ParameterMap.pack(notificationRequest.getNotificationParameters()));
       return struct;
     }
 
@@ -635,13 +647,14 @@ public class NotificationManager extends DeliveryManager implements Runnable
       Integer returnCode = valueStruct.getInt32("returnCode");
       String returnCodeDetails = valueStruct.getString("returnCodeDetails");
       String channelID = valueStruct.getString("channelID");
+      ParameterMap notificationParameters =  ParameterMap.unpack(new SchemaAndValue(schema.field("notificationParameters").schema(), valueStruct.get("notificationParameters")));
       MessageStatus status = MessageStatus.fromReturnCode(returnCode);
 
       //
       // return
       //
 
-      return new NotificationManagerRequest(schemaAndValue, destination, language, templateID, tags, confirmationExpected, restricted, status, returnCodeDetails, channelID);
+      return new NotificationManagerRequest(schemaAndValue, destination, language, templateID, tags, confirmationExpected, restricted, status, returnCodeDetails, channelID, notificationParameters);
     }
 
 //    /*****************************************
@@ -864,39 +877,55 @@ public class NotificationManager extends DeliveryManager implements Runnable
 
             }
 //          log.info(" ===================================");
+
+          //
+          // Parameters specific to the channel but NOT related to template
+          //
+          
+          ParameterMap notificationParameters = new ParameterMap();
+          for(CriterionField field : communicationChannel.getParameters().values()) {
+            if(!field.getFieldDataType().getExternalRepresentation().startsWith("template_")) {
+              Object value = CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,field.getID());
+              notificationParameters.put(field.getID(), value);
+            }
+          }
+          
+          /*****************************************
+          *
+          * request
+          *
+          *****************************************/
+
+         NotificationManagerRequest request = null;
+         if (destAddress != null)
+           {
+             request = new NotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters);
+             request.setModuleID(moduleID);
+             request.setFeatureID(deliveryRequestSource);
+             request.setNotificationHistory(evolutionEventContext.getSubscriberState().getNotificationHistory());
+           }
+         else
+           {
+             log.info("NotificationManager unknown destination address for subscriberID " + subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID());
+           }
+
+         /*****************************************
+          *
+          * return
+          *
+          *****************************************/
+
+         return Collections.<Action>singletonList(request);
         }
+      
       else
         {
           log.info("NotificationManager unknown dialog template ");
+          throw new RuntimeException("NotificationManager unknown dialog template for Journey " 
+              + subscriberEvaluationRequest.getJourneyState().getJourneyID() 
+              + " node " + subscriberEvaluationRequest.getJourneyNode().getNodeID() + "/" + subscriberEvaluationRequest.getJourneyNode().getNodeName());
         }
-
-      /*****************************************
-       *
-       * request
-       *
-       *****************************************/
-
-      NotificationManagerRequest request = null;
-      if (destAddress != null)
-        {
-          request = new NotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID);
-          request.setModuleID(moduleID);
-          request.setFeatureID(deliveryRequestSource);
-          request.setNotificationHistory(evolutionEventContext.getSubscriberState().getNotificationHistory());
-        }
-      else
-        {
-          log.info("NotificationManager unknown destination address for subscriberID " + subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID());
-        }
-
-      /*****************************************
-       *
-       * return
-       *
-       *****************************************/
-
-      return Collections.<Action>singletonList(request);
-    }
+      }
   }
 
   /*****************************************
