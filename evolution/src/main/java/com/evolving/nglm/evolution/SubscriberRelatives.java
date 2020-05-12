@@ -164,12 +164,12 @@ public class SubscriberRelatives
                   }
               }
           }
-        json.put("parentDetails", JSONUtilities.encodeObject(parentJson));
       } 
     catch (SubscriberProfileServiceException e)
       {
         e.printStackTrace();
       }
+    json.put("parentDetails", JSONUtilities.encodeObject(parentJson));
     
     //
     //  children
