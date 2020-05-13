@@ -890,6 +890,13 @@ public class NotificationManager extends DeliveryManager implements Runnable
             }
           }
           
+          // add also the mandatory parameters for all channels
+          Object value = CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.contacttype");
+          notificationParameters.put("node.parameter.contacttype", value);
+          value = CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.fromaddress");
+          notificationParameters.put("node.parameter.fromaddress", value);
+          
+          
           /*****************************************
           *
           * request
@@ -1040,18 +1047,6 @@ public class NotificationManager extends DeliveryManager implements Runnable
         dialogRequest.setDeliveryDate(SystemTime.getCurrentTime());
         completeRequest(dialogRequest);
       }
-  }
-
-  /*****************************************
-   *
-   * filterRequest verify contact policy rules
-   *
-   *****************************************/
-
-  @Override
-  public boolean filterRequest(DeliveryRequest request)
-  {
-    return false; // contactPolicyProcessor.ensureContactPolicy(request,this,log);
   }
 
   /*****************************************

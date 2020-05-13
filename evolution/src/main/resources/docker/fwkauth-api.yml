@@ -6,7 +6,7 @@ fwkauth-api-<_KEY_>:
     FWK_AUTH_API_PORT: <_PORT_>
     Logging__LogLevel__Default: '<_GUI_LOGGING_LOGLEVEL_DEFAULT_>'
     FwkAuthSettings__EnableClientIPAuthorization: '<_FWKAUTHSETTINGS_ENABLECLIENTIPAUTHORIZATION_>'
-    FwkAuthSettings__TokenTimeOutInMinutes: '<_FKWAUTHSETTINGS_TOKENTIMEOUTINMINUTES_>
+    FwkAuthSettings__TokenTimeOutInMinutes: '<_FKWAUTHSETTINGS_TOKENTIMEOUTINMINUTES_>'
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/fwkauth-api-<_KEY_>/mnt
