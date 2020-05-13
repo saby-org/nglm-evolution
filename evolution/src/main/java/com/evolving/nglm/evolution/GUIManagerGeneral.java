@@ -6,7 +6,10 @@
 
 package com.evolving.nglm.evolution;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -16,7 +19,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import org.apache.commons.fileupload.FileItemIterator;
+import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.fileupload.FileUpload;
+import org.apache.commons.fileupload.RequestContext;
+import org.apache.commons.fileupload.util.Streams;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
@@ -24,13 +33,20 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.ExistsQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.ParsedAggregation;
 import org.elasticsearch.search.aggregations.bucket.filter.Filters;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator;
+import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilter;
+import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator.KeyedFilter;
+import org.elasticsearch.search.aggregations.bucket.range.ParsedRange;
+import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.range.RangeAggregator.Range;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
@@ -50,8 +66,10 @@ import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
+import com.sun.net.httpserver.HttpExchange;
 
 public class GUIManagerGeneral extends GUIManager
 {
@@ -1248,6 +1266,2030 @@ public class GUIManagerGeneral extends GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  /*****************************************
+  *
+  *  processGetCountBySegmentationRanges
+  *
+  *****************************************/
+
+  JSONObject processGetCountBySegmentationRanges(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  parse input (segmentationDimension)
+    *
+    *****************************************/
+
+    jsonRoot.put("id", "fake-id"); // fill segmentationDimensionID with anything
+    SegmentationDimensionRanges segmentationDimensionRanges = null;
+    try
+      {
+        switch (SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true)))
+          {
+            case RANGES:
+              segmentationDimensionRanges = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
+              break;
+
+            case Unknown:
+              throw new GUIManagerException("unsupported dimension type", JSONUtilities.decodeString(jsonRoot, "targetingType", false));
+          }
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("responseCode", "segmentationDimensionNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  extract BaseSplits
+    *
+    *****************************************/
+
+    List<BaseSplit> baseSplits = segmentationDimensionRanges.getBaseSplit();
+    int nbBaseSplits = baseSplits.size();
+
+    /*****************************************
+    *
+    *  construct query
+    *
+    *****************************************/
+
+    final String MAIN_AGG_NAME = "MAIN";
+    final String RANGE_AGG_PREFIX = "RANGE-";
+
+    //
+    //  Main aggregation query: BaseSplit
+    //
+
+    List<BoolQueryBuilder> baseSplitQueries = new ArrayList<BoolQueryBuilder>();
+    try
+      {
+        //
+        // BaseSplit query creation
+        //
+
+        for(int i = 0; i < nbBaseSplits; i++)
+          {
+            baseSplitQueries.add(QueryBuilders.boolQuery());
+          }
+
+        for(int i = 0; i < nbBaseSplits; i++)
+          {
+            BoolQueryBuilder query = baseSplitQueries.get(i);
+            BaseSplit baseSplit = baseSplits.get(i);
+
+            //
+            // Filter this bucket with this BaseSplit criteria
+            //
+
+            if(baseSplit.getProfileCriteria().isEmpty())
+              {
+                //
+                // If there is not any profile criteria, just filter with a match_all query.
+                //
+
+                query = query.filter(QueryBuilders.matchAllQuery());
+              }
+            else
+              {
+                for (EvaluationCriterion evaluationCriterion : baseSplit.getProfileCriteria())
+                  {
+                    query = query.filter(evaluationCriterion.esQuery());
+                  }
+              }
+
+            //
+            //  Must_not for all following buckets (reminder : bucket must be disjointed, if not, some customer could be counted in several buckets)
+            //
+
+            for(int j = i+1; j < nbBaseSplits; j++)
+              {
+                BoolQueryBuilder nextQuery = baseSplitQueries.get(j);
+                if(baseSplit.getProfileCriteria().isEmpty())
+                  {
+                    //
+                    // If there is not any profile criteria, just filter with a match_all query.
+                    //
+                    nextQuery = nextQuery.mustNot(QueryBuilders.matchAllQuery());
+                  }
+                else
+                  {
+                    for (EvaluationCriterion evaluationCriterion : baseSplit.getProfileCriteria())
+                      {
+                        nextQuery = nextQuery.mustNot(evaluationCriterion.esQuery());
+                      }
+                  }
+              }
+          }
+      }
+    catch (CriterionException e)
+      {
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("responseCode", "argumentError");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  the main aggregation is a filter aggregation.Each filter query will constitute a bucket representing a BaseSplit.
+    *
+    *****************************************/
+
+    List<KeyedFilter> queries = new ArrayList<KeyedFilter>();
+    for(int i = 0; i < nbBaseSplits; i++)
+      {
+        BoolQueryBuilder query = baseSplitQueries.get(i);
+        String bucketName = baseSplits.get(i).getSplitName(); // Warning: input must ensure that all BaseSplit names are different. ( TODO )
+        queries.add(new FiltersAggregator.KeyedFilter(bucketName, query));
+      }
+
+    //
+    // @DEBUG: *otherBucket* can be activated for debug purpose: .otherBucket(true).otherBucketKey("OTH_BUCK")
+    //
+
+    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+    AggregationBuilder aggregation = AggregationBuilders.filters(MAIN_AGG_NAME, queries.toArray(new KeyedFilter[queries.size()]));
+
+    //
+    //  Sub-aggregation query: Segments
+    //    sub-aggregations corresponding to all ranges-aggregation are added to the query
+    //
+
+    for(int i = 0; i < nbBaseSplits; i++)
+      {
+        BaseSplit baseSplit = baseSplits.get(i);
+        if(baseSplit.getVariableName() == null)
+          {
+            //
+            // This means that it should be the default segment, ranges-aggregation does not make sense here.
+            //
+
+            QueryBuilder match_all = QueryBuilders.matchAllQuery();
+            AggregationBuilder other = AggregationBuilders.filter(RANGE_AGG_PREFIX+baseSplit.getSplitName(), match_all);
+            aggregation.subAggregation(other);
+          }
+        else
+          {
+            //
+            // Warning: input must ensure that all BaseSplit names are different. ( TODO )
+            //
+
+            RangeAggregationBuilder range = AggregationBuilders.range(RANGE_AGG_PREFIX+baseSplit.getSplitName());
+
+            //
+            // Retrieving the ElasticSearch field from the Criterion field.
+            //
+
+            CriterionField criterionField = CriterionContext.FullProfile.getCriterionFields().get(baseSplit.getVariableName());
+            if(criterionField.getESField() == null)
+              {
+                //
+                // If this Criterion field does not correspond to any field from Deployment.json, raise an error
+                //
+
+                log.warn("Unknown criterion field {}", baseSplit.getVariableName());
+
+                //
+                //  response
+                //
+
+                response.put("responseCode", "systemError");
+                response.put("responseMessage", "Unknown criterion field "+baseSplit.getVariableName()); // TODO security issue ?
+                response.put("responseParameter", null);
+                return JSONUtilities.encodeObject(response);
+              }
+
+            //
+            //
+            //
+
+            range = range.field(criterionField.getESField());
+            for(SegmentRanges segment : baseSplit.getSegments())
+              {
+                //
+                // Warning: input must ensure that all segment names are different. ( TODO )
+                //
+
+                range = range.addRange(new Range(segment.getName(), (segment.getRangeMin() != null)? new Double (segment.getRangeMin()) : null, (segment.getRangeMax() != null)? new Double (segment.getRangeMax()) : null));
+              }
+            aggregation.subAggregation(range);
+            //add no value aggrebation for null values for range field
+            BoolQueryBuilder builder = QueryBuilders.boolQuery();
+            ExistsQueryBuilder existsQueryBuilder = QueryBuilders.existsQuery(criterionField.getESField());
+            builder.mustNot().add(existsQueryBuilder);
+            AggregationBuilder noValueAgg = AggregationBuilders.filter(RANGE_AGG_PREFIX+baseSplit.getSplitName()+"NOVALUE",builder);
+            aggregation.subAggregation(noValueAgg);
+          }
+      }
+
+    searchSourceBuilder.aggregation(aggregation);
+
+    /*****************************************
+    *
+    *  construct response (JSON object)
+    *
+    *****************************************/
+//trebuie inteles aici cum se conpun array-urile pentru citirea raspunsului
+    JSONObject responseJSON = new JSONObject();
+    List<JSONObject> responseBaseSplits = new ArrayList<JSONObject>();
+    for(int i = 0; i < nbBaseSplits; i++)
+      {
+        BaseSplit baseSplit = baseSplits.get(i);
+        JSONObject responseBaseSplit = new JSONObject();
+        List<JSONObject> responseSegments = new ArrayList<JSONObject>();
+        responseBaseSplit.put("splitName", baseSplit.getSplitName());
+
+        //
+        //  ranges
+        //   the "count" field will be filled with the result of the ElasticSearch query
+        //
+
+        for(SegmentRanges segment : baseSplit.getSegments())
+          {
+            JSONObject responseSegment = new JSONObject();
+            responseSegment.put("name", segment.getName());
+            responseSegments.add(responseSegment);
+          }
+        responseBaseSplit.put("segments", responseSegments);
+        responseBaseSplits.add(responseBaseSplit);
+      }
+
+    /*****************************************
+    *
+    *  execute query
+    *
+    *****************************************/
+
+    SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().query(QueryBuilders.matchAllQuery()).aggregation(aggregation).size(0));
+    SearchResponse searchResponse = null;
+    try
+      {
+        searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+      }
+    catch (IOException e)
+      {
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("responseCode", "systemError");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", null);
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  retrieve result and fill the response JSON object
+    *
+    *****************************************/
+
+    Filters mainAggregationResult = searchResponse.getAggregations().get(MAIN_AGG_NAME);
+
+    //
+    //  fill response JSON object with counts for each segments from ElasticSearch result
+    //
+
+    for(JSONObject responseBaseSplit : responseBaseSplits)
+      {
+        Filters.Bucket bucket = mainAggregationResult.getBucketByKey((String) responseBaseSplit.get("splitName"));
+        ParsedAggregation segmentAggregationResult = bucket.getAggregations().get(RANGE_AGG_PREFIX+bucket.getKeyAsString());
+        ParsedAggregation noValueAggregationResult = bucket.getAggregations().get(RANGE_AGG_PREFIX+bucket.getKeyAsString()+"NOVALUE");
+        if (segmentAggregationResult instanceof ParsedFilter)
+          {
+            //
+            // This specific segment aggregation is corresponding to the "default" BaseSplit (without any variableName)
+            //
+
+            ParsedFilter other = (ParsedFilter) segmentAggregationResult;
+
+            //
+            //  fill the "count" field of the response JSON object (for each segments)
+            List<JSONObject> responseSegments = (List<JSONObject>)responseBaseSplit.get("segments");
+            for(JSONObject responseSegment : responseSegments)
+              {
+                responseSegment.put("count", other.getDocCount());
+              }
+            JSONObject noValueSegment = new JSONObject();
+            noValueSegment.put("name", "no value");
+            noValueSegment.put("count",((ParsedFilter)noValueAggregationResult).getDocCount());
+            responseSegments.add(noValueSegment);
+          }
+        else
+          {
+            //
+            // Segment aggregation is a range-aggregation.
+            //
+
+            ParsedRange ranges = (ParsedRange) segmentAggregationResult;
+            List<ParsedRange.ParsedBucket> segmentBuckets = (List<ParsedRange.ParsedBucket>) ranges.getBuckets();
+
+            //
+            // bucketMap is an hash map for caching purpose
+            //
+
+            Map<String, ParsedRange.ParsedBucket> bucketMap = new HashMap<>(segmentBuckets.size());
+            for (ParsedRange.ParsedBucket segmentBucket : segmentBuckets)
+              {
+                bucketMap.put(segmentBucket.getKey(), segmentBucket);
+              }
+
+            //
+            //  fill the "count" field of the response JSON object (for each segments)
+            //
+            List<JSONObject> responseSegments = (List<JSONObject>)responseBaseSplit.get("segments");
+            for(JSONObject responseSegment : responseSegments)
+              {
+                responseSegment.put("count", bucketMap.get(responseSegment.get("name")).getDocCount());
+              }
+            //read no value aggregation values and add for each segment
+            JSONObject noValueSegment = new JSONObject();
+            noValueSegment.put("name", "no available values");
+            noValueSegment.put("count",((ParsedFilter)noValueAggregationResult).getDocCount());
+            responseSegments.add(noValueSegment);
+          }
+      }
+    responseJSON.put("baseSplit", responseBaseSplits);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("result", responseJSON);
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetCatalogCharacteristic
+  *
+  *****************************************/
+
+  JSONObject processGetCatalogCharacteristic(String userID, JSONObject jsonRoot, boolean includeArchived)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String catalogCharacteristicID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID, includeArchived);
+    JSONObject catalogCharacteristicJSON = catalogCharacteristicService.generateResponseJSON(catalogCharacteristic, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (catalogCharacteristic != null) ? "ok" : "catalogCharacteristicNotFound");
+    if (catalogCharacteristic != null) response.put("catalogCharacteristic", catalogCharacteristicJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutCatalogCharacteristic
+  *
+  *****************************************/
+
+  JSONObject processPutCatalogCharacteristic(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  catalogCharacteristicID
+    *
+    *****************************************/
+
+    String catalogCharacteristicID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (catalogCharacteristicID == null)
+      {
+        catalogCharacteristicID = catalogCharacteristicService.generateCatalogCharacteristicID();
+        jsonRoot.put("id", catalogCharacteristicID);
+      }
+
+    /*****************************************
+    *
+    *  existing catalogCharacteristic
+    *
+    *****************************************/
+
+    GUIManagedObject existingCatalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingCatalogCharacteristic != null && existingCatalogCharacteristic.getReadOnly())
+      {
+        response.put("id", existingCatalogCharacteristic.getGUIManagedObjectID());
+        response.put("accepted", existingCatalogCharacteristic.getAccepted());
+        response.put("valid", existingCatalogCharacteristic.getAccepted());
+        response.put("processing", catalogCharacteristicService.isActiveCatalogCharacteristic(existingCatalogCharacteristic, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process catalogCharacteristic
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate catalogCharacteristic
+        *
+        ****************************************/
+
+        CatalogCharacteristic catalogCharacteristic = new CatalogCharacteristic(jsonRoot, epoch, existingCatalogCharacteristic);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        catalogCharacteristicService.putCatalogCharacteristic(catalogCharacteristic, (existingCatalogCharacteristic == null), userID);
+
+        /*****************************************
+        *
+        *  revalidate dependent objects
+        *
+        *****************************************/
+
+        revalidateOffers(now);
+        revalidateJourneyObjectives(now);
+        revalidateOfferObjectives(now);
+        revalidateProductTypes(now);
+        revalidateProducts(now);
+        // right now voucher has no characteristics, the way I'm implementing however I think should logically have
+        revalidateVoucherTypes(now);
+        revalidateVouchers(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", catalogCharacteristic.getCatalogCharacteristicID());
+        response.put("accepted", catalogCharacteristic.getAccepted());
+        response.put("valid", catalogCharacteristic.getAccepted());
+        response.put("processing", catalogCharacteristicService.isActiveCatalogCharacteristic(catalogCharacteristic, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        catalogCharacteristicService.putCatalogCharacteristic(incompleteObject, (existingCatalogCharacteristic == null), userID);
+
+        //
+        //  revalidate dependent objects
+        //
+
+        revalidateOffers(now);
+        revalidateJourneyObjectives(now);
+        revalidateOfferObjectives(now);
+        revalidateProductTypes(now);
+        revalidateProducts(now);
+        revalidateVoucherTypes(now);
+        revalidateVouchers(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "catalogCharacteristicNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveCatalogCharacteristic
+  *
+  *****************************************/
+
+  JSONObject processRemoveCatalogCharacteristic(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String catalogCharacteristicID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID);
+    if (catalogCharacteristic != null && (force || !catalogCharacteristic.getReadOnly())) catalogCharacteristicService.removeCatalogCharacteristic(catalogCharacteristicID, userID);
+
+    /*****************************************
+    *
+    *  revalidate dependent objects
+    *
+    *****************************************/
+
+    revalidateOffers(now);
+    revalidateJourneyObjectives(now);
+    revalidateOfferObjectives(now);
+    revalidateProductTypes(now);
+    revalidateProducts(now);
+    revalidateVoucherTypes(now);
+    revalidateVouchers(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (catalogCharacteristic != null && (force || !catalogCharacteristic.getReadOnly()))
+      responseCode = "ok";
+    else if (catalogCharacteristic != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "catalogCharacteristicNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetCatalogCharacteristicList
+  *
+  *****************************************/
+
+  JSONObject processGetCatalogCharacteristicList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert catalogCharacteristics
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> catalogCharacteristics = new ArrayList<JSONObject>();
+    for (GUIManagedObject catalogCharacteristic : catalogCharacteristicService.getStoredCatalogCharacteristics(includeArchived))
+      {
+        catalogCharacteristics.add(catalogCharacteristicService.generateResponseJSON(catalogCharacteristic, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("catalogCharacteristics", JSONUtilities.encodeArray(catalogCharacteristics));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetDeliverable
+  *
+  *****************************************/
+
+  JSONObject processGetDeliverable(String userID, JSONObject jsonRoot, boolean includeArchived)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String deliverableID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, includeArchived);
+    JSONObject deliverableJSON = deliverableService.generateResponseJSON(deliverable, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (deliverable != null) ? "ok" : "deliverableNotFound");
+    if (deliverable != null) response.put("deliverable", deliverableJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetDeliverableByName
+  *
+  *****************************************/
+
+  JSONObject processGetDeliverableByName(String userID, JSONObject jsonRoot, boolean includeArchived)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String deliverableName = JSONUtilities.decodeString(jsonRoot, "name", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject deliverable = deliverableService.getStoredDeliverableByName(deliverableName, includeArchived);
+    JSONObject deliverableJSON = deliverableService.generateResponseJSON(deliverable, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (deliverable != null) ? "ok" : "deliverableNotFound");
+    if (deliverable != null) response.put("deliverable", deliverableJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutDeliverable
+  *
+  *****************************************/
+
+  JSONObject processPutDeliverable(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  deliverableID
+    *
+    *****************************************/
+
+    String deliverableID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (deliverableID == null)
+      {
+        deliverableID = deliverableService.generateDeliverableID();
+        jsonRoot.put("id", deliverableID);
+      }
+
+    /*****************************************
+    *
+    *  existing deliverable
+    *
+    *****************************************/
+
+    GUIManagedObject existingDeliverable = deliverableService.getStoredDeliverable(deliverableID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingDeliverable != null && existingDeliverable.getReadOnly())
+      {
+        response.put("id", existingDeliverable.getGUIManagedObjectID());
+        response.put("accepted", existingDeliverable.getAccepted());
+        response.put("valid", existingDeliverable.getAccepted());
+        response.put("processing", deliverableService.isActiveDeliverable(existingDeliverable, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process deliverable
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate deliverable
+        *
+        ****************************************/
+
+        Deliverable deliverable = new Deliverable(jsonRoot, epoch, existingDeliverable);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        deliverableService.putDeliverable(deliverable, (existingDeliverable == null), userID);
+
+        /*****************************************
+        *
+        *  revalidateProducts
+        *
+        *****************************************/
+
+        revalidateProducts(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", deliverable.getDeliverableID());
+        response.put("accepted", deliverable.getAccepted());
+        response.put("valid", deliverable.getAccepted());
+        response.put("processing", deliverableService.isActiveDeliverable(deliverable, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        deliverableService.putDeliverable(incompleteObject, (existingDeliverable == null), userID);
+
+        //
+        //  revalidateProducts
+        //
+
+        revalidateProducts(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "deliverableNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveDeliverable
+  *
+  *****************************************/
+
+  JSONObject processRemoveDeliverable(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String deliverableID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
+    if (deliverable != null && (force || !deliverable.getReadOnly())) deliverableService.removeDeliverable(deliverableID, userID);
+
+    /*****************************************
+    *
+    *  revalidateProducts
+    *
+    *****************************************/
+
+    revalidateProducts(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (deliverable != null && (force || !deliverable.getReadOnly()))
+      responseCode = "ok";
+    else if (deliverable != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "deliverableNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetTokenTypeList
+  *
+  *****************************************/
+
+  JSONObject processGetTokenTypeList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert tokenTypes
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> tokenTypes = new ArrayList<JSONObject>();
+    for (GUIManagedObject tokenType : tokenTypeService.getStoredTokenTypes(includeArchived))
+      {
+        tokenTypes.add(tokenTypeService.generateResponseJSON(tokenType, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("tokenTypes", JSONUtilities.encodeArray(tokenTypes));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetTokenType
+  *
+  *****************************************/
+
+  JSONObject processGetTokenType(String userID, JSONObject jsonRoot, boolean includeArchived)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String tokenTypeID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate tokenType
+    *
+    *****************************************/
+
+    GUIManagedObject tokenType = tokenTypeService.getStoredTokenType(tokenTypeID, includeArchived);
+    JSONObject tokenTypeJSON = tokenTypeService.generateResponseJSON(tokenType, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (tokenType != null) ? "ok" : "tokenTypeNotFound");
+    if (tokenType != null) response.put("tokenType", tokenTypeJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutTokenType
+  *
+  *****************************************/
+
+  JSONObject processPutTokenType(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  tokenTypeID
+    *
+    *****************************************/
+
+    String tokenTypeID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (tokenTypeID == null)
+      {
+        tokenTypeID = tokenTypeService.generateTokenTypeID();
+        jsonRoot.put("id", tokenTypeID);
+      }
+
+    /*****************************************
+    *
+    *  existing tokenType
+    *
+    *****************************************/
+
+    GUIManagedObject existingTokenType = tokenTypeService.getStoredTokenType(tokenTypeID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingTokenType != null && existingTokenType.getReadOnly())
+      {
+        response.put("id", existingTokenType.getGUIManagedObjectID());
+        response.put("accepted", existingTokenType.getAccepted());
+        response.put("valid", existingTokenType.getAccepted());
+        response.put("processing", tokenTypeService.isActiveTokenType(existingTokenType, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process tokenType
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate tokenType
+        *
+        ****************************************/
+
+        TokenType tokenType = new TokenType(jsonRoot, epoch, existingTokenType);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        tokenTypeService.putTokenType(tokenType, (existingTokenType == null), userID);
+
+        /*****************************************
+        *
+        *  revalidateProducts
+        *
+        *****************************************/
+
+        revalidateProducts(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", tokenType.getTokenTypeID());
+        response.put("accepted", tokenType.getAccepted());
+        response.put("valid", tokenType.getAccepted());
+        response.put("processing", tokenTypeService.isActiveTokenType(tokenType, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        tokenTypeService.putTokenType(incompleteObject, (existingTokenType == null), userID);
+
+        //
+        //  revalidateProducts
+        //
+
+        revalidateProducts(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "tokenTypeNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveTokenType
+  *
+  *****************************************/
+
+  JSONObject processRemoveTokenType(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String tokenTypeID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject tokenType = tokenTypeService.getStoredTokenType(tokenTypeID);
+    if (tokenType != null && (force || !tokenType.getReadOnly())) tokenTypeService.removeTokenType(tokenTypeID, userID);
+
+    /*****************************************
+    *
+    *  revalidateProducts
+    *
+    *****************************************/
+
+    revalidateProducts(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (tokenType != null && (force || !tokenType.getReadOnly()))
+      responseCode = "ok";
+    else if (tokenType != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "tokenTypeNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetTokenCodesFormats
+  *
+  *****************************************/
+  JSONObject processGetTokenCodesFormats(String userID, JSONObject jsonRoot)
+  {
+
+    /*****************************************
+    *
+    *  retrieve tokenCodesFormats
+    *
+    *****************************************/
+
+    List<JSONObject> supportedTokenCodesFormats = new ArrayList<JSONObject>();
+    for (SupportedTokenCodesFormat supportedTokenCodesFormat : Deployment.getSupportedTokenCodesFormats().values())
+      {
+        JSONObject supportedTokenCodesFormatJSON = supportedTokenCodesFormat.getJSONRepresentation();
+        supportedTokenCodesFormats.add(supportedTokenCodesFormatJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("supportedTokenCodesFormats", JSONUtilities.encodeArray(supportedTokenCodesFormats));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetPaymentMean
+  *
+  *****************************************/
+
+  JSONObject processGetPaymentMean(String userID, JSONObject jsonRoot, boolean includeArchived)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate payment mean
+    *
+    *****************************************/
+
+    GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID, includeArchived);
+    JSONObject paymentMeanJSON = paymentMeanService.generateResponseJSON(paymentMean, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (paymentMean != null) ? "ok" : "paymentMeanNotFound");
+    if (paymentMean != null) response.put("paymentMean", paymentMeanJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutPaymentMean
+  *
+  *****************************************/
+
+  JSONObject processPutPaymentMean(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  paymentMeanID
+    *
+    *****************************************/
+
+    String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (paymentMeanID == null)
+      {
+        paymentMeanID = paymentMeanService.generatePaymentMeanID();
+        jsonRoot.put("id", paymentMeanID);
+      }
+
+    /*****************************************
+    *
+    *  existing paymentMean
+    *
+    *****************************************/
+
+    GUIManagedObject existingPaymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingPaymentMean != null && existingPaymentMean.getReadOnly())
+      {
+        response.put("id", existingPaymentMean.getGUIManagedObjectID());
+        response.put("accepted", existingPaymentMean.getAccepted());
+        response.put("processing", paymentMeanService.isActivePaymentMean(existingPaymentMean, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process paymentMean
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate paymentMean
+        *
+        ****************************************/
+
+        PaymentMean paymentMean = new PaymentMean(jsonRoot, epoch, existingPaymentMean);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        paymentMeanService.putPaymentMean(paymentMean, (existingPaymentMean == null), userID);
+
+        /*****************************************
+        *
+        *  revalidateProducts
+        *
+        *****************************************/
+
+        revalidateProducts(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", paymentMean.getPaymentMeanID());
+        response.put("accepted", paymentMean.getAccepted());
+        response.put("processing", paymentMeanService.isActivePaymentMean(paymentMean, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        paymentMeanService.putIncompletePaymentMean(incompleteObject, (existingPaymentMean == null), userID);
+
+        //
+        //  revalidateProducts
+        //
+
+        revalidateProducts(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "paymentMeanNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemovePaymentMean
+  *
+  *****************************************/
+
+  JSONObject processRemovePaymentMean(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID);
+    if (paymentMean != null && (force || !paymentMean.getReadOnly())) paymentMeanService.removePaymentMean(paymentMeanID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (paymentMean != null && (force || !paymentMean.getReadOnly()))
+      responseCode = "ok";
+    else if (paymentMean != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "paymentMeanNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutFile
+  *
+  *****************************************/
+
+  void processPutFile(JSONObject jsonResponse, HttpExchange exchange) throws IOException
+  {
+    /****************************************
+    *
+    *  response map and object
+    *
+    ****************************************/
+
+    JSONObject jsonRoot = null;
+    String fileID = null;
+    String userID = null;
+    String responseText = null;
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  check incoming request
+    *
+    ****************************************/
+
+    //
+    //  contentType
+    //
+
+    String contentType = exchange.getRequestHeaders().getFirst("Content-Type"); 
+    if(contentType == null)
+      { 
+        responseText = "Content-Type is null";    
+      }
+    else if (!contentType.startsWith(MULTIPART_FORM_DATA))
+      { 
+        responseText = "Message is not multipart/form-data";
+      } 
+
+    //
+    //  contentLength
+    //
+
+    String contentLengthString = exchange.getRequestHeaders().getFirst("Content-Length"); 
+    if(contentLengthString == null)
+      { 
+        responseText = "Content of message is null";  
+      } 
+
+    /****************************************
+    *
+    *  apache FileUpload API
+    *
+    ****************************************/
+
+    final InputStream requestBodyStream = exchange.getRequestBody(); 
+    final String contentEncoding = exchange.getRequestHeaders().getFirst("Content-Encoding");
+    FileUpload upload = new FileUpload(); 
+    FileItemIterator fileItemIterator; 
+    try
+      {
+        fileItemIterator = upload.getItemIterator(new RequestContext()
+        { 
+          public String getCharacterEncoding() { return contentEncoding; } 
+          public String getContentType() { return contentType; } 
+          public int getContentLength() { return 0; } 
+          public InputStream getInputStream() throws IOException { return requestBodyStream; }
+        }); 
+
+        if (!fileItemIterator.hasNext())
+          { 
+            responseText = "Body is empty";
+          }
+
+        //
+        // here we will extract the meta data of the request and the file
+        //
+
+        if (responseText == null)
+          {
+            boolean uploadFile = false;
+            while (fileItemIterator.hasNext())
+              {
+                FileItemStream fis = fileItemIterator.next();
+                if (fis.getFieldName().equals(FILE_UPLOAD_META_DATA))
+                  {
+                    InputStream streams = fis.openStream();
+                    String jsonAsString = Streams.asString(streams, "UTF-8");
+                    jsonRoot = (JSONObject) (new JSONParser()).parse(jsonAsString);
+                    userID = JSONUtilities.decodeString(jsonRoot, "userID", true);
+                    if(!jsonRoot.containsKey("id"))
+                      {
+                        fileID = uploadedFileService.generateFileID();
+                      }
+                    else
+                      {
+                        fileID = JSONUtilities.decodeString(jsonRoot, "id", true);
+                      }
+                    jsonRoot.put("id", fileID);
+                    uploadFile = true;
+                  }
+                if (fis.getFieldName().equals(FILE_REQUEST) && uploadFile)
+                  {
+                    // converted the meta data and now attempting to save the file locally
+                    //
+
+                    long epoch = epochServer.getKey();
+
+                    /*****************************************
+                    *
+                    *  existing UploadedFile
+                    *
+                    *****************************************/
+
+                    GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(fileID);
+                    try
+                      {
+                        /****************************************
+                        *
+                        *  instantiate new UploadedFile
+                        *
+                        ****************************************/
+
+                        UploadedFile uploadedFile = new UploadedFile(jsonRoot, epoch, existingFileUpload);
+
+                        /*****************************************
+                        *
+                        *  store UploadedFile
+                        *
+                        *****************************************/
+
+                        uploadedFileService.putUploadedFile(uploadedFile, fis.openStream(), uploadedFile.getDestinationFilename(), (uploadedFile == null), userID);
+
+                        /*****************************************
+                        *
+                        *  revalidate dependent objects
+                        *
+                        *****************************************/
+
+                        revalidateTargets(now);
+
+                        /*****************************************
+                        *
+                        *  response
+                        *
+                        *****************************************/
+
+                        jsonResponse.put("id", fileID);
+                        jsonResponse.put("accepted", true);
+                        jsonResponse.put("valid", true);
+                        jsonResponse.put("processing", true);
+                        if(uploadedFile.getMetaData() != null && uploadedFile.getMetaData().get("segmentCounts") != null) 
+                          {
+                            jsonResponse.put("segmentCounts", uploadedFile.getMetaData().get("segmentCounts"));
+                          }
+                        jsonResponse.put("responseCode", "ok");
+                      }
+                    catch (JSONUtilitiesException|GUIManagerException e)
+                      {
+                        //
+                        //  incompleteObject
+                        //
+
+                        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+                        //
+                        //  store
+                        //
+
+                        uploadedFileService.putIncompleteUploadedFile(incompleteObject, (existingFileUpload == null), userID);
+
+                        //
+                        //  revalidate dependent objects
+                        //
+
+                        revalidateTargets(now);
+
+                        //
+                        //  log
+                        //
+
+                        StringWriter stackTraceWriter = new StringWriter();
+                        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+                        //
+                        //  response
+                        //
+
+                        jsonResponse.put("id", incompleteObject.getGUIManagedObjectID());
+                        jsonResponse.put("responseCode", "fileNotValid");
+                        jsonResponse.put("responseMessage", e.getMessage());
+                        jsonResponse.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+                      }
+                  }
+              }
+          }
+        else
+          {
+            jsonResponse.put("responseCode", "systemError");
+            jsonResponse.put("responseMessage", responseText);
+          }
+
+        //
+        //  log
+        //
+
+        log.debug("API (raw response): {}", jsonResponse.toString());
+
+        //
+        //  send
+        //
+
+        exchange.sendResponseHeaders(200, 0);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(jsonResponse.toString());
+        writer.close();
+        exchange.close();
+      }
+    catch (Exception e)
+      { 
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error("Failed to write file REST api: {}", stackTraceWriter.toString());   
+        jsonResponse.put("responseCode", "systemError");
+        jsonResponse.put("responseMessage", e.getMessage());
+        exchange.sendResponseHeaders(200, 0);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(jsonResponse.toString());
+        writer.close();
+        exchange.close();
+      } 
+  }
+
+  /*****************************************
+  *
+  *  processGetFilesList
+  *
+  *****************************************/
+
+  JSONObject processGetFilesList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert UploadedFiles
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> uploadedFiles = new ArrayList<JSONObject>();
+    String applicationID = JSONUtilities.decodeString(jsonRoot, "applicationID", true);
+    for (GUIManagedObject uploaded : uploadedFileService.getStoredGUIManagedObjects(includeArchived))
+      {
+        String fileApplicationID = JSONUtilities.decodeString(uploaded.getJSONRepresentation(), "applicationID", false);
+        if (Objects.equals(applicationID, fileApplicationID))
+          {
+            JSONObject jsonObject = uploadedFileService.generateResponseJSON(uploaded, fullDetails, now);
+            if(fullDetails && applicationID.equals(UploadedFileService.basemanagementApplicationID))
+              {
+                jsonObject.put("segmentCounts", ((UploadedFile)uploaded).getMetaData().get("segmentCounts"));
+              }
+            uploadedFiles.add(jsonObject);
+          }
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    //
+    //  uploadedFiles
+    //
+
+    HashMap<String,Object> responseResult = new HashMap<String,Object>();
+    responseResult.put("applicationID", applicationID);
+    responseResult.put("uploadedFiles", JSONUtilities.encodeArray(uploadedFiles));
+
+    //
+    //  response
+    //
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("uploadedFiles", JSONUtilities.encodeObject(responseResult));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processRemoveUploadedFile
+  *
+  *****************************************/
+
+  JSONObject processRemoveUploadedFile(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String uploadedFileID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(uploadedFileID);
+    if (existingFileUpload != null && (force || !existingFileUpload.getReadOnly()))
+      {
+        uploadedFileService.deleteUploadedFile(uploadedFileID, userID, (UploadedFile)existingFileUpload);
+      }
+
+    /*****************************************
+    *
+    *  revalidate dependent objects
+    *
+    *****************************************/
+
+    revalidateTargets(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (existingFileUpload != null && (force || !existingFileUpload.getReadOnly()))
+      responseCode = "ok";
+    else if (existingFileUpload != null) 
+      responseCode = "failedReadOnly";
+    else 
+      responseCode = "uploadedFileNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getEffectiveSystemTime
+  *
+  *****************************************/
+
+  JSONObject processGetEffectiveSystemTime(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("effectiveSystemTime", SystemTime.getCurrentTime());
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*********************************************
+  *
+  *  processGetTenantList
+  *
+  *********************************************/
+
+  JSONObject processGetTenantList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert Tenants
+    *
+    *****************************************/
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> tenantList = new ArrayList<JSONObject>();
+
+    // TODO move this to be a regular GUIManagedObject
+    {
+      JSONObject result = new JSONObject();
+      result.put("id", "0");
+      result.put("name", "global");
+      result.put("description", "Global");
+      result.put("display", "Global");
+      result.put("isDefault", false);
+      result.put("language", "1");
+      result.put("active", true);
+      result.put("readOnly", true);
+      tenantList.add(result);
+    }
+    {
+      JSONObject result = new JSONObject();
+      result.put("id", "1");
+      result.put("name", "default");
+      result.put("description", "Default");
+      result.put("display", "Default");
+      result.put("isDefault", true);
+      result.put("language", "1");
+      result.put("active", true);
+      result.put("readOnly", true);
+      tenantList.add(result);
+    }
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("tenants", JSONUtilities.encodeArray(tenantList));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  
   
 }
 
