@@ -8,23 +8,35 @@ package com.evolving.nglm.evolution;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.invoke.SwitchPoint;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -51,9 +63,7 @@ import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
-import org.apache.zookeeper.ZooKeeper;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
@@ -65,14 +75,12 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.ExistsQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.ParsedAggregation;
 import org.elasticsearch.search.aggregations.bucket.filter.Filters;
-import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator.KeyedFilter;
 import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilter;
@@ -80,12 +88,9 @@ import org.elasticsearch.search.aggregations.bucket.range.ParsedRange;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregator.Range;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.FieldSortBuilder;
-import org.elasticsearch.search.sort.SortOrder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,12 +109,10 @@ import com.evolving.nglm.core.ReferenceDataValue;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.StringValue;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
-import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
@@ -131,20 +134,15 @@ import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.JourneyService.JourneyListener;
-import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
-import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
-import com.evolving.nglm.evolution.ThirdPartyManager.API;
-import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyManagerException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
-import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -170,7 +168,6 @@ public class GUIManager
     getSupportedCurrencies("getSupportedCurrencies"),
     getSupportedTimeUnits("getSupportedTimeUnits"),
     getSupportedRelationships("getSupportedRelationships"),
-    getServiceTypes("getServiceTypes"),
     getCallingChannelProperties("getCallingChannelProperties"),
     getCatalogCharacteristicUnits("getCatalogCharacteristicUnits"),
     getSupportedDataTypes("getSupportedDataTypes"),
@@ -522,70 +519,76 @@ public class GUIManager
   //  instance
   //
 
-  private KafkaProducer<byte[], byte[]> kafkaProducer;
+  protected KafkaProducer<byte[], byte[]> kafkaProducer;
   private HttpServer restServer;
-  private RestHighLevelClient elasticsearch;
-  private DynamicCriterionFieldService dynamicCriterionFieldService;
-  private JourneyService journeyService;
-  private JourneyTemplateService journeyTemplateService;
-  private SegmentationDimensionService segmentationDimensionService;
-  private PointService pointService;
-  private OfferService offerService;
-  private ReportService reportService;
-  private PaymentMeanService paymentMeanService;
-  private ScoringStrategyService scoringStrategyService;
-  private PresentationStrategyService presentationStrategyService;
-  private DNBOMatrixService dnboMatrixService;
-  private CallingChannelService callingChannelService;
-  private SalesChannelService salesChannelService;
-  private SourceAddressService sourceAddressService;
-  private SupplierService supplierService;
-  private ProductService productService;
-  private CatalogCharacteristicService catalogCharacteristicService;
-  private ContactPolicyService contactPolicyService;
-  private JourneyObjectiveService journeyObjectiveService;
-  private OfferObjectiveService offerObjectiveService;
-  private ProductTypeService productTypeService;
-  private UCGRuleService ucgRuleService;
-  private DeliverableService deliverableService;
-  private TokenTypeService tokenTypeService;
-  private VoucherTypeService voucherTypeService;
-  private VoucherService voucherService;
-  private SubscriberMessageTemplateService subscriberMessageTemplateService;
-  private SubscriberProfileService subscriberProfileService;
-  private SubscriberIDService subscriberIDService;
-  private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
-  private ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader;
-  private ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader;
-  private ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader;
-  private DeliverableSourceService deliverableSourceService;
-  private String getCustomerAlternateID;
-  private UploadedFileService uploadedFileService;
-  private TargetService targetService;
-  private CommunicationChannelService communicationChannelService;
-  private CommunicationChannelBlackoutService communicationChannelBlackoutService;
-  private LoyaltyProgramService loyaltyProgramService;
-  private ExclusionInclusionTargetService exclusionInclusionTargetService;
-  private ResellerService resellerService;
-  private SegmentContactPolicyService segmentContactPolicyService;
-  private SharedIDService subscriberGroupSharedIDService;
-  private DynamicEventDeclarationsService dynamicEventDeclarationsService;
-  private CriterionFieldAvailableValuesService criterionFieldAvailableValuesService;
-  private static Method externalAPIMethodJourneyActivated;
-  private static Method externalAPIMethodJourneyDeactivated;
-  private ZookeeperUniqueKeyServer zuks;
-  private KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
-  private int httpTimeout = Deployment.getPurchaseTimeoutMs();
+  protected RestHighLevelClient elasticsearch;
   
-  private static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
-  private static final String FILE_REQUEST = "file"; 
-  private static final String FILE_UPLOAD_META_DATA= "fileUploadMetaData"; 
+  protected DynamicCriterionFieldService dynamicCriterionFieldService;
+  protected JourneyService journeyService;
+  protected JourneyTemplateService journeyTemplateService;
+  protected SegmentationDimensionService segmentationDimensionService;
+  protected PointService pointService;
+  protected OfferService offerService;
+  protected ReportService reportService;
+  protected PaymentMeanService paymentMeanService;
+  protected ScoringStrategyService scoringStrategyService;
+  protected PresentationStrategyService presentationStrategyService;
+  protected DNBOMatrixService dnboMatrixService;
+  protected CallingChannelService callingChannelService;
+  protected SalesChannelService salesChannelService;
+  protected SourceAddressService sourceAddressService;
+  protected SupplierService supplierService;
+  protected ProductService productService;
+  protected CatalogCharacteristicService catalogCharacteristicService;
+  protected ContactPolicyService contactPolicyService;
+  protected JourneyObjectiveService journeyObjectiveService;
+  protected OfferObjectiveService offerObjectiveService;
+  protected ProductTypeService productTypeService;
+  protected UCGRuleService ucgRuleService;
+  protected DeliverableService deliverableService;
+  protected TokenTypeService tokenTypeService;
+  protected VoucherTypeService voucherTypeService;
+  protected VoucherService voucherService;
+  protected SubscriberMessageTemplateService subscriberMessageTemplateService;
+  protected SubscriberProfileService subscriberProfileService;
+  protected SubscriberIDService subscriberIDService;
+  protected ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+  protected ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader;
+  protected ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader;
+  protected ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader;
+  protected DeliverableSourceService deliverableSourceService;
+  protected String getCustomerAlternateID;
+  protected UploadedFileService uploadedFileService;
+  protected TargetService targetService;
+  protected CommunicationChannelService communicationChannelService;
+  protected CommunicationChannelBlackoutService communicationChannelBlackoutService;
+  protected LoyaltyProgramService loyaltyProgramService;
+  protected ExclusionInclusionTargetService exclusionInclusionTargetService;
+  protected ResellerService resellerService;
+  protected SegmentContactPolicyService segmentContactPolicyService;
+  protected SharedIDService subscriberGroupSharedIDService;
+  protected DynamicEventDeclarationsService dynamicEventDeclarationsService;
+  protected CriterionFieldAvailableValuesService criterionFieldAvailableValuesService;
+  protected static Method externalAPIMethodJourneyActivated;
+  protected static Method externalAPIMethodJourneyDeactivated;
+  
+  protected ZookeeperUniqueKeyServer zuks;
+  protected KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
+  protected int httpTimeout = Deployment.getPurchaseTimeoutMs();
+  
+  protected static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
+  protected static final String FILE_REQUEST = "file"; 
+  protected static final String FILE_UPLOAD_META_DATA= "fileUploadMetaData"; 
 
   //
   //  context
   //
 
-  private GUIManagerContext guiManagerContext;
+  protected GUIManagerContext guiManagerContext;
+  
+  private GUIManagerBaseManagement guiManagerBaseManagement;
+  private GUIManagerLoyaltyReporting guiManagerLoyaltyReporting;
+  private GUIManagerGeneral guiManagerGeneral;
 
   /*****************************************
   *
@@ -593,7 +596,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private static UniqueKeyServer epochServer = new UniqueKeyServer();
+  protected static UniqueKeyServer epochServer = new UniqueKeyServer();
 
   /*****************************************
   *
@@ -872,6 +875,10 @@ public class GUIManager
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
     purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(),StringKey.serde(),PurchaseFulfillmentRequest.serde());
     purchaseResponseListenerService.start();
+
+    guiManagerBaseManagement = new GUIManagerBaseManagement(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, propensityDataReader);
+    guiManagerLoyaltyReporting = new GUIManagerLoyaltyReporting(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, propensityDataReader);
+    guiManagerGeneral = new GUIManagerGeneral(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, propensityDataReader);
 
     /*****************************************
     *
@@ -1198,7 +1205,7 @@ public class GUIManager
             }
           if (create)
           {
-            processPutReport("0", reportJSON); // this will patch the report, if it already exists
+            guiManagerLoyaltyReporting.processPutReport("0", reportJSON); // this will patch the report, if it already exists
           }
         }
     }
@@ -1429,7 +1436,7 @@ public class GUIManager
             for (int i=0; i<initialSegmentationDimensionsJSONArray.size(); i++)
               {
                 JSONObject segmentationDimensionJSON = (JSONObject) initialSegmentationDimensionsJSONArray.get(i);
-                processPutSegmentationDimension("0", segmentationDimensionJSON);
+                guiManagerBaseManagement.processPutSegmentationDimension("0", segmentationDimensionJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -1583,7 +1590,7 @@ public class GUIManager
 
                 newSimpleProfileDimensionJSON.put("segments", JSONUtilities.encodeArray(newSimpleProfileDimensionSegments));
                 JSONObject newSimpleProfileDimension = JSONUtilities.encodeObject(newSimpleProfileDimensionJSON);
-                processPutSegmentationDimension("0", newSimpleProfileDimension);
+                guiManagerBaseManagement.processPutSegmentationDimension("0", newSimpleProfileDimension);
               }
           }
       }
@@ -1650,7 +1657,6 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSupportedCurrencies", new APISimpleHandler(API.getSupportedCurrencies));
         restServer.createContext("/nglm-guimanager/getSupportedTimeUnits", new APISimpleHandler(API.getSupportedTimeUnits));
         restServer.createContext("/nglm-guimanager/getSupportedRelationships", new APISimpleHandler(API.getSupportedRelationships));
-        restServer.createContext("/nglm-guimanager/getServiceTypes", new APISimpleHandler(API.getServiceTypes));
         restServer.createContext("/nglm-guimanager/getCallingChannelProperties", new APISimpleHandler(API.getCallingChannelProperties));
         restServer.createContext("/nglm-guimanager/getCatalogCharacteristicUnits", new APISimpleHandler(API.getCatalogCharacteristicUnits));
         restServer.createContext("/nglm-guimanager/getSupportedDataTypes", new APISimpleHandler(API.getSupportedDataTypes));
@@ -2293,19 +2299,19 @@ public class GUIManager
             switch (api)
               {
                 case getStaticConfiguration:
-                  jsonResponse = processGetStaticConfiguration(userID, jsonRoot, includeArchived);
+                  jsonResponse = guiManagerGeneral.processGetStaticConfiguration(userID, jsonRoot, includeArchived);
                   break;
 
                 case getSupportedLanguages:
-                  jsonResponse = processGetSupportedLanguages(userID, jsonRoot);
+                  jsonResponse = guiManagerGeneral.processGetSupportedLanguages(userID, jsonRoot);
                   break;
 
                 case getSupportedCurrencies:
-                  jsonResponse = processGetSupportedCurrencies(userID, jsonRoot);
+                  jsonResponse = guiManagerGeneral.processGetSupportedCurrencies(userID, jsonRoot);
                   break;
 
                 case getSupportedTimeUnits:
-                  jsonResponse = processGetSupportedTimeUnits(userID, jsonRoot);
+                  jsonResponse = guiManagerGeneral.processGetSupportedTimeUnits(userID, jsonRoot);
                   break;
 
                 case getSupportedRelationships:
@@ -2317,19 +2323,19 @@ public class GUIManager
                   break;
 
                 case getCatalogCharacteristicUnits:
-                  jsonResponse = processGetCatalogCharacteristicUnits(userID, jsonRoot);
+                  jsonResponse = guiManagerGeneral.processGetCatalogCharacteristicUnits(userID, jsonRoot);
                   break;
 
                 case getSupportedDataTypes:
-                  jsonResponse = processGetSupportedDataTypes(userID, jsonRoot);
+                  jsonResponse = guiManagerGeneral.processGetSupportedDataTypes(userID, jsonRoot);
                   break;
 
                 case getSupportedEvents:
-                  jsonResponse = processGetSupportedEvents(userID, jsonRoot);
+                  jsonResponse = guiManagerGeneral.processGetSupportedEvents(userID, jsonRoot);
                   break;
 
                 case getLoyaltyProgramPointsEvents:
-                  jsonResponse = processGetLoyaltyProgramPointsEvents(userID, jsonRoot);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramPointsEvents(userID, jsonRoot);
                   break;
 
                 case getSupportedTargetingTypes:
@@ -2545,23 +2551,23 @@ public class GUIManager
                   break;
                   
                 case getSegmentationDimensionList:
-                  jsonResponse = processGetSegmentationDimensionList(userID, jsonRoot, true, includeArchived);
+                  jsonResponse = guiManagerBaseManagement.processGetSegmentationDimensionList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getSegmentationDimensionSummaryList:
-                  jsonResponse = processGetSegmentationDimensionList(userID, jsonRoot, false, includeArchived);
+                  jsonResponse = guiManagerBaseManagement.processGetSegmentationDimensionList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getSegmentationDimension:
-                  jsonResponse = processGetSegmentationDimension(userID, jsonRoot, includeArchived);
+                  jsonResponse = guiManagerBaseManagement.processGetSegmentationDimension(userID, jsonRoot, includeArchived);
                   break;
 
                 case putSegmentationDimension:
-                  jsonResponse = processPutSegmentationDimension(userID, jsonRoot);
+                  jsonResponse = guiManagerBaseManagement.processPutSegmentationDimension(userID, jsonRoot);
                   break;
 
                 case removeSegmentationDimension:
-                  jsonResponse = processRemoveSegmentationDimension(userID, jsonRoot);
+                  jsonResponse = guiManagerBaseManagement.processRemoveSegmentationDimension(userID, jsonRoot);
                   break;
 
                 case getCountBySegmentationRanges:
@@ -2569,35 +2575,35 @@ public class GUIManager
                   break;
 
                 case getCountBySegmentationEligibility:
-                  jsonResponse = processGetCountBySegmentationEligibility(userID, jsonRoot);
+                  jsonResponse = guiManagerGeneral.processGetCountBySegmentationEligibility(userID, jsonRoot);
                   break;
 
                 case evaluateProfileCriteria:
-                  jsonResponse = processEvaluateProfileCriteria(userID, jsonRoot);
+                  jsonResponse = guiManagerGeneral.processEvaluateProfileCriteria(userID, jsonRoot);
                   break;
 
                 case getUCGDimensionSummaryList:
-                  jsonResponse = processGetUCGDimensionList(userID, jsonRoot, false, includeArchived);
+                  jsonResponse = guiManagerBaseManagement.processGetUCGDimensionList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getPointList:
-                  jsonResponse = processGetPointList(userID, jsonRoot, true, includeArchived);
+                  jsonResponse = guiManagerGeneral.processGetPointList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getPointSummaryList:
-                  jsonResponse = processGetPointList(userID, jsonRoot, false, includeArchived);
+                  jsonResponse = guiManagerGeneral.processGetPointList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getPoint:
-                  jsonResponse = processGetPoint(userID, jsonRoot, includeArchived);
+                  jsonResponse = guiManagerGeneral.processGetPoint(userID, jsonRoot, includeArchived);
                   break;
 
                 case putPoint:
-                  jsonResponse = processPutPoint(userID, jsonRoot);
+                  jsonResponse = guiManagerGeneral.processPutPoint(userID, jsonRoot);
                   break;
 
                 case removePoint:
-                  jsonResponse = processRemovePoint(userID, jsonRoot);
+                  jsonResponse = guiManagerGeneral.processRemovePoint(userID, jsonRoot);
                   break;
 
                 case getOfferList:
@@ -2621,19 +2627,19 @@ public class GUIManager
                   break;
 
                 case getReportGlobalConfiguration:
-                  jsonResponse = processGetReportGlobalConfiguration(userID, jsonRoot);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetReportGlobalConfiguration(userID, jsonRoot);
                   break;
 
                 case getReportList:
-                  jsonResponse = processGetReportList(userID, jsonRoot, includeArchived);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetReportList(userID, jsonRoot, includeArchived);
                   break;
 
                 case putReport:
-                  jsonResponse = processPutReport(userID, jsonRoot);
+                  jsonResponse = guiManagerLoyaltyReporting.processPutReport(userID, jsonRoot);
                   break;
 
                 case launchReport:
-                  jsonResponse = processLaunchReport(userID, jsonRoot);
+                  jsonResponse = guiManagerLoyaltyReporting.processLaunchReport(userID, jsonRoot);
                   break;
 
                 case getPresentationStrategyList:
@@ -2885,23 +2891,23 @@ public class GUIManager
                   break;
 
                 case getUCGRuleList:
-                  jsonResponse = processGetUCGRuleList(userID, jsonRoot, true, includeArchived);
+                  jsonResponse = guiManagerBaseManagement.processGetUCGRuleList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getUCGRuleSummaryList:
-                  jsonResponse = processGetUCGRuleList(userID, jsonRoot, false, includeArchived);
+                  jsonResponse = guiManagerBaseManagement.processGetUCGRuleList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getUCGRule:
-                  jsonResponse = processGetUCGRule(userID, jsonRoot, includeArchived);
+                  jsonResponse = guiManagerBaseManagement.processGetUCGRule(userID, jsonRoot, includeArchived);
                   break;
 
                 case putUCGRule:
-                  jsonResponse = processPutUCGRule(userID, jsonRoot);
+                  jsonResponse = guiManagerBaseManagement.processPutUCGRule(userID, jsonRoot);
                   break;
 
                 case removeUCGRule:
-                  jsonResponse = processRemoveUCGRule(userID, jsonRoot);
+                  jsonResponse = guiManagerBaseManagement.processRemoveUCGRule(userID, jsonRoot);
                   break;
 
                 case getDeliverableList:
@@ -3089,7 +3095,7 @@ public class GUIManager
                   break;
 
                 case getDashboardCounts:
-                  jsonResponse = processGetDashboardCounts(userID, jsonRoot, includeArchived);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetDashboardCounts(userID, jsonRoot, includeArchived);
                   break;
 
                 case getCustomer:
@@ -3133,7 +3139,7 @@ public class GUIManager
                   break;
 
                 case refreshUCG:
-                  jsonResponse = processRefreshUCG(userID, jsonRoot);
+                  jsonResponse = guiManagerBaseManagement.processRefreshUCG(userID, jsonRoot);
                   break;
 
                 case getUploadedFileList:
@@ -3157,23 +3163,23 @@ public class GUIManager
                   break;
 
                 case getTargetList:
-                  jsonResponse = processGetTargetList(userID, jsonRoot, true, includeArchived);
+                  jsonResponse = guiManagerBaseManagement.processGetTargetList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getTargetSummaryList:
-                  jsonResponse = processGetTargetList(userID, jsonRoot, false, includeArchived);
+                  jsonResponse = guiManagerBaseManagement.processGetTargetList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getTarget:
-                  jsonResponse = processGetTarget(userID, jsonRoot, includeArchived);
+                  jsonResponse = guiManagerBaseManagement.processGetTarget(userID, jsonRoot, includeArchived);
                   break;
 
                 case putTarget:
-                  jsonResponse = processPutTarget(userID, jsonRoot);
+                  jsonResponse = guiManagerBaseManagement.processPutTarget(userID, jsonRoot);
                   break;
 
                 case removeTarget:
-                  jsonResponse = processRemoveTarget(userID, jsonRoot);
+                  jsonResponse = guiManagerBaseManagement.processRemoveTarget(userID, jsonRoot);
                   break;
 
                 case updateCustomer:
@@ -3229,27 +3235,27 @@ public class GUIManager
                   break;
 
                 case getLoyaltyProgramTypeList:
-                  jsonResponse = processGetLoyaltyProgramTypeList(userID, jsonRoot);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramTypeList(userID, jsonRoot);
                   break;
 
                 case getLoyaltyProgramList:
-                  jsonResponse = processGetLoyaltyProgramList(userID, jsonRoot, true, includeArchived);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getLoyaltyProgramSummaryList:
-                  jsonResponse = processGetLoyaltyProgramList(userID, jsonRoot, false, includeArchived);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getLoyaltyProgram:
-                  jsonResponse = processGetLoyaltyProgram(userID, jsonRoot, includeArchived);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgram(userID, jsonRoot, includeArchived);
                   break;
 
                 case putLoyaltyProgram:
-                  jsonResponse = processPutLoyaltyProgram(userID, jsonRoot);
+                  jsonResponse = guiManagerLoyaltyReporting.processPutLoyaltyProgram(userID, jsonRoot);
                   break;
 
                 case removeLoyaltyProgram:
-                  jsonResponse = processRemoveLoyaltyProgram(userID, jsonRoot);
+                  jsonResponse = guiManagerLoyaltyReporting.processRemoveLoyaltyProgram(userID, jsonRoot);
                   break;
 
                 case getResellerList:
@@ -3285,23 +3291,23 @@ public class GUIManager
                   break;
                   
                 case getExclusionInclusionTargetList:  
-                  jsonResponse = processGetExclusionInclusionTargetList(userID, jsonRoot, true, includeArchived);
+                  jsonResponse = guiManagerBaseManagement.processGetExclusionInclusionTargetList(userID, jsonRoot, true, includeArchived);
                   break;
                   
                 case getExclusionInclusionTargetSummaryList:
-                  jsonResponse = processGetExclusionInclusionTargetList(userID, jsonRoot, false, includeArchived);
+                  jsonResponse = guiManagerBaseManagement.processGetExclusionInclusionTargetList(userID, jsonRoot, false, includeArchived);
                   break;
                   
                 case getExclusionInclusionTarget:
-                  jsonResponse = processGetExclusionInclusionTarget(userID, jsonRoot, includeArchived);
+                  jsonResponse = guiManagerBaseManagement.processGetExclusionInclusionTarget(userID, jsonRoot, includeArchived);
                   break;
 
                 case putExclusionInclusionTarget:
-                  jsonResponse = processPutExclusionInclusionTarget(userID, jsonRoot);
+                  jsonResponse = guiManagerBaseManagement.processPutExclusionInclusionTarget(userID, jsonRoot);
                   break;
                   
                 case removeExclusionInclusionTarget:
-                  jsonResponse = processRemoveExclusionInclusionTarget(userID, jsonRoot);
+                  jsonResponse = guiManagerBaseManagement.processRemoveExclusionInclusionTarget(userID, jsonRoot);
                   break;
                   
                 case getSegmentContactPolicyList:  
@@ -3325,15 +3331,15 @@ public class GUIManager
                   break;
                   
                 case getBillingModes:
-                  jsonResponse = processGetBillingModes(userID, jsonRoot);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetBillingModes(userID, jsonRoot);
                   break;
 
                 case getPartnerTypes:
-                  jsonResponse = processGetPartnerTypes(userID, jsonRoot);
+                  jsonResponse = guiManagerLoyaltyReporting.processGetPartnerTypes(userID, jsonRoot);
                   break;
 
                 case configAdaptorSupportedLanguages:
-                  jsonResponse = processConfigAdaptorSupportedLanguages(jsonRoot);
+                  jsonResponse = guiManagerGeneral.processConfigAdaptorSupportedLanguages(jsonRoot);
                   break;
 
                 case configAdaptorSubscriberMessageTemplate:
@@ -3377,7 +3383,7 @@ public class GUIManager
                   break;
                   
                 case configAdaptorSegmentationDimension:
-                  jsonResponse = processConfigAdaptorSegmentationDimension(jsonRoot);
+                  jsonResponse = guiManagerBaseManagement.processConfigAdaptorSegmentationDimension(jsonRoot);
                   break;
 
                 case configAdaptorCampaign:
@@ -3687,7 +3693,7 @@ public class GUIManager
                   break;
 
                 case downloadReport:
-                  processDownloadReport(userID, jsonRoot, jsonResponse, exchange);
+                  guiManagerLoyaltyReporting.processDownloadReport(userID, jsonRoot, jsonResponse, exchange);
                   break;
               }
           }
@@ -3756,419 +3762,6 @@ public class GUIManager
 
   /*****************************************
   *
-  *  getStaticConfiguration
-  *
-  *****************************************/
-
-  private JSONObject processGetStaticConfiguration(String userID, JSONObject jsonRoot, boolean includeArchived)
-  {
-    /*****************************************
-    *
-    *  retrieve supportedLanguages
-    *
-    *****************************************/
-
-    List<JSONObject> supportedLanguages = new ArrayList<JSONObject>();
-    for (SupportedLanguage supportedLanguage : Deployment.getSupportedLanguages().values())
-      {
-        JSONObject supportedLanguageJSON = supportedLanguage.getJSONRepresentation();
-        supportedLanguages.add(supportedLanguageJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve supportedCurrencies
-    *
-    *****************************************/
-
-    List<JSONObject> supportedCurrencies = new ArrayList<JSONObject>();
-    for (SupportedCurrency supportedCurrency : Deployment.getSupportedCurrencies().values())
-      {
-        JSONObject supportedCurrencyJSON = supportedCurrency.getJSONRepresentation();
-        supportedCurrencies.add(supportedCurrencyJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve supportedTimeUnits
-    *
-    *****************************************/
-
-    List<JSONObject> supportedTimeUnits = new ArrayList<JSONObject>();
-    for (SupportedTimeUnit supportedTimeUnit : Deployment.getSupportedTimeUnits().values())
-      {
-        JSONObject supportedTimeUnitJSON = supportedTimeUnit.getJSONRepresentation();
-        supportedTimeUnits.add(supportedTimeUnitJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve supportedRelationships
-    *
-    *****************************************/
-
-    List<JSONObject> supportedRelationships = new ArrayList<JSONObject>();
-    for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
-      {
-        JSONObject supportedRelationshipJSON = supportedRelationship.getJSONRepresentation();
-        supportedRelationships.add(supportedRelationshipJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve communicationChannels
-    *
-    *****************************************/
-
-    List<JSONObject> communicationChannels = new ArrayList<JSONObject>();
-    for (GUIManagedObject communicationChannel : communicationChannelService.getStoredCommunicationChannels(includeArchived))
-      {
-        JSONObject communicationChannelJSON = communicationChannel.getJSONRepresentation();
-        communicationChannels.add(communicationChannelJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve callingChannelProperties
-    *
-    *****************************************/
-
-    List<JSONObject> callingChannelProperties = new ArrayList<JSONObject>();
-    for (CallingChannelProperty callingChannelProperty : Deployment.getCallingChannelProperties().values())
-      {
-        JSONObject callingChannelPropertyJSON = callingChannelProperty.getJSONRepresentation();
-        callingChannelProperties.add(callingChannelPropertyJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve catalogCharacteristicUnits
-    *
-    *****************************************/
-
-    List<JSONObject> catalogCharacteristicUnits = new ArrayList<JSONObject>();
-    for (CatalogCharacteristicUnit catalogCharacteristicUnit : Deployment.getCatalogCharacteristicUnits().values())
-      {
-        JSONObject catalogCharacteristicUnitJSON = catalogCharacteristicUnit.getJSONRepresentation();
-        catalogCharacteristicUnits.add(catalogCharacteristicUnitJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve supported data types
-    *
-    *****************************************/
-
-    List<JSONObject> supportedDataTypes = new ArrayList<JSONObject>();
-    for (SupportedDataType supportedDataType : Deployment.getSupportedDataTypes().values())
-      {
-        JSONObject supportedDataTypeJSON = supportedDataType.getJSONRepresentation();
-        supportedDataTypes.add(supportedDataTypeJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve profile criterion fields
-    *
-    *****************************************/
-
-    List<JSONObject> profileCriterionFields = processCriterionFields(CriterionContext.Profile.getCriterionFields(), false);
-
-    /*****************************************
-    *
-    *  retrieve presentation criterion fields
-    *
-    *****************************************/
-
-    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.getCriterionFields(), false);
-
-
-    /*****************************************
-    *
-    *  retrieve offerProperties
-    *
-    *****************************************/
-
-    List<JSONObject> offerProperties = new ArrayList<JSONObject>();
-    for (OfferProperty offerProperty : Deployment.getOfferProperties().values())
-      {
-        JSONObject offerPropertyJSON = offerProperty.getJSONRepresentation();
-        offerProperties.add(offerPropertyJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve scoringEngines
-    *
-    *****************************************/
-
-    List<JSONObject> scoringEngines = new ArrayList<JSONObject>();
-    for (ScoringEngine scoringEngine : Deployment.getScoringEngines().values())
-      {
-        JSONObject scoringEngineJSON = scoringEngine.getJSONRepresentation();
-        scoringEngines.add(scoringEngineJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve offerOptimizationAlgorithms
-    *
-    *****************************************/
-
-    List<JSONObject> offerOptimizationAlgorithms = new ArrayList<JSONObject>();
-    for (OfferOptimizationAlgorithm offerOptimizationAlgorithm : Deployment.getOfferOptimizationAlgorithms().values())
-      {
-        JSONObject offerOptimizationAlgorithmJSON = offerOptimizationAlgorithm.getJSONRepresentation();
-        offerOptimizationAlgorithms.add(offerOptimizationAlgorithmJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve nodeTypes
-    *
-    *****************************************/
-
-    List<JSONObject> nodeTypes;
-    try
-      {
-        nodeTypes = processNodeTypes(Deployment.getNodeTypes(), Collections.<String,CriterionField>emptyMap(), Collections.<String,CriterionField>emptyMap());
-      }
-    catch (GUIManagerException e)
-      {
-        throw new ServerRuntimeException(e);
-      }
-
-    /*****************************************
-    *
-    *  retrieve journeyToolboxSections
-    *
-    *****************************************/
-
-    List<JSONObject> journeyToolboxSections = new ArrayList<JSONObject>();
-    for (ToolboxSection journeyToolboxSection : Deployment.getJourneyToolbox().values())
-      {
-        JSONObject journeyToolboxSectionJSON = journeyToolboxSection.getJSONRepresentation();
-        journeyToolboxSections.add(journeyToolboxSectionJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve campaignToolboxSections
-    *
-    *****************************************/
-
-    List<JSONObject> campaignToolboxSections = new ArrayList<JSONObject>();
-    for (ToolboxSection campaignToolboxSection : Deployment.getCampaignToolbox().values())
-      {
-        JSONObject campaignToolboxSectionJSON = campaignToolboxSection.getJSONRepresentation();
-        campaignToolboxSections.add(campaignToolboxSectionJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve workflowToolboxSections
-    *
-    *****************************************/
-
-    List<JSONObject> workflowToolboxSections = new ArrayList<JSONObject>();
-    for (ToolboxSection workflowToolboxSection : Deployment.getWorkflowToolbox().values())
-      {
-        JSONObject workflowToolboxSectionJSON = workflowToolboxSection.getJSONRepresentation();
-        workflowToolboxSections.add(workflowToolboxSectionJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("supportedLanguages", JSONUtilities.encodeArray(supportedLanguages));
-    response.put("supportedCurrencies", JSONUtilities.encodeArray(supportedCurrencies));
-    response.put("supportedRelationships", JSONUtilities.encodeArray(supportedRelationships));
-    response.put("callingChannelProperties", JSONUtilities.encodeArray(callingChannelProperties));
-    response.put("supportedDataTypes", JSONUtilities.encodeArray(supportedDataTypes));
-    response.put("profileCriterionFields", JSONUtilities.encodeArray(profileCriterionFields));
-    response.put("presentationCriterionFields", JSONUtilities.encodeArray(presentationCriterionFields));
-    response.put("offerProperties", JSONUtilities.encodeArray(offerProperties));
-    response.put("scoringEngines", JSONUtilities.encodeArray(scoringEngines));
-    response.put("offerOptimizationAlgorithms", JSONUtilities.encodeArray(offerOptimizationAlgorithms));
-    response.put("nodeTypes", JSONUtilities.encodeArray(nodeTypes));
-    response.put("journeyToolbox", JSONUtilities.encodeArray(journeyToolboxSections));
-    response.put("campaignToolbox", JSONUtilities.encodeArray(campaignToolboxSections));
-    response.put("workflowToolbox", JSONUtilities.encodeArray(workflowToolboxSections));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getSupportedLanguages
-  *
-  *****************************************/
-
-  private JSONObject processGetSupportedLanguages(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve supportedLanguages
-    *
-    *****************************************/
-
-    List<JSONObject> supportedLanguages = new ArrayList<JSONObject>();
-    for (SupportedLanguage supportedLanguage : Deployment.getSupportedLanguages().values())
-      {
-        JSONObject supportedLanguageJSON = supportedLanguage.getJSONRepresentation();
-        supportedLanguages.add(supportedLanguageJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("supportedLanguages", JSONUtilities.encodeArray(supportedLanguages));
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  getBillingModes
-  *
-  *****************************************/
-
-  private JSONObject processGetBillingModes(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve BillingModes
-    *
-    *****************************************/
-
-    List<JSONObject> billingModes = new ArrayList<JSONObject>();
-    for (BillingMode billingMode : Deployment.getBillingModes().values())
-      {
-        JSONObject billingModeJSON = billingMode.getJSONRepresentation();
-        billingModes.add(billingModeJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("billingModes", JSONUtilities.encodeArray(billingModes));
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  getPartnerTypes
-  *
-  *****************************************/
-
-  private JSONObject processGetPartnerTypes(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve PartnerTypes
-    *
-    *****************************************/
-
-    List<JSONObject> partnerTypes = new ArrayList<JSONObject>();
-    for (PartnerType partnerType : Deployment.getPartnerTypes().values())
-      {
-        JSONObject partnerTypeJSON = partnerType.getJSONRepresentation();
-        partnerTypes.add(partnerTypeJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("partnerTypes", JSONUtilities.encodeArray(partnerTypes));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getSupportedCurrencies
-  *
-  *****************************************/
-
-  private JSONObject processGetSupportedCurrencies(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve supportedCurrencies
-    *
-    *****************************************/
-
-    List<JSONObject> supportedCurrencies = new ArrayList<JSONObject>();
-    for (SupportedCurrency supportedCurrency : Deployment.getSupportedCurrencies().values())
-      {
-        JSONObject supportedCurrencyJSON = supportedCurrency.getJSONRepresentation();
-        supportedCurrencies.add(supportedCurrencyJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("supportedCurrencies", JSONUtilities.encodeArray(supportedCurrencies));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getSupportedTimeUnits
-  *
-  *****************************************/
-
-  private JSONObject processGetSupportedTimeUnits(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve supportedTimeUnits
-    *
-    *****************************************/
-
-    List<JSONObject> supportedTimeUnits = new ArrayList<JSONObject>();
-    for (SupportedTimeUnit supportedTimeUnit : Deployment.getSupportedTimeUnits().values())
-      {
-        JSONObject supportedTimeUnitJSON = supportedTimeUnit.getJSONRepresentation();
-        supportedTimeUnits.add(supportedTimeUnitJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("supportedTimeUnits", JSONUtilities.encodeArray(supportedTimeUnits));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
   *  getSupportedRelationships
   *
   *****************************************/
@@ -4231,128 +3824,6 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("callingChannelProperties", JSONUtilities.encodeArray(callingChannelProperties));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getCatalogCharacteristicUnits
-  *
-  *****************************************/
-
-  private JSONObject processGetCatalogCharacteristicUnits(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve catalogCharacteristicUnits
-    *
-    *****************************************/
-
-    List<JSONObject> catalogCharacteristicUnits = new ArrayList<JSONObject>();
-    for (CatalogCharacteristicUnit catalogCharacteristicUnit : Deployment.getCatalogCharacteristicUnits().values())
-      {
-        JSONObject catalogCharacteristicUnitJSON = catalogCharacteristicUnit.getJSONRepresentation();
-        catalogCharacteristicUnits.add(catalogCharacteristicUnitJSON);
-      }
-
-    /*****************************************et
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("catalogCharacteristicUnits", JSONUtilities.encodeArray(catalogCharacteristicUnits));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getSupportedDataTypes
-  *
-  *****************************************/
-
-  private JSONObject processGetSupportedDataTypes(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve supported data types
-    *
-    *****************************************/
-
-    List<JSONObject> supportedDataTypes = new ArrayList<JSONObject>();
-    for (SupportedDataType supportedDataType : Deployment.getSupportedDataTypes().values())
-      {
-        JSONObject supportedDataTypeJSON = supportedDataType.getJSONRepresentation();
-        supportedDataTypes.add(supportedDataTypeJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("supportedDataTypes", JSONUtilities.encodeArray(supportedDataTypes));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getSupportedEvents
-  *
-  *****************************************/
-
-  private JSONObject processGetSupportedEvents(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve events
-    *
-    *****************************************/
-
-    List<JSONObject> events = evaluateEnumeratedValues("eventNames", SystemTime.getCurrentTime(), true);
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("events", JSONUtilities.encodeArray(events));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getLoyaltyProgramPointsEvents
-  *
-  *****************************************/
-
-  private JSONObject processGetLoyaltyProgramPointsEvents(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve events
-    *
-    *****************************************/
-
-    List<JSONObject> events = evaluateEnumeratedValues("loyaltyProgramPointsEventNames", SystemTime.getCurrentTime(), true);
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("loyaltyProgramPointsEvents", JSONUtilities.encodeArray(events));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -6619,425 +6090,6 @@ public class GUIManager
     response.put("journeyNodeCount", JSONUtilities.encodeObject(result));
     return JSONUtilities.encodeObject(response);
   }  
-  
-  /*****************************************
-  *
-  *  processGetSegmentationDimensionList
-  *
-  *****************************************/
-
-  private JSONObject processGetSegmentationDimensionList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
-  {
-    /*****************************************
-    *
-    *  retrieve and convert segmentationDimensions
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> segmentationDimensions = new ArrayList<JSONObject>();
-    for (GUIManagedObject segmentationDimension : segmentationDimensionService.getStoredSegmentationDimensions(includeArchived))
-      {
-
-        //        SegmentationDimensionTargetingType targetingType = ((SegmentationDimension)segmentationDimension).getTargetingType();
-        //        
-        //        switch(targetingType) {
-        //          case ELIGIBILITY:
-        //
-        //            break;
-        //          case FILE_IMPORT:
-        //            
-        //            break;
-        //          case RANGES:
-        //            if(((SegmentationDimensionRanges)segmentationDimension).get != null) {
-        //              ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(((SegmentationDimensionRanges)segmentationDimension).getContactPolicyID(), now);
-        //              segmentationDimensions.add(contactPolicy.getJSONRepresentation());
-        //            }
-        //            break;
-        //        }
-
-        segmentationDimensions.add(segmentationDimensionService.generateResponseJSON(segmentationDimension, fullDetails, now));
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();;
-    response.put("responseCode", "ok");
-    response.put("segmentationDimensions", JSONUtilities.encodeArray(segmentationDimensions));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processGetSegmentationDimension
-  *
-  *****************************************/
-
-  private JSONObject processGetSegmentationDimension(String userID, JSONObject jsonRoot, boolean includeArchived)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String segmentationDimensionID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  retrieve and decorate segmentationDimension
-    *
-    *****************************************/
-
-    GUIManagedObject segmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID, includeArchived);
-    JSONObject segmentationDimensionJSON = segmentationDimensionService.generateResponseJSON(segmentationDimension, true, SystemTime.getCurrentTime());
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (segmentationDimension != null) ? "ok" : "segmentationDimensionNotFound");
-    if (segmentationDimension != null) response.put("segmentationDimension", segmentationDimensionJSON);
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processPutSegmentationDimension
-  *
-  *****************************************/
-
-  private JSONObject processPutSegmentationDimension(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  segmentationDimensionID
-    *
-    *****************************************/
-
-    String segmentationDimensionID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    boolean resetSegmentIDs = false;
-    if (segmentationDimensionID == null)
-      {
-        segmentationDimensionID = subscriberGroupSharedIDService.generateID();
-        jsonRoot.put("id", segmentationDimensionID);
-        resetSegmentIDs = true;
-      }
-
-    /*****************************************
-    *
-    *  existing segmentationDimension
-    *
-    *****************************************/
-
-    GUIManagedObject existingSegmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID);
-
-    /*****************************************
-    *
-    *  read-only
-    *
-    *****************************************/
-
-    if (existingSegmentationDimension != null && existingSegmentationDimension.getReadOnly())
-      {
-        response.put("id", existingSegmentationDimension.getGUIManagedObjectID());
-        response.put("accepted", existingSegmentationDimension.getAccepted());
-        response.put("valid", existingSegmentationDimension.getAccepted());
-        response.put("processing", segmentationDimensionService.isActiveSegmentationDimension(existingSegmentationDimension, now));
-        response.put("responseCode", "failedReadOnly");
-        return JSONUtilities.encodeObject(response);
-      }
-
-    /*****************************************
-    *
-    *  process segmentationDimension
-    *
-    *****************************************/
-
-    long epoch = epochServer.getKey();
-    try
-      {
-        /****************************************
-        *
-        *  instantiate segmentationDimension
-        *
-        ****************************************/
-
-        SegmentationDimension segmentationDimension = null;
-        switch (SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true)))
-          {
-            case ELIGIBILITY:
-              segmentationDimension = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension, resetSegmentIDs);
-              break;
-
-            case RANGES:
-              segmentationDimension = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension, resetSegmentIDs);
-              break;
-
-            case FILE:
-              segmentationDimension = new SegmentationDimensionFileImport(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension, resetSegmentIDs);
-              break;
-
-            case Unknown:
-              throw new GUIManagerException("unsupported dimension type", JSONUtilities.decodeString(jsonRoot, "targetingType", false));
-          }
-
-        /*****************************************
-        *
-        *  initialize/update subscriber group
-        *
-        *****************************************/
-
-        //
-        //  open zookeeper and lock dimension
-        //
-
-        ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockGroup(segmentationDimension.getSegmentationDimensionID());
-
-        //
-        //  create or ensure subscriberGroupEpoch exists
-        //
-
-        SubscriberGroupEpoch existingSubscriberGroupEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, segmentationDimension.getSegmentationDimensionID());
-
-        //
-        //  submit new subscriberGroupEpoch
-        //
-
-        SubscriberGroupEpoch subscriberGroupEpoch = SubscriberGroupEpochService.updateSubscriberGroupEpoch(zookeeper, segmentationDimension.getSegmentationDimensionID(), existingSubscriberGroupEpoch, kafkaProducer, Deployment.getSubscriberGroupEpochTopic());
-
-        //
-        //  update segmentationDimension
-        //
-
-        segmentationDimension.setSubscriberGroupEpoch(subscriberGroupEpoch);
-
-        //
-        //  close zookeeper and release dimension
-        //
-
-        SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, segmentationDimension.getSegmentationDimensionID());
-
-        /*****************************************
-        *
-        *  store
-        *
-        *****************************************/
-
-        segmentationDimensionService.putSegmentationDimension(segmentationDimension, uploadedFileService, subscriberIDService, (existingSegmentationDimension == null), userID);
-
-        /*****************************************
-        *
-        *  revalidate
-        *
-        *****************************************/
-
-        revalidateUCGRules(now);
-
-        /*****************************************
-        *
-        *  response
-        *
-        *****************************************/
-
-        response.put("id", segmentationDimension.getSegmentationDimensionID());
-        response.put("accepted", segmentationDimension.getAccepted());
-        response.put("valid", segmentationDimension.getAccepted());
-        response.put("processing", segmentationDimensionService.isActiveSegmentationDimension(segmentationDimension, now));
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
-      }
-    catch (JSONUtilitiesException|GUIManagerException e)
-      {
-        //
-        //  incompleteObject
-        //
-
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
-
-        //
-        //  store
-        //
-
-        segmentationDimensionService.putIncompleteSegmentationDimension(incompleteObject, (existingSegmentationDimension == null), userID);
-
-        //
-        //  revalidate
-        //
-
-        revalidateUCGRules(now);
-
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-        //
-        //  response
-        //
-
-        response.put("segmentationDimensionID", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "segmentationDimensionNotValid");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
-  }
-
-  /*****************************************
-  *
-  *  processRemoveSegmentationDimension
-  *
-  *****************************************/
-
-  private JSONObject processRemoveSegmentationDimension(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String segmentationDimensionID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject segmentationDimensionUnchecked = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID);
-    if (segmentationDimensionUnchecked != null && (force || !segmentationDimensionUnchecked.getReadOnly()))
-      {
-        /*****************************************
-        *
-        *  initialize/update subscriber group
-        *
-        *****************************************/
-
-        if (segmentationDimensionUnchecked.getAccepted())
-          {
-            //
-            //  segmentationDimension
-            //
-
-            SegmentationDimension segmentationDimension = (SegmentationDimension) segmentationDimensionUnchecked;
-
-            //
-            //  open zookeeper and lock dimension
-            //
-
-            ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockGroup(segmentationDimension.getSegmentationDimensionID());
-
-            //
-            //  create or ensure subscriberGroupEpoch exists
-            //
-
-            SubscriberGroupEpoch existingSubscriberGroupEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, segmentationDimension.getSegmentationDimensionID());
-
-            //
-            //  submit new subscriberGroupEpoch
-            //
-
-            SubscriberGroupEpoch subscriberGroupEpoch = SubscriberGroupEpochService.updateSubscriberGroupEpoch(zookeeper, segmentationDimension.getSegmentationDimensionID(), existingSubscriberGroupEpoch, kafkaProducer, Deployment.getSubscriberGroupEpochTopic());
-
-            //
-            //  update segmentationDimension
-            //
-
-            segmentationDimension.setSubscriberGroupEpoch(subscriberGroupEpoch);
-
-            //
-            //  close zookeeper and release dimension
-            //
-
-            SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, segmentationDimension.getSegmentationDimensionID());
-
-          }
-
-        /*****************************************
-        *
-        *  remove
-        *
-        *****************************************/
-
-        segmentationDimensionService.removeSegmentationDimension(segmentationDimensionID, userID);
-      }
-
-    /*****************************************
-    *
-    *  revalidate
-    *
-    *****************************************/
-
-    revalidateUCGRules(now);
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (segmentationDimensionUnchecked != null && (force || !segmentationDimensionUnchecked.getReadOnly()))
-      responseCode = "ok";
-    else if (segmentationDimensionUnchecked != null)
-      responseCode = "failedReadOnly";
-    else
-      responseCode = "segmentationDimensionNotFound";
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
-    return JSONUtilities.encodeObject(response);
-  }
 
   /*****************************************
   *
@@ -7441,721 +6493,6 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processGetCountBySegmentationEligibility
-  *
-  *****************************************/
-
-  private JSONObject processGetCountBySegmentationEligibility(String userID,JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  populate segmentationDimensionID with "nothing"
-    *
-    *****************************************/
-
-    jsonRoot.put("id", "(not used)"); 
-
-    /*****************************************
-    *
-    *  validate targetingType
-    *
-    *****************************************/
-
-    SegmentationDimensionTargetingType targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
-    if(targetingType != SegmentationDimensionTargetingType.ELIGIBILITY)
-      {
-        //
-        //  log
-        //
-
-        log.warn("Invalid dimension targeting type for processGetCountBySegmentationEligibility. Targeting type: {}",targetingType.getExternalRepresentation());
-
-        //
-        //  response
-        //
-
-        response.put("responseCode", "segmentationDimensionNotValid");
-        response.put("responseMessage", "Segmentation dimension not ELIGIBILITY");
-        response.put("responseParameter", null);
-        return JSONUtilities.encodeObject(response);
-      }
-
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    List<JSONObject> aggregationResult = new ArrayList<>();
-    List<QueryBuilder> processedQueries = new ArrayList<>();
-    try
-      {
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
-        List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
-        SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
-        for(SegmentEligibility segmentEligibility :segmentationDimensionEligibility.getSegments())
-          {
-            BoolQueryBuilder query = QueryBuilders.boolQuery();
-            for(QueryBuilder processedQuery : processedQueries)
-              {
-                query = query.mustNot(processedQuery);
-              }
-            BoolQueryBuilder segmentQuery = QueryBuilders.boolQuery();
-            for(EvaluationCriterion evaluationCriterion:segmentEligibility.getProfileCriteria())
-              {
-                segmentQuery = segmentQuery.filter(evaluationCriterion.esQuery());
-                processedQueries.add(segmentQuery);
-              }
-            query = query.filter(segmentQuery);
-            //use name as key, even if normally should use id, to make simpler to use this count in chart
-            aggFilters.add(new FiltersAggregator.KeyedFilter(segmentEligibility.getName(),query));
-          }
-        AggregationBuilder aggregation = null;
-        FiltersAggregator.KeyedFilter [] filterArray = new FiltersAggregator.KeyedFilter [aggFilters.size()];
-        filterArray = aggFilters.toArray(filterArray);
-        aggregation = AggregationBuilders.filters("SegmentEligibility",filterArray);
-        ((FiltersAggregationBuilder) aggregation).otherBucket(true);
-        ((FiltersAggregationBuilder) aggregation).otherBucketKey("other_key");
-        searchSourceBuilder.aggregation(aggregation);
-
-        //
-        //  search in ES
-        //
-
-        SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
-        SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
-        Filters aggResultFilters = searchResponse.getAggregations().get("SegmentEligibility");
-        for (Filters.Bucket entry : aggResultFilters.getBuckets())
-          {
-            HashMap<String,Object> aggItem = new HashMap<String,Object>();
-            String key = entry.getKeyAsString();            // bucket key
-            long docCount = entry.getDocCount();            // Doc count
-            aggItem.put("name",key);
-            aggItem.put("count",docCount);
-            aggregationResult.add(JSONUtilities.encodeObject(aggItem));
-          }
-      }
-    catch(Exception ex)
-      {
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        ex.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-        //
-        //  response
-        //
-
-        response.put("responseCode", "systemError");
-        response.put("responseMessage", ex.getMessage());
-        response.put("responseParameter", (ex instanceof GUIManagerException) ? ((GUIManagerException) ex).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
-    response.put("responseCode", "ok");
-    response.put("result",aggregationResult);
-    return JSONUtilities.encodeObject(response);
-  }
-
-
-  /*****************************************
-  *
-  *  processEvaluateProfileCriteria
-  *
-  *****************************************/
-
-  private JSONObject processEvaluateProfileCriteria(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  parse
-    *
-    *****************************************/
-
-    List<EvaluationCriterion> criteriaList = new ArrayList<EvaluationCriterion>();
-    try
-      {
-        JSONArray jsonCriteriaList = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true);
-        for (int i=0; i<jsonCriteriaList.size(); i++)
-          {
-            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.FullDynamicProfile));
-          }
-      }
-    catch (JSONUtilitiesException|GUIManagerException e)
-      {
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-        //
-        //  response
-        //
-
-        response.put("responseCode", "argumentError");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
-
-    Boolean returnQuery = JSONUtilities.decodeBoolean(jsonRoot, "returnQuery", Boolean.FALSE);
-
-    /*****************************************
-    *
-    *  construct query
-    *
-    *****************************************/
-
-    BoolQueryBuilder query = null;
-    try
-      {
-        query = EvaluationCriterion.esCountMatchCriteriaGetQuery(criteriaList);
-      }
-    catch (CriterionException e)
-      {
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-        //
-        //  response
-        //
-
-        response.put("responseCode", "argumentError");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
-
-    /*****************************************
-    *
-    *  execute query
-    *
-    *****************************************/
-
-    long result;
-    try
-      {
-        result = EvaluationCriterion.esCountMatchCriteriaExecuteQuery(query, elasticsearch);
-      }
-    catch (IOException|ElasticsearchStatusException e)
-      {
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-        //
-        //  response
-        //
-
-        response.put("responseCode", "systemError");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", null);
-        return JSONUtilities.encodeObject(response);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", "ok");
-    response.put("result", result);
-    if (returnQuery && (query != null))
-      {
-        try
-          {
-            JSONObject queryJSON = (JSONObject) (new JSONParser()).parse(query.toString());
-            response.put("query", JSONUtilities.encodeObject(queryJSON));
-          }
-        catch (ParseException e)
-          {
-            log.debug("Cannot parse query string {} : {}", query.toString(), e.getLocalizedMessage());
-          }
-      }
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processGetUCGDimensionList
-  *
-  *****************************************/
-
-  private JSONObject processGetUCGDimensionList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
-  {
-    /*****************************************
-    *
-    *  retrieve and convert segmentationDimensions
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> segmentationDimensions = new ArrayList<JSONObject>();
-    for (GUIManagedObject segmentationDimension : segmentationDimensionService.getStoredSegmentationDimensions(includeArchived))
-      {
-        SegmentationDimension dimension = (SegmentationDimension) segmentationDimension;
-        if (dimension.getDefaultSegmentID() != null)
-          {
-            segmentationDimensions.add(segmentationDimensionService.generateResponseJSON(segmentationDimension, fullDetails, now));
-          }
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();;
-    response.put("responseCode", "ok");
-    response.put("segmentationDimensions", JSONUtilities.encodeArray(segmentationDimensions));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processGetPointList
-  *
-  *****************************************/
-
-  private JSONObject processGetPointList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
-  {
-    /*****************************************
-    *
-    *  retrieve and convert Points
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> points = new ArrayList<JSONObject>();
-    for (GUIManagedObject point : pointService.getStoredPoints(includeArchived))
-      {
-        points.add(pointService.generateResponseJSON(point, fullDetails, now));
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();;
-    response.put("responseCode", "ok");
-    response.put("points", JSONUtilities.encodeArray(points));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processGetPoint
-  *
-  *****************************************/
-
-  private JSONObject processGetPoint(String userID, JSONObject jsonRoot, boolean includeArchived)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String pointID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  retrieve and decorate point
-    *
-    *****************************************/
-
-    GUIManagedObject point = pointService.getStoredPoint(pointID, includeArchived);
-    JSONObject pointJSON = pointService.generateResponseJSON(point, true, SystemTime.getCurrentTime());
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (point != null) ? "ok" : "pointNotFound");
-    if (point != null) response.put("point", pointJSON);
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processPutPoint
-  *
-  *****************************************/
-
-  private JSONObject processPutPoint(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  pointID
-    *
-    *****************************************/
-
-    String pointID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (pointID == null)
-      {
-        //little hack here :
-        //   since pointID = deliverableID (if creditable) = paymentMeanID (if debitable), we need to be sure that 
-        //   deliverableID and paymentMeanID are unique, so point IDs start at position 10001
-        //   NOTE : we will be in trouble when we will have more than 10000 deliverables/paymentMeans ...
-        String idString = pointService.generatePointID();
-        try
-          {
-            int id = Integer.parseInt(idString);
-            pointID = String.valueOf(id > 10000 ? id : (10000 + id));
-          } catch (NumberFormatException e)
-          {
-            throw new ServerRuntimeException("ProcessPutPoint : could not generate new ID");
-          }
-        jsonRoot.put("id", pointID);
-      }
-
-    /*****************************************
-    *
-    *  existing point
-    *
-    *****************************************/
-
-    GUIManagedObject existingPoint = pointService.getStoredPoint(pointID);
-
-    /*****************************************
-    *
-    *  read-only
-    *
-    *****************************************/
-
-    if (existingPoint != null && existingPoint.getReadOnly())
-      {
-        response.put("id", existingPoint.getGUIManagedObjectID());
-        response.put("accepted", existingPoint.getAccepted());
-        response.put("valid", existingPoint.getAccepted());
-        response.put("processing", pointService.isActivePoint(existingPoint, now));
-        response.put("responseCode", "failedReadOnly");
-        return JSONUtilities.encodeObject(response);
-      }
-
-    /*****************************************
-    *
-    *  process point
-    *
-    *****************************************/
-
-    long epoch = epochServer.getKey();
-    try
-      {
-        /****************************************
-        *
-        *  instantiate Point
-        *
-        ****************************************/
-
-        Point point = new Point(jsonRoot, epoch, existingPoint);
-
-        /*****************************************
-        *
-        *  store
-        *
-        *****************************************/
-
-        pointService.putPoint(point, (existingPoint == null), userID);
-        
-        /*****************************************
-        *
-        *  add dynamic criterion fields)
-        *
-        *****************************************/
-
-        dynamicCriterionFieldService.addPointCriterionFields(point, (existingPoint == null));
-
-        /*****************************************
-        *
-        *  create related deliverable and related paymentMean
-        *
-        *****************************************/
-
-        DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("pointFulfillment");
-        JSONObject deliveryManagerJSON = (deliveryManager != null) ? deliveryManager.getJSONRepresentation() : null;
-        String providerID = (deliveryManagerJSON != null) ? (String) deliveryManagerJSON.get("providerID") : null;
-
-        //
-        // deliverable
-        //
-
-        if (providerID != null && point.getCreditable())
-          {
-            Map<String, Object> deliverableMap = new HashMap<String, Object>();
-            deliverableMap.put("id", "point-" + point.getPointID());
-            deliverableMap.put("fulfillmentProviderID", providerID);
-            deliverableMap.put("externalAccountID", point.getPointID());
-            deliverableMap.put("name", point.getPointName());
-            deliverableMap.put("display", point.getDisplay());
-            deliverableMap.put("active", true);
-            deliverableMap.put("unitaryCost", 0);
-            Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
-            deliverableService.putDeliverable(deliverable, true, userID);
-          }
-
-        //
-        // paymentMean
-        //
-
-        if (providerID != null && point.getDebitable())
-          {
-            Map<String, Object> paymentMeanMap = new HashMap<String, Object>();
-            paymentMeanMap.put("id", "point-" + point.getPointID());
-            paymentMeanMap.put("fulfillmentProviderID", providerID);
-            paymentMeanMap.put("externalAccountID", point.getPointID());
-            paymentMeanMap.put("name", point.getPointName());
-            paymentMeanMap.put("display", point.getDisplay());
-            paymentMeanMap.put("active", true);
-            PaymentMean paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), epoch, null);
-            paymentMeanService.putPaymentMean(paymentMean, true, userID);
-          }
-
-        /*****************************************
-        *
-        *  revalidate
-        *
-        *****************************************/
-
-        revalidateSubscriberMessageTemplates(now);
-        revalidateTargets(now);
-        revalidateJourneys(now);
-
-        /*****************************************
-        *
-        *  response
-        *
-        *****************************************/
-
-        response.put("id", point.getPointID());
-        response.put("accepted", point.getAccepted());
-        response.put("valid", point.getAccepted());
-        response.put("processing", pointService.isActivePoint(point, now));
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
-      }
-    catch (JSONUtilitiesException|GUIManagerException e)
-      {
-        //
-        //  incompleteObject
-        //
-
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
-
-        //
-        //  store
-        //
-
-        pointService.putIncompletePoint(incompleteObject, (existingPoint == null), userID);
-
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-        //
-        //  response
-        //
-
-        response.put("pointID", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "pointNotValid");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
-  }
-
-  /*****************************************
-  *
-  *  processRemovePoint
-  *
-  *****************************************/
-
-  private JSONObject processRemovePoint(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String pointID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
-
-    /*****************************************
-    *
-    *  remove related deliverable and related paymentMean
-    *
-    *****************************************/
-
-    DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("pointFulfillment");
-    JSONObject deliveryManagerJSON = (deliveryManager != null) ? deliveryManager.getJSONRepresentation() : null;
-    String providerID = (deliveryManagerJSON != null) ? (String) deliveryManagerJSON.get("providerID") : null;
-    if (providerID != null)
-      {
-        //
-        //  deliverable
-        //
-
-        Collection<GUIManagedObject> deliverableObjects = deliverableService.getStoredDeliverables();
-        for (GUIManagedObject deliverableObject : deliverableObjects)
-          {
-            if(deliverableObject instanceof Deliverable)
-              {
-                Deliverable deliverable = (Deliverable) deliverableObject;
-                if (deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getExternalAccountID().equals(pointID))
-                  {
-                    deliverableService.removeDeliverable(deliverable.getDeliverableID(), "0");
-                  }
-              }
-          }
-
-        //
-        //  paymentMean
-        //
-
-        Collection<GUIManagedObject> paymentMeanObjects = paymentMeanService.getStoredPaymentMeans();
-        for(GUIManagedObject paymentMeanObject : paymentMeanObjects)
-          {
-            if(paymentMeanObject instanceof PaymentMean)
-              {
-                PaymentMean paymentMean = (PaymentMean) paymentMeanObject;
-                if(paymentMean.getFulfillmentProviderID().equals(providerID) && paymentMean.getExternalAccountID().equals(pointID))
-                  {
-                    paymentMeanService.removePaymentMean(paymentMean.getPaymentMeanID(), "0");
-                  }
-              }
-          }
-      }
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject point = pointService.getStoredPoint(pointID);
-    if (point != null && (force || !point.getReadOnly()))
-      {
-        //
-        //  remove point
-        //
-
-        pointService.removePoint(pointID, userID);
-
-        //
-        //  remove dynamic criterion fields
-        //
-
-        dynamicCriterionFieldService.removePointCriterionFields(point);
-
-        //
-        //  revalidate
-        //
-
-        revalidateSubscriberMessageTemplates(now);
-        revalidateTargets(now);
-        revalidateJourneys(now);
-      }
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (point != null && (force || !point.getReadOnly()))
-      responseCode = "ok";
-    else if (point != null)
-      responseCode = "failedReadOnly";
-    else
-      responseCode = "pointNotFound";
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
   *  processGetOfferList
   *
   *****************************************/
@@ -8411,175 +6748,6 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", responseCode);
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processGetReportGlobalConfiguration
-  *
-  *****************************************/
-
-  private JSONObject processGetReportGlobalConfiguration(String userID, JSONObject jsonRoot)
-  {
-    Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    HashMap<String,Object> globalConfig = new HashMap<String,Object>();
-    globalConfig.put("reportManagerZookeeperDir",   Deployment.getReportManagerZookeeperDir());
-    globalConfig.put("reportManagerOutputPath",     Deployment.getReportManagerOutputPath());
-    globalConfig.put("reportManagerDateFormat",     Deployment.getReportManagerDateFormat());
-    globalConfig.put("reportManagerFileExtension",  Deployment.getReportManagerFileExtension());
-    globalConfig.put("reportManagerCsvSeparator",   Deployment.getReportManagerCsvSeparator());
-    globalConfig.put("reportManagerStreamsTempDir", Deployment.getReportManagerStreamsTempDir());
-    response.put("reportGlobalConfiguration", JSONUtilities.encodeObject(globalConfig));
-    response.put("responseCode", "ok");
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processGetReportList
-  *
-  *****************************************/
-
-  private JSONObject processGetReportList(String userID, JSONObject jsonRoot, boolean includeArchived)
-  {
-    log.trace("In processGetReportList : "+jsonRoot);
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> reports = new ArrayList<JSONObject>();
-    for (GUIManagedObject report : reportService.getStoredReports(includeArchived))
-      {
-        log.trace("In processGetReportList, adding : "+report);
-        JSONObject reportResponse = reportService.generateResponseJSON(report, true, now);
-        reportResponse.put("isRunning", reportService.isReportRunning(((Report)report).getName()));
-        reports.add(reportResponse);
-      }
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("reports", JSONUtilities.encodeArray(reports));
-    log.trace("res : "+response.get("reports"));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processPutReport
-  *
-  *****************************************/
-
-  private JSONObject processPutReport(String userID, JSONObject jsonRoot)
-  {
-    log.trace("In processPutReport : "+jsonRoot);
-    Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    String reportID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (reportID == null)
-      {
-        reportID = reportService.generateReportID();
-        jsonRoot.put("id", reportID);
-      }
-    log.trace("ID : "+reportID);
-    GUIManagedObject existingReport = reportService.getStoredReport(reportID);
-    if (existingReport != null && existingReport.getReadOnly())
-      {
-        log.trace("existingReport : "+existingReport);
-        response.put("id", existingReport.getGUIManagedObjectID());
-        response.put("accepted", existingReport.getAccepted());
-        response.put("valid", existingReport.getAccepted());
-        response.put("processing", reportService.isActiveReport(existingReport, now));
-        response.put("responseCode", "failedReadOnly");
-        return JSONUtilities.encodeObject(response);
-      }
-    if (existingReport != null)
-      {
-        if (existingReport instanceof Report)
-          {
-            Report existingRept = (Report) existingReport;
-            // Is the new effective scheduling valid ?
-            List<SchedulingInterval> availableScheduling = existingRept.getAvailableScheduling();
-            if (availableScheduling != null) {
-              // Check if the effectiveScheduling is valid
-              JSONArray effectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EFFECTIVE_SCHEDULING, false);
-              if (effectiveSchedulingJSONArray != null) { 
-                for (int i=0; i<effectiveSchedulingJSONArray.size(); i++) {
-                  String schedulingIntervalStr = (String) effectiveSchedulingJSONArray.get(i);
-                  SchedulingInterval eSchedule = SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr);
-                  log.trace("Checking that "+eSchedule+" is allowed");
-                  if (! availableScheduling.contains(eSchedule)) {
-                    response.put("id", jsonRoot.get("id"));
-                    response.put("responseCode", "reportNotValid");
-                    response.put("responseMessage", "scheduling "+eSchedule+" is not valid");
-                    StringBuffer respMsg = new StringBuffer("scheduling "+eSchedule+" should be part of [ ");
-                    for (SchedulingInterval aSched : availableScheduling) {
-                      respMsg.append(aSched+" ");
-                    }
-                    respMsg.append("]");
-                    response.put("responseParameter", respMsg.toString());
-                    return JSONUtilities.encodeObject(response);
-                  }
-                }
-              }
-            }
-          }
-      }
-
-    long epoch = epochServer.getKey();
-    try
-      {
-        Report report = new Report(jsonRoot, epoch, existingReport);
-        log.trace("new report : "+report);
-        reportService.putReport(report, (existingReport == null), userID);
-        response.put("id", report.getReportID());
-        response.put("accepted", report.getAccepted());
-        response.put("valid", report.getAccepted());
-        response.put("processing", reportService.isActiveReport(report, now));
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
-      }
-    catch (JSONUtilitiesException|GUIManagerException e)
-      {
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-        response.put("id", jsonRoot.get("id"));
-        response.put("responseCode", "reportNotValid");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
-  }  
-
-  /*****************************************
-  *
-  *  processLaunchReport
-  *
-  *****************************************/
-
-  private JSONObject processLaunchReport(String userID, JSONObject jsonRoot)
-  {
-    log.trace("In processLaunchReport : "+jsonRoot);
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    Report report = (Report) reportService.getStoredReport(reportID);
-    log.trace("Looking for "+reportID+" and got "+report);
-    String responseCode;
-    if (report == null)
-      {
-        responseCode = "reportNotFound";
-      }
-    else
-      {
-        if (reportService.isReportRunning(report.getName()))
-          {
-            responseCode = "reportIsAlreadyRunning";
-          }
-        else
-          {
-            reportService.launchReport(report.getName());
-            responseCode = "ok";
-          }
-      }
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
@@ -12367,287 +10535,6 @@ public class GUIManager
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
-
-  /*****************************************
-  *
-  *  processGetUCGRuleList
-  *
-  *****************************************/
-
-  private JSONObject processGetUCGRuleList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
-  {
-    /*****************************************
-    *
-    *  retrieve and convert ucg rules
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> ucgRules = new ArrayList<JSONObject>();
-    for (GUIManagedObject ucgRule : ucgRuleService.getStoredUCGRules(includeArchived))
-      {
-        ucgRules.add(ucgRuleService.generateResponseJSON(ucgRule, fullDetails, now));
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();;
-    response.put("responseCode", "ok");
-    response.put("ucgRules", JSONUtilities.encodeArray(ucgRules));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processGetUCGRule
-  *
-  *****************************************/
-
-  private JSONObject processGetUCGRule(String userID, JSONObject jsonRoot, boolean includeArchived)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String ucgRuleID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  retrieve and decorate ucg rule
-    *
-    *****************************************/
-
-    GUIManagedObject ucgRule = ucgRuleService.getStoredUCGRule(ucgRuleID, includeArchived);
-    JSONObject productJSON = ucgRuleService.generateResponseJSON(ucgRule, true, SystemTime.getCurrentTime());
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (ucgRule != null) ? "ok" : "ucgRuleNotFound");
-    if (ucgRule != null) response.put("ucgRule", productJSON);
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processPutUCGRule
-  *
-  *****************************************/
-
-  private JSONObject processPutUCGRule(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  productID
-    *
-    *****************************************/
-
-    String ucgRuleID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (ucgRuleID == null)
-      {
-        ucgRuleID = ucgRuleService.generateUCGRuleID();
-        jsonRoot.put("id", ucgRuleID);
-      }
-
-    /*****************************************
-    *
-    *  existing product
-    *
-    *****************************************/
-
-    GUIManagedObject existingUCGRule = ucgRuleService.getStoredUCGRule(ucgRuleID);
-
-    /*****************************************
-    *
-    *  read-only
-    *
-    *****************************************/
-
-    if (existingUCGRule != null && existingUCGRule.getReadOnly())
-      {
-        response.put("id", existingUCGRule.getGUIManagedObjectID());
-        response.put("accepted", existingUCGRule.getAccepted());
-        response.put("valid", existingUCGRule.getAccepted());
-        response.put("processing", ucgRuleService.isActiveUCGRule(existingUCGRule, now));
-        response.put("responseCode", "failedReadOnly");
-        return JSONUtilities.encodeObject(response);
-      }
-
-    /*****************************************
-    *
-    *  process product
-    *
-    *****************************************/
-
-    long epoch = epochServer.getKey();
-    try
-      {
-        /****************************************
-        *
-        *  instantiate product
-        *
-        ****************************************/
-
-        UCGRule ucgRule = new UCGRule(jsonRoot, epoch, existingUCGRule);
-
-        /*****************************************
-        *
-        *  store
-        *
-        *****************************************/
-
-        ucgRuleService.putUCGRule(ucgRule,segmentationDimensionService,(existingUCGRule == null), userID);
-
-        /*****************************************
-        *
-        *  deactivate any active rules except current one active
-        *  this replace one UCGRule active sequence from UCGRule.validate()
-        *
-        *****************************************/
-
-        if(ucgRule.getActive()) {
-          deactivateOtherUCGRules(ucgRule, now);
-        }
-
-        /*****************************************
-        *
-        *  response
-        *
-        *****************************************/
-
-        response.put("id", ucgRule.getUCGRuleID());
-        response.put("accepted", ucgRule.getAccepted());
-        response.put("valid", ucgRule.getAccepted());
-        response.put("processing", ucgRuleService.isActiveUCGRule(ucgRule, now));
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
-      }
-    catch (JSONUtilitiesException|GUIManagerException e)
-      {
-        //
-        //  incompleteObject
-        //
-
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
-
-        //
-        //  store
-        //
-
-        ucgRuleService.putUCGRule(incompleteObject, segmentationDimensionService, (existingUCGRule == null), userID);
-
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-        //
-        //  response
-        //
-
-        response.put("id", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "ucgRuleNotValid");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
-  }
-
-  /*****************************************
-  *
-  *  processRemoveUCGRule
-  *
-  *****************************************/
-
-  private JSONObject processRemoveUCGRule(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String ucgRuleID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject ucgRule = ucgRuleService.getStoredUCGRule(ucgRuleID);
-    if (ucgRule != null && (force || !ucgRule.getReadOnly())) ucgRuleService.removeUCGRule(ucgRuleID, userID);
-
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (ucgRule != null && (force || !ucgRule.getReadOnly()))
-      responseCode = "ok";
-    else if (ucgRule != null)
-      responseCode = "failedReadOnly";
-    else
-      responseCode = "ucgRuleNotFound";
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
-    return JSONUtilities.encodeObject(response);
-  }  
   
   /*********************************************
   *
@@ -15174,55 +13061,6 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processGetDashboardCounts
-  *
-  *****************************************/
-
-  private JSONObject processGetDashboardCounts(String userID, JSONObject jsonRoot, boolean includeArchived)
-  {
-    HashMap<String,Object> response = new HashMap<String,Object>();;
-    response.put("responseCode", "ok");
-    response.put("journeyCount", journeyCount(GUIManagedObjectType.Journey));
-    response.put("campaignCount", journeyCount(GUIManagedObjectType.Campaign));
-    response.put("workflowCount", journeyCount(GUIManagedObjectType.Workflow));
-    response.put("bulkCampaignCount", journeyCount(GUIManagedObjectType.BulkCampaign));
-    response.put("segmentationDimensionCount", segmentationDimensionService.getStoredSegmentationDimensions(includeArchived).size());
-    response.put("pointCount", pointService.getStoredPoints(includeArchived).size());
-    response.put("offerCount", offerService.getStoredOffers(includeArchived).size());
-    response.put("loyaltyProgramCount", loyaltyProgramService.getStoredLoyaltyPrograms(includeArchived).size());
-    response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies(includeArchived).size());
-    response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies(includeArchived).size());
-    response.put("dnboMatrixCount", dnboMatrixService.getStoredDNBOMatrixes(includeArchived).size());
-    response.put("callingChannelCount", callingChannelService.getStoredCallingChannels(includeArchived).size());
-    response.put("salesChannelCount", salesChannelService.getStoredSalesChannels(includeArchived).size());
-    response.put("sourceAddressCount", sourceAddressService.getStoredSourceAddresses(includeArchived).size());
-    response.put("supplierCount", supplierService.getStoredSuppliers(includeArchived).size());
-    response.put("productCount", productService.getStoredProducts(includeArchived).size());
-    response.put("voucherTypeCount", voucherTypeService.getStoredVoucherTypes(includeArchived).size());
-    response.put("voucherCount", voucherService.getStoredVouchers(includeArchived).size());
-    response.put("catalogCharacteristicCount", catalogCharacteristicService.getStoredCatalogCharacteristics(includeArchived).size());
-    response.put("journeyObjectiveCount", journeyObjectiveService.getStoredJourneyObjectives(includeArchived).size());
-    response.put("offerObjectiveCount", offerObjectiveService.getStoredOfferObjectives(includeArchived).size());
-    response.put("productTypeCount", productTypeService.getStoredProductTypes(includeArchived).size());
-    response.put("deliverableCount", deliverableService.getStoredDeliverables(includeArchived).size());
-    response.put("mailTemplateCount", subscriberMessageTemplateService.getStoredMailTemplates(true, includeArchived).size());
-    response.put("smsTemplateCount", subscriberMessageTemplateService.getStoredSMSTemplates(true, includeArchived).size());
-    response.put("pushTemplateCount", subscriberMessageTemplateService.getStoredPushTemplates(true, includeArchived).size());
-    response.put("reportsCount", reportService.getStoredReports(includeArchived).size());
-    response.put("walletsCount", pointService.getStoredPoints(includeArchived).size() + tokenTypeService.getStoredTokenTypes(includeArchived).size() + voucherTypeService.getStoredVoucherTypes(includeArchived).size());
-    response.put("ucgRuleCount", ucgRuleService.getStoredUCGRules(includeArchived).size());
-    response.put("targetCount", targetService.getStoredTargets(includeArchived).size());
-    response.put("exclusionInclusionCount", exclusionInclusionTargetService.getStoredExclusionInclusionTargets(includeArchived).size());
-    response.put("segmentContactPolicies",segmentContactPolicyService.getStoredSegmentContactPolicys(includeArchived).size());
-    response.put("contactPolicyCount", contactPolicyService.getStoredContactPolicies(includeArchived).size());
-    response.put("communicationChannelCount", communicationChannelService.getStoredCommunicationChannels(includeArchived).size());
-    response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived).size());
-    response.put("partnerCount", resellerService.getStoredResellers(includeArchived).size());
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
   *  processGetCustomer
   * @throws GUIManagerException
   *
@@ -16943,57 +14781,6 @@ public class GUIManager
 
     return JSONUtilities.encodeObject(response);
   }
-  
-  /*****************************************
-  *
-  * refreshUCG
-  *
-  *****************************************/
-
-  private JSONObject processRefreshUCG(String userID, JSONObject jsonRoot) throws GUIManagerException
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  identify active UCGRule (if any)
-    *
-    *****************************************/
-
-    UCGRule activeUCGRule = null;
-    for (UCGRule ucgRule : ucgRuleService.getActiveUCGRules(now))
-      {
-        activeUCGRule = ucgRule;
-      }
-
-    /*****************************************
-    *
-    *  refresh
-    *
-    *****************************************/
-
-    if (activeUCGRule != null)
-      {
-        activeUCGRule.setRefreshEpoch(activeUCGRule.getRefreshEpoch() != null ? activeUCGRule.getRefreshEpoch() + 1 : 1);
-        ucgRuleService.putUCGRule(activeUCGRule,segmentationDimensionService,false, userID);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (activeUCGRule != null) ? "ok" : "noActiveUCGRule");
-    return JSONUtilities.encodeObject(response);
-  }
 
   /*****************************************
   *
@@ -17305,289 +15092,6 @@ public class GUIManager
     *
     *****************************************/
 
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processGetTargetList
-  *
-  *****************************************/
-
-  private JSONObject processGetTargetList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
-  {
-
-    /*****************************************
-    *
-    *  retrieve target list
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> targetLists = new ArrayList<JSONObject>();
-    for (GUIManagedObject targetList : targetService.getStoredTargets(includeArchived))
-      {
-        JSONObject targetResponse = targetService.generateResponseJSON(targetList, fullDetails, now);
-        targetResponse.put("isRunning", targetService.isActiveTarget(targetList, now) ? targetService.isTargetFileBeingProcessed((Target) targetList) : false);
-        targetLists.add(targetResponse);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("targets", JSONUtilities.encodeArray(targetLists));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processPutTarget
-  *
-  *****************************************/
-
-  private JSONObject processPutTarget(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  targetID
-    *
-    *****************************************/
-
-    String targetID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (targetID == null)
-      {
-        targetID = subscriberGroupSharedIDService.generateID();
-        jsonRoot.put("id", targetID);
-      }
-
-    /*****************************************
-    *
-    *  existing target
-    *
-    *****************************************/
-
-    GUIManagedObject existingTarget = targetService.getStoredTarget(targetID);
-
-    /*****************************************
-    *
-    *  read-only
-    *
-    *****************************************/
-
-    if (existingTarget != null && existingTarget.getReadOnly())
-      {
-        response.put("id", existingTarget.getGUIManagedObjectID());
-        response.put("accepted", existingTarget.getAccepted());
-        response.put("valid", existingTarget.getAccepted());
-        response.put("processing", targetService.isActiveTarget(existingTarget, now));
-        response.put("responseCode", "failedReadOnly");
-        return JSONUtilities.encodeObject(response);
-      }
-
-    /*****************************************
-    *
-    *  process target
-    *
-    *****************************************/
-
-    long epoch = epochServer.getKey();
-    try
-      {
-        /****************************************
-        *
-        *  instantiate Target
-        *
-        ****************************************/
-
-        Target target = new Target(jsonRoot, epoch, existingTarget);
-
-        /*****************************************
-        *
-        *  store
-        *
-        *****************************************/
-
-        targetService.putTarget(target, uploadedFileService, subscriberIDService, (existingTarget == null), userID);
-
-        /*****************************************
-        *
-        *  revalidate dependent objects
-        *
-        *****************************************/
-
-        revalidateJourneys(now);
-
-        /*****************************************
-        *
-        *  response
-        *
-        *****************************************/
-
-        response.put("id", target.getGUIManagedObjectID());
-        response.put("accepted", target.getAccepted());
-        response.put("valid", target.getAccepted());
-        response.put("processing", targetService.isActiveTarget(target, now));
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
-      }
-    catch (JSONUtilitiesException|GUIManagerException e)
-      {
-        //
-        //  incompleteObject
-        //
-
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
-
-        //
-        //  store
-        //
-
-        targetService.putTarget(incompleteObject, uploadedFileService, subscriberIDService, (existingTarget == null), userID);
-
-        //
-        //  revalidate dependent objects
-        //
-
-        revalidateJourneys(now);
-
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-        //
-        //  response
-        //
-
-        response.put("targetID", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "targetNotValid");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
-  }
-
-  /*****************************************
-  *
-  *  processGetTarget
-  *
-  *****************************************/
-
-  private JSONObject processGetTarget(String userID, JSONObject jsonRoot, boolean includeArchived)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String targetID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  retrieve and decorate target
-    *
-    *****************************************/
-
-    GUIManagedObject target = targetService.getStoredTarget(targetID, includeArchived);
-    JSONObject targetJSON = targetService.generateResponseJSON(target, true, SystemTime.getCurrentTime());
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (target != null) ? "ok" : "targetNotFound");
-    if (target != null) response.put("target", targetJSON);
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processRemoveTarget
-  *
-  *****************************************/
-
-  private JSONObject processRemoveTarget(String userID, JSONObject jsonRoot){
-
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String targetID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject existingTarget = targetService.getStoredTarget(targetID);
-    if (existingTarget != null && (force || !existingTarget.getReadOnly()) ){
-      targetService.removeTarget(targetID, userID);
-    }
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (existingTarget != null && (force || !existingTarget.getReadOnly())) {
-      responseCode = "ok";
-    }
-    else if (existingTarget != null) {
-      responseCode = "failedReadOnly";
-    }
-    else {
-      responseCode = "targetNotFound";
-    }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
   
@@ -18448,373 +15952,6 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processGetLoyaltyProgramTypeList
-  *
-  *****************************************/
-
-  private JSONObject processGetLoyaltyProgramTypeList(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve loyalty program type list
-    *
-    *****************************************/
-
-    List<JSONObject> programTypeList = new ArrayList<JSONObject>();
-    for (LoyaltyProgramType programType : LoyaltyProgramType.values())
-      {
-        if(!programType.equals(LoyaltyProgramType.Unknown)){
-          Map<String, Object> programTypeJSON = new HashMap<String, Object>();
-          programTypeJSON.put("display", programType.getExternalRepresentation());
-          programTypeJSON.put("name", programType.getExternalRepresentation());
-          programTypeList.add(JSONUtilities.encodeObject(programTypeJSON));
-        }
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("loyaltyProgramTypes", JSONUtilities.encodeArray(programTypeList));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processGetLoyaltyProgramList
-  *
-  *****************************************/
-
-  private JSONObject processGetLoyaltyProgramList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
-  {
-    /*****************************************
-    *
-    *  retrieve loyalty program list
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> loyaltyProgramList = new ArrayList<JSONObject>();
-    for (GUIManagedObject loyaltyProgram : loyaltyProgramService.getStoredGUIManagedObjects(includeArchived))
-      {
-        JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(loyaltyProgram, fullDetails, now);
-        loyaltyProgramList.add(loyaltyPro);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("loyaltyPrograms", JSONUtilities.encodeArray(loyaltyProgramList));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processGetLoyaltyProgram
-  *
-  *****************************************/
-
-  private JSONObject processGetLoyaltyProgram(String userID, JSONObject jsonRoot, boolean includeArchived)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /**************************************************************
-    *
-    *  retrieve and decorate loyalty program
-    *
-    ***************************************************************/
-
-    GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID, includeArchived);
-    JSONObject loyaltyProgramJSON = loyaltyProgramService.generateResponseJSON(loyaltyProgram, true, SystemTime.getCurrentTime());
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (loyaltyProgram != null) ? "ok" : "loyaltyProgramNotFound");
-    if (loyaltyProgram != null) response.put("loyaltyProgram", loyaltyProgramJSON);
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processPutLoyaltyProgram
-  *
-  *****************************************/
-
-  private JSONObject processPutLoyaltyProgram(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  loyaltyProgramID
-    *
-    *****************************************/
-
-    String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (loyaltyProgramID == null)
-      {
-        loyaltyProgramID = loyaltyProgramService.generateLoyaltyProgramID();
-        jsonRoot.put("id", loyaltyProgramID);
-      }
-
-    /*****************************************
-    *
-    *  existing LoyaltyProgram
-    *
-    *****************************************/
-
-    GUIManagedObject existingLoyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID);
-
-    /*****************************************
-    *
-    *  read-only
-    *
-    *****************************************/
-
-    if (existingLoyaltyProgram != null && existingLoyaltyProgram.getReadOnly())
-      {
-        response.put("id", existingLoyaltyProgram.getGUIManagedObjectID());
-        response.put("accepted", existingLoyaltyProgram.getAccepted());
-        response.put("valid", existingLoyaltyProgram.getAccepted());
-        response.put("processing", loyaltyProgramService.isActiveLoyaltyProgram(existingLoyaltyProgram, now));
-        response.put("responseCode", "failedReadOnly");
-        return JSONUtilities.encodeObject(response);
-      }
-
-    /*****************************************
-    *
-    *  process LoyaltyProgram
-    *
-    *****************************************/
-
-    long epoch = epochServer.getKey();
-    try
-      {
-        /****************************************
-        *
-        *  instantiate LoyaltyProgram
-        *
-        ****************************************/
-
-        LoyaltyProgram loyaltyProgram = null;
-        switch (LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "loyaltyProgramType", true)))
-        {
-          case POINTS:
-            loyaltyProgram = new LoyaltyProgramPoints(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService);
-            break;
-
-//          case BADGES:
-//            // TODO
-//            break;
-
-          case Unknown:
-            throw new GUIManagerException("unsupported loyalty program type", JSONUtilities.decodeString(jsonRoot, "loyaltyProgramType", false));
-        }
-
-        /*****************************************
-        *
-        *  store
-        *
-        *****************************************/
-
-        loyaltyProgramService.putLoyaltyProgram(loyaltyProgram, (existingLoyaltyProgram == null), userID);
-        
-        /*****************************************
-        *
-        *  add dynamic criterion fields)
-        *
-        *****************************************/
-
-        dynamicCriterionFieldService.addLoyaltyProgramCriterionFields(loyaltyProgram, (existingLoyaltyProgram == null));
-
-        /*****************************************
-        *
-        *  revalidate
-        *
-        *****************************************/
-
-        revalidateSubscriberMessageTemplates(now);
-        revalidateOffers(now);
-        revalidateTargets(now);
-        revalidateJourneys(now);
-
-        /*****************************************
-        *
-        *  response
-        *
-        *****************************************/
-
-        response.put("id", loyaltyProgram.getGUIManagedObjectID());
-        response.put("accepted", loyaltyProgram.getAccepted());
-        response.put("valid", loyaltyProgram.getAccepted());
-        response.put("processing", loyaltyProgramService.isActiveLoyaltyProgram(loyaltyProgram, now));
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
-      }
-    catch (JSONUtilitiesException|GUIManagerException e)
-      {
-        //
-        //  incompleteObject
-        //
-
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
-
-        //
-        //  store
-        //
-
-        loyaltyProgramService.putLoyaltyProgram(incompleteObject, (existingLoyaltyProgram == null), userID);
-
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-        //
-        //  response
-        //
-
-        response.put("id", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "loyaltyProgramNotValid");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
-  }
-
-  /*****************************************
-  *
-  *  processRemoveLoyaltyProgram
-  *
-  *****************************************/
-
-  private JSONObject processRemoveLoyaltyProgram(String userID, JSONObject jsonRoot){
-
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject existingLoyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID);
-    if (existingLoyaltyProgram != null && (force || !existingLoyaltyProgram.getReadOnly()))
-      {
-        //
-        //  remove loyalty program
-        //
-
-        loyaltyProgramService.removeLoyaltyProgram(loyaltyProgramID, userID);
-
-        //
-        //  remove dynamic criterion fields
-        //
-        
-        dynamicCriterionFieldService.removeLoyaltyProgramCriterionFields(existingLoyaltyProgram);
-
-        //
-        //  revalidate
-        //
-
-        revalidateSubscriberMessageTemplates(now);
-        revalidateOffers(now);
-        revalidateTargets(now);
-        revalidateJourneys(now);
-      }
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (existingLoyaltyProgram != null && (force || !existingLoyaltyProgram.getReadOnly()))
-      {
-        responseCode = "ok";
-      }
-    else if (existingLoyaltyProgram != null)
-      {
-        responseCode = "failedReadOnly";
-      }
-    else
-      {
-        responseCode = "loyaltyProgamNotFound";
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
   *  processGetResellerList
   *
   *****************************************/
@@ -19051,210 +16188,7 @@ public class GUIManager
         return JSONUtilities.encodeObject(response);
       }
   }
-  
-  /*****************************************
-  *
-  *  processGetExclusionInclusionTargetList
-  *
-  *****************************************/
 
-  private JSONObject processGetExclusionInclusionTargetList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
-  {
-    /*****************************************
-    *
-    *  retrieve and convert exclusionInclusionTargets
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> exclusionInclusionTargets = new ArrayList<JSONObject>();
-    for (GUIManagedObject exclusionInclusionTarget : exclusionInclusionTargetService.getStoredExclusionInclusionTargets(includeArchived))
-      {
-        exclusionInclusionTargets.add(exclusionInclusionTargetService.generateResponseJSON(exclusionInclusionTarget, fullDetails, now));
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();;
-    response.put("responseCode", "ok");
-    response.put("exclusionInclusionTargets", JSONUtilities.encodeArray(exclusionInclusionTargets));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processGetExclusionInclusionTarget
-  *
-  *****************************************/
-
-  private JSONObject processGetExclusionInclusionTarget(String userID, JSONObject jsonRoot, boolean includeArchived)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String exclusionInclusionTargetID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  retrieve and decorate exclusionInclusionTarget
-    *
-    *****************************************/
-
-    GUIManagedObject exclusionInclusionTarget = exclusionInclusionTargetService.getStoredExclusionInclusionTarget(exclusionInclusionTargetID, includeArchived);
-    JSONObject exclusionInclusionTargetJSON = exclusionInclusionTargetService.generateResponseJSON(exclusionInclusionTarget, true, SystemTime.getCurrentTime());
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (exclusionInclusionTarget != null) ? "ok" : "exclusionInclusionTargetNotFound");
-    if (exclusionInclusionTarget != null) response.put("exclusionInclusionTarget", exclusionInclusionTargetJSON);
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processPutExclusionInclusionTarget
-  *
-  *****************************************/
-
-  private JSONObject processPutExclusionInclusionTarget(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  exclusionInclusionTargetID
-    *
-    *****************************************/
-
-    String exclusionInclusionTargetID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (exclusionInclusionTargetID == null)
-      {
-        exclusionInclusionTargetID = subscriberGroupSharedIDService.generateID();
-        jsonRoot.put("id", exclusionInclusionTargetID);
-      }
-
-    /*****************************************
-    *
-    *  existing exclusionInclusionTarget
-    *
-    *****************************************/
-
-    GUIManagedObject existingExclusionInclusionTarget = exclusionInclusionTargetService.getStoredExclusionInclusionTarget(exclusionInclusionTargetID);
-
-    /*****************************************
-    *
-    *  read-only
-    *
-    *****************************************/
-
-    if (existingExclusionInclusionTarget != null && existingExclusionInclusionTarget.getReadOnly())
-      {
-        response.put("id", existingExclusionInclusionTarget.getGUIManagedObjectID());
-        response.put("accepted", existingExclusionInclusionTarget.getAccepted());
-        response.put("valid", existingExclusionInclusionTarget.getAccepted());
-        response.put("processing", exclusionInclusionTargetService.isActiveExclusionInclusionTarget(existingExclusionInclusionTarget, now));
-        response.put("responseCode", "failedReadOnly");
-        return JSONUtilities.encodeObject(response);
-      }
-
-    /*****************************************
-    *
-    *  process exclusionInclusionTarget
-    *
-    *****************************************/
-
-    long epoch = epochServer.getKey();
-    try
-      {
-        /****************************************
-        *
-        *  instantiate exclusionInclusionTarget
-        *
-        ****************************************/
-
-        ExclusionInclusionTarget exclusionInclusionTarget = new ExclusionInclusionTarget(jsonRoot, epoch, existingExclusionInclusionTarget);
-
-        /*****************************************
-        *
-        *  store
-        *
-        *****************************************/
-
-        exclusionInclusionTargetService.putExclusionInclusionTarget(exclusionInclusionTarget, uploadedFileService, subscriberIDService, (existingExclusionInclusionTarget == null), userID);
-
-        /*****************************************
-        *
-        *  response
-        *
-        *****************************************/
-
-        response.put("id", exclusionInclusionTarget.getExclusionInclusionTargetID());
-        response.put("accepted", exclusionInclusionTarget.getAccepted());
-        response.put("valid", exclusionInclusionTarget.getAccepted());
-        response.put("processing", exclusionInclusionTargetService.isActiveExclusionInclusionTarget(exclusionInclusionTarget, now));
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
-      }
-    catch (JSONUtilitiesException|GUIManagerException e)
-      {
-        //
-        //  incompleteObject
-        //
-
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
-
-        //
-        //  store
-        //
-
-        exclusionInclusionTargetService.putExclusionInclusionTarget(incompleteObject, uploadedFileService, subscriberIDService, (existingExclusionInclusionTarget == null), userID);
-
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-        //
-        //  response
-        //
-
-        response.put("id", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "exclusionInclusionTargetNotValid");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
-  }
-  
   /*****************************************
   *
   *  processGetSegmentContactPolicyList
@@ -19509,72 +16443,6 @@ public class GUIManager
       responseCode = "failedReadOnly";
     else
       responseCode = "segmentContactPolicyNotFound";
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processRemoveExclusionInclusionTarget
-  *
-  *****************************************/
-
-  private JSONObject processRemoveExclusionInclusionTarget(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String exclusionInclusionTargetID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject exclusionInclusionTarget = exclusionInclusionTargetService.getStoredExclusionInclusionTarget(exclusionInclusionTargetID);
-    if (exclusionInclusionTarget != null && (force || !exclusionInclusionTarget.getReadOnly())) exclusionInclusionTargetService.removeExclusionInclusionTarget(exclusionInclusionTargetID, userID);
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (exclusionInclusionTarget != null && (force || !exclusionInclusionTarget.getReadOnly()))
-      responseCode = "ok";
-    else if (exclusionInclusionTarget != null)
-      responseCode = "failedReadOnly";
-    else
-      responseCode = "exclusionInclusionTargetNotFound";
 
     /*****************************************
     *
@@ -20028,17 +16896,6 @@ public class GUIManager
 
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processConfigAdaptorSupportedLanguages
-  *
-  *****************************************/
-
-  private JSONObject processConfigAdaptorSupportedLanguages(JSONObject jsonRoot)
-  {
-    return processGetSupportedLanguages(null, jsonRoot);
   }
   
   /*****************************************
@@ -20626,59 +17483,6 @@ public class GUIManager
 
     response.put("responseCode", (contactPolicy != null) ? "ok" : "contactPolicyNotFound");
     if (contactPolicy != null) response.put("contactPolicy", contactPolicyJSON);
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processConfigAdaptorSegmentationDimension
-  *
-  *****************************************/
-
-  private JSONObject processConfigAdaptorSegmentationDimension(JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String segmentationDimensionID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  retrieve and decorate segmentationDimension
-    *
-    *****************************************/
-
-    GUIManagedObject segmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID);
-    JSONObject segmentationDimensionJSON = segmentationDimensionService.generateResponseJSON(segmentationDimension, true, SystemTime.getCurrentTime());
-
-    //
-    //  remove gui specific fields
-    //
-    
-    segmentationDimensionJSON.remove("readOnly");
-    segmentationDimensionJSON.remove("accepted");
-    segmentationDimensionJSON.remove("valid");
-    segmentationDimensionJSON.remove("active");
-    
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (segmentationDimension != null) ? "ok" : "segmentationDimensionNotFound");
-    if (segmentationDimension != null) response.put("segmentationDimension", segmentationDimensionJSON);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -22579,112 +19383,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
   /*****************************************
   *
-  *  processDownloadReport
-  *
-  *****************************************/
-
-  private void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
-  {
-    String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    GUIManagedObject report1 = reportService.getStoredReport(reportID);
-    log.trace("Looking for "+reportID+" and got "+report1);
-    String responseCode = null;
-
-    if (report1 == null)
-      {
-        responseCode = "reportNotFound";
-      }
-    else
-      {
-        try
-          {
-            Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
-            String reportName = report.getName();
-
-            String outputPath = Deployment.getReportManagerOutputPath()+File.separator;
-            String fileExtension = Deployment.getReportManagerFileExtension();
-
-            File folder = new File(outputPath);
-            String csvFilenameRegex = reportName+ "_"+ ".*"+ "\\."+ fileExtension+ReportUtils.ZIP_EXTENSION;
-
-            File[] listOfFiles = folder.listFiles(new FileFilter(){
-              @Override
-                  public boolean accept(File f) {
-                return Pattern.compile(csvFilenameRegex).matcher(f.getName()).matches();
-              }});
-
-              File reportFile = null;
-
-              long lastMod = Long.MIN_VALUE;
-              if(listOfFiles != null && listOfFiles.length != 0) {
-                for (int i = 0; i < listOfFiles.length; i++) {
-                  if (listOfFiles[i].isFile()) {
-                    if(listOfFiles[i].lastModified() > lastMod) {
-                      reportFile = listOfFiles[i];
-                      lastMod = reportFile.lastModified();
-                    }
-                  }
-                }
-              }else {
-                responseCode = "Cant find report with that name";
-              }
-
-              if(reportFile != null) {
-                if(reportFile.length() > 0) {
-                  try {
-                    FileInputStream fis = new FileInputStream(reportFile);
-                    exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
-                    exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
-                    exchange.sendResponseHeaders(200, reportFile.length());
-                    OutputStream os = exchange.getResponseBody();
-                    byte data[] = new byte[10_000]; // allow some bufferization
-                    int length;
-                    while ((length = fis.read(data)) != -1) {
-                      os.write(data, 0, length);
-                    }
-                    fis.close();
-                    os.flush();
-                    os.close();
-                  } catch (Exception excp) {
-                    StringWriter stackTraceWriter = new StringWriter();
-                    excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-                  }
-                }else {
-                  responseCode = "Report size is 0, report file is empty";
-                }
-              }else {
-                responseCode = "Report is null, cant find this report";
-              }
-          }
-        catch (GUIManagerException e)
-          {
-            log.info("Exception when building report from "+report1+" : "+e.getLocalizedMessage());
-            responseCode = "internalError";
-          }
-      }
-    if(responseCode != null) {
-      try {
-        jsonResponse.put("responseCode", responseCode);
-        exchange.sendResponseHeaders(200, 0);
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
-        writer.write(jsonResponse.toString());
-        writer.close();
-        exchange.close();
-      }catch(Exception e) {
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-      }
-    }
-  }
-
-  /*****************************************
-  *
   *  processCriterionFields
   *
   *****************************************/
-  private List<JSONObject> processCriterionFields(Map<String,CriterionField> baseCriterionFields, boolean tagsOnly)
+  protected List<JSONObject> processCriterionFields(Map<String,CriterionField> baseCriterionFields, boolean tagsOnly)
   {
     return processCriterionFields(baseCriterionFields, tagsOnly, null);
   }
@@ -23111,7 +19813,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
   *
   *****************************************/
 
-  private List<JSONObject> processNodeTypes(Map<String,NodeType> nodeTypes, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables) throws GUIManagerException
+  protected List<JSONObject> processNodeTypes(Map<String,NodeType> nodeTypes, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables) throws GUIManagerException
   {
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> result = new ArrayList<JSONObject>();
@@ -23295,7 +19997,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
   *
   ****************************************/
 
-  private List<JSONObject> evaluateEnumeratedValues(String reference, Date now, boolean includeDynamic)
+  protected List<JSONObject> evaluateEnumeratedValues(String reference, Date now, boolean includeDynamic)
   {
     List<JSONObject> result = new ArrayList<JSONObject>();
     switch (reference)
@@ -24067,66 +20769,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           }
       }
   }
-  
-  /*****************************************
-  *
-  *  deactivateOtherUCGRules
-  *
-  *****************************************/
-
-  private void deactivateOtherUCGRules(UCGRule currentUCGRule,Date date)
-  {
-    /****************************************
-    *
-    *  identify
-    *
-    ****************************************/
-
-    Set<GUIManagedObject> modifiedUCGRules = new HashSet<GUIManagedObject>();
-    for (GUIManagedObject existingUCGRule : ucgRuleService.getStoredUCGRules())
-      {
-        //
-        //  modifiedUCGRule
-        //
-        if(currentUCGRule.getGUIManagedObjectID() != existingUCGRule.getGUIManagedObjectID() && existingUCGRule.getActive() == true)
-          {
-            long epoch = epochServer.getKey();
-            GUIManagedObject modifiedUCGRule;
-            try
-              {
-                JSONObject existingRuleJSON = existingUCGRule.getJSONRepresentation();
-                existingRuleJSON.replace("active", Boolean.FALSE);
-                UCGRule ucgRule = new UCGRule(existingRuleJSON, epoch, existingUCGRule);
-                //ucgRule.validate(ucgRuleService, segmentationDimensionService, date);
-                modifiedUCGRule = ucgRule;
-              }
-            catch (JSONUtilitiesException | GUIManagerException e)
-              {
-                modifiedUCGRule = new IncompleteObject(existingUCGRule.getJSONRepresentation(), epoch);
-              }
-
-            //
-            //  changed?
-            //
-
-            if (existingUCGRule.getAccepted() != modifiedUCGRule.getAccepted())
-              {
-                modifiedUCGRules.add(modifiedUCGRule);
-              }
-          }
-      }
-
-    /****************************************
-    *
-    *  update
-    *
-    ****************************************/
-
-    for (GUIManagedObject modifiedUCGRule : modifiedUCGRules)
-      {
-        ucgRuleService.putGUIManagedObject(modifiedUCGRule, date, false, null);
-      }
-  }
+ 
 
   /*****************************************
   *
@@ -24134,7 +20777,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
   *
   *****************************************/
 
-  private void revalidateTargets(Date date)
+  protected void revalidateTargets(Date date)
   {
     /****************************************
     *
@@ -24318,7 +20961,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
   *
   *****************************************/
 
-  private void revalidateJourneys(Date date)
+  protected void revalidateJourneys(Date date)
   {
     /****************************************
     *
@@ -24374,7 +21017,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
   *
   *****************************************/
 
-  private void revalidateSubscriberMessageTemplates(Date date)
+  protected void revalidateSubscriberMessageTemplates(Date date)
   {
     /****************************************
     *
@@ -24433,7 +21076,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
   *
   *****************************************/
 
-  private void revalidateOffers(Date date)
+  protected void revalidateOffers(Date date)
   {
     /****************************************
     *
@@ -25015,62 +21658,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     revalidateVouchers(date);
   }
 
-  /*****************************************
-  *
-  *  revalidateUCGRules
-  *
-  *****************************************/
-
-  private void revalidateUCGRules(Date date)
-  {
-    /****************************************
-    *
-    *  identify
-    *
-    ****************************************/
-
-    Set<GUIManagedObject> modifiedUCGRules = new HashSet<GUIManagedObject>();
-    for (GUIManagedObject existingUCGRule : ucgRuleService.getStoredUCGRules())
-      {
-        //
-        //  modifiedUCGRule
-        //
-
-        long epoch = epochServer.getKey();
-        GUIManagedObject modifiedUCGRule;
-        try
-          {
-            UCGRule ucgRule = new UCGRule(existingUCGRule.getJSONRepresentation(), epoch, existingUCGRule);
-            ucgRule.validate(ucgRuleService, segmentationDimensionService, date);
-            modifiedUCGRule = ucgRule;
-          }
-        catch (JSONUtilitiesException|GUIManagerException e)
-          {
-            modifiedUCGRule = new IncompleteObject(existingUCGRule.getJSONRepresentation(), epoch);
-          }
-
-        //
-        //  changed?
-        //
-
-        if (existingUCGRule.getAccepted() != modifiedUCGRule.getAccepted())
-          {
-            modifiedUCGRules.add(modifiedUCGRule);
-          }
-      }
-
-    /****************************************
-    *
-    *  update
-    *
-    ****************************************/
-
-    for (GUIManagedObject modifiedUCGRule : modifiedUCGRules)
-      {
-        ucgRuleService.putGUIManagedObject(modifiedUCGRule, date, false, null);
-      }
-  }
-
   /****************************************
   *
   *  resolveSubscriberID
@@ -25091,24 +21678,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     return result;
   }
 
-  /*****************************************
-  *
-  *  journeyCount
-  *
-  *****************************************/
-
-  private int journeyCount(GUIManagedObjectType journeyType)
-  {
-    int result = 0;
-    for (GUIManagedObject journey : journeyService.getStoredJourneys())
-      {
-        if (journey.getGUIManagedObjectType() == journeyType)
-          {
-            result += 1;
-          }
-      }
-    return result;
-  }
 
   /*****************************************
   *
@@ -25458,7 +22027,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
   *
   *****************************************/
 
-  private class DeliverableSourceService
+  protected class DeliverableSourceService
   {
     /*****************************************
     *
