@@ -158,13 +158,9 @@ public class DialogMessage
 
               String rawTag = m.group();
               String criterionFieldName = m.group(1).trim();
-              CriterionField criterionField = criterionContext.getCriterionFields().get(criterionFieldName);
               boolean parameterTag = false;
-              if (criterionField == null)
-                {
-                  criterionField = new CriterionField(criterionFieldName, messageTextAttribute);
-                  parameterTag = true;
-                }
+              CriterionField criterionField = new CriterionField(criterionFieldName, messageTextAttribute);
+              parameterTag = true;
 
               //
               //  valid data type

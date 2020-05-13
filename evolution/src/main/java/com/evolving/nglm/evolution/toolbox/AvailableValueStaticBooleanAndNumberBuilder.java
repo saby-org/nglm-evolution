@@ -7,7 +7,7 @@ public class AvailableValueStaticBooleanAndNumberBuilder extends AvailableValueS
   
   public AvailableValueStaticBooleanAndNumberBuilder(Object value) {
     if(value == null) {
-      this.value = "null";
+      this.value = "false";
     }
     else {
       this.value = value.toString();
@@ -15,8 +15,8 @@ public class AvailableValueStaticBooleanAndNumberBuilder extends AvailableValueS
   }
   
   public String build(Integer indentationTabNumber) {
-    return ToolBoxUtils.getIndentation(indentationTabNumber+1) + this.value; 
+    return ToolBoxUtils.getIndentation(indentationTabNumber + 1) + "{ \"id\" : " + this.value + ", \"display\" : \"" + this.value + "\" }"; 
   }  
-  // { "id" : "callToAction",  "display" : "Advertising" }
+  // { "id" : true,  "display" : "true" }
 
 }

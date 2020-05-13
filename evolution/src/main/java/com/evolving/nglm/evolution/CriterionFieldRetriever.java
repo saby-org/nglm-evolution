@@ -101,6 +101,10 @@ public abstract class CriterionFieldRetriever
     // OLD Way to retrieve subscriberMessage
     SubscriberMessage subscriberMessage = (SubscriberMessage) CriterionFieldRetriever.getJourneyNodeParameter(evaluationRequest, tagJourneyNodeParameterName);
     if(subscriberMessage == null) {
+      // compatibility with OLD MAIL
+      subscriberMessage = (SubscriberMessage) CriterionFieldRetriever.getJourneyNodeParameter(evaluationRequest, "node.parameter.message");
+    }
+    if(subscriberMessage == null) {
       // GENERIC WAY to retrieve subscriberMessage
       subscriberMessage = (SubscriberMessage) CriterionFieldRetriever.getJourneyNodeParameter(evaluationRequest, "node.parameter.dialog_template");
     }

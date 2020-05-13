@@ -38,7 +38,12 @@ public class CommunicationChannel extends GUIManagedObject
     String profileAddressField;
     String deliveryType;
     NotificationDailyWindows notificationDailyWindows;
+
+    // parameters that must be into the template
     Map<String,CriterionField> parameters = new HashMap<String, CriterionField>();
+    
+    // paramters that must not be into the template but present into the toolbox
+    Map<String,CriterionField> toolboxParameters = new HashMap<String, CriterionField>();
     String notificationPluginClass;
     JSONObject notificationPluginConfiguration; 
     String icon;
@@ -68,6 +73,7 @@ public class CommunicationChannel extends GUIManagedObject
     public String getDeliveryType () { return deliveryType; } 
     public NotificationDailyWindows getNotificationDailyWindows() { return notificationDailyWindows; }
     public Map<String,CriterionField> getParameters() { return parameters; }
+    public Map<String,CriterionField> getToolboxParameters() { return toolboxParameters; }
     public String getNotificationPluginClass() { return notificationPluginClass; }
     public JSONObject getNotificationPluginConfiguration() { return notificationPluginConfiguration; }
     public String getIcon() { return icon; }
@@ -151,13 +157,26 @@ public class CommunicationChannel extends GUIManagedObject
       }else {
         this.notificationDailyWindows = Deployment.getNotificationDailyWindows().get("0");
       }
-      JSONArray parametersJSON = JSONUtilities.decodeJSONArray(jsonRoot, "parameters", false);
-      for (int i=0; i<parametersJSON.size(); i++)
-        {
-          JSONObject parameterJSON = (JSONObject) parametersJSON.get(i);
-          CriterionField parameter = new CriterionField(parameterJSON);
-          this.parameters.put(parameter.getID(), parameter);
-        }
+      
+      JSONArray templateParametersJSON = JSONUtilities.decodeJSONArray(jsonRoot, "parameters", false);
+      if(templateParametersJSON != null) {
+        for (int i=0; i<templateParametersJSON.size(); i++)
+          {
+            JSONObject parameterJSON = (JSONObject) templateParametersJSON.get(i);
+            CriterionField parameter = new CriterionField(parameterJSON);
+            this.parameters.put(parameter.getID(), parameter);
+          }
+      }
+      
+      JSONArray toolboxParametersJSON = JSONUtilities.decodeJSONArray(jsonRoot, "toolboxParameters", false);
+      if(toolboxParametersJSON != null) {
+        for (int i=0; i<toolboxParametersJSON.size(); i++)
+          {
+            JSONObject parameterJSON = (JSONObject) toolboxParametersJSON.get(i);
+            CriterionField parameter = new CriterionField(parameterJSON);
+            this.toolboxParameters.put(parameter.getID(), parameter);
+          }
+      }
       
       this.isGeneric =  JSONUtilities.decodeBoolean(jsonRoot, "isGeneric", Boolean.FALSE);
       

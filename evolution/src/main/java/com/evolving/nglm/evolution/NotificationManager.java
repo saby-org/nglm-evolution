@@ -879,15 +879,12 @@ public class NotificationManager extends DeliveryManager implements Runnable
 //          log.info(" ===================================");
 
           //
-          // Parameters specific to the channel but NOT related to template
-          //
-          
+          // Parameters specific to the channel toolbox but NOT related to template
+          //          
           ParameterMap notificationParameters = new ParameterMap();
-          for(CriterionField field : communicationChannel.getParameters().values()) {
-            if(!field.getFieldDataType().getExternalRepresentation().startsWith("template_")) {
-              Object value = CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,field.getID());
-              notificationParameters.put(field.getID(), value);
-            }
+          for(CriterionField field : communicationChannel.getToolboxParameters().values()) {
+            Object value = CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,field.getID());
+            notificationParameters.put(field.getID(), value);            
           }
           
           // add also the mandatory parameters for all channels
@@ -1199,23 +1196,23 @@ public class NotificationManager extends DeliveryManager implements Runnable
             templateParameter.addFlatStringField("communicationChannelID", current.getID());
             tb.addParameter(templateParameter);
           }
-        if (current.getJSONRepresentation().get("parameters") != null)
+        if (current.getJSONRepresentation().get("toolboxParameters") != null)
           {
-            JSONArray paramsJSON = JSONUtilities.decodeJSONArray(current.getJSONRepresentation(), "parameters");
+            JSONArray paramsJSON = JSONUtilities.decodeJSONArray(current.getJSONRepresentation(), "toolboxParameters");
             for (int i = 0; i < paramsJSON.size(); i++)
               {
                 JSONObject cp = (JSONObject) paramsJSON.get(i);
                 String dataType = JSONUtilities.decodeString(cp, "dataType");
                 if(dataType != null && dataType.startsWith("template_")) {
                   // this parameter must not be put into the toolbox as the GUI will retrieve it directly from the channel definition
+                  log.warn("Channel " + current.getID() + " must not have a toolbox field of type " + dataType + " fieldID " + JSONUtilities.decodeString(cp, "id"));
                   continue;
                 }
                 parameterBuilder = new ParameterBuilder(JSONUtilities.decodeString(cp, "id"), JSONUtilities.decodeString(cp, "display"), CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(cp, "dataType")), JSONUtilities.decodeBoolean(cp, "multiple"), JSONUtilities.decodeBoolean(cp, "mandatory"), cp.get("defaultValue"));
                 tb.addParameter(parameterBuilder);
                 // TODO EVPRO-146 Available Values
               }
-          }
-       
+          }       
 
         // Action:
         tb.setAction(new ActionBuilder("com.evolving.nglm.evolution.NotificationManager$ActionManager").addManagerClassConfigurationField("channelID", current.getID()).addManagerClassConfigurationField("moduleID", "1"));
