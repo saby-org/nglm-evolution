@@ -140,12 +140,13 @@ public class SubscriberRelatives
     
     json.put("relationshipID", relationshipID);
     json.put("relationshipName", Deployment.getSupportedRelationships().get(relationshipID) != null ? Deployment.getSupportedRelationships().get(relationshipID).getName() : null);
+    json.put("relationshipDisplay", Deployment.getSupportedRelationships().get(relationshipID) != null ? Deployment.getSupportedRelationships().get(relationshipID).getDisplay() : null);
     
     //
     //  parent
     //
     
-    HashMap<String, Object> parentJson = new HashMap<String, Object>();
+    HashMap<String, Object> parentJsonMap = new HashMap<String, Object>();
     try
       {
         if (getParentSubscriberID() != null && !getParentSubscriberID().isEmpty())
@@ -153,7 +154,7 @@ public class SubscriberRelatives
             SubscriberProfile parentProfile = subscriberProfileService.getSubscriberProfile(getParentSubscriberID());
             if (parentProfile != null)
               {
-                parentJson.put("subscriberID", getParentSubscriberID());
+                parentJsonMap.put("subscriberID", getParentSubscriberID());
                 SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(parentProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
                 for (String id : Deployment.getAlternateIDs().keySet())
                   {
@@ -162,7 +163,7 @@ public class SubscriberRelatives
                     if (criterionField != null)
                       {
                         String alternateIDValue = (String) criterionField.retrieve(evaluationRequest);
-                        parentJson.put(alternateID.getID(), alternateIDValue);
+                        parentJsonMap.put(alternateID.getID(), alternateIDValue);
                       }
                   }
               }
@@ -172,7 +173,7 @@ public class SubscriberRelatives
       {
         e.printStackTrace();
       }
-    json.put("parentDetails", parentJson.isEmpty() ? null : JSONUtilities.encodeObject(parentJson));
+    json.put("parentDetails", parentJsonMap.isEmpty() ? null : JSONUtilities.encodeObject(parentJsonMap));
     
     //
     //  children
