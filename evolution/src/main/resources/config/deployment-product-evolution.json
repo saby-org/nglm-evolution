@@ -456,12 +456,6 @@
   "allThoseFollowingAreComingFromNGLMQA": "this is not yet OK, just a first try",
 
   "autoApproveGuiObjects" : false,
-  "periodicEvaluationCronEntry" : "0 2 * * *",
-  "ucgEvaluationCronEntry" : "0 4 * * *",
-  "ucgEngineESConnectTimeout" : 30000,
-  "ucgEngineESSocketTimeout" : 60000,
-  "ucgEngineESMasRetryTimeout" : 60000,
-  "elasticSearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
 
   "propensityRule"                                       :
   {

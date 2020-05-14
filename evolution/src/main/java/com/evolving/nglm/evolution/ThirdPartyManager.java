@@ -5228,44 +5228,30 @@ public class ThirdPartyManager
 
   private boolean hasAccess(AuthenticatedResponse authResponse, ThirdPartyMethodAccessLevel methodAccessLevel, String api)
   {
-    boolean result = true;
 
     //
-    //  check method access
+    // check method access
     //
 
-    if (methodAccessLevel == null || (methodAccessLevel.getPermissions().isEmpty() && methodAccessLevel.getWorkgroups().isEmpty()))
+    if (methodAccessLevel == null || (methodAccessLevel.getPermissions().isEmpty()))
       {
-        result = false;
         log.warn("No permission/workgroup is configured for method {} ", api);
+        return false;
       }
-    else
+
+    //
+    // check permissions
+    //
+    for (String userPermission : authResponse.getPermissions())
       {
-        //
-        //  check workgroup
-        //
-
-        result = methodAccessLevel.getWorkgroups().contains(authResponse.getWorkgroupHierarchy().getWorkgroup().getName());
-
-        //
-        //  check permissions
-        //
-
-        if (result)
+        if (methodAccessLevel.getPermissions().contains(userPermission))
           {
-            for (String userPermission : authResponse.getPermissions())
-              {
-                result = methodAccessLevel.getPermissions().contains(userPermission);
-                if (result) break;
-              }
+            return true;
           }
+
       }
+    return false;
 
-    //
-    //  result
-    //
-
-    return result;
   }
   
   /*****************************************

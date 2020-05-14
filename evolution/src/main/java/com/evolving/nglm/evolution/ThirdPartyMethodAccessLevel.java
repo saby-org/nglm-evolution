@@ -24,7 +24,6 @@ public class ThirdPartyMethodAccessLevel
   *****************************************/
   
   private List<String> permissions;
-  private List<String> workgroups;
   private boolean byPassAuth;
   
   //
@@ -32,7 +31,6 @@ public class ThirdPartyMethodAccessLevel
   //
   
   public List<String> getPermissions() { return permissions; }
-  public List<String> getWorkgroups() { return workgroups; }
   public boolean isByPassAuth() { return byPassAuth; } 
   
   /*****************************************
@@ -55,22 +53,10 @@ public class ThirdPartyMethodAccessLevel
       }
     
     //
-    //  workgroups
-    //
-    
-    JSONArray workgroupsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "workgroups", true);
-    List<String> configuredGroups = new ArrayList<String>();
-    for (int i=0; i<workgroupsJSONArray.size(); i++)
-      {
-        configuredGroups.add((String) workgroupsJSONArray.get(i));
-      }
-    
-    //
     //  set
     //
     
     this.permissions = configuredPermissions;
-    this.workgroups = configuredGroups;
     this.byPassAuth = JSONUtilities.decodeBoolean(jsonRoot, "byPassAuth", Boolean.FALSE);
   }
   
@@ -82,7 +68,7 @@ public class ThirdPartyMethodAccessLevel
   
   @Override public String toString()
   {
-    return "ThirdPartyMethodAccessLevel [permissions=" + permissions + ", workgroups=" + workgroups + "]";
+    return "ThirdPartyMethodAccessLevel [permissions=" + permissions + "]";
   }
 
 }
