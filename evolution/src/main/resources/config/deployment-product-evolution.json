@@ -571,6 +571,16 @@
       "internalTopic"             : "${topic.commoditydelivery.internal}",
       "routingTopic"              : "${topic.commoditydelivery.routing}",
       "deliveryGuarantee"         : "atLeastOnce"
+    },
+    {
+      "deliveryType"              : "notificationmanager",
+      "requestClass"              : "com.evolving.nglm.evolution.NotificationManager$NotificationManagerRequest",
+      "requestTopic"              : "${topic.notificationmanager.request}",
+      "responseTopic"             : "${topic.notificationmanager.response}",
+      "internalTopic"             : "${topic.notificationmanager.internal}",
+      "routingTopic"              : "${topic.notificationmanager.routing}",
+      "deliveryRatePerMinute"     : 60,
+      "deliveryGuarantee"         : "atLeastOnce"
     }
   ],
 
