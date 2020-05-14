@@ -603,7 +603,7 @@ public class CriterionContext
             Map<String,CriterionField> newMap = new LinkedHashMap<String,CriterionField>();
             for (Entry<String, CriterionField> entry : this.additionalCriterionFields.entrySet())
               {
-                if (entry.getValue().getFieldDataType().equals(expectedDataType))
+                if (expectedDataType.compatibleWith(entry.getValue().getFieldDataType()))
                   {
                     newMap.put(entry.getKey(), entry.getValue());
                   }

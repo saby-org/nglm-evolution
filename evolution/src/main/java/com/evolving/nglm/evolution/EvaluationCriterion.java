@@ -134,6 +134,14 @@ public class EvaluationCriterion
     private CriterionDataType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public String getExternalRepresentation() { return externalRepresentation; }
     public static CriterionDataType fromExternalRepresentation(String externalRepresentation) { for (CriterionDataType enumeratedValue : CriterionDataType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+    public boolean compatibleWith(CriterionDataType dataType) {
+      if(this.equals(DoubleCriterion) && dataType.equals(IntegerCriterion)) {
+        return true;
+      }
+      else {
+        return this.equals(dataType);
+      }
+    }
 
     //
     //  getBaseType
