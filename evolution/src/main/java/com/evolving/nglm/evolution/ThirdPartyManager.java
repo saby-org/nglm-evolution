@@ -4277,9 +4277,9 @@ public class ThirdPartyManager
       String salesChannelID = null;
       for (SalesChannel sc : salesChannelService.getActiveSalesChannels(now))
         {
-          if (sc.getGUIManagedObjectName().equals(salesChannel))
+          if (salesChannel.equals(sc.getGUIManagedObjectDisplay()))
             {
-              salesChannelID = sc.getGUIManagedObjectID();
+              salesChannelID = sc.getSalesChannelID();
               break;
             }
         }
