@@ -21631,8 +21631,8 @@ public class GUIManager
        return JSONUtilities.encodeObject(response);
      }
  
-   String offerName = JSONUtilities.decodeString(jsonRoot, "offerName", true);
-   String salesChannel = JSONUtilities.decodeString(jsonRoot, "salesChannel", true);
+   String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
+   String salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
    Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
    String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
 
@@ -21659,32 +21659,16 @@ public class GUIManager
       } 
     else
       {
-        String offerID = null;
-        for (Offer offer : offerService.getActiveOffers(now))
-          {
-            if (offer.getDisplay().equals(offerName))
-              {
-                offerID = offer.getGUIManagedObjectID();
-                break;
-              }
-          }
-        if (offerID == null)
+        Offer offer = offerService.getActiveOffer(offerID, now);
+        if (offer == null)
           {
             String str = "Invalid Offer";
             log.error(str);
             response.put("responseCode", str);
             return JSONUtilities.encodeObject(response);
           }
-        String salesChannelID = null;
-        for (SalesChannel sc : salesChannelService.getActiveSalesChannels(now))
-          {
-            if (sc.getGUIManagedObjectName().equals(salesChannel))
-              {
-                salesChannelID = sc.getGUIManagedObjectID();
-                break;
-              }
-          }
-        if (salesChannelID == null)
+        SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, now);
+        if (salesChannel == null)
           {
             String str = "Invalid SalesChannel";
             log.error(str);
