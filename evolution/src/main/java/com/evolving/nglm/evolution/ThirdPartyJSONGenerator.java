@@ -105,33 +105,12 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  protected static JSONObject generateOfferJSONForThirdParty(Offer offer, ProductService productService, VoucherService voucherService)
-  {
-    HashMap<String, Object> offerMap = new HashMap<String, Object>();
-    if ( null == offer ) return JSONUtilities.encodeObject(offerMap);
-    offerMap.put("offerID", offer.getOfferID());
-    offerMap.put("offerName", offer.getGUIManagedObjectName());
-    offerMap.put("offerInitialPropensity", offer.getInitialPropensity());
-    offerMap.put("offerUnitaryCost", offer.getUnitaryCost());
-    List<JSONObject> products = offer.getOfferProducts()==null?null:offer.getOfferProducts().stream().map(product -> ThirdPartyJSONGenerator.generateProductJSONForThirdParty(product, productService)).collect(Collectors.toList());
-    if(products!=null) offerMap.put("products", products);
-    List<JSONObject> vouchers = offer.getOfferVouchers()==null?null:offer.getOfferVouchers().stream().map(voucher -> ThirdPartyJSONGenerator.generateVoucherJSONForThirdParty(voucher, voucherService)).collect(Collectors.toList());
-    if(vouchers!=null) offerMap.put("vouchers", vouchers);
-
-    return JSONUtilities.encodeObject(offerMap);
-  }
-  
-  /*****************************************
-  *
-  *  generateOfferJSONForThirdParty
-  *
-  *****************************************/
-  
   public static JSONObject generateOfferJSONForThirdParty(Offer offer, OfferService offerService, OfferObjectiveService offerObjectiveService, ProductService productService, VoucherService voucherService, SalesChannelService salesChannelService)
   {
     HashMap<String, Object> offerMap = new HashMap<String, Object>();
     if ( null == offer ) return JSONUtilities.encodeObject(offerMap);
     offerMap.put("offerID", offer.getOfferID());
+    offerMap.put("offerDisplay", offer.getDisplay());
     offerMap.put("offerName", offer.getGUIManagedObjectName());
     offerMap.put("offerState", offerService.isActiveOffer(offer, SystemTime.getCurrentTime()) ? "active" : "stored");
     offerMap.put("offerStartDate", getDateString(offer.getEffectiveStartDate()));
