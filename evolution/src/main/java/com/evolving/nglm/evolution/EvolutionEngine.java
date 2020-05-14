@@ -3946,7 +3946,6 @@ public class EvolutionEngine
               {
                 if(token instanceof DNBOToken)
                   {
-
                     subscriberStoredToken = (DNBOToken) token;
                   }
                 else
@@ -4023,7 +4022,7 @@ public class EvolutionEngine
                   }
               }
           }
-        else if(evolutionEvent instanceof AcceptanceLog)
+        else if (evolutionEvent instanceof AcceptanceLog)
           {
 
             //

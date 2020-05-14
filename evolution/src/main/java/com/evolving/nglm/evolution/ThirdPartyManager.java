@@ -2681,7 +2681,13 @@ public class ThirdPartyManager
     *
     ****************************************/
 
-   String loyaltyProgramID = readString(jsonRoot, "loyaltyProgramID", true);
+   String loyaltyProgramID = readString(jsonRoot, "loyaltyProgramID", false);
+   if (loyaltyProgramID == null) // this is mandatory, but we want to control the return code
+     {
+       response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
+       response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage());
+       return JSONUtilities.encodeObject(response);          
+     }
 
    /*****************************************
     *
@@ -3450,7 +3456,13 @@ public class ThirdPartyManager
    String presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "presentationStrategyID", false);
    String presentationStrategyDisplay = JSONUtilities.decodeString(jsonRoot, "presentationStrategy", false);
 
-   String tokenTypeDisplay = JSONUtilities.decodeString(jsonRoot, "tokenType", true);
+   String tokenTypeDisplay = JSONUtilities.decodeString(jsonRoot, "tokenType", false);
+   if (tokenTypeDisplay == null) // this is mandatory, but we want to control the return code
+     {
+       response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
+       response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage());
+       return JSONUtilities.encodeObject(response);          
+     }
 
    // _allow_multiple_token_ indicates if the solution creates a new token if there is still one valid for this strategy
    // optional parameter default value: false (in that case, the existing valid token is returned)
@@ -3578,15 +3590,23 @@ public class ThirdPartyManager
        {
          for (Token token : subscriberProfile.getTokens())
            {
-             if (token instanceof DNBOToken && ((DNBOToken) token).getPresentationStrategyID().equals(presentationStrategyID))
+             if (token != null && token instanceof DNBOToken)
                {
-                 response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, callingChannel, null, paymentMeanService);
-                 response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
-                 response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
-                 return JSONUtilities.encodeObject(response);
+                 DNBOToken dnboToken = (DNBOToken) token;
+                 if (presentationStrategyID.equals(dnboToken.getPresentationStrategyID()))
+                   {
+                     TokenStatus status = dnboToken.getTokenStatus();
+                     if (status != null && (status.equals(TokenStatus.New) || status.equals(TokenStatus.Bound)) && !token.getTokenExpirationDate().before(now))
+                       {
+                         response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, callingChannel, null, paymentMeanService);
+                         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+                         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+                         return JSONUtilities.encodeObject(response);
+                       }
+                   }
                }
            }
-       }
+         }
 
      DNBOToken newToken = TokenUtils.generateTokenCode(subscriberProfile, tokenType);
      if (newToken == null)
@@ -4162,8 +4182,22 @@ public class ThirdPartyManager
     
     String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
     String offerDisplay = JSONUtilities.decodeString(jsonRoot, "offer", false);
-    String salesChannel = JSONUtilities.decodeString(jsonRoot, "salesChannel", true);
+    String salesChannel = JSONUtilities.decodeString(jsonRoot, "salesChannel", false);
+    if (salesChannel == null) // this is mandatory, but we want to control the return code
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);          
+      }
+
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+    if (quantity == null) // this is mandatory, but we want to control the return code
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);          
+      }
+    
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
     String userID = JSONUtilities.decodeString(jsonRoot, "loginName", true); 
     Map<String, List<String>> activeResellerAndSalesChannelIDs = activeResellerAndSalesChannelIDs(userID);
@@ -4356,7 +4390,13 @@ public class ThirdPartyManager
 
     String subscriberID = resolveSubscriberID(jsonRoot);
     
-    String loyaltyProgramName = JSONUtilities.decodeString(jsonRoot, "loyaltyProgram", true);
+    String loyaltyProgramName = JSONUtilities.decodeString(jsonRoot, "loyaltyProgram", false);
+    if (loyaltyProgramName == null) // this is mandatory, but we want to control the return code
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.LOYALTY_PROJECT_NOT_FOUND.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.LOYALTY_PROJECT_NOT_FOUND.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);          
+      }
     String loyaltyProgramRequestID = "";
 
     /*****************************************
@@ -4594,7 +4634,7 @@ public class ThirdPartyManager
     //
 
 
-    String eventName = JSONUtilities.decodeString(jsonRoot, "eventName", true);
+    String eventName = JSONUtilities.decodeString(jsonRoot, "eventName", false);
     if (eventName == null || eventName.isEmpty())
       {
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage() + "-{eventName is missing}");

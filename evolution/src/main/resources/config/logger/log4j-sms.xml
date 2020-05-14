@@ -35,5 +35,8 @@
 	<category name="org.apache.zookeeper">
 		<priority value="ERROR" />
 	</category>
+	<category name="ie.omk.smpp.Connection">
+		<priority value="ERROR" />
+	</category>
 
 </log4j:configuration>

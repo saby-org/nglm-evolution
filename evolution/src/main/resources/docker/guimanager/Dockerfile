@@ -51,4 +51,6 @@ COPY config/*_jmx.yml /app/config/
 #  run
 #
 
+LABEL evolution.artifact="${project.artifactId}-${project.version}"
+
 CMD [ "/app/bin/guimanager-run.sh" ]

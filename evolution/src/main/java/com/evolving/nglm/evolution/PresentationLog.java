@@ -139,7 +139,7 @@ public class PresentationLog implements SubscriberStreamEvent
   public String getFeatureID() { return featureID; }
   public List<Date> getPresentationDates() { return presentationDates;}
   public String getTokenTypeID() { return tokenTypeID; }
-  public DNBOToken getToken() { return null;}
+  public DNBOToken getToken() { return token;}
   
   public void setToken(DNBOToken token) { this.token = token; }
 
@@ -347,7 +347,7 @@ public class PresentationLog implements SubscriberStreamEvent
     struct.put("featureID", presentationLog.getFeatureID());
     struct.put("presentationDates", presentationLog.getPresentationDates());
     struct.put("tokenTypeID", presentationLog.getTokenTypeID());
-    struct.put("token", presentationLog.getToken());
+    struct.put("token", DNBOToken.serde().packOptional(presentationLog.getToken()));
    return struct;
   }
 
@@ -400,7 +400,7 @@ public class PresentationLog implements SubscriberStreamEvent
     String featureID = (schemaVersion >= 2) ? valueStruct.getString("featureID") : null;
     List<Date> presentationDates = (schemaVersion >= 3) ? (List<Date>)valueStruct.get("presentationDates") : new ArrayList<Date>();
     String tokenTypeID = (schemaVersion >= 4) ? valueStruct.getString("tokenTypeID") : null;
-    DNBOToken token = (schemaVersion >= 5) ? (DNBOToken)valueStruct.get("token") : null;
+    DNBOToken token = (schemaVersion >= 5) ? DNBOToken.serde().unpackOptional((new SchemaAndValue(schema.field("token").schema(), valueStruct.get("token")))) : null;
     //
     //  return
     //
