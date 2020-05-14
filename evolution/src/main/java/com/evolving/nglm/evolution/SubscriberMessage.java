@@ -141,7 +141,7 @@ public abstract class SubscriberMessage
         for (String dialogMessageField : dialogMessageFields.keySet())
           {
             boolean mandatory = dialogMessageFields.get(dialogMessageField);
-            dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, mandatory, criterionContext));
+            dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, mandatory, criterionContext, true));
           }
       }
   }

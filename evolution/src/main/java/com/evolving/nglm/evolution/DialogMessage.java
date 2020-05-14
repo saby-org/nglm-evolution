@@ -102,7 +102,7 @@ public class DialogMessage
   *
   *****************************************/
 
-  public DialogMessage(JSONArray messagesJSON, String messageTextAttribute, boolean mandatory, CriterionContext criterionContext) throws GUIManagerException
+  public DialogMessage(JSONArray messagesJSON, String messageTextAttribute, boolean mandatory, CriterionContext criterionContext, boolean inlineTemplate) throws GUIManagerException
   {
     Map<CriterionField,String> tagReplacements = new HashMap<CriterionField,String>();
     for (int i=0; i<messagesJSON.size(); i++)
@@ -158,9 +158,13 @@ public class DialogMessage
 
               String rawTag = m.group();
               String criterionFieldName = m.group(1).trim();
+              CriterionField criterionField = criterionContext.getCriterionFields().get(criterionFieldName);
               boolean parameterTag = false;
-              CriterionField criterionField = new CriterionField(criterionFieldName, messageTextAttribute);
-              parameterTag = true;
+              if (criterionField == null || !inlineTemplate /*because in inline template mode, paramameter tags are not allowed !!*/)
+                {
+                  criterionField = new CriterionField(criterionFieldName, messageTextAttribute);
+                  parameterTag = true;
+                }
 
               //
               //  valid data type
