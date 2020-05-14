@@ -641,6 +641,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("mailTemplateCount", subscriberMessageTemplateService.getStoredMailTemplates(true, includeArchived).size());
     response.put("smsTemplateCount", subscriberMessageTemplateService.getStoredSMSTemplates(true, includeArchived).size());
     response.put("pushTemplateCount", subscriberMessageTemplateService.getStoredPushTemplates(true, includeArchived).size());
+    response.put("dialogTemplateCount", subscriberMessageTemplateService.getStoredDialogTemplates(true, includeArchived).size());
     response.put("reportsCount", reportService.getStoredReports(includeArchived).size());
     response.put("walletsCount", pointService.getStoredPoints(includeArchived).size() + tokenTypeService.getStoredTokenTypes(includeArchived).size() + voucherTypeService.getStoredVoucherTypes(includeArchived).size());
     response.put("ucgRuleCount", ucgRuleService.getStoredUCGRules(includeArchived).size());
