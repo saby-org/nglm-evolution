@@ -262,12 +262,10 @@ public class BDRReportCsvWriter implements ReportCsvFactory
               }
             if (bdrFields.containsKey(returnCode))
               {
-                bdrRecs.put(returnCode, bdrFields.get(returnCode));
+                Object code = bdrFields.get(returnCode);
+                bdrRecs.put(returnCode, code);
+                bdrRecs.put(returnCodeDetails, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code) : "");
               }
-            if (bdrFields.containsKey(returnCodeDetails))
-              {
-                bdrRecs.put(returnCodeDetails, bdrFields.get(returnCodeDetails));
-              } 
             
             //
             // result

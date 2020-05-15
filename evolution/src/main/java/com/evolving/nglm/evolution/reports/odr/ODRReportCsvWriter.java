@@ -119,7 +119,6 @@ public class ODRReportCsvWriter implements ReportCsvFactory
             if(odrFields.get(subscriberID) != null) {
               Object subscriberIDField = odrFields.get(subscriberID);
               oderRecs.put(customerID, subscriberIDField);
-             // odrFields.remove(subscriberID);
             }
             for (AlternateID alternateID : Deployment.getAlternateIDs().values())
               {
@@ -132,22 +131,18 @@ public class ODRReportCsvWriter implements ReportCsvFactory
             
             if (odrFields.containsKey(originatingDeliveryRequestID))
               {
-                // TODO : same as salesChannelID
                 oderRecs.put(originatingDeliveryRequestID, odrFields.get(originatingDeliveryRequestID));
               }
             if (odrFields.containsKey(deliveryRequestID))
               {
-                // TODO : same as salesChannelID
                 oderRecs.put(deliveryRequestID, odrFields.get(deliveryRequestID));
               }
             if (odrFields.containsKey(deliveryStatus))
               {
-                // TODO : same as salesChannelID
                 oderRecs.put(deliveryStatus, odrFields.get(deliveryStatus));
               }
             if (odrFields.containsKey(eventID))
               {
-                // TODO : same as salesChannelID
                 oderRecs.put(eventID, odrFields.get(eventID));
               }
 
@@ -180,13 +175,9 @@ public class ODRReportCsvWriter implements ReportCsvFactory
               oderRecs.put(moduleName, module.toString());
               oderRecs.put(featureId, odrFields.get(featureId));
               oderRecs.put(moduleId, odrFields.get(moduleId));
-
-             // odrFields.remove(featureId);
-              //odrFields.remove(moduleId);
             }  
             if (odrFields.containsKey(meanOfPayment))
               {
-                // TODO : same as salesChannelID
                 oderRecs.put(meanOfPayment, odrFields.get(meanOfPayment));
               }
             if (odrFields.containsKey(offerID))
@@ -196,16 +187,13 @@ public class ODRReportCsvWriter implements ReportCsvFactory
                 if (offerObject instanceof Offer)
                   {
                     oderRecs.put(offerDisplay, ((Offer)offerObject).getDisplay());
-                    //odrFields.remove(offerID);                  
                   }
                 else {
                   oderRecs.put(offerDisplay, "");
                 }
-                
             }
             if (odrFields.containsKey(offerPrice))
               {
-                // TODO : same as salesChannelID
                 oderRecs.put(offerPrice, odrFields.get(offerPrice));
               }
             
@@ -234,20 +222,16 @@ public class ODRReportCsvWriter implements ReportCsvFactory
          
             if (odrFields.containsKey(offerQty))
               {
-                // TODO : same as salesChannelID
                 oderRecs.put(offerQty, odrFields.get(offerQty));
               }
             if (odrFields.containsKey(offerStock))
               {
-                // TODO : same as salesChannelID
                 oderRecs.put(offerStock, odrFields.get(offerStock));
               }
             if (odrFields.containsKey(origin))
               {
-                // TODO : same as salesChannelID
                 oderRecs.put(origin, odrFields.get(origin));
               }
-            // get salesChannel display
             if (odrFields.containsKey(salesChannelID))
               {
                 GUIManagedObject salesChannelObject = salesChannelService.getStoredSalesChannel(String.valueOf(odrFields.get(salesChannelID)));
@@ -259,19 +243,14 @@ public class ODRReportCsvWriter implements ReportCsvFactory
               }
             if (odrFields.containsKey(voucherCode))
               {
-                // TODO : same as salesChannelID
                 oderRecs.put(voucherCode, odrFields.get(voucherCode));
               }
             if (odrFields.containsKey(returnCode))
               {
-                // TODO : same as salesChannelID
-                oderRecs.put(returnCode, odrFields.get(returnCode));
+                Object code = odrFields.get(returnCode);
+                oderRecs.put(returnCode, code);
+                oderRecs.put(returnCodeDetails, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code) : "");
               }
-            if (odrFields.containsKey(returnCodeDetails))
-              {
-                // TODO : same as salesChannelID
-                oderRecs.put(returnCodeDetails, odrFields.get(returnCodeDetails));
-              }    
             
             //
             // result

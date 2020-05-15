@@ -245,11 +245,9 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
               }
             if (notifFields.containsKey(returnCode))
               {
-                notifRecs.put(returnCode, notifFields.get(returnCode));
-              }
-            if (notifFields.get(returnCodeDetails) != null)
-              {
-                notifRecs.put(returnCodeDetails, notifFields.get(returnCodeDetails));
+                Object code = notifFields.get(returnCode);
+                notifRecs.put(returnCode, code);
+                notifRecs.put(returnCodeDetails, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code) : "");
               }
             if (notifFields.containsKey(source))
               {
