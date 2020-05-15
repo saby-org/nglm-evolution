@@ -4313,9 +4313,9 @@ public class ThirdPartyManager
           else
             {            
               response.put(GENERIC_RESPONSE_CODE,
-                  RESTAPIGenericReturnCodes.SALSCHANNEL_RESELLER_MISMATCH.getGenericResponseCode());
+                  RESTAPIGenericReturnCodes.SALESCHANNEL_RESELLER_MISMATCH.getGenericResponseCode());
               response.put(GENERIC_RESPONSE_MSG,
-                  RESTAPIGenericReturnCodes.SALSCHANNEL_RESELLER_MISMATCH.getGenericResponseMessage());
+                  RESTAPIGenericReturnCodes.SALESCHANNEL_RESELLER_MISMATCH.getGenericResponseMessage());
               return JSONUtilities.encodeObject(response);
             }
         }
