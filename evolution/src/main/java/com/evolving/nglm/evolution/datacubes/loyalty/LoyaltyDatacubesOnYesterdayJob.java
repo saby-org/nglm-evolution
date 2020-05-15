@@ -29,7 +29,7 @@ public class LoyaltyDatacubesOnYesterdayJob extends ScheduledJob
         "LoyaltyPrograms(definitive)", 
         Deployment.getYesterdayLoyaltyDatacubePeriodCronEntryString(), 
         Deployment.getBaseTimeZone(),
-        true);
+        false);
     this.loyaltyHistoryDatacube = new ProgramsHistoryDatacubeGenerator(this.jobName+":History", elasticsearch, loyaltyProgramService);
     this.tierChangesDatacube = new ProgramsChangesDatacubeGenerator(this.jobName+":Changes", elasticsearch, loyaltyProgramService);
   }
