@@ -572,7 +572,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
-      thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).toString());
+      thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, "PUSH");  // TODO SCH : should this be more specific (communication channel name ?) ?
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());

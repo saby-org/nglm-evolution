@@ -249,7 +249,7 @@ public class ODRReportCsvWriter implements ReportCsvFactory
               {
                 Object code = odrFields.get(returnCode);
                 oderRecs.put(returnCode, code);
-                oderRecs.put(returnCodeDetails, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code) : "");
+                oderRecs.put(returnCodeDetails, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
               }
             
             //

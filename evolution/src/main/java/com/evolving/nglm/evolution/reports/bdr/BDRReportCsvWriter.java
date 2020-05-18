@@ -70,6 +70,7 @@ public class BDRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(orgin);
     headerFieldsOrder.add(providerId);
     headerFieldsOrder.add(returnCode);
+    headerFieldsOrder.add(returnCodeDescription);
     headerFieldsOrder.add(returnCodeDetails);
     headerFieldsOrder.add(deliveryRequestID);
     headerFieldsOrder.add(originatingDeliveryRequestID);
@@ -265,7 +266,7 @@ public class BDRReportCsvWriter implements ReportCsvFactory
               {
                 Object code = bdrFields.get(returnCode);
                 bdrRecs.put(returnCode, code);
-                bdrRecs.put(returnCodeDescription, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code) : "");
+                bdrRecs.put(returnCodeDescription, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
                 bdrRecs.put(returnCodeDetails, bdrFields.get(returnCodeDetails));
               }
             

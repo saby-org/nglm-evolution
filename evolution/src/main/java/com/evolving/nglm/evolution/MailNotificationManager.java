@@ -590,7 +590,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(SOURCE, getFromAddress());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
-      thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).toString());
+      thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
       thirdPartyPresentationMap.put(NOTIFICATION_SUBJECT, getSubject(subscriberMessageTemplateService));
       thirdPartyPresentationMap.put(NOTIFICATION_TEXT_BODY, getTextBody(subscriberMessageTemplateService));

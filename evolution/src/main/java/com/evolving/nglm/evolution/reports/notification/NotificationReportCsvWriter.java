@@ -62,6 +62,7 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(deliveryStatus);
     headerFieldsOrder.add(eventID);
     headerFieldsOrder.add(returnCode);
+    headerFieldsOrder.add(returnCodeDescription);
     headerFieldsOrder.add(returnCodeDetails);
     headerFieldsOrder.add(source);
   }
@@ -248,7 +249,7 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
               {
                 Object code = notifFields.get(returnCode);
                 notifRecs.put(returnCode, code);
-                notifRecs.put(returnCodeDescription, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code) : "");
+                notifRecs.put(returnCodeDescription, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
                 notifRecs.put(returnCodeDetails, notifFields.get(returnCodeDetails));
               }
             if (notifFields.containsKey(source))

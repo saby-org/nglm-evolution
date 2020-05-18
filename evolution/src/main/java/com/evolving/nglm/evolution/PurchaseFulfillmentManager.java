@@ -836,7 +836,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(ORIGIN, getOrigin());
           thirdPartyPresentationMap.put(RESELLERID, getResellerID());
           thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
-          thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).toString());
+          thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
           thirdPartyPresentationMap.put(RETURNCODEDETAILS, getOfferDeliveryReturnCodeDetails());
           thirdPartyPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
           thirdPartyPresentationMap.put(VOUCHERPARTNERID, getOfferDeliveryVoucherPartnerId());

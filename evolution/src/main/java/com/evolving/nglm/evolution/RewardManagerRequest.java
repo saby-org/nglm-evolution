@@ -365,7 +365,7 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
     thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
     thirdPartyPresentationMap.put(ORIGIN, "");
     thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
-    thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).toString());
+    thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
     thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
   }
   @Override
