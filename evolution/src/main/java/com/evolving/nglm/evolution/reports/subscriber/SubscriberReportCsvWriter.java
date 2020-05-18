@@ -130,6 +130,19 @@ public class SubscriberReportCsvWriter implements ReportCsvFactory
                 result.put("activationDate", "");
               }
           }
+        
+        if (elasticFields.containsKey("relationships"))
+          {
+            if (elasticFields.get("relationships") != null)
+              {
+                Object relationshipObject = elasticFields.get("relationships");
+                result.put("relationships", relationshipObject);
+              }
+            else
+              {
+                result.put("relationships", "");
+              }
+          }
 
         for (String field : allProfileFields)
           {
