@@ -48,7 +48,19 @@ public class NotificationManager extends DeliveryManager implements Runnable
 
   public enum MessageStatus
   {
-    PENDING(10), SENT(1), NO_CUSTOMER_LANGUAGE(701), NO_CUSTOMER_CHANNEL(702), DELIVERED(0), EXPIRED(707), ERROR(706), UNDELIVERABLE(703), INVALID(704), QUEUE_FULL(705), RESCHEDULE(709), UNKNOWN(999);
+    PENDING(10), 
+    SENT(1), 
+    NO_CUSTOMER_LANGUAGE(701), 
+    NO_CUSTOMER_CHANNEL(702), 
+    DELIVERED(0), 
+    EXPIRED(707), 
+    ERROR(706), 
+    UNDELIVERABLE(703), 
+    INVALID(704), 
+    QUEUE_FULL(705), 
+    RESCHEDULE(709), 
+    THROTTLING(23),
+    UNKNOWN(999);
 
     private Integer returncode;
 
@@ -69,6 +81,15 @@ public class NotificationManager extends DeliveryManager implements Runnable
           if (enumeratedValue.getReturnCode().equals(externalRepresentation)) return enumeratedValue;
         }
       return UNKNOWN;
+    }
+    
+    public static MessageStatus fromExternalRepresentation(String value) 
+    { 
+      for (MessageStatus enumeratedValue : MessageStatus.values()) 
+        { 
+          if (enumeratedValue.toString().equalsIgnoreCase(value)) return enumeratedValue; 
+        } 
+      return UNKNOWN; 
     }
   }
 
@@ -196,7 +217,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
                   try
                     {
                       NotificationInterface pluginInstance = (NotificationInterface) (Class.forName(cc.getNotificationPluginClass()).newInstance());
-                      pluginInstance.init(cc.getNotificationPluginConfiguration());
+                      pluginInstance.init(this, cc.getNotificationPluginConfiguration());
                       pluginInstances.put(cc.getID(), (NotificationInterface) (Class.forName(cc.getNotificationPluginClass()).newInstance()));
                     }
                   catch (InstantiationException | IllegalAccessException | IllegalArgumentException e)
@@ -249,7 +270,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
    *
    *****************************************/
 
-  public static class NotificationManagerRequest extends DeliveryRequest implements MessageDelivery
+  public static class NotificationManagerRequest extends DeliveryRequest implements MessageDelivery, INotificationRequest
   {
     /*****************************************
      *
@@ -505,29 +526,29 @@ public class NotificationManager extends DeliveryManager implements Runnable
 //      this.returnCodeDetails = null;
 //      this.channelID = JSONUtilities.decodeString(jsonRoot, "channelID", true);
 //    }
-
-    /*****************************************
-     *
-     * decodeMessageTags
-     *
-     *****************************************/
-
-    private Map<String, List<String>> decodeTags(JSONArray jsonArray) // TODO SCH : A TESTER !!! !!! !!! !!! !!! !!! !!! !!! !!!
-    {
-      Map<String, List<String>> tags = new HashMap<String, List<String>>();
-      if (jsonArray != null)
-        {
-          for (int i = 0; i < jsonArray.size(); i++)
-            {
-              JSONObject messageTagJSON = (JSONObject) jsonArray.get(i);
-              String messageField = JSONUtilities.decodeString(messageTagJSON, "messageField", true);
-              List<String> messageTags = (List<String>) JSONUtilities.decodeJSONObject(messageTagJSON, "messageTags");
-              tags.put(messageField, messageTags);
-            }
-        }
-      return tags;
-
-    }
+//
+//    /*****************************************
+//     *
+//     * decodeMessageTags
+//     *
+//     *****************************************/
+//
+//    private Map<String, List<String>> decodeTags(JSONArray jsonArray) // TODO SCH : A TESTER !!! !!! !!! !!! !!! !!! !!! !!! !!!
+//    {
+//      Map<String, List<String>> tags = new HashMap<String, List<String>>();
+//      if (jsonArray != null)
+//        {
+//          for (int i = 0; i < jsonArray.size(); i++)
+//            {
+//              JSONObject messageTagJSON = (JSONObject) jsonArray.get(i);
+//              String messageField = JSONUtilities.decodeString(messageTagJSON, "messageField", true);
+//              List<String> messageTags = (List<String>) JSONUtilities.decodeJSONObject(messageTagJSON, "messageTags");
+//              tags.put(messageField, messageTags);
+//            }
+//        }
+//      return tags;
+//
+//    }
 
     /*****************************************
      *
@@ -954,39 +975,80 @@ public class NotificationManager extends DeliveryManager implements Runnable
         log.info("NotificationManagerRequest run deliveryRequest" + deliveryRequest);
 
         NotificationManagerRequest dialogRequest = (NotificationManagerRequest) deliveryRequest;
-//        DialogTemplate DialogTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
-//        
-//        if (DialogTemplate != null) 
-//          {
-//            Date effectiveDeliveryTime = dialogRequest.getEffectiveDeliveryTime(this, DialogTemplate.getCommunicationChannelID(), now); 
-//            if(effectiveDeliveryTime.equals(now))
-//              {
-//                log.info("NotificationManagerRequest run deliveryRequest : sending notification now");
-//                notification.send(dialogRequest);
-//              }
-//            else
-//              {
-//                log.info("NotificationManagerRequest run deliveryRequest : notification rescheduled ("+effectiveDeliveryTime+")");
-//                dialogRequest.setRescheduledDate(effectiveDeliveryTime);
-//                dialogRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
-//                dialogRequest.setReturnCode(MessageStatus.RESCHEDULE.getReturnCode());
-//                dialogRequest.setMessageStatus(MessageStatus.RESCHEDULE);
-//                completeDeliveryRequest(dialogRequest);
-//              }
-//          }
-//        else
-//          {
-//            log.info("NotificationManagerRequest run deliveryRequest : ERROR : template with id '"+dialogRequest.getTemplateID()+"' not found");
-//            log.info("subscriberMessageTemplateService contains :");
-//            for(GUIManagedObject obj : subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now)){
-//              log.info("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
-//            }
-//            dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
-//            dialogRequest.setReturnCode(MessageStatus.UNKNOWN.getReturnCode());
-//            dialogRequest.setMessageStatus(MessageStatus.UNKNOWN);
-//            completeDeliveryRequest(dialogRequest);
-//          }
+        DialogTemplate dialogTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
+        
+        if (dialogTemplate != null) 
+          {
+            
+            if(dialogRequest.getRestricted()) 
+              {
+
+                Date effectiveDeliveryTime = now;
+                CommunicationChannel channel = (CommunicationChannel) Deployment.getCommunicationChannels().get(dialogRequest.getChannelID());
+                if(channel != null) 
+                  {
+                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(blackoutService, now);
+                  }
+
+                if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))
+                  {
+                    NotificationInterface plugin = pluginInstances.get(dialogRequest.getChannelID());
+                    if(plugin != null) {
+                      log.debug("NotificationManagerRequest SEND Immediately restricted " + dialogRequest);
+                      plugin.send(dialogRequest);
+                    }
+                    else {
+                      log.warn("NotificationManagerRequest Can't retrieve NotificationInterface plugin for channel " + dialogRequest.getChannelID());
+                      dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
+                      dialogRequest.setReturnCode(MessageStatus.ERROR.getReturnCode());
+                      dialogRequest.setMessageStatus(MessageStatus.ERROR);
+                      dialogRequest.setReturnCodeDetails("NoChannelConfig" + dialogRequest.getChannelID());
+                      completeDeliveryRequest((DeliveryRequest)dialogRequest);
+;
+                    }
+                  }
+                else
+                  {
+                    log.debug("NotificationManagerRequest RESCHEDULE to " + effectiveDeliveryTime + " restricted " + dialogRequest);
+                    dialogRequest.setRescheduledDate(effectiveDeliveryTime);
+                    dialogRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
+                    dialogRequest.setReturnCode(MessageStatus.RESCHEDULE.getReturnCode());
+                    dialogRequest.setMessageStatus(MessageStatus.RESCHEDULE);
+                    completeDeliveryRequest((DeliveryRequest)dialogRequest);
+                  }      
+              }
+            else {
+              NotificationInterface plugin = pluginInstances.get(dialogRequest.getChannelID());
+              if(plugin != null) {
+                log.debug("NotificationManagerRequest SEND Immediately NON restricted " + dialogRequest);
+                plugin.send(dialogRequest);
+              }
+              else {
+                log.warn("NotificationManagerRequest Can't retrieve NotificationInterface plugin for channel " + dialogRequest.getChannelID());
+                dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
+                dialogRequest.setReturnCode(MessageStatus.ERROR.getReturnCode());
+                dialogRequest.setMessageStatus(MessageStatus.ERROR);
+                dialogRequest.setReturnCodeDetails("NoChannelConfig" + dialogRequest.getChannelID());
+                completeDeliveryRequest((DeliveryRequest)dialogRequest);
+;
+              }
+            }
+          }
+        else
+          {
+            log.info("NotificationManagerRequest run deliveryRequest : ERROR : template with id '"+dialogRequest.getTemplateID()+"' not found");
+            log.info("subscriberMessageTemplateService contains :");
+            for(GUIManagedObject obj : subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now)){
+              log.info("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
+            }
+            dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
+            dialogRequest.setReturnCode(MessageStatus.UNKNOWN.getReturnCode());
+            dialogRequest.setMessageStatus(MessageStatus.UNKNOWN);
+            dialogRequest.setReturnCodeDetails("NoTemplate" + dialogRequest.getTemplateID());
+            completeDeliveryRequest((DeliveryRequest)dialogRequest);
+          }
       }
+
   }
 
   /*****************************************
@@ -995,6 +1057,12 @@ public class NotificationManager extends DeliveryManager implements Runnable
    *
    *****************************************/
 
+  public void updateDeliveryRequest(INotificationRequest deliveryRequest)
+  {
+    log.info("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
+    updateRequest((DeliveryRequest)deliveryRequest);
+  }
+  
   public void updateDeliveryRequest(DeliveryRequest deliveryRequest)
   {
     log.info("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
@@ -1007,11 +1075,18 @@ public class NotificationManager extends DeliveryManager implements Runnable
    *
    *****************************************/
 
+  public void completeDeliveryRequest(INotificationRequest deliveryRequest)
+  {
+    DeliveryRequest dr = (DeliveryRequest)deliveryRequest;
+    completeDeliveryRequest(deliveryRequest);
+  }
+  
   public void completeDeliveryRequest(DeliveryRequest deliveryRequest)
   {
+    DeliveryRequest dr = (DeliveryRequest)deliveryRequest;
     log.info("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
-    completeRequest(deliveryRequest);
-    stats.updateMessageCount(channelsString, 1, deliveryRequest.getDeliveryStatus());
+    completeRequest(dr);
+    stats.updateMessageCount(channelsString, 1, dr.getDeliveryStatus());
   }
 
   /*****************************************
