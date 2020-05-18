@@ -130,8 +130,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
         documentMap.put("featureID", commodityRequest.getFeatureID());
         documentMap.put("origin", "");
         documentMap.put("returnCode", commodityRequest.getCommodityDeliveryStatus().getReturnCode());
-        documentMap.put("returnDescription", commodityRequest.getStatusMessage());
-        documentMap.put("returnCodeDetails", commodityRequest.getCommodityDeliveryStatus());
+        documentMap.put("returnCodeDetails", commodityRequest.getStatusMessage());
       }
       log.debug("BDRSinkConnector.getDocumentMap: map computed, contents are="+documentMap.toString());
       return documentMap;

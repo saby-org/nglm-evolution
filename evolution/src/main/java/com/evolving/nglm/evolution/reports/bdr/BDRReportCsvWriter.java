@@ -43,6 +43,7 @@ public class BDRReportCsvWriter implements ReportCsvFactory
   private static final String providerId = "providerID";
   private static final String returnCode = "returnCode";
   private static final String returnCodeDetails = "returnCodeDetails";
+  private static final String returnCodeDescription = "returnCodeDescription";
   private static final String deliveryRequestID = "deliveryRequestID";
   private static final String originatingDeliveryRequestID = "originatingDeliveryRequestID";
   private static final String eventID = "eventID";
@@ -264,7 +265,8 @@ public class BDRReportCsvWriter implements ReportCsvFactory
               {
                 Object code = bdrFields.get(returnCode);
                 bdrRecs.put(returnCode, code);
-                bdrRecs.put(returnCodeDetails, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code) : "");
+                bdrRecs.put(returnCodeDescription, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code) : "");
+                bdrRecs.put(returnCodeDetails, bdrFields.get(returnCodeDetails));
               }
             
             //

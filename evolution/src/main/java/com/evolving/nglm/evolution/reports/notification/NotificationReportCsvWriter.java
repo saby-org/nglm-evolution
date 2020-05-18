@@ -40,6 +40,7 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
   private static final String eventID = "eventID";
   private static final String returnCode = "returnCode";
   private static final String returnCodeDetails = "returnCodeDetails";
+  private static final String returnCodeDescription = "returnCodeDescription";
   private static final String source = "source";
   
   private static List<String> headerFieldsOrder = new LinkedList<String>();
@@ -247,7 +248,8 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
               {
                 Object code = notifFields.get(returnCode);
                 notifRecs.put(returnCode, code);
-                notifRecs.put(returnCodeDetails, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code) : "");
+                notifRecs.put(returnCodeDescription, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code) : "");
+                notifRecs.put(returnCodeDetails, notifFields.get(returnCodeDetails));
               }
             if (notifFields.containsKey(source))
               {
