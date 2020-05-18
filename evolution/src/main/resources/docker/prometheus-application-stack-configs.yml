@@ -1,0 +1,6 @@
+
+configs:
+  prometheus-application-config:
+    file: ./runtime-config/prometheus-application/config/prometheus-application.yml
+  prometheus-application-alert-rules:
+    file: ./runtime-config/prometheus-application/config/prometheus-application-alert.rules

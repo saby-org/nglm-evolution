@@ -13,5 +13,11 @@
     placement:
       constraints:
         - engine.labels.hostname == <_MONITORING_HOST_>
+  configs:
+    - source: prometheus-application-config
+      target: /etc/prometheus/prometheus.yml.tmpl
+    - source: prometheus-application-alert-rules
+      target: /etc/prometheus/prometheus-alert.rules.tmpl
+
   networks:
     - outside
