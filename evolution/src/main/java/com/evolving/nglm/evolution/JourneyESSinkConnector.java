@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -100,13 +101,14 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
 
       Object guiManagedObjectValue = sinkRecord.value();
       Schema guiManagedObjectValueSchema = sinkRecord.valueSchema();
-      GUIManagedObject guiManagedObject = GUIManagedObject.commonSerde().unpack(new SchemaAndValue(guiManagedObjectValueSchema, guiManagedObjectValue));
-
       Map<String,Object> documentMap = new HashMap<String,Object>();
 
 
       try
         {
+
+          GUIManagedObject guiManagedObject = GUIManagedObject.commonSerde().unpack(new SchemaAndValue(guiManagedObjectValueSchema, guiManagedObjectValue));
+
           Journey journey = new Journey(guiManagedObject.getJSONRepresentation(), guiManagedObject.getGUIManagedObjectType(), guiManagedObject.getEpoch(), guiManagedObject, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
           
           //
@@ -155,23 +157,10 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
           }
           
           //
-          // targetCount 
+          // targetCount: retrieved from JSON, not in the object
           //
-          long targetCount = 0;
-          
-          /** TODO: @rl does not have acces to RestHighLevelClient here
-           * maybe do this in datacubemanager ?
-           *
-          if(journey.getTargetingType() == TargetingType.Target) {
-            try {
-              BoolQueryBuilder query = Journey.processEvaluateProfileCriteriaGetQuery(journey.getTargetingCriteria());
-              targetCount = Journey.processEvaluateProfileCriteriaExecuteQuery(query, elasticsearch);
-            } catch (CriterionException|IOException e) {
-              StringWriter stackTraceWriter = new StringWriter();
-              e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-              log.warn("Journey sink connector processEvaluateProfileCriteria exception {}", stackTraceWriter.toString());
-            }
-          }*/
+          Object targetCountObj = journey.getJSONRepresentation().get("targetCount");
+          long targetCount = (targetCountObj != null && targetCountObj instanceof Long) ? (long) targetCountObj : 0;
           
           documentMap.put("journeyID", journey.getJourneyID());
           documentMap.put("display", journey.getGUIManagedObjectDisplay());
@@ -187,7 +176,7 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
           documentMap.put("timestamp", DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime())); // @rl: TODO TIMESTAMP_FORMAT in more generic class ? Elasticsearch client ?
 
         }
-      catch (GUIManagerException e)
+      catch (GUIManagerException|SerializationException|Expression.ExpressionParseException|Expression.ExpressionTypeCheckException e)
         {
         }
 

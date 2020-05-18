@@ -81,13 +81,17 @@ public enum RESTAPIGenericReturnCodes
   CHANNEL_WITH_ALLOCATED_OFFERS(513, "CHANNEL_WITH_ALLOCATED_OFFERS", "Channel with allocated offers: cannot be deactivate"),
   TOKEN_CONFIGURATION_ERROR(514, "TOKEN CONFIGURATION ERROR", "Could not find any default token type for external token. Check your configuration"),
   TOKEN_BAD_TYPE(515, "TOKEN_BAD_TYPE", "Token is not DNBO type."),
+  INVALID_TOKEN_TYPE(516, "INVALID_TOKEN_TYPE", "Unknown Token Type."),
+  CANNOT_GENERATE_TOKEN_CODE(517, "UNABLE TO GENERATE TOKEN CODE", "Unable to generate token code, check the pattern."),
   INVALID_STRATEGY(517, "INVALID_STRATEGY", "Invalid Strategy found for scoring offers"),
   PREDICTION_NOT_AVAILABLE(600, "PREDICTION_NOT_AVAILABLE", "Prediction not available"),
   NO_CUSTOMER_LANGUAGE(701, "NO_CUSTOMER_LANGUAGE", "Missing customer language for this message"),
   NO_CUSTOMER_CHANNEL(702, "NO_CUSTOMER_CHANNEL", "Missing customer communication channel for this message"),
   UNDELIVERABLE(703, "UNDELIVERABLE", "Undeliverable message"),
   INVALID(704, "INVALID", "Invalid message"),
-  QUEUE_FULL(705, "QUEUE_FULL", "Message queue full"),  
+  QUEUE_FULL(705, "QUEUE_FULL", "Message queue full"),
+  BLOCKED_BY_CONTACT_POLICY(710,"BLOCKED_BY_CONTACT_POLICY","Message is blocked by contact policy rules"),
+  CONTACT_POLICY_EVALUATION_ERROR(711,"CONTACT_POLICY_EVALUATION_ERROR","Contact policy rules validation failed"),
   UNKNOWN(-1, "UNKNOWN", "UNKNOWN");
   
   private int genericResponseCode;

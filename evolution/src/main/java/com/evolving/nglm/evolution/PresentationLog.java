@@ -6,34 +6,22 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SubscriberStreamEvent;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
-import com.rii.utilities.JSONUtilities;
-import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SubscriberStreamEvent;
 
 public class PresentationLog implements SubscriberStreamEvent
 {
@@ -52,7 +40,7 @@ public class PresentationLog implements SubscriberStreamEvent
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("presentation_log");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(5));
     schemaBuilder.field("msisdn", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Schema.INT64_SCHEMA);
@@ -74,6 +62,8 @@ public class PresentationLog implements SubscriberStreamEvent
     schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("presentationDates", SchemaBuilder.array(Timestamp.SCHEMA).optional().schema());
+    schemaBuilder.field("tokenTypeID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("token", DNBOToken.serde().optionalSchema());
     schema = schemaBuilder.build();
   };
 
@@ -118,6 +108,8 @@ public class PresentationLog implements SubscriberStreamEvent
   private String moduleID;
   private String featureID;
   private List<Date> presentationDates;
+  private String tokenTypeID;
+  private DNBOToken token;
 
   /****************************************
   *
@@ -146,6 +138,10 @@ public class PresentationLog implements SubscriberStreamEvent
   public String getModuleID() { return moduleID; }
   public String getFeatureID() { return featureID; }
   public List<Date> getPresentationDates() { return presentationDates;}
+  public String getTokenTypeID() { return tokenTypeID; }
+  public DNBOToken getToken() { return null;}
+  
+  public void setToken(DNBOToken token) { this.token = token; }
 
   /*****************************************
   *
@@ -153,7 +149,7 @@ public class PresentationLog implements SubscriberStreamEvent
   *
   *****************************************/
 
-  public PresentationLog(String msisdn, String subscriberID, Date eventDate, String callUniqueIdentifier, String channelID, String salesChannelID, String userID, String presentationToken, String presentationStrategyID, Integer transactionDurationMs, List<String> offerIDs, List<Double> offerScores, List<Integer> positions,   String controlGroupState, List<String> scoringStrategyIDs, String retailerMsisdn, Double rechargeAmount, Double balance, String moduleID, String featureID, List<Date> presentationDates)
+  public PresentationLog(String msisdn, String subscriberID, Date eventDate, String callUniqueIdentifier, String channelID, String salesChannelID, String userID, String presentationToken, String presentationStrategyID, Integer transactionDurationMs, List<String> offerIDs, List<Double> offerScores, List<Integer> positions,   String controlGroupState, List<String> scoringStrategyIDs, String retailerMsisdn, Double rechargeAmount, Double balance, String moduleID, String featureID, List<Date> presentationDates, String tokenTypeID, DNBOToken token)
   {
     this.msisdn = msisdn;
     this.subscriberID = subscriberID;
@@ -176,6 +172,8 @@ public class PresentationLog implements SubscriberStreamEvent
     this.moduleID = moduleID;
     this.featureID = featureID;
     this.presentationDates = presentationDates;
+    this.tokenTypeID = tokenTypeID;
+    this.token = token;
 }
 
   /*****************************************
@@ -211,6 +209,8 @@ public class PresentationLog implements SubscriberStreamEvent
     this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
     this.featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
     this.presentationDates = decodePresentationDates(JSONUtilities.decodeJSONArray(jsonRoot, "presentationDates", false));
+    this.tokenTypeID = JSONUtilities.decodeString(jsonRoot, "tokenTypeID", false);
+    this.token = null;
   }
 
   /*****************************************
@@ -346,6 +346,8 @@ public class PresentationLog implements SubscriberStreamEvent
     struct.put("moduleID", presentationLog.getModuleID());
     struct.put("featureID", presentationLog.getFeatureID());
     struct.put("presentationDates", presentationLog.getPresentationDates());
+    struct.put("tokenTypeID", presentationLog.getTokenTypeID());
+    struct.put("token", presentationLog.getToken());
    return struct;
   }
 
@@ -397,12 +399,13 @@ public class PresentationLog implements SubscriberStreamEvent
     String moduleID = (schemaVersion >= 2) ? valueStruct.getString("moduleID") : null;
     String featureID = (schemaVersion >= 2) ? valueStruct.getString("featureID") : null;
     List<Date> presentationDates = (schemaVersion >= 3) ? (List<Date>)valueStruct.get("presentationDates") : new ArrayList<Date>();
-
+    String tokenTypeID = (schemaVersion >= 4) ? valueStruct.getString("tokenTypeID") : null;
+    DNBOToken token = (schemaVersion >= 5) ? (DNBOToken)valueStruct.get("token") : null;
     //
     //  return
     //
 
-    return new PresentationLog(msisdn, subscriberID, eventDate, callUniqueIdentifier, channelID, salesChannelID, userID, presentationToken, presentationStrategyID, transactionDurationMs, offerIDs, offerScores, positions, controlGroupState, scoringStrategyIDs, retailerMsisdn, rechargeAmount, balance, moduleID, featureID, presentationDates);
+    return new PresentationLog(msisdn, subscriberID, eventDate, callUniqueIdentifier, channelID, salesChannelID, userID, presentationToken, presentationStrategyID, transactionDurationMs, offerIDs, offerScores, positions, controlGroupState, scoringStrategyIDs, retailerMsisdn, rechargeAmount, balance, moduleID, featureID, presentationDates, tokenTypeID, token);
   }
   
 }

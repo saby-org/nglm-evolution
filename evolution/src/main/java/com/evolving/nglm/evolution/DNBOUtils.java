@@ -160,29 +160,14 @@ public class DNBOUtils
       *  action -- generate new token code (different from others already associated with this subscriber)
       *
       *****************************************/
-      List<String> currentTokens = evolutionEventContext.getSubscriberState().getSubscriberProfile().getTokens().stream().map(token->token.getTokenCode()).collect(Collectors.toList());
-      String tokenCode = null;
-      boolean newTokenGenerated = false;
-      String codeFormat = tokenType.getCodeFormat();
-      for (int i=0; i<HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_TOKEN_CODE; i++)
-      {
-        tokenCode = TokenUtils.generateFromRegex(codeFormat);
-        if (!currentTokens.contains(tokenCode))
-          {
-            newTokenGenerated = true;
-            break;
-          }
-      }
-      if (!newTokenGenerated)
+      
+      DNBOToken token = TokenUtils.generateTokenCode(evolutionEventContext.getSubscriberState().getSubscriberProfile(), tokenType);
+      if (token == null)
         {
-          String str = "After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_TOKEN_CODE + " tries, unable to generate a new token code with pattern " + codeFormat;
+          String str = "unable to generate a new token code";
           if (log.isTraceEnabled()) log.trace(str);
           return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, "", action, str))};
         }
-      
-      log.info("ActionManagerDNBO.handleToken() token code generated " + tokenCode);
-
-      DNBOToken token = new DNBOToken(tokenCode, subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID(), tokenType);
       token.setModuleID(Module.Journey_Manager.getExternalRepresentation()); // featureID is set by evolution engine (to journeyID)
       token.setPresentationStrategyID(presentationStrategy.getPresentationStrategyID());
       // TODO : which sales channel to use ?

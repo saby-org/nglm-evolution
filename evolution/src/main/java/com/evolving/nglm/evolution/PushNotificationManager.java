@@ -103,7 +103,6 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private CommunicationChannelService communicationChannelService;
   private CommunicationChannelBlackoutService blackoutService;
-  private ContactPolicyProcessor contactPolicyProcessor;
 
   //
   //  logger
@@ -155,11 +154,6 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
         
     blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "pushnotificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
     blackoutService.start();
-
-    //
-    //  contact policy processor
-    //
-    contactPolicyProcessor = new ContactPolicyProcessor("pushnotificationmanager-communicationchannel",deliveryManagerKey);
 
     //
     //  manager
@@ -888,18 +882,6 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
   }
 
   /*****************************************
-   *
-   *  filterRequest
-   *  verify contact policy rules
-   *
-   *****************************************/
-
-  @Override public boolean filterRequest(DeliveryRequest request)
-  {
-    return false; //contactPolicyProcessor.ensureContactPolicy(request,this,log);
-  }
-
-  /*****************************************
   *
   *  shutdown
   *
@@ -918,6 +900,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
 
   public static void main(String[] args)
   {
+    new LoggerInitialization().initLogger();
     log.info("PushNotificationManager: recieved " + args.length + " args");
     for(String arg : args)
       {

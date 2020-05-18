@@ -46,7 +46,7 @@ public class AcceptanceLog implements SubscriberStreamEvent
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("acceptance_log");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("msisdn", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Schema.INT64_SCHEMA);
@@ -64,6 +64,7 @@ public class AcceptanceLog implements SubscriberStreamEvent
     schemaBuilder.field("actionCall", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("tokenTypeID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -104,6 +105,7 @@ public class AcceptanceLog implements SubscriberStreamEvent
   private Integer actionCall;
   private String moduleID;
   private String featureID;
+  private String tokenTypeID;
 
   /****************************************
   *
@@ -128,14 +130,16 @@ public class AcceptanceLog implements SubscriberStreamEvent
   public Integer getActionCall() { return actionCall; }
   public String getModuleID() { return moduleID; }
   public String getFeatureID() { return featureID; }
+  public String getTokenTypeID() { return tokenTypeID; }
 
   /*****************************************
   *
   *  constructor
+   * @param tokenTypeID 
   *
   *****************************************/
 
-  public AcceptanceLog(String msisdn, String subscriberID, Date eventDate, String callUniqueIdentifier, String channelID, String salesChannelID, String userID, String presentationToken, String presentationStrategyID, Integer transactionDurationMs, String controlGroupState, String offerID, Date fulfilledDate, Integer position, Integer actionCall, String moduleID, String featureID)
+  public AcceptanceLog(String msisdn, String subscriberID, Date eventDate, String callUniqueIdentifier, String channelID, String salesChannelID, String userID, String presentationToken, String presentationStrategyID, Integer transactionDurationMs, String controlGroupState, String offerID, Date fulfilledDate, Integer position, Integer actionCall, String moduleID, String featureID, String tokenTypeID)
   {
     this.msisdn = msisdn;
     this.subscriberID = subscriberID;
@@ -154,6 +158,7 @@ public class AcceptanceLog implements SubscriberStreamEvent
     this.actionCall = actionCall;
     this.moduleID = moduleID;
     this.featureID = featureID;
+    this.tokenTypeID = tokenTypeID;
   }
 
   /*****************************************
@@ -181,6 +186,7 @@ public class AcceptanceLog implements SubscriberStreamEvent
     this.actionCall = JSONUtilities.decodeInteger(jsonRoot, "actionCall", false);
     this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
     this.featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
+    this.tokenTypeID = JSONUtilities.decodeString(jsonRoot, "tokenTypeID", false);
   }
 
   /*****************************************
@@ -210,6 +216,7 @@ public class AcceptanceLog implements SubscriberStreamEvent
     struct.put("actionCall", acceptanceLog.getActionCall());
     struct.put("moduleID", acceptanceLog.getModuleID());
     struct.put("featureID", acceptanceLog.getFeatureID());
+    struct.put("tokenTypeID", acceptanceLog.getTokenTypeID());
     return struct;
   }
 
@@ -257,11 +264,12 @@ public class AcceptanceLog implements SubscriberStreamEvent
     Integer actionCall = valueStruct.getInt32("actionCall");
     String moduleID = (schemaVersion >= 2) ? valueStruct.getString("moduleID") : null;
     String featureID = (schemaVersion >= 2) ? valueStruct.getString("featureID") : null;
-    
+    String tokenTypeID = (schemaVersion >= 3) ? valueStruct.getString("tokenTypeID") : null;
+
     //
     //  return
     //
 
-    return new AcceptanceLog(msisdn, subscriberID, eventDate, callUniqueIdentifier, channelID, salesChannelID, userID, presentationToken, presentationStrategyID, transactionDurationMs, controlGroupState, offerID, fulfilledDate, position, actionCall, moduleID, featureID);
+    return new AcceptanceLog(msisdn, subscriberID, eventDate, callUniqueIdentifier, channelID, salesChannelID, userID, presentationToken, presentationStrategyID, transactionDurationMs, controlGroupState, offerID, fulfilledDate, position, actionCall, moduleID, featureID, tokenTypeID);
   }
 }

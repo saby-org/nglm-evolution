@@ -28,10 +28,10 @@ public class CustomerPointDetailsCsvWriter implements ReportCsvFactory
   private static PointService pointService;
 
   @Override
-  public void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException
+  public boolean dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
     if (re.type == ReportElement.MARKER) // We will find markers in the topic
-      return;
+      return true;
 
     log.trace("We got "+key+" "+re);
     Map<String, Object> subscriberFields = re.fields.get(0);
@@ -115,7 +115,7 @@ public class CustomerPointDetailsCsvWriter implements ReportCsvFactory
             }
           else
             {
-              return;
+              return true;
             }
         }
         catch (Exception e){
@@ -143,8 +143,8 @@ public class CustomerPointDetailsCsvWriter implements ReportCsvFactory
             log.trace("Empty line => not writing");
           }
       }      
-      
     }
+    return addHeaders;
   }
 
   public static void main(String[] args) {

@@ -312,6 +312,7 @@ public class ReportEsReader
                               }
                             miniSourceMap = new HashMap<>();
                             miniSourceMap.put(elasticKey, sourceMap.get(elasticKey));
+                            miniSourceMap.put("pointBalances", sourceMap.get("pointBalances")); // keep this (for Customer Point Details report)
                             for (AlternateID alternateID : Deployment.getAlternateIDs().values())
                               {
                                 String name = alternateID.getName();

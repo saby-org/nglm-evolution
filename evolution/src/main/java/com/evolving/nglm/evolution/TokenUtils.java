@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,6 +20,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.DNBOProxy.DNBOProxyException;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
@@ -35,6 +38,7 @@ import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 
 public class TokenUtils
 {
+  private static final int HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_TOKEN_CODE = 100;
 
   private static Random random = new Random();
   private static final Logger log = LoggerFactory.getLogger(TokenUtils.class);
@@ -245,6 +249,42 @@ public class TokenUtils
     return res;
   }
 
+  /*****************************************
+   *
+   *  generateTokenCode
+   *
+   *****************************************/
+  
+  public static DNBOToken generateTokenCode(SubscriberProfile subscriberProfile, TokenType tokenType)
+  {
+    List<String> currentTokens = subscriberProfile.getTokens().stream().map(token->token.getTokenCode()).collect(Collectors.toList());
+    String tokenCode = null;
+    boolean newTokenGenerated = false;
+    String codeFormat = tokenType.getCodeFormat();
+    for (int i=0; i<HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_TOKEN_CODE; i++)
+    {
+      tokenCode = generateFromRegex(codeFormat);
+      if (!currentTokens.contains(tokenCode))
+        {
+          newTokenGenerated = true;
+          break;
+        }
+    }
+    if (!newTokenGenerated)
+      {
+        log.info("After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_TOKEN_CODE + " tries, unable to generate a new token code with pattern " + codeFormat);
+        return null;
+      }
+    log.info("token code generated " + tokenCode);
+    DNBOToken token = new DNBOToken(tokenCode, subscriberProfile.getSubscriberID(), tokenType);
+    return token;
+  }
+
+  /*****************************************
+   *
+   *  getOffers
+   *
+   *****************************************/
   
   public static Collection<ProposedOfferDetails> getOffers(Date now, DNBOToken token, SubscriberEvaluationRequest evaluationRequest,
       SubscriberProfile subscriberProfile, PresentationStrategy presentationStrategy,

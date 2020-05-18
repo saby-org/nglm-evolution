@@ -103,7 +103,6 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private CommunicationChannelService communicationChannelService;
   private CommunicationChannelBlackoutService blackoutService;
-  private ContactPolicyProcessor contactPolicyProcessor;
 
   //
   //  logger
@@ -155,11 +154,6 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
         
     blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "mailnotificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
     blackoutService.start();
-
-    //
-    //  contact policy processor
-    //
-    contactPolicyProcessor = new ContactPolicyProcessor("mailnotificationmanager-communicationchannel",deliveryManagerKey);
 
     //
     //  manager
@@ -831,17 +825,6 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
   }
 
   /*****************************************
-   *
-   *  filterRequest
-   *
-   ****************************************
-   * @param request*/
-  @Override public boolean filterRequest(DeliveryRequest request)
-  {
-    return false; //contactPolicyProcessor.ensureContactPolicy(request,this,log);
-  }
-
-  /*****************************************
   *
   *  processCorrelatorUpdate
   *
@@ -879,6 +862,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
 
   public static void main(String[] args)
   {
+    new LoggerInitialization().initLogger();
     log.info("MailNotificationManager: recieved " + args.length + " args");
     for(String arg : args)
       {

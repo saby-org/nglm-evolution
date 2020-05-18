@@ -12,15 +12,22 @@ import java.util.stream.Collectors;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
+import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
+
+import kafka.log.Log;
 
 public class ThirdPartyJSONGenerator 
 {
-  
+  private static final String UNKNOWN_OFFER = "unknown offer";
+  private static final Logger log = LoggerFactory.getLogger(ThirdPartyJSONGenerator.class);
+
   /*****************************************
   *
   *  generateLoyaltyProgramJSONForThirdParty
@@ -261,8 +268,16 @@ public class ThirdPartyJSONGenerator
    * @param offerObjectiveService 
   *
   *****************************************/
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService)
+  {
+    return generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, null, null, null, null);
+  }
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService)
+  {
+    return generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, null, null, null);
+  }
   
-  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService) 
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService, CallingChannel callingChannel, Collection<ProposedOfferDetails> presentedOffers, PaymentMeanService paymentMeanService) 
   {
     Date now = SystemTime.getCurrentTime();
     HashMap<String, Object> tokenMap = new HashMap<String, Object>();
@@ -275,7 +290,10 @@ public class ThirdPartyJSONGenerator
     tokenMap.put("boundCount", token.getBoundCount());
     //tokenMap.put("eventID", token.getEventID());
     //tokenMap.put("subscriberID", token.getSubscriberID());
-    tokenMap.put("tokenTypeID", token.getTokenTypeID());
+    String tokenTypeID = token.getTokenTypeID();
+    tokenMap.put("tokenTypeID", tokenTypeID);
+    TokenType tokenType = tokenTypeService.getActiveTokenType(tokenTypeID, now);
+    tokenMap.put("tokenTypeDisplay", tokenType != null ? tokenType.getGUIManagedObjectDisplay() : "unknownTokenType");
     Module module = Module.fromExternalRepresentation(token.getModuleID());
     tokenMap.put("moduleName", module.toString());
     Integer featureID = token.getFeatureID();
@@ -301,13 +319,20 @@ public class ThirdPartyJSONGenerator
         ArrayList<Object> presentedOffersList = new ArrayList<>();
         for (String offerID : dnboToken.getPresentedOfferIDs())
           {
-            presentedOffersList.add(JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now)));
+            presentedOffersList.add(JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now, callingChannel, presentedOffers, dnboToken, paymentMeanService)));
           }
         tokenMap.put("presentedOffers", JSONUtilities.encodeArray(presentedOffersList));
         tokenMap.put("presentedOffersSalesChannel", dnboToken.getPresentedOffersSalesChannel());
         
         String offerID = dnboToken.getAcceptedOfferID();
-        tokenMap.put("acceptedOffer", JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now)));
+        if (offerID == null)
+          {
+            tokenMap.put("acceptedOffer", null);
+          }
+        else
+          {
+            tokenMap.put("acceptedOffer", JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now, callingChannel, presentedOffers, dnboToken, paymentMeanService)));
+          }
       }
     return JSONUtilities.encodeObject(tokenMap);
   }
@@ -342,17 +367,185 @@ public class ThirdPartyJSONGenerator
     return scoringStrategyMap;
   }
   
-  private static HashMap<String, Object> buildOfferElement(String offerID, OfferService offerService, OfferObjectiveService offerObjectiveService, Date now) {
+  private static HashMap<String, Object> buildOfferElement(String offerID, OfferService offerService, OfferObjectiveService offerObjectiveService, Date now, CallingChannel callingChannel, Collection<ProposedOfferDetails> presentedOffers, DNBOToken dnboToken, PaymentMeanService paymentMeanService) {
     HashMap<String, Object> offerMap = new HashMap<String, Object>();
     offerMap.put("id", offerID);
     if (offerID == null)
       {
-        offerMap.put("name",null);
+        offerMap.put("name",UNKNOWN_OFFER);
       }
     else
       {
         Offer offer = offerService.getActiveOffer(offerID, now);
-        offerMap.put("name", (offer == null) ? "unknown offer" : offer.getDisplay());
+        if (offer == null)
+          {
+            offerMap.put("name", UNKNOWN_OFFER); 
+          }
+        else
+          {
+            offerMap.put("name", offer.getDisplay());
+            JSONObject offerJSON = offer.getJSONRepresentation();
+            if (callingChannel != null && offerJSON != null)
+              {
+                // Add more elements to offerMap, based on what's in the channel
+                JSONObject callingChannelJSON = callingChannel.getJSONRepresentation();
+                if (callingChannelJSON != null)
+                  {
+                    JSONArray offerProperties = JSONUtilities.decodeJSONArray(callingChannelJSON, "offerProperties", false);
+                    if (offerProperties != null)
+                      {
+                        for (int i=0; i<offerProperties.size(); i++)
+                          {
+                            JSONObject offerPropertyJSON = (JSONObject) offerProperties.get(i);
+                            if (offerPropertyJSON != null)
+                              {
+                                boolean presentOffers = JSONUtilities.decodeBoolean(offerPropertyJSON, "presentOffers", Boolean.TRUE);
+                                if (presentOffers)
+                                  {
+                                    String offerPropertyName = JSONUtilities.decodeString(offerPropertyJSON, "offerPropertyName", false);
+                                    if (offerPropertyName != null) 
+                                      {
+                                        if ("offerScore".equals(offerPropertyName) && presentedOffers != null)
+                                          {
+                                            for (ProposedOfferDetails presentedOffer : presentedOffers)
+                                              {
+                                                if (offerID.equals(presentedOffer.getOfferId()))
+                                                  {
+                                                    offerMap.put("offerScore", presentedOffer.getOfferScore());
+                                                    break;
+                                                  }
+                                              }
+                                          }
+                                        else if ("offerRank".equals(offerPropertyName) && presentedOffers != null)
+                                          {
+                                            int rank=1;
+                                            for (ProposedOfferDetails presentedOffer : presentedOffers)
+                                              {
+                                                if (offerID.equals(presentedOffer.getOfferId()))
+                                                  {
+                                                    offerMap.put("offerRank", rank);
+                                                    break;
+                                                  }
+                                                rank++;
+                                              }
+                                          }
+                                        else if ("price".equals(offerPropertyName))
+                                          {
+                                            String salesChannel = dnboToken.getPresentedOffersSalesChannel();
+                                            for (OfferSalesChannelsAndPrice sc : offer.getOfferSalesChannelsAndPrices())
+                                              {
+                                                if (sc.getSalesChannelIDs() != null && sc.getSalesChannelIDs().contains(salesChannel))
+                                                  {
+                                                    Map<String, Object> salesChannelJSON = new LinkedHashMap<>(); // to preserve order when displaying
+                                                    String paymentMean = "";
+                                                    String currency = "";
+                                                    long amount = 0;
+                                                    OfferPrice offerPrice = sc.getPrice(); // Can be null for free offer
+                                                    if (offerPrice != null)
+                                                      {
+                                                        amount = offerPrice.getAmount();
+                                                        String paymentMeanID = offerPrice.getPaymentMeanID();
+                                                        String currencyID = offerPrice.getSupportedCurrencyID();
+                                                        GUIManagedObject paymentMeanObject = paymentMeanService.getStoredPaymentMean(paymentMeanID);
+                                                        if (paymentMeanObject != null && (paymentMeanObject instanceof PaymentMean))
+                                                          {
+                                                            paymentMean = ((PaymentMean) paymentMeanObject).getDisplay();
+                                                          }
+                                                        if (currencyID != null)
+                                                          {
+                                                            for (SupportedCurrency supportedCurrency : Deployment.getSupportedCurrencies().values())
+                                                              {
+                                                                JSONObject supportedCurrencyJSON = supportedCurrency.getJSONRepresentation();
+                                                                if (supportedCurrencyJSON != null && currencyID.equals(supportedCurrencyJSON.get("id")))
+                                                                  {
+                                                                    currency = "" + supportedCurrencyJSON.get("display");
+                                                                    break;
+                                                                  }
+                                                              }
+                                                          }
+                                                      }
+                                                    salesChannelJSON.put("paymentMean", paymentMean);
+                                                    salesChannelJSON.put("amount", amount);
+                                                    salesChannelJSON.put("currency", currency);
+                                                    offerMap.put("price", salesChannelJSON);
+                                                    break;
+                                                  }
+                                              }
+                                          }
+                                        else
+                                          {
+                                            Object offerProperty = offerJSON.get(offerPropertyName);
+                                            if (offerProperty != null)
+                                              {
+                                                log.info("Adding " + offerPropertyName + " -> " + offerProperty);
+                                                offerMap.put(offerPropertyName, offerProperty);
+                                              }
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                    // build an array of what's in the offer to speed up processing
+                    Map<String,Object>offerPropertiesMap = new HashMap<>();
+
+                    JSONObject offerCharacteristics = JSONUtilities.decodeJSONObject(offerJSON, "offerCharacteristics", false);
+                    if (offerCharacteristics != null)
+                      {
+                        JSONArray languageProperties = JSONUtilities.decodeJSONArray(offerCharacteristics, "languageProperties", false);
+                        if (languageProperties != null)
+                          {
+                            // take 1st language. What if we have more than 1 ?
+                            JSONObject languagePropertiesJSON = (JSONObject) languageProperties.get(0);
+                            if (languagePropertiesJSON != null)
+                              {
+                                JSONArray properties = JSONUtilities.decodeJSONArray(languagePropertiesJSON, "properties", false);
+                                if (properties != null)
+                                  {
+                                    for (int i=0; i<properties.size(); i++)
+                                      {
+                                        JSONObject propertiesJSON = (JSONObject) properties.get(i);
+                                        if (propertiesJSON != null)
+                                          {
+                                            String catalogCharacteristicName = JSONUtilities.decodeString(propertiesJSON, "catalogCharacteristicName", false);
+                                            if (catalogCharacteristicName != null)
+                                              {
+                                                Object value = propertiesJSON.get("value");
+                                                offerPropertiesMap.put(catalogCharacteristicName, value);
+                                              }
+                                          }
+                                      }
+                                  }
+                                if (!offerPropertiesMap.isEmpty())
+                                  {
+                                    JSONArray catalogCharacteristics = JSONUtilities.decodeJSONArray(callingChannelJSON, "catalogCharacteristics", false);
+                                    if (catalogCharacteristics != null)
+                                      {
+                                        for (int i=0; i<catalogCharacteristics.size(); i++)
+                                          {
+                                            JSONObject catalogCharacteristicsJSON = (JSONObject) catalogCharacteristics.get(i);
+                                            if (catalogCharacteristicsJSON != null)
+                                              {
+                                                boolean presentOffers = JSONUtilities.decodeBoolean(catalogCharacteristicsJSON, "presentOffers", Boolean.TRUE);
+                                                if (presentOffers)
+                                                  {
+                                                    String catalogCharacteristicName = JSONUtilities.decodeString(catalogCharacteristicsJSON, "catalogCharacteristicName", false);
+                                                    if (catalogCharacteristicName != null) 
+                                                      {
+                                                        Object offerProperty = offerPropertiesMap.get(catalogCharacteristicName);
+                                                        offerMap.put(catalogCharacteristicName, offerProperty);
+                                                      }
+                                                  }
+                                              }
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+          }
       }
     return offerMap;
   }

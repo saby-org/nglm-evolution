@@ -234,6 +234,7 @@ public class EvolutionEngine
   {
     NGLMRuntime.initialize(true);
     EvolutionEngine evolutionEngine = new EvolutionEngine();
+    new LoggerInitialization().initLogger();
     evolutionEngine.start(args);
   }
 
@@ -3867,13 +3868,8 @@ public class EvolutionEngine
         String featureIDStr = null;
         int featureID = 0;
         List<Token> subscriberTokens = subscriberProfile.getTokens();
-        DNBOToken subscriberStoredToken = null;
-        TokenType defaultDNBOTokenType = tokenTypeService.getActiveTokenType("external", SystemTime.getCurrentTime());
-        if (defaultDNBOTokenType == null)
-          {
-            log.error("Could not find any default token type for external token. Check your configuration.");
-            return false;
-          }
+        String tokenTypeID = null;
+        DNBOToken presentationLogToken = null;
 
         //
         // Retrieve the token-code we are looking for, from the event log.
@@ -3884,12 +3880,27 @@ public class EvolutionEngine
             eventTokenCode = ((PresentationLog) evolutionEvent).getPresentationToken();
             moduleID = ((PresentationLog)evolutionEvent).getModuleID();
             featureIDStr = ((PresentationLog)evolutionEvent).getFeatureID();
+            tokenTypeID = ((PresentationLog)evolutionEvent).getTokenTypeID();
+            presentationLogToken = ((PresentationLog) evolutionEvent).getToken();
           }
         else if (evolutionEvent instanceof AcceptanceLog)
           {
             eventTokenCode = ((AcceptanceLog) evolutionEvent).getPresentationToken();
             moduleID = ((AcceptanceLog)evolutionEvent).getModuleID();
             featureIDStr = ((AcceptanceLog)evolutionEvent).getFeatureID();
+            tokenTypeID = ((AcceptanceLog)evolutionEvent).getTokenTypeID();
+          }
+
+        DNBOToken subscriberStoredToken = null;
+        if (tokenTypeID == null)
+          {
+            tokenTypeID = "external"; // predefined tokenTypeID for tokens created externally
+          }
+        TokenType defaultDNBOTokenType = tokenTypeService.getActiveTokenType(tokenTypeID, SystemTime.getCurrentTime());
+        if (defaultDNBOTokenType == null)
+          {
+            log.error("Could not find token type with ID " + tokenTypeID + " Check your configuration.");
+            return false;
           }
 
         try
@@ -3955,17 +3966,21 @@ public class EvolutionEngine
               }
           }
 
-        //
-        // We start by creating a new token if it does not exist in Evolution (if it has been created by an outside system)
-        //
-
         if (subscriberStoredToken == null)
           {
-            subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
+            if (presentationLogToken == null)
+              {
+                // We start by creating a new token if it does not exist in Evolution (if it has been created by an outside system)
+                subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
+              }
+            else
+              {
+                subscriberStoredToken = presentationLogToken;
+              }
             subscriberTokens.add(subscriberStoredToken);
             subscriberStoredToken.setFeatureID(featureID);
             subscriberStoredToken.setModuleID(moduleID);
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), "", eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName(), moduleID, 0));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), "", eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName(), moduleID, featureID));
             subscriberStateUpdated = true;
           }
 
@@ -4778,7 +4793,7 @@ public class EvolutionEngine
             DeliveryRequest deliveryResponse = (DeliveryRequest) evolutionEvent;
             if (Objects.equals(deliveryResponse.getModuleID(), DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && Objects.equals(deliveryResponse.getFeatureID(), journeyState.getJourneyID()))
               {
-                RewardHistory lastRewards = journeyState.getJourneyHistory().addRewardInformation(deliveryResponse);
+                RewardHistory lastRewards = journeyState.getJourneyHistory().addRewardInformation(deliveryResponse, deliverableService, now);
                 if (lastRewards != null)
                   {
                     subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, new RewardHistory(lastRewards), journeyState.getJourneyID()));

@@ -849,6 +849,12 @@
       "workgroups"   : ["Adminstrator workgroup "]
     },
     {
+      "id"           : "getCustomerTokenAndNBO",
+      "methodName"   : "getCustomerTokenAndNBO",
+      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "workgroups"   : ["Adminstrator workgroup "]
+    },
+    {
       "id"           : "validateVoucher",
       "methodName"   : "validateVoucher",
       "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
@@ -1104,7 +1110,8 @@
     
     "subscriberProfileDatacubeMetrics" : [],
     
-    "enableProfileSegmentChange" : true
+    "enableProfileSegmentChange" : true,
+    "enableEvaluateTargetRandomness" : false
      
     
     
