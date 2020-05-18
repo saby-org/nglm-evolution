@@ -48,7 +48,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     CUSTOMER_NOT_FOUND(20),
     SYSTEM_ERROR(21),
     THIRD_PARTY_ERROR(24),
-    BONUS_NOT_FOUND(101),
+    BONUS_NOT_FOUND(100),
     OFFER_NOT_FOUND(400),
     PRODUCT_NOT_FOUND(401),
     INVALID_PRODUCT(402),

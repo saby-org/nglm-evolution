@@ -67,7 +67,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
     TIMEOUT(22),
     THROTTLING(23),
     CUSTOMER_NOT_FOUND(20),
-    BONUS_NOT_FOUND(101),
+    BONUS_NOT_FOUND(100),
     UNKNOWN(999);
     private Integer externalRepresentation;
     private EmptyFulfillmentStatus(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }

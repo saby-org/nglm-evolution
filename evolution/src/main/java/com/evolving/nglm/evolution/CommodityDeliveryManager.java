@@ -107,7 +107,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     SYSTEM_ERROR(21),
     TIMEOUT(22),
     THIRD_PARTY_ERROR(24),
-    BONUS_NOT_FOUND(101),
+    BONUS_NOT_FOUND(100),
     INSUFFICIENT_BALANCE(405),
     UNKNOWN(999);
     private Integer externalRepresentation;

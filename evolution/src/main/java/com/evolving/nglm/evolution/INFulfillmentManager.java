@@ -49,7 +49,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     TIMEOUT(22),
     THROTTLING(23),
     THIRD_PARTY_ERROR(24),
-    BONUS_NOT_FOUND(101),
+    BONUS_NOT_FOUND(100),
     UNKNOWN(999);
     private Integer externalRepresentation;
     private INFulfillmentStatus(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
