@@ -7,6 +7,6 @@ import com.evolving.nglm.evolution.NotificationManager.NotificationManagerReques
 
 public interface NotificationInterface
 {
-  public void init(JSONObject pluginConfiguration);
+  public void init(NotificationManager notificationManager, JSONObject pluginConfiguration);
   public void send(NotificationManagerRequest notificationRequest);
 }
