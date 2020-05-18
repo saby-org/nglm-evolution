@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>1.4.2_2-SNAPSHOT</version>
+  <version>dv-1.4.2_2a-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -27,7 +27,7 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.2_2-SNAPSHOT</version>
+    <version>dv-1.4.2_2a-SNAPSHOT</version>
     <relativePath/>
   </parent>
 
