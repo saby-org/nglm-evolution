@@ -912,14 +912,11 @@ public class DNBOProxy
     try {
 
       DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
-      Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo = null;
-      /*
-          TokenUtils.getOffers(now, salesChannelID,
-              subscriberProfile, scoringStrategy, productService, productTypeService, voucherService, voucherTypeService,
-              catalogCharacteristicService, propensityDataReader, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog,
-              msisdn);
-              */
-      
+      Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo = TokenUtils.getOffersWithScoringStrategy(
+          now, salesChannelID, subscriberProfile, scoringStrategy,
+          productService, productTypeService, voucherService, voucherTypeService,
+          catalogCharacteristicService, propensityDataReader, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService,
+          returnedLog, msisdn);
       if (offerAvailabilityFromPropensityAlgo == null)
         {
           log.warn("DNBOProxy.getOffers Exception "+returnedLog);
