@@ -208,14 +208,13 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       {
         SchemaBuilder schemaBuilder = SchemaBuilder.struct();
         schemaBuilder.name("service_notification_request");
-        schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 1));
+        schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 2));
         for (Field field : commonSchema().fields())
           schemaBuilder.field(field.name(), field.schema());
         schemaBuilder.field("destination", Schema.STRING_SCHEMA);
         schemaBuilder.field("language", Schema.STRING_SCHEMA);
         schemaBuilder.field("templateID", Schema.STRING_SCHEMA);
         schemaBuilder.field("tags", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).name("notification_tags").schema());
-        schemaBuilder.field("confirmationExpected", Schema.BOOLEAN_SCHEMA);
         schemaBuilder.field("restricted", Schema.BOOLEAN_SCHEMA);
         schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
         schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
@@ -260,7 +259,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     private String language;
     private String templateID;
     private Map<String, List<String>> tags;
-    private boolean confirmationExpected;
     private boolean restricted;
     private MessageStatus status;
     private int returnCode;
@@ -290,11 +288,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     public Map<String, List<String>> getTags()
     {
       return tags;
-    }
-
-    public boolean getConfirmationExpected()
-    {
-      return confirmationExpected;
     }
 
     public boolean getRestricted()
@@ -341,10 +334,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     // setters
     //
 
-    public void setConfirmationExpected(boolean confirmationExpected)
-    {
-      this.confirmationExpected = confirmationExpected;
-    }
 
     public void setRestricted(boolean restricted)
     {
@@ -477,14 +466,13 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
      *
      *****************************************/
 
-    private NotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails, String channelID, ParameterMap notificationParameters)
+    private NotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean restricted, MessageStatus status, String returnCodeDetails, String channelID, ParameterMap notificationParameters)
       {
         super(schemaAndValue);
         this.destination = destination;
         this.language = language;
         this.templateID = templateID;
         this.tags = tags;
-        this.confirmationExpected = confirmationExpected;
         this.restricted = restricted;
         this.status = status;
         this.returnCode = status.getReturnCode();
@@ -506,7 +494,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         this.language = NotificationManagerRequest.getLanguage();
         this.templateID = NotificationManagerRequest.getTemplateID();
         this.tags = NotificationManagerRequest.getTags();
-        this.confirmationExpected = NotificationManagerRequest.getConfirmationExpected();
         this.restricted = NotificationManagerRequest.getRestricted();
         this.status = NotificationManagerRequest.getMessageStatus();
         this.returnCode = NotificationManagerRequest.getReturnCode();
@@ -541,7 +528,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       struct.put("language", notificationRequest.getLanguage());
       struct.put("templateID", notificationRequest.getTemplateID());
       struct.put("tags", notificationRequest.getTags());
-      struct.put("confirmationExpected", notificationRequest.getConfirmationExpected());
       struct.put("restricted", notificationRequest.getRestricted());
       struct.put("returnCode", notificationRequest.getReturnCode());
       struct.put("returnCodeDetails", notificationRequest.getReturnCodeDetails());
@@ -584,7 +570,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       String language = valueStruct.getString("language");
       String templateID = valueStruct.getString("templateID");
       Map<String, List<String>> tags = (Map<String, List<String>>) valueStruct.get("tags");
-      boolean confirmationExpected = valueStruct.getBoolean("confirmationExpected");
       boolean restricted = valueStruct.getBoolean("restricted");
       Integer returnCode = valueStruct.getInt32("returnCode");
       String returnCodeDetails = valueStruct.getString("returnCodeDetails");
@@ -596,7 +581,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       // return
       //
 
-      return new NotificationManagerRequest(schemaAndValue, destination, language, templateID, tags, confirmationExpected, restricted, status, returnCodeDetails, channelID, notificationParameters);
+      return new NotificationManagerRequest(schemaAndValue, destination, language, templateID, tags, restricted, status, returnCodeDetails, channelID, notificationParameters);
     }
 
 //    /*****************************************
@@ -690,7 +675,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     @Override
     public String toString()
     {
-      return "NotificationManagerRequest [destination=" + destination + ", language=" + language + ", templateID=" + templateID + ", tags=" + tags + ", confirmationExpected=" + confirmationExpected + ", restricted=" + restricted + ", status=" + status + ", returnCode=" + returnCode + ", returnCodeDetails=" + returnCodeDetails + ", channelID=" + channelID + "]";
+      return "NotificationManagerRequest [destination=" + destination + ", language=" + language + ", templateID=" + templateID + ", tags=" + tags + ", restricted=" + restricted + ", status=" + status + ", returnCode=" + returnCode + ", returnCodeDetails=" + returnCodeDetails + ", channelID=" + channelID + "]";
     }
 
   }

@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
-import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.lumatagroup.expression.driver.SMPP.SMSSenderFactory;
 import com.lumatagroup.expression.driver.SMPP.SimpleSMSSender;
 import com.lumatagroup.expression.driver.SMPP.configuration.SMSC;
@@ -181,19 +180,19 @@ public class SMPPGenericPlugin implements NotificationInterface
     DialogTemplate smsTemplate = (DialogTemplate) smsNotificationManager.getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(deliveryRequest.getTemplateID(), SystemTime.getCurrentTime());
     DialogMessage dialogMessage = smsTemplate.getDialogMessage("sms.body");
     String text = (dialogMessage != null) ? dialogMessage.resolve(deliveryRequest.getLanguage(), deliveryRequest.getTags().get("sms.body")) : null;
-    
-    
-    
-    
+        
     String destination = deliveryRequest.getDestination();
-    String source = deliveryRequest.getSource();
+    
+    String source = (String) deliveryRequest.getNotificationParameters().get("node.parameter.fromaddress");
+    Boolean receiptExpected = (Boolean) deliveryRequest.getNotificationParameters().get("node.parameter.confirmationexpected");
+    Boolean flashSMS = (Boolean) deliveryRequest.getNotificationParameters().get("node.parameter.flashsms");
     if(sender == null)
       {
         throw new RuntimeException("SMPPPlugin.send("+deliveryRequest+") sender is null, no smsc");
       }
     else
       {
-        if(sender.sendSMS(deliveryRequest, text, destination, source, true))
+        if(sender.sendSMS(deliveryRequest, text, destination, source, receiptExpected != null ? receiptExpected : false, flashSMS != null ? flashSMS : false))
           {
             log.info("SMPP Driver message sent successfully");
           }

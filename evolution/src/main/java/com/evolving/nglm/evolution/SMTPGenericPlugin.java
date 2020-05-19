@@ -229,7 +229,7 @@ public class SMTPGenericPlugin implements NotificationInterface
     MailSenderFactory mailSenderFactory = new MailSenderFactory(config);
     try
     {
-      mailSenderFactory.init(mailNotificationManager);
+//      mailSenderFactory.init(mailNotificationManager);
       senders = mailSenderFactory.getEmailSenders();  
       if(senders == null || senders.length==0)
         {
@@ -279,7 +279,7 @@ public class SMTPGenericPlugin implements NotificationInterface
         try
           {
             // TODO extract all parameters from the generic request
-            senders[currentSenderIndex].sendEmail(mailNotificationRequest);
+//            senders[currentSenderIndex].sendEmail(mailNotificationRequest);
           }
         catch (Exception mEx)
           {
