@@ -28,7 +28,7 @@ public class SubscriberProfileDatacubesOnYesterdayJob extends ScheduledJob
         "SubscriberProfile(definitive)", 
         Deployment.getYesterdaySubscriberDatacubePeriodCronEntryString(), 
         Deployment.getBaseTimeZone(),
-        true);
+        false);
     this.subscriberProfileDatacube = new SubscriberProfileDatacubeGenerator(this.jobName, elasticsearch, segmentationDimensionService);
   }
   

@@ -32,7 +32,7 @@ public class ODRDatacubeOnYesterdayJob extends ScheduledJob
         "ODR(definitive)",
         Deployment.getYesterdayODRDatacubePeriodCronEntryString(), 
         Deployment.getBaseTimeZone(),
-        true);
+        false);
     this.datacube = new ODRDatacubeGenerator(this.jobName, elasticsearch, offerService, salesChannelService, paymentMeanService, loyaltyProgramService, journeyService);
   }
   

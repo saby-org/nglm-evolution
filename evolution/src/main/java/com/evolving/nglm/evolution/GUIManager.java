@@ -457,6 +457,7 @@ public class GUIManager
     configAdaptorPresentationCriterionFields("configAdaptorPresentationCriterionFields"),
     configAdaptorDefaultNoftificationDailyWindows("configAdaptorDefaultNoftificationDailyWindows"),
     configAdaptorDeliverable("configAdaptorDeliverable"),
+    configAdaptorSourceAddress("configAdaptorSourceAddress"),
     
     getSourceAddressList("getSourceAddressList"),
     getSourceAddressSummaryList("getSourceAddressSummaryList"),
@@ -1920,6 +1921,7 @@ public class GUIManager
         restServer.createContext("/nglm-configadaptor/getPresentationCriterionFields", new APISimpleHandler(API.configAdaptorPresentationCriterionFields));
         restServer.createContext("/nglm-configadaptor/getDefaultNoftificationDailyWindows", new APISimpleHandler(API.configAdaptorDefaultNoftificationDailyWindows));
         restServer.createContext("/nglm-configadaptor/getDeliverable", new APISimpleHandler(API.configAdaptorDeliverable));
+        restServer.createContext("/nglm-configadaptor/getSourceAddress", new APISimpleHandler(API.configAdaptorSourceAddress));
         restServer.createContext("/nglm-guimanager/getBillingModes", new APISimpleHandler(API.getBillingModes));
         restServer.createContext("/nglm-guimanager/getPartnerTypes", new APISimpleHandler(API.getPartnerTypes));
         restServer.createContext("/nglm-guimanager/getCriterionFieldAvailableValuesList", new APISimpleHandler(API.getCriterionFieldAvailableValuesList));
@@ -3412,6 +3414,10 @@ public class GUIManager
 
                 case configAdaptorDeliverable:
                   jsonResponse = processConfigAdaptorDeliverable(jsonRoot);
+                  break;
+
+                case configAdaptorSourceAddress:
+                  jsonResponse = processConfigAdaptorSourceAddress(jsonRoot);
                   break;
 
                 case getCriterionFieldAvailableValuesList:
@@ -16189,6 +16195,59 @@ public class GUIManager
 
     response.put("responseCode", (deliverable != null) ? "ok" : "deliverableNotFound");
     if (deliverable != null) response.put("deliverable", deliverableJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorSourceAddress
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorSourceAddress(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String sourceAddressID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate source address
+    *
+    *****************************************/
+
+    GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID);
+    JSONObject sourceAddressJSON = sourceAddressService.generateResponseJSON(sourceAddress, true, SystemTime.getCurrentTime());
+
+    //
+    //  remove gui specific fields
+    //
+    
+    sourceAddressJSON.remove("readOnly");
+    sourceAddressJSON.remove("accepted");
+    sourceAddressJSON.remove("valid");
+    sourceAddressJSON.remove("active");
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (sourceAddress != null) ? "ok" : "sourceAddressNotFound");
+    if (sourceAddress != null) response.put("sourceAddress", sourceAddressJSON);
     return JSONUtilities.encodeObject(response);
   }
 
