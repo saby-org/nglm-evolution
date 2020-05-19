@@ -12,11 +12,9 @@ import org.apache.kafka.connect.sink.SinkRecord;
 
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
-import com.evolving.nglm.evolution.MailNotificationManager.MAILMessageStatus;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
-import com.evolving.nglm.evolution.PushNotificationManager.PushMessageStatus;
 import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
-import com.evolving.nglm.evolution.SMSNotificationManager.SMSMessageStatus;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 
 public class NotificationSinkConnector extends SimpleESSinkConnector
@@ -130,7 +128,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("source", mailNotification.getFromAddress());
         documentMap.put("returnCode", mailNotification.getReturnCode());
         documentMap.put("deliveryStatus", mailNotification.getMessageStatus().toString());
-        documentMap.put("returnCodeDetails", MAILMessageStatus.fromReturnCode(mailNotification.getReturnCode()));
+        documentMap.put("returnCodeDetails", MessageStatus.fromReturnCode(mailNotification.getReturnCode()));
       }else if(type.equals("notificationmanagerpush")){
         documentMap = new HashMap<String,Object>();
         PushNotificationManagerRequest pushNotification = PushNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
@@ -146,7 +144,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("source", ""); // TODO SCH : what is the source of push notifications ?
         documentMap.put("returnCode", pushNotification.getReturnCode());
         documentMap.put("deliveryStatus", pushNotification.getMessageStatus().toString());
-        documentMap.put("returnCodeDetails", PushMessageStatus.fromReturnCode(pushNotification.getReturnCode()));
+        documentMap.put("returnCodeDetails", MessageStatus.fromReturnCode(pushNotification.getReturnCode()));
       }else{
         documentMap = new HashMap<String,Object>();
         SMSNotificationManagerRequest smsNotification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
@@ -162,7 +160,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("source", smsNotification.getSource());
         documentMap.put("returnCode", smsNotification.getReturnCode());
         documentMap.put("deliveryStatus", smsNotification.getMessageStatus().toString());
-        documentMap.put("returnCodeDetails", SMSMessageStatus.fromReturnCode(smsNotification.getReturnCode()));
+        documentMap.put("returnCodeDetails", MessageStatus.fromReturnCode(smsNotification.getReturnCode()));
       }
       
       return documentMap;

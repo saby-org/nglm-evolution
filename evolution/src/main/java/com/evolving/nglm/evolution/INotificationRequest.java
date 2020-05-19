@@ -1,21 +1,31 @@
 package com.evolving.nglm.evolution;
 
+import java.util.Date;
+
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
-import com.evolving.nglm.evolution.NotificationManager.MessageStatus;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 
 public interface INotificationRequest
 {
 
-  void setCorrelator(String messageId);
+  public void setCorrelator(String messageId);
 
-  void setDeliveryStatus(DeliveryStatus deliveryStatus);
+  public void setDeliveryStatus(DeliveryStatus deliveryStatus);
 
-  void setReturnCodeDetails(String returnCodeDetails);
+  public void setReturnCodeDetails(String returnCodeDetails);
 
-  void setMessageStatus(MessageStatus status);
+  public void setMessageStatus(MessageStatus status);
 
-  void setReturnCode(Integer returnCode);
+  public void setReturnCode(Integer returnCode);
 
-  DeliveryStatus getDeliveryStatus();
+  public DeliveryStatus getDeliveryStatus();
+
+  public MessageStatus getMessageStatus();
+
+  public void setDeliveryDate(Date currentTime);
+  
+  public String getDeliveryRequestID();
+
+  public String getCorrelator();
 
 }

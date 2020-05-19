@@ -22,6 +22,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
@@ -38,88 +39,8 @@ import com.evolving.nglm.evolution.toolbox.ParameterBuilder;
 import com.evolving.nglm.evolution.toolbox.ToolBoxBuilder;
 import com.evolving.nglm.evolution.toolbox.TransitionCriteriaBuilder;
 
-public class NotificationManager extends DeliveryManager implements Runnable
+public class NotificationManager extends DeliveryManagerForNotifications implements Runnable
 {
-  /*****************************************
-   *
-   * enum - status
-   *
-   *****************************************/
-
-  public enum MessageStatus
-  {
-    PENDING(10), 
-    SENT(1), 
-    NO_CUSTOMER_LANGUAGE(701), 
-    NO_CUSTOMER_CHANNEL(702), 
-    DELIVERED(0), 
-    EXPIRED(707), 
-    ERROR(706), 
-    UNDELIVERABLE(703), 
-    INVALID(704), 
-    QUEUE_FULL(705), 
-    RESCHEDULE(709), 
-    THROTTLING(23),
-    UNKNOWN(999);
-
-    private Integer returncode;
-
-    private MessageStatus(Integer returncode)
-      {
-        this.returncode = returncode;
-      }
-
-    public Integer getReturnCode()
-    {
-      return returncode;
-    }
-
-    public static MessageStatus fromReturnCode(Integer externalRepresentation)
-    {
-      for (MessageStatus enumeratedValue : MessageStatus.values())
-        {
-          if (enumeratedValue.getReturnCode().equals(externalRepresentation)) return enumeratedValue;
-        }
-      return UNKNOWN;
-    }
-    
-    public static MessageStatus fromExternalRepresentation(String value) 
-    { 
-      for (MessageStatus enumeratedValue : MessageStatus.values()) 
-        { 
-          if (enumeratedValue.toString().equalsIgnoreCase(value)) return enumeratedValue; 
-        } 
-      return UNKNOWN; 
-    }
-  }
-
-  /*****************************************
-   *
-   * conversion method
-   *
-   *****************************************/
-
-  public DeliveryStatus getMessageStatus(MessageStatus status)
-  {
-    switch (status)
-      {
-      case PENDING:
-        return DeliveryStatus.Pending;
-      case SENT:
-        return DeliveryStatus.Delivered;
-      case RESCHEDULE:
-        return DeliveryStatus.Reschedule;
-      case NO_CUSTOMER_LANGUAGE:
-      case NO_CUSTOMER_CHANNEL:
-      case ERROR:
-      case UNDELIVERABLE:
-      case INVALID:
-      case QUEUE_FULL:
-      default:
-        return DeliveryStatus.Failed;
-      }
-  }
-
   /*****************************************
    *
    * configuration
@@ -474,19 +395,19 @@ public class NotificationManager extends DeliveryManager implements Runnable
       return getEventID();
     }
 
-    /*****************************************
-     *
-     * getMessage
-     *
-     *****************************************/
-
-    public String getMessage(String messageField, SubscriberMessageTemplateService subscriberMessageTemplateService)
-    {
-      DialogTemplate dialogTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
-      DialogMessage dialogMessage = (dialogTemplate != null) ? dialogTemplate.getDialogMessage(messageField) : null;
-      String text = (dialogMessage != null) ? dialogMessage.resolve(language, tags.get(messageField)) : null;
-      return text;
-    }
+//    /*****************************************
+//     *
+//     * getMessage
+//     *
+//     *****************************************/
+//
+//    public String getMessage(String messageField, SubscriberMessageTemplateService subscriberMessageTemplateService)
+//    {
+//      DialogTemplate dialogTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+//      DialogMessage dialogMessage = (dialogTemplate != null) ? dialogTemplate.getDialogMessage(messageField) : null;
+//      String text = (dialogMessage != null) ? dialogMessage.resolve(language, tags.get(messageField)) : null;
+//      return text;
+//    }
 
     /*****************************************
      *
