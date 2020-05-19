@@ -1742,7 +1742,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   public void handleCommodityDeliveryResponse(DeliveryRequest response)
   {
     
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) called ...");
+    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse() called with " + response);
 
     // ------------------------------------
     // Getting initial request status
