@@ -16594,13 +16594,15 @@ public class GUIManager
       else
         {
           Token subscriberToken = null;
-          List<Token> tokens = subscriberProfile.getTokens();
-          for (Token token : tokens)
+          if (tokenCode != null)
             {
-              if (token.getTokenCode().equals(tokenCode))
+              for (Token token : subscriberProfile.getTokens())
                 {
-                  subscriberToken = token;
-                  break;
+                  if (token.getTokenCode().equals(tokenCode))
+                    {
+                      subscriberToken = token;
+                      break;
+                    }
                 }
             }
           if (subscriberToken == null)
