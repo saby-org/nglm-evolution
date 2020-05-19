@@ -1,0 +1,173 @@
+/*****************************************************************************
+*
+*  SuspenseEvent.java
+*
+*****************************************************************************/
+
+package com.evolving.nglm.core;
+
+import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaAndValue;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Timestamp;
+
+import java.util.Date;
+
+// Deprecated as SuspenseProcess not anymore used 
+@Deprecated
+public class SuspenseEvent 
+{
+  /*****************************************
+  *
+  *  schema
+  *
+  *****************************************/
+
+  //
+  //  schema
+  //
+
+  private static Schema schema = null;
+  static
+  {
+    SchemaBuilder schemaBuilder = SchemaBuilder.struct();
+    schemaBuilder.name("suspense");
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.field("inputSource", Schema.STRING_SCHEMA);
+    schemaBuilder.field("inputRecord", Schema.STRING_SCHEMA);
+    schemaBuilder.field("reprocessCount", Schema.INT32_SCHEMA);
+    schemaBuilder.field("suspenseDate", Timestamp.builder().optional().schema());
+    schemaBuilder.field("cause", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("eventReference", Schema.STRING_SCHEMA);
+    schema = schemaBuilder.build();
+  };
+
+  //
+  //  serde
+  //
+
+  private static ConnectSerde<SuspenseEvent> serde = new ConnectSerde<SuspenseEvent>(schema, false, SuspenseEvent.class, SuspenseEvent::pack, SuspenseEvent::unpack);
+
+  //
+  //  accessor
+  //
+
+  public static Schema schema() { return schema; }
+  public static ConnectSerde<SuspenseEvent> serde() { return serde; }
+
+  //
+  //  key server
+  //
+
+  private static UniqueKeyServer keyServer = new UniqueKeyServer();
+
+  private synchronized static String getReference()
+  {
+    return (new Long(keyServer.getKey())).toString();
+  }
+  
+  /****************************************
+  *
+  *  data
+  *
+  ****************************************/
+
+  private String inputSource;
+  private String inputRecord;
+  private int reprocessCount;
+  private Date suspenseDate;
+  private String cause;
+  private String eventReference;
+
+  /****************************************
+  *
+  *  accessors
+  *
+  ****************************************/
+
+  public String getInputSource() { return inputSource; }
+  public String getInputRecord() { return inputRecord; }
+  public Date getSuspenseDate() { return suspenseDate; }
+  public int getReprocessCount() { return reprocessCount; }
+  public String getCause() { return cause; }
+  public String getEventReference() { return eventReference; }
+
+  /*****************************************
+  *
+  *  constructor
+  *
+  *****************************************/
+
+  public SuspenseEvent(String inputSource, String inputRecord, Date suspenseDate, int reprocessCount, String cause)
+  {
+    this(inputSource, inputRecord, suspenseDate, reprocessCount, cause, getReference());
+  }
+
+  public SuspenseEvent(String inputSource, String inputRecord, Date suspenseDate, int reprocessCount, String cause, String eventReference)
+  {
+    this.inputSource = inputSource;
+    this.inputRecord = inputRecord;
+    this.suspenseDate = suspenseDate;
+    this.reprocessCount = reprocessCount;
+    this.cause = cause;
+    this.eventReference = eventReference;
+  }
+
+  /*****************************************
+  *
+  *  pack
+  *
+  *****************************************/
+
+  public static Object pack(Object value)
+  {
+    SuspenseEvent suspenseEvent = (SuspenseEvent) value;
+    Struct struct = new Struct(schema);
+    struct.put("inputSource", suspenseEvent.getInputSource());
+    struct.put("inputRecord", suspenseEvent.getInputRecord());
+    struct.put("suspenseDate", suspenseEvent.getSuspenseDate());
+    struct.put("reprocessCount", suspenseEvent.getReprocessCount());
+    struct.put("cause", suspenseEvent.getCause());
+    struct.put("eventReference", suspenseEvent.getEventReference());
+    return struct;
+  }
+
+  /*****************************************
+  *
+  *  unpack
+  *
+  *****************************************/
+
+  public static SuspenseEvent unpack(SchemaAndValue schemaAndValue)
+  {
+    //
+    //  data
+    //
+
+    Schema schema = schemaAndValue.schema();
+    Object value = schemaAndValue.value();
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+
+    //
+    //  unpack
+    //
+
+    Struct valueStruct = (Struct) value;
+    String inputSource = valueStruct.getString("inputSource");
+    String inputRecord = valueStruct.getString("inputRecord");
+    Date suspenseDate = (Date) valueStruct.get("suspenseDate");
+    int reprocessCount = valueStruct.getInt32("reprocessCount");
+    String cause = valueStruct.getString("cause");
+    String eventReference = valueStruct.getString("eventReference");
+    
+    //
+    //  return
+    //
+
+    return new SuspenseEvent(inputSource, inputRecord, suspenseDate, reprocessCount, cause, eventReference);
+  }
+}

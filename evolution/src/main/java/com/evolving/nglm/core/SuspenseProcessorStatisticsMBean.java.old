@@ -1,0 +1,16 @@
+/****************************************************************************
+*
+*  SuspenseProcessorStatisticsMBean.java
+*
+****************************************************************************/
+
+package com.evolving.nglm.core;
+
+public interface SuspenseProcessorStatisticsMBean
+{
+  public int getTotalEventCount();
+  public int getSuccessfulEventCount();
+  public int getResubmittedEventCount();
+  public int getFailedEventCount();
+  public int getAbandonedEventCount();
+}
