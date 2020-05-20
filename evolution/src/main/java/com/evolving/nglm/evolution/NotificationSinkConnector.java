@@ -127,56 +127,59 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       if(type.equals("notificationmanagermail"))
       {
         documentMap = new HashMap<String,Object>();
-        MailNotificationManagerRequest mailNotification = MailNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+        MailNotificationManagerRequest notification = MailNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
         documentMap = new HashMap<String,Object>();
-        documentMap.put("subscriberID", mailNotification.getSubscriberID());
-        documentMap.put("deliveryRequestID", mailNotification.getDeliveryRequestID());
-        documentMap.put("originatingDeliveryRequestID", mailNotification.getOriginatingDeliveryRequestID());
+        documentMap.put("subscriberID", notification.getSubscriberID());
+        putAlternateIDs(notification.getSubscriberID(), documentMap);
+        documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
+        documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", "");
-        documentMap.put("creationDate", mailNotification.getCreationDate()!=null?dateFormat.format(mailNotification.getCreationDate()):"");
-        documentMap.put("deliveryDate", mailNotification.getDeliveryDate()!=null?dateFormat.format(mailNotification.getDeliveryDate()):"");
-        documentMap.put("moduleID", mailNotification.getModuleID());
-        documentMap.put("featureID", mailNotification.getFeatureID());
-        documentMap.put("source", mailNotification.getFromAddress());
-        documentMap.put("returnCode", mailNotification.getReturnCode());
-        documentMap.put("deliveryStatus", mailNotification.getMessageStatus().toString());
-        documentMap.put("returnCodeDetails", MAILMessageStatus.fromReturnCode(mailNotification.getReturnCode()));
+        documentMap.put("creationDate", notification.getCreationDate()!=null?dateFormat.format(notification.getCreationDate()):"");
+        documentMap.put("deliveryDate", notification.getDeliveryDate()!=null?dateFormat.format(notification.getDeliveryDate()):"");
+        documentMap.put("moduleID", notification.getModuleID());
+        documentMap.put("featureID", notification.getFeatureID());
+        documentMap.put("source", notification.getFromAddress());
+        documentMap.put("returnCode", notification.getReturnCode());
+        documentMap.put("deliveryStatus", notification.getMessageStatus().toString());
+        documentMap.put("returnCodeDetails", MAILMessageStatus.fromReturnCode(notification.getReturnCode()));
       }
         else if(type.equals("notificationmanagersms"))
         {
           documentMap = new HashMap<String,Object>();
-          SMSNotificationManagerRequest smsNotification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+          SMSNotificationManagerRequest notification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
           documentMap = new HashMap<String,Object>();
-          documentMap.put("subscriberID", smsNotification.getSubscriberID());
-          documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());
-          documentMap.put("originatingDeliveryRequestID", smsNotification.getOriginatingDeliveryRequestID());
+          documentMap.put("subscriberID", notification.getSubscriberID());
+          putAlternateIDs(notification.getSubscriberID(), documentMap);
+          documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
+          documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
           documentMap.put("eventID", "");
-          documentMap.put("creationDate", smsNotification.getCreationDate()!=null?dateFormat.format(smsNotification.getCreationDate()):"");
-          documentMap.put("deliveryDate", smsNotification.getDeliveryDate()!=null?dateFormat.format(smsNotification.getDeliveryDate()):"");
-          documentMap.put("moduleID", smsNotification.getModuleID());
-          documentMap.put("featureID", smsNotification.getFeatureID());
-          documentMap.put("source", smsNotification.getSource());
-          documentMap.put("returnCode", smsNotification.getReturnCode());
-          documentMap.put("deliveryStatus", smsNotification.getMessageStatus().toString());
-          documentMap.put("returnCodeDetails", SMSMessageStatus.fromReturnCode(smsNotification.getReturnCode()));
+          documentMap.put("creationDate", notification.getCreationDate()!=null?dateFormat.format(notification.getCreationDate()):"");
+          documentMap.put("deliveryDate", notification.getDeliveryDate()!=null?dateFormat.format(notification.getDeliveryDate()):"");
+          documentMap.put("moduleID", notification.getModuleID());
+          documentMap.put("featureID", notification.getFeatureID());
+          documentMap.put("source", notification.getSource());
+          documentMap.put("returnCode", notification.getReturnCode());
+          documentMap.put("deliveryStatus", notification.getMessageStatus().toString());
+          documentMap.put("returnCodeDetails", SMSMessageStatus.fromReturnCode(notification.getReturnCode()));
         }
         else
         {
           documentMap = new HashMap<String,Object>();
-          PushNotificationManagerRequest pushNotification = PushNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+          PushNotificationManagerRequest notification = PushNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
           documentMap = new HashMap<String,Object>();
-          documentMap.put("subscriberID", pushNotification.getSubscriberID());
-          documentMap.put("deliveryRequestID", pushNotification.getDeliveryRequestID());
-          documentMap.put("originatingDeliveryRequestID", pushNotification.getOriginatingDeliveryRequestID());
+          documentMap.put("subscriberID", notification.getSubscriberID());
+          putAlternateIDs(notification.getSubscriberID(), documentMap);
+          documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
+          documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
           documentMap.put("eventID", "");
-          documentMap.put("creationDate", pushNotification.getCreationDate()!=null?dateFormat.format(pushNotification.getCreationDate()):"");
-          documentMap.put("deliveryDate", pushNotification.getDeliveryDate()!=null?dateFormat.format(pushNotification.getDeliveryDate()):"");
-          documentMap.put("moduleID", pushNotification.getModuleID());
-          documentMap.put("featureID", pushNotification.getFeatureID());
+          documentMap.put("creationDate", notification.getCreationDate()!=null?dateFormat.format(notification.getCreationDate()):"");
+          documentMap.put("deliveryDate", notification.getDeliveryDate()!=null?dateFormat.format(notification.getDeliveryDate()):"");
+          documentMap.put("moduleID", notification.getModuleID());
+          documentMap.put("featureID", notification.getFeatureID());
           documentMap.put("source", ""); // TODO SCH : what is the source of push notifications ?
-          documentMap.put("returnCode", pushNotification.getReturnCode());
-          documentMap.put("deliveryStatus", pushNotification.getMessageStatus().toString());
-          documentMap.put("returnCodeDetails", PushMessageStatus.fromReturnCode(pushNotification.getReturnCode()));
+          documentMap.put("returnCode", notification.getReturnCode());
+          documentMap.put("deliveryStatus", notification.getMessageStatus().toString());
+          documentMap.put("returnCodeDetails", PushMessageStatus.fromReturnCode(notification.getReturnCode()));
         }
       
       return documentMap;

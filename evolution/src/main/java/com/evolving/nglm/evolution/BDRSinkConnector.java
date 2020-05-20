@@ -117,6 +117,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
         
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", commodityRequest.getSubscriberID());
+        putAlternateIDs(commodityRequest.getSubscriberID(), documentMap);
         documentMap.put("eventDatetime", commodityRequest.getEventDate()!=null?dateFormat.format(commodityRequest.getEventDate()):"");
         documentMap.put("deliveryRequestID", commodityRequest.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", commodityRequest.getOriginatingDeliveryRequestID());

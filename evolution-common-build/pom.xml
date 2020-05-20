@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>1.4.3_1-SNAPSHOT</version>
+  <version>1.4.3_1-reports-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -25,14 +25,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.3_0-SNAPSHOT</version>
+    <version>1.4.3_0-reports-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>1.4.3_0-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.4.3_0-reports-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->

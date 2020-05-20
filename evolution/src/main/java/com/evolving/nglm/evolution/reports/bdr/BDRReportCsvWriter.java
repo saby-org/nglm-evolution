@@ -99,11 +99,10 @@ public class BDRReportCsvWriter implements ReportCsvFactory
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     LinkedHashMap<String, Object> bdrRecs = new LinkedHashMap<>();
     Map<String, Object> bdrFieldsMap = reportElement.fields.get(0);
-    Map<String, Object> subscriberFields = reportElement.fields.get(1);
     for (Object bdrFieldsObj : bdrFieldsMap.values())
       {
         Map<String, Object> bdrFields = (Map<String, Object>) bdrFieldsObj;
-        if (bdrFields != null && !bdrFields.isEmpty() && subscriberFields != null && !subscriberFields.isEmpty())
+        if (bdrFields != null && !bdrFields.isEmpty())
           {
             // rename subscriberID
             if(bdrFields.get(subscriberID) != null) {
@@ -113,9 +112,9 @@ public class BDRReportCsvWriter implements ReportCsvFactory
             }
             for (AlternateID alternateID : Deployment.getAlternateIDs().values())
               {
-                if (subscriberFields.get(alternateID.getESField()) != null)
+                if (bdrFields.get(alternateID.getESField()) != null)
                   {
-                    Object alternateId = subscriberFields.get(alternateID.getESField());
+                    Object alternateId = bdrFields.get(alternateID.getESField());
                     bdrRecs.put(alternateID.getName(), alternateId);
                   }
               } 
