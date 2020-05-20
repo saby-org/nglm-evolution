@@ -14,6 +14,7 @@ import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
+import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 
@@ -145,6 +146,22 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("returnCode", pushNotification.getReturnCode());
         documentMap.put("deliveryStatus", pushNotification.getMessageStatus().toString());
         documentMap.put("returnCodeDetails", MessageStatus.fromReturnCode(pushNotification.getReturnCode()));
+      }else if(type.equals("notificationmanager")){
+        documentMap = new HashMap<String,Object>();
+        NotificationManagerRequest notification = NotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+        documentMap = new HashMap<String,Object>();
+        documentMap.put("subscriberID", notification.getSubscriberID());
+        documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
+        documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
+        documentMap.put("eventID", "");
+        documentMap.put("creationDate", notification.getCreationDate()!=null?dateFormat.format(notification.getCreationDate()):"");
+        documentMap.put("deliveryDate", notification.getDeliveryDate()!=null?dateFormat.format(notification.getDeliveryDate()):"");
+        documentMap.put("moduleID", notification.getModuleID());
+        documentMap.put("featureID", notification.getFeatureID());
+        documentMap.put("source", ""); // TODO SCH : what is the source of push notifications ?
+        documentMap.put("returnCode", notification.getReturnCode());
+        documentMap.put("deliveryStatus", notification.getMessageStatus().toString());
+        documentMap.put("returnCodeDetails", MessageStatus.fromReturnCode(notification.getReturnCode()));
       }else{
         documentMap = new HashMap<String,Object>();
         SMSNotificationManagerRequest smsNotification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));

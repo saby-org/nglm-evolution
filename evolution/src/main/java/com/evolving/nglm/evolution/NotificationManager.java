@@ -91,7 +91,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       // superclass
       //
 
-      super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), NotificationManagerRequest.serde, Deployment.getDeliveryManagers().get("notificationManager"));
+      super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), NotificationManagerRequest.serde, Deployment.getDeliveryManagers().get("notificationmanager"));
 
       //
       // service
@@ -120,7 +120,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       ArrayList<String> channels = new ArrayList<>();
       if (channelsString != null)
         {
-          for (String channel : channelsString.split("."))
+          for (String channel : channelsString.split("\\."))
             {
               channels.add(channel);
             }
@@ -139,7 +139,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
                     {
                       NotificationInterface pluginInstance = (NotificationInterface) (Class.forName(cc.getNotificationPluginClass()).newInstance());
                       pluginInstance.init(this, cc.getNotificationPluginConfiguration());
-                      pluginInstances.put(cc.getID(), (NotificationInterface) (Class.forName(cc.getNotificationPluginClass()).newInstance()));
+                      pluginInstances.put(cc.getID(), pluginInstance);
                     }
                   catch (InstantiationException | IllegalAccessException | IllegalArgumentException e)
                     {

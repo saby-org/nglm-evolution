@@ -55,7 +55,12 @@ fi
 
 if [ "<_NOTIFICATIONMANAGER_PUSH_ENABLED_>" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-notificationmanagerpush.yml <_DOCKER_STACK_>-notificationmanagerpush
-fi  
+fi
+
+if [ "<_NOTIFICATIONMANAGER_ENABLED_>" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-notificationmanager.yml <_DOCKER_STACK_>-notificationmanager
+fi
+  
 
 if [ "<_REPORTMANAGER_ENABLED_>" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-reportmanager.yml <_DOCKER_STACK_>-reportmanager

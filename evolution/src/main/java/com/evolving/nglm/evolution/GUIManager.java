@@ -11103,7 +11103,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
-    template = (template != null && (template.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate || template.getGUIManagedObjectType() == GUIManagedObjectType.DialogTemplate)) ? template : null;
+    template = (template != null && (template.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate)) ? template : null;
     JSONObject templateJSON = subscriberMessageTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -11367,7 +11367,9 @@ public class GUIManager
       {
         String templateCommunicationChannelID = (String) template.getJSONRepresentation().get("communicationChannelID");
         if(communicationChannelID == null || communicationChannelID.isEmpty() || communicationChannelID.equals(templateCommunicationChannelID)){
-          templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
+          JSONObject templateJSON = subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now);
+          templateJSON.put("communicationChannelID", templateCommunicationChannelID);
+          templates.add(templateJSON);
         }
       }
 
@@ -11621,7 +11623,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
-    template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate) ? template : null;
+    template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.DialogTemplate) ? template : null;
     if (template != null && (force || !template.getReadOnly())) subscriberMessageTemplateService.removeSubscriberMessageTemplate(templateID, userID);
 
     /*****************************************
