@@ -25,69 +25,13 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.SMSNotificationManager.SMSMessageStatus;
 
-public class PushNotificationManager extends DeliveryManager implements Runnable
+public class PushNotificationManager extends DeliveryManagerForNotifications implements Runnable
 {
-  /*****************************************
-  *
-  *  enum - status
-  *
-  *****************************************/
-
-  public enum PushMessageStatus
-  {
-    PENDING(10),
-    SENT(1),
-    NO_CUSTOMER_LANGUAGE(701),
-    NO_CUSTOMER_CHANNEL(702),
-    DELIVERED(0),
-    EXPIRED(707),
-    ERROR(706),
-    UNDELIVERABLE(703),
-    INVALID(704),
-    QUEUE_FULL(705),
-    RESCHEDULE(709),
-    UNKNOWN(999);
-    private Integer returncode;
-    private PushMessageStatus(Integer returncode) { this.returncode = returncode; }
-    public Integer getReturnCode() { return returncode; }
-    public static PushMessageStatus fromReturnCode(Integer externalRepresentation) { for (PushMessageStatus enumeratedValue : PushMessageStatus.values()) { if (enumeratedValue.getReturnCode().equals(externalRepresentation)) return enumeratedValue; } return UNKNOWN; }
-  }
-
-  /*****************************************
-  *
-  *  conversion method
-  *
-  *****************************************/
-
-  public DeliveryStatus getMessageStatus (PushMessageStatus status)
-  {
-    switch(status)
-      {
-        case PENDING:
-          return DeliveryStatus.Pending;
-        case SENT:
-          return DeliveryStatus.Delivered;
-        case RESCHEDULE:
-          return DeliveryStatus.Reschedule;
-        case NO_CUSTOMER_LANGUAGE:
-        case NO_CUSTOMER_CHANNEL:
-        case ERROR:
-        case UNDELIVERABLE:
-        case INVALID:
-        case QUEUE_FULL:
-        default:
-          return DeliveryStatus.Failed;
-      }
-  }
-
   /*****************************************
   *
   *  configuration
@@ -207,7 +151,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
   *
   *****************************************/
 
-  public static class PushNotificationManagerRequest extends DeliveryRequest implements MessageDelivery
+  public static class PushNotificationManagerRequest extends DeliveryRequest implements MessageDelivery, INotificationRequest
   {
     /*****************************************
     *
@@ -263,7 +207,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
     private Map<String, List<String>> tags;
     private boolean confirmationExpected;
     private boolean restricted;
-    private PushMessageStatus status;
+    private MessageStatus status;
     private int returnCode;
     private String returnCodeDetails;
 
@@ -277,7 +221,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
     public Map<String, List<String>> getTags() { return tags; }
     public boolean getConfirmationExpected() { return confirmationExpected; }
     public boolean getRestricted() { return restricted; }
-    public PushMessageStatus getMessageStatus() { return status; }
+    public MessageStatus getMessageStatus() { return status; }
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
 
@@ -293,7 +237,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
 
     public void setConfirmationExpected(boolean confirmationExpected) { this.confirmationExpected = confirmationExpected; }
     public void setRestricted(boolean restricted) { this.restricted = restricted; }
-    public void setMessageStatus(PushMessageStatus status) { this.status = status; }
+    public void setMessageStatus(MessageStatus status) { this.status = status; }
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
     
@@ -333,7 +277,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
       this.language = language;
       this.templateID = templateID;
       this.tags = tags;
-      this.status = PushMessageStatus.PENDING;
+      this.status = MessageStatus.PENDING;
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = null;
     }
@@ -351,8 +295,8 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
       this.language = JSONUtilities.decodeString(jsonRoot, "language", true);
       this.templateID = JSONUtilities.decodeString(jsonRoot, "templateID", true);
       this.tags = decodeTags(JSONUtilities.decodeJSONArray(jsonRoot, "tags", new JSONArray()));
-      this.status = PushMessageStatus.PENDING;
-      this.returnCode = PushMessageStatus.PENDING.getReturnCode();
+      this.status = MessageStatus.PENDING;
+      this.returnCode = MessageStatus.PENDING.getReturnCode();
       this.returnCodeDetails = null;
     }
 
@@ -386,7 +330,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private PushNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean confirmationExpected, boolean restricted, PushMessageStatus status, String returnCodeDetails)
+    private PushNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails)
     {
       super(schemaAndValue);
       this.destination = destination;
@@ -488,7 +432,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
       boolean restricted = valueStruct.getBoolean("restricted");
       Integer returnCode = valueStruct.getInt32("returnCode");
       String returnCodeDetails = valueStruct.getString("returnCodeDetails");
-      PushMessageStatus status = PushMessageStatus.fromReturnCode(returnCode);
+      MessageStatus status = MessageStatus.fromReturnCode(returnCode);
       
       //
       //  return
@@ -551,7 +495,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
       guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(RETURNCODE, getReturnCode());
-      guiPresentationMap.put(RETURNCODEDETAILS, PushMessageStatus.fromReturnCode(getReturnCode()).toString());
+      guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
       guiPresentationMap.put(NOTIFICATION_CHANNEL, "PUSH");  // TODO SCH : should this be more specific (communication channel name ?) ?
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
@@ -572,7 +516,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
-      thirdPartyPresentationMap.put(RETURNCODEDETAILS, PushMessageStatus.fromReturnCode(getReturnCode()).toString());
+      thirdPartyPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, "PUSH");  // TODO SCH : should this be more specific (communication channel name ?) ?
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
@@ -580,8 +524,8 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
     @Override
     public void resetDeliveryRequestAfterReSchedule()
     {
-      this.setReturnCode(PushMessageStatus.PENDING.getReturnCode());
-      this.setMessageStatus(PushMessageStatus.PENDING);
+      this.setReturnCode(MessageStatus.PENDING.getReturnCode());
+      this.setMessageStatus(MessageStatus.PENDING);
       
     }   
   }
@@ -790,9 +734,9 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
                     log.debug("PushNotificationManagerRequest RESCHEDULE to " + effectiveDeliveryTime + " restricted " + pushRequest);
                     pushRequest.setRescheduledDate(effectiveDeliveryTime);
                     pushRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
-                    pushRequest.setReturnCode(PushMessageStatus.RESCHEDULE.getReturnCode());
-                    pushRequest.setMessageStatus(PushMessageStatus.RESCHEDULE);
-                    completeDeliveryRequest(pushRequest);
+                    pushRequest.setReturnCode(MessageStatus.RESCHEDULE.getReturnCode());
+                    pushRequest.setMessageStatus(MessageStatus.RESCHEDULE);
+                    completeDeliveryRequest((DeliveryRequest)pushRequest);
                   }      
               }
             else {
@@ -808,9 +752,9 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
               log.info("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
             }
             pushRequest.setDeliveryStatus(DeliveryStatus.Failed);
-            pushRequest.setReturnCode(PushMessageStatus.UNKNOWN.getReturnCode());
-            pushRequest.setMessageStatus(PushMessageStatus.UNKNOWN);
-            completeDeliveryRequest(pushRequest);
+            pushRequest.setReturnCode(MessageStatus.UNKNOWN.getReturnCode());
+            pushRequest.setMessageStatus(MessageStatus.UNKNOWN);
+            completeDeliveryRequest((DeliveryRequest)pushRequest);
           }
       }
   }
@@ -864,7 +808,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
     PushNotificationManagerRequest pushRequest = (PushNotificationManagerRequest) deliveryRequest;
     if (pushRequest != null)
       {
-        pushRequest.setMessageStatus(PushMessageStatus.fromReturnCode(result));
+        pushRequest.setMessageStatus(MessageStatus.fromReturnCode(result));
         pushRequest.setDeliveryStatus(getMessageStatus(pushRequest.getMessageStatus()));
         pushRequest.setDeliveryDate(SystemTime.getCurrentTime());
         completeRequest(pushRequest);

@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.SubscriberIDService;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.SMSNotificationManager;
 import com.lumatagroup.expression.driver.SMPP.configuration.SMSC;
@@ -33,7 +34,7 @@ public class SMSSenderFactory {
         if (logger.isInfoEnabled()) logger.info("SMSSenderFactory.ctor");
     }
 
-	public void init(SMSNotificationManager smsNotificationManager) {
+	public void init(DeliveryManagerForNotifications smsNotificationManager) {
 		if (logger.isDebugEnabled()) logger.debug("SMSSenderFactory.init");
         
         if (smppDriverConfigurationMap == null || smppDriverConfigurationMap.getSize() == 0) {

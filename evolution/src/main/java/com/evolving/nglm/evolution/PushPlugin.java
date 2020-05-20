@@ -19,17 +19,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.MailNotificationManager.MAILMessageStatus;
-import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
-import com.evolving.nglm.evolution.PushNotificationManager.PushMessageStatus;
-import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
+//import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
-import com.evolving.nglm.core.JSONUtilities;
-
-import com.lumatagroup.expression.driver.SMTP.FeedbackThread;
-import com.lumatagroup.expression.driver.SMTP.MailSenderFactory;
-import com.lumatagroup.expression.driver.SMTP.SimpleEmailSender;
-import com.lumatagroup.expression.driver.SMTP.constants.SMTPConstants;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
+import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
 import com.lumatagroup.expression.driver.dyn.NotificationStatus;
 import com.lumatagroup.expression.driver.push.PushSenderFactory;
 import com.lumatagroup.expression.driver.push.SimplePushSender;
@@ -98,11 +91,11 @@ public class PushPlugin implements PushNotificationInterface
       {
         try
           {
-            sender.sendPush(pushNotificationRequest);
+            sender.sendPush(pushNotificationRequest, pushNotificationRequest.getConfirmationExpected());
           } catch (MessagingException e)
           {
             logger.error("Exception occured in PushDriver.send()."+e.getMessage(), e);
-            sender.completeDeliveryRequest(pushNotificationRequest, pushNotificationRequest.getDeliveryRequestID(), PushMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatus.ERROR.toString());
+            sender.completeDeliveryRequest(pushNotificationRequest, pushNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatus.ERROR.toString());
           }
       }
     

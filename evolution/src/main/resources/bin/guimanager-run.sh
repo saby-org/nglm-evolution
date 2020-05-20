@@ -18,7 +18,7 @@ cat /etc/kafka/log4j-evol.properties | perl -e 'while ( $line=<STDIN> ) { $line=
 
 case "${ENTRYPOINT}" in
 
-  "guimanager" | "thirdpartymanager" | "notificationmanagermail" | "notificationmanagersms" | "notificationmanagerpush" | "infulfillmentmanager" | "purchasefulfillment" | "evolutionengine")
+  "guimanager" | "thirdpartymanager" | "notificationmanagermail" | "notificationmanagersms" | "notificationmanagerpush" | "notificationmanager" | "infulfillmentmanager" | "purchasefulfillment" | "evolutionengine")
     ;;
   "dnboproxy" | "datacubemanager" | "reportmanager" | "reportscheduler" | "emptyfulfillmentmanager" | "commoditydeliverymanager" | "ucgengine" | "propensityengine" | "journeytrafficengine")
 	#
@@ -82,6 +82,9 @@ case "${ENTRYPOINT}" in
   "notificationmanagersms")
    exec kafka-run-class -name notificationmanagersms -loggc com.evolving.nglm.evolution.SMSNotificationManager $KEY $PLUGIN_NAME $PLUGIN_CONFIGURATION 
     ;;
+  "notificationmanager")
+   exec kafka-run-class -name notificationmanagersms -loggc com.evolving.nglm.evolution.NotificationManager $KEY $PLUGIN_NAME $PLUGIN_CONFIGURATION 
+    ;;  
   "emptyfulfillmentmanager")
     exec kafka-run-class -name emptyFulfillmentManager -loggc com.evolving.nglm.evolution.EmptyFulfillmentManager $KEY $PLUGIN_NAME
     ;;

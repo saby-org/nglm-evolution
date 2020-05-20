@@ -1,10 +1,8 @@
 package com.lumatagroup.expression.driver.push;
 
-import java.util.Map;
 
 import org.apache.log4j.Logger;
-
-import com.evolving.nglm.evolution.PushNotificationManager;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications;
 
 
 public class PushSenderFactory {
@@ -21,10 +19,10 @@ public class PushSenderFactory {
   /**
    * init() method used to create push driver connection.
    */
-  public void init(PushNotificationManager pushNotificationManager) {
-    logger.debug("MailSenderFactory.init() method execution ...");
+  public void init(DeliveryManagerForNotifications pushNotificationManager) {
+    logger.debug("PushSenderFactory.init() method execution ...");
     sender = new SimplePushSender(pushNotificationManager);
-    logger.debug("MailSenderFactory.init() method execution done");
+    logger.debug("PushSenderFactory.init() method execution done");
   }
 
   public SimplePushSender getPushSender() 

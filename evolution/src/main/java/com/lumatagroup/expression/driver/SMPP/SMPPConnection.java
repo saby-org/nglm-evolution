@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.evolution.DeliveryRequest;
+import com.evolving.nglm.evolution.INotificationRequest;
 import com.lumatagroup.expression.driver.SMPP.receiver.ReceiverWorkerThread;
 
 /**
@@ -586,7 +587,7 @@ public class SMPPConnection implements ConnectionObserver, NotifConnection {
 	 * @param if the current SMPP message belongs to a multi part SMS then this field represents the ordinal number of this part. (from 0 to n-1)
 	 * @return
 	 */
-	public synchronized int referenceMessageId(SMSNotificationManagerRequest deliveryRequest, String text, boolean isMultiPart, int partOrdianl, int totalPartNumber){
+	public synchronized int referenceMessageId(INotificationRequest deliveryRequest, String text, boolean isMultiPart, int partOrdianl, int totalPartNumber){
 
 		int id = messageIndex++;
 		if (logger.isTraceEnabled()) {
@@ -631,13 +632,13 @@ public class SMPPConnection implements ConnectionObserver, NotifConnection {
      *
      */
     public class SubmitSMCorrectionDeliveryRequest {
-        private SMSNotificationManagerRequest deliveryRequest;
+        private INotificationRequest deliveryRequest;
     	private String messageContent;
     	private boolean isMultiPart;
     	private int partOrdinal;
     	private int totalPartsNumber;
    	
-    	public SubmitSMCorrectionDeliveryRequest(SMSNotificationManagerRequest deliveryRequest, String messageContent, boolean isMultiPart, int partOridnal, int totalPartsNumber){
+    	public SubmitSMCorrectionDeliveryRequest(INotificationRequest deliveryRequest, String messageContent, boolean isMultiPart, int partOridnal, int totalPartsNumber){
     		this.setDeliveryRequest(deliveryRequest);
     		this.setMessageContent(messageContent);
     		this.setMultiPart(isMultiPart);
@@ -664,11 +665,11 @@ public class SMPPConnection implements ConnectionObserver, NotifConnection {
 			this.isMultiPart = isMultiPart;
 		}
 		
-		public void setDeliveryRequest(SMSNotificationManagerRequest deliveryRequest){
+		public void setDeliveryRequest(INotificationRequest deliveryRequest){
 		  this.deliveryRequest = deliveryRequest;
 		}
 		
-		public SMSNotificationManagerRequest getDeliveryRequest(){
+		public INotificationRequest getDeliveryRequest(){
 		  return deliveryRequest;
 		}
 

@@ -23,71 +23,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.PushNotificationManager.PushMessageStatus;
-import com.evolving.nglm.evolution.SMSNotificationManager.SMSMessageStatus;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 
-public class MailNotificationManager extends DeliveryManager implements Runnable
+public class MailNotificationManager extends DeliveryManagerForNotifications implements Runnable
 {
-  /*****************************************
-  *
-  *  enum - status
-  *
-  *****************************************/
-
-  public enum MAILMessageStatus
-  {
-    PENDING(10),
-    SENT(1),
-    NO_CUSTOMER_LANGUAGE(701),
-    NO_CUSTOMER_CHANNEL(702),
-    DELIVERED(0),
-    EXPIRED(707),
-    ERROR(706),
-    UNDELIVERABLE(703),
-    INVALID(704),
-    QUEUE_FULL(705),
-    RESCHEDULE(709),
-    UNKNOWN(999);
-    private Integer returncode;
-    private MAILMessageStatus(Integer returncode) { this.returncode = returncode; }
-    public Integer getReturnCode() { return returncode; }
-    public static MAILMessageStatus fromReturnCode(Integer externalRepresentation) { for (MAILMessageStatus enumeratedValue : MAILMessageStatus.values()) { if (enumeratedValue.getReturnCode().equals(externalRepresentation)) return enumeratedValue; } return UNKNOWN; }
-  }
-
-  /*****************************************
-  *
-  *  conversion method
-  *
-  *****************************************/
-
-  public DeliveryStatus getMessageStatus (MAILMessageStatus status)
-  {
-    switch(status)
-      {
-        case PENDING:
-          return DeliveryStatus.Pending;
-        case SENT:
-          return DeliveryStatus.Delivered;
-        case RESCHEDULE:
-          return DeliveryStatus.Reschedule;
-        case NO_CUSTOMER_LANGUAGE:
-        case NO_CUSTOMER_CHANNEL:
-        case ERROR:
-        case UNDELIVERABLE:
-        case INVALID:
-        case QUEUE_FULL:
-        default:
-          return DeliveryStatus.Failed;
-      }
-  }
-
   /*****************************************
   *
   *  configuration
@@ -207,7 +151,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
   *
   *****************************************/
 
-  public static class MailNotificationManagerRequest extends DeliveryRequest implements MessageDelivery
+  public static class MailNotificationManagerRequest extends DeliveryRequest implements MessageDelivery, INotificationRequest
   {
     /*****************************************
     *
@@ -269,7 +213,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     private List<String> textBodyTags;
     private boolean confirmationExpected;
     private boolean restricted;
-    private MAILMessageStatus status;
+    private MessageStatus status;
     private int returnCode;
     private String returnCodeDetails;
 
@@ -286,7 +230,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     public List<String> getTextBodyTags() { return textBodyTags; }
     public boolean getConfirmationExpected() { return confirmationExpected; }
     public boolean getRestricted() { return restricted; }
-    public MAILMessageStatus getMessageStatus() { return status; }
+    public MessageStatus getMessageStatus() { return status; }
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
 
@@ -302,7 +246,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
 
     public void setConfirmationExpected(boolean confirmationExpected) { this.confirmationExpected = confirmationExpected; }
     public void setRestricted(boolean restricted) { this.restricted = restricted; }
-    public void setMessageStatus(MAILMessageStatus status) { this.status = status; }
+    public void setMessageStatus(MessageStatus status) { this.status = status; }
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
 
@@ -373,7 +317,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       this.subjectTags = subjectTags;
       this.htmlBodyTags = htmlBodyTags;
       this.textBodyTags = textBodyTags;
-      this.status = MAILMessageStatus.PENDING;
+      this.status = MessageStatus.PENDING;
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = null;
     }
@@ -394,8 +338,8 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       this.subjectTags = decodeMessageTags(JSONUtilities.decodeJSONArray(jsonRoot, "subjectTags", new JSONArray()));
       this.htmlBodyTags = decodeMessageTags(JSONUtilities.decodeJSONArray(jsonRoot, "htmlBodyTags", new JSONArray()));
       this.textBodyTags = decodeMessageTags(JSONUtilities.decodeJSONArray(jsonRoot, "textBodyTags", new JSONArray()));
-      this.status = MAILMessageStatus.PENDING;
-      this.returnCode = MAILMessageStatus.PENDING.getReturnCode();
+      this.status = MessageStatus.PENDING;
+      this.returnCode = MessageStatus.PENDING.getReturnCode();
       this.returnCodeDetails = null;
     }
 
@@ -421,7 +365,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private MailNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String fromAddress, String language, String templateID, List<String> subjectTags, List<String> htmlBodyTags, List<String> textBodyTags, boolean confirmationExpected, boolean restricted, MAILMessageStatus status, String returnCodeDetails)
+    private MailNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String fromAddress, String language, String templateID, List<String> subjectTags, List<String> htmlBodyTags, List<String> textBodyTags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails)
     {
       super(schemaAndValue);
       this.destination = destination;
@@ -535,7 +479,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       boolean restricted = valueStruct.getBoolean("restricted");
       Integer returnCode = valueStruct.getInt32("returnCode");
       String returnCodeDetails = valueStruct.getString("returnCodeDetails");
-      MAILMessageStatus status = MAILMessageStatus.fromReturnCode(returnCode);
+      MessageStatus status = MessageStatus.fromReturnCode(returnCode);
       
       //
       //  return
@@ -566,7 +510,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(SOURCE, getFromAddress());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
-      guiPresentationMap.put(RETURNCODEDETAILS, MAILMessageStatus.fromReturnCode(getReturnCode()).toString());
+      guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
       guiPresentationMap.put(NOTIFICATION_SUBJECT, getSubject(subscriberMessageTemplateService));
       guiPresentationMap.put(NOTIFICATION_TEXT_BODY, getTextBody(subscriberMessageTemplateService));
       guiPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody(subscriberMessageTemplateService));
@@ -590,7 +534,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(SOURCE, getFromAddress());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
-      thirdPartyPresentationMap.put(RETURNCODEDETAILS, MAILMessageStatus.fromReturnCode(getReturnCode()).toString());
+      thirdPartyPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
       thirdPartyPresentationMap.put(NOTIFICATION_SUBJECT, getSubject(subscriberMessageTemplateService));
       thirdPartyPresentationMap.put(NOTIFICATION_TEXT_BODY, getTextBody(subscriberMessageTemplateService));
       thirdPartyPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody(subscriberMessageTemplateService));
@@ -601,8 +545,8 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     @Override
     public void resetDeliveryRequestAfterReSchedule()
     {
-      this.setReturnCode(MAILMessageStatus.PENDING.getReturnCode());
-      this.setMessageStatus(MAILMessageStatus.PENDING);
+      this.setReturnCode(MessageStatus.PENDING.getReturnCode());
+      this.setMessageStatus(MessageStatus.PENDING);
     }   
   }
 
@@ -765,9 +709,9 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
                 log.debug("MailNotificationManagerRequest RESCHEDULE to " + effectiveDeliveryTime + " restricted " + mailRequest);
                 mailRequest.setRescheduledDate(effectiveDeliveryTime);
                 mailRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
-                mailRequest.setReturnCode(SMSMessageStatus.RESCHEDULE.getReturnCode());
-                mailRequest.setMessageStatus(MAILMessageStatus.RESCHEDULE);
-                completeDeliveryRequest(mailRequest);
+                mailRequest.setReturnCode(MessageStatus.RESCHEDULE.getReturnCode());
+                mailRequest.setMessageStatus(MessageStatus.RESCHEDULE);
+                completeDeliveryRequest((DeliveryRequest)mailRequest);
               }
           }
         else 
@@ -827,7 +771,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     MailNotificationManagerRequest mailRequest = (MailNotificationManagerRequest) deliveryRequest;
     if (mailRequest != null)
       {
-        mailRequest.setMessageStatus(MAILMessageStatus.fromReturnCode(result));
+        mailRequest.setMessageStatus(MessageStatus.fromReturnCode(result));
         mailRequest.setDeliveryStatus(getMessageStatus(mailRequest.getMessageStatus()));
         mailRequest.setDeliveryDate(SystemTime.getCurrentTime());
         completeRequest(mailRequest);

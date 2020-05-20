@@ -28,7 +28,7 @@ import com.lumatagroup.expression.driver.SMTP.SimpleEmailSender;
 import com.lumatagroup.expression.driver.SMTP.constants.SMTPConstants;
 import com.lumatagroup.expression.driver.dyn.NotificationStatus;
 
-public class SMTPPlugin implements MailNotificationInterface
+public class SMTPGenericPlugin implements NotificationInterface
 {
   /*****************************************
   *
@@ -36,7 +36,7 @@ public class SMTPPlugin implements MailNotificationInterface
   *
   *****************************************/
 
-  private static final Logger logger = LoggerFactory.getLogger(SMTPPlugin.class);
+  private static final Logger logger = LoggerFactory.getLogger(SMTPGenericPlugin.class);
 
   /*****************************************
   *
@@ -46,7 +46,7 @@ public class SMTPPlugin implements MailNotificationInterface
 
   private SimpleEmailSender[] senders = null;
   private int currentSenderIndex = 0; 
-  private MailNotificationManager mailNotificationManager;
+  private DeliveryManagerForNotifications mailNotificationManager;
   private FeedbackThread ft;
 
   /*****************************************
@@ -55,7 +55,7 @@ public class SMTPPlugin implements MailNotificationInterface
   *
   *****************************************/
 
-  @Override public void init(MailNotificationManager mailNotificationManager, JSONObject mailNotifSharedConfiguration, String mailNotifSpecificConfiguration, String pluginName)
+  @Override public void init(DeliveryManagerForNotifications mailNotificationManager, JSONObject mailNotifSharedConfiguration)
   {
     logger.info("SMTP Driver Loading Start...");
 
@@ -229,7 +229,7 @@ public class SMTPPlugin implements MailNotificationInterface
     MailSenderFactory mailSenderFactory = new MailSenderFactory(config);
     try
     {
-      mailSenderFactory.init(mailNotificationManager);
+//      mailSenderFactory.init(mailNotificationManager);
       senders = mailSenderFactory.getEmailSenders();  
       if(senders == null || senders.length==0)
         {
@@ -264,7 +264,7 @@ public class SMTPPlugin implements MailNotificationInterface
   *
   *****************************************/
 
-  @Override public void send(MailNotificationManagerRequest mailNotificationRequest)
+  @Override public void send(INotificationRequest mailNotificationRequest)
   {
     if (logger.isDebugEnabled()) logger.debug("START: SMTPDriver.send() execution.");
 
@@ -278,11 +278,8 @@ public class SMTPPlugin implements MailNotificationInterface
       {
         try
           {
-            String emailText = mailNotificationRequest.getTextBody(mailNotificationManager.getSubscriberMessageTemplateService());
-            String toEmail = mailNotificationRequest.getDestination();
-            String fromAddress = mailNotificationRequest.getFromAddress();
-            boolean confirmationExpected = mailNotificationRequest.getConfirmationExpected();
-            senders[currentSenderIndex].sendEmail(mailNotificationRequest, emailText, toEmail, fromAddress, confirmationExpected);
+            // TODO extract all parameters from the generic request
+//            senders[currentSenderIndex].sendEmail(mailNotificationRequest);
           }
         catch (Exception mEx)
           {

@@ -10,14 +10,15 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
+import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.lumatagroup.expression.driver.SMPP.SMSSenderFactory;
 import com.lumatagroup.expression.driver.SMPP.SimpleSMSSender;
 import com.lumatagroup.expression.driver.SMPP.configuration.SMSC;
 import com.lumatagroup.expression.driver.SMPP.Util.SMPPUtil.SMPP_CONFIGS;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SystemTime;
 
-public class SMPPPlugin implements SMSNotificationInterface
+public class SMPPGenericPlugin implements NotificationInterface
 {
   /*****************************************
   *
@@ -33,7 +34,7 @@ public class SMPPPlugin implements SMSNotificationInterface
   *
   *****************************************/
 
-  private SMSNotificationManager smsNotificationManager = null;
+  private DeliveryManagerForNotifications smsNotificationManager = null;
   private SimpleSMSSender sender = null;
 
   /*****************************************
@@ -42,7 +43,7 @@ public class SMPPPlugin implements SMSNotificationInterface
   *
   *****************************************/
 
-  public void init(SMSNotificationManager smsNotificationManager, JSONObject notificationPluginConfiguration, String notificationPluginSpecificConfiguration, String pluginName)
+  public void init(DeliveryManagerForNotifications smsNotificationManager, JSONObject notificationPluginConfiguration)
   {
     //
     //  smsNotificationManager
@@ -54,6 +55,7 @@ public class SMPPPlugin implements SMSNotificationInterface
     //  attributes
     //  
 
+    String connection_name = JSONUtilities.decodeString(notificationPluginConfiguration, "smsc_connection_name", true);
     String smscHost = JSONUtilities.decodeString(notificationPluginConfiguration, "smsc_connection", true);
     String username = JSONUtilities.decodeString(notificationPluginConfiguration, "username", true);
     String password = JSONUtilities.decodeString(notificationPluginConfiguration, "password", true);
@@ -120,8 +122,8 @@ public class SMPPPlugin implements SMSNotificationInterface
     //
 
     SMSSenderFactory smsSenderFactory = null ;
-    SMSC config = new SMSC(pluginName);
-    config.addProperty(SMPP_CONFIGS.name.toString(), pluginName);
+    SMSC config = new SMSC(connection_name);
+    config.addProperty(SMPP_CONFIGS.name.toString(), connection_name);
     config.addProperty(SMPP_CONFIGS.address.toString(), host);
     config.addProperty(SMPP_CONFIGS.port.toString(), String.valueOf(port));
     config.addProperty(SMPP_CONFIGS.connection_type.toString(), connection_type);
@@ -171,19 +173,26 @@ public class SMPPPlugin implements SMSNotificationInterface
   *
   *****************************************/
 
-  public void send(SMSNotificationManagerRequest deliveryRequest)
+  public void send(INotificationRequest deliveryNotificationRequest)
   {
-    String text = deliveryRequest.getText(smsNotificationManager.getSubscriberMessageTemplateService());
+    
+    NotificationManagerRequest deliveryRequest = (NotificationManagerRequest)deliveryNotificationRequest;
+    DialogTemplate smsTemplate = (DialogTemplate) smsNotificationManager.getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(deliveryRequest.getTemplateID(), SystemTime.getCurrentTime());
+    DialogMessage dialogMessage = smsTemplate.getDialogMessage("sms.body");
+    String text = (dialogMessage != null) ? dialogMessage.resolve(deliveryRequest.getLanguage(), deliveryRequest.getTags().get("sms.body")) : null;
+        
     String destination = deliveryRequest.getDestination();
-    String source = deliveryRequest.getSource();
-    boolean flashSMS = ((SMSNotificationManagerRequest)deliveryRequest).getFlashSMS();
+    
+    String source = (String) deliveryRequest.getNotificationParameters().get("node.parameter.fromaddress");
+    Boolean receiptExpected = (Boolean) deliveryRequest.getNotificationParameters().get("node.parameter.confirmationexpected");
+    Boolean flashSMS = (Boolean) deliveryRequest.getNotificationParameters().get("node.parameter.flashsms");
     if(sender == null)
       {
         throw new RuntimeException("SMPPPlugin.send("+deliveryRequest+") sender is null, no smsc");
       }
     else
       {
-        if(sender.sendSMS(deliveryRequest, text, destination, source, true, flashSMS))
+        if(sender.sendSMS(deliveryRequest, text, destination, source, receiptExpected != null ? receiptExpected : false, flashSMS != null ? flashSMS : false))
           {
             log.info("SMPP Driver message sent successfully");
           }

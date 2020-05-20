@@ -12,11 +12,10 @@ import org.apache.kafka.connect.sink.SinkRecord;
 
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
-import com.evolving.nglm.evolution.MailNotificationManager.MAILMessageStatus;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
-import com.evolving.nglm.evolution.PushNotificationManager.PushMessageStatus;
+import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
-import com.evolving.nglm.evolution.SMSNotificationManager.SMSMessageStatus;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 
 public class NotificationSinkConnector extends SimpleESSinkConnector
@@ -146,6 +145,24 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         {
           documentMap = new HashMap<String,Object>();
           SMSNotificationManagerRequest smsNotification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+          documentMap = new HashMap<String,Object>();
+          documentMap.put("subscriberID", smsNotification.getSubscriberID());
+          documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());
+          documentMap.put("originatingDeliveryRequestID", smsNotification.getOriginatingDeliveryRequestID());
+          documentMap.put("eventID", "");
+          documentMap.put("creationDate", smsNotification.getCreationDate()!=null?dateFormat.format(smsNotification.getCreationDate()):"");
+          documentMap.put("deliveryDate", smsNotification.getDeliveryDate()!=null?dateFormat.format(smsNotification.getDeliveryDate()):"");
+          documentMap.put("moduleID", smsNotification.getModuleID());
+          documentMap.put("featureID", smsNotification.getFeatureID());
+          documentMap.put("source", smsNotification.getSource());
+          documentMap.put("returnCode", smsNotification.getReturnCode());
+          documentMap.put("deliveryStatus", smsNotification.getMessageStatus().toString());
+          documentMap.put("returnCodeDetails", SMSMessageStatus.fromReturnCode(smsNotification.getReturnCode()));
+        }
+        else if(type.equals("notificationmanager"))
+        {
+          documentMap = new HashMap<String,Object>();
+          NotificationManagerRequest smsNotification = NotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", smsNotification.getSubscriberID());
           documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());
