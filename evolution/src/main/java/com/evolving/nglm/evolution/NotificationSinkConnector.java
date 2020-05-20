@@ -139,7 +139,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("source", mailNotification.getFromAddress());
         documentMap.put("returnCode", mailNotification.getReturnCode());
         documentMap.put("deliveryStatus", mailNotification.getMessageStatus().toString());
-        documentMap.put("returnCodeDetails", MAILMessageStatus.fromReturnCode(mailNotification.getReturnCode()));
+        documentMap.put("returnCodeDetails", MessageStatus.fromReturnCode(mailNotification.getReturnCode()));
       }
         else if(type.equals("notificationmanagersms"))
         {
@@ -157,7 +157,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           documentMap.put("source", smsNotification.getSource());
           documentMap.put("returnCode", smsNotification.getReturnCode());
           documentMap.put("deliveryStatus", smsNotification.getMessageStatus().toString());
-          documentMap.put("returnCodeDetails", SMSMessageStatus.fromReturnCode(smsNotification.getReturnCode()));
+          documentMap.put("returnCodeDetails", MessageStatus.fromReturnCode(smsNotification.getReturnCode()));
         }
         else if(type.equals("notificationmanager"))
         {
@@ -172,10 +172,10 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           documentMap.put("deliveryDate", smsNotification.getDeliveryDate()!=null?dateFormat.format(smsNotification.getDeliveryDate()):"");
           documentMap.put("moduleID", smsNotification.getModuleID());
           documentMap.put("featureID", smsNotification.getFeatureID());
-          documentMap.put("source", smsNotification.getSource());
+          documentMap.put("source", smsNotification.getNotificationParameters().get("node.parameter.fromaddress"));
           documentMap.put("returnCode", smsNotification.getReturnCode());
           documentMap.put("deliveryStatus", smsNotification.getMessageStatus().toString());
-          documentMap.put("returnCodeDetails", SMSMessageStatus.fromReturnCode(smsNotification.getReturnCode()));
+          documentMap.put("returnCodeDetails", MessageStatus.fromReturnCode(smsNotification.getReturnCode()));
         }
         else
         {
@@ -193,7 +193,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           documentMap.put("source", ""); // TODO SCH : what is the source of push notifications ?
           documentMap.put("returnCode", pushNotification.getReturnCode());
           documentMap.put("deliveryStatus", pushNotification.getMessageStatus().toString());
-          documentMap.put("returnCodeDetails", PushMessageStatus.fromReturnCode(pushNotification.getReturnCode()));
+          documentMap.put("returnCodeDetails", MessageStatus.fromReturnCode(pushNotification.getReturnCode()));
         }
       
       return documentMap;
