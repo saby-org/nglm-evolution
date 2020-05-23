@@ -434,19 +434,18 @@ public class SimpleSMSSender extends SMSSenderListener {
 			//Cant be multiple flashsms
 			if(flashsms && !this.support_sar && !this.support_udh) {
 			  encoding = new UCS2Encoding();
-			}else {
-			  if (encoding instanceof AlphabetEncoding) {
-			    if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with alphabet charset "+((AlphabetEncoding)encoding).getCharset());
-			    // The AlphabetEncoding applies its own conversion algo and charset
-			    message = ((AlphabetEncoding)encoding).encodeString(text);
+			}
+			if (encoding instanceof AlphabetEncoding) {
+			  if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with alphabet charset "+((AlphabetEncoding)encoding).getCharset());
+			  // The AlphabetEncoding applies its own conversion algo and charset
+			  message = ((AlphabetEncoding)encoding).encodeString(text);
+			} else {
+			  if (encoding_charset != null) {
+			    if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with charset "+encoding_charset);
+			    message = text.getBytes(encoding_charset);
 			  } else {
-			    if (encoding_charset != null) {
-			      if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with charset "+encoding_charset);
-			      message = text.getBytes(encoding_charset);
-			    } else {
-			      message = text.getBytes();
-			      if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with default charset");
-			    }
+			    message = text.getBytes();
+			    if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with default charset");
 			  }
 			}
 			

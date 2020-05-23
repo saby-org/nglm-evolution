@@ -1021,7 +1021,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     if (dialogRequest != null)
       {
         dialogRequest.setMessageStatus(MessageStatus.fromReturnCode(result));
-        dialogRequest.setDeliveryStatus(getMessageStatus(dialogRequest.getMessageStatus()));
+        dialogRequest.setDeliveryStatus(getDeliveryStatus(dialogRequest.getMessageStatus()));
         dialogRequest.setDeliveryDate(SystemTime.getCurrentTime());
         completeRequest(dialogRequest);
       }
@@ -1152,8 +1152,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         tb.addFlatStringField("communicationChannelID", current.getID());
         tb.addOutputConnector(new OutputConnectorBuilder("delivered", "Delivered/Sent").addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'delivered', 'acknowledged' ]"))));
         tb.addOutputConnector(new OutputConnectorBuilder("failed", "Failed").addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'failed', 'indeterminate', 'failedTimeout' ]"))));
-        tb.addOutputConnector(new OutputConnectorBuilder("timeout", "Timeout").addTransitionCriteria(new TransitionCriteriaBuilder("evaluation.date", CriterionOperator.GreaterThanOrEqualOperator, new ArgumentBuilder("dateAdd(node.entryDate, 1, 'minute')").setTimeUnit(TimeUnit.Instant))));
-        tb.addOutputConnector(new OutputConnectorBuilder("unknown", "UnknownAppID").addTransitionCriteria(new TransitionCriteriaBuilder("subscriber.appID", CriterionOperator.IsNullOperator, null)));
+        tb.addOutputConnector(new OutputConnectorBuilder("timeout", "Timeout").addTransitionCriteria(new TransitionCriteriaBuilder("evaluation.date", CriterionOperator.GreaterThanOrEqualOperator, new ArgumentBuilder("dateAdd(node.entryDate, 1, 'hour')").setTimeUnit(TimeUnit.Instant))));
+        tb.addOutputConnector(new OutputConnectorBuilder("unknown", "Unknown " + current.getProfileAddressField()).addTransitionCriteria(new TransitionCriteriaBuilder(current.getProfileAddressField(), CriterionOperator.IsNullOperator, null)));
 
         // add manually all parameters common to any notification : contact type, from
         // address
