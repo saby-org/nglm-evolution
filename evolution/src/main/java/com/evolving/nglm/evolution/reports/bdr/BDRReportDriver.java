@@ -20,7 +20,7 @@ public class BDRReportDriver extends ReportDriver{
       String elasticSearch,
       String csvFilename,
       String[] params) {
-        log.debug("Processing Subscriber Report with "+report.getName());
+        log.debug("Processing "+report.getName());
         String topicPrefix = super.getTopicPrefix(report.getName());
         String topic1 = topicPrefix;
         String esIndexBdr = "detailedrecords_bonuses-";

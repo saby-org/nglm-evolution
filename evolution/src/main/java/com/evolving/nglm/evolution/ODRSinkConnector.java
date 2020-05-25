@@ -135,7 +135,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       if(purchaseManager != null){
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", purchaseManager.getSubscriberID());
-        putAlternateIDs(purchaseManager.getSubscriberID(), documentMap);
+        //putAlternateIDs(purchaseManager.getSubscriberID(), documentMap);
         documentMap.put("deliveryRequestID", purchaseManager.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", purchaseManager.getOriginatingDeliveryRequestID());
         documentMap.put("eventDatetime", purchaseManager.getEventDate()!=null?dateFormat.format(purchaseManager.getEventDate()):"");

@@ -130,7 +130,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         MailNotificationManagerRequest notification = MailNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", notification.getSubscriberID());
-        putAlternateIDs(notification.getSubscriberID(), documentMap);
+        //putAlternateIDs(notification.getSubscriberID(), documentMap);
         documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", "");
@@ -149,7 +149,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           SMSNotificationManagerRequest notification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", notification.getSubscriberID());
-          putAlternateIDs(notification.getSubscriberID(), documentMap);
+          //putAlternateIDs(notification.getSubscriberID(), documentMap);
           documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
           documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
           documentMap.put("eventID", "");
@@ -168,7 +168,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           PushNotificationManagerRequest notification = PushNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", notification.getSubscriberID());
-          putAlternateIDs(notification.getSubscriberID(), documentMap);
+          //putAlternateIDs(notification.getSubscriberID(), documentMap);
           documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
           documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
           documentMap.put("eventID", "");

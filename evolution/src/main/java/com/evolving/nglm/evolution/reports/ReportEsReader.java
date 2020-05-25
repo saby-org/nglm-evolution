@@ -101,6 +101,7 @@ public class ReportEsReader
   private LinkedHashMap<String, QueryBuilder> esIndex;
   private String elasticKey;
   private boolean onlyKeepAlternateIDs;
+  private boolean onlyOneIndex;
 
   /**
    * Create a {@code ReportEsReader} instance.
@@ -141,6 +142,7 @@ public class ReportEsReader
         this.esIndex.put(elem.getKey().toLowerCase(), elem.getValue());
       }
     log.info("Starting ES read with indexes : " + this.esIndex);
+    this.onlyOneIndex = (this.esIndex.size() == 1);
   }
 
   public ReportEsReader(String elasticKey, String topicName, String kafkaNodeList, String kzHostList, String esNode, LinkedHashMap<String, QueryBuilder> esIndex)
@@ -329,6 +331,10 @@ public class ReportEsReader
                           }
                         
                         ReportElement re = new ReportElement(i, miniSourceMap);
+                        if (onlyOneIndex) // record is complete, we don't need to join it
+                          {
+                            re.isComplete = true;
+                          }
                         log.trace("Sending record k=" + key + ", v=" + re);
                         ProducerRecord<String, ReportElement> record = new ProducerRecord<>(topicName, key, re);
                         producerReportElement.send(record, (mdata, e) -> {
