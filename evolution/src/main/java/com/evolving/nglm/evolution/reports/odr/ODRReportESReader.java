@@ -82,7 +82,7 @@ public class ODRReportESReader
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexOdrList.toString(), QueryBuilders.matchAllQuery());
 
-    ReportEsReader reportEsReader = new ReportEsReader("subscriberID", topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery, true);
+    ReportEsReader reportEsReader = new ReportEsReader("subscriberID", topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery, false);
 
     reportEsReader.start();
     log.info("Finished ODRReportESReader");
