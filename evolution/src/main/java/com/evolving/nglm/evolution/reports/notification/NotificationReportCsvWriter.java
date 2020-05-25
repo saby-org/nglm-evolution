@@ -245,7 +245,7 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
         //
 
         String rawEventDateTime = notifRecs.get(creationDate) == null ? null : notifRecs.get(creationDate).toString();
-        if (rawEventDateTime == null) log.warn("bad EventDateTime -- report will be generated in 'null' file name -- for record {} ", notifFieldsObj);
+        if (rawEventDateTime == null) log.warn("bad EventDateTime -- report will be generated in 'null' file name -- for record {} ", notifFields);
         String evntDate = getEventDate(rawEventDateTime);
         if (result.containsKey(evntDate))
           {
