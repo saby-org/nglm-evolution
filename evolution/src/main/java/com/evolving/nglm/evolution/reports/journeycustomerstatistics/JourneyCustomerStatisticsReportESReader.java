@@ -46,9 +46,9 @@ public class JourneyCustomerStatisticsReportESReader
         log.info("JourneyCustomerStatisticsReportESReader: arg " + arg);
       }
 
-    if (args.length < 6)
+    if (args.length < 5)
       {
-        log.warn("Usage : JourneyCustomerStatisticsReportESReader <Output Topic> <KafkaNodeList> <ZKhostList> <ESNode> <ES journey index> <ES journey metric index> <ES customer index>");
+        log.warn("Usage : JourneyCustomerStatisticsReportESReader <Output Topic> <KafkaNodeList> <ZKhostList> <ESNode> <ES journey index> <ES journey metric index>");
         return;
       }
     String topicName = args[0];
@@ -57,7 +57,6 @@ public class JourneyCustomerStatisticsReportESReader
     String esNode = args[3];
     String esIndexJourney = args[4];
     String esIndexJourneyMetric = args[5];
-    String esIndexCustomer = args[6];
     
     JourneyService journeyService = new JourneyService(kafkaNodeList, "JourneyCustomerStatisticsReportESReader-journeyservice-" + topicName, Deployment.getJourneyTopic(), false);
     journeyService.start();
@@ -78,9 +77,8 @@ public class JourneyCustomerStatisticsReportESReader
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(activeJourneyEsIndex.toString(), QueryBuilders.matchAllQuery());
     esIndexWithQuery.put(esIndexJourneyMetric, QueryBuilders.matchAllQuery());
-    esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
 
-    ReportEsReader reportEsReader = new ReportEsReader(JourneyCustomerStatesReportObjects.KEY_STR, topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery, true);
+    ReportEsReader reportEsReader = new ReportEsReader(JourneyCustomerStatesReportObjects.KEY_STR, topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery, false);
 
     reportEsReader.start();
     log.info("Finished JourneyCustomerStatisticsReportESReader");

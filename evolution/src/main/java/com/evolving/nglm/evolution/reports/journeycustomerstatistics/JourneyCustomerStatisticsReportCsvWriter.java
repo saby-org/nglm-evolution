@@ -53,14 +53,9 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     Map<String, Object> journeyStats = reportElement.fields.get(0);
-    Map<String, Object> subscriberFieldsMap = reportElement.fields.get(1);
-    Map<String, Object> journeyMetric = reportElement.fields.get(2);
-    for (Object subscriberFieldsObj : subscriberFieldsMap.values()) // we don't care about the keys
-      {
-        Map<String, Object> subscriberFields = (Map<String, Object>) subscriberFieldsObj;
-        if (journeyStats != null && !journeyStats.isEmpty() && subscriberFields != null && !subscriberFields.isEmpty() && journeyMetric != null && !journeyMetric.isEmpty())
+    Map<String, Object> journeyMetric = reportElement.fields.get(1);
+        if (journeyStats != null && !journeyStats.isEmpty() && journeyMetric != null && !journeyMetric.isEmpty())
           {
-
             Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
             if (journey != null)
               {
@@ -97,14 +92,14 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
                 if (journeyStats.get(subscriberID) != null)
                   {
                     Object subscriberIDField = journeyStats.get(subscriberID);
-                    subscriberFields.put(customerID, subscriberIDField);
+                    journeyInfo.put(customerID, subscriberIDField);
                   }
                 for (AlternateID alternateID : Deployment.getAlternateIDs().values())
                   {
-                    if (journeyStats.get(alternateID.getESField()) != null)
+                    if (journeyStats.get(alternateID.getID()) != null)
                       {
-                        Object alternateId = journeyStats.get(alternateID.getESField());
-                        subscriberFields.put(alternateID.getName(), alternateId);
+                        Object alternateId = journeyStats.get(alternateID.getID());
+                        journeyInfo.put(alternateID.getID(), alternateId);
                       }
                   }
 
@@ -121,7 +116,6 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
                 //
 
                 String journeyID = journeyInfo.get("journeyID").toString();
-                journeyInfo.putAll(subscriberFields);
                 if (result.containsKey(journeyID))
                   {
                     result.get(journeyID).add(journeyInfo);
@@ -135,7 +129,6 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
                 
               }
           }
-      }
     return result;
   }
 

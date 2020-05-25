@@ -41,9 +41,9 @@ public class JourneyCustomerStatesReportESReader
         log.info("JourneyCustomerStatesReportESReader: arg " + arg);
       }
 
-    if (args.length < 6)
+    if (args.length < 5)
       {
-        log.warn("Usage : JourneyCustomerStatesReportESReader <Output Topic> <KafkaNodeList> <ZKhostList> <ESNode> <ES customer index> <ES journey index>");
+        log.warn("Usage : JourneyCustomerStatesReportESReader <Output Topic> <KafkaNodeList> <ZKhostList> <ESNode> <ES journey index>");
         return;
       }
     String topicName = args[0];
@@ -51,7 +51,6 @@ public class JourneyCustomerStatesReportESReader
     String kzHostList = args[2];
     String esNode = args[3];
     String esIndexJourney = args[4];
-    String esIndexCustomer = args[5];
 
     JourneyService journeyService = new JourneyService(kafkaNodeList, "JourneyCustomerStatesReportESReader-journeyservice-" + topicName, Deployment.getJourneyTopic(), false);
     journeyService.start();
@@ -67,12 +66,11 @@ public class JourneyCustomerStatesReportESReader
         firstEntry = false;
       }
 
-    log.info("Reading data from ES in (" + activeJourneyEsIndex.toString() + ") and " + esIndexCustomer + " index and writing to " + topicName + " topic.");
+    log.info("Reading data from ES in (" + activeJourneyEsIndex.toString() + ") and writing to " + topicName + " topic.");
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(activeJourneyEsIndex.toString(), QueryBuilders.matchAllQuery());
-    esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
 
-    ReportEsReader reportEsReader = new ReportEsReader(JourneyCustomerStatesReportObjects.KEY_STR, topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery, true);
+    ReportEsReader reportEsReader = new ReportEsReader(JourneyCustomerStatesReportObjects.KEY_STR, topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery, false);
     reportEsReader.start();
     journeyService.stop();
     log.info("Finished JourneyCustomerStatesReportESReader");
