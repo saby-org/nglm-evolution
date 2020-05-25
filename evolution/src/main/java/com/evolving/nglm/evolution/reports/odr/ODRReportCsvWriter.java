@@ -107,14 +107,9 @@ public class ODRReportCsvWriter implements ReportCsvFactory
   public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
-    Map<String, Object> odrFieldsMap = reportElement.fields.get(0);
-    Map<String, Object> subscriberFields = reportElement.fields.get(1);
+    Map<String, Object> odrFields = reportElement.fields.get(0);
     LinkedHashMap<String, Object> oderRecs = new LinkedHashMap<>();
-    LinkedHashMap<String, Object> subscriberFieldsresult = new LinkedHashMap<>();
-    for (Object odrFieldsObj : odrFieldsMap.values()) // we don't care about the keys
-      {
-        Map<String, Object> odrFields = (Map<String, Object>) odrFieldsObj;
-        if (odrFields != null && !odrFields.isEmpty() && subscriberFields != null && !subscriberFields.isEmpty()) 
+        if (odrFields != null && !odrFields.isEmpty()) 
           {
             if(odrFields.get(subscriberID) != null) {
               Object subscriberIDField = odrFields.get(subscriberID);
@@ -123,9 +118,9 @@ public class ODRReportCsvWriter implements ReportCsvFactory
             }
             for (AlternateID alternateID : Deployment.getAlternateIDs().values())
               {
-                if (subscriberFields.get(alternateID.getESField()) != null)
+                if (odrFields.get(alternateID.getID()) != null)
                   {
-                    Object alternateId = subscriberFields.get(alternateID.getESField());
+                    Object alternateId = odrFields.get(alternateID.getID());
                     oderRecs.put(alternateID.getName(), alternateId);
                   }
               }

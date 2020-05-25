@@ -1,25 +1,19 @@
 package com.evolving.nglm.evolution;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
-import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
-import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 
 
 public class BDRSinkConnector extends SimpleESSinkConnector
@@ -77,9 +71,8 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       //
       //  services
       //
-      String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
-      subscriberProfileService = new EngineSubscriberProfileService(subscriberProfileEndpoints);
-      subscriberProfileService.start();
+      
+      subscriberProfileService = SinkConnectorUtils.init();
 
     }
 
@@ -128,7 +121,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
         
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", commodityRequest.getSubscriberID());
-        putAlternateIDs(commodityRequest.getSubscriberID(), documentMap);
+        SinkConnectorUtils.putAlternateIDs(commodityRequest.getSubscriberID(), documentMap, subscriberProfileService);
         documentMap.put("eventDatetime", commodityRequest.getEventDate()!=null?dateFormat.format(commodityRequest.getEventDate()):"");
         documentMap.put("deliveryRequestID", commodityRequest.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", commodityRequest.getOriginatingDeliveryRequestID());
@@ -150,44 +143,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       return documentMap;
     }
     
-    public void putAlternateIDs(String subscriberID, Map<String,Object> map)
-    {
-      try
-        {
-          log.info("subscriberID : " + subscriberID);
-          SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
-          log.info("subscriber profile : " + subscriberProfile);
-          for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-            {
-              String methodName;
-              if ("msisdn".equals(alternateID.getID())) // special case
-                {
-                  methodName = "getMSISDN";
-                }
-              else
-                {
-                  methodName = "get" + StringUtils.capitalize(alternateID.getID());
-                }
-              log.info("method " + methodName);
-              try
-              {
-                Method method = subscriberProfile.getClass().getMethod(methodName);
-                Object alternateIDValue = method.invoke(subscriberProfile);
-                //if (log.isTraceEnabled())
-                  log.info("adding " + alternateID.getID() + " with " + alternateIDValue);
-                map.put(alternateID.getID(), alternateIDValue);
-              }
-              catch (NoSuchMethodException|SecurityException|IllegalAccessException|IllegalArgumentException|InvocationTargetException e)
-                {
-                  log.warn("Problem retrieving alternateID " + alternateID.getID() + " : " + e.getLocalizedMessage());
-                }
-            }
-        }
-      catch (SubscriberProfileServiceException e1)
-        {
-          log.warn("Cannot resolve " + subscriberID);
-        }
-      }
+
   }
 
 }

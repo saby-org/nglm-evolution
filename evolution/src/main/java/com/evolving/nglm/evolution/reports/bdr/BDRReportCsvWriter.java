@@ -98,195 +98,188 @@ public class BDRReportCsvWriter implements ReportCsvFactory
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     LinkedHashMap<String, Object> bdrRecs = new LinkedHashMap<>();
-    Map<String, Object> bdrFieldsMap = reportElement.fields.get(0);
-    for (Object bdrFieldsObj : bdrFieldsMap.values())
+    Map<String, Object> bdrFields = reportElement.fields.get(0);
+    if (bdrFields != null && !bdrFields.isEmpty())
       {
-        Map<String, Object> bdrFields = (Map<String, Object>) bdrFieldsObj;
-        if (bdrFields != null && !bdrFields.isEmpty())
+        // rename subscriberID
+        if(bdrFields.get(subscriberID) != null) {
+          Object subscriberIDField = bdrFields.get(subscriberID);
+          bdrRecs.put(customerID, subscriberIDField);
+          //bdrFields.remove(subscriberID);
+        }
+        for (AlternateID alternateID : Deployment.getAlternateIDs().values())
           {
-            // rename subscriberID
-            if(bdrFields.get(subscriberID) != null) {
-              Object subscriberIDField = bdrFields.get(subscriberID);
-              bdrRecs.put(customerID, subscriberIDField);
-              //bdrFields.remove(subscriberID);
+            if (bdrFields.get(alternateID.getID()) != null)
+              {
+                Object alternateId = bdrFields.get(alternateID.getID());
+                bdrRecs.put(alternateID.getName(), alternateId);
+              }
+          } 
+        if (bdrFields.containsKey(eventID)) {
+          bdrRecs.put(eventID, bdrFields.get(eventID));
+        }
+        if (bdrFields.containsKey(deliverableID)) {
+          bdrRecs.put(deliverableID, bdrFields.get(deliverableID));
+        }
+
+        if (bdrFields.containsKey(deliverableID))
+          {               
+            GUIManagedObject deliverableObject = deliverableService
+                .getStoredDeliverable(String.valueOf(bdrFields.get(deliverableID)));
+            if (deliverableObject instanceof Deliverable)
+              {
+                bdrRecs.put(deliverableDisplay, ((Deliverable) deliverableObject).getDeliverableDisplay());                   
+              }
+            else {
+              bdrRecs.put(deliverableDisplay, "");
             }
-            for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-              {
-                if (bdrFields.get(alternateID.getESField()) != null)
-                  {
-                    Object alternateId = bdrFields.get(alternateID.getESField());
-                    bdrRecs.put(alternateID.getName(), alternateId);
-                  }
-              } 
-            if (bdrFields.containsKey(eventID)) {
-              bdrRecs.put(eventID, bdrFields.get(eventID));
-              
-            }
-            if (bdrFields.containsKey(deliverableID)) {
-              bdrRecs.put(deliverableID, bdrFields.get(deliverableID));
-              
-            }
-           
-            if (bdrFields.containsKey(deliverableID))
-              {               
-                GUIManagedObject deliverableObject = deliverableService
-                    .getStoredDeliverable(String.valueOf(bdrFields.get(deliverableID)));
-                if (deliverableObject instanceof Deliverable)
-                  {
-                    bdrRecs.put(deliverableDisplay, ((Deliverable) deliverableObject).getDeliverableDisplay());                   
-                  }
-                else {
-                  bdrRecs.put(deliverableDisplay, "");
-                }
-              }
-            if (bdrFields.containsKey(deliverableQty))
-              {
-                bdrRecs.put(deliverableQty, bdrFields.get(deliverableQty));
-              }
-            if (bdrFields.containsKey(deliverableExpirationDate))
-              {
-                if (bdrFields.get(deliverableExpirationDate) != null)
-                  {
-                    Object deliverableExpirationDateObj = bdrFields.get(deliverableExpirationDate);
-                    if (deliverableExpirationDateObj instanceof String)
-                      {
-                        String deliverableExpirationDateStr = (String) deliverableExpirationDateObj;
-                        // TEMP fix for BLK : reformat date with correct
-                        // template.
-                        // current format comes from ES and is :
-                        // 2020-04-20T09:51:38.953Z
-                        SimpleDateFormat parseSDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-                        try
-                          {
-                            Date date = parseSDF.parse(deliverableExpirationDateStr);
-                            bdrRecs.put(deliverableExpirationDate, ReportsCommonCode.getDateString(date)); // replace
-                                                                                                          // with
-                                                                                                          // new
-                                                                                                          // value
-                          }
-                        catch (ParseException e1)
-                          {
-                            // Could also be 2019-11-27 15:39:30.276+0100
-                            SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
-                            try
-                              {
-                                Date date = parseSDF2.parse(deliverableExpirationDateStr);
-                                bdrRecs.put(deliverableExpirationDate, ReportsCommonCode.getDateString(date)); // replace
-                                                                                                              // with
-                                                                                                              // new
-                                                                                                              // value
-                              }
-                            catch (ParseException e2)
-                              {
-                                log.info("Unable to parse " + deliverableExpirationDateStr);
-                              }
-                          }
-
-                      }
-                    else
-                      {
-                        log.info(deliverableExpirationDate + " is of wrong type : "
-                            + deliverableExpirationDateObj.getClass().getName());
-                      }
-                  }
-                else {
-                  bdrRecs.put(deliverableExpirationDate, "");
-                }
-            }
-            
-            if (bdrFields.containsKey(deliveryRequestID))
-              {
-                bdrRecs.put(deliveryRequestID, bdrFields.get(deliveryRequestID));
-              }
-            if (bdrFields.containsKey(originatingDeliveryRequestID))
-              {
-                bdrRecs.put(originatingDeliveryRequestID, bdrFields.get(originatingDeliveryRequestID));
-              }
-            if (bdrFields.containsKey(deliveryStatus))
-              {
-                bdrRecs.put(deliveryStatus, bdrFields.get(deliveryStatus));
-              }
-            if (bdrFields.containsKey(eventDatetime))
-              {
-                if (bdrFields.get(eventDatetime) != null)
-                  {
-                    Object eventDatetimeObj = bdrFields.get(eventDatetime);
-                    if (eventDatetimeObj instanceof String)
-                      {
-                        // TEMP fix for BLK : reformat date with correct
-                        // template.
-
-                        List<SimpleDateFormat> standardDateFormats = ReportsCommonCode.initializeDateFormats();
-                        bdrRecs.put(eventDatetime,
-                            ReportsCommonCode.parseDate(standardDateFormats, (String) eventDatetimeObj));
-
-                        // END TEMP fix for BLK
-                      }
-                    else
-                      {
-                        log.info(eventDatetime + " is of wrong type : " + eventDatetimeObj.getClass().getName());
-                      }
-
-                  }
-                else {
-                  bdrRecs.put(eventDatetime, "");
-                }
-              }
-
-            // Compute featureName and ModuleName from ID
-            if (bdrFields.containsKey(moduleId) && bdrFields.containsKey(featureId))
-              {
-                Module module = Module.fromExternalRepresentation(String.valueOf(bdrFields.get(moduleId)));
-                String featureDis = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);                
-                bdrRecs.put(featureDisplay, featureDis);
-                bdrRecs.put(moduleName, module.toString());
-                bdrRecs.put(featureId, bdrFields.get(featureId));
-                bdrRecs.put(moduleId, bdrFields.get(moduleId));
-
-                // bdrFields.remove(featureId);
-                // bdrFields.remove(moduleId);
-              }
-
-            if (bdrFields.containsKey(operation))
-              {
-                bdrRecs.put(operation, bdrFields.get(operation));
-              }
-            if (bdrFields.containsKey(orgin))
-              {
-                bdrRecs.put(orgin, bdrFields.get(orgin));
-              }
-            if (bdrFields.containsKey(providerId))
-              {
-                bdrRecs.put(providerId, bdrFields.get(providerId));
-              }
-            if (bdrFields.containsKey(returnCode))
-              {
-                bdrRecs.put(returnCode, bdrFields.get(returnCode));
-              }
-            if (bdrFields.containsKey(returnCodeDetails))
-              {
-                bdrRecs.put(returnCodeDetails, bdrFields.get(returnCodeDetails));
-              } 
-            
-            //
-            // result
-            //
-
-            String rawEventDateTime = bdrRecs.get(eventDatetime) == null ? null : bdrRecs.get(eventDatetime).toString();
-            if (rawEventDateTime == null) log.warn("bad EventDateTime -- report will be generated in 'null' file name -- for record {} ", bdrFields);
-            String evntDate = getEventDate(rawEventDateTime);
-            if (result.containsKey(evntDate))
-              {
-                result.get(evntDate).add(bdrRecs);
-              } 
-            else
-              {
-                List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
-                elements.add(bdrRecs);
-                result.put(evntDate, elements);
-              }
           }
-        
+        if (bdrFields.containsKey(deliverableQty))
+          {
+            bdrRecs.put(deliverableQty, bdrFields.get(deliverableQty));
+          }
+        if (bdrFields.containsKey(deliverableExpirationDate))
+          {
+            if (bdrFields.get(deliverableExpirationDate) != null)
+              {
+                Object deliverableExpirationDateObj = bdrFields.get(deliverableExpirationDate);
+                if (deliverableExpirationDateObj instanceof String)
+                  {
+                    String deliverableExpirationDateStr = (String) deliverableExpirationDateObj;
+                    // TEMP fix for BLK : reformat date with correct
+                    // template.
+                    // current format comes from ES and is :
+                    // 2020-04-20T09:51:38.953Z
+                    SimpleDateFormat parseSDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+                    try
+                    {
+                      Date date = parseSDF.parse(deliverableExpirationDateStr);
+                      bdrRecs.put(deliverableExpirationDate, ReportsCommonCode.getDateString(date)); // replace
+                      // with
+                      // new
+                      // value
+                    }
+                    catch (ParseException e1)
+                    {
+                      // Could also be 2019-11-27 15:39:30.276+0100
+                      SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
+                      try
+                      {
+                        Date date = parseSDF2.parse(deliverableExpirationDateStr);
+                        bdrRecs.put(deliverableExpirationDate, ReportsCommonCode.getDateString(date)); // replace
+                        // with
+                        // new
+                        // value
+                      }
+                      catch (ParseException e2)
+                      {
+                        log.info("Unable to parse " + deliverableExpirationDateStr);
+                      }
+                    }
+
+                  }
+                else
+                  {
+                    log.info(deliverableExpirationDate + " is of wrong type : "
+                        + deliverableExpirationDateObj.getClass().getName());
+                  }
+              }
+            else {
+              bdrRecs.put(deliverableExpirationDate, "");
+            }
+          }
+
+        if (bdrFields.containsKey(deliveryRequestID))
+          {
+            bdrRecs.put(deliveryRequestID, bdrFields.get(deliveryRequestID));
+          }
+        if (bdrFields.containsKey(originatingDeliveryRequestID))
+          {
+            bdrRecs.put(originatingDeliveryRequestID, bdrFields.get(originatingDeliveryRequestID));
+          }
+        if (bdrFields.containsKey(deliveryStatus))
+          {
+            bdrRecs.put(deliveryStatus, bdrFields.get(deliveryStatus));
+          }
+        if (bdrFields.containsKey(eventDatetime))
+          {
+            if (bdrFields.get(eventDatetime) != null)
+              {
+                Object eventDatetimeObj = bdrFields.get(eventDatetime);
+                if (eventDatetimeObj instanceof String)
+                  {
+                    // TEMP fix for BLK : reformat date with correct
+                    // template.
+
+                    List<SimpleDateFormat> standardDateFormats = ReportsCommonCode.initializeDateFormats();
+                    bdrRecs.put(eventDatetime,
+                        ReportsCommonCode.parseDate(standardDateFormats, (String) eventDatetimeObj));
+
+                    // END TEMP fix for BLK
+                  }
+                else
+                  {
+                    log.info(eventDatetime + " is of wrong type : " + eventDatetimeObj.getClass().getName());
+                  }
+
+              }
+            else {
+              bdrRecs.put(eventDatetime, "");
+            }
+          }
+
+        // Compute featureName and ModuleName from ID
+        if (bdrFields.containsKey(moduleId) && bdrFields.containsKey(featureId))
+          {
+            Module module = Module.fromExternalRepresentation(String.valueOf(bdrFields.get(moduleId)));
+            String featureDis = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);                
+            bdrRecs.put(featureDisplay, featureDis);
+            bdrRecs.put(moduleName, module.toString());
+            bdrRecs.put(featureId, bdrFields.get(featureId));
+            bdrRecs.put(moduleId, bdrFields.get(moduleId));
+
+            // bdrFields.remove(featureId);
+            // bdrFields.remove(moduleId);
+          }
+
+        if (bdrFields.containsKey(operation))
+          {
+            bdrRecs.put(operation, bdrFields.get(operation));
+          }
+        if (bdrFields.containsKey(orgin))
+          {
+            bdrRecs.put(orgin, bdrFields.get(orgin));
+          }
+        if (bdrFields.containsKey(providerId))
+          {
+            bdrRecs.put(providerId, bdrFields.get(providerId));
+          }
+        if (bdrFields.containsKey(returnCode))
+          {
+            bdrRecs.put(returnCode, bdrFields.get(returnCode));
+          }
+        if (bdrFields.containsKey(returnCodeDetails))
+          {
+            bdrRecs.put(returnCodeDetails, bdrFields.get(returnCodeDetails));
+          } 
+
+        //
+        // result
+        //
+
+        String rawEventDateTime = bdrRecs.get(eventDatetime) == null ? null : bdrRecs.get(eventDatetime).toString();
+        if (rawEventDateTime == null) log.warn("bad EventDateTime -- report will be generated in 'null' file name -- for record {} ", bdrFields);
+        String evntDate = getEventDate(rawEventDateTime);
+        if (result.containsKey(evntDate))
+          {
+            result.get(evntDate).add(bdrRecs);
+          } 
+        else
+          {
+            List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
+            elements.add(bdrRecs);
+            result.put(evntDate, elements);
+          }
       }
     return result;
   }
