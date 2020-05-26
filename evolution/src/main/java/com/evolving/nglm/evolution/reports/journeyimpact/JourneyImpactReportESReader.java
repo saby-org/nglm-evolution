@@ -1,6 +1,5 @@
 package com.evolving.nglm.evolution.reports.journeyimpact;
 
-import com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportObjects;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.Journey;
@@ -20,7 +19,7 @@ import java.util.LinkedHashMap;
  * This implements phase 1 of the Journey report. All it does is specifying
  * <ol>
  * <li>Which field in Elastic Search is used as the key in the Kafka topic that
- * is produced ({@link JourneyCustomerStatesReportObjects#KEY_STR}), and
+ * is produced, and
  * <li>Which Elastic Search indexes have to be read (passed as an array to the
  * {@link ReportEsReader} constructor.
  * </ol>
@@ -38,7 +37,7 @@ public class JourneyImpactReportESReader
   private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
   private static DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
-  public static void main(String[] args)
+  public static void main(String[] args, JourneyService journeyService)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -58,10 +57,7 @@ public class JourneyImpactReportESReader
     String esNode = args[3];
     String esIndexJourneyStats = args[4];
     String esIndexJourneyMetric = args[5];
-    
-    JourneyService journeyService = new JourneyService(kafkaNodeList, "JourneyImpactReportESReader-journeyservice-" + topicName, Deployment.getJourneyTopic(), false);
-    journeyService.start();
-    
+      
     Collection<Journey> activeJourneys = journeyService.getActiveJourneys(SystemTime.getCurrentTime());
     StringBuilder activeJourneyEsIndex = new StringBuilder();
     boolean firstEntry = true;

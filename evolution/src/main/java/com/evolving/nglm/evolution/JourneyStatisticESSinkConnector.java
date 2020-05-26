@@ -50,6 +50,7 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
   {
     private SubscriberProfileService subscriberProfileService = null;
     private JourneyService journeyService = null;
+
     private final Logger log = LoggerFactory.getLogger(JourneyStatisticESSinkConnector.class);
     
     /*****************************************
@@ -61,8 +62,7 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
     @Override public void start(Map<String, String> taskConfig)
     {
       super.start(taskConfig);
-      subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
-      subscriberProfileService.start();
+      subscriberProfileService = SinkConnectorUtils.init();
       
       journeyService = new JourneyService(Deployment.getBrokerServers(), "sinkconnector-journeyservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getJourneyTopic(), false);
       journeyService.start();
@@ -76,6 +76,10 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
 
     @Override public void stop()
     {
+      
+      journeyService.stop();
+      if (subscriberProfileService != null) subscriberProfileService.stop();
+
       //
       //  super
       //
@@ -161,6 +165,7 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       documentMap.put("journeyInstanceID", journeyStatistic.getJourneyInstanceID());
       documentMap.put("journeyID", journeyStatistic.getJourneyID());
       documentMap.put("subscriberID", journeyStatistic.getSubscriberID());
+      SinkConnectorUtils.putAlternateIDs(journeyStatistic.getSubscriberID(), documentMap, subscriberProfileService);
       documentMap.put("transitionDate", journeyStatistic.getTransitionDate());
       documentMap.put("nodeHistory", journeyNode);
       documentMap.put("statusHistory", journeyStatus);

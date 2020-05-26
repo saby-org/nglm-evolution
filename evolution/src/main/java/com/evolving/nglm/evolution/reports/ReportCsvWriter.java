@@ -262,6 +262,7 @@ public class ReportCsvWriter
           {
             log.debug("Doing poll...");
             final ConsumerRecords<String, ReportElement> consumerRecords = consumer.poll(delay);
+            // TODO We could count the number of markers, and stop when we have seen them all
             if (consumerRecords.count() == 0)
               {
                 noRecordsCount++;
@@ -276,6 +277,7 @@ public class ReportCsvWriter
               {
                 nbRecords++;
                 ReportElement re = record.value();
+                log.trace("read " + re);
                 if (re.type != ReportElement.MARKER && re.isComplete)
                   {
                     Map<String, List<Map<String, Object>>> splittedReportElements = reportFactory.getSplittedReportElementsForFile(record.value());
@@ -353,6 +355,6 @@ public class ReportCsvWriter
   private void showOffsets(final Consumer<String, ReportElement> consumer)
   {
     log.trace("Reading at offsets :");
-    consumer.assignment().forEach(p -> log.trace(" " + p));
+    consumer.assignment().forEach(p -> log.trace(" " + p.toString()));
   }
 }

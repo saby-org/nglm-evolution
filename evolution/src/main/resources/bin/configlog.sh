@@ -62,11 +62,16 @@ elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-infulfillmentmanager_infulfillmentm
   FILE=infulfillment
 elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-purchasefulfillmentmanager_purchasemanager ]]; then
   FILE=purchasefulfillment
+elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-connect_connect ]]; then
+  FILE=connect
 else
   FILE=generic
 fi
 
-if [ $FILE == "generic" ]
+if [ $FILE == "connect" ]
+then
+  LOGFILE=/app/config/log4j-connect.xml
+elif [ $FILE == "generic" ]
 then
   LOGFILE=/etc/kafka/log4j-evol-final.properties
 else
@@ -90,6 +95,9 @@ then
   exit 1
 fi
 echo "--> changing log config file in container..."
+echo "docker exec -i $CONTAINERID ls -la $LOGFILE"
+docker exec -i $CONTAINERID ls -la $LOGFILE
+
 docker cp $TEMPFILE $CONTAINERID:${LOGFILE}.tmp
 if [ $? -ne 0 ]
 then
