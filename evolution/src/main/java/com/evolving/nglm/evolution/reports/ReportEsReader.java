@@ -269,7 +269,7 @@ public class ReportEsReader
 
             String scrollId = searchResponse.getScrollId(); // always null
             SearchHit[] searchHits = searchResponse.getHits().getHits();
-            log.trace("searchHits = " + searchHits);
+            log.trace("searchHits = " + Arrays.toString(searchHits));
             if (searchHits != null)
               {
                 // log.info("searchResponse = " + searchResponse.toString());

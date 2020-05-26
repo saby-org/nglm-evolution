@@ -28,7 +28,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
 {
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatesReportCsvWriter.class);
   final private static String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private static JourneyService journeyService;
+  private static JourneyService journeyServiceStatic;
   List<String> headerFieldsOrder = new ArrayList<String>();
   private final String subscriberID = "subscriberID";
   private final String customerID = "customerID";
@@ -59,7 +59,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
     Map<String, Object> journeyStats = reportElement.fields.get(0);
     if (journeyStats != null && !journeyStats.isEmpty())
       {
-        Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
+        Journey journey = journeyServiceStatic.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
         if (journey != null)
           {
             Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
@@ -229,7 +229,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
   }
 
   
-  public static void main(String[] args)
+  public static void main(String[] args, JourneyService journeyService)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -246,14 +246,10 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
     String topic = args[1];
     String csvfile = args[2];
     log.info("Reading data from " + topic + " topic on broker " + kafkaNode + " producing " + csvfile + " with '" + CSV_SEPARATOR + "' separator");
-
+    journeyServiceStatic = journeyService;
+    
     ReportCsvFactory reportFactory = new JourneyCustomerStatesReportCsvWriter();
     ReportCsvWriter reportWriter = new ReportCsvWriter(reportFactory, kafkaNode, topic);
-
-    String journeyTopic = Deployment.getJourneyTopic();
-
-    journeyService = new JourneyService(kafkaNode, "journeycustomerstatesreportcsvwriter-journeyservice-" + topic, journeyTopic, false);
-    journeyService.start();
 
     if (!reportWriter.produceReport(csvfile, true))
       {

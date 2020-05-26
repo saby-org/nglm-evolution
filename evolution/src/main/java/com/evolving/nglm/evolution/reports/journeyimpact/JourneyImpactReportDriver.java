@@ -5,6 +5,8 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
@@ -35,12 +37,15 @@ public class JourneyImpactReportDriver extends ReportDriver {
       String appIdPrefix = report.getName() + "_" + getTopicPrefixDate();
       log.debug("data for report : "
           +topic1+" "+topic2+" "+JOURNEY_STATS_ES_INDEX+" "+JOURNEY_METRIC_ES_INDEX+" "+appIdPrefix);
+      
+      JourneyService journeyService = new JourneyService(kafka, "JourneyImpactReport-journeyservice-" + topic1, Deployment.getJourneyTopic(), false);
+      journeyService.start();
 
       log.debug("PHASE 1 : read ElasticSearch");
       log.trace(topic1+","+kafka+","+zookeeper+","+elasticSearch+","+JOURNEY_STATS_ES_INDEX+","+JOURNEY_METRIC_ES_INDEX);
       JourneyImpactReportESReader.main(new String[]{
           topic1, kafka, zookeeper, elasticSearch, JOURNEY_STATS_ES_INDEX, JOURNEY_METRIC_ES_INDEX, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit
-      });         
+      }, journeyService);         
       try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) {}
       
       log.debug("PHASE 2 : process data");
@@ -52,7 +57,9 @@ public class JourneyImpactReportDriver extends ReportDriver {
       log.debug("PHASE 3 : write csv file ");
       JourneyImpactReportCsvWriter.main(new String[]{
           kafka, topic2, csvFilename
-      });
+      }, journeyService);
+      
+      journeyService.stop();
       ReportUtils.cleanupTopics(topic1, topic2, ReportUtils.APPLICATION_ID_PREFIX, appIdPrefix, JourneyImpactReportProcessor.STORENAME);
       log.debug("Finished with Journey Impact Report");
       
