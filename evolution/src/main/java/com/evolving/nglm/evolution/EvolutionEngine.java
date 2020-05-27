@@ -38,6 +38,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -69,14 +70,12 @@ import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.processor.TaskMetadata;
 import org.apache.kafka.streams.processor.ThreadMetadata;
 import org.apache.kafka.streams.processor.TimestampExtractor;
-import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
-import org.apache.kafka.streams.state.QueryableStoreTypes;
-import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
-import org.apache.kafka.streams.state.Stores;
-import org.apache.kafka.streams.state.StreamsMetadata;
+import org.apache.kafka.streams.state.*;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.rocksdb.BlockBasedTableConfig;
+import org.rocksdb.Options;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -264,7 +263,14 @@ public class EvolutionEngine
     Integer internalPort = Integer.parseInt(args[5]);
     Integer kafkaReplicationFactor = Integer.parseInt(args[6]);
     Integer kafkaStreamsStandbyReplicas = Integer.parseInt(args[7]);
-    Integer numberOfStreamThreads = Integer.parseInt(args[8]);
+    // for performance testing only, SHOULD NOT BE USED IN PROD, the right rocksDB configuration should be able to provide the same
+    boolean isInMemoryStateStores = false;
+    if(args.length>8 && args[8].toLowerCase().equals("1")) isInMemoryStateStores = true;
+    // try as well some rocksdb config (not sure yet at all about all this, documentation is not so clear, so testing)
+    int rocksDBCacheMBytes=-1;// will not change the default kstream rocksdb settings
+    if(args.length>9 && !isInMemoryStateStores) rocksDBCacheMBytes = Integer.parseInt(args[9]);
+    int rocksDBMemTableMBytes=-1;
+    if(args.length>10 && !isInMemoryStateStores && rocksDBCacheMBytes!=-1) rocksDBMemTableMBytes = Integer.parseInt(args[10]);
 
     //
     //  source topics
@@ -329,7 +335,7 @@ public class EvolutionEngine
     //  log
     //
 
-    log.info("main START: {} {} {} {} {}", stateDirectory, bootstrapServers, kafkaStreamsStandbyReplicas, numberOfStreamThreads, kafkaReplicationFactor);
+    log.info("main START: {} {} {} {} {}", stateDirectory, bootstrapServers, kafkaStreamsStandbyReplicas, kafkaReplicationFactor);
 
     
     //
@@ -609,12 +615,18 @@ public class EvolutionEngine
     streamsProperties.put(StreamsConfig.STATE_DIR_CONFIG, stateDirectory);
     streamsProperties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
     streamsProperties.put(StreamsConfig.DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG, EvolutionEventTimestampExtractor.class.getName());
-    streamsProperties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, Integer.toString(numberOfStreamThreads));
+    streamsProperties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, Deployment.getEvolutionEngineStreamThreads());
     streamsProperties.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, Integer.toString(kafkaReplicationFactor));
     streamsProperties.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, Integer.toString(kafkaStreamsStandbyReplicas));
     streamsProperties.put(StreamsConfig.METRICS_RECORDING_LEVEL_CONFIG, Sensor.RecordingLevel.DEBUG.toString());
     streamsProperties.put(StreamsConfig.APPLICATION_SERVER_CONFIG, subscriberProfileHost + ":" + Integer.toString(internalPort));
     streamsProperties.put("producer.batch.size", Integer.toString(100000));
+    if(!isInMemoryStateStores && rocksDBCacheMBytes!=-1 && rocksDBMemTableMBytes!=-1)
+      {
+        BoundedMemoryRocksDBConfig.setRocksDBCacheMBytes(rocksDBCacheMBytes);
+        BoundedMemoryRocksDBConfig.setRocksDBMemTableMBytes(rocksDBMemTableMBytes);
+        streamsProperties.put(StreamsConfig.ROCKSDB_CONFIG_SETTER_CLASS_CONFIG, BoundedMemoryRocksDBConfig.class);
+      }
     StreamsConfig streamsConfig = new StreamsConfig(streamsProperties);
 
     /*****************************************
@@ -844,7 +856,9 @@ public class EvolutionEngine
     //  aggregate
     //
 
-    KeyValueBytesStoreSupplier extendedProfileSupplier = Stores.persistentKeyValueStore(extendedSubscriberProfileChangeLog);
+    //KeyValueBytesStoreSupplier extendedProfileSupplier = Stores.persistentKeyValueStore(extendedSubscriberProfileChangeLog);
+    KeyValueBytesStoreSupplier extendedProfileSupplier = isInMemoryStateStores?Stores.inMemoryKeyValueStore(extendedSubscriberProfileChangeLog):Stores.persistentKeyValueStore(extendedSubscriberProfileChangeLog);
+
     Materialized extendedProfileStoreSchema = Materialized.<StringKey, ExtendedSubscriberProfile>as(extendedProfileSupplier).withKeySerde(stringKeySerde).withValueSerde(extendedSubscriberProfileSerde);
     KTable<StringKey, ExtendedSubscriberProfile> extendedProfile = extendedProfileEventStream.groupByKey(Serialized.with(stringKeySerde, evolutionEventSerde)).aggregate(EvolutionEngine::nullExtendedSubscriberProfile, EvolutionEngine::updateExtendedSubscriberProfile, extendedProfileStoreSchema);
 
@@ -903,7 +917,8 @@ public class EvolutionEngine
     //  aggregate
     //
 
-    KeyValueBytesStoreSupplier subscriberStateSupplier = Stores.persistentKeyValueStore(subscriberStateChangeLog);
+    //KeyValueBytesStoreSupplier subscriberStateSupplier = Stores.persistentKeyValueStore(subscriberStateChangeLog);
+    KeyValueBytesStoreSupplier subscriberStateSupplier = isInMemoryStateStores?Stores.inMemoryKeyValueStore(subscriberStateChangeLog):Stores.persistentKeyValueStore(subscriberStateChangeLog);
     Materialized subscriberStateStoreSchema = Materialized.<StringKey, SubscriberState>as(subscriberStateSupplier).withKeySerde(stringKeySerde).withValueSerde(subscriberStateSerde);
     KTable<StringKey, SubscriberState> subscriberState = evolutionEventStream.groupByKey(Serialized.with(stringKeySerde, evolutionEventSerde)).aggregate(EvolutionEngine::nullSubscriberState, EvolutionEngine::updateSubscriberState, subscriberStateStoreSchema);
 
@@ -1068,7 +1083,8 @@ public class EvolutionEngine
     //  aggregate
     //
 
-    KeyValueBytesStoreSupplier subscriberHistorySupplier = Stores.persistentKeyValueStore(subscriberHistoryChangeLog);
+    //KeyValueBytesStoreSupplier subscriberHistorySupplier = Stores.persistentKeyValueStore(subscriberHistoryChangeLog);
+    KeyValueBytesStoreSupplier subscriberHistorySupplier = isInMemoryStateStores?Stores.inMemoryKeyValueStore(subscriberHistoryChangeLog):Stores.persistentKeyValueStore(subscriberHistoryChangeLog);
     Materialized subscriberHistoryStoreSchema = Materialized.<StringKey, SubscriberHistory>as(subscriberHistorySupplier).withKeySerde(stringKeySerde).withValueSerde(subscriberHistorySerde);
     KTable<StringKey, SubscriberHistory> subscriberHistory = subscriberHistoryStream.groupByKey(Serialized.with(stringKeySerde, evolutionEventSerde)).aggregate(EvolutionEngine::nullSubscriberHistory, EvolutionEngine::updateSubscriberHistory, subscriberHistoryStoreSchema);
 
@@ -1308,8 +1324,8 @@ public class EvolutionEngine
     //
 
     PoolingHttpClientConnectionManager httpClientConnectionManager = new PoolingHttpClientConnectionManager();
-    httpClientConnectionManager.setDefaultMaxPerRoute(50*numberOfStreamThreads);
-    httpClientConnectionManager.setMaxTotal(100*numberOfStreamThreads);
+    httpClientConnectionManager.setDefaultMaxPerRoute(Deployment.getEvolutionEngineStreamThreads());
+    httpClientConnectionManager.setMaxTotal(Deployment.getEvolutionEngineInstanceNumbers()*Deployment.getEvolutionEngineStreamThreads());
 
     //
     //  httpClient
@@ -1330,7 +1346,7 @@ public class EvolutionEngine
         InetSocketAddress addr = new InetSocketAddress(subscriberProfilePort);
         subscriberProfileServer = HttpServer.create(addr, 0);
         subscriberProfileServer.createContext("/nglm-evolutionengine/getSubscriberProfile", new APIHandler(API.getSubscriberProfile));
-        subscriberProfileServer.setExecutor(Executors.newFixedThreadPool(50*numberOfStreamThreads));
+        subscriberProfileServer.setExecutor(Executors.newFixedThreadPool(Deployment.getEvolutionEngineInstanceNumbers()*Deployment.getEvolutionEngineStreamThreads()));
       }
     catch (IOException e)
       {
@@ -1348,7 +1364,7 @@ public class EvolutionEngine
         InetSocketAddress addr = new InetSocketAddress(internalPort);
         internalServer = HttpServer.create(addr, 0);
         internalServer.createContext("/nglm-evolutionengine/retrieveSubscriberProfile", new APIHandler(API.retrieveSubscriberProfile));
-        internalServer.setExecutor(Executors.newFixedThreadPool(50*numberOfStreamThreads));
+        internalServer.setExecutor(Executors.newFixedThreadPool(Deployment.getEvolutionEngineStreamThreads()));
       }
     catch (IOException e)
       {
@@ -1448,6 +1464,98 @@ public class EvolutionEngine
   public void waitForStreams()
   {
     waitForStreams(NGLMRuntime.END_OF_TIME);
+  }
+
+  /****************************************
+   *
+   *  class BoundedMemoryRocksDBConfig
+   *
+   ****************************************/
+
+  public static class BoundedMemoryRocksDBConfig implements RocksDBConfigSetter
+  {
+
+    // https://docs.confluent.io/current/streams/developer-guide/memory-mgmt.html#rocksdb
+    // https://github.com/facebook/rocksdb/blob/master/java/src/main/java/org/rocksdb/LRUCache.java
+    // https://github.com/apache/kafka/blob/2.3/streams/src/main/java/org/apache/kafka/streams/state/internals/RocksDBStore.java
+    // https://docs.confluent.io/current/streams/developer-guide/config-streams.html#rocksdb-config-setter
+    // https://kafka.apache.org/23/documentation/streams/developer-guide/memory-mgmt.html#id3
+    // https://github.com/facebook/rocksdb/wiki/RocksDB-Tuning-Guide
+    // https://github.com/facebook/rocksdb/wiki/Memory-usage-in-RocksDB
+
+    //
+    //  data
+    //
+
+    //really just for logging, and make understand that the cache is shared for all stores of the app
+    private static final String CACHE_NAME="evolution_rocksdb_cache";
+
+    private static long TOTAL_OFF_HEAP_MEMORY=-1;
+    private static long TOTAL_MEMTABLE_MEMORY=-1;
+
+    // https://github.com/facebook/rocksdb/wiki/RocksDB-Tuning-Guide#flushing-options
+    private static final int N_MEMTABLE=2;
+
+    private static org.rocksdb.Cache cache = null;
+    private static org.rocksdb.WriteBufferManager writeBufferManager = null;
+
+    //
+    //  setConfig
+    //
+
+    @Override public void setConfig(final String storeName, final Options options, final Map<String, Object> configs)
+    {
+      if(cache==null){
+        synchronized (BoundedMemoryRocksDBConfig.class){
+          if(cache==null){
+            if(TOTAL_OFF_HEAP_MEMORY>-1){
+              log.info("creating {} shared cache, {} off-heap", CACHE_NAME, FileUtils.byteCountToDisplaySize(TOTAL_OFF_HEAP_MEMORY));
+              if(TOTAL_MEMTABLE_MEMORY<=TOTAL_MEMTABLE_MEMORY){
+                log.info("{} of {} {} shared cache, will be allocate for memtable", FileUtils.byteCountToDisplaySize(TOTAL_MEMTABLE_MEMORY), FileUtils.byteCountToDisplaySize(TOTAL_OFF_HEAP_MEMORY), CACHE_NAME);
+                cache=new org.rocksdb.LRUCache(TOTAL_OFF_HEAP_MEMORY, -1, false, 0.0d);
+                writeBufferManager=new org.rocksdb.WriteBufferManager(TOTAL_MEMTABLE_MEMORY, cache);
+              }else{
+                log.error("memtable cache should fit in shared cache!");
+                throw new RuntimeException();
+              }
+            }else{
+              log.error("bug in code");
+              throw new RuntimeException();
+            }
+          }
+        }
+      }
+      log.info("Setting RocksDB config using {} off-heap shared cache for store {}", CACHE_NAME, storeName);
+      BlockBasedTableConfig tableConfig = new org.rocksdb.BlockBasedTableConfig();
+      tableConfig.setBlockCache(cache);
+      tableConfig.setCacheIndexAndFilterBlocks(true);
+      options.setWriteBufferManager(writeBufferManager);
+      tableConfig.setCacheIndexAndFilterBlocksWithHighPriority(true);
+      tableConfig.setPinTopLevelIndexAndFilter(true);
+      tableConfig.setBlockSize(32*1024L);
+      options.setMaxWriteBufferNumber(N_MEMTABLE);
+      options.setWriteBufferSize(TOTAL_MEMTABLE_MEMORY/N_MEMTABLE);
+      options.setTableFormatConfig(tableConfig);
+    }
+
+    @Override public void close(String storeName, Options options)
+    {
+      // https://docs.confluent.io/current/streams/developer-guide/memory-mgmt.html
+      // shared "cache" for all stores, not closing it then
+      log.warn("called BoundedMemoryRocksDBConfig.close for store {}, not doing anything as {} is shared", storeName, CACHE_NAME);
+    }
+
+    protected static void setRocksDBCacheMBytes(int cacheMBytes)
+    {
+      // might not yet able to create the static org.rocksdb.LRUCache object, cause of underlying rocksdb native lib "not yet deployed", so will lazy instantiate
+      TOTAL_OFF_HEAP_MEMORY=cacheMBytes * 1024 * 1024L;
+    }
+
+    protected static void setRocksDBMemTableMBytes(int memtableMBytes)
+    {
+      TOTAL_MEMTABLE_MEMORY=memtableMBytes * 1024 * 1024L;
+    }
+
   }
 
   /****************************************
@@ -7208,6 +7316,12 @@ public class EvolutionEngine
                 for (TaskMetadata taskMetadata : threadMetadata.activeTasks()) log.info("active " + taskMetadata.toString());
                 for (TaskMetadata taskMetadata : threadMetadata.standbyTasks()) log.info("standby " + taskMetadata.toString());
               }
+
+            //
+            //  memory usage
+            //
+
+            log.info("JVM free memory : {} over total of {}", FileUtils.byteCountToDisplaySize(Runtime.getRuntime().freeMemory()), FileUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory()));
 
             //
             //  nextprocessingtime

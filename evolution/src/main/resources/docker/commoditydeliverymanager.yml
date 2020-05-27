@@ -22,7 +22,7 @@ commoditydeliverymanager-<_KEY_>:
     KAFKA_DEBUG: <_COMMODITYDELIVERYMANAGER_DEBUG_>
     JAVA_DEBUG_OPTS: -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=<_DEBUG_PORT_>,suspend=n
     KAFKA_HEAP_OPTS: <_COMMODITYDELIVERYMANAGER_HEAP_OPTS_>
-    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_MONITORING_PORT_>:/app/config/commoditydeliverymanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> 
+    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_MONITORING_PORT_>:/app/config/commoditydeliverymanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> -Devolutionengine.streamthreads=<_EVOLUTIONENGINE_STREAMTHREADS_>
     KAFKA_LOG4J_OPTS: -Dlog4j.configuration=file:/app/config/log4j-commoditydelivery.xml
     ENTRYPOINT: commoditydeliverymanager
   volumes:

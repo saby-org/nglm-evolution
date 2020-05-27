@@ -26,10 +26,16 @@
   
   "periodicEvaluationCronEntry" : "0 2 * * *",
   "ucgEvaluationCronEntry" : "0 4 * * *",
-  
-  
-  
-  
+
+  "minExpiryDelayForVoucherDeliveryInHours" : 4,
+  "cleanUpExpiredVoucherDelayInDays" : 31,
+  "importVoucherFileBulkSize" : 5000,
+  "cleanExpiredVoucherCronEntry" : "0 3 * * *",
+  "voucherESCacheCleanerFrequencyInSec" : 300,
+  "numberConcurrentVoucherAllocationToES" : 10,
+  "liveVoucherIndexNumberOfReplicas" : "<_ELASTICSEARCH_REPLICAS_>",
+  "liveVoucherIndexNumberOfShards" : "<_ELASTICSEARCH_SHARDS_LARGE_>",
+
   "ucgEngineESConnectTimeout" : 30000,
   "ucgEngineESSocketTimeout" : 60000,
   "ucgEngineESMasRetryTimeout" : 60000,

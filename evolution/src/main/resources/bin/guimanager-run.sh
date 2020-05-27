@@ -101,7 +101,7 @@ case "${ENTRYPOINT}" in
     exec kafka-run-class -name propensityengine -loggc com.evolving.nglm.evolution.PropensityEngine /app/runtime $BROKER_SERVERS $KEY $KAFKA_REPLICATION_FACTOR $KAFKA_STREAMS_STANDBY_REPLICAS $PROPENSITYENGINE_STREAMTHREADS
     ;;
   "evolutionengine")
-    exec kafka-run-class -name evolutionengine -loggc com.evolving.nglm.evolution.EvolutionEngine /app/runtime $BROKER_SERVERS $KEY $SUBSCRIBERPROFILE_HOST $SUBSCRIBERPROFILE_PORT $INTERNAL_PORT $KAFKA_REPLICATION_FACTOR $KAFKA_STREAMS_STANDBY_REPLICAS $EVOLUTIONENGINE_STREAMTHREADS
+    exec kafka-run-class -name evolutionengine -loggc com.evolving.nglm.evolution.EvolutionEngine /app/runtime $BROKER_SERVERS $KEY $SUBSCRIBERPROFILE_HOST $SUBSCRIBERPROFILE_PORT $INTERNAL_PORT $KAFKA_REPLICATION_FACTOR $KAFKA_STREAMS_STANDBY_REPLICAS $EVOLUTIONENGINE_IN_MEMORY_STATE_STORES $EVOLUTIONENGINE_ROCKSDB_CACHE_MB $EVOLUTIONENGINE_ROCKSDB_MEMTABLE_MB
     ;;
   "journeytrafficengine")
     exec kafka-run-class -name journeytrafficengine -loggc com.evolving.nglm.evolution.JourneyTrafficEngine /app/runtime $BROKER_SERVERS $KEY $KAFKA_REPLICATION_FACTOR $KAFKA_STREAMS_STANDBY_REPLICAS $JOURNEYTRAFFICENGINE_STREAMTHREADS
