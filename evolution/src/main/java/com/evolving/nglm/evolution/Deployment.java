@@ -118,10 +118,6 @@ public class Deployment
   private static String deliverableSourceTopic;
   private static String presentationLogTopic;
   private static String acceptanceLogTopic;
-  private static String propensityLogTopic;
-  private static String propensityStateChangeLog;
-  private static String propensityStateChangeLogTopic;
-  private static String propensityOutputTopic;
   private static String profileLoyaltyProgramChangeEventTopic;
   private static String profileChangeEventTopic;
   private static String profileSegmentChangeEventTopic;
@@ -355,10 +351,6 @@ public class Deployment
   public static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
   public static String getPresentationLogTopic() { return presentationLogTopic; }
   public static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
-  public static String getPropensityLogTopic() { return propensityLogTopic; }
-  public static String getPropensityStateChangeLog() { return propensityStateChangeLog; }
-  public static String getPropensityStateChangeLogTopic() { return propensityStateChangeLogTopic; }
-  public static String getPropensityOutputTopic() { return propensityOutputTopic; }
   public static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
   public static String getProfileSegmentChangeEventTopic() { return profileSegmentChangeEventTopic;}
   public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
@@ -1793,58 +1785,6 @@ public class Deployment
       try
         {
           acceptanceLogTopic = JSONUtilities.decodeString(jsonRoot, "acceptanceLogTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  propensityLogTopic
-      //
-
-      try
-        {
-          propensityLogTopic = JSONUtilities.decodeString(jsonRoot, "propensityLogTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  propensityStateChangeLog
-      //
-
-      try
-        {
-          propensityStateChangeLog = JSONUtilities.decodeString(jsonRoot, "propensityStateChangeLog", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  propensityStateChangeLogTopic
-      //
-
-      try
-        {
-          propensityStateChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "propensityStateChangeLogTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  propensityOutputTopic
-      //
-
-      try
-        {
-          propensityOutputTopic = JSONUtilities.decodeString(jsonRoot, "propensityOutputTopic", true);
         }
       catch (JSONUtilitiesException e)
         {

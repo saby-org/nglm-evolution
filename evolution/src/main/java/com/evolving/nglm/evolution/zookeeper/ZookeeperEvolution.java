@@ -23,6 +23,7 @@ public class ZookeeperEvolution {
 
 	// check the zookeeper server env is well init/installed
 	private static volatile boolean envInit = false;
+	// DO NOT USE THAT FOR NOW
 	synchronized public static void initServerEnv(){
 		if(!envInit){
 

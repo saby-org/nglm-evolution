@@ -38,6 +38,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import com.evolving.nglm.evolution.propensity.PropensityService;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -198,7 +199,6 @@ public class EvolutionEngine
   private static VoucherTypeService voucherTypeService;
   private static CatalogCharacteristicService catalogCharacteristicService;
   private static DNBOMatrixService dnboMatrixService;
-  private static ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader; 
   private static TokenTypeService tokenTypeService;
   private static SubscriberMessageTemplateService subscriberMessageTemplateService;
   private static DeliverableService deliverableService;
@@ -221,6 +221,7 @@ public class EvolutionEngine
   private static HttpClient httpClient;
   private static ExclusionInclusionTargetService exclusionInclusionTargetService;
   private static StockMonitor stockService;
+  private static PropensityService propensityService;
 
   /****************************************
   *
@@ -318,12 +319,6 @@ public class EvolutionEngine
     String subscriberStateChangeLog = Deployment.getSubscriberStateChangeLog();
     String extendedSubscriberProfileChangeLog = Deployment.getExtendedSubscriberProfileChangeLog();
     String subscriberHistoryChangeLog = Deployment.getSubscriberHistoryChangeLog();
-
-    //
-    // Internal repartitioning topic (when rekeyed)
-    //
-
-    String propensityOutputTopic = Deployment.getPropensityOutputTopic();
 
     //
     //  (force load of SubscriberProfile class)
@@ -525,6 +520,7 @@ public class EvolutionEngine
     stockService = new StockMonitor("evolutionengine-stockservice-" + evolutionEngineKey, journeyService);
     stockService.start();
 
+
     //
     //  subscriberGroupEpochReader
     //
@@ -532,11 +528,11 @@ public class EvolutionEngine
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("evolutionengine-subscribergroupepoch", evolutionEngineKey, Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
 
     //
-    //  propensityDataReader
+    // propensity service
     //
 
-    propensityDataReader = ReferenceDataReader.<PropensityKey,PropensityState>startReader("evolutionengine-propensity", evolutionEngineKey, Deployment.getBrokerServers(), Deployment.getPropensityLogTopic(), PropensityState::unpack);
-    
+    propensityService = new PropensityService(subscriberGroupEpochReader);
+
     //
     //  ucgStateReader
     //
@@ -698,8 +694,6 @@ public class EvolutionEngine
     final ConnectSerde<SubscriberGroup> subscriberGroupSerde = SubscriberGroup.serde();
     final ConnectSerde<SubscriberTraceControl> subscriberTraceControlSerde = SubscriberTraceControl.serde();
     final ConnectSerde<SubscriberProfile> subscriberProfileSerde = SubscriberProfile.getSubscriberProfileSerde();
-    final ConnectSerde<PropensityEventOutput> propensityEventOutputSerde = PropensityEventOutput.serde();
-    final ConnectSerde<PropensityKey> propensityKeySerde = PropensityKey.serde();
     final Serde<SubscriberTrace> subscriberTraceSerde = SubscriberTrace.serde();
     final Serde<ExternalAPIOutput> externalAPISerde = ExternalAPIOutput.serde();
     final Serde<TokenChange> tokenChangeSerde = TokenChange.serde();
@@ -939,40 +933,45 @@ public class EvolutionEngine
     //
 
     KStream<StringKey, ? extends SubscriberStreamOutput>[] branchedEvolutionEngineOutputs = evolutionEngineOutputs.branch(
+
         (key,value) -> (value instanceof JourneyRequest && !((JourneyRequest)value).getDeliveryStatus().equals(DeliveryStatus.Pending)), 
         (key,value) -> (value instanceof JourneyRequest), 
         (key,value) -> (value instanceof LoyaltyProgramRequest && !((LoyaltyProgramRequest)value).getDeliveryStatus().equals(DeliveryStatus.Pending)), 
-        (key,value) -> (value instanceof LoyaltyProgramRequest), 
-        (key,value) -> (value instanceof PointFulfillmentRequest && !((PointFulfillmentRequest)value).getDeliveryStatus().equals(DeliveryStatus.Pending)), 
+        (key,value) -> (value instanceof LoyaltyProgramRequest),
+        (key,value) -> (value instanceof PointFulfillmentRequest && !((PointFulfillmentRequest)value).getDeliveryStatus().equals(DeliveryStatus.Pending)),
+
         (key,value) -> (value instanceof DeliveryRequest), 
         (key,value) -> (value instanceof JourneyStatisticWrapper), 
         (key,value) -> (value instanceof JourneyStatistic), 
         (key,value) -> (value instanceof JourneyMetric), 
         (key,value) -> (value instanceof SubscriberTrace),
-        (key,value) -> (value instanceof PropensityEventOutput),
+
         (key,value) -> (value instanceof ExternalAPIOutput),
 	    (key,value) -> (value instanceof ProfileChangeEvent),
         (key,value) -> (value instanceof ProfileSegmentChangeEvent),
         (key,value) -> (value instanceof ProfileLoyaltyProgramChangeEvent),
         (key,value) -> (value instanceof TokenChange),
+
         (key,value) -> (value instanceof VoucherChange));
+
     KStream<StringKey, JourneyRequest> journeyResponseStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[0];
     KStream<StringKey, JourneyRequest> journeyRequestStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[1];
     KStream<StringKey, LoyaltyProgramRequest> loyaltyProgramResponseStream = (KStream<StringKey, LoyaltyProgramRequest>) branchedEvolutionEngineOutputs[2];
     KStream<StringKey, LoyaltyProgramRequest> loyaltyProgramRequestStream = (KStream<StringKey, LoyaltyProgramRequest>) branchedEvolutionEngineOutputs[3];
     KStream<StringKey, PointFulfillmentRequest> pointResponseStream = (KStream<StringKey, PointFulfillmentRequest>) branchedEvolutionEngineOutputs[4];
+
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[5];
     KStream<StringKey, JourneyStatisticWrapper> journeyStatisticWrapperStream = (KStream<StringKey, JourneyStatisticWrapper>) branchedEvolutionEngineOutputs[6];
     KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[7];
     KStream<StringKey, JourneyMetric> journeyMetricStream = (KStream<StringKey, JourneyMetric>) branchedEvolutionEngineOutputs[8];
     KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[9];
-    KStream<StringKey, PropensityEventOutput> propensityOutputsStream = (KStream<StringKey, PropensityEventOutput>) branchedEvolutionEngineOutputs[10];
 
     KStream<StringKey, ExternalAPIOutput> externalAPIOutputsStream = (KStream<StringKey, ExternalAPIOutput>) branchedEvolutionEngineOutputs[11];
     KStream<StringKey, ProfileChangeEvent> profileChangeEventsStream = (KStream<StringKey, ProfileChangeEvent>) branchedEvolutionEngineOutputs[12];
     KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventsStream = (KStream<StringKey, ProfileSegmentChangeEvent>) branchedEvolutionEngineOutputs[13];
     KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventsStream = (KStream<StringKey, ProfileLoyaltyProgramChangeEvent>) branchedEvolutionEngineOutputs[14];
     KStream<StringKey, TokenChange> tokenChangeStream = (KStream<StringKey, TokenChange>) branchedEvolutionEngineOutputs[15];
+
     KStream<StringKey, VoucherChange> voucherChangeStream = (KStream<StringKey, VoucherChange>) branchedEvolutionEngineOutputs[16];
 
 
@@ -1031,35 +1030,6 @@ public class EvolutionEngine
     *****************************************/
 
     KStream<StringKey, JourneyStatisticWrapper> rekeyedJourneyStatisticStream = journeyStatisticWrapperStream.map(EvolutionEngine::rekeyByJourneyID);
-    
-    /*****************************************
-    *
-    *  propensityState -- update
-    *
-    *****************************************/
-
-    //
-    //  propensity rekey
-    //
-    // We manually write the rekeyed KStream in an underlying intermediary topic (propensityoutput-repartition)
-    //
-    // When going through a map operation, we change the key of the topic.
-    // Therefore the repartition done by Kafka between the different topic partitions will not be the same.
-    // For instance, a worker assigned to the treatment of a record may not be assigned to the treatment of its rekeyed record.
-    // That is why, we need to write the rekeyed KStream in an intermediary topic.
-    //
-    // Usually it's automatically done in the next operation applied on this KStream as it is mentioned in groupByKey or leftJoin javadoc:
-    //      "If a key changing operator was used before this operation and no data redistribution
-    //      happened afterwards an internal repartitioning topic will be created in Kafka."
-    // But here, if we let this happen, it will create two different internal repartitioning topics (both containing the same records), one for the groupeByKey and one for the leftJoin.
-    // Firstly, it would be a waste of resources to duplicate those topics.
-    // But, more important, by doing this, we will introduce indeterminism, and therefore errors.
-    // Indeed, the groupByKey and leftJoin operations would not be done sequentially anymore but in parallel, and we could not ensure that groupByKey will be done before the leftJoin.
-    //
-    // For those reasons, we manually create the intermediary topic just after the map operation and we applied groupeByKey and leftJoin on this "well-partioned" stream, thus no other redistribution intermediary topic will be needed.
-    //
-
-    KStream<PropensityKey, PropensityEventOutput> rekeyedPropensityStream = propensityOutputsStream.map(EvolutionEngine::rekeyPropensityStream);
 
     /*****************************************
     *
@@ -1111,7 +1081,6 @@ public class EvolutionEngine
     profileSegmentChangeEventsStream.to(profileSegmentChangeEventTopic, Produced.with(stringKeySerde, profileSegmentChangeEventSerde));
     profileLoyaltyProgramChangeEventsStream.to(profileLoyaltyProgramChangeEventTopic, Produced.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
     rekeyedJourneyStatisticStream.to(journeyTrafficTopic, Produced.with(stringKeySerde, journeyStatisticWrapperSerde));
-    rekeyedPropensityStream.to(propensityOutputTopic, Produced.with(propensityKeySerde, propensityEventOutputSerde));
     tokenChangeStream.to(tokenChangeTopic, Produced.with(stringKeySerde, tokenChangeSerde));
     voucherChangeStream.to(voucherChangeResponseTopic, Produced.with(stringKeySerde, voucherChangeSerde));
 
@@ -1377,7 +1346,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, propensityDataReader,subscriberProfileServer, internalServer, stockService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, subscriberProfileServer, internalServer, stockService));
 
     /*****************************************
     *
@@ -1688,7 +1657,6 @@ public class EvolutionEngine
     private VoucherTypeService voucherTypeService;
     private CatalogCharacteristicService catalogCharacteristicService;
     private DNBOMatrixService dnboMatrixService;
-    private ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader; 
     private TokenTypeService tokenTypeService;
     private SubscriberMessageTemplateService subscriberMessageTemplateService;
     private DeliverableService deliverableService;
@@ -1705,7 +1673,7 @@ public class EvolutionEngine
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, HttpServer subscriberProfileServer, HttpServer internalServer, StockMonitor stockService)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, HttpServer subscriberProfileServer, HttpServer internalServer, StockMonitor stockService)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
@@ -1734,7 +1702,6 @@ public class EvolutionEngine
       this.catalogCharacteristicService = catalogCharacteristicService;
       this.dnboMatrixService = dnboMatrixService;
       this.paymentMeanService = paymentMeanService;
-      this.propensityDataReader = propensityDataReader; 
       this.subscriberProfileServer = subscriberProfileServer;
       this.internalServer = internalServer;
       this.stockService = stockService;
@@ -1758,7 +1725,6 @@ public class EvolutionEngine
 
       subscriberGroupEpochReader.close();
       ucgStateReader.close();
-      propensityDataReader.close(); 
 
       //
       //  stop services
@@ -1839,7 +1805,7 @@ public class EvolutionEngine
     SubscriberState subscriberState = (currentSubscriberState != null) ? new SubscriberState(currentSubscriberState) : new SubscriberState(evolutionEvent.getSubscriberID());
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
-    EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, propensityDataReader, uniqueKeyServer, SystemTime.getCurrentTime());
+    EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, uniqueKeyServer, SystemTime.getCurrentTime());
     boolean subscriberStateUpdated = (currentSubscriberState != null) ? false : true;
 
     /*****************************************
@@ -2201,16 +2167,6 @@ public class EvolutionEngine
     if (subscriberState.getSubscriberTrace() != null)
       {
         subscriberState.setSubscriberTrace(null);
-        subscriberStateUpdated = true;
-      }
-
-    //
-    //  propensityOutputs cleaning
-    //
-
-    if (subscriberState.getPropensityOutputs() != null)
-      {
-        subscriberState.getPropensityOutputs().clear();
         subscriberStateUpdated = true;
       }
 
@@ -4155,10 +4111,10 @@ public class EvolutionEngine
           }
 
         //
-        // Extract propensity information (only if we already acknowledged both Presentation & Acceptance events)
+        // update global propensity information (only if we already acknowledged both Presentation & Acceptance events)
         //
 
-        if (subscriberStoredToken.getPresentedOfferIDs().size() > 0 && subscriberStoredToken.getAcceptedOfferID() != null)
+        if (subscriberStoredToken.getPresentedOfferIDs().size() > 0 || subscriberStoredToken.getAcceptedOfferID() != null)
           {
 
             // 
@@ -4167,8 +4123,10 @@ public class EvolutionEngine
 
             if (Deployment.getPropensityRule().validate(segmentationDimensionService))
               {
-                subscriberState.getPropensityOutputs().addAll(retrievePropensityOutputs(subscriberStoredToken, subscriberProfile));
-                subscriberStateUpdated = true;
+                for(String offerID: subscriberStoredToken.getPresentedOfferIDs())
+                  {
+                    propensityService.incrementPropensity(offerID,subscriberProfile,true,offerID.equals(subscriberStoredToken.getAcceptedOfferID()));
+                  }
               }
           }
       }
@@ -4207,24 +4165,6 @@ public class EvolutionEngine
     *****************************************/
 
     return subscriberStateUpdated;
-  }
-
-  /*****************************************
-  *
-  *  retrievePropensityOutputs
-  *
-  *   once we have acknowledge both presentation & acceptance for a token, we can extract a list of propensity outputs.
-  *
-  ****************************************/
-
-  private static List<PropensityEventOutput> retrievePropensityOutputs(DNBOToken token, SubscriberProfile subscriberProfile)
-  {
-    List<PropensityEventOutput> result = new ArrayList<PropensityEventOutput>();
-    for(String offerID: token.getPresentedOfferIDs())
-      {
-        result.add(new PropensityEventOutput(new PropensityKey(offerID, subscriberProfile, subscriberGroupEpochReader), offerID.equals(token.getAcceptedOfferID())));
-      }
-    return result;
   }
 
   /*****************************************
@@ -5710,17 +5650,6 @@ public class EvolutionEngine
     return extendedSubscriberProfileUpdated;
   }
 
-  /****************************************
-  *
-  *  rekeyPropensityStream
-  *
-  ****************************************/
-
-  private static KeyValue<PropensityKey, PropensityEventOutput> rekeyPropensityStream(StringKey key, PropensityEventOutput propensityEventOutput)
-  {
-    return new KeyValue<PropensityKey, PropensityEventOutput>(propensityEventOutput.getPropensityKey(), propensityEventOutput);
-  }
-
   /*****************************************
   *
   *  nullSubscriberHistory
@@ -6048,7 +5977,6 @@ public class EvolutionEngine
           }
         result.addAll(subscriberState.getJourneyMetrics());
         result.addAll((subscriberState.getSubscriberTrace() != null) ? Collections.<SubscriberTrace>singletonList(subscriberState.getSubscriberTrace()) : Collections.<SubscriberTrace>emptyList());
-        result.addAll(subscriberState.getPropensityOutputs());
         result.addAll((subscriberState.getExternalAPIOutput() != null) ? Collections.<ExternalAPIOutput>singletonList(subscriberState.getExternalAPIOutput()) : Collections.<ExternalAPIOutput>emptyList());
         result.addAll(subscriberState.getProfileChangeEvents());
         result.addAll(subscriberState.getTokenChanges());
@@ -6486,7 +6414,6 @@ public class EvolutionEngine
     private VoucherTypeService voucherTypeService;
     private CatalogCharacteristicService catalogCharacteristicService;
     private DNBOMatrixService dnboMatrixService;
-    private ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader; 
     
     private TokenTypeService tokenTypeService;
     private PaymentMeanService paymentMeanService;
@@ -6501,7 +6428,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    public EvolutionEventContext(SubscriberState subscriberState, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
+    public EvolutionEventContext(SubscriberState subscriberState, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
     {
       this.subscriberState = subscriberState;
       this.extendedSubscriberProfile = extendedSubscriberProfile;
@@ -6523,7 +6450,6 @@ public class EvolutionEngine
       this.catalogCharacteristicService = catalogCharacteristicService;
       this.dnboMatrixService = dnboMatrixService;
       this.paymentMeanService = paymentMeanService;
-      this.propensityDataReader = propensityDataReader; 
       this.uniqueKeyServer = uniqueKeyServer;
       this.now = now;
       this.subscriberTraceDetails = new ArrayList<String>();
@@ -6552,7 +6478,6 @@ public class EvolutionEngine
     public VoucherTypeService getVoucherTypeService() { return voucherTypeService; }
     public CatalogCharacteristicService getCatalogCharacteristicService() { return catalogCharacteristicService; }
     public DNBOMatrixService getDnboMatrixService() { return dnboMatrixService; }
-    public ReferenceDataReader<PropensityKey, PropensityState> getPropensityDataReader() { return propensityDataReader; }
     public TokenTypeService getTokenTypeService() { return tokenTypeService; }
     public PaymentMeanService getPaymentMeanService() { return paymentMeanService; }
     public SegmentContactPolicyService getSegmentContactPolicyService() { return segmentContactPolicyService; }

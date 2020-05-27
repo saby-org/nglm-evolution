@@ -48,6 +48,9 @@ public class PropensityService {
 				this.zookeeperEvolutionClient = new ZookeeperEvolutionClient();
 				this.subscriberGroupEpochReader = subscriberGroupEpochReader;
 
+				// if dont exist
+				zookeeperEvolutionClient.createPersistentNodeIfNotExists(Configuration.NODE.PROPENSITY.node());
+
 				// a first one blocking call to init from zookeeper
 				log.info("PropensityService : loading from zookeeper");
 				updateDataFromZookeeper();
