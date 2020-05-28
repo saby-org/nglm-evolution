@@ -28,7 +28,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
 {
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatesReportCsvWriter.class);
   final private static String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private static JourneyService journeyService;
+  private static JourneyService journeyServiceStatic;
   List<String> headerFieldsOrder = new ArrayList<String>();
   private final String subscriberID = "subscriberID";
   private final String customerID = "customerID";
@@ -56,142 +56,137 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
   public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
-    Map<String, Object> journeyStatsMap = reportElement.fields.get(0);
-    Map<String, Object> subscriberFields = reportElement.fields.get(1);
-    for (Object journeyStatsObj : journeyStatsMap.values())
+    Map<String, Object> journeyStats = reportElement.fields.get(0);
+    if (journeyStats != null && !journeyStats.isEmpty())
       {
-        Map<String, Object> journeyStats = (Map<String, Object>) journeyStatsObj;
-        if (journeyStats != null && !journeyStats.isEmpty() && subscriberFields != null && !subscriberFields.isEmpty())
+        Journey journey = journeyServiceStatic.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
+        if (journey != null)
           {
-            Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
-            if (journey != null)
+            Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
+            if (journeyStats.get(subscriberID) != null)
               {
-                Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
-                if (journeyStats.get(subscriberID) != null)
+                Object subscriberIDField = journeyStats.get(subscriberID);
+                journeyInfo.put(customerID, subscriberIDField);
+              }
+            for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+              {
+                if (journeyStats.get(alternateID.getID()) != null)
                   {
-                    Object subscriberIDField = journeyStats.get(subscriberID);
-                    journeyInfo.put(customerID, subscriberIDField);
+                    Object alternateId = journeyStats.get(alternateID.getID());
+                    journeyInfo.put(alternateID.getName(), alternateId);
                   }
-                for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+              }
+            journeyInfo.put("journeyID", journey.getJourneyID());
+            journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
+            journeyInfo.put("journeyType", journey.getTargetingType());
+
+            if (journeyStats.get("sample") != null)
+              {
+                journeyInfo.put("sample", journeyStats.get("sample"));
+              }
+
+            boolean statusNotified = (boolean) journeyStats.get("statusNotified");
+            boolean journeyComplete = (boolean) journeyStats.get("journeyComplete");
+            boolean statusConverted = (boolean) journeyStats.get("statusConverted");
+            Boolean statusTargetGroup  = journeyStats.get("statusTargetGroup")  == null ? null : (boolean) journeyStats.get("statusTargetGroup");
+            Boolean statusControlGroup = journeyStats.get("statusControlGroup") == null ? null : (boolean) journeyStats.get("statusControlGroup");
+            Boolean statusUniversalControlGroup = journeyStats.get("statusUniversalControlGroup") == null ? null : (boolean) journeyStats.get("statusUniversalControlGroup");
+
+            journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
+
+            List<String> nodeHistory = (List<String>) journeyStats.get("nodeHistory");
+            StringBuilder sbStatus = new StringBuilder();
+            if (nodeHistory != null && !nodeHistory.isEmpty())
+              {
+                for (String status : nodeHistory)
                   {
-                    if (subscriberFields.get(alternateID.getESField()) != null)
+                    if (status != null)
                       {
-                        Object alternateId = subscriberFields.get(alternateID.getESField());
-                        journeyInfo.put(alternateID.getName(), alternateId);
-                      }
-                  }
-                journeyInfo.put("journeyID", journey.getJourneyID());
-                journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
-                journeyInfo.put("journeyType", journey.getTargetingType());
-
-                if (journeyStats.get("sample") != null)
-                  {
-                    journeyInfo.put("sample", journeyStats.get("sample"));
-                  }
-
-                boolean statusNotified = (boolean) journeyStats.get("statusNotified");
-                boolean journeyComplete = (boolean) journeyStats.get("journeyComplete");
-                boolean statusConverted = (boolean) journeyStats.get("statusConverted");
-                Boolean statusTargetGroup  = journeyStats.get("statusTargetGroup")  == null ? null : (boolean) journeyStats.get("statusTargetGroup");
-                Boolean statusControlGroup = journeyStats.get("statusControlGroup") == null ? null : (boolean) journeyStats.get("statusControlGroup");
-                Boolean statusUniversalControlGroup = journeyStats.get("statusUniversalControlGroup") == null ? null : (boolean) journeyStats.get("statusUniversalControlGroup");
-
-                journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
-
-                List<String> nodeHistory = (List<String>) journeyStats.get("nodeHistory");
-                StringBuilder sbStatus = new StringBuilder();
-                if (nodeHistory != null && !nodeHistory.isEmpty())
-                  {
-                    for (String status : nodeHistory)
-                      {
-                        if (status != null)
-                          {
-                            String[] split = status.split(";");
-                            String fromNodeName = decodeNodeName(journey, split, 0);
-                            String toNodeName   = decodeNodeName(journey, split, 1);
-                            Date   date         = decodeDate(split, 2);
-                            sbStatus.append("(").append(fromNodeName).append("->").append(toNodeName).append(",").append(ReportsCommonCode.getDateString(date)).append("),");
-                          }
-                      }
-                  }
-
-                String states = null;
-                if (sbStatus.length() > 0)
-                  {
-                    states = sbStatus.toString().substring(0, sbStatus.toString().length() - 1);
-                  }
-
-                StringBuilder sbStatuses = new StringBuilder();
-                List<String> statusHistory = (List<String>) journeyStats.get("statusHistory");
-                if (statusHistory != null && !statusHistory.isEmpty())
-                  {
-                    for (String status : statusHistory)
-                      {
-                        String statusNameToBeDisplayed = "";
                         String[] split = status.split(";");
-                        String statusName = null;
-                        if (split[0] != null && !split[0].equals("null"))
-                          {
-                            statusName = split[0];
-                          }
-                        Date date = decodeDate(split, 1);
-                        sbStatuses.append("(").append(SubscriberJourneyStatus.fromExternalRepresentation(statusName).getDisplay()).append(",").append(ReportsCommonCode.getDateString(date)).append("),");
+                        String fromNodeName = decodeNodeName(journey, split, 0);
+                        String toNodeName   = decodeNodeName(journey, split, 1);
+                        Date   date         = decodeDate(split, 2);
+                        sbStatus.append("(").append(fromNodeName).append("->").append(toNodeName).append(",").append(ReportsCommonCode.getDateString(date)).append("),");
                       }
                   }
+              }
 
-                String statuses = null;
-                if (sbStatuses.length() > 0)
+            String states = null;
+            if (sbStatus.length() > 0)
+              {
+                states = sbStatus.toString().substring(0, sbStatus.toString().length() - 1);
+              }
+
+            StringBuilder sbStatuses = new StringBuilder();
+            List<String> statusHistory = (List<String>) journeyStats.get("statusHistory");
+            if (statusHistory != null && !statusHistory.isEmpty())
+              {
+                for (String status : statusHistory)
                   {
-                    statuses = sbStatuses.toString().substring(0, sbStatuses.toString().length() - 1);
-                  }
-
-                journeyInfo.put("customerStates",   states);
-                journeyInfo.put("customerStatuses", statuses);
-                journeyInfo.put("dateTime",         ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
-                journeyInfo.put("startDate",        ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
-                journeyInfo.put("endDate",          ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
-
-                List<String> rewardHistory = (List<String>) journeyStats.get("rewardHistory");
-                List<Map<String, Object>> outputJSON = new ArrayList<>();
-
-                if (rewardHistory != null && !rewardHistory.isEmpty())
-                  {
-                    for (String status : rewardHistory)
+                    String statusNameToBeDisplayed = "";
+                    String[] split = status.split(";");
+                    String statusName = null;
+                    if (split[0] != null && !split[0].equals("null"))
                       {
-                        Map<String, Object> historyJSON = new LinkedHashMap<>(); // to preserve order when displaying
-                        String[] split = status.split(";");
-                        String rewardID = null;
-                        String amount   = null;
-                        Date   date     = null;
-                        if (split != null && split.length >= 3)
-                          {
-                            rewardID = split[0];
-                            amount   = split[1];
-                            date     = decodeDate(split, 2);
-                          }
-                        historyJSON.put("reward", rewardID);
-                        historyJSON.put("quantity", amount);
-                        historyJSON.put("date", ReportsCommonCode.getDateString(date));
-                        outputJSON.add(historyJSON);
+                        statusName = split[0];
                       }
+                    Date date = decodeDate(split, 1);
+                    sbStatuses.append("(").append(SubscriberJourneyStatus.fromExternalRepresentation(statusName).getDisplay()).append(",").append(ReportsCommonCode.getDateString(date)).append("),");
                   }
-                journeyInfo.put("rewards", ReportUtils.formatJSON(outputJSON));
+              }
 
-                //
-                // result
-                //
+            String statuses = null;
+            if (sbStatuses.length() > 0)
+              {
+                statuses = sbStatuses.toString().substring(0, sbStatuses.toString().length() - 1);
+              }
 
-                String journeyID = journeyInfo.get("journeyID").toString();
-                if (result.containsKey(journeyID))
+            journeyInfo.put("customerStates",   states);
+            journeyInfo.put("customerStatuses", statuses);
+            journeyInfo.put("dateTime",         ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
+            journeyInfo.put("startDate",        ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
+            journeyInfo.put("endDate",          ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
+
+            List<String> rewardHistory = (List<String>) journeyStats.get("rewardHistory");
+            List<Map<String, Object>> outputJSON = new ArrayList<>();
+
+            if (rewardHistory != null && !rewardHistory.isEmpty())
+              {
+                for (String status : rewardHistory)
                   {
-                    result.get(journeyID).add(journeyInfo);
-                  } 
-                else
-                  {
-                    List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
-                    elements.add(journeyInfo);
-                    result.put(journeyID, elements);
+                    Map<String, Object> historyJSON = new LinkedHashMap<>(); // to preserve order when displaying
+                    String[] split = status.split(";");
+                    String rewardID = null;
+                    String amount   = null;
+                    Date   date     = null;
+                    if (split != null && split.length >= 3)
+                      {
+                        rewardID = split[0];
+                        amount   = split[1];
+                        date     = decodeDate(split, 2);
+                      }
+                    historyJSON.put("reward", rewardID);
+                    historyJSON.put("quantity", amount);
+                    historyJSON.put("date", ReportsCommonCode.getDateString(date));
+                    outputJSON.add(historyJSON);
                   }
+              }
+            journeyInfo.put("rewards", ReportUtils.formatJSON(outputJSON));
+
+            //
+            // result
+            //
+
+            String journeyID = journeyInfo.get("journeyID").toString();
+            if (result.containsKey(journeyID))
+              {
+                result.get(journeyID).add(journeyInfo);
+              } 
+            else
+              {
+                List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
+                elements.add(journeyInfo);
+                result.put(journeyID, elements);
               }
           }
       }
@@ -234,7 +229,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
   }
 
   
-  public static void main(String[] args)
+  public static void main(String[] args, JourneyService journeyService)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -251,14 +246,10 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
     String topic = args[1];
     String csvfile = args[2];
     log.info("Reading data from " + topic + " topic on broker " + kafkaNode + " producing " + csvfile + " with '" + CSV_SEPARATOR + "' separator");
-
+    journeyServiceStatic = journeyService;
+    
     ReportCsvFactory reportFactory = new JourneyCustomerStatesReportCsvWriter();
     ReportCsvWriter reportWriter = new ReportCsvWriter(reportFactory, kafkaNode, topic);
-
-    String journeyTopic = Deployment.getJourneyTopic();
-
-    journeyService = new JourneyService(kafkaNode, "journeycustomerstatesreportcsvwriter-journeyservice-" + topic, journeyTopic, false);
-    journeyService.start();
 
     if (!reportWriter.produceReport(csvfile, true))
       {

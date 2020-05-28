@@ -15,6 +15,7 @@ import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 
+
 public class BDRSinkConnector extends SimpleESSinkConnector
 {
   private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
@@ -45,7 +46,8 @@ public class BDRSinkConnector extends SimpleESSinkConnector
     *  attributes
     *
     ****************************************/
-
+    private SubscriberProfileService subscriberProfileService;
+    
     //
     //  logger
     //
@@ -69,6 +71,8 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       //
       //  services
       //
+      
+      subscriberProfileService = SinkConnectorUtils.init();
 
     }
 
@@ -84,8 +88,8 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       //  services
       //
 
-      
-      
+      if (subscriberProfileService != null) subscriberProfileService.stop();
+
       //
       //  super
       //
@@ -117,6 +121,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
         
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", commodityRequest.getSubscriberID());
+        SinkConnectorUtils.putAlternateIDs(commodityRequest.getSubscriberID(), documentMap, subscriberProfileService);
         documentMap.put("eventDatetime", commodityRequest.getEventDate()!=null?dateFormat.format(commodityRequest.getEventDate()):"");
         documentMap.put("deliveryRequestID", commodityRequest.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", commodityRequest.getOriginatingDeliveryRequestID());
@@ -138,6 +143,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       return documentMap;
     }
     
+
   }
 
 }

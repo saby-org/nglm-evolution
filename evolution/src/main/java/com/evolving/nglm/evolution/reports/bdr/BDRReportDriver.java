@@ -20,32 +20,23 @@ public class BDRReportDriver extends ReportDriver{
       String elasticSearch,
       String csvFilename,
       String[] params) {
-        log.debug("Processing Subscriber Report with "+report.getName());
+        log.debug("Processing "+report.getName());
         String topicPrefix = super.getTopicPrefix(report.getName());
-        String topic1 = topicPrefix+"-a";
-        String topic2 = topicPrefix+"-b";
+        String topic1 = topicPrefix;
         String esIndexBdr = "detailedrecords_bonuses-";
-        String esIndexCustomer = "subscriberprofile";
         log.debug("PHASE 1 : read ElasticSearch");
         String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
         int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-        String appIdPrefix = report.getName() + "_" + getTopicPrefixDate();
         BDRReportESReader.main(new String[]{
-            topic1, kafka, zookeeper, elasticSearch, esIndexBdr, esIndexCustomer, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit 
+            topic1, kafka, zookeeper, elasticSearch, esIndexBdr, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit 
         });         
-        try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) {}
-        
-        log.debug("PHASE 2 : process data");
-        BDRReportProcessor.main(new String[]{
-            topic1, topic2, kafka, zookeeper, appIdPrefix, "1"
-        });
         try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) {}
 
         log.debug("PHASE 2 : write csv file ");
         BDRReportCsvWriter.main(new String[]{
-            kafka, topic2, csvFilename
+            kafka, topic1, csvFilename
         });
-        ReportUtils.cleanupTopics(topic1, topic2, ReportUtils.APPLICATION_ID_PREFIX, appIdPrefix, BDRReportProcessor.STORENAME);
+        ReportUtils.cleanupTopics(topic1);
         log.debug("Finished with BDR Report");
 
   }

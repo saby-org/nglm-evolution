@@ -229,12 +229,15 @@ public class ReportManager implements Watcher
                     {
                       for (GUIManagedObject gmo : reports)
                         {
-                          Report reportLocal = (Report) gmo;
-                          log.trace("Checking "+report+" for "+reportName);
-                          if (reportName.equals(reportLocal.getName())) 
+                          if (gmo instanceof Report)
                             {
-                              report = reportLocal;
-                              break;
+                              Report reportLocal = (Report) gmo;
+                              log.trace("Checking "+reportLocal+" for "+reportName);
+                              if (reportName.equals(reportLocal.getName())) 
+                                {
+                                  report = reportLocal;
+                                  break;
+                                }
                             }
                         }
                     }

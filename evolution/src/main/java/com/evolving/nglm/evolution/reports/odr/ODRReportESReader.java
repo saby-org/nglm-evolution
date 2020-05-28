@@ -46,9 +46,9 @@ public class ODRReportESReader
         log.info("ODRReportESReader: arg " + arg);
       }
 
-    if (args.length < 6)
+    if (args.length < 5)
       {
-        log.warn("Usage : ODRReportESReader <Output Topic> <KafkaNodeList> <ZKhostList> <ESNode> <ES customer index> <ES journey index>");
+        log.warn("Usage : ODRReportESReader <Output Topic> <KafkaNodeList> <ZKhostList> <ESNode> <ES journey index>");
         return;
       }
     String topicName = args[0];
@@ -56,13 +56,13 @@ public class ODRReportESReader
     String kzHostList = args[2];
     String esNode = args[3];
     String esIndexOdr = args[4];
-    String esIndexCustomer = args[5];
+    
     Integer reportPeriodQuantity = 0;
     String reportPeriodUnit = null;
-    if (args.length > 6 && args[6] != null && args[7] != null)
+    if (args.length > 5 && args[5] != null && args[6] != null)
       {
-        reportPeriodQuantity = Integer.parseInt(args[6]);
-        reportPeriodUnit = args[7];
+        reportPeriodQuantity = Integer.parseInt(args[5]);
+        reportPeriodUnit = args[6];
       }
     Date fromDate = getFromDate(reportPeriodUnit, reportPeriodQuantity);
     Date toDate = SystemTime.getCurrentTime();
@@ -81,9 +81,8 @@ public class ODRReportESReader
     log.info("Reading data from ES in (" + esIndexOdrList.toString() + ")  index and writing to " + topicName + " topic.");
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexOdrList.toString(), QueryBuilders.matchAllQuery());
-    esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
 
-    ReportEsReader reportEsReader = new ReportEsReader("subscriberID", topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery, true);
+    ReportEsReader reportEsReader = new ReportEsReader("subscriberID", topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery, false);
 
     reportEsReader.start();
     log.info("Finished ODRReportESReader");
