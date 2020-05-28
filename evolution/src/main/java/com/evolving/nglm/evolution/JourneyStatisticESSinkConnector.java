@@ -49,7 +49,6 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
   public static class JourneyStatisticESSinkTask extends ChangeLogESSinkTask
   {
     private SubscriberProfileService subscriberProfileService = null;
-    private JourneyService journeyService = null;
     private final Logger log = LoggerFactory.getLogger(JourneyStatisticESSinkConnector.class);
     
     /*****************************************
@@ -63,9 +62,6 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       super.start(taskConfig);
       subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
       subscriberProfileService.start();
-      
-      journeyService = new JourneyService(Deployment.getBrokerServers(), "sinkconnector-journeyservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getJourneyTopic(), false);
-      journeyService.start();
     }
     
     /*****************************************
@@ -97,7 +93,6 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       *  extract JourneyStatistic
       *
       ****************************************/
-
       Object journeyStatisticValue = sinkRecord.value();
       Schema journeyStatisticValueSchema = sinkRecord.valueSchema();
       JourneyStatistic journeyStatistic = JourneyStatistic.unpack(new SchemaAndValue(journeyStatisticValueSchema, journeyStatisticValue));
@@ -117,6 +112,7 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
     
     @Override public Map<String,Object> getDocumentMap(SinkRecord sinkRecord)
     {
+
       /****************************************
       *
       *  extract JourneyStatistic
