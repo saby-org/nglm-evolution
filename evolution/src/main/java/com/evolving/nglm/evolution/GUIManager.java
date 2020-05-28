@@ -18905,9 +18905,26 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 }       
             
           }
-          if(reference.startsWith("dialog_source_address_")) {
-            // TODO EVPRO-146
-          }
+          if(reference.startsWith("dialog_source_address_")) 
+            {
+              String[] referenceSplit = reference.split("_");
+              String communicationChannelID = referenceSplit[(referenceSplit.length)-1];
+              CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(communicationChannelID);
+              for (GUIManagedObject sourceAddressUnchecked : sourceAddressService.getStoredGUIManagedObjects())
+                {
+                  if (sourceAddressUnchecked.getAccepted())
+                    {
+                      SourceAddress sourceAddress = (SourceAddress) sourceAddressUnchecked;
+                      if (sourceAddress.getCommunicationChannelId().equals(communicationChannel.getID()))
+                        {
+                          HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                          availableValue.put("id", sourceAddress.getSourceAddressId());
+                          availableValue.put("display", sourceAddress.getGUIManagedObjectDisplay());
+                          result.add(JSONUtilities.encodeObject(availableValue));
+                        }
+                    }
+                }   
+            }
           
           boolean foundValue = false;
           if(includeDynamic)

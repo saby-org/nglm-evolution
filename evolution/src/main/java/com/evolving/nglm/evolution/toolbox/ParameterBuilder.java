@@ -70,7 +70,7 @@ public class ParameterBuilder
     StringBuilder sb = new StringBuilder();
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 1) + "{\n");
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 2) + "\"id\" : \"" + id + "\",\n");
-    sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 2) + "\"display\" : \"" + display + "\",\n");
+    sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 2) + "\"display\" : " + (display != null ? "\"" + display + "\"" : display) + ",\n");
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 2) + "\"dataType\" : \"" + dataType.getExternalRepresentation() + "\",\n");
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 2) + "\"multiple\" : " + multiple + ",\n");
     sb.append(ToolBoxUtils.getIndentation(indentationTabNumber + 2) + "\"mandatory\" : " + mandatory + ",\n");
