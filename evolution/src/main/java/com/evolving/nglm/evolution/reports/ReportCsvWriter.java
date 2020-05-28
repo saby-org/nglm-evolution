@@ -163,6 +163,7 @@ public class ReportCsvWriter
         int nbRecords = 1;
         boolean breakMainLoop = false;
         // List<String> alreadySeen = new ArrayList<>(30_000_000);
+        boolean addHeader = true;
         for (int nbLoop = 0; !breakMainLoop; nbLoop++)
           {
             log.debug("Doing poll...");
@@ -178,7 +179,6 @@ public class ReportCsvWriter
             if (nbLoop % nbLoopForTrace == 0)
               log.debug("" + SystemTime.getCurrentTime() + " got " + d(consumerRecords.count()) + " records, total " + d(nbRecords) + " free mem = " + d(rt.freeMemory()) + "/" + d(rt.totalMemory()));
 
-            boolean addHeader = true;
             for (ConsumerRecord<String, ReportElement> record : consumerRecords)
               {
                 String key = record.key();
