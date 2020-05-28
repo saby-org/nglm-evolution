@@ -48,7 +48,6 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
   
   public static class JourneyStatisticESSinkTask extends ChangeLogESSinkTask
   {
-    private SubscriberProfileService subscriberProfileService = null;
     private final Logger log = LoggerFactory.getLogger(JourneyStatisticESSinkConnector.class);
     
     /*****************************************
@@ -60,7 +59,6 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
     @Override public void start(Map<String, String> taskConfig)
     {
       super.start(taskConfig);
-      subscriberProfileService = SinkConnectorUtils.init();
     }
     
     /*****************************************
@@ -72,8 +70,6 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
     @Override public void stop()
     {
       
-      if (subscriberProfileService != null) subscriberProfileService.stop();
-
       //
       //  super
       //
@@ -159,7 +155,7 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       documentMap.put("journeyInstanceID", journeyStatistic.getJourneyInstanceID());
       documentMap.put("journeyID", journeyStatistic.getJourneyID());
       documentMap.put("subscriberID", journeyStatistic.getSubscriberID());
-      SinkConnectorUtils.putAlternateIDs(journeyStatistic.getSubscriberID(), documentMap, subscriberProfileService);
+      SinkConnectorUtils.putAlternateIDs(journeyStatistic.getAlternateIDs(), documentMap);
       documentMap.put("transitionDate", journeyStatistic.getTransitionDate());
       documentMap.put("nodeHistory", journeyNode);
       documentMap.put("statusHistory", journeyStatus);
