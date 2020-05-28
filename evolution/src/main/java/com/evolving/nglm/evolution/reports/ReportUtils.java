@@ -508,7 +508,7 @@ public class ReportUtils {
   //
   public static String formatJSON(List<Map<String, Object>> json)
   {
-    String res = JSONUtilities.encodeArray(json).toString();    
+    String res = JSONUtilities.encodeArray(json).toString();
     return res;
   }
 

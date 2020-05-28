@@ -7,7 +7,6 @@
 package com.evolving.nglm.evolution.reports.offer;
 
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
-import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.*;
@@ -189,10 +188,7 @@ public class OfferReportDriver extends ReportDriver
                   }
               }
           }
-        String offerCharacteristics =  ReportUtils.formatJSON(outputJSON);
-        offerFields.put("offerCharacteristics", offerCharacteristics);
-        JSONArray res = JSONUtilities.encodeArray(outputJSON);      
-        
+        offerFields.put("offerCharacteristics", ReportUtils.formatJSON(outputJSON));
       }
       
       {
