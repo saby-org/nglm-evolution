@@ -180,9 +180,8 @@ public class OfferReportDriver extends ReportDriver
                             JSONObject offer2 = (JSONObject) obj3.get(i);
                             if (offer2 != null)
                               {
-                                String name = "" + offer2.get("catalogCharacteristicName");
-                                String value = "" + offer2.get("value");
-                                caracteristicsJSON.put(name, value);
+                                String name = "" + offer2.get("catalogCharacteristicName");                                
+                                caracteristicsJSON.put(name, offer2.get("value"));
                               }
                           }
                         outputJSON.add(caracteristicsJSON);
@@ -191,8 +190,7 @@ public class OfferReportDriver extends ReportDriver
               }
           }
         String offerCharacteristics =  ReportUtils.formatJSON(outputJSON);
-        String offerCharacteristicsFormatted =  offerCharacteristics.replaceAll("\\\\", "");
-        offerFields.put("offerCharacteristics", offerCharacteristicsFormatted);
+        offerFields.put("offerCharacteristics", offerCharacteristics);
         JSONArray res = JSONUtilities.encodeArray(outputJSON);      
         
       }
@@ -229,7 +227,7 @@ public class OfferReportDriver extends ReportDriver
                                         Map<String, Object> characteristicJSON = new HashMap<>();
                                         CatalogCharacteristic characteristicObj = (CatalogCharacteristic) characteristic;
                                         String name = characteristicObj.getCatalogCharacteristicName();
-                                        characteristicJSON.put(name, value+"");
+                                        characteristicJSON.put(name, value);
                                         characteristicsJSON.add(characteristicJSON);
                                       }
                                   }
@@ -267,7 +265,7 @@ public class OfferReportDriver extends ReportDriver
                       {
                         Map<String, Object> salesChannelJSON = new LinkedHashMap<>(); // to preserve order when displaying
                         SalesChannel salesChannel = (SalesChannel) guiManagedObject;
-                        salesChannelJSON.put("salesChannelName", salesChannel.getSalesChannelName());
+                        salesChannelJSON.put("salesChannelName", salesChannel.getGUIManagedObjectDisplay());
 
                         JSONObject price = (JSONObject) element.get("price");
                         if (price != null)
