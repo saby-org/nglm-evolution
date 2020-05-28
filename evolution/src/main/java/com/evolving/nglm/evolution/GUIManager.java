@@ -913,12 +913,6 @@ public class GUIManager
     };
     loyaltyProgramService.registerListener(dynamicEventDeclarationsListener);
 
-    try {
-      long waiting = 60;
-      log.info("Waiting " + waiting + " seconds for schema registry to start");
-      Thread.sleep(waiting*1_000l);
-    } catch (InterruptedException e) {}
-
     /*****************************************
     *
     *  clean payment means and deliverables (need to be done before initialProducts, ...)

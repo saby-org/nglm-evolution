@@ -248,6 +248,8 @@ public class Deployment
   private static int numberConcurrentVoucherAllocationToES;
   private static int liveVoucherIndexNumberOfReplicas;
   private static int liveVoucherIndexNumberOfShards;
+  private static int propensityReaderRefreshPeriodMs;
+  private static int propensityWriterRefreshPeriodMs;
 
   /*****************************************
    *
@@ -482,6 +484,8 @@ public class Deployment
   public static String getWeeklyReportCronEntryString() { return weeklyReportCronEntryString; }
   public static String getMonthlyReportCronEntryString() { return monthlyReportCronEntryString; }
   public static boolean getEnableEvaluateTargetRandomness() { return enableEvaluateTargetRandomness; }
+  public static int getPropensityReaderRefreshPeriodMs() { return propensityReaderRefreshPeriodMs; }
+  public static int getPropensityWriterRefreshPeriodMs() { return propensityWriterRefreshPeriodMs; }
   
   // addProfileCriterionField
   //
@@ -3281,14 +3285,31 @@ public class Deployment
         // an approximation of number of total concurrent process tyring to allocate Voucher in // to ES, but should not need to configure, algo should auto-adjust this
         numberConcurrentVoucherAllocationToES = JSONUtilities.decodeInteger(jsonRoot, "numberConcurrentVoucherAllocationToES",10);
         // the default number of replicas for voucher ES indices
-        liveVoucherIndexNumberOfReplicas = JSONUtilities.decodeInteger(jsonRoot, "liveVoucherIndexNumberOfReplicas",2);
+        liveVoucherIndexNumberOfReplicas = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "liveVoucherIndexNumberOfReplicas","1"));
         // the default number of shards for voucher ES indices
-        liveVoucherIndexNumberOfShards = JSONUtilities.decodeInteger(jsonRoot, "liveVoucherIndexNumberOfShards",1);
+        liveVoucherIndexNumberOfShards = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "liveVoucherIndexNumberOfShards","1"));
+      }
+      catch (JSONUtilitiesException|NumberFormatException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+      //
+      // conf for propensity service
+      //
+
+      try
+      {
+        // period in ms global propensity state will be read from zookeeper :
+        propensityReaderRefreshPeriodMs = JSONUtilities.decodeInteger(jsonRoot, "propensityReaderRefreshPeriodMs",10000);
+        // period in ms local propensity state will be write to zookeeper :
+        propensityWriterRefreshPeriodMs = JSONUtilities.decodeInteger(jsonRoot, "propensityWriterRefreshPeriodMs",10000);
       }
       catch (JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }
+
     }
 
   /*****************************************

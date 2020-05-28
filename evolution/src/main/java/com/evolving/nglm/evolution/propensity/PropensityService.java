@@ -20,9 +20,6 @@ public class PropensityService {
 
 	private static final Logger log = LoggerFactory.getLogger(PropensityService.class);
 
-	private static final long READER_PERIOD_MS = 5000L;
-	private static final long WRITER_PERIOD_MS = 5000L;
-
 	// key is offerID, only one map for the jvm should be better
 	private static volatile Map<String,PropensityOffer> propensities = new ConcurrentHashMap<>();
 	// to avoid to write to zookeeper if there is nothing to
@@ -58,22 +55,22 @@ public class PropensityService {
 				// then starting the background task that will handle synchro with zookeeper data
 
 				// the reader
-				log.info("PropensityService : scheduling reading from zookeeper every "+READER_PERIOD_MS+" ms");
+				log.info("PropensityService : scheduling reading from zookeeper every "+Deployment.getPropensityReaderRefreshPeriodMs()+" ms");
 				zookeeperDataSynchronizer.schedule(new TimerTask() {
 					@Override
 					public void run() {
 						updateDataFromZookeeper();
 					}
-				},READER_PERIOD_MS,READER_PERIOD_MS);
+				},Deployment.getPropensityReaderRefreshPeriodMs(),Deployment.getPropensityReaderRefreshPeriodMs());
 
 				// the writer
-				log.info("PropensityService : scheduling writing to zookeeper every "+WRITER_PERIOD_MS+" ms");
+				log.info("PropensityService : scheduling writing to zookeeper every "+Deployment.getPropensityWriterRefreshPeriodMs()+" ms");
 				zookeeperDataSynchronizer.schedule(new TimerTask() {
 					@Override
 					public void run() {
 						flushLocalDataToZookeeper();
 					}
-				},WRITER_PERIOD_MS,WRITER_PERIOD_MS);
+				},Deployment.getPropensityWriterRefreshPeriodMs(),Deployment.getPropensityWriterRefreshPeriodMs());
 
 				// add a shutdown hook to force a flush of data on stop
 				NGLMRuntime.addShutdownHook(notUsed-> {

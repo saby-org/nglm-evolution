@@ -31,16 +31,17 @@ public class ZookeeperEvolutionClient {
 	public ZookeeperEvolutionClient(){
 		onHoldLocks = new ConcurrentHashMap<>();
 		persistentNodesAlreadyCreated = new CopyOnWriteArrayList<>();
-		// just reset the "already exist" cache every 5 minutes, BUT DELETE SHOULD HAPPENS FROM THERE AS WELL TO KEEP CACHE OK
+		// just reset the "already exist" cache every minute (hope thats enough, it seems not possible to put a watcher only on delete event)
 		new Timer("zookeeper-nodes-cache-cleaner",true).schedule(new TimerTask() {
 			@Override
 			public void run() {
 				if(log.isDebugEnabled()) log.debug("zookeeper-nodes-cache-cleaner : clearing cache");
 				persistentNodesAlreadyCreated.clear();
 			}
-		},300000,300000);
+		},60000,60000);
 		// object hold a connected zookeeper client
 		ensureConnected();
+		createPersistentNodeIfNotExists(NODE.LOCKS.node());
 	}
 
 	// this is a closable resource as is the underlying zookeeper client

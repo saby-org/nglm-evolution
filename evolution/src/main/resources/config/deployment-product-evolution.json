@@ -468,6 +468,9 @@
   "propensityInitialisationPresentationThreshold"        : 100,
   "propensityInitialisationDurationInDaysThreshold"      : 90,
 
+  "propensityReaderRefreshPeriodMs" : 10000,
+  "propensityWriterRefreshPeriodMs" : 10000,
+
   "journeyDefaultTargetingWindowDuration"  : 100,
   "journeyDefaultTargetingWindowUnit"      : "year",
   "journeyDefaultTargetingWindowRoundUp"   : false,
