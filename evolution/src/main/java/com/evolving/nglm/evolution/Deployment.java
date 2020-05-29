@@ -242,7 +242,8 @@ public class Deployment
   private static String weeklyReportCronEntryString;
   private static String monthlyReportCronEntryString;
   private static boolean enableEvaluateTargetRandomness;
-
+  private static boolean bypassJourneyTrafficEngine; // @rl Hack. TODO: remove later
+  
 
   // conf for voucher
   // we won't deliver a voucher that expiry in lest than X hours from now :
@@ -497,6 +498,7 @@ public class Deployment
   public static String getWeeklyReportCronEntryString() { return weeklyReportCronEntryString; }
   public static String getMonthlyReportCronEntryString() { return monthlyReportCronEntryString; }
   public static boolean getEnableEvaluateTargetRandomness() { return enableEvaluateTargetRandomness; }
+  public static boolean getBypassJourneyTrafficEngine() { return bypassJourneyTrafficEngine; }
   
   // addProfileCriterionField
   //
@@ -3307,13 +3309,28 @@ public class Deployment
       //
 
       try
-      {
-        enableEvaluateTargetRandomness = JSONUtilities.decodeBoolean(jsonRoot, "enableEvaluateTargetRandomness", Boolean.FALSE);
-      }
+        {
+          enableEvaluateTargetRandomness = JSONUtilities.decodeBoolean(jsonRoot, "enableEvaluateTargetRandomness", Boolean.FALSE);
+        }
       catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+
+      //
+      //  bypassJourneyTrafficEngine
+      //  @rl Hack TODO remove later
+      //  default to true
+
+      try
+        {
+          bypassJourneyTrafficEngine = JSONUtilities.decodeBoolean(jsonRoot, "bypassJourneyTrafficEngine", Boolean.TRUE);
+        }
+        catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
     }
 
   /*****************************************

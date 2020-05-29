@@ -123,6 +123,8 @@ import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTa
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
@@ -579,7 +581,18 @@ public class GUIManager
   private GUIManagerBaseManagement guiManagerBaseManagement;
   private GUIManagerLoyaltyReporting guiManagerLoyaltyReporting;
   private GUIManagerGeneral guiManagerGeneral;
-
+  
+  //
+  //  properties
+  //
+  
+  /**
+   * @rl Hack while refactoring journeytraffic engine. 
+   * If activated, we will bypass journeytraffic engine 
+   * and use Elasticsearch for retrieving traffic data.
+   */
+  protected boolean bypassJourneyTrafficEngine;
+  
   /*****************************************
   *
   *  epochServer
@@ -675,7 +688,9 @@ public class GUIManager
     String segmentContactPolicyTopic = Deployment.getSegmentContactPolicyTopic();
     String dynamicEventDeclarationsTopic = Deployment.getDynamicEventDeclarationsTopic();
     String criterionFieldAvailableValuesTopic = Deployment.getCriterionFieldAvailableValuesTopic();
-    getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
+    
+    this.getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
+    this.bypassJourneyTrafficEngine = Deployment.getBypassJourneyTrafficEngine();
 
     //
     //  log
@@ -4753,12 +4768,40 @@ public class GUIManager
         if (journey.getGUIManagedObjectType().equals(objectType) && (! externalOnly || ! journey.getInternalOnly()))
           {
             JSONObject journeyInfo = journeyService.generateResponseJSON(journey, fullDetails, now);
-            int subscriberCount = 0;
-            JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journey.getGUIManagedObjectID());
-            if (journeyTrafficHistory != null && journeyTrafficHistory.getCurrentData() != null && journeyTrafficHistory.getCurrentData().getGlobal() != null)
-              {
-                subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberInflow();
+            long subscriberCount = 0;
+            String journeyID = journey.getGUIManagedObjectID();
+
+            //
+            //  retrieve from Elasticsearch if by pass is activated
+            // 
+            
+            boolean bypassSuccess = bypassJourneyTrafficEngine;
+            if(bypassJourneyTrafficEngine) {
+              try {
+                ElasticsearchClientAPI client = new ElasticsearchClientAPI("",0); // @rl deprecated use, change later
+                client.setConnection(this.elasticsearch);
+                Long count = client.getJourneySubscriberCount(journeyID);
+                subscriberCount = (count != null)? count : 0;
               }
+              catch (ElasticsearchClientException e) {
+                log.error(e.getMessage());
+                log.info("Elasticsearch request failed, switch back to journeytraffic engine for this one.");
+                bypassSuccess = false;
+              }
+            }
+            
+            //
+            //  retrieve from JourneyTraffic Engine if by pass is disabled or if it failed !
+            // 
+            
+            if(!bypassSuccess) {
+              JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
+              if (journeyTrafficHistory != null && journeyTrafficHistory.getCurrentData() != null && journeyTrafficHistory.getCurrentData().getGlobal() != null)
+                {
+                  subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberInflow();
+                }
+            }
+            
             journeyInfo.put("subscriberCount", subscriberCount);
             journeys.add(journeyInfo);
           }
@@ -6040,12 +6083,12 @@ public class GUIManager
         journeyID = JSONUtilities.decodeString(jsonRoot, "journeyID", true);
       }
     
-
     /*****************************************
     *
     *  retrieve corresponding Journey & JourneyTrafficHistory
     *
     *****************************************/
+    
     Map<String,Object> result = new HashMap<String,Object>();
 
     //
@@ -6056,21 +6099,52 @@ public class GUIManager
     if (journey instanceof Journey) 
       {
         Set<String> nodeIDs = ((Journey) journey).getJourneyNodes().keySet();
-        JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
-        for (String key : nodeIDs)
-        {
-          int subscriberCount = 0;
-          
-          if(journeyTrafficHistory != null)
-            {
-              Map<String, SubscriberTraffic> byNodeMap = journeyTrafficHistory.getCurrentData().getByNode();
-              if(byNodeMap.get(key) != null)
-                {
-                  subscriberCount = byNodeMap.get(key).getSubscriberCount();
-                }
-            }
+        
+        //
+        //  retrieve from Elasticsearch if by pass is activated
+        // 
+        
+        boolean bypassSuccess = bypassJourneyTrafficEngine;
+        if(bypassJourneyTrafficEngine) {
+          try {
+            ElasticsearchClientAPI client = new ElasticsearchClientAPI("",0); // @rl deprecated use, change later
+            client.setConnection(this.elasticsearch);
+            Map<String, Long> esMap = client.getJourneyNodeCount(journeyID);
+            for (String key : nodeIDs)
+              {
+                Long count = esMap.get(key);
+                result.put(key, (count != null)? count : 0);
+              }
+          }
+          catch (ElasticsearchClientException e) {
+            log.error(e.getMessage());
+            log.info("Elasticsearch request failed, switch back to journeytraffic engine for this one.");
+            result = new HashMap<String,Object>();
+            bypassSuccess = false;
+          }
+        }
+        
+        //
+        //  retrieve from JourneyTraffic Engine if by pass is disabled or if it failed !
+        // 
+        
+        if(!bypassSuccess) {
+          JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
+          for (String key : nodeIDs)
+          {
+            int subscriberCount = 0;
             
-          result.put(key, subscriberCount);
+            if(journeyTrafficHistory != null)
+              {
+                Map<String, SubscriberTraffic> byNodeMap = journeyTrafficHistory.getCurrentData().getByNode();
+                if(byNodeMap.get(key) != null)
+                  {
+                    subscriberCount = byNodeMap.get(key).getSubscriberCount();
+                  }
+              }
+              
+            result.put(key, subscriberCount);
+          }
         }
       }
     else
