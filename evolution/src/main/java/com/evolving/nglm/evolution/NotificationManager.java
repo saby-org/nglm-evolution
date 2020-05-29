@@ -208,7 +208,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       {
         SchemaBuilder schemaBuilder = SchemaBuilder.struct();
         schemaBuilder.name("service_notification_request");
-        schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 2));
+        schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 3));
         for (Field field : commonSchema().fields())
           schemaBuilder.field(field.name(), field.schema());
         schemaBuilder.field("destination", Schema.STRING_SCHEMA);
@@ -219,7 +219,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
         schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
         schemaBuilder.field("channelID", Schema.STRING_SCHEMA);
-        schemaBuilder.field("notificationParameters", ParameterMap.schema());
+        schemaBuilder.field("notificationParameters", ParameterMap.serde().optionalSchema());
         
         schema = schemaBuilder.build();
       };
@@ -532,7 +532,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       struct.put("returnCode", notificationRequest.getReturnCode());
       struct.put("returnCodeDetails", notificationRequest.getReturnCodeDetails());
       struct.put("channelID", notificationRequest.getChannelID());
-      struct.put("notificationParameters", ParameterMap.pack(notificationRequest.getNotificationParameters()));
+      struct.put("notificationParameters", ParameterMap.serde().packOptional(notificationRequest.getNotificationParameters()));
       return struct;
     }
 
@@ -574,7 +574,16 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       Integer returnCode = valueStruct.getInt32("returnCode");
       String returnCodeDetails = valueStruct.getString("returnCodeDetails");
       String channelID = valueStruct.getString("channelID");
-      ParameterMap notificationParameters =  ParameterMap.unpack(new SchemaAndValue(schema.field("notificationParameters").schema(), valueStruct.get("notificationParameters")));
+      ParameterMap notificationParameters = null;
+      if(schemaVersion < 3)
+        {
+          notificationParameters = ParameterMap.unpack(new SchemaAndValue(schema.field("notificationParameters").schema(), valueStruct.get("notificationParameters")));
+        }
+      else 
+        {
+          // >=3
+          notificationParameters = ParameterMap.serde().unpackOptional(new SchemaAndValue(schema.field("notificationParameters").schema(), valueStruct.get("notificationParameters")));
+      }
       MessageStatus status = MessageStatus.fromReturnCode(returnCode);
 
       //
