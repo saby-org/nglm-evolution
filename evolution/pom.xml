@@ -58,6 +58,9 @@
 
     <!-- lag exporter -->
     <lagexporter.version>0.4.0</lagexporter.version>
+
+    <!-- Prometheus -->
+    <evolving.prometheus.version>2.14.0_01-tmp</evolving.prometheus.version>
     
     <!-- core-common-build -->
     <common.build.phase.proguard>package</common.build.phase.proguard>
