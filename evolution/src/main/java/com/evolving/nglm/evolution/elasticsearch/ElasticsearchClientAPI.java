@@ -7,6 +7,7 @@ import java.util.Map;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -171,8 +172,8 @@ public class ElasticsearchClientAPI
       //
       // Check search response
       //
-      if (countResponse.getFailedShards() > 0
-          || countResponse.status() != RestStatus.OK) {
+      // @rl TODO checking status seems useless because it raises exception
+      if (countResponse.getFailedShards() > 0) {
         throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
       }
 
@@ -183,6 +184,15 @@ public class ElasticsearchClientAPI
     }
     catch (ElasticsearchClientException e) { // forward
       throw e;
+    }
+    catch (ElasticsearchStatusException e)
+    {
+      if(e.status() == RestStatus.NOT_FOUND) { // index not found
+        log.debug(e.getMessage());
+        return 0;
+      }
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
     }
     catch (ElasticsearchException e) {
       e.printStackTrace();
@@ -219,9 +229,9 @@ public class ElasticsearchClientAPI
       //
       // Check search response
       //
+      // @rl TODO checking status seems useless because it raises exception
       if (searchResponse.isTimedOut()
-          || searchResponse.getFailedShards() > 0
-          || searchResponse.status() != RestStatus.OK) {
+          || searchResponse.getFailedShards() > 0) {
         throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
       }
       
@@ -245,6 +255,15 @@ public class ElasticsearchClientAPI
     }
     catch (ElasticsearchClientException e) { // forward
       throw e;
+    }
+    catch (ElasticsearchStatusException e)
+    {
+      if(e.status() == RestStatus.NOT_FOUND) { // index not found
+        log.debug(e.getMessage());
+        return new HashMap<String, Long>();
+      }
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
     }
     catch (ElasticsearchException e) {
       e.printStackTrace();
@@ -281,9 +300,13 @@ public class ElasticsearchClientAPI
       //
       // Check search response
       //
+      if(searchResponse.status() == RestStatus.NOT_FOUND) {
+        return result; // empty map
+      }
+
+      // @rl TODO checking status seems useless because it raises exception
       if (searchResponse.isTimedOut()
-          || searchResponse.getFailedShards() > 0
-          || searchResponse.status() != RestStatus.OK) {
+          || searchResponse.getFailedShards() > 0) {
         throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
       }
       
@@ -307,6 +330,15 @@ public class ElasticsearchClientAPI
     }
     catch (ElasticsearchClientException e) { // forward
       throw e;
+    }
+    catch (ElasticsearchStatusException e)
+    {
+      if(e.status() == RestStatus.NOT_FOUND) { // index not found
+        log.debug(e.getMessage());
+        return new HashMap<String, Long>();
+      }
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
     }
     catch (ElasticsearchException e) {
       e.printStackTrace();

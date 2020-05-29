@@ -870,7 +870,7 @@ public class GUIManager
     subscriberProfileService = new EngineSubscriberProfileService(subscriberProfileEndpoints);
     subscriberIDService = new SubscriberIDService(redisServer, "guimanager-" + apiProcessKey);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
-    journeyTrafficReader = ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", apiProcessKey, bootstrapServers, journeyTrafficChangeLogTopic, JourneyTrafficHistory::unpack);
+    journeyTrafficReader = (bypassJourneyTrafficEngine)? null : ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", apiProcessKey, bootstrapServers, journeyTrafficChangeLogTopic, JourneyTrafficHistory::unpack);
     renamedProfileCriterionFieldReader = ReferenceDataReader.<String,RenamedProfileCriterionField>startReader("guimanager-renamedprofilecriterionfield", apiProcessKey, bootstrapServers, renamedProfileCriterionFieldTopic, RenamedProfileCriterionField::unpack);
     propensityDataReader = ReferenceDataReader.<PropensityKey, PropensityState>startReader("guimanager-propensitystate", "guimanager-propensityreader-"+apiProcessKey, bootstrapServers, Deployment.getPropensityLogTopic(), PropensityState::unpack);
     deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice-" + apiProcessKey, deliverableSourceTopic);
@@ -4772,10 +4772,8 @@ public class GUIManager
             String journeyID = journey.getGUIManagedObjectID();
 
             //
-            //  retrieve from Elasticsearch if by pass is activated
+            //  retrieve from Elasticsearch if by pass is activated, JourneyTraffic Engine otherwise
             // 
-            
-            boolean bypassSuccess = bypassJourneyTrafficEngine;
             if(bypassJourneyTrafficEngine) {
               try {
                 ElasticsearchClientAPI client = new ElasticsearchClientAPI("",0); // @rl deprecated use, change later
@@ -4784,17 +4782,13 @@ public class GUIManager
                 subscriberCount = (count != null)? count : 0;
               }
               catch (ElasticsearchClientException e) {
-                log.error(e.getMessage());
-                log.info("Elasticsearch request failed, switch back to journeytraffic engine for this one.");
-                bypassSuccess = false;
+                // Log
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
               }
             }
-            
-            //
-            //  retrieve from JourneyTraffic Engine if by pass is disabled or if it failed !
-            // 
-            
-            if(!bypassSuccess) {
+            else {
               JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
               if (journeyTrafficHistory != null && journeyTrafficHistory.getCurrentData() != null && journeyTrafficHistory.getCurrentData().getGlobal() != null)
                 {
@@ -6101,34 +6095,32 @@ public class GUIManager
         Set<String> nodeIDs = ((Journey) journey).getJourneyNodes().keySet();
         
         //
-        //  retrieve from Elasticsearch if by pass is activated
+        //  retrieve from Elasticsearch if by pass is activated, JourneyTraffic Engine otherwise
         // 
         
-        boolean bypassSuccess = bypassJourneyTrafficEngine;
         if(bypassJourneyTrafficEngine) {
           try {
             ElasticsearchClientAPI client = new ElasticsearchClientAPI("",0); // @rl deprecated use, change later
             client.setConnection(this.elasticsearch);
             Map<String, Long> esMap = client.getJourneyNodeCount(journeyID);
-            for (String key : nodeIDs)
-              {
-                Long count = esMap.get(key);
-                result.put(key, (count != null)? count : 0);
-              }
+            for (String key : nodeIDs) {
+              Long count = esMap.get(key);
+              result.put(key, (count != null)? count : 0);
+            }
           }
           catch (ElasticsearchClientException e) {
-            log.error(e.getMessage());
-            log.info("Elasticsearch request failed, switch back to journeytraffic engine for this one.");
-            result = new HashMap<String,Object>();
-            bypassSuccess = false;
+            // Log
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+            
+            // Response
+            response.put("responseCode", RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+            response.put("responseMessage", e.getMessage());
+            return JSONUtilities.encodeObject(response);
           }
-        }
-        
-        //
-        //  retrieve from JourneyTraffic Engine if by pass is disabled or if it failed !
-        // 
-        
-        if(!bypassSuccess) {
+        } 
+        else {
           JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
           for (String key : nodeIDs)
           {
