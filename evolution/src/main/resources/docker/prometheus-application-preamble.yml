@@ -1,5 +1,5 @@
 prometheus-application:
-  image: evolving/ev-prometheus:0.0.1-tmp
+  image: evolving/ev-prometheus:${evolving.prometheus.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
     MONITORING_HOST: "<_MONITORING_HOST_>"

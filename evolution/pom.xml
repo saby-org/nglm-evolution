@@ -231,8 +231,6 @@
                   <directory>src/main/resources</directory>
                   <includes>
                     <include>bin/evolution-*.sh</include>
-                    <include>bin/prometheus-application-run-preamble.sh</include>
-                    <include>bin/prometheus-application-run-postamble.sh</include>
                     <include>bin/evolutionengine-run.sh</include>
                     <include>bin/journeytrafficengine-run.sh</include>
                     <include>bin/subscribergroup-run.sh</include>
