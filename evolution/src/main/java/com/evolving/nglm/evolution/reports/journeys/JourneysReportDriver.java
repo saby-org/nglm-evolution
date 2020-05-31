@@ -34,7 +34,7 @@ public class JourneysReportDriver extends ReportDriver{
         });         
         try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) {}
         
-        log.debug("PHASE 3 : write csv file ");
+        log.debug("PHASE 2 : write csv file ");
         JourneysReportCsvWriter.main(new String[]{
                 kafka, topic1, csvFilename
         });

@@ -809,7 +809,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     if (pushRequest != null)
       {
         pushRequest.setMessageStatus(MessageStatus.fromReturnCode(result));
-        pushRequest.setDeliveryStatus(getMessageStatus(pushRequest.getMessageStatus()));
+        pushRequest.setDeliveryStatus(getDeliveryStatus(pushRequest.getMessageStatus()));
         pushRequest.setDeliveryDate(SystemTime.getCurrentTime());
         completeRequest(pushRequest);
       }

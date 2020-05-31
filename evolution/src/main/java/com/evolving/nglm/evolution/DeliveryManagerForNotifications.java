@@ -21,25 +21,27 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
 
   public enum MessageStatus
   {
-    PENDING(10), 
-    SENT(1), 
-    NO_CUSTOMER_LANGUAGE(701), 
-    NO_CUSTOMER_CHANNEL(702), 
-    DELIVERED(0), 
-    EXPIRED(707), 
-    ERROR(706), 
-    UNDELIVERABLE(703), 
-    INVALID(704), 
-    QUEUE_FULL(705), 
-    RESCHEDULE(709), 
-    THROTTLING(23), 
-    UNKNOWN(999);
+    PENDING(10, DeliveryStatus.Pending), 
+    SENT(1, DeliveryStatus.Delivered), 
+    NO_CUSTOMER_LANGUAGE(701, DeliveryStatus.Failed), 
+    NO_CUSTOMER_CHANNEL(702, DeliveryStatus.Failed), 
+    DELIVERED(0, DeliveryStatus.Delivered), 
+    EXPIRED(707, DeliveryStatus.Failed), 
+    ERROR(706, DeliveryStatus.Failed), 
+    UNDELIVERABLE(703, DeliveryStatus.Failed), 
+    INVALID(704, DeliveryStatus.Failed), 
+    QUEUE_FULL(705, DeliveryStatus.Failed), 
+    RESCHEDULE(709, DeliveryStatus.Reschedule), 
+    THROTTLING(23, DeliveryStatus.Failed), 
+    UNKNOWN(999, DeliveryStatus.Unknown);
    
     private Integer returncode;
+    private DeliveryStatus associatedDeliveryStatus;
 
-    private MessageStatus(Integer returncode)
+    private MessageStatus(Integer returncode, DeliveryStatus associatedDeliveryStatus)
       {
         this.returncode = returncode;
+        this.associatedDeliveryStatus = associatedDeliveryStatus;
       }
 
     public Integer getReturnCode()
@@ -64,32 +66,10 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
         }
       return UNKNOWN;
     }
-  }
-
-  /*****************************************
-   *
-   * conversion method
-   *
-   *****************************************/
-
-  public DeliveryStatus getMessageStatus(MessageStatus status)
-  {
-    switch (status)
+    
+    public DeliveryStatus getAssociatedDeliveryStatus()
       {
-      case PENDING:
-        return DeliveryStatus.Pending;
-      case SENT:
-        return DeliveryStatus.Delivered;
-      case RESCHEDULE:
-        return DeliveryStatus.Reschedule;
-      case NO_CUSTOMER_LANGUAGE:
-      case NO_CUSTOMER_CHANNEL:
-      case ERROR:
-      case UNDELIVERABLE:
-      case INVALID:
-      case QUEUE_FULL:
-      default:
-        return DeliveryStatus.Failed;
+        return associatedDeliveryStatus;
       }
   }
 
@@ -98,6 +78,7 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
   private HashMap<String, NotificationStatistics> statsPerChannels = new HashMap<>();
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private CommunicationChannelBlackoutService blackoutService;
+
 
   /*****************************************
    *
@@ -217,10 +198,15 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
       {
         log.debug("SMSNotificationManager.processCorrelatorUpdate(deliveryRequest=" + deliveryRequest.toString() + ", correlatorUpdate=" + correlatorUpdate.toJSONString() + ")");
         notificationRequest.setMessageStatus(MessageStatus.fromReturnCode(result));
-        notificationRequest.setDeliveryStatus(getMessageStatus(notificationRequest.getMessageStatus()));
+        notificationRequest.setDeliveryStatus(getDeliveryStatus(notificationRequest.getMessageStatus()));
         notificationRequest.setDeliveryDate(SystemTime.getCurrentTime());
         completeDeliveryRequest((DeliveryRequest) notificationRequest);
       }
+  }
+  
+  public DeliveryStatus getDeliveryStatus(MessageStatus messageStatus)
+  {
+    return messageStatus != null ? messageStatus.getAssociatedDeliveryStatus() : DeliveryStatus.Unknown;
   }
 
 }

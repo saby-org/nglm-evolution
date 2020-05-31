@@ -772,7 +772,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     if (mailRequest != null)
       {
         mailRequest.setMessageStatus(MessageStatus.fromReturnCode(result));
-        mailRequest.setDeliveryStatus(getMessageStatus(mailRequest.getMessageStatus()));
+        mailRequest.setDeliveryStatus(getDeliveryStatus(mailRequest.getMessageStatus()));
         mailRequest.setDeliveryDate(SystemTime.getCurrentTime());
         completeRequest(mailRequest);
       }

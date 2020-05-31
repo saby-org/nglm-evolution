@@ -1447,7 +1447,7 @@ public abstract class DeliveryManager
 
             DeliveryRequest deliveryRequestOnScheduler = null;
             boolean waiting = false;
-            boolean rescheduled = (deliveryRequest.getDeliveryStatus().equals(DeliveryStatus.Reschedule));
+            boolean rescheduled = (deliveryRequest.getDeliveryStatus() != null && deliveryRequest.getDeliveryStatus().equals(DeliveryStatus.Reschedule));
             if (waitingForAcknowledgement.containsKey(deliveryRequest.getDeliveryRequestID()))
               {
                 deliveryRequestOnScheduler = waitingForAcknowledgement.get(deliveryRequest.getDeliveryRequestID());
