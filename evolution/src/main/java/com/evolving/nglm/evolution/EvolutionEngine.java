@@ -2010,7 +2010,7 @@ public class EvolutionEngine
       {
         SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
         evolutionEngineStatistics.updateSubscriberStateSize(subscriberState.getKafkaRepresentation());
-        if (subscriberState.getKafkaRepresentation().length > 1000000)
+        if (subscriberState.getKafkaRepresentation().length > 950000)
           {
             log.error("StateStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberState.getKafkaRepresentation().length);
             cleanSubscriberState(currentSubscriberState, now);
