@@ -54,13 +54,6 @@ scrape_configs:
     static_configs:
       - targets: [<_JOURNEYTRAFFICENGINE_PROMETHEUS_>]
 
-  # propensityengine job
-  - job_name: 'propensityengine'
-
-    # main config
-    static_configs:
-      - targets: [<_PROPENSITYENGINE_PROMETHEUS_>]
-
   # ucgengine job
   - job_name: 'ucgengine'
 

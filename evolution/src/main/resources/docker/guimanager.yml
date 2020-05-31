@@ -26,7 +26,7 @@ guimanager:
     JAVA_DEBUG_OPTS: -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=<_GUIMANAGER_DEBUG_PORT_>,suspend=n
     KAFKA_HEAP_OPTS: <_GUIMANAGER_HEAP_OPTS_>
     KAFKA_LOG4J_OPTS: -Dlog4j.configuration=file:/app/config/log4j-guimanager.xml
-    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_GUIMANAGER_MONITORING_PORT_>:/app/config/guimanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_>  -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> -Dnglm.license.nodeid=<_GUIMANAGER_HOST_>
+    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_GUIMANAGER_MONITORING_PORT_>:/app/config/guimanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_>  -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> -Dnglm.license.nodeid=<_GUIMANAGER_HOST_> -Devolutionengine.streamthreads=<_EVOLUTIONENGINE_STREAMTHREADS_>
     ENTRYPOINT: guimanager
   deploy: 
     restart_policy:

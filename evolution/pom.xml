@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>1.4.3_notif-SNAPSHOT</version>
+  <version>release-1.4.3_2-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -253,7 +253,6 @@
                     <include>config/log4j-evolution.properties</include>
                     <include>config/evolutionengine_jmx.yml</include>
                     <include>config/journeytrafficengine_jmx.yml</include>
-                    <include>config/propensityengine_jmx.yml</include>
                     <include>config/ucgengine_jmx.yml</include>
                     <include>config/infulfillmentmanager_jmx.yml</include>
                     <include>config/emptyfulfillmentmanager_jmx.yml</include>
@@ -284,8 +283,6 @@
                     <include>docker/evolutionengine.yml</include>
                     <include>docker/journeytrafficengine/*</include>
                     <include>docker/journeytrafficengine.yml</include>
-                    <include>docker/propensityengine/*</include>
-                    <include>docker/propensityengine.yml</include>
                     <include>docker/ucgengine/*</include>
                     <include>docker/ucgengine.yml</include>
                     <include>docker/infulfillmentmanager/*</include>
@@ -336,7 +333,6 @@
                     <exclude>docker/dnboproxy.yml</exclude>
                     <exclude>docker/evolutionengine.yml</exclude>
                     <exclude>docker/journeytrafficengine.yml</exclude>
-                    <exclude>docker/propensityengine.yml</exclude>
                     <exclude>docker/ucgengine.yml</exclude>
                     <exclude>docker/infulfillmentmanager.yml</exclude>
                     <exclude>docker/emptyfulfillmentmanager.yml</exclude>
