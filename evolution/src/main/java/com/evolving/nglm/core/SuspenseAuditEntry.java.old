@@ -1,0 +1,192 @@
+/*****************************************************************************
+*
+*  SuspenseAuditEntry.java
+*
+*****************************************************************************/
+
+package com.evolving.nglm.core;
+
+import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaAndValue;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Timestamp;
+
+import java.util.Date;
+
+public class SuspenseAuditEntry
+{
+  /*****************************************
+  *
+  *  enum
+  *
+  *****************************************/
+  
+  //
+  //  SuspenseProcessResolution
+  //
+  
+  public enum SuspenseProcessResolution
+  {
+    Success("success", "Success"),
+    Resubmitted("resubmitted", "Resubmitted"),
+    Failed("failed", "failed"),
+    Abandoned("abandoned", "Abandoned"),
+    Unknown("unknown", "unknown");
+    private String externalRepresentation;
+    private String displayRepresentation;
+    private String getExternalRepresentation() { return externalRepresentation; }
+    public String getDisplayRepresentation() { return displayRepresentation; }
+    private SuspenseProcessResolution(String externalRepresentation, String displayRepresentation) { this.externalRepresentation = externalRepresentation; this.displayRepresentation = displayRepresentation; }
+    public static SuspenseProcessResolution fromExternalRepresentation(String externalRepresentation) { for (SuspenseProcessResolution enumeratedValue : SuspenseProcessResolution.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return null; }
+  }
+
+  /*****************************************
+  *
+  *  schema
+  *
+  *****************************************/
+
+  //
+  //  schema
+  //
+
+  private static Schema schema = null;
+  static
+  {
+    SchemaBuilder schemaBuilder = SchemaBuilder.struct();
+    schemaBuilder.name("suspense_audit");
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.field("resolution", Schema.STRING_SCHEMA);
+    schemaBuilder.field("inputSource", Schema.STRING_SCHEMA);
+    schemaBuilder.field("inputRecord", Schema.STRING_SCHEMA);
+    schemaBuilder.field("destinationTopic", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("reprocessCount", Schema.INT32_SCHEMA);
+    schemaBuilder.field("auditDate", Timestamp.builder().optional().schema());
+    schemaBuilder.field("note", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("eventReference", Schema.STRING_SCHEMA);
+    schema = schemaBuilder.build();
+  };
+
+  //
+  //  serde
+  //
+
+  private static ConnectSerde<SuspenseAuditEntry> serde = new ConnectSerde<SuspenseAuditEntry>(schema, false, SuspenseAuditEntry.class, SuspenseAuditEntry::pack, SuspenseAuditEntry::unpack);
+
+  //
+  //  accessor
+  //
+
+  public static Schema schema() { return schema; }
+  public static ConnectSerde<SuspenseAuditEntry> serde() { return serde; }
+
+  /****************************************
+  *
+  *  data
+  *
+  ****************************************/
+
+  private SuspenseProcessResolution resolution;
+  private String eventReference;
+  private String inputSource;
+  private String inputRecord;
+  private String destinationTopic;
+  private int reprocessCount;
+  private Date auditDate;
+  private String note;
+
+  /****************************************
+  *
+  *  accessors
+  *
+  ****************************************/
+
+  public SuspenseProcessResolution getResolution() { return resolution; }
+  public String getEventReference() { return eventReference; }
+  public String getInputSource() { return inputSource; }
+  public String getInputRecord() { return inputRecord; }
+  public String getDestinationTopic() { return destinationTopic; }
+  public int getReprocessCount() { return reprocessCount; }
+  public Date getAuditDate() { return auditDate; }
+  public String getNote() { return note; }
+
+  /*****************************************
+  *
+  *  constructor
+  *
+  *****************************************/
+
+  public SuspenseAuditEntry(SuspenseProcessResolution resolution, String eventReference, String inputSource, String inputRecord, String destinationTopic, int reprocessCount, Date auditDate, String note)
+  {
+    this.resolution = resolution;
+    this.eventReference = eventReference;
+    this.inputSource = inputSource;
+    this.inputRecord = inputRecord;
+    this.destinationTopic = destinationTopic;
+    this.reprocessCount = reprocessCount;
+    this.auditDate = auditDate;
+    this.note = note;
+  }
+
+  /*****************************************
+  *
+  *  pack
+  *
+  *****************************************/
+
+  public static Object pack(Object value)
+  {
+    SuspenseAuditEntry suspenseAuditEntry = (SuspenseAuditEntry) value;
+    Struct struct = new Struct(schema);
+    struct.put("resolution", suspenseAuditEntry.getResolution().getExternalRepresentation());
+    struct.put("eventReference", suspenseAuditEntry.getEventReference());
+    struct.put("inputSource", suspenseAuditEntry.getInputSource());
+    struct.put("inputRecord", suspenseAuditEntry.getInputRecord());
+    struct.put("destinationTopic", suspenseAuditEntry.getDestinationTopic());
+    struct.put("reprocessCount", suspenseAuditEntry.getReprocessCount());
+    struct.put("auditDate", suspenseAuditEntry.getAuditDate());
+    struct.put("note", suspenseAuditEntry.getNote());
+    return struct;
+  }
+
+  /*****************************************
+  *
+  *  unpack
+  *
+  *****************************************/
+
+  public static SuspenseAuditEntry unpack(SchemaAndValue schemaAndValue)
+  {
+    //
+    //  data
+    //
+
+    Schema schema = schemaAndValue.schema();
+    Object value = schemaAndValue.value();
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+
+    //
+    //  unpack
+    //
+
+    Struct valueStruct = (Struct) value;
+    SuspenseProcessResolution resolution = SuspenseProcessResolution.fromExternalRepresentation(valueStruct.getString("resolution"));
+    String eventReference = valueStruct.getString("eventReference");
+    String inputSource = valueStruct.getString("inputSource");
+    String inputRecord = valueStruct.getString("inputRecord");
+    String destinationTopic = valueStruct.getString("destinationTopic");
+    int reprocessCount = valueStruct.getInt32("reprocessCount");
+    Date auditDate = (Date) valueStruct.get("auditDate");
+    String note = valueStruct.getString("note");
+    
+    //
+    //  return
+    //
+
+    return new SuspenseAuditEntry(resolution, eventReference, inputSource, inputRecord, destinationTopic, reprocessCount, auditDate, note);
+  }
+}

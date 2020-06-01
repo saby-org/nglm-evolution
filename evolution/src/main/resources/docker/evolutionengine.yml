@@ -19,12 +19,14 @@ evolutionengine-<_KEY_>:
     INTERNAL_PORT: <_INTERNAL_PORT_>
     KAFKA_REPLICATION_FACTOR: <_KAFKA_REPLICATION_FACTOR_>
     KAFKA_STREAMS_STANDBY_REPLICAS: <_KAFKA_STREAMS_STANDBY_REPLICAS_>
-    EVOLUTIONENGINE_STREAMTHREADS: <_EVOLUTIONENGINE_STREAMTHREADS_>
+    EVOLUTIONENGINE_IN_MEMORY_STATE_STORES: <_EVOLUTIONENGINE_IN_MEMORY_STATE_STORES_>
+    EVOLUTIONENGINE_ROCKSDB_CACHE_MB: <_EVOLUTIONENGINE_ROCKSDB_CACHE_MB_>
+    EVOLUTIONENGINE_ROCKSDB_MEMTABLE_MB: <_EVOLUTIONENGINE_ROCKSDB_MEMTABLE_MB_>
     KEY: "<_KEY_>"
     KAFKA_DEBUG: <_EVOLUTIONENGINE_DEBUG_>
     JAVA_DEBUG_OPTS: -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=<_DEBUG_PORT_>,suspend=n
     KAFKA_HEAP_OPTS: <_EVOLUTIONENGINE_HEAP_OPTS_>
-    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_MONITORING_PORT_>:/app/config/evolutionengine_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_> -Dredis.password=<_REDIS_PASSWORD_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> -Duse.regression=<_USE_REGRESSION_> 
+    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_MONITORING_PORT_>:/app/config/evolutionengine_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_> -Dredis.password=<_REDIS_PASSWORD_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> -Duse.regression=<_USE_REGRESSION_> -Devolutionengine.streamthreads=<_EVOLUTIONENGINE_STREAMTHREADS_>
     KAFKA_LOG4J_OPTS: -Dlog4j.configuration=file:/app/config/log4j-evolutionengine.xml
     ENTRYPOINT: evolutionengine
   volumes:

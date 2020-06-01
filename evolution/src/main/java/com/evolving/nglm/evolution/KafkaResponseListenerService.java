@@ -95,13 +95,25 @@ public class KafkaResponseListenerService<K,V> {
         }catch (WakeupException e){
         }
       }
-      for(PartitionInfo partitionInfo:kafkaConsumer.partitionsFor(topic)){
+      for(PartitionInfo partitionInfo:partitionInfos){
         partitions.add(new TopicPartition(topic, partitionInfo.partition()));
       }
       kafkaConsumer.assign(partitions);
     }
 
     while(isRunning){
+
+      // skip kafka topic read if no job waiting
+      synchronized (waitingForResponse){
+        if(waitingForResponse.isEmpty()){
+          kafkaConsumer.seekToEnd(kafkaConsumer.assignment());
+          if(log.isDebugEnabled()) log.debug("KafkaResponseListenerService.runResponseCheck : no waiting jobs, not polling records from "+topic);
+          try {
+            Thread.sleep(50);// a release CPU
+          } catch (InterruptedException e) {}
+          continue;
+        }
+      }
 
       ConsumerRecords<byte[],byte[]> consumerRecords = kafkaConsumer.poll(5000);
 
@@ -137,7 +149,7 @@ public class KafkaResponseListenerService<K,V> {
       if(waitingForResponse.size()>1000) log.warn("KafkaResponseListenerService.runResponseCheck : check me, seems more than 1000 waiting requests");
 
     }
-    log.info("KafkaResponseListenerService.runResponseCheck :");
+    log.info("KafkaResponseListenerService.runResponseCheck : stopped");
   }
 
   private class BlockingResponse implements Future<V> {
