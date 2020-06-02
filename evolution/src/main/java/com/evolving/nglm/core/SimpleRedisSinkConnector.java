@@ -41,6 +41,7 @@ import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.Pipeline;
+import redis.clients.jedis.Protocol;
 import redis.clients.jedis.exceptions.JedisException;
 
 public abstract class SimpleRedisSinkConnector extends SinkConnector
@@ -403,7 +404,17 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
       jedisPoolConfig.setMaxTotal(2);
       jedisPoolConfig.setJmxNamePrefix("SimpleRedisSinkConnector");
       jedisPoolConfig.setJmxNameBase(connectorName + "-" + Integer.toString(taskNumber));
-      jedisSentinelPool = new JedisSentinelPool(redisInstance, redisSentinels, jedisPoolConfig);
+      
+      String password = System.getProperty("redis.password");
+      if(password != null && !password.trim().equals("")) {
+        log.info("SimpleRedisSinkConnector() Use Redis Password " + password);
+        jedisSentinelPool = new JedisSentinelPool(redisInstance, redisSentinels, jedisPoolConfig, Protocol.DEFAULT_TIMEOUT, Protocol.DEFAULT_TIMEOUT, null, password, 0, null,
+            Protocol.DEFAULT_TIMEOUT, Protocol.DEFAULT_TIMEOUT, null, password, null);        
+      }
+      else {
+        log.info("SimpleRedisSinkConnector() No Redis Password");
+        jedisSentinelPool = new JedisSentinelPool(redisInstance, redisSentinels, jedisPoolConfig);
+      }  
     }
 
     /*****************************************
@@ -516,7 +527,7 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
           //  return
           //
           
-          if (pipeline != null) try { pipeline.close(); } catch (IOException|JedisException e1) { }
+          if (pipeline != null) try { pipeline.close(); } catch (JedisException e1) { }
           if (jedis != null) try { jedis.close(); } catch (JedisException e1) { }
         }
     }
