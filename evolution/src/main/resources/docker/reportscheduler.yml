@@ -35,3 +35,7 @@ reportscheduler-<_KEY_>:
         - engine.labels.hostname == <_HOST_>
   networks:
     - outside
+  volumes:
+    - type: bind
+      source: <_NGLM_REPORTS_>
+      target: /app/reports

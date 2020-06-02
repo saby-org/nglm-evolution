@@ -1,7 +1,6 @@
 package com.evolving.nglm.evolution.reports.bdr;
 
 import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.reports.ReportEsReader;
 import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
@@ -13,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,13 +30,7 @@ public class BDRReportESReader
       DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
     }
 
-  /****************************************
-   * 
-   * read
-   * 
-   ****************************************/
-  
-  public static void read(String[] args)
+  public static void main(String[] args, final Date reportGenerationDate)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -65,16 +57,15 @@ public class BDRReportESReader
         reportPeriodUnit = args[6];
       }
 
-    Date fromDate = getFromDate(reportPeriodUnit, reportPeriodQuantity);
-    Date toDate = SystemTime.getCurrentTime();
+    Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
+    Date toDate = reportGenerationDate;
 
     List<String> esIndexDates = getEsIndexDates(fromDate, toDate);
     StringBuilder esIndexBdrList = new StringBuilder();
     boolean firstEntry = true;
     for (String esIndexDate : esIndexDates)
       {
-        if (!firstEntry)
-          esIndexBdrList.append(",");
+        if (!firstEntry) esIndexBdrList.append(",");
         String indexName = esIndexBdr + esIndexDate;
         esIndexBdrList.append(indexName);
         firstEntry = false;
@@ -85,9 +76,10 @@ public class BDRReportESReader
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexBdrList.toString(), QueryBuilders.matchAllQuery());
 
+    log.info("RAJ K ES indexes to read {}", esIndexWithQuery.keySet());
     ReportEsReader reportEsReader = new ReportEsReader("subscriberID", topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery, false);
-
     reportEsReader.start();
+    
     log.info("Finished BDRReportESReader");
   }
 
@@ -103,17 +95,16 @@ public class BDRReportESReader
     return esIndexOdrList;
   }
 
-  private static Date getFromDate(String reportPeriodUnit, Integer reportPeriodQuantity)
+  private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit, Integer reportPeriodQuantity)
   {
     reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(1) : reportPeriodQuantity;
-    if (reportPeriodUnit == null)
-      reportPeriodUnit = PERIOD.DAYS.getExternalRepresentation();
+    if (reportPeriodUnit == null) reportPeriodUnit = PERIOD.DAYS.getExternalRepresentation();
 
     //
     //
     //
 
-    Date now = SystemTime.getCurrentTime();
+    Date now = reportGenerationDate;
     Date fromDate = null;
     switch (reportPeriodUnit.toUpperCase())
     {
