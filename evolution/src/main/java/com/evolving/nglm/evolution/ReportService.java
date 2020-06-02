@@ -560,7 +560,16 @@ public class ReportService extends GUIService
             if (!generatedLastWeek)
               {
                 Date lastWeekReportDate = getPreviousReportDate(Deployment.getWeeklyReportCronEntryString(), now);
-                if(lastWeekReportDate == null) lastWeekReportDate = RLMDateUtils.addWeeks(now, -1, Deployment.getBaseTimeZone());
+                if (lastWeekReportDate != null)
+                  {
+                    int thisWK = RLMDateUtils.getField(now, Calendar.WEEK_OF_YEAR, Deployment.getBaseTimeZone());
+                    int lastWKReportsWK = RLMDateUtils.getField(lastWeekReportDate, Calendar.WEEK_OF_YEAR, Deployment.getBaseTimeZone());
+                    if (thisWK == lastWKReportsWK) lastWeekReportDate = RLMDateUtils.addWeeks(lastWeekReportDate, -1, Deployment.getBaseTimeZone());
+                  }
+                else
+                  {
+                    lastWeekReportDate = RLMDateUtils.addWeeks(now, -1, Deployment.getBaseTimeZone());
+                  }
                 lastWeekReportDate = RLMDateUtils.truncate(lastWeekReportDate, Calendar.DATE, Deployment.getBaseTimeZone());
                 result.add(lastWeekReportDate);
               }
