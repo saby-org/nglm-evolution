@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.connect.data.Field;
@@ -50,12 +51,14 @@ import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyModel;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
+@GUIDependencyModel(attachableIN = { }, objectType = "journey", serviceClass = JourneyService.class)
 public class Journey extends GUIManagedObject implements StockableItem
 {
   /*****************************************
@@ -3619,5 +3622,40 @@ public class Journey extends GUIManagedObject implements StockableItem
       this.actionType = actionType;
       this.parameters = new ParameterMap();
     }
+  }
+  
+  @ISContaining(Campaign.class)
+  public boolean isContainingCampaign(String campaignID)
+  {
+    return getParameterMapsFromNodesWithKey("node.parameter.journey").stream().filter(offerParameterMap -> offerParameterMap.values().contains(campaignID)).count() > 0L;
+  }
+  
+  @ISContaining(Offer.class)
+  public boolean isContainingOffer(String offerID)
+  {
+    return getParameterMapsFromNodesWithKey("node.parameter.offerid").stream().filter(offerParameterMap -> offerParameterMap.values().contains(offerID)).count() > 0L;
+  }
+  
+  @ISContaining(JourneyObjective.class)
+  public boolean isJourneyContaingJourneyobjective(String journeyobjectiveID)
+  {
+    return getJourneyObjectiveInstances() != null && getJourneyObjectiveInstances().stream().filter(journeyObjective -> journeyobjectiveID.equalsIgnoreCase(journeyObjective.getJourneyObjectiveID())).count() > 0L;
+  }
+  
+  //
+  //  getParameterMapFromNodeWithKey
+  //
+  
+  private List<ParameterMap> getParameterMapsFromNodesWithKey(String parameterKey)
+  {
+    List<ParameterMap> result = new ArrayList<ParameterMap>();
+    if (getJourneyNodes() != null)
+      {
+        for (JourneyNode journeyNode : getJourneyNodes().values())
+          {
+            if (journeyNode.getNodeParameters().containsKey(parameterKey)) result.add(journeyNode.getNodeParameters());
+          }
+      }
+    return result;
   }
 }

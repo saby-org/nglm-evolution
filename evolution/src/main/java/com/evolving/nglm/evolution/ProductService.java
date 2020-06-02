@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManagedObject.Provides;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -133,6 +134,7 @@ public class ProductService extends GUIService
   public String generateProductID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredProduct(String productID) { return getStoredGUIManagedObject(productID); }
   public GUIManagedObject getStoredProduct(String productID, boolean includeArchived) { return getStoredGUIManagedObject(productID, includeArchived); }
+  @Provides(Product.class)
   public Collection<GUIManagedObject> getStoredProducts() { return getStoredGUIManagedObjects(); }
   public Collection<GUIManagedObject> getStoredProducts(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveProductThroughInterval(GUIManagedObject productUnchecked, Date startDate, Date endDate) { return isActiveThroughInterval(productUnchecked, startDate, endDate); }

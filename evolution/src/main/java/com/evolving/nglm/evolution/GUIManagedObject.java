@@ -25,6 +25,10 @@ import org.slf4j.LoggerFactory;
 
 import org.json.simple.parser.JSONParser;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -182,7 +186,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(PushTemplate.serde());
     guiManagedObjectSerdes.add(DialogTemplate.serde());
     guiManagedObjectSerdes.add(UploadedFile.serde());
-    guiManagedObjectSerdes.add(Target.serde());
+    guiManagedObjectSerdes.add(com.evolving.nglm.evolution.Target.serde());
     guiManagedObjectSerdes.add(CommunicationChannelBlackoutPeriod.serde());
     guiManagedObjectSerdes.add(LoyaltyProgramPoints.serde());
     guiManagedObjectSerdes.add(ExclusionInclusionTarget.serde());
@@ -693,5 +697,28 @@ public abstract class GUIManagedObject
     {
       super(jsonRoot, epoch);
     }
+  }
+  
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target(ElementType.TYPE)
+  public @interface GUIDependencyModel
+  {
+    public String objectType();
+    public Class<? extends GUIManagedObject>[] attachableIN();
+    public Class<? extends GUIService> serviceClass();
+  }
+  
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target(ElementType.METHOD)
+  public @interface Provides
+  {
+    public Class<? extends GUIManagedObject> value();
+  }
+  
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target(ElementType.METHOD)
+  public @interface ISContaining
+  {
+    public Class<? extends GUIManagedObject> value();
   }
 }

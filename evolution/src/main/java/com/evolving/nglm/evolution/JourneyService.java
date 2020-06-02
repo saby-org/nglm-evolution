@@ -8,16 +8,19 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManagedObject.Provides;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.JourneyStatus;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 
 import com.evolving.nglm.core.SystemTime;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -153,6 +156,10 @@ public class JourneyService extends GUIService
   public GUIManagedObject getStoredJourney(String journeyID) { return getStoredGUIManagedObject(journeyID); }
   public GUIManagedObject getStoredJourney(String journeyID, boolean includeArchived) { return getStoredGUIManagedObject(journeyID, includeArchived); }
   public Collection<GUIManagedObject> getStoredJourneys() { return getStoredGUIManagedObjects(); }
+  @Provides(Journey.class)
+  public Collection<GUIManagedObject> getStoredJourneyList() { return getStoredGUIManagedObjects().stream().filter( journry -> journry.getGUIManagedObjectType() == GUIManagedObjectType.Journey).collect(Collectors.toList()); }
+  @Provides(Campaign.class)
+  public Collection<GUIManagedObject> getStoredCampaignList() { return getStoredGUIManagedObjects().stream().filter( journry -> journry.getGUIManagedObjectType() == GUIManagedObjectType.Campaign).collect(Collectors.toList()); }
   public Collection<GUIManagedObject> getStoredJourneys(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveJourney(GUIManagedObject journeyUnchecked, Date date) { return isActiveGUIManagedObject(journeyUnchecked, date); }
   public Journey getActiveJourney(String journeyID, Date date) 

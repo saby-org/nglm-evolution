@@ -1,0 +1,16 @@
+package com.evolving.nglm.evolution;
+
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyModel;
+
+@GUIDependencyModel(attachableIN = { Journey.class }, objectType = "campaign", serviceClass = JourneyService.class)
+public class Campaign extends GUIManagedObject
+{
+
+  protected Campaign(String guiManagedObjectID)
+  {
+    super(guiManagedObjectID);
+    throw new ServerRuntimeException("Campaign is marker only - not allowed to create an object");
+  }
+
+}

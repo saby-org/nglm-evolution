@@ -7,8 +7,9 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManagedObject.Provides;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 
 import org.json.simple.JSONArray;
@@ -19,6 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Date;
+
+import javax.ws.rs.GET;
 
 public class OfferService extends GUIService
 {
@@ -114,6 +117,7 @@ public class OfferService extends GUIService
   public String generateOfferID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredOffer(String offerID) { return getStoredGUIManagedObject(offerID); }
   public GUIManagedObject getStoredOffer(String offerID, boolean includeArchived) { return getStoredGUIManagedObject(offerID, includeArchived); }
+  @Provides(Offer.class)
   public Collection<GUIManagedObject> getStoredOffers() { return getStoredGUIManagedObjects(); }
   public Collection<GUIManagedObject> getStoredOffers(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveOffer(GUIManagedObject offerUnchecked, Date date) { return isActiveGUIManagedObject(offerUnchecked, date); }

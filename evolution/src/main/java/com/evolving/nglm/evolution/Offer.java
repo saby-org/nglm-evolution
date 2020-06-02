@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyModel;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 
+@GUIDependencyModel(attachableIN = { Journey.class, Campaign.class }, objectType = "offer", serviceClass = OfferService.class)
 public class Offer extends GUIManagedObject implements StockableItem
 {  
   //
@@ -861,4 +863,16 @@ public class Offer extends GUIManagedObject implements StockableItem
       return "Offer [initialPropensity=" + initialPropensity + ", "
           + (getGUIManagedObjectID() != null ? "getGUIManagedObjectID()=" + getGUIManagedObjectID() : "") + "]";
     }
+  
+  @ISContaining(Product.class)
+  public boolean isContainingProduct(String productID)
+  {
+    return getOfferProducts() != null && getOfferProducts().stream().filter( product -> productID.equalsIgnoreCase(product.getProductID())).count() > 0L;
+  }
+  
+  @ISContaining(Voucher.class)
+  public boolean isContainingVoucher(String voucherID)
+  {
+    return getOfferVouchers() != null && getOfferVouchers().stream().filter( voucher -> voucherID.equalsIgnoreCase(voucher.getVoucherID())).count() > 0L;
+  }
 }
