@@ -703,11 +703,18 @@ public abstract class GUIManagedObject
   //public abstract List<GUIDependency> getGUIDependencies();
   public List<GUIDependency> getGUIDependencies()
   {
+    log.info("RAJ K result {} ", "from super");
     return new ArrayList<GUIDependency>();
   }
   
   public class GUIDependency
   {
+    @Override
+    public String toString()
+    {
+      return "GUIDependency [guidependencyObjectType=" + guidependencyObjectType + ", guidependencyObjectIDs=" + guidependencyObjectIDs + "]";
+    }
+
     private String guidependencyObjectType;
     private List<String> guidependencyObjectIDs;
     

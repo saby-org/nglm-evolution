@@ -878,6 +878,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     List<String> voucherIDs = getOfferVouchers().stream().map(voucher -> voucher.getVoucherID()).collect(Collectors.toList());
     result.add(new GUIDependency("product", productIDs));
     result.add(new GUIDependency("voucher", voucherIDs));
+    log.info("RAJ K result {} ", result);
     return result;
   }
 }
