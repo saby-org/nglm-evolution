@@ -541,7 +541,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     List<NodeHistory> journeyNodeHistory =  unpackNodeHistory(schema.field("journeyNodeHistory").schema(), valueStruct.get("journeyNodeHistory"));
     List<StatusHistory> journeyStatusHistory =  unpackStatusHistory(schema.field("journeyStatusHistory").schema(), valueStruct.get("journeyStatusHistory"));
     Map<String, String> subscriberStratum = (Map<String,String>) valueStruct.get("subscriberStratum");
-    Map<String, String> alternateIDs = (schemaVersion >= 3) ? (Map<String,String>) valueStruct.get("alternateIDs") : new HashMap<String, String>();
+    Map<String, String> alternateIDs = (schemaVersion >= 4) ? (Map<String,String>) valueStruct.get("alternateIDs") : new HashMap<String, String>();
     
     //
     //  return
