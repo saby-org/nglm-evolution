@@ -12,7 +12,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import org.json.simple.JSONObject;
-
+import org.apache.commons.lang3.builder.HashCodeExclude;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -740,6 +740,12 @@ public abstract class GUIManagedObject
           result = dependency.getGUIDependencyObjectType().equalsIgnoreCase(this.guidependencyObjectType);
         }
       return result;
+    }
+    
+    @Override
+    public int hashCode()
+    {
+      return this.guidependencyObjectType.hashCode();
     }
   }
   

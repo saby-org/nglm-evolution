@@ -68,7 +68,16 @@ public class GUIManagedObjectDependencyHelper
             for (GUIManagedObject guiManagedObject : storedObjectList)
               {
                 List<GUIDependency> guiDependencies = guiManagedObject.getGUIDependencies();
-                if (guiDependencies != null && guiDependencies.contains(guiDependencyModelTree.getGuiManagedObjectType())) containerObjectList.add(guiManagedObject);
+                log.info("looking for {}", guiDependencyModelTree.getGuiManagedObjectType());
+                if (guiDependencies != null && !guiDependencies.isEmpty())
+                  {
+                    for (GUIDependency guiDependency: guiDependencies)
+                      {
+                        boolean contains = guiDependency.getGUIDependencyObjectType().equalsIgnoreCase(guiDependencyModelTree.getGuiManagedObjectType());
+                        contains = contains && guiDependency.getGUIDependencyObjectID().contains(objectID);
+                        if (contains) containerObjectList.add(guiManagedObject);
+                      }
+                  }
               }
           }
 
