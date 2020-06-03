@@ -56,7 +56,8 @@ public class GUIManagedObjectDependencyHelper
         
         Class serviceClass = guiDependencyModelTreeMap.get(dependency).getServiceClass();
         Object serviceObject  = getService(guiServiceList, serviceClass);
-        Method retriver = serviceClass.getMethod("getStoredGUIManagedObjects", null);
+        Method retriver = serviceClass.getDeclaredMethod("getStoredGUIManagedObjects", null);
+        retriver.setAccessible(true);
         Collection<GUIManagedObject> storedObjectList = (Collection<GUIManagedObject>) retriver.invoke(serviceObject, null);
         
         //
