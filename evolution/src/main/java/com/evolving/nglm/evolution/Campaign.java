@@ -1,9 +1,9 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyModel;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 
-@GUIDependencyModel(attachableIN = { Journey.class }, objectType = "campaign", serviceClass = JourneyService.class)
+@GUIDependencyDef(objectType = "campaign", serviceClass = JourneyService.class, dependencies = { "offer", "journeyobjective" })
 public class Campaign extends GUIManagedObject
 {
 

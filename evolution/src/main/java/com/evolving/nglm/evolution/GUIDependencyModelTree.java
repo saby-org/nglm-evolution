@@ -1,13 +1,19 @@
 package com.evolving.nglm.evolution;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.reflections.Reflections;
+
 import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyModel;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
+
+import scala.annotation.meta.setter;
 
 /****************************************
 *
@@ -21,46 +27,54 @@ public class GUIDependencyModelTree
   //  data
   //
   
-  private String guiManagedObjectTypeID;
-  private Class<? extends GUIManagedObject> guiManagedObjectTypeClass;
-  private List<Class<? extends GUIManagedObject>> dependencyList = new LinkedList<Class<? extends GUIManagedObject>>();
+  private String guiManagedObjectType;
+  private Set<String> dependencyList = new HashSet<String>();
   private Class<? extends GUIService> serviceClass;
   
   //
   // accessors
   //
   
-  public String getGuiManagedObjectTypeID() { return guiManagedObjectTypeID; }
-  public Class<? extends GUIManagedObject> getGuiManagedObjectTypeClass() { return guiManagedObjectTypeClass; }
-  public List<Class<? extends GUIManagedObject>> getDependencyList() { return dependencyList; }
+  public String getGuiManagedObjectType() { return guiManagedObjectType; }
+  public Set<String> getDependencyList() { return dependencyList; }
   public Class<? extends GUIService> getServiceClass() { return serviceClass; }
   
   /*********************************************
    * 
-   * GUIDependencyModelTree Class constructor
+   * constructor
    * 
    *********************************************/
   
-  public GUIDependencyModelTree(Class guiDependencyModelClass)
+  public GUIDependencyModelTree(Class guiDependencyDefClass, final Set<Class<?>> guiDependencyDefClassList)
   {
-    GUIDependencyModel guiDependencyModel = (GUIDependencyModel) guiDependencyModelClass.getAnnotation(GUIDependencyModel.class);
-    if (guiDependencyModel != null)
+    GUIDependencyDef guiDependencyDef = (GUIDependencyDef) guiDependencyDefClass.getAnnotation(GUIDependencyDef.class);
+    if (guiDependencyDef != null)
       {
-        this.guiManagedObjectTypeID = guiDependencyModel.objectType().toLowerCase();
-        this.guiManagedObjectTypeClass = guiDependencyModelClass;
-        this.serviceClass = guiDependencyModel.serviceClass();
+        this.guiManagedObjectType = guiDependencyDef.objectType().toLowerCase();
+        this.serviceClass = guiDependencyDef.serviceClass();
+        this.dependencyList = prepareDependencyList(guiManagedObjectType, guiDependencyDefClassList);
         
-        //
-        //  depdencyList
-        //
-        
-        if (guiDependencyModel.attachableIN() != null)
+      }
+  }
+  
+  /*********************************************
+   * 
+   * prepareDependencyList
+   * 
+   *********************************************/
+  
+  private Set<String> prepareDependencyList(String guiManagedObjectType, final Set<Class<?>> guiDependencyDefClassList)
+  {
+    Set<String> result = new HashSet<String>();
+    for (Class guiDependencyDefClass : guiDependencyDefClassList)
+      {
+        GUIDependencyDef guiDependencyDef = (GUIDependencyDef) guiDependencyDefClass.getAnnotation(GUIDependencyDef.class);
+        if (!guiManagedObjectType.equalsIgnoreCase(guiDependencyDef.objectType()) && (guiDependencyDef.dependencies().length > 0))
           {
-            for (Class<? extends GUIManagedObject> attachableIN : guiDependencyModel.attachableIN())
-              {
-                dependencyList.add(attachableIN);
-              }
+            Set<String> thisDependencies = new HashSet<>(Arrays.asList(guiDependencyDef.dependencies()));
+            if (thisDependencies.contains(guiManagedObjectType)) result.add(guiDependencyDef.objectType());
           }
       }
+    return result;
   }
 }

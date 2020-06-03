@@ -51,14 +51,15 @@ import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyModel;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependency;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
-@GUIDependencyModel(attachableIN = { }, objectType = "journey", serviceClass = JourneyService.class)
+@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "offer", "campaign", "journeyobjective" })
 public class Journey extends GUIManagedObject implements StockableItem
 {
   /*****************************************
@@ -3624,22 +3625,53 @@ public class Journey extends GUIManagedObject implements StockableItem
     }
   }
   
-  @ISContaining(Campaign.class)
-  public boolean isContainingCampaign(String campaignID)
-  {
-    return getParameterMapsFromNodesWithKey("node.parameter.journey").stream().filter(offerParameterMap -> offerParameterMap.values().contains(campaignID)).count() > 0L;
-  }
+  /*******************************
+   * 
+   * getGUIDependencies
+   * 
+   *******************************/
   
-  @ISContaining(Offer.class)
-  public boolean isContainingOffer(String offerID)
+  @Override public List<GUIDependency> getGUIDependencies()
   {
-    return getParameterMapsFromNodesWithKey("node.parameter.offerid").stream().filter(offerParameterMap -> offerParameterMap.values().contains(offerID)).count() > 0L;
-  }
-  
-  @ISContaining(JourneyObjective.class)
-  public boolean isJourneyContaingJourneyobjective(String journeyobjectiveID)
-  {
-    return getJourneyObjectiveInstances() != null && getJourneyObjectiveInstances().stream().filter(journeyObjective -> journeyobjectiveID.equalsIgnoreCase(journeyObjective.getJourneyObjectiveID())).count() > 0L;
+    List<GUIDependency> result = new ArrayList<GUIDependency>();
+    List<String> offerIDs = new ArrayList<String>();
+    
+    //
+    //  offer
+    //
+    
+    for (ParameterMap offerMap : getParameterMapsFromNodesWithKey("node.parameter.offerid"))
+      {
+        offerIDs.addAll(offerMap.values().stream().map( obj -> obj.toString()).collect(Collectors.toList()));
+      }
+    result.add(new GUIDependency("offer", offerIDs));
+    
+    //
+    //  campaign
+    //
+    
+    if (getGUIManagedObjectType() == GUIManagedObjectType.Journey)
+      {
+        List<String> campaignIDs = new ArrayList<String>();
+        for (ParameterMap offerMap : getParameterMapsFromNodesWithKey("node.parameter.journey"))
+          {
+            campaignIDs.addAll(offerMap.values().stream().map( obj -> obj.toString()).collect(Collectors.toList()));
+          }
+        result.add(new GUIDependency("campaign", campaignIDs));
+      }
+    
+    //
+    //  journeyObjective
+    //
+    
+    List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+    result.add(new GUIDependency("journeyobjective", journeyObjectiveIDs));
+    
+    //
+    //  return
+    //
+    
+    return result;
   }
   
   //

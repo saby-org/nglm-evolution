@@ -70,7 +70,7 @@ import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyModel;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
@@ -89,7 +89,7 @@ public class GUIManagerGeneral extends GUIManager
   //  data
   //
   
-  private Map<Class<? extends GUIManagedObject>, GUIDependencyModelTree> guiDependencyModelTreeMap = new LinkedHashMap<Class<? extends GUIManagedObject>, GUIDependencyModelTree>();
+  private Map<String, GUIDependencyModelTree> guiDependencyModelTreeMap = new LinkedHashMap<String, GUIDependencyModelTree>();
   private final List<GUIService> guiServiceList = new ArrayList<GUIService>();
 
 
@@ -3414,7 +3414,7 @@ public class GUIManagerGeneral extends GUIManager
     // request data
     //
     
-    String objetTypeID = JSONUtilities.decodeString(jsonRoot, "objectType", true).toLowerCase();
+    String objetType = JSONUtilities.decodeString(jsonRoot, "objectType", true).toLowerCase();
     String objectID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean fiddleTest = JSONUtilities.decodeBoolean(jsonRoot, "fiddleTest", Boolean.FALSE);
     
@@ -3422,7 +3422,7 @@ public class GUIManagerGeneral extends GUIManager
     //  resolveAndGetDependencyModelTree
     //
     
-    GUIDependencyModelTree guiDependencyModelTree = resolveAndGetDependencyModelTree(objetTypeID);
+    GUIDependencyModelTree guiDependencyModelTree =  guiDependencyModelTreeMap.get(objetType);
     if (guiDependencyModelTree != null )
       {
         try
@@ -3449,7 +3449,7 @@ public class GUIManagerGeneral extends GUIManager
               }
             response.put("responseCode", "ok");
           } 
-        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
+        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e)
           {
             response.put("responseCode", "systemEroor");
             response.put("responseMessage", e.getMessage());
@@ -3462,7 +3462,7 @@ public class GUIManagerGeneral extends GUIManager
     else
       {
         response.put("responseCode", "objetTypeNotValid");
-        response.put("responseMessage", "objetTypeID " + objetTypeID + " not found in configuration");
+        response.put("responseMessage", "objectType " + objetType + " not found in configuration");
       }
     
     //
@@ -3472,24 +3472,6 @@ public class GUIManagerGeneral extends GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
-  //
-  //  resolveAndGetDependencyModelTree
-  //
-  
-  private GUIDependencyModelTree resolveAndGetDependencyModelTree(String objetTypeID)
-  {
-    GUIDependencyModelTree result = null;
-    for (GUIDependencyModelTree dependencyModelTree : guiDependencyModelTreeMap.values())
-      {
-        if (objetTypeID.equalsIgnoreCase(dependencyModelTree.getGuiManagedObjectTypeID()))
-          {
-            result = dependencyModelTree;
-            break;
-          }
-      }
-    return result;
-  }
-
   private void validatenocycle(Map<String, GUIDependencyModelTree> guiManagedObjectDependencyTreeMap)
   {
     GUIManagedObjectDependencyGraph dependencyGraph = new GUIManagedObjectDependencyGraph(guiManagedObjectDependencyTreeMap);
@@ -3517,11 +3499,11 @@ public class GUIManagerGeneral extends GUIManager
     //  get the annoted classes
     //
     
-    Set<Class<?>> guiDependencyModelClassList = reflections.getTypesAnnotatedWith(GUIDependencyModel.class);
+    Set<Class<?>> guiDependencyModelClassList = reflections.getTypesAnnotatedWith(GUIDependencyDef.class);
     for (Class guiDependencyModelClass : guiDependencyModelClassList)
       {
-        GUIDependencyModelTree guiDependencyModelTree = new GUIDependencyModelTree(guiDependencyModelClass);
-        guiDependencyModelTreeMap.put(guiDependencyModelTree.getGuiManagedObjectTypeClass(), guiDependencyModelTree);
+        GUIDependencyModelTree guiDependencyModelTree = new GUIDependencyModelTree(guiDependencyModelClass, guiDependencyModelClassList);
+        guiDependencyModelTreeMap.put(guiDependencyModelTree.getGuiManagedObjectType(), guiDependencyModelTree);
       }
   }
 }

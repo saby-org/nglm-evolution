@@ -697,27 +697,57 @@ public abstract class GUIManagedObject
     {
       super(jsonRoot, epoch);
     }
+    @Override public List<GUIDependency> getGUIDependencies() { return new ArrayList<GUIDependency>(); }
+  }
+  
+  //public abstract List<GUIDependency> getGUIDependencies();
+  public List<GUIDependency> getGUIDependencies()
+  {
+    return new ArrayList<GUIDependency>();
+  }
+  
+  public class GUIDependency
+  {
+    private String guidependencyObjectType;
+    private List<String> guidependencyObjectIDs;
+    
+    public GUIDependency(String guidependencyObjectType, List<String> guidependencyObjectIDs)
+    {
+      this.guidependencyObjectType = guidependencyObjectType;
+      this.guidependencyObjectIDs = guidependencyObjectIDs;
+    }
+    
+    public String getGUIDependencyObjectType() { return guidependencyObjectType ;}
+    public List<String> getGUIDependencyObjectID() { return guidependencyObjectIDs ;}
+    
+    //
+    //  used only for contains check
+    //
+    
+    @Override public boolean equals(Object obj)
+    {
+      boolean result = false;
+      if (obj instanceof GUIDependency)
+        {
+          GUIDependency dependency = (GUIDependency) obj;
+          result = dependency.getGUIDependencyObjectType().equalsIgnoreCase(this.guidependencyObjectType);
+        }
+      return result;
+    }
   }
   
   @Retention(RetentionPolicy.RUNTIME)
   @Target(ElementType.TYPE)
-  public @interface GUIDependencyModel
+  public @interface GUIDependencyDef
   {
     public String objectType();
-    public Class<? extends GUIManagedObject>[] attachableIN();
+    public String[] dependencies ();
     public Class<? extends GUIService> serviceClass();
   }
   
   @Retention(RetentionPolicy.RUNTIME)
   @Target(ElementType.METHOD)
   public @interface Provides
-  {
-    public Class<? extends GUIManagedObject> value();
-  }
-  
-  @Retention(RetentionPolicy.RUNTIME)
-  @Target(ElementType.METHOD)
-  public @interface ISContaining
   {
     public Class<? extends GUIManagedObject> value();
   }

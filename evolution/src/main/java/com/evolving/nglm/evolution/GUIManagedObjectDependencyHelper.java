@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.evolution.GUIManagedObject.ISContaining;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependency;
 import com.evolving.nglm.evolution.GUIManagedObject.Provides;
 
 /*****************************************
@@ -39,10 +39,10 @@ public class GUIManagedObjectDependencyHelper
   *
   ****************************************/
   
-  public static void createDependencyTreeMAP(Map<Class<? extends GUIManagedObject>, GUIDependencyModelTree> guiDependencyModelTreeMap, GUIDependencyModelTree guiDependencyModelTree, List<Class<? extends GUIManagedObject>>  dependencyList, String objectID, List<JSONObject> dependencyListOutput, boolean fiddleTest, List<GUIService> guiServiceList) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException
+  public static void createDependencyTreeMAP(Map<String, GUIDependencyModelTree> guiDependencyModelTreeMap, GUIDependencyModelTree guiDependencyModelTree, Set<String>  dependencies, String objectID, List<JSONObject> dependencyListOutput, boolean fiddleTest, List<GUIService> guiServiceList) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException
   {
-    log.info("RAJ K createDependencyTreeMAP for {} and ID {} will look into {} types", guiDependencyModelTree.getGuiManagedObjectTypeID(), objectID, dependencyList);
-    for (Class<? extends GUIManagedObject> dependency : dependencyList)
+    log.info("RAJ K createDependencyTreeMAP for {} and ID {} will look into {} types", guiDependencyModelTree.getGuiManagedObjectType(), objectID, dependencies);
+    for (String dependency : dependencies)
       {
         //
         // stored and container
@@ -55,8 +55,8 @@ public class GUIManagedObjectDependencyHelper
         //
         
         Class serviceClass = guiDependencyModelTreeMap.get(dependency).getServiceClass();
-        Method retriver = getProvidesMethod(serviceClass, dependency);
         Object serviceObject  = getService(guiServiceList, serviceClass);
+        Method retriver = serviceClass.getMethod("getStoredGUIManagedObjects", null);
         Collection<GUIManagedObject> storedObjectList = (Collection<GUIManagedObject>) retriver.invoke(serviceObject, null);
         
         //
@@ -67,13 +67,8 @@ public class GUIManagedObjectDependencyHelper
           {
             for (GUIManagedObject guiManagedObject : storedObjectList)
               {
-                Class actualTypeClass = guiDependencyModelTreeMap.get(dependency).getGuiManagedObjectTypeClass() == Campaign.class ? Journey.class :  guiDependencyModelTreeMap.get(dependency).getGuiManagedObjectTypeClass();
-                if (actualTypeClass == guiManagedObject.getClass())
-                  {
-                    Method containingRetriver = getContainsMethod(guiManagedObject.getClass(), guiDependencyModelTree.getGuiManagedObjectTypeClass());
-                    boolean contains = (boolean) containingRetriver.invoke(guiManagedObject, objectID);
-                    if (contains) containerObjectList.add(guiManagedObject);
-                  }
+                List<GUIDependency> guiDependencies = guiManagedObject.getGUIDependencies();
+                if (guiDependencies != null && guiDependencies.contains(guiDependencyModelTree.getGuiManagedObjectType())) containerObjectList.add(guiManagedObject);
               }
           }
 
@@ -127,56 +122,6 @@ public class GUIManagedObjectDependencyHelper
       }
   }
   
-  /***********************************
-   * 
-   * getContainsMethod
-   * 
-   ***********************************/
-  
-  private static Method getContainsMethod(Class serviceClass, final Class containsType)
-  {
-    log.info("RAJ K getContainsMethod call for {} in class {}", containsType, serviceClass.getName());
-    Method result = null;
-    Method[] methods = serviceClass.getMethods();
-    for (Method m : methods)
-      {
-        ISContaining contains = m.getAnnotation(ISContaining.class);
-        if (contains != null && containsType == contains.value())
-          {
-            result = m;
-            break;
-          }
-      }
-    if (result == null) throw new ServerRuntimeException(serviceClass.getName() + " does not have a ISContaining method for" + containsType);
-    log.info("RAJ K getContainsMethod for {} in class {} is {}", containsType, serviceClass.getName(), result.getName());
-    return result;
-  }
-  
-  /***********************************
-   * 
-   * getProvidesMethod
-   * 
-   ***********************************/
-  
-  private static Method getProvidesMethod(Class serviceClass, final Class serviceRetriverType)
-  {
-    log.info("RAJ K getProvidesMethod call for {} in class {}", serviceRetriverType, serviceClass.getName());
-    Method result = null;
-    Method[] methods = serviceClass.getMethods();
-    for (Method m : methods)
-      {
-        Provides provides = m.getAnnotation(Provides.class);
-        if (provides != null && serviceRetriverType == provides.value())
-          {
-            result = m;
-            break;
-          }
-      }
-    if (result == null) throw new ServerRuntimeException(serviceClass.getName() + " does not have Provides method for " + serviceRetriverType);
-    log.info("RAJ K getProvidesMethod for {} in class {} is {}", serviceRetriverType, serviceClass.getName(), result.getName());
-    return result;
-  }
-
   /***********************************
    * 
    * getService

@@ -6,7 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyModel;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -32,7 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 
-@GUIDependencyModel(attachableIN = { Journey.class, Campaign.class }, objectType = "offer", serviceClass = OfferService.class)
+@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "product" , "voucher" })
 public class Offer extends GUIManagedObject implements StockableItem
 {  
   //
@@ -864,15 +865,19 @@ public class Offer extends GUIManagedObject implements StockableItem
           + (getGUIManagedObjectID() != null ? "getGUIManagedObjectID()=" + getGUIManagedObjectID() : "") + "]";
     }
   
-  @ISContaining(Product.class)
-  public boolean isContainingProduct(String productID)
-  {
-    return getOfferProducts() != null && getOfferProducts().stream().filter( product -> productID.equalsIgnoreCase(product.getProductID())).count() > 0L;
-  }
+  /*******************************
+   * 
+   * getGUIDependencies
+   * 
+   *******************************/
   
-  @ISContaining(Voucher.class)
-  public boolean isContainingVoucher(String voucherID)
+  @Override public List<GUIDependency> getGUIDependencies()
   {
-    return getOfferVouchers() != null && getOfferVouchers().stream().filter( voucher -> voucherID.equalsIgnoreCase(voucher.getVoucherID())).count() > 0L;
+    List<GUIDependency> result = new ArrayList<GUIDependency>();
+    List<String> productIDs = getOfferProducts().stream().map(product -> product.getProductID()).collect(Collectors.toList());
+    List<String> voucherIDs = getOfferVouchers().stream().map(voucher -> voucher.getVoucherID()).collect(Collectors.toList());
+    result.add(new GUIDependency("product", productIDs));
+    result.add(new GUIDependency("voucher", voucherIDs));
+    return result;
   }
 }

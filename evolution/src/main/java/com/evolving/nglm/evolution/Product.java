@@ -6,7 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyModel;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
@@ -31,7 +31,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
-@GUIDependencyModel(attachableIN = { Offer.class }, objectType = "product", serviceClass = ProductService.class)
+@GUIDependencyDef(objectType = "product", serviceClass = ProductService.class, dependencies = { })
 public class Product extends GUIManagedObject implements StockableItem
 {
   /*****************************************
@@ -371,5 +371,10 @@ public class Product extends GUIManagedObject implements StockableItem
     //
 
     if (! deliverableService.isActiveDeliverableThroughInterval(deliverable, this.getEffectiveStartDate(), this.getEffectiveEndDate())) throw new GUIManagerException("invalid deliverable (start/end dates)", deliverableID);
+  }
+  
+  @Override public List<GUIDependency> getGUIDependencies()
+  {
+    return new ArrayList<GUIDependency>();
   }
 }
