@@ -27,7 +27,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
@@ -35,8 +34,6 @@ import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.management.relation.RelationService;
 
 import com.evolving.nglm.core.*;
 import org.apache.http.HttpHost;
@@ -145,7 +142,6 @@ public class ThirdPartyManager
   private SupplierService supplierService;
   private CallingChannelService callingChannelService;
 
-  private ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static final int RESTAPIVersion = 1;
   private HttpServer restServer;
@@ -452,9 +448,7 @@ public class ThirdPartyManager
 
     subscriberIDService = new SubscriberIDService(redisServer, "thirdpartymanager-" + apiProcessKey);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("thirdpartymanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
-    propensityDataReader = ReferenceDataReader.<PropensityKey, PropensityState>startReader("thirdpartymanager-propensitystate", "thirdpartymanager-propensityreader-"+apiProcessKey,
-        Deployment.getBrokerServers(), Deployment.getPropensityLogTopic(), PropensityState::unpack);
-    
+
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(PURCHASE_FULFILLMENT_MANAGER_TYPE);
     purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(),StringKey.serde(),PurchaseFulfillmentRequest.serde());
     purchaseResponseListenerService.start();
@@ -3636,7 +3630,6 @@ public class ThirdPartyManager
          productService, productTypeService, voucherService, voucherTypeService,
          catalogCharacteristicService,
          scoringStrategyService,
-         propensityDataReader,
          subscriberGroupEpochReader,
          segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
          );
@@ -3857,7 +3850,6 @@ public class ThirdPartyManager
               voucherService, voucherTypeService,
               catalogCharacteristicService,
               scoringStrategyService,
-              propensityDataReader,
               subscriberGroupEpochReader,
               segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
               );

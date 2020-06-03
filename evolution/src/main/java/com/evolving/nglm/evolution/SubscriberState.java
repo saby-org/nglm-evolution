@@ -67,7 +67,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("subscriber_state");
       // TODO SCHEMA CHANGED
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(7));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(8));
       schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
       schemaBuilder.field("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().schema());
       schemaBuilder.field("journeyStates", SchemaBuilder.array(JourneyState.schema()).schema());
@@ -86,7 +86,6 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
       schemaBuilder.field("deliveryRequests", SchemaBuilder.array(DeliveryRequest.commonSerde().schema()).schema());
       schemaBuilder.field("journeyStatisticWrappers", SchemaBuilder.array(JourneyStatisticWrapper.schema()).schema());
       schemaBuilder.field("journeyMetrics", SchemaBuilder.array(JourneyMetric.schema()).schema());
-      schemaBuilder.field("propensityOutputs", SchemaBuilder.array(PropensityEventOutput.schema()).defaultValue(Collections.<PropensityEventOutput>emptyList()).schema());
       schemaBuilder.field("profileChangeEvents", SchemaBuilder.array(ProfileChangeEvent.schema()).defaultValue(Collections.<ProfileChangeEvent>emptyList()).schema());
       schemaBuilder.field("profileSegmentChangeEvents", SchemaBuilder.array(ProfileSegmentChangeEvent.schema()).defaultValue(Collections.<ProfileSegmentChangeEvent>emptyList()).schema());
       schemaBuilder.field("profileLoyaltyProgramChangeEvents", SchemaBuilder.array(ProfileLoyaltyProgramChangeEvent.schema()).defaultValue(Collections.<ProfileLoyaltyProgramChangeEvent>emptyList()).schema());
@@ -144,7 +143,6 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   private List<DeliveryRequest> deliveryRequests;
   private List<JourneyStatisticWrapper> journeyStatisticWrappers;
   private List<JourneyMetric> journeyMetrics;
-  private List<PropensityEventOutput> propensityOutputs;
   private List<ProfileChangeEvent> profileChangeEvents;
   private List<ProfileSegmentChangeEvent> profileSegmentChangeEvents;
   private List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents;
@@ -183,7 +181,6 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
   public List<JourneyStatisticWrapper> getJourneyStatisticWrappers() { return journeyStatisticWrappers; }
   public List<JourneyMetric> getJourneyMetrics() { return journeyMetrics; }
-  public List<PropensityEventOutput> getPropensityOutputs() { return propensityOutputs; }
   public List<ProfileChangeEvent> getProfileChangeEvents() { return profileChangeEvents; }
   public List<ProfileSegmentChangeEvent> getProfileSegmentChangeEvents() { return profileSegmentChangeEvents; }
   public List<ProfileLoyaltyProgramChangeEvent> getProfileLoyaltyProgramChangeEvents() { return profileLoyaltyProgramChangeEvents; }
@@ -279,7 +276,6 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
         this.deliveryRequests = new ArrayList<DeliveryRequest>();
         this.journeyStatisticWrappers = new ArrayList<JourneyStatisticWrapper>();
         this.journeyMetrics = new ArrayList<JourneyMetric>();
-        this.propensityOutputs = new ArrayList<PropensityEventOutput>();
         this.profileChangeEvents = new ArrayList<ProfileChangeEvent>();
         this.profileSegmentChangeEvents = new ArrayList<ProfileSegmentChangeEvent>();
         this.profileLoyaltyProgramChangeEvents = new ArrayList<ProfileLoyaltyProgramChangeEvent>();
@@ -309,7 +305,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
    *
    *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput, List<UUID> trackingIDs, List<TokenChange> tokenChanges, List<Pair<String,MetricHistory>> notificationHistory, List<VoucherChange> voucherChanges)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput, List<UUID> trackingIDs, List<TokenChange> tokenChanges, List<Pair<String,MetricHistory>> notificationHistory, List<VoucherChange> voucherChanges)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
@@ -329,7 +325,6 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     this.deliveryRequests = deliveryRequests;
     this.journeyStatisticWrappers = journeyStatisticWrappers;
     this.journeyMetrics = journeyMetrics;
-    this.propensityOutputs = propensityOutputs;
     this.profileChangeEvents = profileChangeEvents;
     this.profileSegmentChangeEvents = profileSegmentChangeEvents;
 
@@ -392,7 +387,6 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
         this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberState.getDeliveryRequests());
         this.journeyStatisticWrappers = new ArrayList<JourneyStatisticWrapper>(subscriberState.getJourneyStatisticWrappers());
         this.journeyMetrics = new ArrayList<JourneyMetric>(subscriberState.getJourneyMetrics());
-        this.propensityOutputs = new ArrayList<PropensityEventOutput>(subscriberState.getPropensityOutputs());
         this.profileChangeEvents= new ArrayList<ProfileChangeEvent>(subscriberState.getProfileChangeEvents());
         this.profileSegmentChangeEvents= new ArrayList<ProfileSegmentChangeEvent>(subscriberState.getProfileSegmentChangeEvents());
         this.profileLoyaltyProgramChangeEvents= new ArrayList<ProfileLoyaltyProgramChangeEvent>(subscriberState.getProfileLoyaltyProgramChangeEvents());
@@ -440,7 +434,6 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     struct.put("deliveryRequests", packDeliveryRequests(subscriberState.getDeliveryRequests()));
     struct.put("journeyStatisticWrappers", packJourneyStatisticWrappers(subscriberState.getJourneyStatisticWrappers()));
     struct.put("journeyMetrics", packJourneyMetrics(subscriberState.getJourneyMetrics()));
-    struct.put("propensityOutputs", packPropensityOutputs(subscriberState.getPropensityOutputs()));
     struct.put("profileChangeEvents", packProfileChangeEvents(subscriberState.getProfileChangeEvents()));
     struct.put("profileSegmentChangeEvents", packProfileSegmentChangeEvents(subscriberState.getProfileSegmentChangeEvents()));
     struct.put("profileLoyaltyProgramChangeEvents", packProfileLoyaltyProgramChangeEvents(subscriberState.getProfileLoyaltyProgramChangeEvents()));
@@ -599,22 +592,6 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
 
   /*****************************************
    *
-   *  packPropensityOutputs
-   *
-   *****************************************/
-
-  private static List<Object> packPropensityOutputs(List<PropensityEventOutput> propensityOutputs)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (PropensityEventOutput propensityOutput : propensityOutputs)
-      {
-        result.add(PropensityEventOutput.pack(propensityOutput));
-      }
-    return result;
-  }
-
-  /*****************************************
-   *
    *  packProfileChangeEvents
    *
    *****************************************/
@@ -752,7 +729,6 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     List<DeliveryRequest> deliveryRequests = unpackDeliveryRequests(schema.field("deliveryRequests").schema(), valueStruct.get("deliveryRequests"));
     List<JourneyStatisticWrapper> journeyStatisticWrappers = (schemaVersion >= 3) ?unpackJourneyStatisticWrappers(schema.field("journeyStatisticWrappers").schema(), valueStruct.get("journeyStatisticWrappers")) : new ArrayList<JourneyStatisticWrapper>();
     List<JourneyMetric> journeyMetrics = (schemaVersion >= 2) ? unpackJourneyMetrics(schema.field("journeyMetrics").schema(), valueStruct.get("journeyMetrics")) : new ArrayList<JourneyMetric>();
-    List<PropensityEventOutput> propensityOutputs = (schemaVersion >= 2) ? unpackPropensityOutputs(schema.field("propensityOutputs").schema(), valueStruct.get("propensityOutputs")) : new ArrayList<PropensityEventOutput>();
     List<ProfileChangeEvent> profileChangeEvents = (schemaVersion >= 2) ? unpackProfileChangeEvents(schema.field("profileChangeEvents").schema(), valueStruct.get("profileChangeEvents")) : Collections.<ProfileChangeEvent>emptyList();
     List<ProfileSegmentChangeEvent> profileSegmentChangeEvents = (schemaVersion >= 2) ? unpackProfileSegmentChangeEvents(schema.field("profileSegmentChangeEvents").schema(), valueStruct.get("profileSegmentChangeEvents")) : Collections.<ProfileSegmentChangeEvent>emptyList();
     List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents = (schemaVersion >= 2) ? unpackProfileLoyaltyProgramChangeEvents(schema.field("profileLoyaltyProgramChangeEvents").schema(), valueStruct.get("profileLoyaltyProgramChangeEvents")) : Collections.<ProfileLoyaltyProgramChangeEvent>emptyList();
@@ -767,7 +743,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, reScheduledDeliveryRequest, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, journeyStatisticWrappers, journeyMetrics, propensityOutputs, profileChangeEvents, profileSegmentChangeEvents, profileLoyaltyProgramChangeEvents, subscriberTrace, externalAPIOutput, trackingIDs, tokenChanges, notificationHistory, voucherChanges);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, reScheduledDeliveryRequest, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, journeyStatisticWrappers, journeyMetrics, profileChangeEvents, profileSegmentChangeEvents, profileLoyaltyProgramChangeEvents, subscriberTrace, externalAPIOutput, trackingIDs, tokenChanges, notificationHistory, voucherChanges);
   }
 
   /*****************************************
@@ -1056,39 +1032,6 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
       {
         JourneyMetric journeyMetric = JourneyMetric.unpack(new SchemaAndValue(journeyMetricSchema, metric));
         result.add(journeyMetric);
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  unpackPropensityOutputs
-   *
-   *****************************************/
-
-  private static List<PropensityEventOutput> unpackPropensityOutputs(Schema schema, Object value)
-  {
-    //
-    //  get schema for PropensityEventOutput
-    //
-
-    Schema propensityOutputsSchema = schema.valueSchema();
-
-    //
-    //  unpack
-    //
-
-    List<PropensityEventOutput> result = new ArrayList<PropensityEventOutput>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object output : valueArray)
-      {
-        PropensityEventOutput propensityOutput = PropensityEventOutput.unpack(new SchemaAndValue(propensityOutputsSchema, output));
-        result.add(propensityOutput);
       }
 
     //

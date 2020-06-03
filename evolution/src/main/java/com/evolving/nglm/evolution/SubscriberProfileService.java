@@ -182,8 +182,8 @@ public abstract class SubscriberProfileService
       //
 
       PoolingHttpClientConnectionManager httpClientConnectionManager = new PoolingHttpClientConnectionManager();
-      httpClientConnectionManager.setDefaultMaxPerRoute(50);
-      httpClientConnectionManager.setMaxTotal(150);
+      httpClientConnectionManager.setDefaultMaxPerRoute(Deployment.getEvolutionEngineStreamThreads());
+      httpClientConnectionManager.setMaxTotal(Deployment.getEvolutionEngineInstanceNumbers()*Deployment.getEvolutionEngineStreamThreads());
 
       //
       //  httpClient

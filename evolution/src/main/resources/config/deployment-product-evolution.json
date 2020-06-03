@@ -26,10 +26,16 @@
   
   "periodicEvaluationCronEntry" : "0 2 * * *",
   "ucgEvaluationCronEntry" : "0 4 * * *",
-  
-  
-  
-  
+
+  "minExpiryDelayForVoucherDeliveryInHours" : 4,
+  "cleanUpExpiredVoucherDelayInDays" : 31,
+  "importVoucherFileBulkSize" : 5000,
+  "cleanExpiredVoucherCronEntry" : "0 3 * * *",
+  "voucherESCacheCleanerFrequencyInSec" : 300,
+  "numberConcurrentVoucherAllocationToES" : 10,
+  "liveVoucherIndexNumberOfReplicas" : "<_ELASTICSEARCH_REPLICAS_>",
+  "liveVoucherIndexNumberOfShards" : "<_ELASTICSEARCH_SHARDS_LARGE_>",
+
   "ucgEngineESConnectTimeout" : 30000,
   "ucgEngineESSocketTimeout" : 60000,
   "ucgEngineESMasRetryTimeout" : 60000,
@@ -103,9 +109,6 @@
   "extendedSubscriberProfileChangeLogTopic"              : "${changelog.evolutionengine.extendedsubscriberprofile.topic}",
   "subscriberHistoryChangeLog"                           : "${changelog.evolutionengine.subscriberhistory}",
   "subscriberHistoryChangeLogTopic"                      : "${changelog.evolutionengine.subscriberhistory.topic}",
-  "propensityStateChangeLog"                             : "${changelog.propensityengine.propensitystate}",
-  "propensityStateChangeLogTopic"                        : "${changelog.propensityengine.propensitystate.topic}",
-  "propensityOutputTopic"                                : "${topic.propensityoutput}",
   "journeyTrafficChangeLog"                              : "${changelog.journeytrafficengine.journeytraffic}",
   "journeyTrafficChangeLogTopic"                         : "${changelog.journeytrafficengine.journeytraffic.topic}",
   "journeyTrafficTopic"                                  : "${topic.journeytraffic}",
@@ -126,7 +129,6 @@
   "deliverableSourceTopic"                               : "${topic.deliverable.source}",
   "presentationLogTopic"                                 : "${topic.presentationlog}",
   "acceptanceLogTopic"                                   : "${topic.acceptancelog}",
-  "propensityLogTopic"                                   : "${topic.propensitylog}",
   "subscriberMessageTemplateTopic"                       : "${topic.template.subscribermessage}",
   "uploadedFileTopic"                                    : "${topic.uploadedfile}",
   "targetTopic"                                          : "${topic.target}",
@@ -465,6 +467,9 @@
   
   "propensityInitialisationPresentationThreshold"        : 100,
   "propensityInitialisationDurationInDaysThreshold"      : 90,
+
+  "propensityReaderRefreshPeriodMs" : 10000,
+  "propensityWriterRefreshPeriodMs" : 10000,
 
   "journeyDefaultTargetingWindowDuration"  : 100,
   "journeyDefaultTargetingWindowUnit"      : "year",

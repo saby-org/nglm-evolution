@@ -1,0 +1,76 @@
+/*****************************************************************************
+*
+*  SuspenseProcessEventConfiguration.java
+*
+*****************************************************************************/
+
+package com.evolving.nglm.core;
+
+import com.rii.utilities.JSONUtilities;
+import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+public class SuspenseProcessEventConfiguration
+{
+  /*****************************************
+  *
+  *  data
+  *
+  *****************************************/
+
+  private String inputSource;
+  private String eventParsingClass;
+  private String eventParsingMethod;
+  private String eventParsingConfig;
+  private int maxReprocessCount;
+  private Map<String, String> classTopicMapping;
+
+  /*****************************************
+  *
+  *  accessors
+  *
+  *****************************************/
+
+  public String getInputSource() { return inputSource; }
+  public String getEventParsingClass() { return eventParsingClass; }
+  public String getEventParsingMethod() { return eventParsingMethod; }
+  public String getEventParsingConfig() { return eventParsingConfig; }
+  public String getTopicForParsedEvent(String className) { return classTopicMapping.get(className); }
+  public int getMaxReprocessCount() { return maxReprocessCount; }
+  public Set<String> getParsedEventClassNames() { return classTopicMapping.keySet(); }
+  
+  /*****************************************
+  *
+  *  constructor
+  *
+  *****************************************/
+
+  public SuspenseProcessEventConfiguration(JSONObject jsonRoot) throws JSONUtilitiesException
+  {
+    this.inputSource = JSONUtilities.decodeString(jsonRoot, "inputSource", true);
+    this.eventParsingClass = JSONUtilities.decodeString(jsonRoot, "eventParsingClass", true);
+    this.eventParsingMethod = JSONUtilities.decodeString(jsonRoot, "eventParsingMethod", true);
+    this.eventParsingConfig = JSONUtilities.decodeString(jsonRoot, "eventParsingConfig", false);
+    this.maxReprocessCount = JSONUtilities.decodeInteger(jsonRoot, "maxReprocessCount", true);
+
+    //
+    //  target topics for parsed events
+    //
+    
+    this.classTopicMapping = new HashMap<String, String>();
+    JSONArray parsedEventTopicValues = JSONUtilities.decodeJSONArray(jsonRoot, "targetTopics", true);
+    for (int i=0; i<parsedEventTopicValues.size(); i++)
+      {
+        JSONObject mapping = (JSONObject) parsedEventTopicValues.get(i);
+        String parsedEventClass = JSONUtilities.decodeString(mapping, "parsedEventClass", true);
+        String destinationTopic = JSONUtilities.decodeString(mapping, "destinationTopic", true);
+        this.classTopicMapping.put(parsedEventClass, destinationTopic);
+      }
+  }
+}

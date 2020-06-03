@@ -9,7 +9,6 @@ package com.evolving.nglm.evolution;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,8 +27,6 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.ActionManager.Action;
-import com.evolving.nglm.evolution.DNBOProxy.DNBOProxyException;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
@@ -292,7 +289,6 @@ public class TokenUtils
       VoucherService voucherService, VoucherTypeService voucherTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
       ScoringStrategyService scoringStrategyService,
-      ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader,
       ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
       SegmentationDimensionService segmentationDimensionService,
       DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters, OfferService offerService, StringBuffer returnedLog,
@@ -376,7 +372,7 @@ public class TokenUtils
         Collection<ProposedOfferDetails> localScoring = scoringCache.get(scoringStrategyID);
         if (localScoring == null) // cache miss
           {
-            localScoring = getOffersWithScoringStrategy(now, salesChannelID, subscriberProfile, scoringStrategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, propensityDataReader, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, msisdn);
+            localScoring = getOffersWithScoringStrategy(now, salesChannelID, subscriberProfile, scoringStrategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, msisdn);
             scoringCache.put(scoringStrategyID, localScoring);
           }
         if (localScoring.size() < indexResult+1)
@@ -396,7 +392,6 @@ public class TokenUtils
     ProductService productService, ProductTypeService productTypeService,
     VoucherService voucherService, VoucherTypeService voucherTypeService,
     CatalogCharacteristicService catalogCharacteristicService,
-    ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader,
     ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
     SegmentationDimensionService segmentationDimensionService, DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters,
     OfferService offerService, StringBuffer returnedLog, String msisdn) throws GetOfferException
@@ -443,7 +438,7 @@ public class TokenUtils
         OfferOptimizerAlgoManager.getInstance().applyScoreAndSort(
             algo, algoParameters, offersForAlgo, subscriberProfile, threshold, salesChannelID,
             productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService,
-            propensityDataReader, subscriberGroupEpochReader,
+            subscriberGroupEpochReader,
             segmentationDimensionService, dnboMatrixAlgorithmParameters, returnedLog);
 
     if (offerAvailabilityFromPropensityAlgo == null)

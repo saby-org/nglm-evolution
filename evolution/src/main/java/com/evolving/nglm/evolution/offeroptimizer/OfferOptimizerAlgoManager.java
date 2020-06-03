@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.evolving.nglm.evolution.*;
+import com.evolving.nglm.evolution.propensity.PropensityService;
 import org.apache.log4j.Logger;
 
 import com.evolving.nglm.core.ReferenceDataReader;
@@ -26,6 +27,7 @@ import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationA
 public class OfferOptimizerAlgoManager {
   private static Logger logger = Logger.getLogger(OfferOptimizerAlgoManager.class);
   private static OfferOptimizerAlgoManager instance;
+  private static PropensityService propensityService;
   private static Object lock = new Object();
   private HashMap<String, IOfferOptimizerAlgorithm> algorithmInstances = new HashMap<>();
 
@@ -49,7 +51,6 @@ public class OfferOptimizerAlgoManager {
       Map<OfferOptimizationAlgorithmParameter, String> algoParameters, Set<Offer> offers, SubscriberProfile subscriberProfile, double minScoreThreshold,
       String requestedSalesChannelId, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
-      ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader,
       ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader,
       SegmentationDimensionService segmentationDimensionService, DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters,StringBuffer returnedLog) {
 
@@ -98,23 +99,24 @@ public class OfferOptimizerAlgoManager {
         // 
         // Validate propensity rule before using it
         //
-        
-        PropensityState propensityState = null;
-        
+        double currentPropensity = o.getInitialPropensity();
         if(Deployment.getPropensityRule().validate(segmentationDimensionService))
           {
-            // retrieve the current propensity for this offer
-            PropensityKey pk = new PropensityKey(o.getOfferID(), subscriberProfile, subscriberGroupEpochReader);
-            propensityState = propensityDataReader.get(pk);
-          }
-        
-        double currentPropensity = o.getInitialPropensity();
-        if (propensityState != null) 
-          {
+            // lazy init of the propensityService if needed
+            if(propensityService==null)
+              {
+                synchronized (lock)
+                  {
+                    if(propensityService==null)
+                      {
+                        propensityService=new PropensityService(subscriberGroupEpochReader);
+                      }
+                  }
+              }
             int presentationThreshold = Deployment.getPropensityInitialisationPresentationThreshold();
             int daysThreshold = Deployment.getPropensityInitialisationDurationInDaysThreshold();
-            currentPropensity = propensityState.getPropensity(currentPropensity, o.getEffectiveStartDate(), presentationThreshold, daysThreshold);
-          } 
+            currentPropensity = propensityService.getPropensity(o.getOfferID(), subscriberProfile, o.getInitialPropensity(),o.getEffectiveStartDate(),presentationThreshold,daysThreshold);
+          }
         else 
           {
             // just log a warn and keep initial propensity

@@ -379,13 +379,13 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1}' http:/
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getDefaultNoftificationDailyWindows; echo
 
 --
---  elasticsearch - propensity
+--  elasticsearch
 --
 
 curl -XGET http://<_MASTER_ELASTICSEARCH_SERVER_>/_cat/indices
-curl -XGET http://<_MASTER_ELASTICSEARCH_SERVER_>/propensity/_search?pretty
-curl -XGET "http://<_MASTER_ELASTICSEARCH_SERVER_>/propensity/_search?q=173&pretty"
-curl -XDELETE http://<_MASTER_ELASTICSEARCH_SERVER_>/propensity
+curl -XGET http://<_MASTER_ELASTICSEARCH_SERVER_>/subscriberprofile/_search?pretty
+curl -XGET "http://<_MASTER_ELASTICSEARCH_SERVER_>/subscriberprofile/_search?q=173&pretty"
+curl -XDELETE http://<_MASTER_ELASTICSEARCH_SERVER_>/subscriberprofile
 curl -XGET "http://<_MASTER_ELASTICSEARCH_SERVER_>/_nodes"
 curl -XPUT -H "Content-Type: application/json" http://<_MASTER_ELASTICSEARCH_SERVER_>/_all/_settings -d '{"index.blocks.read_only_allow_delete": null}'
 
