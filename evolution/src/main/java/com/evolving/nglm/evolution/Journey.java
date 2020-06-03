@@ -51,7 +51,6 @@ import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIDependency;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -3631,10 +3630,9 @@ public class Journey extends GUIManagedObject implements StockableItem
    * 
    *******************************/
   
-  @Override public List<GUIDependency> getGUIDependencies()
+  @Override public Map<String, List<String>> getGUIDependencies()
   {
-    List<GUIDependency> result = new ArrayList<GUIDependency>();
-    
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
     switch (getGUIManagedObjectType())
       {
         case Journey:
@@ -3644,7 +3642,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           //
           
           List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
-          result.add(new GUIDependency("journeyobjective", journeyObjectiveIDs));
+          result.put("journeyobjective", journeyObjectiveIDs);
           
           //
           //  campaign
@@ -3657,7 +3655,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                 {
                   campaignIDs.addAll(offerMap.values().stream().map( obj -> obj.toString()).collect(Collectors.toList()));
                 }
-              result.add(new GUIDependency("campaign", campaignIDs));
+              result.put("campaign", campaignIDs);
             }
           break;
           
@@ -3672,7 +3670,7 @@ public class Journey extends GUIManagedObject implements StockableItem
             {
               offerIDs.addAll(offerMap.values().stream().map( obj -> obj.toString()).collect(Collectors.toList()));
             }
-          result.add(new GUIDependency("offer", offerIDs));
+          result.put("offer", offerIDs);
           break;
 
         default:

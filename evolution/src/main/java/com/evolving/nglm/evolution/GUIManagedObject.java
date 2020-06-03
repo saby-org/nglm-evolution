@@ -33,7 +33,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
 
@@ -697,56 +699,13 @@ public abstract class GUIManagedObject
     {
       super(jsonRoot, epoch);
     }
-    @Override public List<GUIDependency> getGUIDependencies() { return new ArrayList<GUIDependency>(); }
+    @Override public Map<String, List<String>>  getGUIDependencies() { return new HashMap<String, List<String>>(); }
   }
   
-  //public abstract List<GUIDependency> getGUIDependencies();
-  public List<GUIDependency> getGUIDependencies()
+  //public abstract Map<String, List<String>>  getGUIDependencies();
+  public Map<String, List<String>> getGUIDependencies()
   {
-    log.info("RAJ K result {} ", "from super");
-    return new ArrayList<GUIDependency>();
-  }
-  
-  public class GUIDependency
-  {
-    @Override
-    public String toString()
-    {
-      return "GUIDependency [guidependencyObjectType=" + guidependencyObjectType + ", guidependencyObjectIDs=" + guidependencyObjectIDs + "]";
-    }
-
-    private String guidependencyObjectType;
-    private List<String> guidependencyObjectIDs;
-    
-    public GUIDependency(String guidependencyObjectType, List<String> guidependencyObjectIDs)
-    {
-      this.guidependencyObjectType = guidependencyObjectType;
-      this.guidependencyObjectIDs = guidependencyObjectIDs;
-    }
-    
-    public String getGUIDependencyObjectType() { return guidependencyObjectType ;}
-    public List<String> getGUIDependencyObjectID() { return guidependencyObjectIDs ;}
-    
-    //
-    //  used only for contains check
-    //
-    
-    @Override public boolean equals(Object obj)
-    {
-      boolean result = false;
-      if (obj instanceof GUIDependency)
-        {
-          GUIDependency dependency = (GUIDependency) obj;
-          result = dependency.getGUIDependencyObjectType().equalsIgnoreCase(this.guidependencyObjectType);
-        }
-      return result;
-    }
-    
-    @Override
-    public int hashCode()
-    {
-      return this.guidependencyObjectType.hashCode();
-    }
+    return new HashMap<String, List<String>>();
   }
   
   @Retention(RetentionPolicy.RUNTIME)

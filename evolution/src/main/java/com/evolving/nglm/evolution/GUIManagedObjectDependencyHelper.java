@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIDependency;
 import com.evolving.nglm.evolution.GUIManagedObject.Provides;
 
 /*****************************************
@@ -67,16 +66,12 @@ public class GUIManagedObjectDependencyHelper
           {
             for (GUIManagedObject guiManagedObject : storedObjectList)
               {
-                List<GUIDependency> guiDependencies = guiManagedObject.getGUIDependencies();
+                Map<String, List<String>> guiDependencies = guiManagedObject.getGUIDependencies();
                 log.info("looking for {}", guiDependencyModelTree.getGuiManagedObjectType());
                 if (guiDependencies != null && !guiDependencies.isEmpty())
                   {
-                    for (GUIDependency guiDependency: guiDependencies)
-                      {
-                        boolean contains = guiDependency.getGUIDependencyObjectType().equalsIgnoreCase(guiDependencyModelTree.getGuiManagedObjectType());
-                        contains = contains && guiDependency.getGUIDependencyObjectID().contains(objectID);
-                        if (contains) containerObjectList.add(guiManagedObject);
-                      }
+                    List<String> guiDependencyList = guiDependencies.get(guiDependencyModelTree.getGuiManagedObjectType().toLowerCase());
+                    if (guiDependencyList != null && guiDependencyList.contains(objectID)) containerObjectList.add(guiManagedObject);
                   }
               }
           }

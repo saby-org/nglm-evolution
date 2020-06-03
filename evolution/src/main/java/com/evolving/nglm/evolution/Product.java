@@ -28,8 +28,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 @GUIDependencyDef(objectType = "product", serviceClass = ProductService.class, dependencies = { })
 public class Product extends GUIManagedObject implements StockableItem
@@ -373,8 +375,5 @@ public class Product extends GUIManagedObject implements StockableItem
     if (! deliverableService.isActiveDeliverableThroughInterval(deliverable, this.getEffectiveStartDate(), this.getEffectiveEndDate())) throw new GUIManagerException("invalid deliverable (start/end dates)", deliverableID);
   }
   
-  @Override public List<GUIDependency> getGUIDependencies()
-  {
-    return new ArrayList<GUIDependency>();
-  }
+  @Override public Map<String, List<String>>  getGUIDependencies() { return new HashMap<String, List<String>>(); }
 }

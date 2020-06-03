@@ -15,8 +15,10 @@ import com.evolving.nglm.core.SchemaUtilities;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -871,14 +873,13 @@ public class Offer extends GUIManagedObject implements StockableItem
    * 
    *******************************/
   
-  @Override public List<GUIDependency> getGUIDependencies()
+  @Override public Map<String, List<String>> getGUIDependencies()
   {
-    List<GUIDependency> result = new ArrayList<GUIDependency>();
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> productIDs = getOfferProducts().stream().map(product -> product.getProductID()).collect(Collectors.toList());
     List<String> voucherIDs = getOfferVouchers().stream().map(voucher -> voucher.getVoucherID()).collect(Collectors.toList());
-    result.add(new GUIDependency("product", productIDs));
-    result.add(new GUIDependency("voucher", voucherIDs));
-    log.info("RAJ K result {} ", result);
+    result.put("product", productIDs);
+    result.put("voucher", voucherIDs);
     return result;
   }
 }
