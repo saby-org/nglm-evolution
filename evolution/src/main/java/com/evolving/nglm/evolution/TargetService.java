@@ -1,20 +1,14 @@
 package com.evolving.nglm.evolution;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Properties;
+import java.io.*;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import com.evolving.nglm.evolution.reports.ReportManager;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -368,6 +362,99 @@ public class TargetService extends GUIService
             log.warn("Exception processing listener: {}", stackTraceWriter.toString());
           }
       }
+  }
+
+  private ZooKeeper zk = null;
+  private static final int NB_TIMES_TO_TRY = 10;
+
+  /*
+   * Called by GuiManager to trigger a one-time report
+   */
+  public void launchTargetExtract(String targetName)
+  {
+    log.trace("launchTarget : " + targetName);
+    String znode = ReportManager.getExtractCOntrolDir() + File.separator + "launchTarget-" + targetName + "-";
+    if (getZKConnection())
+      {
+        log.debug("Trying to create ephemeral znode " + znode + " for " + targetName);
+        try
+          {
+            // Create new file in control dir with reportName inside, to trigger
+            // report generation
+            zk.create(znode, targetName.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
+          }
+        catch (KeeperException e)
+          {
+            log.info("Got " + e.getLocalizedMessage());
+          }
+        catch (InterruptedException e)
+          {
+            log.info("Got " + e.getLocalizedMessage());
+          }
+      }
+    else
+      {
+        log.info("There was a major issue connecting to zookeeper");
+      }
+  }
+
+  private boolean isConnectionValid(ZooKeeper zookeeper)
+  {
+    return (zookeeper != null) && (zookeeper.getState() == ZooKeeper.States.CONNECTED);
+  }
+
+  public boolean isTargetExtractRunning(String targetName) {
+    try
+      {
+        if (getZKConnection())
+          {
+            List<String> children = zk.getChildren(ReportManager.getExtractCOntrolDir(), false);
+            for(String child : children)
+              {
+                if(child.contains(targetName))
+                  {
+                    String znode = ReportManager.getExtractCOntrolDir() + File.separator+child;
+                    return (zk.exists(znode, false) != null);
+                  }
+              }
+          }
+        else
+          {
+            log.info("There was a major issue connecting to zookeeper");
+          }
+      }
+    catch (KeeperException e)
+      {
+        log.info(e.getLocalizedMessage());
+      }
+    catch (InterruptedException e) { }
+    return false;
+  }
+
+  private boolean getZKConnection()  {
+    if (!isConnectionValid(zk)) {
+      log.debug("Trying to acquire ZooKeeper connection to "+Deployment.getZookeeperConnect());
+      int nbLoop = 0;
+      do
+        {
+          try
+            {
+              zk = new ZooKeeper(Deployment.getZookeeperConnect(), 3000, new Watcher() { @Override public void process(WatchedEvent event) {} }, false);
+              try { Thread.sleep(1*1000); } catch (InterruptedException e) {}
+              if (!isConnectionValid(zk))
+                {
+                  log.info("Could not get a zookeeper connection, waiting... ("+(NB_TIMES_TO_TRY-nbLoop)+" more times to go)");
+                  try { Thread.sleep(5*1000); } catch (InterruptedException e) {}
+                }
+            }
+          catch (IOException e)
+            {
+              log.info("could not create zookeeper client using {}", Deployment.getZookeeperConnect());
+            }
+        }
+      while (!isConnectionValid(zk) && (nbLoop++ < NB_TIMES_TO_TRY));
+    }
+    return isConnectionValid(zk);
   }
 
   /*****************************************

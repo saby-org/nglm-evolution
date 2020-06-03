@@ -251,6 +251,7 @@ public class GUIManager
     putReport("putReport"),
     launchReport("launchReport"),
     downloadReport("downloadReport"),
+    downloadTargetExtract("downloadTargetExtract"),
     getPresentationStrategyList("getPresentationStrategyList"),
     getPresentationStrategySummaryList("getPresentationStrategySummaryList"),
     getPresentationStrategy("getPresentationStrategy"),
@@ -391,6 +392,7 @@ public class GUIManager
     putTarget("putTarget"),
     getTarget("getTarget"),
     removeTarget("removeTarget"),
+    launchTargetExtract("launchTargetExtract"),
     updateCustomer("updateCustomer"),
     updateCustomerParent("updateCustomerParent"),
     removeCustomerParent("removeCustomerParent"),
@@ -1727,7 +1729,9 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getReportList", new APISimpleHandler(API.getReportList));
         restServer.createContext("/nglm-guimanager/putReport", new APISimpleHandler(API.putReport));
         restServer.createContext("/nglm-guimanager/launchReport", new APISimpleHandler(API.launchReport));
+        restServer.createContext("/nglm-guimanager/launchTargetExtract", new APISimpleHandler(API.launchTargetExtract));
         restServer.createContext("/nglm-guimanager/downloadReport", new APIComplexHandler(API.downloadReport));
+        restServer.createContext("/nglm-guimanager/downloadTargetExtract", new APIComplexHandler(API.downloadTargetExtract));
         restServer.createContext("/nglm-guimanager/getPresentationStrategySummaryList", new APISimpleHandler(API.getPresentationStrategySummaryList));
         restServer.createContext("/nglm-guimanager/getPresentationStrategy", new APISimpleHandler(API.getPresentationStrategy));
         restServer.createContext("/nglm-guimanager/putPresentationStrategy", new APISimpleHandler(API.putPresentationStrategy));
@@ -2628,6 +2632,10 @@ public class GUIManager
 
                 case launchReport:
                   jsonResponse = processLaunchReport(userID, jsonRoot);
+                  break;
+
+                case launchTargetExtract:
+                  jsonResponse = processLaunchTargetExtract(userID, jsonRoot);
                   break;
 
                 case getPresentationStrategyList:
@@ -3682,6 +3690,9 @@ public class GUIManager
 
                 case downloadReport:
                   processDownloadReport(userID, jsonRoot, jsonResponse, exchange);
+                  break;
+                case downloadTargetExtract:
+                  processDownloadTargetExtract(userID, jsonRoot, jsonResponse, exchange);
                   break;
               }
           }
@@ -7638,10 +7649,10 @@ public class GUIManager
     *
     *****************************************/
 
-    long result;
+    Object result;
     try
       {
-        result = Journey.processEvaluateProfileCriteriaExecuteQuery(query, elasticsearch);
+          result = Journey.processEvaluateProfileCriteriaExecuteQuery(query, elasticsearch);
       }
     catch (IOException e)
       {
@@ -8557,6 +8568,40 @@ public class GUIManager
         else
           {
             reportService.launchReport(report.getName());
+            responseCode = "ok";
+          }
+      }
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+   *
+   *  processLaunchReport
+   *
+   *****************************************/
+
+  private JSONObject processLaunchTargetExtract(String userID, JSONObject jsonRoot)
+  {
+    log.trace("In processLaunchTargetExtract : "+jsonRoot);
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    String targetID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    Target target = (Target) targetService.getStoredTarget(targetID);
+    log.trace("Looking for "+targetID+" and got "+target);
+    String responseCode;
+    if (target == null)
+      {
+        responseCode = "target not found";
+      }
+    else
+      {
+        if (targetService.isTargetExtractRunning(target.getTargetName()))
+          {
+            responseCode = "targetIsAlreadyRunning";
+          }
+        else
+          {
+            targetService.launchTargetExtract(target.getTargetName());
             responseCode = "ok";
           }
       }
@@ -17308,6 +17353,7 @@ public class GUIManager
       {
         JSONObject targetResponse = targetService.generateResponseJSON(targetList, fullDetails, now);
         targetResponse.put("isRunning", targetService.isActiveTarget(targetList, now) ? targetService.isTargetFileBeingProcessed((Target) targetList) : false);
+        targetResponse.put("isExtractProcessing", targetService.isTargetExtractRunning(((Target)targetList).getTargetName()));
         targetLists.add(targetResponse);
       }
 
@@ -22628,6 +22674,108 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         catch (GUIManagerException e)
           {
             log.info("Exception when building report from "+report1+" : "+e.getLocalizedMessage());
+            responseCode = "internalError";
+          }
+      }
+    if(responseCode != null) {
+      try {
+        jsonResponse.put("responseCode", responseCode);
+        exchange.sendResponseHeaders(200, 0);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(jsonResponse.toString());
+        writer.close();
+        exchange.close();
+      }catch(Exception e) {
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+      }
+    }
+  }
+
+  /*****************************************
+   *
+   *  processDownloadReport
+   *
+   *****************************************/
+
+  private void processDownloadTargetExtract(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
+  {
+    String targetID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    Target target = targetService.getActiveTarget(targetID,Calendar.getInstance().getTime());
+    log.trace("Looking for "+targetID+" and got "+target);
+    String responseCode = null;
+
+    if (target == null)
+      {
+        responseCode = "targetNotFound";
+      }
+    else
+      {
+        try
+          {
+            //Report report = new Report(target.getJSONRepresentation(), epochServer.getKey(), null);
+            //String reportName = report.getName();
+
+            String outputPath = Deployment.getReportManagerOutputPath()+File.separator;
+            String fileExtension = Deployment.getReportManagerFileExtension();
+
+            File folder = new File(outputPath);
+            String csvFilenameRegex = target.getTargetName()+ "_"+ ".*"+ "\\."+ fileExtension+ReportUtils.ZIP_EXTENSION;
+
+            File[] listOfFiles = folder.listFiles(new FileFilter(){
+              @Override
+              public boolean accept(File f) {
+                return Pattern.compile(csvFilenameRegex).matcher(f.getName()).matches();
+              }});
+
+            File reportFile = null;
+
+            long lastMod = Long.MIN_VALUE;
+            if(listOfFiles != null && listOfFiles.length != 0) {
+              for (int i = 0; i < listOfFiles.length; i++) {
+                if (listOfFiles[i].isFile()) {
+                  if(listOfFiles[i].lastModified() > lastMod) {
+                    reportFile = listOfFiles[i];
+                    lastMod = reportFile.lastModified();
+                  }
+                }
+              }
+            }else {
+              responseCode = "Cant find target with that name";
+            }
+
+            if(reportFile != null) {
+              if(reportFile.length() > 0) {
+                try {
+                  FileInputStream fis = new FileInputStream(reportFile);
+                  exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
+                  exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
+                  exchange.sendResponseHeaders(200, reportFile.length());
+                  OutputStream os = exchange.getResponseBody();
+                  byte data[] = new byte[10_000]; // allow some bufferization
+                  int length;
+                  while ((length = fis.read(data)) != -1) {
+                    os.write(data, 0, length);
+                  }
+                  fis.close();
+                  os.flush();
+                  os.close();
+                } catch (Exception excp) {
+                  StringWriter stackTraceWriter = new StringWriter();
+                  excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                  log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                }
+              }else {
+                responseCode = "Target size is 0, report file is empty";
+              }
+            }else {
+              responseCode = "Target is null, cant find this report";
+            }
+          }
+        catch (Exception e)
+          {
+            log.info("Exception when building target from "+target+" : "+e.getLocalizedMessage());
             responseCode = "internalError";
           }
       }

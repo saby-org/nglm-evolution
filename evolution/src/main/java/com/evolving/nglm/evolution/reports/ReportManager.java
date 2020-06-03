@@ -19,6 +19,9 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
+import com.evolving.nglm.evolution.*;
+import com.evolving.nglm.evolution.reports.extracts.TargetExtractDriver;
+import com.evolving.nglm.evolution.reports.subscriber.SubscriberReportDriver;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -32,12 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.CriterionContext;
-import com.evolving.nglm.evolution.Deployment;
-import com.evolving.nglm.evolution.DynamicCriterionFieldService;
-import com.evolving.nglm.evolution.GUIManagedObject;
-import com.evolving.nglm.evolution.Report;
-import com.evolving.nglm.evolution.ReportService;
 import com.evolving.nglm.evolution.ReportService.ReportListener;
 
 /**
@@ -51,10 +48,13 @@ public class ReportManager implements Watcher
 
   public static final String CONTROL_SUBDIR = "control"; // used in ReportScheduler
   private static final String LOCK_SUBDIR = "lock";
+  private static final String EXTRACT_SUBDIR = "extracts";
   private static final int sessionTimeout = 10*1000; // 60 seconds
 
   private static String controlDir = null;
   private String lockDir = null;
+  private String extractLockDir = null;
+  private String extractControlDir = null;
   private ZooKeeper zk = null;
   private static String zkHostList;
   private static String brokerServers;
@@ -63,6 +63,7 @@ public class ReportManager implements Watcher
   private static final Logger log = LoggerFactory.getLogger(ReportManager.class);
   private static ReportManagerStatistics reportManagerStatistics;
   private ReportService reportService;
+  private TargetService targetService;
   
   public static short replicationFactor;
   public static int nbPartitions;
@@ -73,6 +74,11 @@ public class ReportManager implements Watcher
    */
   public static String getControlDir() {
     return getTopDir() + File.separator + CONTROL_SUBDIR;
+  }
+
+  public static String getExtractCOntrolDir()
+  {
+    return getControlDir()+File.separator+EXTRACT_SUBDIR;
   }
 
   /**
@@ -102,6 +108,8 @@ public class ReportManager implements Watcher
     String topDir = getTopDir();
     controlDir = getControlDir();
     lockDir = topDir + File.separator + LOCK_SUBDIR;
+    extractLockDir = lockDir+File.separator+EXTRACT_SUBDIR;
+    extractControlDir = controlDir+File.separator+EXTRACT_SUBDIR;
     log.debug("controlDir = "+controlDir+" , lockDir = "+lockDir);
 
     ReportListener reportListener = new ReportListener() {
@@ -122,12 +130,19 @@ public class ReportManager implements Watcher
     reportService.start();
     log.trace("ReportService started");
 
+    log.trace("Creating TargetService");
+    targetService = new TargetService(Deployment.getBrokerServers(), "reportmanager-targetService-001", Deployment.getTargetTopic(), false);
+    targetService.start();
+    log.trace("TargetService started");
+
     zk  = new ZooKeeper(zkHostList, sessionTimeout, this);
     log.debug("ZK client created : "+zk);
     // TODO next 3 lines could be done once for all in nglm-evolution/.../evolution-setup-zookeeper.sh
     createZKNode(topDir, true);
     createZKNode(controlDir, true);
+    createZKNode(extractControlDir,true);
     createZKNode(lockDir, true);
+    createZKNode(extractLockDir,true);
     List<String> initialReportList = zk.getChildren(controlDir, null); // no watch initially
     try
     {
@@ -137,6 +152,7 @@ public class ReportManager implements Watcher
       log.error("Error processing report", e);
     }
     zk.getChildren(controlDir, this); // sets watch
+    zk.getChildren(extractControlDir,this);
   }
 
   /*****************************************
@@ -177,7 +193,10 @@ public class ReportManager implements Watcher
       if (event.getType().equals(EventType.NodeChildrenChanged)) 
         {
           List<String> children = zk.getChildren(controlDir, this); // get the children and renew watch
+          children.remove(EXTRACT_SUBDIR);
           processChildren(children);
+          List<String> extractChildren = zk.getChildren(extractControlDir, this);
+          processExportChildren(extractChildren);
         }
     }
     catch (KeeperException | InterruptedException e)
@@ -303,6 +322,124 @@ public class ReportManager implements Watcher
         }
       }
   }
+
+  /*****************************************
+   *this is an temporary solution
+   *  processExportChildren
+   *
+   *****************************************/
+
+  private void processExportChildren(List<String> children) throws KeeperException, InterruptedException
+  {
+    if (!children.isEmpty())
+      {
+        Collections.sort(children); // we are getting an unsorted list
+        for (String child : children)
+          {
+            String controlFile = extractControlDir + File.separator + child;
+            String lockFile = extractLockDir + File.separator + child;
+            log.trace("Checking if lock exists : "+lockFile);
+            if (zk.exists(lockFile, false) == null)
+              {
+                log.trace("Processing entry "+child+" with znodes "+controlFile+" and "+lockFile);
+                try
+                  {
+                    log.trace("Trying to create lock "+lockFile);
+                    zk.create(lockFile, dfrm.format(SystemTime.getCurrentTime()).getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+                    try
+                      {
+                        log.trace("Lock "+lockFile+" successfully created");
+                        Stat stat = null;
+                        Charset utf8Charset = Charset.forName("UTF-8");
+                        byte[] d = zk.getData(controlFile, false, stat);
+                        String data = new String(d, utf8Charset);
+                        log.info("Got data "+data);
+                        Scanner s = new Scanner(data+"\n"); // Make sure s.nextLine() will work
+                        String targetName = s.next().trim();
+                        log.trace("We got reportName = "+targetName);
+                        String restOfLine = s.nextLine().trim();
+                        s.close();
+                        Collection<GUIManagedObject> targets = targetService.getStoredTargets();
+                        Target target = null;
+                        if (targetName != null)
+                          {
+                            for (GUIManagedObject gmo : targets)
+                              {
+                                Target targetLocal = (Target) gmo;
+                                log.trace("Checking "+target+" for "+targetName);
+                                if (targetName.equals(targetLocal.getTargetName()))
+                                  {
+                                    target = targetLocal;
+                                    break;
+                                  }
+                              }
+                          }
+                        if (target == null)
+                          {
+                            log.error("Report does not exist : "+targetName);
+                            reportManagerStatistics.incrementFailureCount();
+                          }
+                        else
+                          {
+                            log.debug("report = "+target);
+                            handleTarget(targetName, target, restOfLine);
+                            reportManagerStatistics.incrementReportCount();
+                          }
+                      }
+                    catch (KeeperException | InterruptedException | NoSuchElementException e)
+                      {
+                        log.error("Issue while reading from control node "+e.getLocalizedMessage(), e);
+                        reportManagerStatistics.incrementFailureCount();
+                      }
+                    catch (IllegalCharsetNameException e)
+                      {
+                        log.error("Unexpected issue, UTF-8 does not seem to exist "+e.getLocalizedMessage(), e);
+                        reportManagerStatistics.incrementFailureCount();
+                      }
+                    catch (Exception e) // this is OK because we trace the root cause, and we'll fix it
+                      {
+                        log.error("Unexpected issue " + e.getLocalizedMessage(), e);
+                        reportManagerStatistics.incrementFailureCount();
+                      }
+                    finally
+                      {
+                        log.info("Deleting control "+controlFile);
+                        try
+                          {
+                            zk.delete(controlFile, -1);
+                          }
+                        catch (KeeperException | InterruptedException e)
+                          {
+                            log.info("Issue deleting control : "+e.getLocalizedMessage(), e);
+                          }
+                        finally
+                          {
+                            log.info("Deleting lock "+lockFile);
+                            try
+                              {
+                                zk.delete(lockFile, -1);
+                                log.info("Both files deleted");
+                              }
+                            catch (KeeperException | InterruptedException e)
+                              {
+                                log.info("Issue deleting lock : "+e.getLocalizedMessage(), e);
+                              }
+                          }
+                      }
+                  }
+                catch (KeeperException | InterruptedException ignore)
+                  {
+                    // even so we check the existence of a lock, it could have been created in the mean time making create fail. We catch and ignore it.
+                    log.trace("Failed to create lock file, this is OK " +lockFile+ ":"+ignore.getLocalizedMessage(), ignore);
+                  }
+              }
+            else
+              {
+                log.trace("--> This report is already processed by another ReportManager instance");
+              }
+          }
+      }
+  }
   
   /*****************************************
   *
@@ -383,6 +520,77 @@ public class ReportManager implements Watcher
       log.error("Error : "+e.getLocalizedMessage(), e);
       reportManagerStatistics.incrementFailureCount();
     }
+  }
+
+  /*****************************************
+   *this ia an temporary solution
+   *  handleReport
+   *
+   *****************************************/
+
+  private void handleTarget(String targetName, Target target, String restOfLine)
+  {
+    log.trace("---> Starting report "+targetName+" "+restOfLine);
+    String[] params = null;
+    if (!"".equals(restOfLine))
+      {
+        params = restOfLine.split("\\s+"); // split with spaces
+      }
+    if (params != null)
+      {
+        for (String param : params)
+          {
+            log.debug("  param : " + param);
+          }
+      }
+    try
+      {
+        String outputPath = Deployment.getReportManagerOutputPath();
+        log.trace("outputPath = "+outputPath);
+        String dateFormat = Deployment.getReportManagerDateFormat();
+        log.trace("dateFormat = "+dateFormat);
+        String fileExtension = Deployment.getReportManagerFileExtension();
+        log.trace("dateFormat = "+fileExtension);
+
+        SimpleDateFormat sdf;
+        try {
+          sdf = new SimpleDateFormat(dateFormat);
+        } catch (IllegalArgumentException e) {
+          log.error("Config error : date format "+dateFormat+" is invalid, using default"+e.getLocalizedMessage(), e);
+          sdf = new SimpleDateFormat(); // Default format, might not be valid in a filename, sigh...
+        }
+        String fileSuffix = sdf.format(SystemTime.getCurrentTime());
+        String csvFilename = ""
+                + outputPath
+                + File.separator
+                + targetName
+                + "_"
+                + fileSuffix
+                + "."
+                + fileExtension;
+        log.trace("csvFilename = " + csvFilename);
+
+        @SuppressWarnings("unchecked")
+        //Class<ReportDriver> reportClass = (Class<ReportDriver>) Class.forName(report.getReportClass());
+        //Constructor<ReportDriver> cons = reportClass.getConstructor();
+        //ReportDriver rd = cons.newInstance((Object[]) null);
+        TargetExtractDriver rd = new TargetExtractDriver();
+        try
+          {
+            rd.produceReport(target, zkHostList, brokerServers, esNode, csvFilename, params);
+          }
+        catch (Exception e)
+          {
+            // handle any kind of exception that can happen during generating the report, and do not crash the container
+            log.error("Exception processing target " + targetName + " : " + e);
+          }
+        log.trace("---> Finished target extract "+targetName);
+      }
+    catch (Exception e)
+      {
+        log.error("Error : "+e.getLocalizedMessage(), e);
+        reportManagerStatistics.incrementFailureCount();
+      }
   }
 
   /*****************************************
