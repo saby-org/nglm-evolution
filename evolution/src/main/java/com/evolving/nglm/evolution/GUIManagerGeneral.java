@@ -3371,7 +3371,7 @@ public class GUIManagerGeneral extends GUIManager
     boolean fiddleTest = JSONUtilities.decodeBoolean(jsonRoot, "fiddleTest", Boolean.FALSE);
     
     //
-    //  resolveAndGetDependencyModelTree
+    //  guiDependencyModelTree
     //
     
     GUIDependencyModelTree guiDependencyModelTree =  guiDependencyModelTreeMap.get(objetType);

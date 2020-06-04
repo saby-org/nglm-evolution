@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 
-@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "product" , "voucher" })
+@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "product" , "voucher", "saleschannel"})
 public class Offer extends GUIManagedObject implements StockableItem
 {  
   //
@@ -863,8 +863,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   @Override
   public String toString()
     {
-      return "Offer [initialPropensity=" + initialPropensity + ", "
-          + (getGUIManagedObjectID() != null ? "getGUIManagedObjectID()=" + getGUIManagedObjectID() : "") + "]";
+      return "Offer [initialPropensity=" + initialPropensity + ", " + (getGUIManagedObjectID() != null ? "getGUIManagedObjectID()=" + getGUIManagedObjectID() : "") + "]";
     }
   
   /*******************************
@@ -878,8 +877,14 @@ public class Offer extends GUIManagedObject implements StockableItem
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> productIDs = getOfferProducts().stream().map(product -> product.getProductID()).collect(Collectors.toList());
     List<String> voucherIDs = getOfferVouchers().stream().map(voucher -> voucher.getVoucherID()).collect(Collectors.toList());
+    List<String> saleschannelIDs = new ArrayList<String>();
+    for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : getOfferSalesChannelsAndPrices())
+      {
+        saleschannelIDs.addAll(offerSalesChannelsAndPrice.getSalesChannelIDs());
+      }
     result.put("product", productIDs);
     result.put("voucher", voucherIDs);
+    result.put("saleschannel", saleschannelIDs);
     return result;
   }
 }

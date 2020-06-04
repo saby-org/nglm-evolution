@@ -33,7 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-@GUIDependencyDef(objectType = "product", serviceClass = ProductService.class, dependencies = { })
+@GUIDependencyDef(objectType = "product", serviceClass = ProductService.class, dependencies = { "supplier" })
 public class Product extends GUIManagedObject implements StockableItem
 {
   /*****************************************
@@ -375,5 +375,12 @@ public class Product extends GUIManagedObject implements StockableItem
     if (! deliverableService.isActiveDeliverableThroughInterval(deliverable, this.getEffectiveStartDate(), this.getEffectiveEndDate())) throw new GUIManagerException("invalid deliverable (start/end dates)", deliverableID);
   }
   
-  @Override public Map<String, List<String>>  getGUIDependencies() { return new HashMap<String, List<String>>(); }
+  @Override public Map<String, List<String>> getGUIDependencies()
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    List<String> supplierIDs = new ArrayList<String>();
+    supplierIDs.add(getSupplierID());
+    result.put("supplier", supplierIDs);
+    return result;
+  }
 }
