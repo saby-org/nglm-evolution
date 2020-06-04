@@ -6,41 +6,16 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
-import com.evolving.nglm.evolution.GUIManagedObject.Provides;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.StringKey;
-
-import com.evolving.nglm.core.SystemTime;
-
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.common.TopicPartition;
+import java.util.Collection;
+import java.util.Date;
 
 import org.json.simple.JSONObject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class ProductService extends GUIService
 {
@@ -134,7 +109,6 @@ public class ProductService extends GUIService
   public String generateProductID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredProduct(String productID) { return getStoredGUIManagedObject(productID); }
   public GUIManagedObject getStoredProduct(String productID, boolean includeArchived) { return getStoredGUIManagedObject(productID, includeArchived); }
-  @Provides(Product.class)
   public Collection<GUIManagedObject> getStoredProducts() { return getStoredGUIManagedObjects(); }
   public Collection<GUIManagedObject> getStoredProducts(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveProductThroughInterval(GUIManagedObject productUnchecked, Date startDate, Date endDate) { return isActiveThroughInterval(productUnchecked, startDate, endDate); }

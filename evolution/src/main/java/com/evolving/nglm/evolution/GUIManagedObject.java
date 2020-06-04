@@ -716,11 +716,4 @@ public abstract class GUIManagedObject
     public String[] dependencies ();
     public Class<? extends GUIService> serviceClass();
   }
-  
-  @Retention(RetentionPolicy.RUNTIME)
-  @Target(ElementType.METHOD)
-  public @interface Provides
-  {
-    public Class<? extends GUIManagedObject> value();
-  }
 }

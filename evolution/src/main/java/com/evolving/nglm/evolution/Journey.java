@@ -3638,26 +3638,16 @@ public class Journey extends GUIManagedObject implements StockableItem
         case Journey:
           
           //
-          //  journeyObjective
-          //
-          
-          List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
-          result.put("journeyobjective", journeyObjectiveIDs);
-          
-          //
           //  campaign
           //
           
-          if (getGUIManagedObjectType() == GUIManagedObjectType.Journey)
+          List<String> campaignIDs = new ArrayList<String>();
+          for (JourneyNode journeyNode : getJourneyNodes().values())
             {
-              List<String> campaignIDs = new ArrayList<String>();
-              for (ParameterMap offerMap : getParameterMapsFromNodesWithKey("node.parameter.journey"))
-                {
-                  campaignIDs.addAll(offerMap.values().stream().map( obj -> obj.toString()).collect(Collectors.toList()));
-                }
-              result.put("campaign", campaignIDs);
+              String campaignID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("journey");
+              if (campaignID != null)campaignIDs.add(campaignID);
             }
-          break;
+          result.put("campaign", campaignIDs);
           
         case Campaign:
           
@@ -3666,9 +3656,10 @@ public class Journey extends GUIManagedObject implements StockableItem
           //
           
           List<String> offerIDs = new ArrayList<String>();
-          for (ParameterMap offerMap : getParameterMapsFromNodesWithKey("node.parameter.offerid"))
+          for (JourneyNode offerNode : getJourneyNodes().values())
             {
-              offerIDs.addAll(offerMap.values().stream().map( obj -> obj.toString()).collect(Collectors.toList()));
+              String offerID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("offer");
+              if (offerID != null) offerIDs.add(offerID);
             }
           result.put("offer", offerIDs);
           break;
@@ -3678,26 +3669,16 @@ public class Journey extends GUIManagedObject implements StockableItem
       }
     
     //
+    //  journeyObjective
+    //
+    
+  List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+  result.put("journeyobjective", journeyObjectiveIDs);
+    
+    //
     //  return
     //
     
-    return result;
-  }
-  
-  //
-  //  getParameterMapFromNodeWithKey
-  //
-  
-  private List<ParameterMap> getParameterMapsFromNodesWithKey(String parameterKey)
-  {
-    List<ParameterMap> result = new ArrayList<ParameterMap>();
-    if (getJourneyNodes() != null)
-      {
-        for (JourneyNode journeyNode : getJourneyNodes().values())
-          {
-            if (journeyNode.getNodeParameters().containsKey(parameterKey)) result.add(journeyNode.getNodeParameters());
-          }
-      }
     return result;
   }
 }

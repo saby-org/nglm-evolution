@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.evolution.GUIManagedObject.Provides;
 
 /*****************************************
  * 

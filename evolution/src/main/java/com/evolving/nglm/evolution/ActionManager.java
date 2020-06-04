@@ -16,6 +16,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -145,4 +146,10 @@ public abstract class ActionManager
       }
     return deliveryRequestSource;
   }
+  
+  public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
+  {
+    return new HashMap<String, String>();
+  }
+
 }
