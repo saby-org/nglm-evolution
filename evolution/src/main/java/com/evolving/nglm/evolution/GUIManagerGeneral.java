@@ -3403,7 +3403,7 @@ public class GUIManagerGeneral extends GUIManager
           } 
         catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e)
           {
-            response.put("responseCode", "systemEroor");
+            response.put("responseCode", "systemError");
             response.put("responseMessage", e.getMessage());
             
             StringWriter stackTraceWriter = new StringWriter();
