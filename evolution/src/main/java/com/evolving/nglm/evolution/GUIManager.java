@@ -464,7 +464,6 @@ public class GUIManager
     getSourceAddress("getSourceAddress"),
     putSourceAddress("putSourceAddress"),
     removeSourceAddress("removeSourceAddress"),
-    getDependencies("getDependencies"),
     getDependents("getDependents"),
     
     //
@@ -1942,7 +1941,6 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSourceAddress", new APISimpleHandler(API.getSourceAddress));
         restServer.createContext("/nglm-guimanager/putSourceAddress", new APISimpleHandler(API.putSourceAddress));
         restServer.createContext("/nglm-guimanager/removeSourceAddress", new APISimpleHandler(API.removeSourceAddress));
-        restServer.createContext("/nglm-guimanager/getDependencies", new APISimpleHandler(API.getDependencies));
         restServer.createContext("/nglm-guimanager/getDependents", new APISimpleHandler(API.getDependents));
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
@@ -3490,10 +3488,6 @@ public class GUIManager
 
                 case getTenantList:
                   jsonResponse = guiManagerGeneral.processGetTenantList(userID, jsonRoot, true, includeArchived);
-                  break;
-                  
-                case getDependencies:
-                  //jsonResponse = guiManagerGeneral.processGetDependencies(userID, jsonRoot);
                   break;
                   
                 case getDependents:

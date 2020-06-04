@@ -155,18 +155,6 @@ public class GUIManagerGeneral extends GUIManager
     super.journeyTrafficReader = journeyTrafficReader;
     super.renamedProfileCriterionFieldReader = renamedProfileCriterionFieldReader;
     
-    //
-    //  buildGUIDependencyModelTreeMap
-    //
-    
-    buildGUIDependencyModelTreeMap();
-    
-    //
-    // validatenocycle(guiManagedObjectDependencyTreeMap);
-    //
-    
-    //validatenocycle(Deployment.getGUIManagedObjectDependencyTreeMap());
-    
     guiServiceList.add(callingChannelService);
     guiServiceList.add(catalogCharacteristicService);
     guiServiceList.add(communicationChannelBlackoutService);
@@ -203,6 +191,12 @@ public class GUIManagerGeneral extends GUIManager
     guiServiceList.add(dynamicCriterionFieldService);
     guiServiceList.add(dynamicEventDeclarationsService);
     guiServiceList.add(journeyTemplateService);
+    
+    //
+    //  buildGUIDependencyModelTreeMap
+    //
+    
+    buildGUIDependencyModelTreeMap();
   }
 
   /*****************************************
@@ -3360,54 +3354,12 @@ public class GUIManagerGeneral extends GUIManager
   
   /****************************************
   *
-  *  processGetDependencies
-  *
-  ****************************************/
-
-  /*
-   * protected JSONObject processGetDependencies(String userID, JSONObject
-   * jsonRoot) { log.info("RAJ K jsonRoot {}", jsonRoot); Map<String, Object>
-   * response = new LinkedHashMap<String, Object>();
-   * 
-   * // // request data //
-   * 
-   * String objetTypeID = JSONUtilities.decodeString(jsonRoot, "objectType",
-   * true).toLowerCase(); String objectID = JSONUtilities.decodeString(jsonRoot,
-   * "id", true); boolean fiddleTest = JSONUtilities.decodeBoolean(jsonRoot,
-   * "fiddleTest", Boolean.FALSE); log.info("RAJ K objetTypeID {}, objectID {} ",
-   * objetTypeID, objectID);
-   * 
-   * // // guiManagedObjectDependencyPresentation //
-   * 
-   * GUIDependencyModelTree guiManagedObjectDependencyPresentation =
-   * Deployment.getGUIManagedObjectDependencyTreeMap().get(objetTypeID); if
-   * (guiManagedObjectDependencyPresentation != null) { List<JSONObject>
-   * dependencyList = new LinkedList<JSONObject>();
-   * GUIManagedObjectDependencyHelper.createDependencyTreeMAP(
-   * guiManagedObjectDependencyPresentation,
-   * guiManagedObjectDependencyPresentation.getDependencyList(), objectID,
-   * dependencyList, fiddleTest, journeyService, offerService, productService,
-   * journeyObjectiveService); response.put("responseCode", "ok"); if (fiddleTest)
-   * { response.put("children", JSONUtilities.encodeArray(dependencyList)); } else
-   * { response.put("dependents", JSONUtilities.encodeArray(dependencyList)); } }
-   * else { response.put("responseCode", "objetTypeNotValid");
-   * response.put("responseMessage", "objetTypeID " + objetTypeID +
-   * " not found in configuration"); }
-   * 
-   * // // return //
-   * 
-   * return JSONUtilities.encodeObject(response); }
-   */
-  
-  /****************************************
-  *
   *  processGetDependents
   *
   ****************************************/
   
   public JSONObject processGetDependents(String userID, JSONObject jsonRoot)
   {
-    log.info("RAJ K processGetDependents jsonRoot {}", jsonRoot);
     Map<String, Object> response = new LinkedHashMap<String, Object>();
     
     //
@@ -3470,15 +3422,6 @@ public class GUIManagerGeneral extends GUIManager
     //
     
     return JSONUtilities.encodeObject(response);
-  }
-  
-  private void validatenocycle(Map<String, GUIDependencyModelTree> guiManagedObjectDependencyTreeMap)
-  {
-    GUIManagedObjectDependencyGraph dependencyGraph = new GUIManagedObjectDependencyGraph(guiManagedObjectDependencyTreeMap);
-    if (dependencyGraph.isCyclic());
-      {
-        throw new ServerRuntimeException("deployment error guiManagedObjectDependencyTree is cyclic");
-      }
   }
   
   /****************************************

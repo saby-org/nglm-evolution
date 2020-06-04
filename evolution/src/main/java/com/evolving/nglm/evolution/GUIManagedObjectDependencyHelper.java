@@ -39,7 +39,7 @@ public class GUIManagedObjectDependencyHelper
   
   public static void createDependencyTreeMAP(Map<String, GUIDependencyModelTree> guiDependencyModelTreeMap, GUIDependencyModelTree guiDependencyModelTree, Set<String>  dependencies, String objectID, List<JSONObject> dependencyListOutput, boolean fiddleTest, List<GUIService> guiServiceList) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException
   {
-    log.info("RAJ K createDependencyTreeMAP for {} and ID {} will look into {} types", guiDependencyModelTree.getGuiManagedObjectType(), objectID, dependencies);
+    log.info("RAJ K createDependencyTreeMAP for {} - ID {} will look into {} types", guiDependencyModelTree.getGuiManagedObjectType(), objectID, dependencies);
     for (String dependency : dependencies)
       {
         //
@@ -66,7 +66,6 @@ public class GUIManagedObjectDependencyHelper
             for (GUIManagedObject guiManagedObject : storedObjectList)
               {
                 Map<String, List<String>> guiDependencies = guiManagedObject.getGUIDependencies();
-                log.info("looking for {}", guiDependencyModelTree.getGuiManagedObjectType());
                 if (guiDependencies != null && !guiDependencies.isEmpty())
                   {
                     List<String> guiDependencyList = guiDependencies.get(guiDependencyModelTree.getGuiManagedObjectType().toLowerCase());
@@ -133,7 +132,6 @@ public class GUIManagedObjectDependencyHelper
   
   private static Object getService(List<GUIService> guiServiceList, final Class serviceClass)
   {
-    log.info("RAJ K getService call for {}", serviceClass.getName());
     Object result = null;
     for (GUIService guiService : guiServiceList)
       {
@@ -144,7 +142,6 @@ public class GUIManagedObjectDependencyHelper
           }
       }
     if (result == null) throw new ServerRuntimeException(serviceClass.getName() + " not found in guiServiceList");
-    log.info("RAJ K found service is {}", result.getClass().getName());
     return result;
   }
 }
