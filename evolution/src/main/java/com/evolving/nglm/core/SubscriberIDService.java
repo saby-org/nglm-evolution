@@ -9,6 +9,7 @@ package com.evolving.nglm.core;
 import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisSentinelPool;
+import redis.clients.jedis.Protocol;
 import redis.clients.jedis.exceptions.JedisException;
 
 import com.google.common.primitives.Longs;
@@ -95,7 +96,16 @@ public class SubscriberIDService
         jedisPoolConfig.setJmxNamePrefix("SubscriberIDService");
         jedisPoolConfig.setJmxNameBase(name);
       }
-    this.jedisSentinelPool = new JedisSentinelPool(redisInstance, sentinels, jedisPoolConfig);
+    String password = System.getProperty("redis.password");
+    if(password != null && !password.trim().equals("")) {
+      log.info("SubscriberIDService() Use Redis Password " + password);
+      this.jedisSentinelPool = new JedisSentinelPool(redisInstance, sentinels, jedisPoolConfig, Protocol.DEFAULT_TIMEOUT, Protocol.DEFAULT_TIMEOUT, null, password, 0, null,
+          Protocol.DEFAULT_TIMEOUT, Protocol.DEFAULT_TIMEOUT, null, password, null);
+    }
+    else {
+      log.info("SubscriberIDService() No Redis Password");
+      this.jedisSentinelPool = new JedisSentinelPool(redisInstance, sentinels, jedisPoolConfig);
+    }   
   }
 
   //
