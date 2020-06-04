@@ -2757,7 +2757,7 @@ public class EvolutionEngine
         {
           result = (Pair<String,JSONObject>) evolutionEngineExternalAPIMethod.invoke(null, currentSubscriberState, subscriberState, evolutionEvent, journeyService);
         }
-        catch (IllegalAccessException|InvocationTargetException e)
+        catch (RuntimeException|IllegalAccessException|InvocationTargetException e)
         {
           throw new RuntimeException(e);
         }
@@ -5563,7 +5563,7 @@ public class EvolutionEngine
       {
         extendedSubscriberProfileUpdated = ((Boolean) evolutionEngineExtensionUpdateExtendedSubscriberMethod.invoke(null, context, evolutionEvent)).booleanValue() || extendedSubscriberProfileUpdated;
       }
-    catch (IllegalAccessException|InvocationTargetException e)
+    catch (RuntimeException|IllegalAccessException|InvocationTargetException e)
       {
         throw new RuntimeException(e);
       }
