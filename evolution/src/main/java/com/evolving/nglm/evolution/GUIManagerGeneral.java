@@ -3354,11 +3354,11 @@ public class GUIManagerGeneral extends GUIManager
   
   /****************************************
   *
-  *  processGetDependents
+  *  processGetDependencies
   *
   ****************************************/
   
-  public JSONObject processGetDependents(String userID, JSONObject jsonRoot)
+  public JSONObject processGetDependencies(String userID, JSONObject jsonRoot)
   {
     Map<String, Object> response = new LinkedHashMap<String, Object>();
     
@@ -3397,7 +3397,7 @@ public class GUIManagerGeneral extends GUIManager
               }
             else
               {
-                response.put("dependents", JSONUtilities.encodeArray(dependentList));
+                response.put("dependencies", JSONUtilities.encodeArray(dependentList));
               }
             response.put("responseCode", "ok");
           } 

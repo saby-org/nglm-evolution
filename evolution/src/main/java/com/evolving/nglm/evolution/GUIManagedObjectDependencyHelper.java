@@ -112,7 +112,7 @@ public class GUIManagedObjectDependencyHelper
                 dependentMap.put("display", guiManagedObject.getGUIManagedObjectDisplay());
                 dependentMap.put("active", guiManagedObject.getActive());
                 dependentMap.put("objectType", dependency);
-                dependentMap.put("dependents", JSONUtilities.encodeArray(nextDependencyOutputList));
+                dependentMap.put("dependencies", JSONUtilities.encodeArray(nextDependencyOutputList));
               }
             
             //
