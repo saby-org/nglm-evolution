@@ -3644,8 +3644,11 @@ public class Journey extends GUIManagedObject implements StockableItem
           List<String> campaignIDs = new ArrayList<String>();
           for (JourneyNode journeyNode : getJourneyNodes().values())
             {
-              String campaignID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("journey");
-              if (campaignID != null)campaignIDs.add(campaignID);
+              if (journeyNode.getNodeType().getActionManager() != null)
+                {
+                  String campaignID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("journey");
+                  if (campaignID != null)campaignIDs.add(campaignID);
+                }
             }
           result.put("campaign", campaignIDs);
           
@@ -3658,8 +3661,11 @@ public class Journey extends GUIManagedObject implements StockableItem
           List<String> offerIDs = new ArrayList<String>();
           for (JourneyNode offerNode : getJourneyNodes().values())
             {
-              String offerID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("offer");
-              if (offerID != null) offerIDs.add(offerID);
+              if (offerNode.getNodeType().getActionManager() != null)
+                {
+                  String offerID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("offer");
+                  if (offerID != null) offerIDs.add(offerID);
+                }
             }
           result.put("offer", offerIDs);
           break;
