@@ -251,6 +251,8 @@ public class Deployment
   private static int propensityReaderRefreshPeriodMs;
   private static int propensityWriterRefreshPeriodMs;
 
+ private static boolean bypassJourneyTrafficEngine; // @rl Hack. TODO: remove later
+
   /*****************************************
    *
    *  accessors
@@ -486,6 +488,7 @@ public class Deployment
   public static boolean getEnableEvaluateTargetRandomness() { return enableEvaluateTargetRandomness; }
   public static int getPropensityReaderRefreshPeriodMs() { return propensityReaderRefreshPeriodMs; }
   public static int getPropensityWriterRefreshPeriodMs() { return propensityWriterRefreshPeriodMs; }
+  public static boolean getBypassJourneyTrafficEngine() { return bypassJourneyTrafficEngine; }
   
   // addProfileCriterionField
   //
@@ -3258,9 +3261,9 @@ public class Deployment
       //
 
       try
-      {
-        enableEvaluateTargetRandomness = JSONUtilities.decodeBoolean(jsonRoot, "enableEvaluateTargetRandomness", Boolean.FALSE);
-      }
+        {
+          enableEvaluateTargetRandomness = JSONUtilities.decodeBoolean(jsonRoot, "enableEvaluateTargetRandomness", Boolean.FALSE);
+        }
       catch (JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
@@ -3310,6 +3313,20 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
 
+
+      //
+      //  bypassJourneyTrafficEngine
+      //  @rl Hack TODO remove later
+      //  default to true
+
+      try
+        {
+          bypassJourneyTrafficEngine = JSONUtilities.decodeBoolean(jsonRoot, "bypassJourneyTrafficEngine", Boolean.TRUE);
+        }
+        catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
     }
 
   /*****************************************

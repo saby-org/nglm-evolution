@@ -123,6 +123,8 @@ import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTa
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
@@ -578,7 +580,18 @@ public class GUIManager
   private GUIManagerBaseManagement guiManagerBaseManagement;
   private GUIManagerLoyaltyReporting guiManagerLoyaltyReporting;
   private GUIManagerGeneral guiManagerGeneral;
-
+  
+  //
+  //  properties
+  //
+  
+  /**
+   * @rl Hack while refactoring journeytraffic engine. 
+   * If activated, we will bypass journeytraffic engine 
+   * and use Elasticsearch for retrieving traffic data.
+   */
+  protected boolean bypassJourneyTrafficEngine;
+  
   /*****************************************
   *
   *  epochServer
@@ -674,7 +687,9 @@ public class GUIManager
     String segmentContactPolicyTopic = Deployment.getSegmentContactPolicyTopic();
     String dynamicEventDeclarationsTopic = Deployment.getDynamicEventDeclarationsTopic();
     String criterionFieldAvailableValuesTopic = Deployment.getCriterionFieldAvailableValuesTopic();
-    getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
+    
+    this.getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
+    this.bypassJourneyTrafficEngine = Deployment.getBypassJourneyTrafficEngine();
 
     //
     //  log
@@ -854,7 +869,7 @@ public class GUIManager
     subscriberProfileService = new EngineSubscriberProfileService(subscriberProfileEndpoints);
     subscriberIDService = new SubscriberIDService(redisServer, "guimanager-" + apiProcessKey);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
-    journeyTrafficReader = ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", apiProcessKey, bootstrapServers, journeyTrafficChangeLogTopic, JourneyTrafficHistory::unpack);
+    journeyTrafficReader = (bypassJourneyTrafficEngine)? null : ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", apiProcessKey, bootstrapServers, journeyTrafficChangeLogTopic, JourneyTrafficHistory::unpack);
     renamedProfileCriterionFieldReader = ReferenceDataReader.<String,RenamedProfileCriterionField>startReader("guimanager-renamedprofilecriterionfield", apiProcessKey, bootstrapServers, renamedProfileCriterionFieldTopic, RenamedProfileCriterionField::unpack);
     deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice-" + apiProcessKey, deliverableSourceTopic);
     uploadedFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
@@ -4745,12 +4760,34 @@ public class GUIManager
         if (journey.getGUIManagedObjectType().equals(objectType) && (! externalOnly || ! journey.getInternalOnly()))
           {
             JSONObject journeyInfo = journeyService.generateResponseJSON(journey, fullDetails, now);
-            int subscriberCount = 0;
-            JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journey.getGUIManagedObjectID());
-            if (journeyTrafficHistory != null && journeyTrafficHistory.getCurrentData() != null && journeyTrafficHistory.getCurrentData().getGlobal() != null)
-              {
-                subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberInflow();
+            long subscriberCount = 0;
+            String journeyID = journey.getGUIManagedObjectID();
+
+            //
+            //  retrieve from Elasticsearch if by pass is activated, JourneyTraffic Engine otherwise
+            // 
+            if(bypassJourneyTrafficEngine) {
+              try {
+                ElasticsearchClientAPI client = new ElasticsearchClientAPI("",0); // @rl deprecated use, change later
+                client.setConnection(this.elasticsearch);
+                Long count = client.getJourneySubscriberCount(journeyID);
+                subscriberCount = (count != null)? count : 0;
               }
+              catch (ElasticsearchClientException e) {
+                // Log
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+              }
+            }
+            else {
+              JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
+              if (journeyTrafficHistory != null && journeyTrafficHistory.getCurrentData() != null && journeyTrafficHistory.getCurrentData().getGlobal() != null)
+                {
+                  subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberInflow();
+                }
+            }
+            
             journeyInfo.put("subscriberCount", subscriberCount);
             journeys.add(journeyInfo);
           }
@@ -6032,12 +6069,12 @@ public class GUIManager
         journeyID = JSONUtilities.decodeString(jsonRoot, "journeyID", true);
       }
     
-
     /*****************************************
     *
     *  retrieve corresponding Journey & JourneyTrafficHistory
     *
     *****************************************/
+    
     Map<String,Object> result = new HashMap<String,Object>();
 
     //
@@ -6048,21 +6085,50 @@ public class GUIManager
     if (journey instanceof Journey) 
       {
         Set<String> nodeIDs = ((Journey) journey).getJourneyNodes().keySet();
-        JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
-        for (String key : nodeIDs)
-        {
-          int subscriberCount = 0;
-          
-          if(journeyTrafficHistory != null)
-            {
-              Map<String, SubscriberTraffic> byNodeMap = journeyTrafficHistory.getCurrentData().getByNode();
-              if(byNodeMap.get(key) != null)
-                {
-                  subscriberCount = byNodeMap.get(key).getSubscriberCount();
-                }
+        
+        //
+        //  retrieve from Elasticsearch if by pass is activated, JourneyTraffic Engine otherwise
+        // 
+        
+        if(bypassJourneyTrafficEngine) {
+          try {
+            ElasticsearchClientAPI client = new ElasticsearchClientAPI("",0); // @rl deprecated use, change later
+            client.setConnection(this.elasticsearch);
+            Map<String, Long> esMap = client.getJourneyNodeCount(journeyID);
+            for (String key : nodeIDs) {
+              Long count = esMap.get(key);
+              result.put(key, (count != null)? count : 0);
             }
+          }
+          catch (ElasticsearchClientException e) {
+            // Log
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
             
-          result.put(key, subscriberCount);
+            // Response
+            response.put("responseCode", RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+            response.put("responseMessage", e.getMessage());
+            return JSONUtilities.encodeObject(response);
+          }
+        } 
+        else {
+          JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
+          for (String key : nodeIDs)
+          {
+            int subscriberCount = 0;
+            
+            if(journeyTrafficHistory != null)
+              {
+                Map<String, SubscriberTraffic> byNodeMap = journeyTrafficHistory.getCurrentData().getByNode();
+                if(byNodeMap.get(key) != null)
+                  {
+                    subscriberCount = byNodeMap.get(key).getSubscriberCount();
+                  }
+              }
+              
+            result.put(key, subscriberCount);
+          }
         }
       }
     else
