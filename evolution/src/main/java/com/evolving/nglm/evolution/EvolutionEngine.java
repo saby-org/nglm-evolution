@@ -297,7 +297,7 @@ public class EvolutionEngine
     String productTypeServiceTopic = Deployment.getProductTypeTopic();
     String catalogCharacteristicServiceTopic = Deployment.getCatalogCharacteristicTopic();
     String dnboMatrixServiceTopic = Deployment.getDNBOMatrixTopic();
-    String pointFulfillmentRekeyedTopic = Deployment.getPointFulfillmentRekeyedTopic();
+    String pointFulfillmentRequestTopic = Deployment.getPointFulfillmentRequestTopic();
     String voucherChangeRequestTopic = Deployment.getVoucherChangeRequestTopic();
 
     //
@@ -762,7 +762,7 @@ public class EvolutionEngine
     KStream<StringKey, AcceptanceLog> acceptanceLogSourceStream = builder.stream(acceptanceLogTopic, Consumed.with(stringKeySerde, acceptanceLogSerde));
     KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventStream = builder.stream(profileSegmentChangeEventTopic, Consumed.with(stringKeySerde, profileSegmentChangeEventSerde));
     KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventStream = builder.stream(profileLoyaltyProgramChangeEventTopic, Consumed.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
-    KStream<StringKey, PointFulfillmentRequest> rekeyedPointFulfillmentRequestSourceStream = builder.stream(pointFulfillmentRekeyedTopic, Consumed.with(stringKeySerde, pointFulfillmentRequestSerde));
+    KStream<StringKey, PointFulfillmentRequest> pointFulfillmentRequestSourceStream = builder.stream(pointFulfillmentRequestTopic, Consumed.with(stringKeySerde, pointFulfillmentRequestSerde));
     KStream<StringKey, VoucherChange> voucherChangeRequestSourceStream = builder.stream(voucherChangeRequestTopic, Consumed.with(stringKeySerde, voucherChangeSerde));
 
     //
@@ -894,7 +894,7 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) acceptanceLogSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileSegmentChangeEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileLoyaltyProgramChangeEventStream);
-    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) rekeyedPointFulfillmentRequestSourceStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) pointFulfillmentRequestSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) voucherChangeRequestSourceStream);
     evolutionEventStreams.addAll(standardEvolutionEngineEventStreams);
     evolutionEventStreams.addAll(deliveryManagerResponseStreams);
