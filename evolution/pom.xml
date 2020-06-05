@@ -141,22 +141,18 @@
 	  <version>2.7</version>
     </dependency>
     
-<<<<<<< HEAD
     <dependency>
       <groupId>redis.clients</groupId>
       <artifactId>jedis</artifactId>
       <version>3.3.0</version>
     </dependency>
     
-=======
     <!-- reflections -->
     <dependency>
 		<groupId>org.reflections</groupId>
 		<artifactId>reflections</artifactId>
 		<version>0.9.12</version>
 	</dependency>
->>>>>>> EVPRO-269-v143_2
-    
   </dependencies>
 
   <build>
