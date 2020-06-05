@@ -860,9 +860,9 @@
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
-      "name"                : "subscriberReport",
-      "display"             : "Subscriber Report",
-      "description"         : "Description of the Subscriber Report",
+      "name"                : "customerReport",
+      "display"             : "Customer Report",
+      "description"         : "Description of the Customer Report",
       "class"               : "com.evolving.nglm.evolution.reports.subscriber.SubscriberReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
