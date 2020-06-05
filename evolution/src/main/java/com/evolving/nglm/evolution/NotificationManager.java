@@ -983,8 +983,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
   public void completeDeliveryRequest(INotificationRequest deliveryRequest)
   {
-    DeliveryRequest dr = (DeliveryRequest)deliveryRequest;
-    completeDeliveryRequest(deliveryRequest);
+    completeDeliveryRequest((DeliveryRequest)deliveryRequest);
   }
   
   public void completeDeliveryRequest(DeliveryRequest deliveryRequest)

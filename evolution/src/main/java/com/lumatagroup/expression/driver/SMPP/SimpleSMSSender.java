@@ -39,6 +39,7 @@ import com.evolving.nglm.evolution.EvolutionEngineEvent;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration;
 import com.evolving.nglm.evolution.INotificationRequest;
 import com.evolving.nglm.evolution.MONotificationEvent;
+import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.lumatagroup.expression.driver.SMPP.SMPPConnection.SubmitSMCorrectionDeliveryRequest;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.StringKey;
@@ -940,12 +941,17 @@ public class SimpleSMSSender extends SMSSenderListener {
                 }
                 logger.info("SimpleSMSSender.onSubmitSmResp: seqnum: "+packetSequenceNumber+", idreceipt: "+ messageId);
 
-//                if(smsCorrelation.getDeliveryRequest().getConfirmationExpected()) {
-                  updateDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, MessageStatus.SENT, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus())); 
-//                }else {
-//                  completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, SMSMessageStatus.SENT, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus())); 
-//                }
-                
+                Boolean receiptRequired = (Boolean) ((NotificationManagerRequest)smsCorrelation.getDeliveryRequest()).getNotificationParameters().get("node.parameter.confirmationexpected");
+                if(receiptRequired == null || receiptRequired.booleanValue() == false) 
+                  {
+                    // now DR required, let complete the request now
+                    completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, MessageStatus.SENT, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus()));
+                  }
+                else 
+                  {
+                    // deliveryRequest expected
+                    updateDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, MessageStatus.SENT, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus())); 
+                  }                
                 logger.info("Feedback Call for Accept Handler for messageId "+ messageId + " SimpleSMSSender " + this.hashCode());
 
             }

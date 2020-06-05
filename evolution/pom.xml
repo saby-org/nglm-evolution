@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>release-1.4.3_2-SNAPSHOT</version>
+  <version>release-1.4.3_3-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -27,14 +27,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.3_2-SNAPSHOT</version>
+    <version>1.4.3_3-SNAPSHOT</version>
     <relativePath/>
   </parent>
 
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>1.4.3_2-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.4.3_3-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.4.10</gui-fwk.version>
@@ -64,7 +64,6 @@
     <common.build.phase.generate-setup-stack>none</common.build.phase.generate-setup-stack>
     <common.build.phase.generate-analyse-upgrade-stack>none</common.build.phase.generate-analyse-upgrade-stack>
     <common.build.phase.generate-connect-stack>none</common.build.phase.generate-connect-stack>
-    <common.build.phase.generate-simpletransform-stack>none</common.build.phase.generate-simpletransform-stack>
     <common.build.phase.generate-grafana-stack>none</common.build.phase.generate-grafana-stack>
     <common.build.phase.generate-licensemanager-stack>none</common.build.phase.generate-licensemanager-stack>
     <common.build.phase.generate-subscribermanager-stack>none</common.build.phase.generate-subscribermanager-stack>
@@ -73,7 +72,6 @@
     <common.build.skip.docker-setup>true</common.build.skip.docker-setup>
     <common.build.skip.docker-analyse-upgrade>true</common.build.skip.docker-analyse-upgrade>
     <common.build.skip.docker-connect>true</common.build.skip.docker-connect>
-    <common.build.skip.docker-simpletransform>true</common.build.skip.docker-simpletransform>
     <common.build.skip.docker-grafana>true</common.build.skip.docker-grafana>
     <common.build.skip.docker-licensemanager>true</common.build.skip.docker-licensemanager>
     <common.build.skip.docker-subscribermanager>true</common.build.skip.docker-subscribermanager>
@@ -142,6 +140,13 @@
       <artifactId>log4j-api</artifactId>
 	  <version>2.7</version>
     </dependency>
+    
+    <dependency>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
+      <version>3.3.0</version>
+    </dependency>
+    
     
   </dependencies>
 
