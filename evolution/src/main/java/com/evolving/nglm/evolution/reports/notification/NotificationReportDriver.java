@@ -20,33 +20,25 @@ public class NotificationReportDriver extends ReportDriver{
       String elasticSearch,
       String csvFilename,
       String[] params) {
-        log.debug("Processing Subscriber Report with "+report.getName());
+        log.debug("Processing "+report.getName());
         String topicPrefix = super.getTopicPrefix(report.getName());
-        String topic1 = topicPrefix+"-a";
-        String topic2 = topicPrefix+"-b";
+        String topic1 = topicPrefix;
         String esIndexNotif = "detailedrecords_messages-";
-        String esIndexCustomer = "subscriberprofile";
         String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
         int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
         String appIdPrefix = report.getName() + "_" + getTopicPrefixDate();
         
         log.debug("PHASE 1 : read ElasticSearch");
         NotificationReportESReader.main(new String[]{
-            topic1, kafka, zookeeper, elasticSearch, esIndexNotif, esIndexCustomer, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit 
+            topic1, kafka, zookeeper, elasticSearch, esIndexNotif, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit 
         });          
         try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) {}
         
-        log.debug("PHASE 2 : process data");
-        NotificationReportProcessor.main(new String[]{
-            topic1, topic2, kafka, zookeeper, appIdPrefix, "1"
-        });
-        try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) {}
-
         log.debug("PHASE 2 : write csv file ");
         NotificationReportCsvWriter.main(new String[]{
-            kafka, topic2, csvFilename
+            kafka, topic1, csvFilename
         });
-        ReportUtils.cleanupTopics(topic1, topic2, ReportUtils.APPLICATION_ID_PREFIX, appIdPrefix, NotificationReportProcessor.STORENAME);
+        ReportUtils.cleanupTopics(topic1);
         log.debug("Finished with BDR Report");
   }
 }

@@ -1,6 +1,5 @@
 package com.evolving.nglm.evolution.reports.journeyimpact;
 
-import com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportObjects;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.reports.ReportProcessor;
 import com.evolving.nglm.evolution.reports.ReportProcessorFactory;
@@ -186,7 +185,7 @@ public class JourneyImpactReportProcessor implements ReportProcessorFactory {
 
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaNode);
-        props.put(ProducerConfig.CLIENT_ID_CONFIG, JourneyCustomerStatesReportObjects.CLIENTID_PREFIX + System.currentTimeMillis());
+        props.put(ProducerConfig.CLIENT_ID_CONFIG, "client-journeys-" + System.currentTimeMillis());
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, reportElementSerializer.getClass().getName());
         final Producer<String, ReportElement> producer = new KafkaProducer<>(props);

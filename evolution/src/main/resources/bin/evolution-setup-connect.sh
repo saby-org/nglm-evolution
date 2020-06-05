@@ -245,30 +245,6 @@ prepare-curl -XPOST $CONNECT_URL_TOKEN_REDEEMED/connectors -H "Content-Type: app
   }' 
 
 #
-#  sink connector -- propensity (elasticsearch)
-#
-
-export CONNECT_URL_PROPENSITY_ES=${CONNECT_URL_PROPENSITY_ES:-$DEFAULT_CONNECT_URL}
-export CONNECT_ES_PROPENSITY_SINK_TASKS=${CONNECT_ES_PROPENSITY_SINK_TASKS:-'1'}
-export CONNECT_ES_PROPENSITY_BATCHRECORDCOUNT=${CONNECT_ES_PROPENSITY_BATCHRECORDCOUNT:-'1000'}
-export CONNECT_ES_PROPENSITY_BATCHSIZEMB=${CONNECT_ES_PROPENSITY_BATCHSIZEMB:-'5'}
-prepare-curl -XPOST $CONNECT_URL_PROPENSITY_ES/connectors -H "Content-Type: application/json" -d '
-  {
-    "name" : "propensity_es_sink_connector",
-    "config" :
-      {
-      "connector.class" : "com.evolving.nglm.evolution.PropensityESSinkConnector",
-      "tasks.max" : '$CONNECT_ES_PROPENSITY_SINK_TASKS',
-      "topics" : "${topic.propensitylog}",
-      "connectionHost" : "'$MASTER_ESROUTER_HOST'",
-      "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-      "indexName" : "propensity",
-      "batchRecordCount" : "'$CONNECT_ES_PROPENSITY_BATCHRECORDCOUNT'",
-      "batchSize" : "'$CONNECT_ES_PROPENSITY_BATCHSIZEMB'"
-      }
-  }' 
-
-#
 #  sink connector -- ODR (elasticsearch)
 #
 

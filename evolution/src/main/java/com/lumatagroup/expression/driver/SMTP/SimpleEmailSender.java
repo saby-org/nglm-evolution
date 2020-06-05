@@ -7,9 +7,10 @@ import javax.mail.SendFailedException;
 
 import org.apache.log4j.Logger;
 import com.evolving.nglm.evolution.MailNotificationManager;
-import com.evolving.nglm.evolution.MailNotificationManager.MAILMessageStatus;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
+import com.evolving.nglm.evolution.INotificationRequest;
 import com.lumatagroup.expression.driver.dyn.NotificationStatus;
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPTransport;
@@ -49,21 +50,19 @@ public class SimpleEmailSender {
 	 * @param deliveryRequest SMTPFeedbackMsg
 	 * @throws MessagingException 
 	 */
-	public void sendEmail(MailNotificationManagerRequest deliveryRequest) throws MessagingException {
+	public void sendEmail(INotificationRequest deliveryRequest, String emailText, String toEmail, String fromAddress, boolean confirmationExpected) throws MessagingException {
 		if (logger.isTraceEnabled()) logger.trace("START: SimpleEmailSender.sendEmail("+deliveryRequest+")");
-		String emailText = deliveryRequest.getTextBody(mailNotificationManager.getSubscriberMessageTemplateService());
-		String toEmail = deliveryRequest.getDestination();
 //		String dmMessageId = deliveryRequest.getDeliveryRequestID();
-		if (logger.isTraceEnabled()) logger.trace("SimpleEmailSender.sendEmail this.fromEmail="+this.fromEmail+" getSender=" +deliveryRequest.getFromAddress());
+		if (logger.isTraceEnabled()) logger.trace("SimpleEmailSender.sendEmail this.fromEmail="+this.fromEmail+" getSender=" + fromAddress);
 		// EFOGC-5467 : we give priority to this.fromEmail because it also includes the "Friendly From" field.
 		//              dmMsg.getSender().getSender() only contains the "real" email address.
 		// String frmEmail = ((dmMsg.getSender().getSender() == null || dmMsg.getSender().getSender().isEmpty()) ? this.fromEmail : dmMsg.getSender().getSender());
 		String frmEmail = this.fromEmail;
 		if (frmEmail == null)
-			frmEmail = deliveryRequest.getFromAddress();
+			frmEmail = fromAddress;
 		String subject = (null == forceSubject ? "" : forceSubject);
 		
-		send(frmEmail, subject, emailText, replyTo, toEmail, deliveryRequest);
+		send(frmEmail, subject, emailText, replyTo, toEmail, confirmationExpected, deliveryRequest);
 
 	}
 
@@ -80,8 +79,8 @@ public class SimpleEmailSender {
 	 * @return SMTPFeedbackMsg
 	 * @throws MessagingException
 	 */
-	private void send(String frmEmail, String emailSubj, String emailText, String replyTo, String toEmail, 
-								  MailNotificationManagerRequest mailNotificationRequest) throws MessagingException, SendFailedException {
+	private void send(String frmEmail, String emailSubj, String emailText, String replyTo, String toEmail, boolean confirmationExpected, 
+								  INotificationRequest mailNotificationRequest) throws MessagingException, SendFailedException {
 	    if (logger.isTraceEnabled()) logger.trace("START: SimpleEmailSender.send("+frmEmail+", "+emailSubj+", "+emailText+", "+replyTo+", "+toEmail+", "+mailNotificationRequest.getDeliveryRequestID()+", ..., ...) execution.");
 	    else if (logger.isDebugEnabled()) logger.debug("START: SimpleEmailSender.send() execution.");
 		if (smtpConn != null) {
@@ -101,13 +100,13 @@ public class SimpleEmailSender {
 					if (!isTimeout) {
 						trans.sendMessage(smtpMsg, smtpMsg.getAllRecipients());
 						//delivered
-                        if(mailNotificationRequest.getConfirmationExpected()) {
+                        if(confirmationExpected) {
                           mailNotificationRequest.setDeliveryStatus(DeliveryStatus.Acknowledged);
-                          mailNotificationRequest.setMessageStatus(MAILMessageStatus.DELIVERED);
-                          mailNotificationRequest.setReturnCode(MAILMessageStatus.DELIVERED.getReturnCode());
+                          mailNotificationRequest.setMessageStatus(MessageStatus.DELIVERED);
+                          mailNotificationRequest.setReturnCode(MessageStatus.DELIVERED.getReturnCode());
                           updateDeliveryRequest(mailNotificationRequest);
                       }else {
-                          completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.SENT, DeliveryStatus.Acknowledged, NotificationStatusCode.fromReturnCode(NotificationStatusCode.EMAIL_SENT.getReturnCode()).toString());
+                          completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.SENT, DeliveryStatus.Acknowledged, NotificationStatusCode.fromReturnCode(NotificationStatusCode.EMAIL_SENT.getReturnCode()).toString());
                         }
 						smtpConn.setLastActiveTime(System.currentTimeMillis());
 						logger.info("Email sent successfully of X-messageId: "+mailNotificationRequest.getDeliveryRequestID()+" to the recepient address "+toEmail );
@@ -120,47 +119,47 @@ public class SimpleEmailSender {
 							smtpConn.setTransportObject(trans);
 							//delivered
 							trans.sendMessage(smtpMsg, smtpMsg.getAllRecipients());	
-	                         if(mailNotificationRequest.getConfirmationExpected()) {
+	                         if(confirmationExpected) {
                                mailNotificationRequest.setDeliveryStatus(DeliveryStatus.Acknowledged);
-                               mailNotificationRequest.setMessageStatus(MAILMessageStatus.DELIVERED);
-                               mailNotificationRequest.setReturnCode(MAILMessageStatus.DELIVERED.getReturnCode());
-                               mailNotificationRequest.setReturnCodeDetails(MAILMessageStatus.DELIVERED.toString());
+                               mailNotificationRequest.setMessageStatus(MessageStatus.DELIVERED);
+                               mailNotificationRequest.setReturnCode(MessageStatus.DELIVERED.getReturnCode());
+                               mailNotificationRequest.setReturnCodeDetails(MessageStatus.DELIVERED.toString());
                                updateDeliveryRequest(mailNotificationRequest);
                            }else {
-                             completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.SENT, DeliveryStatus.Acknowledged, NotificationStatusCode.fromReturnCode(NotificationStatusCode.EMAIL_SENT.getReturnCode()).toString());
+                             completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.SENT, DeliveryStatus.Acknowledged, NotificationStatusCode.fromReturnCode(NotificationStatusCode.EMAIL_SENT.getReturnCode()).toString());
                            }
 							smtpConn.setLastActiveTime(System.currentTimeMillis());
 							logger.info("Email sent successfully of X-messageId: "+mailNotificationRequest.getDeliveryRequestID()+" to the recepient address "+toEmail);
 						}
 						catch(AuthenticationFailedException authException){
 							logger.error("AuthenticationFailedException occured in SimpleEmailSender.sendEmail() while reconnect : "+ authException);
-							completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatus.ERROR.toString());
+							completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatus.ERROR.toString());
 							
 						}
 					}
 				}
 				catch(AuthenticationFailedException authException){
 					logger.error("AuthenticationFailedException occured in SimpleEmailSender.sendEmail(): "+ authException);
-					completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.AUTHENTICATION_FAILED.getReturnCode()).toString());
+					completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.AUTHENTICATION_FAILED.getReturnCode()).toString());
 				}
 				catch(SendFailedException sendFailedEx){
 					logger.error("SendFailedException occured in SimpleEmailSender.sendEmail() while reconnect : "+ sendFailedEx);
-					completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.AUTHENTICATION_FAILED.getReturnCode()).toString());
+					completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.AUTHENTICATION_FAILED.getReturnCode()).toString());
 				}
 				catch(MessagingException mEx){
 					boolean isConnectionError = false;
 					logger.error("MessagingException occured in SimpleEmailSender.sendEmail() while reconnect : "+ mEx);
 					if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.CAN_NOT_OPEN_CONNECTION.getReturnCode()){
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.CAN_NOT_OPEN_CONNECTION.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.CAN_NOT_OPEN_CONNECTION.getReturnCode()).toString());
 						isConnectionError = true;
 					}else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.CONNECTION_DROPPED.getReturnCode()){
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.CONNECTION_DROPPED.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.CONNECTION_DROPPED.getReturnCode()).toString());
 						isConnectionError = true;
 					}else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.CONNECTION_REFUSED.getReturnCode()){
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.CONNECTION_REFUSED.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.CONNECTION_REFUSED.getReturnCode()).toString());
 						isConnectionError = true;
 					}else{
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.UNKNOWN.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.UNKNOWN.getReturnCode()).toString());
 						isConnectionError = true;
 					}
 
@@ -173,49 +172,49 @@ public class SimpleEmailSender {
 				catch(Exception ex){
 					logger.error("Exception occured in SimpleEmailSender.sendEmail() while reconnect : "+ ex);
 					if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.SERVER_NOT_AVAILABLE.getReturnCode())
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.SERVER_NOT_AVAILABLE.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.SERVER_NOT_AVAILABLE.getReturnCode()).toString());
 					else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.MAILBOX_FULL.getReturnCode())
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.QUEUE_FULL, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.MAILBOX_FULL.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.QUEUE_FULL, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.MAILBOX_FULL.getReturnCode()).toString());
 					else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.DISK_FULL.getReturnCode())
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.DISK_FULL.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.DISK_FULL.getReturnCode()).toString());
 					else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.OUTGOING_MESSAGE_TIMEOUT.getReturnCode())
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.OUTGOING_MESSAGE_TIMEOUT.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.OUTGOING_MESSAGE_TIMEOUT.getReturnCode()).toString());
 					
 					else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.ROUTING_ERROR.getReturnCode())
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.ROUTING_ERROR.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.ROUTING_ERROR.getReturnCode()).toString());
 					else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.REQUESTED_ACTION_NOT_TAKEN.getReturnCode())
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.REQUESTED_ACTION_NOT_TAKEN.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.REQUESTED_ACTION_NOT_TAKEN.getReturnCode()).toString());
 					else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.PAGE_UNAVAILABLE.getReturnCode())
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.PAGE_UNAVAILABLE.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.PAGE_UNAVAILABLE.getReturnCode()).toString());
 					
 					else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.BAD_EMAIL_ADDRESS.getReturnCode())
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.BAD_EMAIL_ADDRESS.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.BAD_EMAIL_ADDRESS.getReturnCode()).toString());
 					else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.BAD_EMAIL_ADDRESS_1.getReturnCode())
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.BAD_EMAIL_ADDRESS_1.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.BAD_EMAIL_ADDRESS_1.getReturnCode()).toString());
 					else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.DNS_ERROR.getReturnCode())
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.DNS_ERROR.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.DNS_ERROR.getReturnCode()).toString());
 					
 					else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.ADDRESS_TYPE_INCORRECT.getReturnCode())
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.ADDRESS_TYPE_INCORRECT.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.ADDRESS_TYPE_INCORRECT.getReturnCode()).toString());
 					else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.TOO_BIG_MESSAGE.getReturnCode())
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.INVALID, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.TOO_BIG_MESSAGE.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.INVALID, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.TOO_BIG_MESSAGE.getReturnCode()).toString());
 					else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.AUTHENTICATION_IS_REQUIRED.getReturnCode())
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.AUTHENTICATION_IS_REQUIRED.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.AUTHENTICATION_IS_REQUIRED.getReturnCode()).toString());
 					
 					else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.RECIPIENT_ADDRESS_REJECTED.getReturnCode())
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.RECIPIENT_ADDRESS_REJECTED.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.RECIPIENT_ADDRESS_REJECTED.getReturnCode()).toString());
 					else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.BLACK_LIST.getReturnCode())
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.BLACK_LIST.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.BLACK_LIST.getReturnCode()).toString());
 					else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.ADDRESS_FAILED.getReturnCode())
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.ADDRESS_FAILED.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.ADDRESS_FAILED.getReturnCode()).toString());
 					else 
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.UNKNOWN, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.UNKNOWN.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.UNKNOWN, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.UNKNOWN.getReturnCode()).toString());
 				}
 			}else if (smtpMsg!=null && smtpMsg.getHeader("From")==null){
-			  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.UNKNOWN.getReturnCode()).toString());
+			  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.UNKNOWN.getReturnCode()).toString());
 				logger.error("Invalid Sender address found in SimpleEmailSender.send().");
 			}else{
-			  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.CAN_NOT_OPEN_CONNECTION.getReturnCode()).toString());
+			  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.CAN_NOT_OPEN_CONNECTION.getReturnCode()).toString());
 				if (logger.isDebugEnabled()) logger.debug("Feedback Call for Accept Handler for messageId: "+mailNotificationRequest.getCorrelator());
 				if (logger.isDebugEnabled()) logger.debug("SMTP message and SMTP transport found null in SimpleEmailSender.send().");
 				throw new MessagingException("Can not open connection");
@@ -226,12 +225,12 @@ public class SimpleEmailSender {
 		}
 	}
 
-	private void updateDeliveryRequest(MailNotificationManagerRequest deliveryRequest){
+	private void updateDeliveryRequest(INotificationRequest deliveryRequest){
 	  logger.info("SimpleSMSSender.updateDeliveryRequest(message sent");
 	  mailNotificationManager.updateDeliveryRequest(deliveryRequest);
 	}
 
-	public void completeDeliveryRequest(MailNotificationManagerRequest mailNotif, String messageId, MAILMessageStatus status, DeliveryStatus deliveryStatus, String returnCodeDetails){
+	public void completeDeliveryRequest(INotificationRequest mailNotif, String messageId, MessageStatus status, DeliveryStatus deliveryStatus, String returnCodeDetails){
 	  mailNotif.setCorrelator(messageId);
 	  mailNotif.setDeliveryStatus(deliveryStatus);
 	  mailNotif.setMessageStatus(status);

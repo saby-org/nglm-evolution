@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.json.simple.JSONObject;
 
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications;
 import com.evolving.nglm.evolution.MailNotificationManager;
 import com.lumatagroup.expression.driver.SMTP.constants.SMTPFeedbackType;
 import com.lumatagroup.expression.driver.SMTP.model.ClickedUrlBean;
@@ -139,7 +140,7 @@ public class PollFeedback {
 		}
 	}
 	
-	public static void checkOpen2(Date from, Date to, MailNotificationManager mailNotificationManager) {
+	public static void checkOpen2(Date from, Date to, DeliveryManagerForNotifications mailNotificationManager) {
 		logger.info("PollFeedback.checkOpen2() start " + from + " " + to);
 		try {
 			String respString = HttpUtil.doGet(Conf.getUrlEmailOpened(),"PollFeedback.checkOpen2()", from, to);
@@ -353,7 +354,7 @@ public class PollFeedback {
 		return beanObj;
 	}
 	
-	  private static void sendFeedback(String messageId, int status, MailNotificationManager mailNotificationManager){
+	  private static void sendFeedback(String messageId, int status, DeliveryManagerForNotifications mailNotificationManager){
 	    logger.info("PollFeedback.sendFeedback("+messageId+", "+status+") got a response, processing feedback");
 	    HashMap<String,Object> correlatorUpdateRecord = new HashMap<String,Object>();
 	    correlatorUpdateRecord.put("result", status);

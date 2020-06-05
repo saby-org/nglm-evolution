@@ -113,49 +113,9 @@ echo
 
 # -------------------------------------------------------------------------------
 #
-# propensity, odr, bdr, mdr, token
+# odr, bdr, mdr, token
 #
 # -------------------------------------------------------------------------------
-#
-#  manually create propensity index
-#   - these settings are for index heavy load
-#
-curl -XPUT http://$MASTER_ESROUTER_SERVER/propensity -H'Content-Type: application/json' -d'
-  {
-    "settings" :
-      {
-        "index" :
-          {
-            "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
-            "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
-            "refresh_interval" : "30s",
-            "translog" :
-              {
-                "durability" : "async",
-                "sync_interval" : "10s"
-              },
-            "routing" :
-              {
-                "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
-              },
-            "merge" :
-              {
-                "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
-              }
-          }
-      },
-    "mappings" :
-      {
-            "properties" :
-              {
-                "offerID" : { "type" : "keyword" },
-                "segment" : { "type" : "keyword" },
-                "propensity" : { "type" : "double" },
-                "evaluationDate" : { "type" : "date" }
-              }
-      }
-  }'
-echo
 
 #
 #  create a cleaning policy for bdr

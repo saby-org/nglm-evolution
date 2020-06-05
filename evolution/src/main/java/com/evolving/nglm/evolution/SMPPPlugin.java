@@ -176,13 +176,14 @@ public class SMPPPlugin implements SMSNotificationInterface
     String text = deliveryRequest.getText(smsNotificationManager.getSubscriberMessageTemplateService());
     String destination = deliveryRequest.getDestination();
     String source = deliveryRequest.getSource();
+    boolean flashSMS = ((SMSNotificationManagerRequest)deliveryRequest).getFlashSMS();
     if(sender == null)
       {
         throw new RuntimeException("SMPPPlugin.send("+deliveryRequest+") sender is null, no smsc");
       }
     else
       {
-        if(sender.sendSMS(deliveryRequest, text, destination, source, true))
+        if(sender.sendSMS(deliveryRequest, text, destination, source, true, flashSMS))
           {
             log.info("SMPP Driver message sent successfully");
           }

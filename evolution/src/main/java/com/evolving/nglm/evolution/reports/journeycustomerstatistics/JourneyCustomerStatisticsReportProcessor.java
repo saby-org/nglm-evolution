@@ -1,6 +1,5 @@
 package com.evolving.nglm.evolution.reports.journeycustomerstatistics;
 
-import com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportObjects;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
@@ -105,7 +104,6 @@ public class JourneyCustomerStatisticsReportProcessor implements ReportProcessor
                         ReportElement re = new ReportElement(agg);
                         final int indexJourneyStat = 0;
                         final int indexJourneyMetric = 1;
-                        final int indexSubscriber = 2;
                         if (v.type == indexJourneyStat) {
                           Map<String, Object> journeyStatV = v.fields.get(indexJourneyStat);
                           if (re.fields.get(indexJourneyStat) == null)
@@ -113,47 +111,23 @@ public class JourneyCustomerStatisticsReportProcessor implements ReportProcessor
                               re.fields.put(indexJourneyStat, new HashMap<>());
                             }
                           re.fields.get(indexJourneyStat).put(String.valueOf(index.getAndIncrement()), journeyStatV);
-                          if (re.fields.get(indexSubscriber) != null && re.fields.get(indexJourneyMetric) != null) {
+                          if (re.fields.get(indexJourneyMetric) != null) {
                             // log.trace("------------> complete record 1 ! "+v+" "+re);
                             re.isComplete = true;
                           }
                           nbStat.incrementAndGet();
-                        } else if (v.type == indexSubscriber) {
-
-                          if (re.fields.get(indexSubscriber) != null) {
-                            log.debug("Unexpected : got new data for existing customer ! Ignore it "+k+", "+v+", "+agg);
-                          } else {
-                            Map<String, Object> result = new HashMap<String,Object>();
-                            for(AlternateID alternateID : Deployment.getAlternateIDs().values()){
-                              if(v.fields.get(indexSubscriber) != null && v.fields.get(indexSubscriber).get(alternateID.getESField()) != null){
-                                Object alternateId = v.fields.get(indexSubscriber).get(alternateID.getESField());
-                                result.put(alternateID.getName(),alternateId);   
-                              }
-                            }
-                            if(!result.isEmpty()) {
-                              re.fields.put(indexSubscriber, result);
-                            }
-
-                            if (re.fields.get(indexJourneyStat) != null && re.fields.get(indexJourneyMetric) != null) {
-                              // log.trace("------------> complete record 1 ! "+v+" "+re);
-                              re.isComplete = true;
-                            }
-                            nbSubscriber.incrementAndGet();     
-                          } 
                         } else if (v.type == indexJourneyMetric) {
-                          
                           Map<String, Object> journeyMetricV = v.fields.get(indexJourneyMetric);
                           if (re.fields.get(indexJourneyMetric) != null) {
                             log.debug("Unexpected : got new data for existing customer ! Ignore it "+k+", "+v+", "+agg);
                           } else {
                             re.fields.put(indexJourneyMetric, journeyMetricV);
-                            if (re.fields.get(indexSubscriber) != null && re.fields.get(indexJourneyStat) != null) {
+                            if (re.fields.get(indexJourneyStat) != null) {
                               // log.trace("------------> complete record 1 ! "+v+" "+re);
                               re.isComplete = true;
                             }
                           }
                           nbMetric.incrementAndGet();
-                          
                         } else if (v.type == ReportElement.MARKER) {
                           re.type = ReportElement.MARKER;
                           nbMarkers.incrementAndGet();
@@ -213,7 +187,7 @@ public class JourneyCustomerStatisticsReportProcessor implements ReportProcessor
 
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaNode);
-        props.put(ProducerConfig.CLIENT_ID_CONFIG, JourneyCustomerStatesReportObjects.CLIENTID_PREFIX + System.currentTimeMillis());
+        props.put(ProducerConfig.CLIENT_ID_CONFIG, "client-journeys-" + System.currentTimeMillis());
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, reportElementSerializer.getClass().getName());
         final Producer<String, ReportElement> producer = new KafkaProducer<>(props);

@@ -40,9 +40,9 @@ public class BDRReportESReader
         log.info("BDRReportESReader: arg " + arg);
       }
 
-    if (args.length < 6)
+    if (args.length < 5)
       {
-        log.warn("Usage : BDRReportESReader <Output Topic> <KafkaNodeList> <ZKhostList> <ESNode> <ES customer index> <ES journey index>");
+        log.warn("Usage : BDRReportESReader <Output Topic> <KafkaNodeList> <ZKhostList> <ESNode> <ES BDR index>");
         return;
       }
     String topicName = args[0];
@@ -50,14 +50,13 @@ public class BDRReportESReader
     String kzHostList = args[2];
     String esNode = args[3];
     String esIndexBdr = args[4];
-    String esIndexCustomer = args[5];
 
     Integer reportPeriodQuantity = 0;
     String reportPeriodUnit = null;
-    if (args.length > 6 && args[6] != null && args[7] != null)
+    if (args.length > 5 && args[5] != null && args[6] != null)
       {
-        reportPeriodQuantity = Integer.parseInt(args[6]);
-        reportPeriodUnit = args[7];
+        reportPeriodQuantity = Integer.parseInt(args[5]);
+        reportPeriodUnit = args[6];
       }
     
     Date fromDate = getFromDate(reportPeriodUnit, reportPeriodQuantity);
@@ -74,13 +73,12 @@ public class BDRReportESReader
         firstEntry = false;
       }
 
-    log.info("Reading data from ES in (" + esIndexBdrList.toString() + ") and joining on " + esIndexCustomer + "  index and writing to " + topicName + " topic.");
+    log.info("Reading data from ES in (" + esIndexBdrList.toString() + ") and writing to " + topicName + " topic.");
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexBdrList.toString(), QueryBuilders.matchAllQuery());
-    esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
     
-    ReportEsReader reportEsReader = new ReportEsReader("subscriberID", topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery, true);
+    ReportEsReader reportEsReader = new ReportEsReader("subscriberID", topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery, false);
 
     reportEsReader.start();
     log.info("Finished BDRReportESReader");

@@ -546,7 +546,6 @@ public class GUIManager
   protected ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   protected ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader;
   protected ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader;
-  protected ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader;
   protected DeliverableSourceService deliverableSourceService;
   protected String getCustomerAlternateID;
   protected UploadedFileService uploadedFileService;
@@ -857,7 +856,6 @@ public class GUIManager
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
     journeyTrafficReader = ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", apiProcessKey, bootstrapServers, journeyTrafficChangeLogTopic, JourneyTrafficHistory::unpack);
     renamedProfileCriterionFieldReader = ReferenceDataReader.<String,RenamedProfileCriterionField>startReader("guimanager-renamedprofilecriterionfield", apiProcessKey, bootstrapServers, renamedProfileCriterionFieldTopic, RenamedProfileCriterionField::unpack);
-    propensityDataReader = ReferenceDataReader.<PropensityKey, PropensityState>startReader("guimanager-propensitystate", "guimanager-propensityreader-"+apiProcessKey, bootstrapServers, Deployment.getPropensityLogTopic(), PropensityState::unpack);
     deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice-" + apiProcessKey, deliverableSourceTopic);
     uploadedFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
     targetService = new TargetService(bootstrapServers, "guimanager-targetservice-" + apiProcessKey, targetTopic, true);
@@ -874,9 +872,9 @@ public class GUIManager
     purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(),StringKey.serde(),PurchaseFulfillmentRequest.serde());
     purchaseResponseListenerService.start();
 
-    guiManagerBaseManagement = new GUIManagerBaseManagement(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, propensityDataReader);
-    guiManagerLoyaltyReporting = new GUIManagerLoyaltyReporting(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, propensityDataReader);
-    guiManagerGeneral = new GUIManagerGeneral(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, propensityDataReader);
+    guiManagerBaseManagement = new GUIManagerBaseManagement(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader);
+    guiManagerLoyaltyReporting = new GUIManagerLoyaltyReporting(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader);
+    guiManagerGeneral = new GUIManagerGeneral(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader);
 
     /*****************************************
     *
@@ -914,12 +912,6 @@ public class GUIManager
       }      
     };
     loyaltyProgramService.registerListener(dynamicEventDeclarationsListener);
-
-    try {
-      long waiting = 60;
-      log.info("Waiting " + waiting + " seconds for schema registry to start");
-      Thread.sleep(waiting*1_000l);
-    } catch (InterruptedException e) {}
 
     /*****************************************
     *
@@ -11109,7 +11101,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
-    template = (template != null && (template.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate || template.getGUIManagedObjectType() == GUIManagedObjectType.DialogTemplate)) ? template : null;
+    template = (template != null && (template.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate)) ? template : null;
     JSONObject templateJSON = subscriberMessageTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -11373,7 +11365,9 @@ public class GUIManager
       {
         String templateCommunicationChannelID = (String) template.getJSONRepresentation().get("communicationChannelID");
         if(communicationChannelID == null || communicationChannelID.isEmpty() || communicationChannelID.equals(templateCommunicationChannelID)){
-          templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
+          JSONObject templateJSON = subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now);
+          templateJSON.put("communicationChannelID", templateCommunicationChannelID);
+          templates.add(templateJSON);
         }
       }
 
@@ -11627,7 +11621,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
-    template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate) ? template : null;
+    template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.DialogTemplate) ? template : null;
     if (template != null && (force || !template.getReadOnly())) subscriberMessageTemplateService.removeSubscriberMessageTemplate(templateID, userID);
 
     /*****************************************
@@ -16491,7 +16485,6 @@ public class GUIManager
                   productService, productTypeService, voucherService, voucherTypeService,
                   catalogCharacteristicService,
                   scoringStrategyService,
-                  propensityDataReader,
                   subscriberGroupEpochReader,
                   segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
                   );
@@ -18903,9 +18896,26 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 }       
             
           }
-          if(reference.startsWith("dialog_source_address_")) {
-            // TODO EVPRO-146
-          }
+          if(reference.startsWith("dialog_source_address_")) 
+            {
+              String[] referenceSplit = reference.split("_");
+              String communicationChannelID = referenceSplit[(referenceSplit.length)-1];
+              CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(communicationChannelID);
+              for (GUIManagedObject sourceAddressUnchecked : sourceAddressService.getStoredGUIManagedObjects())
+                {
+                  if (sourceAddressUnchecked.getAccepted())
+                    {
+                      SourceAddress sourceAddress = (SourceAddress) sourceAddressUnchecked;
+                      if (sourceAddress.getCommunicationChannelId().equals(communicationChannel.getID()))
+                        {
+                          HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                          availableValue.put("id", sourceAddress.getSourceAddressId());
+                          availableValue.put("display", sourceAddress.getGUIManagedObjectDisplay());
+                          result.add(JSONUtilities.encodeObject(availableValue));
+                        }
+                    }
+                }   
+            }
           
           boolean foundValue = false;
           if(includeDynamic)

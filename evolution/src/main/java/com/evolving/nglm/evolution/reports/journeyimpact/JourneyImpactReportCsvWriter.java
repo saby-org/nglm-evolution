@@ -29,7 +29,7 @@ public class JourneyImpactReportCsvWriter implements ReportCsvFactory
 {
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatisticsReportCsvWriter.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private static JourneyService journeyService;
+  private static JourneyService journeyServiceStatic;
   List<String> headerFieldsOrder = new ArrayList<String>();
   private static ReferenceDataReader<String, JourneyTrafficHistory> journeyTrafficReader;
   
@@ -59,7 +59,7 @@ public class JourneyImpactReportCsvWriter implements ReportCsvFactory
     Map<String, Object> journeyMetric = reportElement.fields.get(1);
     if (journeyStats != null && !journeyStats.isEmpty() && journeyMetric != null && !journeyMetric.isEmpty())
       {
-        Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
+        Journey journey = journeyServiceStatic.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
         JourneyTrafficHistory journeyTrafficHistory = null;
         Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
         if (journey != null)
@@ -130,7 +130,7 @@ public class JourneyImpactReportCsvWriter implements ReportCsvFactory
     return result;
   }
 
-  public static void main(String[] args)
+  public static void main(String[] args, JourneyService journeyService)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -150,11 +150,7 @@ public class JourneyImpactReportCsvWriter implements ReportCsvFactory
     ReportCsvFactory reportFactory = new JourneyImpactReportCsvWriter();
     ReportCsvWriter reportWriter = new ReportCsvWriter(reportFactory, kafkaNode, topic);
 
-    String journeyTopic = Deployment.getJourneyTopic();
-
-    journeyService = new JourneyService(kafkaNode, "customerstatsreportcsvwriter-journeyservice-" + topic, journeyTopic, false);
-    journeyService.start();
-
+    journeyServiceStatic = journeyService;
     journeyTrafficReader = ReferenceDataReader.<String, JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", "journeysreportcsvwriter-journeytrafficservice-" + topic, kafkaNode, Deployment.getJourneyTrafficChangeLogTopic(), JourneyTrafficHistory::unpack);
 
     if (!reportWriter.produceReport(csvfile, true))
