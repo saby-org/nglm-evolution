@@ -2,18 +2,9 @@ package com.evolving.nglm.evolution;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import org.reflections.Reflections;
-
-import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
-
-import scala.annotation.meta.setter;
 
 /****************************************
 *
