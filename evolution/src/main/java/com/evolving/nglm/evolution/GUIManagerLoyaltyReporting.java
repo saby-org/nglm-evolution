@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.Serializer;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -39,6 +41,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
+import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.sun.net.httpserver.HttpExchange;
 
@@ -906,6 +909,142 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("billingModes", JSONUtilities.encodeArray(billingModes));
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  *  processLoyaltyProgramOptInOut
+  *
+  *****************************************/
+
+  JSONObject processLoyaltyProgramOptInOut(JSONObject jsonRoot, boolean optIn)throws GUIManagerException {
+    
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    HashMap<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+     *
+     * argument
+     *
+     ****************************************/
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
+
+    /*****************************************
+     *
+     * resolve subscriberID
+     *
+     *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+
+    String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "loyaltyProgram", false); 
+    String loyaltyProgramRequestID = "";
+
+    /*****************************************
+     *
+     * getSubscriberProfile - no history
+     *
+     *****************************************/
+
+    try
+      {
+        SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+        if (subscriberProfile == null)
+          {
+            response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+            response.put("responseMessage", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+            if (log.isDebugEnabled())
+              log.debug("SubscriberProfile is null for subscriberID {}", subscriberID);
+            return JSONUtilities.encodeObject(response);
+          }
+
+        Date now = SystemTime.getCurrentTime();
+
+        String activeLoyaltyProgramID = null;
+        for (LoyaltyProgram loyaltyProgram : loyaltyProgramService.getActiveLoyaltyPrograms(now))
+          {
+            if (loyaltyProgramID.equals(loyaltyProgram.getLoyaltyProgramID()))
+              {
+                activeLoyaltyProgramID = loyaltyProgram.getGUIManagedObjectID();
+                break;
+              }
+          }
+        if (activeLoyaltyProgramID == null)
+          {
+            response.put("responseCode", RESTAPIGenericReturnCodes.LOYALTY_PROJECT_NOT_FOUND.getGenericResponseCode());
+            response.put("responseMessage",
+                RESTAPIGenericReturnCodes.LOYALTY_PROJECT_NOT_FOUND.getGenericResponseMessage());
+            return JSONUtilities.encodeObject(response);
+          }
+        String topic = Deployment.getLoyaltyProgramRequestTopic();
+        Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+        Serializer<LoyaltyProgramRequest> valueSerializer = LoyaltyProgramRequest.serde().serializer();
+
+        String featureID = (optIn ? API.loyaltyProgramOptIn : API.loyaltyProgramOptOut).getMethodIndex() + "";
+        String operation = optIn ? "opt-in" : "opt-out";
+        String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
+        loyaltyProgramRequestID = zuks.getStringKey();
+
+        /*****************************************
+         *
+         * request
+         *
+         *****************************************/
+
+        // Build a json doc to create the LoyaltyProgramRequest
+        HashMap<String, Object> request = new HashMap<String, Object>();
+
+        // Fields for LoyaltyProgramRequest
+        request.put("operation", operation);
+        request.put("loyaltyProgramRequestID", loyaltyProgramRequestID);
+        request.put("loyaltyProgramID", activeLoyaltyProgramID);
+        request.put("eventDate", now);
+
+        // Fields for DeliveryRequest
+        request.put("deliveryRequestID", loyaltyProgramRequestID);
+        request.put("subscriberID", subscriberID);
+        request.put("eventID", "0"); // No event here
+        request.put("moduleID", moduleID);
+        request.put("featureID", featureID);
+        request.put("deliveryType", "loyaltyProgramFulfillment");
+
+        JSONObject valueRes = JSONUtilities.encodeObject(request);
+
+        LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(valueRes, null);
+
+        // Write it to the right topic
+        kafkaProducer
+            .send(new ProducerRecord<byte[], byte[]>(topic, keySerializer.serialize(topic, new StringKey(subscriberID)),
+                valueSerializer.serialize(topic, loyaltyProgramRequest)));
+
+        //
+        // TODO how do we deal with the offline errors ?
+        //
+
+        // TODO trigger event (for campaign) ?
+
+      }
+    catch (SubscriberProfileServiceException e)
+      {
+        log.error("unable to process request processLoyaltyProgramOptInOut {} ", e.getMessage());
+        throw new GUIManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), "21");
+      }
+
+    /*****************************************
+     *
+     * decorate and response
+     *
+     *****************************************/
+    response.put("deliveryRequestID", loyaltyProgramRequestID);
+    response.put("responseCode", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+    response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+    return JSONUtilities.encodeObject(response);
+ }
+  
   
 }
 
