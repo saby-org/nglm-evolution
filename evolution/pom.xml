@@ -34,7 +34,7 @@
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>dv-1.4.3_0-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>dv-1.4.3_2_ext2-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.4.10</gui-fwk.version>
