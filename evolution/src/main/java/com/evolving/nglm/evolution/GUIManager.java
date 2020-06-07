@@ -11837,7 +11837,7 @@ public class GUIManager
               }
             else
               {
-                response = baseSubscriberProfile.getProfileMapForGUIPresentation(loyaltyProgramService, segmentationDimensionService, targetService, pointService, voucherService, voucherTypeService, exclusionInclusionTargetService, subscriberGroupEpochReader);
+                response = baseSubscriberProfile.getProfileMapForGUIPresentation(subscriberProfileService, loyaltyProgramService, segmentationDimensionService, targetService, pointService, voucherService, voucherTypeService, exclusionInclusionTargetService, subscriberGroupEpochReader);
                 response.put("responseCode", "ok");
               }
           }
