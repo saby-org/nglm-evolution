@@ -16,10 +16,12 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class SubscriberHistory implements StateStore
 {
+
   /*****************************************
   *
   *  schema
@@ -286,4 +288,11 @@ public class SubscriberHistory implements StateStore
 
     return result;
   }
+  
+  @Override
+  public String toString()
+  {
+    return "SubscriberHistory [" + (subscriberID != null ? "subscriberID=" + subscriberID + ", " : "") + (deliveryRequests != null ? "deliveryRequests=" + deliveryRequests + ", " : "") + (journeyHistory != null ? "journeyHistory=" + journeyHistory + ", " : "") + "]";
+  }
+
 }

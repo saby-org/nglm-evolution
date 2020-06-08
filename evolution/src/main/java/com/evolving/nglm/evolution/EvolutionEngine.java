@@ -2012,7 +2012,7 @@ public class EvolutionEngine
         evolutionEngineStatistics.updateSubscriberStateSize(subscriberState.getKafkaRepresentation());
         if (subscriberState.getKafkaRepresentation().length > 950000)
           {
-            log.error("StateStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberState.getKafkaRepresentation().length);
+            log.error("StateStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberState.toString());
             cleanSubscriberState(currentSubscriberState, now);
             SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), currentSubscriberState);
             subscriberStateUpdated = false;
@@ -5590,9 +5590,9 @@ public class EvolutionEngine
       {
         ExtendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), extendedSubscriberProfile);
         evolutionEngineStatistics.updateExtendedProfileSize(extendedSubscriberProfile.getKafkaRepresentation());
-        if (extendedSubscriberProfile.getKafkaRepresentation().length > 1000000)
+        if (extendedSubscriberProfile.getKafkaRepresentation().length > 950000)
           {
-            log.error("ExtendedSubscriberProfile size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), extendedSubscriberProfile.getKafkaRepresentation().length);
+            log.error("ExtendedSubscriberProfile size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), extendedSubscriberProfile.toString());
             cleanExtendedSubscriberProfile(currentExtendedSubscriberProfile, now);
             ExtendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), currentExtendedSubscriberProfile);
             extendedSubscriberProfileUpdated = false;
@@ -5738,9 +5738,9 @@ public class EvolutionEngine
       {
         SubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), subscriberHistory);
         evolutionEngineStatistics.updateSubscriberHistorySize(subscriberHistory.getKafkaRepresentation());
-        if (subscriberHistory.getKafkaRepresentation().length > 1000000)
+        if (subscriberHistory.getKafkaRepresentation().length > 950000)
           {
-            log.error("HistoryStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberHistory.getKafkaRepresentation().length);
+            log.error("HistoryStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberHistory.toString());
             cleanSubscriberHistory(currentSubscriberHistory, now);
             SubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), currentSubscriberHistory);
             subscriberHistoryUpdated = false;

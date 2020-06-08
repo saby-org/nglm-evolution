@@ -1230,5 +1230,15 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
 
     return result;
   }
+  @Override
+  public String toString()
+  {
+    return "SubscriberState [" + (subscriberID != null ? "subscriberID=" + subscriberID + ", " : "") + (subscriberProfile != null ? "subscriberProfile=" + subscriberProfile + ", " : "") + (journeyStates != null ? "journeyStates=" + journeyStates + ", " : "") + (recentJourneyStates != null ? "recentJourneyStates=" + recentJourneyStates + ", " : "") + (scheduledEvaluations != null ? "scheduledEvaluations=" + scheduledEvaluations + ", " : "")
+        + (reScheduledDeliveryRequests != null ? "reScheduledDeliveryRequests=" + reScheduledDeliveryRequests + ", " : "") + (ucgRuleID != null ? "ucgRuleID=" + ucgRuleID + ", " : "") + (ucgEpoch != null ? "ucgEpoch=" + ucgEpoch + ", " : "") + (ucgRefreshDay != null ? "ucgRefreshDay=" + ucgRefreshDay + ", " : "") + (lastEvaluationDate != null ? "lastEvaluationDate=" + lastEvaluationDate + ", " : "") + (trackingIDs != null ? "trackingIDs=" + trackingIDs + ", " : "")
+        + (journeyRequests != null ? "journeyRequests=" + journeyRequests + ", " : "") + (journeyResponses != null ? "journeyResponses=" + journeyResponses + ", " : "") + (loyaltyProgramRequests != null ? "loyaltyProgramRequests=" + loyaltyProgramRequests + ", " : "") + (loyaltyProgramResponses != null ? "loyaltyProgramResponses=" + loyaltyProgramResponses + ", " : "") + (pointFulfillmentResponses != null ? "pointFulfillmentResponses=" + pointFulfillmentResponses + ", " : "")
+        + (deliveryRequests != null ? "deliveryRequests=" + deliveryRequests + ", " : "") + (journeyStatisticWrappers != null ? "journeyStatisticWrappers=" + journeyStatisticWrappers + ", " : "") + (journeyMetrics != null ? "journeyMetrics=" + journeyMetrics + ", " : "") + (profileChangeEvents != null ? "profileChangeEvents=" + profileChangeEvents + ", " : "") + (profileSegmentChangeEvents != null ? "profileSegmentChangeEvents=" + profileSegmentChangeEvents + ", " : "")
+        + (profileLoyaltyProgramChangeEvents != null ? "profileLoyaltyProgramChangeEvents=" + profileLoyaltyProgramChangeEvents + ", " : "") + (subscriberTrace != null ? "subscriberTrace=" + subscriberTrace + ", " : "") + (externalAPIOutput != null ? "externalAPIOutput=" + externalAPIOutput + ", " : "") + (tokenChanges != null ? "tokenChanges=" + tokenChanges + ", " : "") + (notificationHistory != null ? "notificationHistory=" + notificationHistory + ", " : "")
+        + (voucherChanges != null ? "voucherChanges=" + voucherChanges : "") + "]";
+  }
 
 }
