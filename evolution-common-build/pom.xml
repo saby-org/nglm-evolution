@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>1.4.3_3-SNAPSHOT</version>
+  <version>1.4.3_3-EVPRO-313-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -25,14 +25,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.3_3-SNAPSHOT</version>
+    <version>1.4.3_3-EVPRO-313-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>1.4.3_3-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.4.3_3-EVPRO-313-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
@@ -64,7 +64,6 @@
     <common.build.phase.generate-reportscheduler-image>none</common.build.phase.generate-reportscheduler-image>
     <common.build.phase.generate-datacubemanager-image>none</common.build.phase.generate-datacubemanager-image>
     <common.build.phase.generate-upgrade-image>none</common.build.phase.generate-upgrade-image>
-    <common.build.skip.docker-prometheus-application-image>true</common.build.skip.docker-prometheus-application-image>
     <common.build.skip.docker-guimanager-image>true</common.build.skip.docker-guimanager-image>
     <common.build.skip.docker-thirdpartymanager-image>true</common.build.skip.docker-thirdpartymanager-image>
     <common.build.skip.docker-dnboproxy-image>true</common.build.skip.docker-dnboproxy-image>
@@ -396,19 +395,11 @@
             </goals>
             <configuration>
               <outputDirectory>${project.build.directory}/assembled-docker/prometheus-application</outputDirectory>
-              <resources>          
-                <resource>
-                  <directory>${project.build.directory}/nglm-evolution-resources/docker/prometheus-application</directory>
-                  <includes>
-                    <include>Dockerfile</include>
-                  </includes>
-                  <filtering>true</filtering>
-                </resource>
+              <resources>
                 <resource>
                   <directory>${project.build.directory}/assembled-resources</directory>
                   <includes>
                     <include>config/prometheus-application.yml</include>
-                    <include>bin/prometheus-application-run.sh</include>
                   </includes>
                   <filtering>true</filtering>
                 </resource>
@@ -613,21 +604,6 @@
         <artifactId>dockerfile-maven-plugin</artifactId>
         <version>${dockerfile.maven.plugin.version}</version>
         <executions>
-
-          <execution>
-            <id>docker-prometheus-application</id>
-            <goals>
-              <goal>build</goal>
-              <goal>push</goal>
-            </goals>
-            <configuration>
-              <skip>${common.build.skip.docker-prometheus-application-image}</skip>
-              <contextDirectory>${project.build.directory}/assembled-docker/prometheus-application</contextDirectory>
-              <repository>${env.DOCKER_REGISTRY}ev-prometheus-application</repository>
-              <classifier>docker-info-prometheus-application</classifier>
-              <tag>${project.name}-${project.version}</tag>
-            </configuration>
-          </execution>
 
           <execution>
             <id>docker-guimanager</id>
