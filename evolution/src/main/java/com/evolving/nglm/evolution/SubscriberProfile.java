@@ -354,6 +354,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
         String dimensionID = groupID.getFirstElement();
         String segmentID = groupID.getSecondElement();
         SegmentationDimension segmentationDimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionID, evaluationDate);
+        if (segmentationDimension.getIsSimpleProfileDimension() == false) {
         if (segmentationDimension != null)
           {
             if(segmentationDimension.getTargetingType().equals(SegmentationDimensionTargetingType.FILE))
@@ -383,6 +384,8 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
                 }                
               }
           }
+        }
+        
       }
     return result;
   }
@@ -809,11 +812,15 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
             hierarchyRelations.add(relatives.getJSONRepresentation(relationshipID));
           }
       }
-
+    
+    //prepare Inclusion/Exclusion list
+    
+    SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(this, subscriberGroupEpochReader, now);
+    
     //
     //  prepare loyalty programs
     //
-
+    
     ArrayList<JSONObject> loyaltyProgramsPresentation = new ArrayList<JSONObject>();
     for (String loyaltyProgramID : loyaltyPrograms.keySet())
       {
@@ -916,7 +923,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
             
           }
       }
-
+    
     //
     // prepare basic generalDetails
     //
@@ -933,9 +940,9 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     generalDetailsPresentation.put("vouchers", JSONUtilities.encodeArray(vouchersPresentation));
     generalDetailsPresentation.put("language", getLanguage());
     generalDetailsPresentation.put("subscriberID", getSubscriberID());
-    generalDetailsPresentation.put("exclusionInclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionInclusionTargetNames(exclusionInclusionTargetService, subscriberGroupEpochReader))));
-
-    //
+    generalDetailsPresentation.put("exclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
+    generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
+    generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
     // prepare basic kpiPresentation (if any)
     //
 
@@ -970,11 +977,15 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   //  getProfileMapForThirdPartyPresentation
   //
 
-  public Map<String,Object> getProfileMapForThirdPartyPresentation(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String,Object> getProfileMapForThirdPartyPresentation(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ExclusionInclusionTargetService exclusionInclusionTargetService)
   {
     HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
     HashMap<String, Object> generalDetailsPresentation = new HashMap<String,Object>();
     HashMap<String, Object> kpiPresentation = new HashMap<String,Object>();
+     //prepare Inclusion/Exclusion list
+    Date now = SystemTime.getCurrentTime();
+    SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(this, subscriberGroupEpochReader, now);
+    
 
     //
     // prepare basic generalDetails
@@ -985,7 +996,10 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     generalDetailsPresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
     generalDetailsPresentation.put("segments", JSONUtilities.encodeArray(getSegmentNames(segmentationDimensionService, subscriberGroupEpochReader)));
     generalDetailsPresentation.put("language", getLanguage());
-
+    generalDetailsPresentation.put("exclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
+    generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
+    generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
+  
     //
     // prepare basic kpiPresentation (if any)
     //
@@ -1863,6 +1877,90 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     return result;
   }
   
+  /****************************************
+  *
+  *  getExclusionList
+  *
+  ****************************************/
+  
+  public Set<String> getExclusionList(SubscriberEvaluationRequest evaluationRequest, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now)
+  {
+    Set<String> result = new HashSet<String>();
+    for (ExclusionInclusionTarget exclusionTarget : exclusionInclusionTargetService.getActiveExclusionTargets(now))
+      {
+        if (exclusionTarget.getFileID() != null)
+          {
+            /*****************************************
+             *
+             *  file-based inclusion/exclusion target
+             *
+             *****************************************/
+
+            Integer epoch = exclusionInclusionTargets.get(exclusionTarget.getExclusionInclusionTargetID());
+            if (epoch != null && epoch.intValue() == ((subscriberGroupEpochReader.get(exclusionTarget.getExclusionInclusionTargetID()) != null) ? subscriberGroupEpochReader.get(exclusionTarget.getExclusionInclusionTargetID()).getEpoch() : 0))
+              {
+                result.add(exclusionTarget.getGUIManagedObjectDisplay());
+              }
+          }
+        else if (exclusionTarget.getCriteriaList().size() > 0)
+          {
+            /*****************************************
+             *
+             *  criteria-based inclusion/exclusion target
+             *
+             *****************************************/
+
+            if (EvaluationCriterion.evaluateCriteria(evaluationRequest, exclusionTarget.getCriteriaList()))
+              {
+                result.add(exclusionTarget.getGUIManagedObjectDisplay());
+              }
+          }
+      }
+    return result;
+  }
+  
+  /****************************************
+  *
+  *  getInclusionList
+  *
+  ****************************************/
+  
+  public Set<String> getInclusionList(SubscriberEvaluationRequest evaluationRequest, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now)
+  {
+    Set<String> result = new HashSet<String>();
+    for (ExclusionInclusionTarget inclusionTarget : exclusionInclusionTargetService.getActiveInclusionTargets(now))
+      {
+        if (inclusionTarget.getFileID() != null)
+          {
+            /*****************************************
+             *
+             *  file-based inclusion/exclusion target
+             *
+             *****************************************/
+
+            Integer epoch = exclusionInclusionTargets.get(inclusionTarget.getExclusionInclusionTargetID());
+            if (epoch != null && epoch.intValue() == ((subscriberGroupEpochReader.get(inclusionTarget.getExclusionInclusionTargetID()) != null) ? subscriberGroupEpochReader.get(inclusionTarget.getExclusionInclusionTargetID()).getEpoch() : 0))
+              {
+                result.add(inclusionTarget.getGUIManagedObjectDisplay());
+              }
+          }
+        else if (inclusionTarget.getCriteriaList().size() > 0)
+          {
+            /*****************************************
+             *
+             *  criteria-based inclusion/exclusion target
+             *
+             *****************************************/
+
+            if (EvaluationCriterion.evaluateCriteria(evaluationRequest, inclusionTarget.getCriteriaList()))
+              {
+                result.add(inclusionTarget.getGUIManagedObjectDisplay());
+              }
+          }
+      }
+    return result;
+  }
+
   /****************************************
   *
   *  getInExclusionList
