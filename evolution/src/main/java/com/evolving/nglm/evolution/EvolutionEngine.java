@@ -135,6 +135,7 @@ import com.sun.net.httpserver.HttpServer;
 
 public class EvolutionEngine
 {
+
   /*****************************************
   *
   *  enum
@@ -222,6 +223,10 @@ public class EvolutionEngine
   private static ExclusionInclusionTargetService exclusionInclusionTargetService;
   private static StockMonitor stockService;
   private static PropensityService propensityService;
+  
+  private static final int MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES = 5;
+  private static Date kafkaSizeErrorLogDate = SystemTime.getCurrentTime();
+  
 
   /****************************************
   *
@@ -2012,7 +2017,15 @@ public class EvolutionEngine
         evolutionEngineStatistics.updateSubscriberStateSize(subscriberState.getKafkaRepresentation());
         if (subscriberState.getKafkaRepresentation().length > 950000)
           {
-            log.error("StateStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberState.toString());
+            if (SystemTime.getCurrentTime().after(kafkaSizeErrorLogDate))
+              {
+                log.error("StateStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberState.toString());
+                kafkaSizeErrorLogDate = RLMDateUtils.addMinutes(SystemTime.getCurrentTime(), MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES);
+              }
+            else
+              {
+                log.error("StateStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberState.getKafkaRepresentation().length);
+              }
             cleanSubscriberState(currentSubscriberState, now);
             SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), currentSubscriberState);
             subscriberStateUpdated = false;
@@ -5592,7 +5605,15 @@ public class EvolutionEngine
         evolutionEngineStatistics.updateExtendedProfileSize(extendedSubscriberProfile.getKafkaRepresentation());
         if (extendedSubscriberProfile.getKafkaRepresentation().length > 950000)
           {
-            log.error("ExtendedSubscriberProfile size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), extendedSubscriberProfile.toString());
+            if (SystemTime.getCurrentTime().after(kafkaSizeErrorLogDate))
+              {
+                log.error("ExtendedSubscriberProfile size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), extendedSubscriberProfile.toString());
+                kafkaSizeErrorLogDate = RLMDateUtils.addMinutes(SystemTime.getCurrentTime(), MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES);
+              }
+            else
+              {
+                log.error("ExtendedSubscriberProfile size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), extendedSubscriberProfile.getKafkaRepresentation().length);
+              }
             cleanExtendedSubscriberProfile(currentExtendedSubscriberProfile, now);
             ExtendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), currentExtendedSubscriberProfile);
             extendedSubscriberProfileUpdated = false;
@@ -5740,7 +5761,15 @@ public class EvolutionEngine
         evolutionEngineStatistics.updateSubscriberHistorySize(subscriberHistory.getKafkaRepresentation());
         if (subscriberHistory.getKafkaRepresentation().length > 950000)
           {
-            log.error("HistoryStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberHistory.toString());
+            if (SystemTime.getCurrentTime().after(kafkaSizeErrorLogDate))
+              {
+                log.error("HistoryStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberHistory.toString());
+                kafkaSizeErrorLogDate = RLMDateUtils.addMinutes(SystemTime.getCurrentTime(), MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES);
+              }
+            else
+              {
+                log.error("HistoryStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberHistory.getKafkaRepresentation().length);
+              }
             cleanSubscriberHistory(currentSubscriberHistory, now);
             SubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), currentSubscriberHistory);
             subscriberHistoryUpdated = false;
