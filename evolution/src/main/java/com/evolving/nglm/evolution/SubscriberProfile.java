@@ -609,6 +609,41 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     return result;
   }
   
+  
+  /****************************************
+  *
+  *  getSubscriberRelationsJSON - 
+  *
+  ****************************************/
+  
+  public JSONArray getSubscriberRelationsJSON()
+  {
+    JSONArray relationships = new JSONArray();    
+    if(this.relations != null)
+      {
+        for(Entry<String, SubscriberRelatives> relationship : relations.entrySet())
+          {
+            JSONObject obj = new JSONObject();          
+            String relationShipID = relationship.getKey();
+            String relationshipName = null;
+            for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+              {
+               if (supportedRelationship.getID().equals(relationShipID)) {
+                 relationshipName = supportedRelationship.getName();
+                 break;
+               }
+                
+              }
+            String parentID = relationship.getValue().getParentSubscriberID();
+            Set<String> childrenIDs = relationship.getValue().getChildrenSubscriberIDs();
+            obj.put("relationshipName", relationshipName);
+            obj.put("parentCustomerID", parentID);
+            obj.put("childrenCount", childrenIDs.size());
+            relationships.add(obj);
+          }
+      }
+    return relationships;  
+  }
   /****************************************
   *
   *  accessors - targets
