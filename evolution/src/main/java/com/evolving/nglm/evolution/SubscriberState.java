@@ -66,35 +66,18 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
 
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("subscriber_state");
-      // TODO SCHEMA CHANGED
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(8));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(9));
       schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
       schemaBuilder.field("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().schema());
       schemaBuilder.field("journeyStates", SchemaBuilder.array(JourneyState.schema()).schema());
       schemaBuilder.field("recentJourneyStates", SchemaBuilder.array(JourneyState.schema()).schema());
-      schemaBuilder.field("scheduledEvaluations", SchemaBuilder.array(TimedEvaluation.schema()).schema());
       schemaBuilder.field("reScheduledDeliveryRequests", SchemaBuilder.array(ReScheduledDeliveryRequest.schema()).defaultValue(Collections.<ReScheduledDeliveryRequest>emptyList()).schema());
       schemaBuilder.field("ucgRuleID", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("ucgEpoch", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("ucgRefreshDay", Timestamp.builder().optional().schema());
       schemaBuilder.field("lastEvaluationDate", Timestamp.builder().optional().schema());
-      schemaBuilder.field("journeyRequests", SchemaBuilder.array(JourneyRequest.schema()).schema());
-      schemaBuilder.field("journeyResponses", SchemaBuilder.array(JourneyRequest.schema()).schema());
-      schemaBuilder.field("loyaltyProgramRequests", SchemaBuilder.array(LoyaltyProgramRequest.schema()).schema());
-      schemaBuilder.field("loyaltyProgramResponses", SchemaBuilder.array(LoyaltyProgramRequest.schema()).schema());
-      schemaBuilder.field("pointFulfillmentResponses", SchemaBuilder.array(PointFulfillmentRequest.schema()).schema());
-      schemaBuilder.field("deliveryRequests", SchemaBuilder.array(DeliveryRequest.commonSerde().schema()).schema());
-      schemaBuilder.field("journeyStatisticWrappers", SchemaBuilder.array(JourneyStatisticWrapper.schema()).schema());
-      schemaBuilder.field("journeyMetrics", SchemaBuilder.array(JourneyMetric.schema()).schema());
-      schemaBuilder.field("profileChangeEvents", SchemaBuilder.array(ProfileChangeEvent.schema()).defaultValue(Collections.<ProfileChangeEvent>emptyList()).schema());
-      schemaBuilder.field("profileSegmentChangeEvents", SchemaBuilder.array(ProfileSegmentChangeEvent.schema()).defaultValue(Collections.<ProfileSegmentChangeEvent>emptyList()).schema());
-      schemaBuilder.field("profileLoyaltyProgramChangeEvents", SchemaBuilder.array(ProfileLoyaltyProgramChangeEvent.schema()).defaultValue(Collections.<ProfileLoyaltyProgramChangeEvent>emptyList()).schema());
-      schemaBuilder.field("subscriberTraceMessage", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("externalAPIOutput", ExternalAPIOutput.serde().optionalSchema()); // TODO : check this
       schemaBuilder.field("trackingID", Schema.OPTIONAL_BYTES_SCHEMA);
-      schemaBuilder.field("tokenChanges", SchemaBuilder.array(TokenChange.schema()));
       schemaBuilder.field("notificationHistory",SchemaBuilder.array(notificationHistorySchema).optional());
-      schemaBuilder.field("voucherChanges", SchemaBuilder.array(VoucherChange.schema()).optional());
       schema = schemaBuilder.build();
     };
 
@@ -420,29 +403,13 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     struct.put("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().pack(subscriberState.getSubscriberProfile()));
     struct.put("journeyStates", packJourneyStates(subscriberState.getJourneyStates()));
     struct.put("recentJourneyStates", packJourneyStates(subscriberState.getRecentJourneyStates()));
-    struct.put("scheduledEvaluations", packScheduledEvaluations(subscriberState.getScheduledEvaluations()));
     struct.put("reScheduledDeliveryRequests", packReScheduledDeliveryRequests(subscriberState.getReScheduledDeliveryRequests()));
     struct.put("ucgRuleID", subscriberState.getUCGRuleID());
     struct.put("ucgEpoch", subscriberState.getUCGEpoch());
     struct.put("ucgRefreshDay", subscriberState.getUCGRefreshDay());
     struct.put("lastEvaluationDate", subscriberState.getLastEvaluationDate());
-    struct.put("journeyRequests", packJourneyRequests(subscriberState.getJourneyRequests()));
-    struct.put("journeyResponses", packJourneyRequests(subscriberState.getJourneyResponses()));
-    struct.put("loyaltyProgramRequests", packLoyaltyProgramRequests(subscriberState.getLoyaltyProgramRequests()));
-    struct.put("loyaltyProgramResponses", packLoyaltyProgramRequests(subscriberState.getLoyaltyProgramResponses()));
-    struct.put("pointFulfillmentResponses", packPointFulfillmentResponses(subscriberState.getPointFulfillmentResponses()));
-    struct.put("deliveryRequests", packDeliveryRequests(subscriberState.getDeliveryRequests()));
-    struct.put("journeyStatisticWrappers", packJourneyStatisticWrappers(subscriberState.getJourneyStatisticWrappers()));
-    struct.put("journeyMetrics", packJourneyMetrics(subscriberState.getJourneyMetrics()));
-    struct.put("profileChangeEvents", packProfileChangeEvents(subscriberState.getProfileChangeEvents()));
-    struct.put("profileSegmentChangeEvents", packProfileSegmentChangeEvents(subscriberState.getProfileSegmentChangeEvents()));
-    struct.put("profileLoyaltyProgramChangeEvents", packProfileLoyaltyProgramChangeEvents(subscriberState.getProfileLoyaltyProgramChangeEvents()));
-    struct.put("subscriberTraceMessage", subscriberState.getSubscriberTrace() != null ? subscriberState.getSubscriberTrace().getSubscriberTraceMessage() : null);
-    struct.put("externalAPIOutput", subscriberState.getExternalAPIOutput() != null ? ExternalAPIOutput.serde().packOptional(subscriberState.getExternalAPIOutput()) : null);
     struct.put("trackingID", EvolutionUtilities.getBytesFromUUIDs(subscriberState.getTrackingIDs()));
-    struct.put("tokenChanges", packTokenChanges(subscriberState.getTokenChanges()));
     struct.put("notificationHistory", packNotificationHistory(subscriberState.getNotificationHistory()));
-    struct.put("voucherChanges", packVoucherChanges(subscriberState.getVoucherChanges()));
     return struct;
   }
 
@@ -463,22 +430,6 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   }
 
   /*****************************************
-   *
-   *  packScheduledEvaluations
-   *
-   *****************************************/
-
-  private static List<Object> packScheduledEvaluations(SortedSet<TimedEvaluation> scheduledEvaluations)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (TimedEvaluation scheduledEvaluation : scheduledEvaluations)
-      {
-        result.add(TimedEvaluation.pack(scheduledEvaluation));
-      }
-    return result;
-  }
-  
-  /*****************************************
   *
   *  packReScheduledDeliveryRequests
   *
@@ -490,166 +441,6 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     for (ReScheduledDeliveryRequest reScheduledDeliveryRequest : reScheduledDeliveryRequests)
       {
         result.add(ReScheduledDeliveryRequest.pack(reScheduledDeliveryRequest));
-      }
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  packJourneyRequests
-   *
-   *****************************************/
-
-  private static List<Object> packJourneyRequests(List<JourneyRequest> journeyRequests)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (JourneyRequest journeyRequest : journeyRequests)
-      {
-        result.add(JourneyRequest.pack(journeyRequest));
-      }
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  packLoyaltyProgramRequests
-   *
-   *****************************************/
-
-  private static List<Object> packLoyaltyProgramRequests(List<LoyaltyProgramRequest> loyaltyProgramRequests)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (LoyaltyProgramRequest loyaltyProgramRequest : loyaltyProgramRequests)
-      {
-        result.add(LoyaltyProgramRequest.pack(loyaltyProgramRequest));
-      }
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  packPointFulfillmentResponses
-   *
-   *****************************************/
-
-  private static List<Object> packPointFulfillmentResponses(List<PointFulfillmentRequest> pointFulfillmentResponses)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (PointFulfillmentRequest pointFulfillmentResponse : pointFulfillmentResponses)
-      {
-        result.add(PointFulfillmentRequest.pack(pointFulfillmentResponse));
-      }
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  packDeliveryRequests
-   *
-   *****************************************/
-
-  private static List<Object> packDeliveryRequests(List<DeliveryRequest> deliveryRequests)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (DeliveryRequest deliveryRequest : deliveryRequests)
-      {
-        result.add(DeliveryRequest.commonSerde().pack(deliveryRequest));
-      }
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  packJourneyStatisticWrappers
-   *
-   *****************************************/
-
-  private static List<Object> packJourneyStatisticWrappers(List<JourneyStatisticWrapper> journeyStatisticWrappers)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (JourneyStatisticWrapper journeyStatisticWrapper : journeyStatisticWrappers)
-      {
-        result.add(JourneyStatisticWrapper.pack(journeyStatisticWrapper));
-      }
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  packJourneyMetrics
-   *
-   *****************************************/
-
-  private static List<Object> packJourneyMetrics(List<JourneyMetric> journeyMetrics)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (JourneyMetric journeyMetric : journeyMetrics)
-      {
-        result.add(JourneyMetric.pack(journeyMetric));
-      }
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  packProfileChangeEvents
-   *
-   *****************************************/
-
-  private static List<Object> packProfileChangeEvents(List<ProfileChangeEvent> profileChangeEvents)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (ProfileChangeEvent profileChangeEvent : profileChangeEvents)
-      {
-        result.add(ProfileChangeEvent.pack(profileChangeEvent));
-      }
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  packProfileSegmentChangeEvents
-   *
-   *****************************************/
-
-  private static List<Object> packProfileSegmentChangeEvents(List<ProfileSegmentChangeEvent> profileSegmentChangeEvents)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (ProfileSegmentChangeEvent profileSegmentChangeEvent : profileSegmentChangeEvents)
-      {
-        result.add(ProfileSegmentChangeEvent.pack(profileSegmentChangeEvent));
-      }
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  packProfileLoyaltyProgramChangeEvents
-   *
-   *****************************************/
-
-  private static List<Object> packProfileLoyaltyProgramChangeEvents(List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent : profileLoyaltyProgramChangeEvents)
-      {
-        result.add(ProfileLoyaltyProgramChangeEvent.pack(profileLoyaltyProgramChangeEvent));
-      }
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  packTokenChanges
-   *
-   *****************************************/
-
-  private static List<Object> packTokenChanges(List<TokenChange> tokenChanges)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (TokenChange tokenChange : tokenChanges)
-      {
-        result.add(TokenChange.pack(tokenChange));
       }
     return result;
   }
@@ -674,21 +465,6 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     return result;
   }
 
-  /*****************************************
-   *
-   *  packVouchersChanges
-   *
-   *****************************************/
-
-  private static List<Object> packVoucherChanges(List<VoucherChange> voucherChanges)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (VoucherChange voucherChange : voucherChanges)
-    {
-      result.add(VoucherChange.pack(voucherChange));
-    }
-    return result;
-  }
 
   /*****************************************
    *
@@ -715,29 +491,29 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     SubscriberProfile subscriberProfile = SubscriberProfile.getSubscriberProfileSerde().unpack(new SchemaAndValue(schema.field("subscriberProfile").schema(), valueStruct.get("subscriberProfile")));
     Set<JourneyState> journeyStates = unpackJourneyStates(schema.field("journeyStates").schema(), valueStruct.get("journeyStates"));
     Set<JourneyState> recentJourneyStates = unpackJourneyStates(schema.field("recentJourneyStates").schema(), valueStruct.get("recentJourneyStates"));
-    SortedSet<TimedEvaluation> scheduledEvaluations = unpackScheduledEvaluations(schema.field("scheduledEvaluations").schema(), valueStruct.get("scheduledEvaluations"));
+    SortedSet<TimedEvaluation> scheduledEvaluations = new TreeSet<TimedEvaluation>();
     Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequest = (schemaVersion >= 7) ? unpackReScheduledDeliveryRequests(schema.field("reScheduledDeliveryRequests").schema(), valueStruct.get("reScheduledDeliveryRequests")) : new HashSet<ReScheduledDeliveryRequest>();
     String ucgRuleID = valueStruct.getString("ucgRuleID");
     Integer ucgEpoch = valueStruct.getInt32("ucgEpoch");
     Date ucgRefreshDay = (Date) valueStruct.get("ucgRefreshDay");
     Date lastEvaluationDate = (Date) valueStruct.get("lastEvaluationDate");
-    List<JourneyRequest> journeyRequests = unpackJourneyRequests(schema.field("journeyRequests").schema(), valueStruct.get("journeyRequests"));
-    List<JourneyRequest> journeyResponses = unpackJourneyRequests(schema.field("journeyResponses").schema(), valueStruct.get("journeyResponses"));
-    List<LoyaltyProgramRequest> loyaltyProgramRequests = unpackLoyaltyProgramRequests(schema.field("loyaltyProgramRequests").schema(), valueStruct.get("loyaltyProgramRequests"));
-    List<LoyaltyProgramRequest> loyaltyProgramResponses = unpackLoyaltyProgramRequests(schema.field("loyaltyProgramResponses").schema(), valueStruct.get("loyaltyProgramResponses"));
-    List<PointFulfillmentRequest> pointFulfillmentResponses = (schemaVersion >= 2) ? unpackPointFulfillmentResponses(schema.field("pointFulfillmentResponses").schema(), valueStruct.get("pointFulfillmentResponses")) : Collections.<PointFulfillmentRequest>emptyList();
-    List<DeliveryRequest> deliveryRequests = unpackDeliveryRequests(schema.field("deliveryRequests").schema(), valueStruct.get("deliveryRequests"));
-    List<JourneyStatisticWrapper> journeyStatisticWrappers = (schemaVersion >= 3) ?unpackJourneyStatisticWrappers(schema.field("journeyStatisticWrappers").schema(), valueStruct.get("journeyStatisticWrappers")) : new ArrayList<JourneyStatisticWrapper>();
-    List<JourneyMetric> journeyMetrics = (schemaVersion >= 2) ? unpackJourneyMetrics(schema.field("journeyMetrics").schema(), valueStruct.get("journeyMetrics")) : new ArrayList<JourneyMetric>();
-    List<ProfileChangeEvent> profileChangeEvents = (schemaVersion >= 2) ? unpackProfileChangeEvents(schema.field("profileChangeEvents").schema(), valueStruct.get("profileChangeEvents")) : Collections.<ProfileChangeEvent>emptyList();
-    List<ProfileSegmentChangeEvent> profileSegmentChangeEvents = (schemaVersion >= 2) ? unpackProfileSegmentChangeEvents(schema.field("profileSegmentChangeEvents").schema(), valueStruct.get("profileSegmentChangeEvents")) : Collections.<ProfileSegmentChangeEvent>emptyList();
-    List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents = (schemaVersion >= 2) ? unpackProfileLoyaltyProgramChangeEvents(schema.field("profileLoyaltyProgramChangeEvents").schema(), valueStruct.get("profileLoyaltyProgramChangeEvents")) : Collections.<ProfileLoyaltyProgramChangeEvent>emptyList();
-    SubscriberTrace subscriberTrace = valueStruct.getString("subscriberTraceMessage") != null ? new SubscriberTrace(valueStruct.getString("subscriberTraceMessage")) : null;
-    ExternalAPIOutput externalAPIOutput = valueStruct.get("externalAPIOutput") != null ? ExternalAPIOutput.unpack(new SchemaAndValue(schema.field("externalAPIOutput").schema(), valueStruct.get("externalAPIOutput"))) : null;
+    List<JourneyRequest> journeyRequests = new ArrayList<JourneyRequest>();
+    List<JourneyRequest> journeyResponses = new ArrayList<JourneyRequest>();
+    List<LoyaltyProgramRequest> loyaltyProgramRequests = new ArrayList<LoyaltyProgramRequest>();
+    List<LoyaltyProgramRequest> loyaltyProgramResponses = new ArrayList<LoyaltyProgramRequest>();
+    List<PointFulfillmentRequest> pointFulfillmentResponses = new ArrayList<PointFulfillmentRequest>();
+    List<DeliveryRequest> deliveryRequests = new ArrayList<DeliveryRequest>();
+    List<JourneyStatisticWrapper> journeyStatisticWrappers = new ArrayList<JourneyStatisticWrapper>();
+    List<JourneyMetric> journeyMetrics = new ArrayList<JourneyMetric>();
+    List<ProfileChangeEvent> profileChangeEvents = new ArrayList<ProfileChangeEvent>();
+    List<ProfileSegmentChangeEvent> profileSegmentChangeEvents = new ArrayList<ProfileSegmentChangeEvent>();
+    List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents = new ArrayList<ProfileLoyaltyProgramChangeEvent>();
+    SubscriberTrace subscriberTrace = null;
+    ExternalAPIOutput externalAPIOutput = null;
     List<UUID> trackingIDs = schemaVersion >= 4 ? EvolutionUtilities.getUUIDsFromBytes(valueStruct.getBytes("trackingID")) : null;
-    List<TokenChange> tokenChanges = schemaVersion >= 5 ? unpackTokenChanges(schema.field("tokenChanges").schema(), valueStruct.get("tokenChanges")) : new ArrayList<TokenChange>();
+    List<TokenChange> tokenChanges = new ArrayList<TokenChange>();
     List<Pair<String,MetricHistory>> notificationHistory = schemaVersion >= 6 ? unpackNotificationHistory(valueStruct.get("notificationHistory")) : new ArrayList<Pair<String,MetricHistory>>();
-    List<VoucherChange> voucherChanges = schemaVersion >= 7 ? unpackVoucherChanges(schema.field("voucherChanges").schema(), valueStruct.get("voucherChanges")) : new ArrayList<VoucherChange>();
+    List<VoucherChange> voucherChanges = new ArrayList<VoucherChange>();
 
     //
     //  return
@@ -779,38 +555,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     return result;
   }
 
-  /*****************************************
-   *
-   *  unpackScheduledEvaluations
-   *
-   *****************************************/
-
-  private static SortedSet<TimedEvaluation> unpackScheduledEvaluations(Schema schema, Object value)
-  {
-    //
-    //  get schema for TimedEvaluation
-    //
-
-    Schema timedEvaluationSchema = schema.valueSchema();
-
-    //
-    //  unpack
-    //
-
-    SortedSet<TimedEvaluation> result = new TreeSet<TimedEvaluation>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object scheduledEvaluation : valueArray)
-      {
-        result.add(TimedEvaluation.unpack(new SchemaAndValue(timedEvaluationSchema, scheduledEvaluation)));
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-  
+ 
   /*****************************************
   *
   *  unpackReScheduledDeliveryRequests
@@ -845,338 +590,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
 
   /*****************************************
    *
-   *  unpackJourneyRequests
-   *
-   *****************************************/
-
-  private static List<JourneyRequest> unpackJourneyRequests(Schema schema, Object value)
-  {
-    //
-    //  get schema for JourneyRequest
-    //
-
-    Schema journeyRequestSchema = schema.valueSchema();
-
-    //
-    //  unpack
-    //
-
-    List<JourneyRequest> result = new ArrayList<JourneyRequest>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object request : valueArray)
-      {
-        JourneyRequest journeyRequest = JourneyRequest.unpack(new SchemaAndValue(journeyRequestSchema, request));
-        result.add(journeyRequest);
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  unpackLoyaltyProgramRequests
-   *
-   *****************************************/
-
-  private static List<LoyaltyProgramRequest> unpackLoyaltyProgramRequests(Schema schema, Object value)
-  {
-    //
-    //  get schema for LoyaltyProgramRequest
-    //
-
-    Schema loyaltyProgramRequestSchema = schema.valueSchema();
-
-    //
-    //  unpack
-    //
-
-    List<LoyaltyProgramRequest> result = new ArrayList<LoyaltyProgramRequest>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object request : valueArray)
-      {
-        LoyaltyProgramRequest loyaltyProgramRequest = LoyaltyProgramRequest.unpack(new SchemaAndValue(loyaltyProgramRequestSchema, request));
-        result.add(loyaltyProgramRequest);
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  unpackPointFulfillmentResponses
-   *
-   *****************************************/
-
-  private static List<PointFulfillmentRequest> unpackPointFulfillmentResponses(Schema schema, Object value)
-  {
-    //
-    //  get schema for PointFulfillmentRequest
-    //
-
-    Schema pointFulfillmentResponseSchema = schema.valueSchema();
-
-    //
-    //  unpack
-    //
-
-    List<PointFulfillmentRequest> result = new ArrayList<PointFulfillmentRequest>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object request : valueArray)
-      {
-        PointFulfillmentRequest pointFulfillmentResponse = PointFulfillmentRequest.unpack(new SchemaAndValue(pointFulfillmentResponseSchema, request));
-        result.add(pointFulfillmentResponse);
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  unpackDeliveryRequests
-   *
-   *****************************************/
-
-  private static List<DeliveryRequest> unpackDeliveryRequests(Schema schema, Object value)
-  {
-    //
-    //  get schema for DeliveryRequest
-    //
-
-    Schema deliveryRequestSchema = schema.valueSchema();
-
-    //
-    //  unpack
-    //
-
-    List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object request : valueArray)
-      {
-        DeliveryRequest deliveryRequest = DeliveryRequest.commonSerde().unpack(new SchemaAndValue(deliveryRequestSchema, request));
-        result.add(deliveryRequest);
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  unpackJourneyStatistics
-   *
-   *****************************************/
-
-  private static List<JourneyStatisticWrapper> unpackJourneyStatisticWrappers(Schema schema, Object value)
-  {
-    //
-    //  get schema for JourneyStatisticWrapper
-    //
-
-    Schema journeyStatisticWrapperSchema = schema.valueSchema();
-
-    //
-    //  unpack
-    //
-
-    List<JourneyStatisticWrapper> result = new ArrayList<JourneyStatisticWrapper>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object statistic : valueArray)
-      {
-        JourneyStatisticWrapper journeyStatisticWrapper = JourneyStatisticWrapper.unpack(new SchemaAndValue(journeyStatisticWrapperSchema, statistic));
-        result.add(journeyStatisticWrapper);
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  unpackJourneyMetrics
-   *
-   *****************************************/
-
-  private static List<JourneyMetric> unpackJourneyMetrics(Schema schema, Object value)
-  {
-    //
-    //  get schema for JourneyMetric
-    //
-
-    Schema journeyMetricSchema = schema.valueSchema();
-
-    //
-    //  unpack
-    //
-
-    List<JourneyMetric> result = new ArrayList<JourneyMetric>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object metric : valueArray)
-      {
-        JourneyMetric journeyMetric = JourneyMetric.unpack(new SchemaAndValue(journeyMetricSchema, metric));
-        result.add(journeyMetric);
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  unpackProfileChangeEvents
-   *
-   *****************************************/
-
-  private static List<ProfileChangeEvent> unpackProfileChangeEvents(Schema schema, Object value)
-  {
-    //
-    //  get schema for ProfileChangeEvent
-    //
-
-    Schema profileChangeEventSchema = schema.valueSchema();
-
-    //
-    //  unpack
-    //
-
-    List<ProfileChangeEvent> result = new ArrayList<ProfileChangeEvent>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object event : valueArray)
-      {
-        ProfileChangeEvent profileChangeEvent = ProfileChangeEvent.unpack(new SchemaAndValue(profileChangeEventSchema, event));
-        result.add(profileChangeEvent);
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-
-  /*****************************************
-   *
-   *  unpackProfileSegmentChangeEvents
-   *
-   *****************************************/
-
-  private static List<ProfileSegmentChangeEvent> unpackProfileSegmentChangeEvents(Schema schema, Object value)
-  {
-    //
-    //  get schema for ProfileChangeEvent
-    //
-
-    Schema profileSegmentChangeEventSchema = schema.valueSchema();
-
-    //
-    //  unpack
-    //
-
-    List<ProfileSegmentChangeEvent> result = new ArrayList<ProfileSegmentChangeEvent>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object event : valueArray)
-      {
-        ProfileSegmentChangeEvent profileSegmentChangeEvent = ProfileSegmentChangeEvent.unpack(new SchemaAndValue(profileSegmentChangeEventSchema, event));
-        result.add(profileSegmentChangeEvent);
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  unpackProfileLoyaltyProgramChangeEvents
-   *
-   *****************************************/
-
-  private static List<ProfileLoyaltyProgramChangeEvent> unpackProfileLoyaltyProgramChangeEvents(Schema schema, Object value)
-  {
-    //
-    //  get schema for ProfileChangeEvent
-    //
-
-    Schema profileLoyaltyProgramChangeEventSchema = schema.valueSchema();
-
-    //
-    //  unpack
-    //
-
-    List<ProfileLoyaltyProgramChangeEvent> result = new ArrayList<ProfileLoyaltyProgramChangeEvent>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object event : valueArray)
-      {
-        ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = ProfileLoyaltyProgramChangeEvent.unpack(new SchemaAndValue(profileLoyaltyProgramChangeEventSchema, event));
-        result.add(profileLoyaltyProgramChangeEvent);
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  unpackTokenChanges
-   *
-   *****************************************/
-
-  private static List<TokenChange> unpackTokenChanges(Schema schema, Object value)
-  {
-    //
-    //  get schema for TokenChange
-    //
-
-    Schema tokenChangeSchema = schema.valueSchema();
-
-    //
-    //  unpack
-    //
-
-    List<TokenChange> result = new ArrayList<>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object output : valueArray)
-      {
-        TokenChange tokenChange = TokenChange.unpack(new SchemaAndValue(tokenChangeSchema, output));
-        result.add(tokenChange);
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  unpackNotificationStatus
+   *  unpackNotificationHistory
    *
    *****************************************/
 
@@ -1197,38 +611,4 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
       }
     return result;
   }
-
-  /*****************************************
-   *
-   *  unpackVoucherChanges
-   *
-   *****************************************/
-
-  private static List<VoucherChange> unpackVoucherChanges(Schema schema, Object value)
-  {
-    //
-    //  get schema for VoucherChange
-    //
-
-    Schema voucherChangeSchema = schema.valueSchema();
-
-    //
-    //  unpack
-    //
-
-    List<VoucherChange> result = new ArrayList<>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object output : valueArray)
-    {
-      VoucherChange voucherChange = VoucherChange.unpack(new SchemaAndValue(voucherChangeSchema, output));
-      result.add(voucherChange);
-    }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
 }
