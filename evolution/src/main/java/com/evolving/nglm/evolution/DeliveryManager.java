@@ -80,6 +80,8 @@ public abstract class DeliveryManager
     *****************************************/
 
     Delivered("delivered"),
+    CheckBalanceLowerThan("checkbalancelowerthan"),
+    CheckBalanceGreaterThan("checkbalancegreaterthan"),
     Indeterminate("indeterminate"),
     Failed("failed"),
     FailedTimeout("failedtimeout"),
