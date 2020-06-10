@@ -197,6 +197,7 @@ public class Deployment
   private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private static Map<String,NotificationDailyWindows> notificationTimeWindowsMap = new LinkedHashMap<String,NotificationDailyWindows>();
   private static Integer authResponseCacheLifetimeInMinutes = null;
+  private static Integer reportManagerMaxMessageLength = null;
   private static int stockRefreshPeriod;
   private static String periodicEvaluationCronEntry;
   private static String ucgEvaluationCronEntry;
@@ -431,6 +432,7 @@ public class Deployment
   public static Map<String,ToolboxSection> getWorkflowToolbox() { return workflowToolbox; }
   public static Map<String,ThirdPartyMethodAccessLevel> getThirdPartyMethodPermissionsMap() { return thirdPartyMethodPermissionsMap; }
   public static Integer getAuthResponseCacheLifetimeInMinutes() { return authResponseCacheLifetimeInMinutes; }
+  public static Integer getReportManagerMaxMessageLength() { return reportManagerMaxMessageLength; }
   public static int getStockRefreshPeriod() { return stockRefreshPeriod; }
   public static String getPeriodicEvaluationCronEntry() { return periodicEvaluationCronEntry; }
   public static String getUCGEvaluationCronEntry() { return ucgEvaluationCronEntry; }
@@ -3019,6 +3021,15 @@ public class Deployment
           throw new ServerRuntimeException("deployment", e);
         }
 
+      try
+      {
+        reportManagerMaxMessageLength = JSONUtilities.decodeInteger(jsonRoot, "reportManagerMaxMessageLength", 200);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+      
       //
       //  stockRefreshPeriod
       //

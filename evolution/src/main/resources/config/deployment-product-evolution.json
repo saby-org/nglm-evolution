@@ -846,6 +846,7 @@
     "reportManagerFileExtension"  : "csv",
     "reportManagerCsvSeparator"   : ";",
     "reportManagerFieldSurrounder": "'",
+    "reportManagerMaxMessageLength": 200,
     "reportManagerStreamsTempDir" : "/tmp",
     "reportManagerTopicsCreationProperties" : "cleanup.policy=delete segment.bytes=52428800 retention.ms=64800000"
   },

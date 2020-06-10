@@ -535,6 +535,38 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
 
   /*****************************************
   *
+  *  constructor -- empty
+  *
+  *****************************************/
+
+  protected DeliveryRequest()
+  {
+    this.deliveryRequestID = null;
+    this.deliveryRequestSource = null;
+    this.originatingDeliveryRequestID = null;
+    this.originatingRequest = true;
+    this.creationDate = null;
+    this.subscriberID = null;
+    this.deliveryPriority = null;
+    this.eventID = null;
+    this.moduleID = null;
+    this.featureID = null;
+    this.deliveryPartition = null;
+    this.retries = 0;
+    this.timeout = null;
+    this.correlator = null;
+    this.control = true;
+    this.segmentContactPolicyID = null;
+    this.deliveryType = null;
+    this.deliveryStatus = DeliveryStatus.Indeterminate;
+    this.deliveryDate = null;
+    this.diplomaticBriefcase = null;
+    this.rescheduledDate = null;
+    this.notificationHistory = null;
+  }
+
+  /*****************************************
+  *
   *  packCommon
   *
   *****************************************/

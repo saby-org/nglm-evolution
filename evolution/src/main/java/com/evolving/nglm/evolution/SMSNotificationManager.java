@@ -262,6 +262,19 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = null;
     }
+
+    /*****************************************
+    *
+    *  constructor : minimum for reports
+    *
+    *****************************************/
+
+    public SMSNotificationManagerRequest(String templateID, String language, List<String> messageTags)
+    {
+      this.language = language;
+      this.templateID = templateID;
+      this.messageTags = messageTags;
+    }
     
     /*****************************************
     *
