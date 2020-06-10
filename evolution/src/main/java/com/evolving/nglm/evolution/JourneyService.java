@@ -173,6 +173,8 @@ public class JourneyService extends GUIService
     if (!Deployment.getAutoApproveGuiObjects()) activeJourney = activeJourney.stream().filter(journey -> JourneyStatus.StartedApproved == journey.getApproval()).collect(Collectors.toList());
     return activeJourney;
   }
+  public Collection<Journey> getActiveRecurrenceJourneys(Date date) { return getActiveJourneys(date).stream().filter( journey -> journey.getRecurrence()).collect(Collectors.toList()); }
+  
 
   /*****************************************
   *
