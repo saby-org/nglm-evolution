@@ -4927,6 +4927,17 @@ public class GUIManager
       }
     
     //
+    // recurrence
+    //
+    
+    boolean recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
+    String recurrenceID = JSONUtilities.decodeString(jsonRoot, "recurrenceId", recurrence);
+    if (recurrence && recurrenceID == null)
+      {
+        jsonRoot.put("recurrenceId", journeyID);
+      }
+    
+    //
     // initial approval
     //
     
