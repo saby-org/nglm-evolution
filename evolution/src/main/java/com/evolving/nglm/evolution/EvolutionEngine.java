@@ -61,13 +61,7 @@ import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
-import org.apache.kafka.streams.kstream.Consumed;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Predicate;
-import org.apache.kafka.streams.kstream.Produced;
-import org.apache.kafka.streams.kstream.Serialized;
+import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.processor.TaskMetadata;
 import org.apache.kafka.streams.processor.ThreadMetadata;
 import org.apache.kafka.streams.processor.TimestampExtractor;
@@ -912,19 +906,15 @@ public class EvolutionEngine
     //KeyValueBytesStoreSupplier subscriberStateSupplier = Stores.persistentKeyValueStore(subscriberStateChangeLog);
     KeyValueBytesStoreSupplier subscriberStateSupplier = isInMemoryStateStores?Stores.inMemoryKeyValueStore(subscriberStateChangeLog):Stores.persistentKeyValueStore(subscriberStateChangeLog);
     Materialized subscriberStateStoreSchema = Materialized.<StringKey, SubscriberState>as(subscriberStateSupplier).withKeySerde(stringKeySerde).withValueSerde(subscriberStateSerde);
-    KTable<StringKey, SubscriberState> subscriberState = evolutionEventStream.groupByKey(Serialized.with(stringKeySerde, evolutionEventSerde)).aggregate(EvolutionEngine::nullSubscriberState, EvolutionEngine::updateSubscriberState, subscriberStateStoreSchema);
 
-    //
-    //  convert to stream
-    //
-
-    KStream<StringKey, SubscriberState> subscriberStateStream = evolutionEventStream.leftJoin(subscriberState, EvolutionEngine::getSubscriberState);
+    KStream<StringKey,SubscriberStateHackyWrapper> hackyStream = evolutionEventStream.mapValues(event->new SubscriberStateHackyWrapper((event)));
+    hackyStream.groupByKey().aggregate(EvolutionEngine::nullSubscriberState, EvolutionEngine::updateSubscriberState, subscriberStateStoreSchema);
 
     //
     //  get outputs
     //
 
-    KStream<StringKey, SubscriberStreamOutput> evolutionEngineOutputs = subscriberStateStream.flatMapValues(EvolutionEngine::getEvolutionEngineOutputs);
+    KStream<StringKey, SubscriberStreamOutput> evolutionEngineOutputs = hackyStream.filter((key,value)->value.getSubscriberState()!=null).flatMapValues(EvolutionEngine::getEvolutionEngineOutputs);
 
     //
     //  branch output streams
@@ -1792,13 +1782,15 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  public static SubscriberState updateSubscriberState(StringKey aggKey, SubscriberStreamEvent evolutionEvent, SubscriberState currentSubscriberState)
+  public static SubscriberState updateSubscriberState(StringKey aggKey, SubscriberStateHackyWrapper evolutionHackyEvent, SubscriberState currentSubscriberState)
   {
     /****************************************
     *
     *  get (or create) entry
     *
     ****************************************/
+
+    SubscriberStreamEvent evolutionEvent = evolutionHackyEvent.getOriginalEvent();
 
     SubscriberState subscriberState = (currentSubscriberState != null) ? new SubscriberState(currentSubscriberState) : new SubscriberState(evolutionEvent.getSubscriberID());
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
@@ -2024,6 +2016,11 @@ public class EvolutionEngine
     *  return
     *
     ****************************************/
+
+    if(subscriberStateUpdated){
+        log.trace("updateSubscriberState : subscriberStateUpdated enriching event with it for down stream processing");
+        evolutionHackyEvent.enrichWithSubscriberState(subscriberState);
+    }
 
     return subscriberStateUpdated ? subscriberState : currentSubscriberState;
   }
@@ -5954,8 +5951,9 @@ public class EvolutionEngine
   *
   ****************************************/
 
-  private static List<SubscriberStreamOutput> getEvolutionEngineOutputs(SubscriberState subscriberState)
+  private static List<SubscriberStreamOutput> getEvolutionEngineOutputs(SubscriberStateHackyWrapper subscriberStateHackyWrapper)
   {
+    SubscriberState subscriberState = subscriberStateHackyWrapper.getSubscriberState();
     List<SubscriberStreamOutput> result = new ArrayList<SubscriberStreamOutput>();
     if (subscriberState != null)
       {
