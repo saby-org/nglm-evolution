@@ -72,34 +72,24 @@ public class SubscriberReportCsvWriter implements ReportCsvFactory
             result.put(customerID, elasticFields.get(subscriberID));
             for (AlternateID alternateID : Deployment.getAlternateIDs().values())
               {
-                if (elasticFields.get(alternateID.getESField()) != null)
-                  {
-                    Object alternateId = elasticFields.get(alternateID.getESField());
-                    result.put(alternateID.getName(), alternateId);
-                  }
+                Object alternateId = elasticFields.get(alternateID.getESField());
+                result.put(alternateID.getName(), alternateId);
               }
           } 
-        if (elasticFields.containsKey("activationDate"))
-          {
-
-            if (elasticFields.get("activationDate") != null)
+        if (elasticFields.containsKey("activationDate") && elasticFields.get("activationDate") != null)
               {
                 Object activationDateObj = elasticFields.get("activationDate");
                 if (activationDateObj instanceof String)
                   {
                     String activationDateStr = (String) activationDateObj;
-                    // TEMP fix for BLK : reformat date with correct
-                    // template.
-                    // current format comes from ES and is :
-                    // 2020-04-20T09:51:38.953Z
+                    // TEMP fix for BLK : reformat date with correct template.
+                    // current format comes from ES and is : 2020-04-20T09:51:38.953Z
                     SimpleDateFormat parseSDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
                     try
                       {
                         Date date = parseSDF.parse(activationDateStr);
-                        result.put("activationDate", ReportsCommonCode.getDateString(date)); // replace
-                                                                                               // with
-                                                                                               // new
-                                                                                               // value
+                        // replace with new value
+                        result.put("activationDate", ReportsCommonCode.getDateString(date)); 
                       }
                     catch (ParseException e1)
                       {
@@ -108,17 +98,14 @@ public class SubscriberReportCsvWriter implements ReportCsvFactory
                         try
                           {
                             Date date = parseSDF2.parse(activationDateStr);
-                            result.put("activationDate", ReportsCommonCode.getDateString(date)); // replace
-                                                                                                   // with
-                                                                                                   // new
-                                                                                                   // value
+                            // replace with new value
+                            result.put("activationDate", ReportsCommonCode.getDateString(date));
                           }
                         catch (ParseException e2)
                           {
                             log.info("Unable to parse " + activationDateStr);
                           }
                       }
-
                   }
                 else
                   {
@@ -129,16 +116,14 @@ public class SubscriberReportCsvWriter implements ReportCsvFactory
               {
                 result.put("activationDate", "");
               }
-          }
 
+        result.putAll(allDimensionsMap); // all dimensions have empty segments
         for (String field : allProfileFields)
           {
             if (field.equals(segments))
               {
                 if (elasticFields.containsKey(segments))
                   {
-                    //allDimensions.stream().forEach(dimensionName -> result.put(dimensionName,""));
-                    result.putAll(allDimensionsMap);
                     String s = "" + elasticFields.get(segments);
                     String removeBrackets = s.substring(1, s.length() - 1); // "[ seg1, seg2, ...]"
                     String segmentIDs[] = removeBrackets.split(",");
@@ -147,6 +132,7 @@ public class SubscriberReportCsvWriter implements ReportCsvFactory
                           String[] couple = segmentsNames.get(segmentID.trim());
                           if (couple != null)
                             {
+                              // for this dimension, display segment 
                               result.put(couple[INDEX_DIMENSION_NAME], couple[INDEX_SEGMENT_NAME]);
                             }
                           else
@@ -270,8 +256,19 @@ public class SubscriberReportCsvWriter implements ReportCsvFactory
     // build map of segmentID -> [dimensionName, segmentName] once for all
     //
     
-    initSegmentationData();
-    initProfileFields();
+    synchronized (allDimensionsMap)
+      {
+        allDimensionsMap.clear();
+        segmentsNames.clear();
+        initSegmentationData();
+      }
+    
+    synchronized (allProfileFields)
+    {
+      allProfileFields.clear();
+      initProfileFields();
+    }
+    
     if (allProfileFields.isEmpty())
       {
         log.warn("Cannot find any profile field in configuration, no report produced");
@@ -289,7 +286,7 @@ public class SubscriberReportCsvWriter implements ReportCsvFactory
 
   private static void initProfileFields()
   {
-    for (CriterionField field : Deployment.getProfileCriterionFields().values())
+    for (CriterionField field : Deployment.getBaseProfileCriterionFields().values())
       {
         if (field.getESField() != null)
           {
