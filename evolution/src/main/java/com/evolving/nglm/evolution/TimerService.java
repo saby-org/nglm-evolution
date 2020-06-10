@@ -645,6 +645,14 @@ public class TimerService
         *****************************************/
 
         log.info("periodicEvaluation {} (start)", nextPeriodicEvaluation);
+        
+        /*****************************************
+        *
+        *  createRecurrentJourneys
+        *
+        *****************************************/
+
+        createRecurrentJourneys();
 
         /*****************************************
         *
@@ -702,6 +710,158 @@ public class TimerService
 
         nextPeriodicEvaluation = periodicEvaluation.next(RLMDateUtils.addSeconds(nextPeriodicEvaluation,1));
         log.info("periodicEvaluation {} (next)", nextPeriodicEvaluation);
+      }
+  }
+
+  /*****************************************
+  *
+  *  createRecurrentJourneys
+  *
+  *****************************************/
+  
+  private void createRecurrentJourneys()
+  {
+    log.info("creating recurrent campaigns");
+    Date now = SystemTime.getCurrentTime();
+    now = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
+    Collection<Journey> recurrentJourneys = journeyService.getActiveRecurrentJourneys(now);
+    for (Journey recurrentJourney : recurrentJourneys)
+      {
+        List<Date> journeyCreationDates = new ArrayList<Date>();
+        JourneyScheduler journeyScheduler = recurrentJourney.getJourneyScheduler();
+        
+        //
+        //  limit reached
+        //
+        
+        if (journeyScheduler.getNumberOfOccurrences() <= recurrentJourney.getOccurrenceNumber()) continue;
+        
+        //
+        //  scheduling
+        //
+        
+        String scheduling = journeyScheduler.getRunEveryUnit().toLowerCase();
+        Integer scheduligInterval = journeyScheduler.getRunEveryDuration();
+        
+        switch (scheduling)
+          {
+            case "week":
+              Date firstDateOfThisWk = getFirstDate(now, Calendar.DAY_OF_WEEK);
+              Date lastDateOfThisWk = getLastDate(now, Calendar.DAY_OF_WEEK);
+              
+              //
+              //  nextExpectedDate
+              //
+              
+              Date nextExpectedDate = RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, Deployment.getBaseTimeZone());
+              while (!nextExpectedDate.after(firstDateOfThisWk))
+                {
+                  nextExpectedDate = RLMDateUtils.addWeeks(nextExpectedDate, scheduligInterval, Deployment.getBaseTimeZone());
+                }
+              
+              //
+              //  not in this week
+              //
+              
+              if (!lastDateOfThisWk.before(nextExpectedDate)) continue;
+              
+              //
+              //  this is the week
+              //
+              
+              List<Date> expectedCreationDates = getExpectedCreationDates(firstDateOfThisWk, lastDateOfThisWk, scheduling, journeyScheduler.getRunEveryWeekDay());
+              
+              //
+              //  journeyCreationDates
+              //
+              
+              Collection<Journey> recurrentSubJourneys = journeyService.getRecurrentSubJourneys(recurrentJourney.getJourneyID());
+              for (Date expectedDate : expectedCreationDates)
+                {
+                  boolean exists = false;
+                  for (Journey subJourney : recurrentSubJourneys)
+                    {
+                      exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getCreatedDate(), Calendar.DATE, Deployment.getBaseTimeZone()) == 0;
+                      if (exists) break;
+                    }
+                  if(!exists) journeyCreationDates.add(expectedDate);
+                }
+              break;
+              
+            case "month":
+              break;
+
+            default:
+              break;
+        }
+        
+      }
+    log.info("created recurrent campaigns");
+  }
+
+  //
+  //  getExpectedCreationDates
+  //
+  
+  private List<Date> getExpectedCreationDates(Date firstDateOfThisWk, Date lastDateOfThisWk, String scheduling, List<String> runEveryWeekDay)
+  {
+    List<Date> result = new ArrayList<Date>();
+    while (firstDateOfThisWk.before(lastDateOfThisWk) || firstDateOfThisWk.compareTo(lastDateOfThisWk) == 0)
+      {
+        int day = RLMDateUtils.getField(firstDateOfThisWk, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
+        String dayOfWeek = String.valueOf(day);
+        if (runEveryWeekDay.contains(dayOfWeek))
+          {
+            result.add(new Date(firstDateOfThisWk.getTime()));
+          }
+        firstDateOfThisWk = RLMDateUtils.addDays(firstDateOfThisWk, 1, Deployment.getBaseTimeZone());
+      }
+    return result;
+  }
+
+  //
+  //  getFirstDate
+  //
+  
+  private Date getFirstDate(Date now, int dayOf)
+  {
+    Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getBaseTimeZone());
+    if (Calendar.DAY_OF_WEEK == dayOf)
+      {
+        return RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getBaseTimeZone());
+      }
+    else
+      {
+        Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        c.setTime(now);
+        int toalNoOfDays = c.getActualMaximum(Calendar.DAY_OF_MONTH);
+        int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
+        Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getBaseTimeZone());
+        return firstDate;
+      }
+  }
+  
+  //
+  //  getLastDate
+  //
+  
+  private Date getLastDate(Date now, int dayOf)
+  {
+    Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getBaseTimeZone());
+    if (Calendar.DAY_OF_WEEK == dayOf)
+      {
+        Date firstDateOfthisWk = RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getBaseTimeZone());
+        return RLMDateUtils.addDays(firstDateOfthisWk, 6, Deployment.getBaseTimeZone());
+      }
+    else
+      {
+        Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        c.setTime(now);
+        int toalNoOfDays = c.getActualMaximum(Calendar.DAY_OF_MONTH);
+        int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
+        Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getBaseTimeZone());
+        Date lastDate = RLMDateUtils.addDays(firstDate, toalNoOfDays-1, Deployment.getBaseTimeZone());
+        return lastDate;
       }
   }
 
