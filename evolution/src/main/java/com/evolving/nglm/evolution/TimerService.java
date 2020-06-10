@@ -789,12 +789,52 @@ public class TimerService
               break;
               
             case "month":
+              Date firstDateOfThisMonth = getFirstDate(now, Calendar.DAY_OF_MONTH);
+              Date lastDateOfThisMonth = getLastDate(now, Calendar.DAY_OF_MONTH);
+              
+              //
+              //  nextExpectedDate
+              //
+              
+              Date nextExpDate = RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, Deployment.getBaseTimeZone());
+              while (!nextExpDate.after(firstDateOfThisMonth))
+                {
+                  nextExpDate = RLMDateUtils.addMonths(nextExpDate, scheduligInterval, Deployment.getBaseTimeZone());
+                }
+              
+              //
+              //  not in this month
+              //
+              
+              if (!lastDateOfThisMonth.before(nextExpDate)) continue;
+              
+              //
+              //  this is the week
+              //
+              
+              List<Date> expCreationDates = getExpectedCreationDates(firstDateOfThisMonth, lastDateOfThisMonth, scheduling, journeyScheduler.getRunEveryMonthDay());
+              
+              //
+              //  journeyCreationDates
+              //
+              
+              Collection<Journey> rcrntSubJourneys = journeyService.getRecurrentSubJourneys(recurrentJourney.getJourneyID());
+              for (Date expectedDate : expCreationDates)
+                {
+                  boolean exists = false;
+                  for (Journey subJourney : rcrntSubJourneys)
+                    {
+                      exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getCreatedDate(), Calendar.DATE, Deployment.getBaseTimeZone()) == 0;
+                      if (exists) break;
+                    }
+                  if(!exists) journeyCreationDates.add(expectedDate);
+                }
               break;
 
             default:
               break;
         }
-        
+        log.info("RAJ K creating subcampaigns of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
       }
     log.info("created recurrent campaigns");
   }
