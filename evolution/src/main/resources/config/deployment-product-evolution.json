@@ -24,7 +24,11 @@
   "weeklyReportCronEntryString"   : "10 2 * * 0",
   "monthlyReportCronEntryString"  : "15 3 1 * *",
   
-  "periodicEvaluationCronEntry" : "0 2 * * *",
+  --
+  --  RAJ K actual was 0 2 * * *
+  --
+  
+  "periodicEvaluationCronEntry" : "1,5,10,15,20,25,30,35,40,45,50,55 * * * *",
   "ucgEvaluationCronEntry" : "0 4 * * *",
 
   "minExpiryDelayForVoucherDeliveryInHours" : 4,
