@@ -727,6 +727,7 @@ public class TimerService
     Collection<Journey> recurrentJourneys = journeyService.getActiveRecurrentJourneys(now);
     for (Journey recurrentJourney : recurrentJourneys)
       {
+        log.info("RAJ K creating recurrent campaign for {} and scheduling {} scheduligInterval {}", recurrentJourney.getJourneyID(), recurrentJourney.getJourneyScheduler().getRunEveryMonthDay(), recurrentJourney.getJourneyScheduler().getRunEveryDuration());
         List<Date> journeyCreationDates = new ArrayList<Date>();
         JourneyScheduler journeyScheduler = recurrentJourney.getJourneyScheduler();
         
@@ -735,6 +736,7 @@ public class TimerService
         //
         
         if (journeyScheduler.getNumberOfOccurrences() <= recurrentJourney.getOccurrenceNumber()) continue;
+        log.info("RAJ K creating recurrent campaign limit ok");
         
         //
         //  scheduling
@@ -762,9 +764,9 @@ public class TimerService
               //
               //  not in this week
               //
-              
+              log.info("RAJ K nextExpectedDate {} ", nextExpectedDate);
               if (!lastDateOfThisWk.before(nextExpectedDate)) continue;
-              
+              log.info("RAJ K nextExpectedDate is ok");
               //
               //  this is the week
               //
@@ -805,9 +807,9 @@ public class TimerService
               //
               //  not in this month
               //
-              
+              log.info("RAJ K nextExpDate {} ", nextExpDate);
               if (!lastDateOfThisMonth.before(nextExpDate)) continue;
-              
+              log.info("RAJ K nextExpDate is ok");
               //
               //  this is the week
               //
