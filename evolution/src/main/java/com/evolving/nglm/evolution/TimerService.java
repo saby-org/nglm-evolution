@@ -811,7 +811,7 @@ public class TimerService
               if (!lastDateOfThisMonth.before(nextExpDate)) continue;
               log.info("RAJ K nextExpDate is ok");
               //
-              //  this is the week
+              //  this is the month
               //
               
               List<Date> expCreationDates = getExpectedCreationDates(firstDateOfThisMonth, lastDateOfThisMonth, scheduling, journeyScheduler.getRunEveryMonthDay());

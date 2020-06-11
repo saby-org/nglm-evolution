@@ -837,7 +837,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     boolean recurrence = (schemaVersion >= 7) ? valueStruct.getBoolean("recurrence") : false;
     String recurrenceId = (schemaVersion >= 7) ? valueStruct.getString("recurrenceId") : null;
     Integer occurrenceNumber = (schemaVersion >= 7) ? valueStruct.getInt32("occurrenceNumber") : null;
-    JourneyScheduler scheduler = (schemaVersion >= 7) ? JourneyScheduler.unpack(new SchemaAndValue(schema.field("scheduler").schema(), valueStruct.get("journeyLinks"))) : null;
+    JourneyScheduler scheduler = (schemaVersion >= 7) ? JourneyScheduler.unpack(new SchemaAndValue(schema.field("scheduler").schema(), valueStruct.get("scheduler"))) : null;
 
     /*****************************************
     *
