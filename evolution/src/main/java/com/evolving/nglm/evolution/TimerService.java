@@ -845,7 +845,7 @@ public class TimerService
   //  getExpectedCreationDates
   //
   
-  private List<Date> getExpectedCreationDates(Date firstDateOfThisWk, Date lastDateOfThisWk, String scheduling, List<String> runEveryWeekDay)
+  private List<Date> getExpectedCreationDates(Date firstDateOfThisWk, Date lastDateOfThisWk, String scheduling, List<String> runEveryDay)
   {
     List<Date> result = new ArrayList<Date>();
     while (firstDateOfThisWk.before(lastDateOfThisWk) || firstDateOfThisWk.compareTo(lastDateOfThisWk) == 0)
@@ -864,8 +864,8 @@ public class TimerService
             default:
               break;
         }
-        String dayOfWeek = String.valueOf(day);
-        if (runEveryWeekDay.contains(dayOfWeek))
+        String dayOf = String.valueOf(day);
+        if (runEveryDay.contains(dayOf))
           {
             result.add(new Date(firstDateOfThisWk.getTime()));
           }
