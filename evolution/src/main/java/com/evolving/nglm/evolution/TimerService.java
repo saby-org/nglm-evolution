@@ -890,7 +890,6 @@ public class TimerService
       {
         Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
         c.setTime(now);
-        int toalNoOfDays = c.getActualMaximum(Calendar.DAY_OF_MONTH);
         int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
         Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getBaseTimeZone());
         return firstDate;
