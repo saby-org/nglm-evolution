@@ -97,7 +97,7 @@ public class SubscriberIDService
         jedisPoolConfig.setJmxNameBase(name);
       }
     String password = System.getProperty("redis.password");
-    if(password != null && !password.trim().equals("")) {
+    if(password != null && !password.trim().equals("") && !password.trim().equals("none")) {
       log.info("SubscriberIDService() Use Redis Password " + password);
       this.jedisSentinelPool = new JedisSentinelPool(redisInstance, sentinels, jedisPoolConfig, Protocol.DEFAULT_TIMEOUT, Protocol.DEFAULT_TIMEOUT, null, password, 0, null,
           Protocol.DEFAULT_TIMEOUT, Protocol.DEFAULT_TIMEOUT, null, password, null);

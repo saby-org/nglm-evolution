@@ -406,7 +406,7 @@ public abstract class SimpleRedisSinkConnector extends SinkConnector
       jedisPoolConfig.setJmxNameBase(connectorName + "-" + Integer.toString(taskNumber));
       
       String password = System.getProperty("redis.password");
-      if(password != null && !password.trim().equals("")) {
+      if(password != null && !password.trim().equals("") && !password.trim().equals("none")) {
         log.info("SimpleRedisSinkConnector() Use Redis Password " + password);
         jedisSentinelPool = new JedisSentinelPool(redisInstance, redisSentinels, jedisPoolConfig, Protocol.DEFAULT_TIMEOUT, Protocol.DEFAULT_TIMEOUT, null, password, 0, null,
             Protocol.DEFAULT_TIMEOUT, Protocol.DEFAULT_TIMEOUT, null, password, null);        
