@@ -140,6 +140,7 @@ public class Deployment
   private static String journeyTrafficDatacubePeriodCronEntryString;
   private static String subscriberProfileSnapshotPeriodCronEntryString;
   private static PropensityRule propensityRule;
+  private static Map<String,Long> journeyTemplateCapacities = new LinkedHashMap<String,Long>();
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
   private static Map<String,ExternalAPITopic> externalAPITopics = new LinkedHashMap<String,ExternalAPITopic>();
   private static String baseLanguageID;
@@ -377,6 +378,7 @@ public class Deployment
   public static String getJourneyTrafficDatacubePeriodCronEntryString() { return journeyTrafficDatacubePeriodCronEntryString; }
   public static String getSubscriberProfileSnapshotPeriodCronEntryString() { return subscriberProfileSnapshotPeriodCronEntryString; }
   public static PropensityRule getPropensityRule() { return propensityRule; }
+  public static Map<String,Long> getJourneyTemplateCapacities() { return journeyTemplateCapacities; }
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
   public static Map<String,ExternalAPITopic> getExternalAPITopics() { return externalAPITopics; }
   public static String getBaseLanguageID() { return baseLanguageID; }
@@ -2081,6 +2083,23 @@ public class Deployment
         {
           JSONObject propensityRuleJSON = (JSONObject) jsonRoot.get("propensityRule");
           propensityRule = new PropensityRule(propensityRuleJSON);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  journeyTemplateCapacities
+      //
+
+      try
+        {
+          JSONObject journeyTemplateCapacitiesJSON = JSONUtilities.decodeJSONObject(jsonRoot, "journeyTemplateCapacities", true);
+          for (Object key : journeyTemplateCapacitiesJSON.keySet())
+            {
+              journeyTemplateCapacities.put((String) key, (Long) journeyTemplateCapacitiesJSON.get(key));
+            }
         }
       catch (JSONUtilitiesException e)
         {

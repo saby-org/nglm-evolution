@@ -201,6 +201,7 @@ public class GUIManager
     getBulkCampaignList("getBulkCampaignList"),
     getBulkCampaignSummaryList("getBulkCampaignSummaryList"),
     getBulkCampaign("getBulkCampaign"),
+    getBulkCampaignCapacity("getBulkCampaignCapacity"),
     putBulkCampaign("putBulkCampaign"),
     removeBulkCampaign("removeBulkCampaign"),
     startBulkCampaign("startBulkCampaign"),
@@ -1691,6 +1692,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getBulkCampaignList", new APISimpleHandler(API.getBulkCampaignList));
         restServer.createContext("/nglm-guimanager/getBulkCampaignSummaryList", new APISimpleHandler(API.getBulkCampaignSummaryList));
         restServer.createContext("/nglm-guimanager/getBulkCampaign", new APISimpleHandler(API.getBulkCampaign));
+        restServer.createContext("/nglm-guimanager/getBulkCampaignCapacity", new APISimpleHandler(API.getBulkCampaignCapacity));
         restServer.createContext("/nglm-guimanager/putBulkCampaign", new APISimpleHandler(API.putBulkCampaign));
         restServer.createContext("/nglm-guimanager/removeBulkCampaign", new APISimpleHandler(API.removeBulkCampaign));
         restServer.createContext("/nglm-guimanager/startBulkCampaign", new APISimpleHandler(API.startBulkCampaign));
@@ -2497,6 +2499,10 @@ public class GUIManager
 
                 case getBulkCampaign:
                   jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, true, includeArchived);
+                  break;
+
+                case getBulkCampaignCapacity:
+                  jsonResponse = processGetBulkCampaignCapacity(userID, jsonRoot);
                   break;
 
                 case putBulkCampaign:
@@ -5506,6 +5512,99 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("workflowToolbox", JSONUtilities.encodeArray(workflowToolboxSections));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetBulkCampaignCapacity
+  *
+  *****************************************/  
+
+  private JSONObject processGetBulkCampaignCapacity(String userID, JSONObject jsonRoot)
+  {
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    //
+    //  get journey template
+    //
+    BulkType bulkType = BulkType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "bulkType", false));
+    String journeyTemplateID = null;
+    if(bulkType != BulkType.Unknown) {
+      switch (bulkType) {
+      case Bulk_SMS:
+        journeyTemplateID = "Bulk_SMS";
+        break;
+
+      case Bulk_Bonus:
+        journeyTemplateID = "Bulk_Bonus";
+        break;
+
+      default:
+        break;
+      }
+    } 
+    else {
+      journeyTemplateID = JSONUtilities.decodeString(jsonRoot, "journeyTemplateID", false);
+    }
+    
+    if(journeyTemplateID == null || journeyTemplateID.isEmpty()){
+      response.put("responseCode", "missingJourneyTemplate");
+      return JSONUtilities.encodeObject(response);
+    }
+    
+    Long maximumCapacity = Deployment.getJourneyTemplateCapacities().get(journeyTemplateID);
+    if(maximumCapacity == null){
+      // @rl: templates added dynamically are not supported yet. This would need a refactoring of journey templates.
+      response.put("responseCode", "journeyTemplateNotFound");
+      return JSONUtilities.encodeObject(response);
+    }
+    
+    //
+    //  get start date
+    //
+    String bulkCampaignEffectiveStartDate = JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false);
+    if(bulkCampaignEffectiveStartDate == null){
+      response.put("responseCode", "startDateNotFound");
+      return JSONUtilities.encodeObject(response);
+    }
+    Date targetDay;
+    try {
+      Date startDate = GUIManagedObject.parseDateField(bulkCampaignEffectiveStartDate);
+      targetDay = RLMDateUtils.truncate(startDate, Calendar.DATE, Deployment.getBaseTimeZone());
+    } catch (JSONUtilitiesException e) {
+      response.put("responseCode", "invalidStartDate");
+      return JSONUtilities.encodeObject(response);
+    }
+    
+    
+    //
+    //  get planned capacity
+    //
+    long plannedCapacity = 0;
+    for (GUIManagedObject journey : journeyService.getStoredJourneys(false)) {
+      if ( journey.getGUIManagedObjectType().equals(GUIManagedObjectType.BulkCampaign) && ((Journey) journey).getEffectiveStartDate() != null) {
+        Date startDate = RLMDateUtils.truncate(((Journey) journey).getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone());
+        Object templateIDObj = journey.getJSONRepresentation().get("journeyTemplateID"); // only in JSON representation
+        String templateID = (templateIDObj != null && templateIDObj instanceof String) ? (String) templateIDObj : null;
+        
+        // Check same effectiveStartDate and same template type !
+        if(targetDay.equals(startDate) && journeyTemplateID.equals(templateID)) {
+          Object targetCountObj = journey.getJSONRepresentation().get("targetCount");  // only in JSON representation
+          long targetCount = (targetCountObj != null && targetCountObj instanceof Long) ? (long) targetCountObj : 0;
+          plannedCapacity += targetCount;
+        }
+      }
+    }
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+    response.put("responseCode", "ok");
+    response.put("plannedCapacity", plannedCapacity);
+    response.put("maximumCapacity", maximumCapacity);
     return JSONUtilities.encodeObject(response);
   }
 
