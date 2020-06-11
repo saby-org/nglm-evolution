@@ -228,7 +228,7 @@ public abstract class DeliveryManager
   //
   //  internal processing
   //
-  private ContactPolicyProcessor contactPolicyProcessor;
+  private ContactPolicyProcessor contactPolicyProcessor = null;
 
   /*****************************************
   *
@@ -515,7 +515,12 @@ public abstract class DeliveryManager
      *
      *****************************************/
 
-    contactPolicyProcessor = new ContactPolicyProcessor("deliveryManager-communicationchannel", deliveryManagerKey);
+    // skip if not needed
+    if(deliveryManagerDeclaration.getDeliveryType().equals(CommodityDeliveryManager.COMMODITY_DELIVERY_MANAGER_NAME)){
+      log.info("skipping contactPolicyProcessor init for "+deliveryManagerDeclaration.getDeliveryType());
+    }else{
+      contactPolicyProcessor = new ContactPolicyProcessor("deliveryManager-communicationchannel", deliveryManagerKey);
+    }
   }
 
   /*****************************************
