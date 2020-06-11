@@ -850,7 +850,20 @@ public class TimerService
     List<Date> result = new ArrayList<Date>();
     while (firstDateOfThisWk.before(lastDateOfThisWk) || firstDateOfThisWk.compareTo(lastDateOfThisWk) == 0)
       {
-        int day = RLMDateUtils.getField(firstDateOfThisWk, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
+        int day = -1;
+        switch (scheduling)
+          {
+            case "week":
+              day = RLMDateUtils.getField(firstDateOfThisWk, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
+              break;
+              
+            case "month":
+              day = RLMDateUtils.getField(firstDateOfThisWk, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
+              break;
+
+            default:
+              break;
+        }
         String dayOfWeek = String.valueOf(day);
         if (runEveryWeekDay.contains(dayOfWeek))
           {
@@ -858,6 +871,7 @@ public class TimerService
           }
         firstDateOfThisWk = RLMDateUtils.addDays(firstDateOfThisWk, 1, Deployment.getBaseTimeZone());
       }
+    log.info("RAJ K getExpectedCreationDates {}", result);
     return result;
   }
 

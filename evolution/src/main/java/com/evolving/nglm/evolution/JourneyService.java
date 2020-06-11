@@ -184,7 +184,7 @@ public class JourneyService extends GUIService
         if (uncheckedJourney.getAccepted())
           {
             Journey checkedJourney = (Journey) uncheckedJourney;
-            if (parentJourneyID.equals(checkedJourney.getRecurrenceId())) subJourneys.add(checkedJourney);
+            if (!checkedJourney.getRecurrence() && parentJourneyID.equals(checkedJourney.getRecurrenceId())) subJourneys.add(checkedJourney);
           }
         
       }
