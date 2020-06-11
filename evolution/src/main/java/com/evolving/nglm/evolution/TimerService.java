@@ -808,7 +808,7 @@ public class TimerService
               //  not in this month
               //
               log.info("RAJ K nextExpDate {} ", nextExpDate);
-              if (!lastDateOfThisMonth.before(nextExpDate)) continue;
+              if (lastDateOfThisMonth.before(nextExpDate)) continue;
               log.info("RAJ K nextExpDate is ok");
               //
               //  this is the month
