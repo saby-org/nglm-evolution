@@ -5604,7 +5604,7 @@ public class GUIManager
     *****************************************/
     response.put("responseCode", "ok");
     response.put("plannedCapacity", plannedCapacity);
-    response.put("maximumCapacity", maximumCapacity);
+    response.put("topCapacity", maximumCapacity);
     return JSONUtilities.encodeObject(response);
   }
 
