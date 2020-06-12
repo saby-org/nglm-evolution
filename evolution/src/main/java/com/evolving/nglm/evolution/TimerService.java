@@ -13,8 +13,11 @@ import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.UniqueKeyServer;
 import com.evolving.nglm.core.utilities.UtilitiesException;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
+import com.evolving.nglm.evolution.Journey.JourneyStatus;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -26,7 +29,7 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
-
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,6 +72,11 @@ public class TimerService
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader = null;
   private TargetService targetService = null;
   private JourneyService journeyService = null;
+  private CatalogCharacteristicService catalogCharacteristicService = null;
+  private SubscriberMessageTemplateService subscriberMessageTemplateService = null;
+  private DynamicEventDeclarationsService dynamicEventDeclarationsService = null;
+  private JourneyObjectiveService journeyObjectiveService = null;
+  protected static UniqueKeyServer epochServer = new UniqueKeyServer();
   private ExclusionInclusionTargetService exclusionInclusionTargetService = null;
   private boolean forceLoadSchedule = true;
   private Date earliestOutOfMemoryDate = NGLMRuntime.END_OF_TIME;
@@ -135,7 +143,7 @@ public class TimerService
   *
   *****************************************/
 
-  public void start(ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, TargetService targetService, JourneyService journeyService, ExclusionInclusionTargetService exclusionInclusionTargetService)
+  public void start(ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, TargetService targetService, JourneyService journeyService, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyObjectiveService journeyObjectiveService, ExclusionInclusionTargetService exclusionInclusionTargetService)
   {
     /*****************************************
     *
@@ -156,6 +164,10 @@ public class TimerService
     this.targetService = targetService;
     this.journeyService = journeyService;
     this.exclusionInclusionTargetService = exclusionInclusionTargetService;
+    this.catalogCharacteristicService = catalogCharacteristicService;
+    this.subscriberMessageTemplateService = subscriberMessageTemplateService;
+    this.dynamicEventDeclarationsService = dynamicEventDeclarationsService;
+    this.journeyObjectiveService = journeyObjectiveService;
 
     /*****************************************
     *
@@ -839,12 +851,61 @@ public class TimerService
         }
         
         //
-        //  filter journeyCreationDates on now
+        //  createJourneys
         //
         
-        log.info("RAJ K creating subcampaigns of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
+        createJourneys(recurrentJourney, journeyCreationDates, latestJourney.getOccurrenceNumber());
       }
     log.info("created recurrent campaigns");
+  }
+
+  //
+  //  createJourneys
+  //
+  
+  private void createJourneys(Journey recurrentJourney, List<Date> journeyCreationDates, Integer existingOccurrenceNumber)
+  {
+    log.info("RAJ K createingJourneys of {}, for {} existingOccurrenceNumber {}", recurrentJourney.getJourneyID(), journeyCreationDates, existingOccurrenceNumber);
+    Integer occurrenceNumber = existingOccurrenceNumber;
+    int daysBetween = RLMDateUtils.daysBetween(recurrentJourney.getEffectiveStartDate(), recurrentJourney.getEffectiveEndDate(), Deployment.getBaseTimeZone());
+    for (Date startDate : journeyCreationDates)
+      {
+        JSONObject journeyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
+        
+        //
+        //  remove
+        //
+        
+        journeyJSON.remove("recurrence");
+        journeyJSON.remove("scheduler");
+        
+        //
+        //  add
+        //
+        
+        String journeyID = journeyService.generateJourneyID();
+        journeyJSON.put("id", journeyID);
+        journeyJSON.put("name", recurrentJourney.getGUIManagedObjectName() + "_" + journeyID);
+        journeyJSON.put("occurrenceNumber", ++occurrenceNumber);
+        journeyJSON.put("active", true);
+        journeyJSON.put("effectiveStartDate", recurrentJourney.formatDateField(startDate));
+        journeyJSON.put("effectiveEndDate", recurrentJourney.formatDateField(RLMDateUtils.addDays(startDate, daysBetween, Deployment.getBaseTimeZone())));
+        try
+          {
+            Journey subJourney = new Journey(journeyJSON, recurrentJourney.getGUIManagedObjectType(), epochServer.getKey(), null, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, JourneyStatus.StartedApproved);
+            subJourney.setCreatedDate(SystemTime.getCurrentTime());
+            subJourney.setUpdatedDate(SystemTime.getCurrentTime());
+            journeyService.putJourney(subJourney, journeyObjectiveService, catalogCharacteristicService, targetService, false, "0");
+            log.info("RAJ K createJourneys of {} new journey {} ", recurrentJourney.getJourneyID(), subJourney.getGUIManagedObjectName());
+          } 
+        catch (GUIManagerException e)
+          {
+            --occurrenceNumber;
+            e.printStackTrace();
+            log.error("unable to create journey " + e.getMessage());
+          }
+      }
+    
   }
 
   //

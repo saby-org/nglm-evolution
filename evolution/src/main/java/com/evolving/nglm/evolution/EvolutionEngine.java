@@ -185,6 +185,7 @@ public class EvolutionEngine
   private static ReferenceDataReader<String,UCGState> ucgStateReader;
   private static DynamicCriterionFieldService dynamicCriterionFieldService; 
   private static JourneyService journeyService;
+  private DynamicEventDeclarationsService dynamicEventDeclarationsService = null;
   private static LoyaltyProgramService loyaltyProgramService;
   private static TargetService targetService;
   private static JourneyObjectiveService journeyObjectiveService;
@@ -357,8 +358,15 @@ public class EvolutionEngine
     //  journeyService
     //
 
-    journeyService = new JourneyService(bootstrapServers, "evolutionengine-journeyservice-" + evolutionEngineKey, Deployment.getJourneyTopic(), false);
+    journeyService = new JourneyService(bootstrapServers, "evolutionengine-journeyservice-" + evolutionEngineKey, Deployment.getJourneyTopic(), true);
     journeyService.start();
+    
+    //
+    //  dynamicEventDeclarationsService
+    //
+    
+    dynamicEventDeclarationsService = new DynamicEventDeclarationsService(bootstrapServers, "evolutionengine-dynamiceventdeclarationsservice-" + evolutionEngineKey, Deployment.getDynamicEventDeclarationsTopic(), true);
+    dynamicEventDeclarationsService.start();
     
     //
     //  loyaltyProgramService
@@ -378,7 +386,7 @@ public class EvolutionEngine
     //  journeyObjectiveService
     //
 
-    journeyObjectiveService = new JourneyObjectiveService(bootstrapServers, "evolutionengine-journeyobjectiveservice-" + evolutionEngineKey, Deployment.getJourneyObjectiveTopic(), false);
+    journeyObjectiveService = new JourneyObjectiveService(bootstrapServers, "evolutionengine-journeyobjectiveservice-" + evolutionEngineKey, Deployment.getJourneyObjectiveTopic(), true);
     journeyObjectiveService.start();
 
     //
@@ -475,7 +483,7 @@ public class EvolutionEngine
     //  subscriberMessageTemplateService
     //
 
-    subscriberMessageTemplateService = new SubscriberMessageTemplateService(bootstrapServers, "evolutionengine-subscribermessagetemplateservice-" + evolutionEngineKey, Deployment.getSubscriberMessageTemplateTopic(), false);
+    subscriberMessageTemplateService = new SubscriberMessageTemplateService(bootstrapServers, "evolutionengine-subscribermessagetemplateservice-" + evolutionEngineKey, Deployment.getSubscriberMessageTemplateTopic(), true);
     subscriberMessageTemplateService.start();
 
     //
@@ -1352,7 +1360,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    timerService.start(subscriberStateStore, subscriberGroupEpochReader, targetService, journeyService, exclusionInclusionTargetService);
+    timerService.start(subscriberStateStore, subscriberGroupEpochReader, targetService, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyObjectiveService, exclusionInclusionTargetService);
 
     /*****************************************
     *
