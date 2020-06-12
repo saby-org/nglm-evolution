@@ -20,8 +20,7 @@
        "numberOfOccurrences":8,
        "runEveryDuration":1,
        "runEveryUnit":"week",
-       "runEveryWeekDay":[ "1" ],      
-       "runEveryMonthDay":[ "15" ]   
+       "runEveryWeekDay":[ "1" , "6" ]    
    },
    "nodes":[
       {

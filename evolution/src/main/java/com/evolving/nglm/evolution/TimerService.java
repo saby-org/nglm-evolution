@@ -727,7 +727,6 @@ public class TimerService
     Collection<Journey> recurrentJourneys = journeyService.getActiveRecurrentJourneys(now);
     for (Journey recurrentJourney : recurrentJourneys)
       {
-        log.info("RAJ K creating recurrent campaign for {} and scheduling {} scheduligInterval {}", recurrentJourney.getJourneyID(), recurrentJourney.getJourneyScheduler().getRunEveryMonthDay(), recurrentJourney.getJourneyScheduler().getRunEveryDuration());
         List<Date> journeyCreationDates = new ArrayList<Date>();
         JourneyScheduler journeyScheduler = recurrentJourney.getJourneyScheduler();
         
@@ -745,6 +744,7 @@ public class TimerService
         String scheduling = journeyScheduler.getRunEveryUnit().toLowerCase();
         Integer scheduligInterval = journeyScheduler.getRunEveryDuration();
         
+        log.info("RAJ K creating recurrent campaign for {} and scheduling {} scheduligInterval {}", recurrentJourney.getJourneyID(), scheduling, scheduligInterval);
         switch (scheduling)
           {
             case "week":
@@ -756,7 +756,7 @@ public class TimerService
               //
               
               Date nextExpectedDate = RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, Deployment.getBaseTimeZone());
-              while (!nextExpectedDate.after(firstDateOfThisWk))
+              while (nextExpectedDate.before(lastDateOfThisWk))
                 {
                   nextExpectedDate = RLMDateUtils.addWeeks(nextExpectedDate, scheduligInterval, Deployment.getBaseTimeZone());
                 }
@@ -765,7 +765,7 @@ public class TimerService
               //  not in this week
               //
               log.info("RAJ K nextExpectedDate {} ", nextExpectedDate);
-              if (!lastDateOfThisWk.before(nextExpectedDate)) continue;
+              if (RLMDateUtils.truncate(nextExpectedDate, Calendar.DATE, Deployment.getBaseTimeZone()).after(lastDateOfThisWk)) continue;
               log.info("RAJ K nextExpectedDate is ok");
               //
               //  this is the week
@@ -836,6 +836,11 @@ public class TimerService
             default:
               break;
         }
+        
+        //
+        //  filter journeyCreationDates on now
+        //
+        
         log.info("RAJ K creating subcampaigns of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
       }
     log.info("created recurrent campaigns");
