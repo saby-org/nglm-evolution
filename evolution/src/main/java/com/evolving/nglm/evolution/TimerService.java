@@ -880,13 +880,20 @@ public class TimerService
         String journeyID = journeyService.generateJourneyID();
         journeyJSON.put("id", journeyID);
         journeyJSON.put("name", recurrentJourney.getGUIManagedObjectName() + "_" + journeyID);
+        journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + "_" + journeyID);
         journeyJSON.put("occurrenceNumber", ++occurrenceNumber);
-        journeyJSON.put("active", true);
         journeyJSON.put("effectiveStartDate", recurrentJourney.formatDateField(startDate));
         journeyJSON.put("effectiveEndDate", recurrentJourney.formatDateField(RLMDateUtils.addDays(startDate, daysBetween, Deployment.getBaseTimeZone())));
-        
+        log.info("request {}", journeyJSON);
         JSONObject result = guiManagerService.processPOSTRequest(journeyJSON, "putCampaign");
         log.info("result {}", result);
+        
+        //
+        //  activate
+        //
+        JSONObject journeyStartJSON = new JSONObject();
+        journeyStartJSON.put("id", journeyID);
+        guiManagerService.processPOSTRequest(journeyStartJSON, "startCampaign");
       }
   }
 
