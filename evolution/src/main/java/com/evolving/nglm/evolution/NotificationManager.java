@@ -319,6 +319,29 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     {
       return notificationParameters;
     }
+    
+    /*****************************************
+    *
+    *  getResolvedParameters
+    *
+    *****************************************/
+
+    public Map<String, String> getResolvedParameters(SubscriberMessageTemplateService subscriberMessageTemplateService)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      if(template.getDialogMessages() != null)
+        {
+          for(Map.Entry<String, DialogMessage> dialogMessageEntry : template.getDialogMessages().entrySet())
+            {
+              DialogMessage dialogMessage = dialogMessageEntry.getValue();
+              String parameterName = dialogMessageEntry.getKey();
+              String resolved = dialogMessage.resolve(language, tags.get(parameterName));
+              result.put(parameterName, resolved);
+            }
+        }
+      return result;
+    }
 
     //
     // abstract
@@ -642,6 +665,9 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
       guiPresentationMap.put(NOTIFICATION_CHANNEL, getChannelID());
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
+      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
+      guiPresentationMap.putAll(resolvedParameters);
+      
     }
 
     //
@@ -663,6 +689,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, getChannelID());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
+      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
+      thirdPartyPresentationMap.putAll(resolvedParameters);
     }
 
     public void resetDeliveryRequestAfterReSchedule()

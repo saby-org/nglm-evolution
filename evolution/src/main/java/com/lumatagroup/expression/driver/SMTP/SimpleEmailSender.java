@@ -5,9 +5,10 @@ import javax.mail.AuthenticationFailedException;
 import javax.mail.MessagingException;
 import javax.mail.SendFailedException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.evolving.nglm.evolution.MailNotificationManager;
-import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.evolution.INotificationRequest;
@@ -21,7 +22,7 @@ import com.sun.mail.smtp.SMTPTransport;
  *
  */
 public class SimpleEmailSender {
-	private static Logger logger = Logger.getLogger(SimpleEmailSender.class);
+	private static Logger logger = LoggerFactory.getLogger(SimpleEmailSender.class);
 	private SMTPConnection smtpConn;
 	private String fromEmail;
 	private String replyTo;

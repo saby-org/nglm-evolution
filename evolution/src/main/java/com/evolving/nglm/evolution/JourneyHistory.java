@@ -1056,4 +1056,10 @@ public class JourneyHistory
       return true;
     }
   }
+
+  @Override
+  public String toString()
+  {
+    return "JourneyHistory [" + (journeyID != null ? "journeyID=" + journeyID + ", " : "") + (nodeHistory != null ? "nodeHistory=" + nodeHistory + ", " : "") + (statusHistory != null ? "statusHistory=" + statusHistory + ", " : "") + (rewardHistory != null ? "rewardHistory=" + rewardHistory : "") + "]";
+  }
 }

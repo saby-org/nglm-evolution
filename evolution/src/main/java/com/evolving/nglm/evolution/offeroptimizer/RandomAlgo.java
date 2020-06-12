@@ -1,17 +1,18 @@
 package com.evolving.nglm.evolution.offeroptimizer;
 
-import java.util.Date;
 import java.util.Map;
 import java.util.Random;
 
 import com.evolving.nglm.evolution.*;
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
 
 public class RandomAlgo implements IOfferOptimizerAlgorithm {
 
-  private static Logger logger = Logger.getLogger(RandomAlgo.class);
+  private static Logger logger = LoggerFactory.getLogger(RandomAlgo.class);
 
   @Override
   public ProposedOfferDetails getOfferPropensityScore(

@@ -1,7 +1,7 @@
 package com.lumatagroup.expression.driver.SMPP;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A simple queue implementation (synchronized)
@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
  */
 public class Queue {
 
-	private static Logger logger = Logger.getLogger(Queue.class);
+	private static Logger logger = LoggerFactory.getLogger(Queue.class);
 
 	private String name;
 	private Cell head;
@@ -36,7 +36,7 @@ public class Queue {
 	public void block_enqueue(int min_size) throws InterruptedException {
 		synchronized(block) {
 			while (size/*not synchronized*/ >= min_size) {
-				if (logger.isEnabledFor(Level.TRACE)) {
+				if (logger.isTraceEnabled()) {
 					logger.trace("Queue.block_enqueue ["+this.name+"]: items in the queue : " + size);
 				}
 				block.wait(); // wait for this Queue to get dequeued.
@@ -63,7 +63,7 @@ public class Queue {
 				// 2nd request (cos it does not "wait()" since the queue is not empty) when it finished 1st request.
 				notify();
 			}
-			if (logger.isEnabledFor(Level.DEBUG)) {
+			if (logger.isDebugEnabled()) {
 				logger.debug("Queue.enqueue ["+this.name+"]: items in the queue : " + size);
 			}
 		}
@@ -87,7 +87,7 @@ public class Queue {
 					tail = c;
 				}
 			}
-			if (logger.isEnabledFor(Level.DEBUG)) {
+			if (logger.isDebugEnabled()) {
 				logger.debug("Queue.enqueue ["+this.name+"]: items in the queue : " + size);
 			}
 			// Notify all waiting thread that several objects have been queued
@@ -114,7 +114,7 @@ public class Queue {
 			ret = head.value;
 			head = head.next;
 			size--;
-			if (logger.isEnabledFor(Level.DEBUG)) {
+			if (logger.isDebugEnabled()) {
 				logger.debug("Queue.dequeue ["+this.name+"]: items in the queue : " + size);
 			}
 			synchronized(block) {
