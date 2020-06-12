@@ -790,7 +790,7 @@ public class TimerService
                   boolean exists = false;
                   for (Journey subJourney : recurrentSubJourneys)
                     {
-                      exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getCreatedDate(), Calendar.DATE, Deployment.getBaseTimeZone()) == 0;
+                      exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone()) == 0;
                       if (exists) break;
                     }
                   if(!exists) journeyCreationDates.add(expectedDate);
