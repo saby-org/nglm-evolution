@@ -10,6 +10,8 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
@@ -25,6 +27,8 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
   private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
   private static DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
   
+  private final Logger log = LoggerFactory.getLogger(NotificationSinkConnector.class);
+
   /****************************************
   *
   *  taskClass
@@ -125,7 +129,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       {
         return documentMap;
       }
-
+      log.info("deliveryType : " + type);
       if(type.equals("notificationmanagermail"))
       {
         documentMap = new HashMap<String,Object>();
@@ -146,9 +150,11 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("returnCodeDetails", MessageStatus.fromReturnCode(notification.getReturnCode()));
         documentMap.put("templateID", notification.getTemplateID());
         documentMap.put("language", notification.getLanguage());
-        documentMap.put("subjectTags", notification.getSubjectTags());
-        documentMap.put("textBodyTags", notification.getTextBodyTags());
-        documentMap.put("htmlBodyTags", notification.getHtmlBodyTags());
+        Map<String,List<String>> tags = new HashMap<>();
+        tags.put("subjectTags", notification.getSubjectTags());
+        tags.put("textBodyTags", notification.getTextBodyTags());
+        tags.put("htmlBodyTags", notification.getHtmlBodyTags());
+        documentMap.put("tags", tags);
       }
       else if(type.equals("notificationmanagersms"))
       {
@@ -171,11 +177,15 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           documentMap.put("templateID", notification.getTemplateID());
           documentMap.put("language", notification.getLanguage());
           documentMap.put("tags", notification.getMessageTags());
+          Map<String,List<String>> tags = new HashMap<>();
+          tags.put("tags", notification.getMessageTags());
+          documentMap.put("tags", tags);
       }
       else if(type.equals("notificationmanager"))
       {
           documentMap = new HashMap<String,Object>();
           NotificationManagerRequest notification = NotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+          log.info("NotificationManagerRequest : " + notification);
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", notification.getSubscriberID());
           documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
@@ -191,8 +201,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           documentMap.put("returnCodeDetails", MessageStatus.fromReturnCode(notification.getReturnCode()));
           documentMap.put("templateID", notification.getTemplateID());
           documentMap.put("language", notification.getLanguage());
-          documentMap.put("tags", notification.getTags()); // TODO : this is a map
-          documentMap.put("other1", notification.getClass().getCanonicalName());
+          documentMap.put("tags", notification.getTags());
       }
       else if(type.equals("notificationmanagerpush"))
       {
@@ -215,7 +224,6 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           documentMap.put("templateID", notification.getTemplateID());
           documentMap.put("language", notification.getLanguage());
           documentMap.put("tags", notification.getTags()); // TODO
-          documentMap.put("other2", notification.getClass().getCanonicalName());
       }
       
       return documentMap;

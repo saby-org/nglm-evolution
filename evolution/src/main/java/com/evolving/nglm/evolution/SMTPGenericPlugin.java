@@ -226,6 +226,7 @@ public class SMTPGenericPlugin implements NotificationInterface
     } 
     config.put("feedback.polling.try.constant.delay", feedback_polling_try_constant_delay);
 
+    logger.info("Configurition for SMTPGenericPlugin : " + config);
     MailSenderFactory mailSenderFactory = new MailSenderFactory(config);
     try
     {
@@ -233,24 +234,18 @@ public class SMTPGenericPlugin implements NotificationInterface
       senders = mailSenderFactory.getEmailSenders();  
       if(senders == null || senders.length==0)
         {
-          //          TrapSenderUtils.sendTrap(SnmpTrapSeverity.WARNING, 
-          //                  SnmpTrapType.COMMUNICATION_SERVER_CONNECTION, "SMTP3rdPartyConnection", "SMTPConnection to 3rdParty SMTPServer Loading Fail on host "+getSystemInfo());
-          throw new Exception("SMTP Driver Load Finished : Driver loading Failure. SMTPConnection to 3rdParty SMTPServer Loading Fail on host ");
-          }
+          // TrapSenderUtils.sendTrap(SnmpTrapSeverity.WARNING, SnmpTrapType.COMMUNICATION_SERVER_CONNECTION, "SMTP3rdPartyConnection", "SMTPConnection to 3rdParty SMTPServer Loading Fail on host "+getSystemInfo());
+          throw new Exception("SMTPGenericPlugin no senders : " + senders);
+        }
         else
-          {
-            logger.info("SMTP Driver Loaded Successfully.");
-            //          TrapSenderUtils.sendTrap(SnmpTrapSeverity.CLEAR, 
-            //                  SnmpTrapType.COMMUNICATION_SERVER_CONNECTION, "SMTP3rdPartyConnection", "SMTPConnection to 3rdParty SMTPServer Loaded Successfully on host "+getSystemInfo());
-            if (logger.isInfoEnabled())
-              {
-                logger.info("SMTPDriver3rdPartyNDM.init SMTP3rdPartyConnection SMTPConnection to 3rdParty SMTPServer Loaded Successfully on host ");                  
-              }
-          }
+        {
+          // TrapSenderUtils.sendTrap(SnmpTrapSeverity.CLEAR, SnmpTrapType.COMMUNICATION_SERVER_CONNECTION, "SMTP3rdPartyConnection", "SMTPConnection to 3rdParty SMTPServer Loaded Successfully on host "+getSystemInfo());
+          logger.info("SMTP Driver Loaded Successfully.");
+        }
     }
     catch(Exception ex)
       {
-        logger.error("Exception occured in SMTPDriver.asyncCall() : "+ex);
+        logger.error("Exception occured in SMTPDriver.init() : "+ex);
         throw new RuntimeException("SMTP Driver Load Finished : Driver loading Failure. ");
       }
 

@@ -2868,7 +2868,7 @@ public class Deployment
               {
                 ToolboxSection section = journeyToolbox.get(cc.getJourneyGUINodeSectionID());
                 if(section == null) {
-                  log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getJourneyGUINodeSectionID() + " for communicationChannel " + cc.getID());
+                  log.warn("Deployment: Can't retrieve Journey ToolBoxSection for " + cc.getJourneyGUINodeSectionID() + " for communicationChannel " + cc.getID());
                 }
                 else {
                   JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
@@ -2881,7 +2881,7 @@ public class Deployment
                       items.add(item);
                     } 
                     else {
-                      log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                      log.warn("Deployment: Can't retrieve Journey NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
                     }
                   }
                   section.getJSONRepresentation().put("items", items);
@@ -2915,7 +2915,7 @@ public class Deployment
               {
                 ToolboxSection section = campaignToolbox.get(cc.getCampaignGUINodeSectionID());
                 if(section == null) {
-                  log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getCampaignGUINodeSectionID() + " for communicationChannel " + cc.getID());
+                  log.warn("Deployment: Can't retrieve Campaign ToolBoxSection for " + cc.getCampaignGUINodeSectionID() + " for communicationChannel " + cc.getID());
                 }
                 else {
                   JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
@@ -2928,7 +2928,7 @@ public class Deployment
                       items.add(item);
                     } 
                     else {
-                      log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                      log.warn("Deployment: Can't retrieve Campaign NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
                     }                    
                   }
                   section.getJSONRepresentation().put("items", items);

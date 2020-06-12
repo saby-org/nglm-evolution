@@ -257,16 +257,18 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
             // get actual text based on the template kind
             if (templateObject instanceof SMSTemplate)
               {
-                List<String> tagsList = getTags(notifFields, "tags");
+                Map<String,Object> tags = getAllTags(notifFields);
+                List<String> tagsList = getTags(tags, "tags");
                 SMSNotificationManagerRequest req = new SMSNotificationManagerRequest(tempID, lang, tagsList);
                 String actualMessage = req.getText(subscriberMessageTemplateService);
                 msgContentJSON.put("sms", truncateIfNecessary(actualMessage));
               }
             else if (templateObject instanceof MailTemplate)
               {
-                List<String> subjectTagsList = getTags(notifFields, "subjectTags");
-                List<String> textBodyTagsList = getTags(notifFields, "textBodyTags");
-                List<String> htmlBodyTagsList = getTags(notifFields, "htmlBodyTags");
+                Map<String,Object> tags = getAllTags(notifFields);
+                List<String> subjectTagsList = getTags(tags, "subjectTags");
+                List<String> textBodyTagsList = getTags(tags, "textBodyTags");
+                List<String> htmlBodyTagsList = getTags(tags, "htmlBodyTags");
                 MailNotificationManagerRequest req = new MailNotificationManagerRequest(tempID, lang, subjectTagsList, textBodyTagsList, htmlBodyTagsList);
                 String actualSubject = req.getSubject(subscriberMessageTemplateService);
                 String actualTextBody = req.getTextBody(subscriberMessageTemplateService);
@@ -277,7 +279,7 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
               }
             else
               {
-                log.info("MK class : " + templateObject.getClass().getCanonicalName());
+                log.info("Not Yet Implemented, template class : " + templateObject.getClass().getCanonicalName());
               }
             notifRecs.put(messageContent, ReportUtils.formatJSON(msgContentJSON));
           }
@@ -326,6 +328,22 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
     else
       {
         tagsList = new ArrayList<>();
+      }
+    return tagsList;
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String,Object> getAllTags(Map<String, Object> notifFields)
+  {
+    Object tagsObj = notifFields.get("tags");
+    Map<String,Object> tagsList = null;
+    if (tagsObj instanceof Map<?,?>)
+      {
+        tagsList = (Map<String,Object>) tagsObj;
+      }
+    else
+      {
+        tagsList = new HashMap<>();
       }
     return tagsList;
   }
