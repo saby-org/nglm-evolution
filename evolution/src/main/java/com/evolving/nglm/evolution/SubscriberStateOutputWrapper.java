@@ -5,11 +5,11 @@ import org.apache.kafka.connect.data.Schema;
 
 import java.util.Date;
 
-public class SubscriberStateHackyWrapper implements SubscriberStreamEvent {
+public class SubscriberStateOutputWrapper implements SubscriberStreamEvent {
 
 	SubscriberState subscriberState;
 	SubscriberStreamEvent event;
-	SubscriberStateHackyWrapper(SubscriberStreamEvent event){
+	SubscriberStateOutputWrapper(SubscriberStreamEvent event){
 		this.event=event;
 	}
 

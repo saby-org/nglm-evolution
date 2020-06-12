@@ -907,14 +907,14 @@ public class EvolutionEngine
     KeyValueBytesStoreSupplier subscriberStateSupplier = isInMemoryStateStores?Stores.inMemoryKeyValueStore(subscriberStateChangeLog):Stores.persistentKeyValueStore(subscriberStateChangeLog);
     Materialized subscriberStateStoreSchema = Materialized.<StringKey, SubscriberState>as(subscriberStateSupplier).withKeySerde(stringKeySerde).withValueSerde(subscriberStateSerde);
 
-    KStream<StringKey,SubscriberStateHackyWrapper> hackyStream = evolutionEventStream.mapValues(event->new SubscriberStateHackyWrapper((event)));
-    hackyStream.groupByKey().aggregate(EvolutionEngine::nullSubscriberState, EvolutionEngine::updateSubscriberState, subscriberStateStoreSchema);
+    KStream<StringKey,SubscriberStateOutputWrapper> forOutputsStream = evolutionEventStream.mapValues(event->new SubscriberStateOutputWrapper((event)));
+    forOutputsStream.groupByKey().aggregate(EvolutionEngine::nullSubscriberState, EvolutionEngine::updateSubscriberState, subscriberStateStoreSchema);
 
     //
     //  get outputs
     //
 
-    KStream<StringKey, SubscriberStreamOutput> evolutionEngineOutputs = hackyStream.filter((key,value)->value.getSubscriberState()!=null).flatMapValues(EvolutionEngine::getEvolutionEngineOutputs);
+    KStream<StringKey, SubscriberStreamOutput> evolutionEngineOutputs = forOutputsStream.filter((key,value)->value.getSubscriberState()!=null).flatMapValues(EvolutionEngine::getEvolutionEngineOutputs);
 
     //
     //  branch output streams
@@ -1782,7 +1782,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  public static SubscriberState updateSubscriberState(StringKey aggKey, SubscriberStateHackyWrapper evolutionHackyEvent, SubscriberState currentSubscriberState)
+  public static SubscriberState updateSubscriberState(StringKey aggKey, SubscriberStateOutputWrapper evolutionHackyEvent, SubscriberState currentSubscriberState)
   {
     /****************************************
     *
@@ -5951,7 +5951,7 @@ public class EvolutionEngine
   *
   ****************************************/
 
-  private static List<SubscriberStreamOutput> getEvolutionEngineOutputs(SubscriberStateHackyWrapper subscriberStateHackyWrapper)
+  private static List<SubscriberStreamOutput> getEvolutionEngineOutputs(SubscriberStateOutputWrapper subscriberStateHackyWrapper)
   {
     SubscriberState subscriberState = subscriberStateHackyWrapper.getSubscriberState();
     List<SubscriberStreamOutput> result = new ArrayList<SubscriberStreamOutput>();
