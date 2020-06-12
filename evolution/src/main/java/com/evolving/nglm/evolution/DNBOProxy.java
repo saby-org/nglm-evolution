@@ -913,7 +913,7 @@ public class DNBOProxy
       Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo = TokenUtils.getOffersWithScoringStrategy(
           now, salesChannelID, subscriberProfile, scoringStrategy,
           productService, productTypeService, voucherService, voucherTypeService,
-          catalogCharacteristicService, propensityDataReader, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService,
+          catalogCharacteristicService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService,
           returnedLog, msisdn);
       if (offerAvailabilityFromPropensityAlgo == null)
         {

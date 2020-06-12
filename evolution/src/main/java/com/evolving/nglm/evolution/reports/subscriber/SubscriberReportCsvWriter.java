@@ -129,7 +129,7 @@ public class SubscriberReportCsvWriter implements ReportCsvFactory
                 result.put("relationships", "");
               }
           }
-sdf
+
         result.putAll(allDimensionsMap); // all dimensions have empty segments
         for (String field : allProfileFields)
           {
