@@ -4,7 +4,8 @@ package com.lumatagroup.expression.driver.SMTP;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -13,7 +14,7 @@ import org.apache.log4j.Logger;
  */
 public class ResponseCode {
 	
-		private static Logger logger = Logger.getLogger(ResponseCode.class);
+		private static Logger logger = LoggerFactory.getLogger(ResponseCode.class);
 		private boolean isSuccess = true;
 		private List<NotificationStatusMessage> notificationMsgList = new ArrayList<NotificationStatusMessage>(1);
 	 	/**
