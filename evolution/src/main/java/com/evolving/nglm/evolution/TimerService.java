@@ -729,12 +729,13 @@ public class TimerService
       {
         List<Date> journeyCreationDates = new ArrayList<Date>();
         JourneyScheduler journeyScheduler = recurrentJourney.getJourneyScheduler();
+        Journey latestJourney = journeyService.getLatestRecurrentJourney(recurrentJourney.getGUIManagedObjectID());
         
         //
         //  limit reached
         //
         
-        if (journeyScheduler.getNumberOfOccurrences() <= recurrentJourney.getOccurrenceNumber()) continue;
+        if (journeyScheduler.getNumberOfOccurrences() <= latestJourney.getOccurrenceNumber()) continue;
         log.info("RAJ K creating recurrent campaign limit ok");
         
         //
@@ -777,7 +778,7 @@ public class TimerService
               //  journeyCreationDates
               //
               
-              Collection<Journey> recurrentSubJourneys = journeyService.getRecurrentSubJourneys(recurrentJourney.getJourneyID());
+              Collection<Journey> recurrentSubJourneys = journeyService.getAllRecurrentJourneysByID(recurrentJourney.getJourneyID());
               for (Date expectedDate : expectedCreationDates)
                 {
                   boolean exists = false;
@@ -820,7 +821,7 @@ public class TimerService
               //  journeyCreationDates
               //
               
-              Collection<Journey> rcrntSubJourneys = journeyService.getRecurrentSubJourneys(recurrentJourney.getJourneyID());
+              Collection<Journey> rcrntSubJourneys = journeyService.getAllRecurrentJourneysByID(recurrentJourney.getJourneyID());
               for (Date expectedDate : expCreationDates)
                 {
                   boolean exists = false;

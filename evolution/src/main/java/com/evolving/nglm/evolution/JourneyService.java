@@ -176,7 +176,7 @@ public class JourneyService extends GUIService
     return activeJourney;
   }
   public Collection<Journey> getActiveRecurrentJourneys(Date date) { return getActiveJourneys(date).stream().filter( journey -> journey.getRecurrence()).collect(Collectors.toList()); }
-  public Collection<Journey> getRecurrentSubJourneys(String parentJourneyID) 
+  public Collection<Journey> getAllRecurrentJourneysByID(String parentJourneyID) 
   { 
     Collection<Journey> subJourneys = new ArrayList<Journey>();
     for (GUIManagedObject uncheckedJourney : getStoredJourneys())
@@ -184,11 +184,26 @@ public class JourneyService extends GUIService
         if (uncheckedJourney.getAccepted())
           {
             Journey checkedJourney = (Journey) uncheckedJourney;
-            if (!checkedJourney.getRecurrence() && parentJourneyID.equals(checkedJourney.getRecurrenceId())) subJourneys.add(checkedJourney);
+            if (parentJourneyID.equals(checkedJourney.getRecurrenceId())) subJourneys.add(checkedJourney);
           }
         
       }
     return subJourneys;
+  }
+  
+  public Journey getLatestRecurrentJourney(String parentJourneyID)
+  {
+    Journey result = null;
+    int occurrenceNumber  = -1;
+    for (Journey journey : getAllRecurrentJourneysByID(parentJourneyID))
+      {
+        if (journey.getOccurrenceNumber() > occurrenceNumber)
+          {
+            occurrenceNumber = journey.getOccurrenceNumber();
+            result = journey;
+          }
+      }
+    return result;
   }
   
 
