@@ -220,7 +220,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     schemaBuilder.field("recurrence", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("recurrenceId", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("occurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
-    schemaBuilder.field("scheduler", JourneyScheduler.schema());
+    schemaBuilder.field("scheduler", JourneyScheduler.serde().optionalSchema());
     
     schema = schemaBuilder.build();
   };
@@ -688,7 +688,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     struct.put("recurrence", journey.getRecurrence());
     struct.put("recurrenceId", journey.getRecurrenceId());
     struct.put("occurrenceNumber", journey.getOccurrenceNumber());
-    struct.put("scheduler", JourneyScheduler.pack(journey.getJourneyScheduler()));
+    struct.put("scheduler", JourneyScheduler.serde().packOptional(journey.getJourneyScheduler()));
     return struct;
   }
 
@@ -837,7 +837,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     boolean recurrence = (schemaVersion >= 7) ? valueStruct.getBoolean("recurrence") : false;
     String recurrenceId = (schemaVersion >= 7) ? valueStruct.getString("recurrenceId") : null;
     Integer occurrenceNumber = (schemaVersion >= 7) ? valueStruct.getInt32("occurrenceNumber") : null;
-    JourneyScheduler scheduler = (schemaVersion >= 7) ? JourneyScheduler.unpack(new SchemaAndValue(schema.field("scheduler").schema(), valueStruct.get("scheduler"))) : null;
+    JourneyScheduler scheduler = (schemaVersion >= 7) ? JourneyScheduler.serde().unpackOptional(new SchemaAndValue(schema.field("scheduler").schema(),valueStruct.get("scheduler"))) : null;
 
     /*****************************************
     *
