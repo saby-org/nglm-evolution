@@ -8,8 +8,8 @@
    "occurrenceNumber":1,
    "recurrence":true,
    "apiVersion":1,
-   "name":"rc-weekly-monday-total-10",
-   "display":"rc-weekly-monday-total-10",
+   "name":"rc-weekly-mon-sat-day-total-10",
+   "display":"rc-weekly-mon-sat-day-total-10"",
    "valid":true,
    "active":false,
    "effectiveStartDate":"2020-04-01T00:00:00+00:00",
@@ -17,10 +17,10 @@
    "effectiveEntryPeriodEndDate":null,
    "status":"Pending",
    "scheduler" : {       
-       "numberOfOccurrences":8,
+       "numberOfOccurrences":10,
        "runEveryDuration":1,
        "runEveryUnit":"week",
-       "runEveryWeekDay":[ "1" , "6" ]    
+       "runEveryWeekDay":[ "2" , "6" ]    
    },
    "nodes":[
       {

@@ -756,7 +756,7 @@ public class TimerService
               //
               
               Date nextExpectedDate = RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, Deployment.getBaseTimeZone());
-              while (nextExpectedDate.before(lastDateOfThisWk))
+              while (nextExpectedDate.before(firstDateOfThisWk))
                 {
                   nextExpectedDate = RLMDateUtils.addWeeks(nextExpectedDate, scheduligInterval, Deployment.getBaseTimeZone());
                 }
