@@ -383,6 +383,7 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1}' http:/
 --
 
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/rc-001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCampaign; echo
+curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/rc-002.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCampaign; echo
 
 --
 --  elasticsearch

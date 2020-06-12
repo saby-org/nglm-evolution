@@ -3,24 +3,24 @@
 --
 
 {
-   "id":"rc-001",
-   "recurrenceId":"rc-001",
+   "id":"rc-002",
+   "recurrenceId":"rc-002",
    "occurrenceNumber":1,
    "recurrence":true,
    "apiVersion":1,
-   "name":"rc-monthly-15-total-10",
-   "display":"rc-monthly-15-total-10",
+   "name":"rc-weekly-monday-total-10",
+   "display":"rc-weekly-monday-total-10",
    "valid":true,
    "active":false,
-   "effectiveStartDate":"2020-04-5T00:00:00+00:00",
+   "effectiveStartDate":"2020-04-01T00:00:00+00:00",
    "effectiveEndDate":"2099-06-30T00:00:00+00:00",
    "effectiveEntryPeriodEndDate":null,
    "status":"Pending",
    "scheduler" : {       
-       "numberOfOccurrences":10,
+       "numberOfOccurrences":8,
        "runEveryDuration":1,
-       "runEveryUnit":"month",
-       "runEveryWeekDay":[ "0", "1" ],      
+       "runEveryUnit":"week",
+       "runEveryWeekDay":[ "1" ],      
        "runEveryMonthDay":[ "15" ]   
    },
    "nodes":[
