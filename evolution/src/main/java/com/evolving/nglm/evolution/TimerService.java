@@ -799,7 +799,7 @@ public class TimerService
               //
               
               Date nextExpDate = RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, Deployment.getBaseTimeZone());
-              while (!nextExpDate.after(firstDateOfThisMonth))
+              while (nextExpDate.before(firstDateOfThisMonth))
                 {
                   nextExpDate = RLMDateUtils.addMonths(nextExpDate, scheduligInterval, Deployment.getBaseTimeZone());
                 }
@@ -808,7 +808,7 @@ public class TimerService
               //  not in this month
               //
               log.info("RAJ K nextExpDate {} ", nextExpDate);
-              if (lastDateOfThisMonth.before(nextExpDate)) continue;
+              if (RLMDateUtils.truncate(nextExpDate, Calendar.DATE, Deployment.getBaseTimeZone()).after(lastDateOfThisMonth)) continue;
               log.info("RAJ K nextExpDate is ok");
               //
               //  this is the month
