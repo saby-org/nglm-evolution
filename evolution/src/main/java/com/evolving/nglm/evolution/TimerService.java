@@ -72,11 +72,6 @@ public class TimerService
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader = null;
   private TargetService targetService = null;
   private JourneyService journeyService = null;
-  private CatalogCharacteristicService catalogCharacteristicService = null;
-  private SubscriberMessageTemplateService subscriberMessageTemplateService = null;
-  private DynamicEventDeclarationsService dynamicEventDeclarationsService = null;
-  private JourneyObjectiveService journeyObjectiveService = null;
-  protected static UniqueKeyServer epochServer = new UniqueKeyServer();
   private ExclusionInclusionTargetService exclusionInclusionTargetService = null;
   private boolean forceLoadSchedule = true;
   private Date earliestOutOfMemoryDate = NGLMRuntime.END_OF_TIME;
@@ -86,6 +81,7 @@ public class TimerService
   private KafkaProducer<byte[], byte[]> kafkaProducer;
   private ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
   private ConnectSerde<TimedEvaluation> timedEvaluationSerde = TimedEvaluation.serde();
+  private GUIManagerService guiManagerService = null;
   Thread scheduleLoaderThread = null;
   Thread schedulerThread = null;
   Thread periodicEvaluatorThread = null;
@@ -143,7 +139,7 @@ public class TimerService
   *
   *****************************************/
 
-  public void start(ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, TargetService targetService, JourneyService journeyService, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyObjectiveService journeyObjectiveService, ExclusionInclusionTargetService exclusionInclusionTargetService)
+  public void start(ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, TargetService targetService, JourneyService journeyService, ExclusionInclusionTargetService exclusionInclusionTargetService)
   {
     /*****************************************
     *
@@ -164,11 +160,8 @@ public class TimerService
     this.targetService = targetService;
     this.journeyService = journeyService;
     this.exclusionInclusionTargetService = exclusionInclusionTargetService;
-    this.catalogCharacteristicService = catalogCharacteristicService;
-    this.subscriberMessageTemplateService = subscriberMessageTemplateService;
-    this.dynamicEventDeclarationsService = dynamicEventDeclarationsService;
-    this.journeyObjectiveService = journeyObjectiveService;
-
+    this.guiManagerService = new GUIManagerService("");
+    
     /*****************************************
     *
     *  journeyService listener
@@ -871,6 +864,7 @@ public class TimerService
     for (Date startDate : journeyCreationDates)
       {
         JSONObject journeyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
+        journeyJSON.put("apiVersion", 1);
         
         //
         //  remove
@@ -890,22 +884,10 @@ public class TimerService
         journeyJSON.put("active", true);
         journeyJSON.put("effectiveStartDate", recurrentJourney.formatDateField(startDate));
         journeyJSON.put("effectiveEndDate", recurrentJourney.formatDateField(RLMDateUtils.addDays(startDate, daysBetween, Deployment.getBaseTimeZone())));
-        try
-          {
-            Journey subJourney = new Journey(journeyJSON, recurrentJourney.getGUIManagedObjectType(), epochServer.getKey(), null, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, JourneyStatus.StartedApproved);
-            subJourney.setCreatedDate(SystemTime.getCurrentTime());
-            subJourney.setUpdatedDate(SystemTime.getCurrentTime());
-            journeyService.putJourney(subJourney, journeyObjectiveService, catalogCharacteristicService, targetService, false, "0");
-            log.info("RAJ K createJourneys of {} new journey {} ", recurrentJourney.getJourneyID(), subJourney.getGUIManagedObjectName());
-          } 
-        catch (GUIManagerException e)
-          {
-            --occurrenceNumber;
-            e.printStackTrace();
-            log.error("unable to create journey " + e.getMessage());
-          }
+        
+        JSONObject result = guiManagerService.processPOSTRequest(journeyJSON, "putCampaign");
+        log.info("result {}", result);
       }
-    
   }
 
   //
