@@ -258,9 +258,16 @@ public class DNBOUtils
         {
           String str = "unknown offer while scoring " + e.getLocalizedMessage();
           log.error(str);
+          log.error(returnedLog.toString());
           return invalidPurchase(evolutionEventContext, subscriberEvaluationRequest, token, action, str).toArray(new Action[0]);
         }
 
+      if (presentedOffers.isEmpty()) // is not expected, trace errors
+        {
+          log.error(returnedLog.toString());
+        }
+      else if (log.isTraceEnabled()) log.trace(returnedLog.toString());
+      
       /*****************************************
       *
       *  transcode list of offers
