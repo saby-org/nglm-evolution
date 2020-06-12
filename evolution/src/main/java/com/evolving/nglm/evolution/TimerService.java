@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.CronFormat;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.RLMDateUtils;
@@ -832,7 +833,7 @@ public class TimerService
                   boolean exists = false;
                   for (Journey subJourney : rcrntSubJourneys)
                     {
-                      exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getCreatedDate(), Calendar.DATE, Deployment.getBaseTimeZone()) == 0;
+                      exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone()) == 0;
                       if (exists) break;
                     }
                   if(!exists) journeyCreationDates.add(expectedDate);
@@ -880,20 +881,26 @@ public class TimerService
         String journeyID = journeyService.generateJourneyID();
         journeyJSON.put("id", journeyID);
         journeyJSON.put("name", recurrentJourney.getGUIManagedObjectName() + "_" + journeyID);
-        journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + "_" + journeyID);
         journeyJSON.put("occurrenceNumber", ++occurrenceNumber);
+        journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + "_" + occurrenceNumber);
         journeyJSON.put("effectiveStartDate", recurrentJourney.formatDateField(startDate));
         journeyJSON.put("effectiveEndDate", recurrentJourney.formatDateField(RLMDateUtils.addDays(startDate, daysBetween, Deployment.getBaseTimeZone())));
-        log.info("request {}", journeyJSON);
         JSONObject result = guiManagerService.processPOSTRequest(journeyJSON, "putCampaign");
-        log.info("result {}", result);
-        
-        //
-        //  activate
-        //
-        JSONObject journeyStartJSON = new JSONObject();
-        journeyStartJSON.put("id", journeyID);
-        guiManagerService.processPOSTRequest(journeyStartJSON, "startCampaign");
+        if (result != null && "ok".equalsIgnoreCase(JSONUtilities.decodeString(result, "responseCode", true)))
+          {
+            //
+            //  activate
+            //
+            JSONObject journeyStartJSON = new JSONObject();
+            journeyJSON.put("apiVersion", 1);
+            journeyStartJSON.put("id", journeyID);
+            guiManagerService.processPOSTRequest(journeyStartJSON, "startCampaign");
+          }
+        else
+          {
+            --occurrenceNumber;
+            log.error("unable to create recurrent campaign for {} error is {}", recurrentJourney.getGUIManagedObjectDisplay(), result);
+          }
       }
   }
 
