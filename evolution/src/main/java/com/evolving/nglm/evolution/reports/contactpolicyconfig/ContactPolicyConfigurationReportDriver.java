@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,8 +38,13 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
   private SegmentationDimensionService segmentationDimensionService;
   private boolean addHeaders=true;
 
-  @Override
-  public void produceReport(Report report, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
+  /****************************************
+   * 
+   * produceReport
+   * 
+   ****************************************/
+  
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
   {
     log.info("Entered in to the contact policy produceReport");
 

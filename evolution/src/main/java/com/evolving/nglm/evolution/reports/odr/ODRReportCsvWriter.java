@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
 public class ODRReportCsvWriter implements ReportCsvFactory
@@ -53,37 +54,37 @@ public class ODRReportCsvWriter implements ReportCsvFactory
   private static final String returnCodeDetails = "returnCodeDetails";
 
   private static List<String> headerFieldsOrder = new LinkedList<String>();
-  static 
-  {
-    headerFieldsOrder.add(moduleId);
-    headerFieldsOrder.add(featureId);
-    headerFieldsOrder.add(moduleName);
-    headerFieldsOrder.add(featureDisplay);
-    headerFieldsOrder.add(offerID);
-    headerFieldsOrder.add(offerDisplay);
-    headerFieldsOrder.add(salesChannelID);
-    headerFieldsOrder.add(voucherPartnerID);
-    headerFieldsOrder.add(salesChannelDisplay);
-    headerFieldsOrder.add(customerID);
-    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-      {
-        headerFieldsOrder.add(alternateID.getName());
-      }
-    headerFieldsOrder.add(offerContent);
-    headerFieldsOrder.add(eventDatetime);
-    headerFieldsOrder.add(originatingDeliveryRequestID);
-    headerFieldsOrder.add(deliveryRequestID);
-    headerFieldsOrder.add(deliveryStatus);
-    headerFieldsOrder.add(eventID);
-    headerFieldsOrder.add(meanOfPayment);
-    headerFieldsOrder.add(offerPrice);
-    headerFieldsOrder.add(offerQty);
-    headerFieldsOrder.add(offerStock);
-    headerFieldsOrder.add(origin);
-    headerFieldsOrder.add(voucherCode);
-    headerFieldsOrder.add(returnCode);
-    headerFieldsOrder.add(returnCodeDetails);
-  }
+  static
+    {
+      headerFieldsOrder.add(moduleId);
+      headerFieldsOrder.add(featureId);
+      headerFieldsOrder.add(moduleName);
+      headerFieldsOrder.add(featureDisplay);
+      headerFieldsOrder.add(offerID);
+      headerFieldsOrder.add(offerDisplay);
+      headerFieldsOrder.add(salesChannelID);
+      headerFieldsOrder.add(voucherPartnerID);
+      headerFieldsOrder.add(salesChannelDisplay);
+      headerFieldsOrder.add(customerID);
+      for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+        {
+          headerFieldsOrder.add(alternateID.getName());
+        }
+      headerFieldsOrder.add(offerContent);
+      headerFieldsOrder.add(eventDatetime);
+      headerFieldsOrder.add(originatingDeliveryRequestID);
+      headerFieldsOrder.add(deliveryRequestID);
+      headerFieldsOrder.add(deliveryStatus);
+      headerFieldsOrder.add(eventID);
+      headerFieldsOrder.add(meanOfPayment);
+      headerFieldsOrder.add(offerPrice);
+      headerFieldsOrder.add(offerQty);
+      headerFieldsOrder.add(offerStock);
+      headerFieldsOrder.add(origin);
+      headerFieldsOrder.add(voucherCode);
+      headerFieldsOrder.add(returnCode);
+      headerFieldsOrder.add(returnCodeDetails);
+    }
 
   @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
@@ -103,19 +104,21 @@ public class ODRReportCsvWriter implements ReportCsvFactory
         e.printStackTrace();
       }
   }
-  
+
   public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
+    List<LinkedHashMap<String, Object>> oderRecsList = new ArrayList<LinkedHashMap<String,Object>>();
     Map<String, Object> odrFields = reportElement.fields.get(0);
-    LinkedHashMap<String, Object> oderRecs = new LinkedHashMap<>();
-    if (odrFields != null && !odrFields.isEmpty()) 
+    if (odrFields != null && !odrFields.isEmpty())
       {
-        if(odrFields.get(subscriberID) != null) {
-          Object subscriberIDField = odrFields.get(subscriberID);
-          oderRecs.put(customerID, subscriberIDField);
-          // odrFields.remove(subscriberID);
-        }
+        LinkedHashMap<String, Object> oderRecs = new LinkedHashMap<>();
+        if (odrFields.get(subscriberID) != null)
+          {
+            Object subscriberIDField = odrFields.get(subscriberID);
+            oderRecs.put(customerID, subscriberIDField);
+            // odrFields.remove(subscriberID);
+          }
         for (AlternateID alternateID : Deployment.getAlternateIDs().values())
           {
             if (odrFields.get(alternateID.getID()) != null)
@@ -159,26 +162,25 @@ public class ODRReportCsvWriter implements ReportCsvFactory
 
                 // END TEMP fix for BLK
 
-              }
-            else
+              } else
               {
-                log.info(eventDatetime + " is of wrong type : "+eventDatetimeObj.getClass().getName());
+                log.info(eventDatetime + " is of wrong type : " + eventDatetimeObj.getClass().getName());
               }
           }
 
+        // Compute featureName and ModuleName from ID
+        if (odrFields.containsKey(moduleId) && odrFields.containsKey(featureId))
+          {
+            Module module = Module.fromExternalRepresentation(String.valueOf(odrFields.get(moduleId)));
+            String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(odrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
+            oderRecs.put(featureDisplay, feature);
+            oderRecs.put(moduleName, module.toString());
+            oderRecs.put(featureId, odrFields.get(featureId));
+            oderRecs.put(moduleId, odrFields.get(moduleId));
 
-        //Compute featureName and ModuleName from ID
-        if(odrFields.containsKey(moduleId) && odrFields.containsKey(featureId)){
-          Module module = Module.fromExternalRepresentation(String.valueOf(odrFields.get(moduleId)));
-          String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(odrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
-          oderRecs.put(featureDisplay, feature);
-          oderRecs.put(moduleName, module.toString());
-          oderRecs.put(featureId, odrFields.get(featureId));
-          oderRecs.put(moduleId, odrFields.get(moduleId));
-
-          // odrFields.remove(featureId);
-          //odrFields.remove(moduleId);
-        }  
+            // odrFields.remove(featureId);
+            // odrFields.remove(moduleId);
+          }
         if (odrFields.containsKey(meanOfPayment))
           {
             // TODO : same as salesChannelID
@@ -190,12 +192,12 @@ public class ODRReportCsvWriter implements ReportCsvFactory
             GUIManagedObject offerObject = offerService.getStoredOffer(String.valueOf(odrFields.get(offerID)));
             if (offerObject instanceof Offer)
               {
-                oderRecs.put(offerDisplay, ((Offer)offerObject).getDisplay());
-                //odrFields.remove(offerID);                  
+                oderRecs.put(offerDisplay, ((Offer) offerObject).getDisplay());
+                // odrFields.remove(offerID);
+              } else
+              {
+                oderRecs.put(offerDisplay, "");
               }
-            else {
-              oderRecs.put(offerDisplay, "");
-            }
 
           }
         if (odrFields.containsKey(offerPrice))
@@ -246,9 +248,9 @@ public class ODRReportCsvWriter implements ReportCsvFactory
         if (odrFields.containsKey(salesChannelID))
           {
             GUIManagedObject salesChannelObject = salesChannelService.getStoredSalesChannel(String.valueOf(odrFields.get(salesChannelID)));
-            if(salesChannelObject instanceof SalesChannel)
+            if (salesChannelObject instanceof SalesChannel)
               {
-                odrFields.put(salesChannelDisplay, ((SalesChannel)salesChannelObject).getGUIManagedObjectDisplay());
+                odrFields.put(salesChannelDisplay, ((SalesChannel) salesChannelObject).getGUIManagedObjectDisplay());
                 odrFields.remove(salesChannelID);
               }
           }
@@ -266,79 +268,77 @@ public class ODRReportCsvWriter implements ReportCsvFactory
           {
             // TODO : same as salesChannelID
             oderRecs.put(returnCodeDetails, odrFields.get(returnCodeDetails));
-          }    
+          }
 
         //
-        // result
+        // add
         //
 
-        String rawEventDateTime = oderRecs.get(eventDatetime) == null ? null : oderRecs.get(eventDatetime).toString();
-        if (rawEventDateTime == null) log.warn("bad EventDateTime -- report will be generated in 'null' file name -- for record {} ", odrFields );
-        String evntDate = getEventDate(rawEventDateTime);
-        if (result.containsKey(evntDate))
+        oderRecsList.add(oderRecs);
+      }
+    if (!oderRecsList.isEmpty()) result = oderRecsList.stream().collect(Collectors.groupingBy(a-> getEventDate(a.get(eventDatetime))));
+    return result;
+  }
+
+  private String getEventDate(Object object)
+  {
+    String eventDateTimeFormat = "yyyy-MM-dd";
+    String result = "null";
+    if (object != null && (object instanceof String))
+      {
+        String eventDateDateString = (String) object;
+        if (!eventDateDateString.trim().isEmpty())
           {
-            result.get(evntDate).add(oderRecs);
-          } 
-        else
-          {
-            List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
-            elements.add(oderRecs);
-            result.put(evntDate, elements);
+            result = eventDateDateString.substring(0, eventDateTimeFormat.length());
           }
       }
     return result;
   }
-  
-  private String getEventDate(String rawEventDateTime)
+
+  public static void main(String[] args)
   {
-    String result = "null";
-    if (rawEventDateTime == null || rawEventDateTime.trim().isEmpty()) return result;
-    String eventDateTimeFormat = "yyyy-MM-dd";
-    result = rawEventDateTime.substring(0, eventDateTimeFormat.length());
-    return result;
-  }
-  
-  public static void main(String[] args) {
-      log.info("received " + args.length + " args");
-      for(String arg : args){
-          log.info("ODRReportCsvWriter: arg " + arg);
+    log.info("received " + args.length + " args");
+    for (String arg : args)
+      {
+        log.info("ODRReportCsvWriter: arg " + arg);
       }
 
-      if (args.length < 3) {
-          log.warn("Usage : ODRReportCsvWriter <KafkaNode> <topic in> <csvfile>");
-          return;
+    if (args.length < 3)
+      {
+        log.warn("Usage : ODRReportCsvWriter <KafkaNode> <topic in> <csvfile>");
+        return;
       }
-      String kafkaNode = args[0];
-      String topic     = args[1];
-      String csvfile   = args[2];
-      log.info("Reading data from "+topic+" topic on broker "+kafkaNode
-              + " producing "+csvfile+" with '"+CSV_SEPARATOR+"' separator");
-      ReportCsvFactory reportFactory = new ODRReportCsvWriter();
-      ReportCsvWriter reportWriter = new ReportCsvWriter(reportFactory, kafkaNode, topic);
-      
-      String journeyTopic = Deployment.getJourneyTopic();
-      String offerTopic = Deployment.getOfferTopic();
-      String salesChannelTopic = Deployment.getSalesChannelTopic();
-      String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
-      String productTopic = Deployment.getProductTopic();
+    String kafkaNode = args[0];
+    String topic = args[1];
+    String csvfile = args[2];
+    log.info("Reading data from " + topic + " topic on broker " + kafkaNode + " producing " + csvfile + " with '" + CSV_SEPARATOR + "' separator");
+    ReportCsvFactory reportFactory = new ODRReportCsvWriter();
+    ReportCsvWriter reportWriter = new ReportCsvWriter(reportFactory, kafkaNode, topic);
 
-      salesChannelService = new SalesChannelService(kafkaNode, "odrreportcsvwriter-saleschannelservice-" + topic, salesChannelTopic, false);
-      salesChannelService.start();
-      offerService = new OfferService(kafkaNode, "odrreportcsvwriter-offerservice-" + topic, offerTopic, false);
-      offerService.start();
-      journeyService = new JourneyService(kafkaNode, "odrreportcsvwriter-journeyservice-" + topic, journeyTopic, false);
-      journeyService.start();
-      loyaltyProgramService = new LoyaltyProgramService(kafkaNode, "odrreportcsvwriter-loyaltyprogramservice-" + topic, loyaltyProgramTopic, false);
-      loyaltyProgramService.start();
-      productService = new ProductService(kafkaNode, "odrreportcsvwriter-productService-" + topic, productTopic, false);
-      productService.start();
-      
-      if (!reportWriter.produceReport(csvfile, true)) {
-          log.warn("An error occured, the report might be corrupted");
-          return;
+    String journeyTopic = Deployment.getJourneyTopic();
+    String offerTopic = Deployment.getOfferTopic();
+    String salesChannelTopic = Deployment.getSalesChannelTopic();
+    String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
+    String productTopic = Deployment.getProductTopic();
+
+    salesChannelService = new SalesChannelService(kafkaNode, "odrreportcsvwriter-saleschannelservice-" + topic, salesChannelTopic, false);
+    salesChannelService.start();
+    offerService = new OfferService(kafkaNode, "odrreportcsvwriter-offerservice-" + topic, offerTopic, false);
+    offerService.start();
+    journeyService = new JourneyService(kafkaNode, "odrreportcsvwriter-journeyservice-" + topic, journeyTopic, false);
+    journeyService.start();
+    loyaltyProgramService = new LoyaltyProgramService(kafkaNode, "odrreportcsvwriter-loyaltyprogramservice-" + topic, loyaltyProgramTopic, false);
+    loyaltyProgramService.start();
+    productService = new ProductService(kafkaNode, "odrreportcsvwriter-productService-" + topic, productTopic, false);
+    productService.start();
+
+    if (!reportWriter.produceReport(csvfile, true))
+      {
+        log.warn("An error occured, the report might be corrupted");
+        return;
       }
   }
-  
+
   private void addHeaders(ZipOutputStream writer, List<String> headers, int offset) throws IOException
   {
     if (headers != null && !headers.isEmpty())
@@ -354,7 +354,6 @@ public class ODRReportCsvWriter implements ReportCsvFactory
           {
             writer.write("\n".getBytes());
           }
-      }  
+      }
   }
 }
-
