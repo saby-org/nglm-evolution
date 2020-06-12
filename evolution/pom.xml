@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>1.4.3_4-SNAPSHOT</version>
+  <version>1.4.3_5-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -27,14 +27,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.3_3-SNAPSHOT</version>
+    <version>1.4.3_5SNAPSHOT</version>
     <relativePath/>
   </parent>
 
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>1.4.3_3-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.4.3_5-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.4.10</gui-fwk.version>
@@ -58,6 +58,9 @@
 
     <!-- lag exporter -->
     <lagexporter.version>0.4.0</lagexporter.version>
+
+    <!-- Prometheus -->
+    <evolving.prometheus.version>2.14.0_04</evolving.prometheus.version>
     
     <!-- core-common-build -->
     <common.build.phase.proguard>package</common.build.phase.proguard>
@@ -236,8 +239,6 @@
                   <directory>src/main/resources</directory>
                   <includes>
                     <include>bin/evolution-*.sh</include>
-                    <include>bin/prometheus-application-run-preamble.sh</include>
-                    <include>bin/prometheus-application-run-postamble.sh</include>
                     <include>bin/evolutionengine-run.sh</include>
                     <include>bin/journeytrafficengine-run.sh</include>
                     <include>bin/subscribergroup-run.sh</include>

@@ -21,12 +21,10 @@ do
       docker pull ${env.DOCKER_REGISTRY}ev-subscribermanager:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-setup:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-analyse-upgrade:${project.name}-${project.version}
-      docker pull ${env.DOCKER_REGISTRY}ev-prometheus-core:${project.name}-${project.version}
-      docker pull ${env.DOCKER_REGISTRY}ev-prometheus-environment:${project.name}-${project.version}
-      docker pull ${env.DOCKER_REGISTRY}ev-prometheus-application:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-grafana:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-licensemanager:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-upgrade:${project.name}-${project.version}
+      docker pull evolving/ev-prometheus:${evolving.prometheus.version}
    " &
 done
 
