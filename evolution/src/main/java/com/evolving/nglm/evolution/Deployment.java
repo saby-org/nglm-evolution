@@ -174,6 +174,7 @@ public class Deployment
   private static Map<String,JourneyMetricDeclaration> journeyMetricDeclarations = new LinkedHashMap<String,JourneyMetricDeclaration>();
   private static Map<String,SubscriberProfileDatacubeMetric> subscriberProfileDatacubeMetrics = new LinkedHashMap<String,SubscriberProfileDatacubeMetric>();
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
+  private static Map<String,CriterionField> baseProfileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> extendedProfileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static List<EvaluationCriterion> universalControlGroupCriteria = new ArrayList<EvaluationCriterion>();
@@ -407,6 +408,7 @@ public class Deployment
   public static Map<String,JourneyMetricDeclaration> getJourneyMetricDeclarations() { return journeyMetricDeclarations; }
   public static Map<String,SubscriberProfileDatacubeMetric> getSubscriberProfileDatacubeMetrics() { return subscriberProfileDatacubeMetrics; }
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
+  public static Map<String,CriterionField> getBaseProfileCriterionFields() { return baseProfileCriterionFields; }
   public static Map<String,CriterionField> getExtendedProfileCriterionFields() { return extendedProfileCriterionFields; }
   public static Map<String, CriterionField> getProfileChangeDetectionCriterionFields() { return profileChangeDetectionCriterionFields; }
   public static Map<String, CriterionField> getProfileChangeGeneratedCriterionFields() { return profileChangeGeneratedCriterionFields; }
@@ -2529,6 +2531,7 @@ public class Deployment
               JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
               CriterionField criterionField = new CriterionField(criterionFieldJSON);
               profileCriterionFields.put(criterionField.getID(), criterionField);
+              baseProfileCriterionFields.put(criterionField.getID(), criterionField);
               if(criterionField.getProfileChangeEvent()) {
                 profileChangeDetectionCriterionFields.put(criterionField.getID(), criterionField);
 
