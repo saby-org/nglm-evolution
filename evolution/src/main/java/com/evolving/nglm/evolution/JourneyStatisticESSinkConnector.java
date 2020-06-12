@@ -59,6 +59,14 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
     @Override public void start(Map<String, String> taskConfig)
     {
       super.start(taskConfig);
+sdf
+      subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
+      subscriberProfileService.start();
+      
+      journeyService = new JourneyService(Deployment.getBrokerServers(), "sinkconnector-journeyservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getJourneyTopic(), false);
+      journeyService.start();
+      subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
+      subscriberProfileService.start();
     }
     
     /*****************************************

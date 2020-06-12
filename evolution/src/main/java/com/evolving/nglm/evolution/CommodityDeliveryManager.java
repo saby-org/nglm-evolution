@@ -17,10 +17,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
@@ -47,6 +44,7 @@ import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
+
 
 public class CommodityDeliveryManager extends DeliveryManager implements Runnable
 {
@@ -160,6 +158,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
   private static final Logger log = LoggerFactory.getLogger(CommodityDeliveryManager.class);
 
+  public static final String COMMODITY_DELIVERY_MANAGER_NAME = "commodityDelivery";
   public static final String APPLICATION_ID = "application_id";
   public static final String APPLICATION_BRIEFCASE = "application_briefcase";
   private static final String COMMODITY_DELIVERY_ID = "commodity_delivery_id";
@@ -211,7 +210,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     //  superclass
     //
     
-    super(COMMODITY_DELIVERY_ID_VALUE, deliveryManagerInstanceKey, Deployment.getBrokerServers(), CommodityDeliveryRequest.serde(), Deployment.getDeliveryManagers().get("commodityDelivery"));
+    super(COMMODITY_DELIVERY_ID_VALUE, deliveryManagerInstanceKey, Deployment.getBrokerServers(), CommodityDeliveryRequest.serde(), Deployment.getDeliveryManagers().get(COMMODITY_DELIVERY_MANAGER_NAME));
     
     //
     // set up all the providers conf and flows
@@ -288,21 +287,29 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
                 // poll
 
+                long lastPollTime=System.currentTimeMillis();// just to log if exception happened later, can be because of this, but most likely because of rebalance because of new consumer created
                 ConsumerRecords<byte[], byte[]> fileRecords = consumer.poll(Duration.ofMillis(5000));
 
                 //  process records
 
-                for (ConsumerRecord<byte[], byte[]> fileRecord : fileRecords) {
-                  //  parse
-				  DeliveryRequest response = deliveryManager.getRequestSerde().deserializer().deserialize(responseTopic, fileRecord.value());
-				  if(response.getDiplomaticBriefcase() != null && response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_ID) != null && response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_ID).equals(COMMODITY_DELIVERY_ID_VALUE)){
-					if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" CommodityDeliveryManager : reading response from "+commodityType+" "+responseTopic+" topic ...");
-					handleThirdPartyResponse(response);
-					consumer.commitSync(Collections.singletonMap(new TopicPartition(fileRecord.topic(),fileRecord.partition()),new OffsetAndMetadata(fileRecord.offset()+1)));
-					if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" CommodityDeliveryManager : reading response from "+commodityType+" "+responseTopic+" topic DONE");
-				  }
-				}
-                consumer.commitSync();
+                try{
+                  for (ConsumerRecord<byte[], byte[]> fileRecord : fileRecords) {
+                    //  parse
+                    DeliveryRequest response = deliveryManager.getRequestSerde().deserializer().deserialize(responseTopic, fileRecord.value());
+                    if(response.getDiplomaticBriefcase() != null && response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_ID) != null && response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_ID).equals(COMMODITY_DELIVERY_ID_VALUE)){
+                      if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" CommodityDeliveryManager : reading response from "+commodityType+" "+responseTopic+" topic ...");
+                      handleThirdPartyResponse(response);
+                      consumer.commitSync(Collections.singletonMap(new TopicPartition(fileRecord.topic(),fileRecord.partition()),new OffsetAndMetadata(fileRecord.offset()+1)));
+                      if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" CommodityDeliveryManager : reading response from "+commodityType+" "+responseTopic+" topic DONE");
+                    }
+                  }
+                  consumer.commitSync();
+
+                }catch (CommitFailedException ex){
+                  long lastPoll_ms=System.currentTimeMillis()-lastPollTime;
+                  log.info(Thread.currentThread().getId()+" CommodityDeliveryManager : CommitFailedException catched, can be normal rebalancing or poll time interval too long, last was "+lastPoll_ms+"ms ago");
+                }
+
               }
 
               // thread leaving the main loop !
@@ -849,11 +856,13 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
           // poll
 
+          long lastPollTime=System.currentTimeMillis();// just to log if exception happened later, can be because of this, but most likely because of rebalance because of new consumer created
           ConsumerRecords<byte[], byte[]> fileRecords = consumer.poll(5000);
 
           //  process records
 
-          for (ConsumerRecord<byte[], byte[]> fileRecord : fileRecords)
+          try{
+            for (ConsumerRecord<byte[], byte[]> fileRecord : fileRecords)
             {
               //  parse
               DeliveryRequest response = deliveryManager.getRequestSerde().deserializer().deserialize(responseTopic, fileRecord.value());
@@ -862,11 +871,16 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
               }
             }
 
-          //
-          //  commit offsets
-          //
+            //
+            //  commit offsets
+            //
 
-          consumer.commitSync();
+            consumer.commitSync();
+          }catch (CommitFailedException ex){
+            long lastPoll_ms=System.currentTimeMillis()-lastPollTime;
+            log.info(Thread.currentThread().getId()+" CommodityDeliveryManager : CommitFailedException catched, can be normal rebalancing or poll time interval too long, last was "+lastPoll_ms+"ms ago");
+          }
+
         }
         consumer.close();
         log.warn(Thread.currentThread().getId()+" CommodityDeliveryManager.addCommodityDeliveryResponseConsumer : STOPPING reading response from "+responseTopic);
