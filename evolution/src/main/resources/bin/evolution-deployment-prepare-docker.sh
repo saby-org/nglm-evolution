@@ -17,7 +17,6 @@ do
       docker pull ${env.DOCKER_REGISTRY}ev-guimanager:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-subscribergroup:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-storeconfiguration:${project.name}-${project.version}
-      docker pull ${env.DOCKER_REGISTRY}ev-simpletransform:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-connect:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-subscribermanager:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-setup:${project.name}-${project.version}

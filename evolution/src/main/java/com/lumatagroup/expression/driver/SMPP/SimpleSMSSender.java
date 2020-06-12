@@ -22,32 +22,27 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.json.simple.JSONObject;
 
-import com.evolving.nglm.evolution.SMSNotificationManager;
-import com.evolving.nglm.evolution.SubscriberProfileForceUpdate;
-import com.evolving.nglm.evolution.SMSNotificationManager.SMSMessageStatus;
-import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
-import com.evolving.nglm.evolution.DeliveryRequest;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.EvolutionEngineEvent;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration;
+import com.evolving.nglm.evolution.INotificationRequest;
 import com.evolving.nglm.evolution.MONotificationEvent;
+import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.lumatagroup.expression.driver.SMPP.SMPPConnection.SubmitSMCorrectionDeliveryRequest;
-import com.lumatagroup.expression.driver.SMPP.Util.SMPPUtil;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 
@@ -94,7 +89,7 @@ public class SimpleSMSSender extends SMSSenderListener {
 	protected int nextSARRefNum = 0;
 
 	protected final String name;
-	private SMSNotificationManager smsNotificationManager;
+	private DeliveryManagerForNotifications smsNotificationManager;
 
 	protected final String source_addr;
 	protected final Integer source_addr_ton;
@@ -135,7 +130,7 @@ public class SimpleSMSSender extends SMSSenderListener {
 	protected static final String SMPP_STAT_SUBMITSM_KO = "SUBMITSM_KO";
 
 	//@formatter:off
-	public SimpleSMSSender(SMSNotificationManager smsNotificationManager,
+	public SimpleSMSSender(DeliveryManagerForNotifications smsNotificationManager,
 	                       String name,
 	                       SMPPConnection conn,
 	                       String source_addr,
@@ -382,7 +377,7 @@ public class SimpleSMSSender extends SMSSenderListener {
 	 * @param sms
 	 * @param receipt
 	 */
-	public boolean sendSMS(SMSNotificationManagerRequest deliveryRequest, String text, String desination, String sender, boolean receipt){
+	public boolean sendSMS(INotificationRequest deliveryRequest, String text, String desination, String sender, boolean receipt, boolean flashsms){
 
 		//DialogManagerMessage sms = expandedsms.getOriginalMsg();
 		logger.info("SimpleSMSSender.sendSMS("+text+")");
@@ -438,21 +433,20 @@ public class SimpleSMSSender extends SMSSenderListener {
 
 			byte[] message = null;
 			//Cant be multiple flashsms
-			if(deliveryRequest.getFlashSMS() && !this.support_sar && !this.support_udh) {
+			if(flashsms && !this.support_sar && !this.support_udh) {
 			  encoding = new UCS2Encoding();
-			}else {
-			  if (encoding instanceof AlphabetEncoding) {
-			    if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with alphabet charset "+((AlphabetEncoding)encoding).getCharset());
-			    // The AlphabetEncoding applies its own conversion algo and charset
-			    message = ((AlphabetEncoding)encoding).encodeString(text);
+			}
+			if (encoding instanceof AlphabetEncoding) {
+			  if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with alphabet charset "+((AlphabetEncoding)encoding).getCharset());
+			  // The AlphabetEncoding applies its own conversion algo and charset
+			  message = ((AlphabetEncoding)encoding).encodeString(text);
+			} else {
+			  if (encoding_charset != null) {
+			    if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with charset "+encoding_charset);
+			    message = text.getBytes(encoding_charset);
 			  } else {
-			    if (encoding_charset != null) {
-			      if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with charset "+encoding_charset);
-			      message = text.getBytes(encoding_charset);
-			    } else {
-			      message = text.getBytes();
-			      if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with default charset");
-			    }
+			    message = text.getBytes();
+			    if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with default charset");
 			  }
 			}
 			
@@ -467,9 +461,9 @@ public class SimpleSMSSender extends SMSSenderListener {
 			//sms.setExpiration_timestamp(d[0]); // mostly for SMSC
 
 			if (!this.support_sar && !this.support_udh) {
-				sendSubmitSM(deliveryRequest, text,source, destination, message, encoding, expiryDateTimeStamp, receipt, dest_addr_subunit, isSendToPayload);
+				sendSubmitSM(deliveryRequest, text,source, destination, message, encoding, expiryDateTimeStamp, receipt, dest_addr_subunit, isSendToPayload, flashsms);
 			} else {
-				sendMultipleSubmitSM(deliveryRequest, text,source, destination, message, encoding, expiryDateTimeStamp, receipt, dest_addr_subunit, isSendToPayload);
+				sendMultipleSubmitSM(deliveryRequest, text,source, destination, message, encoding, expiryDateTimeStamp, receipt, dest_addr_subunit, isSendToPayload, flashsms);
 			}
 
 			return true;
@@ -558,8 +552,8 @@ public class SimpleSMSSender extends SMSSenderListener {
 	 * </ul>
 	 * <p>These optional arguments are only defined in SMPP 3.4 and this is not supported by all operators' smscs yet.
 	 */
-	protected int sendMultipleSubmitSM(SMSNotificationManagerRequest deliveryRequest, final String text,final Address source, final Address destination, final byte[] message, final MessageEncoding encoding, Date expiryTime, final boolean receipt, final Integer dest_addr_subunit
-										, final boolean isSendToPayload) throws IOException, SMPPException, SMPPRuntimeException {
+	protected int sendMultipleSubmitSM(INotificationRequest deliveryRequest, final String text,final Address source, final Address destination, final byte[] message, final MessageEncoding encoding, Date expiryTime, final boolean receipt, final Integer dest_addr_subunit
+										, final boolean isSendToPayload, boolean flashsms) throws IOException, SMPPException, SMPPRuntimeException {
 		boolean trace = logger.isTraceEnabled();
 		// http://www.activexperts.com/xmstoolkit/sms/multipart/
 		// http://www.ashishpaliwal.com/blog/2009/01/smpp-sending-long-sms-through-smpp/
@@ -572,7 +566,7 @@ public class SimpleSMSSender extends SMSSenderListener {
 		final int parts = (message.length<MAX_MESSAGE_LENGTH ? 1 : (int)Math.ceil(((double)message.length) / getMaxSegmentLength()));
 		if (trace) logger.trace("SimpleSMSSender.sendMultipleSubmitSM("+text+", "+source+", "+destination+", ..., "+encoding+", "+receipt+", "+dest_addr_subunit+") parts = "+parts+" = ("+message.length+"<"+MAX_MESSAGE_LENGTH+" ? 1 : (int)Math.ceil("+((double)message.length) / getMaxSegmentLength()+"))");
 
-		if (parts == 1) return sendSubmitSM(deliveryRequest, text, source, destination, message, encoding, expiryTime, receipt, dest_addr_subunit, isSendToPayload);
+		if (parts == 1) return sendSubmitSM(deliveryRequest, text, source, destination, message, encoding, expiryTime, receipt, dest_addr_subunit, isSendToPayload, flashsms);
 
 		final int SARRefNum = getNextSARRefNum();
 		final int dstPos = MAX_MESSAGE_LENGTH-getMaxSegmentLength();
@@ -749,8 +743,8 @@ public class SimpleSMSSender extends SMSSenderListener {
 		return parts;
 	}
 
-	protected int sendSubmitSM(SMSNotificationManagerRequest deliveryRequest, final String text, final Address source, final Address destination, final byte[] message, final MessageEncoding encoding, Date expiryTime, final boolean receipt,
-								final Integer dest_addr_subunit, final boolean isSendToPayload) throws IOException, SMPPException, SMPPRuntimeException {
+	protected int sendSubmitSM(INotificationRequest deliveryRequest, final String text, final Address source, final Address destination, final byte[] message, final MessageEncoding encoding, Date expiryTime, final boolean receipt,
+								final Integer dest_addr_subunit, final boolean isSendToPayload, boolean flashsms) throws IOException, SMPPException, SMPPRuntimeException {
 		final int id = super.getSMPPConnection().referenceMessageId(deliveryRequest,text, false, 0 /*useless for simple sms*/, 0 /*useless for simple sms */); // simple message index for the current connection, not the E4O (i.e. notif bean) message id)
 		logger.info("SimpleSMSSender.sendSubmitSM("+id+", "+source+", "+destination+", ..., "+encoding+", "+receipt+", "+dest_addr_subunit+ ", "+isSendToPayload+")");
 		SubmitSM sm = (SubmitSM) conn.getConnection().newInstance(SMPPPacket.SUBMIT_SM);
@@ -793,7 +787,7 @@ public class SimpleSMSSender extends SMSSenderListener {
 		}else{
 			sm.setMessage(message, encoding);
 			
-			if(deliveryRequest.getFlashSMS()) {
+			if(flashsms) {
 			  sm.setDataCoding(24);
 			  sm.setEsmClass(3);
 			}
@@ -947,12 +941,17 @@ public class SimpleSMSSender extends SMSSenderListener {
                 }
                 logger.info("SimpleSMSSender.onSubmitSmResp: seqnum: "+packetSequenceNumber+", idreceipt: "+ messageId);
 
-//                if(smsCorrelation.getDeliveryRequest().getConfirmationExpected()) {
-                  updateDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, SMSMessageStatus.SENT, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus())); 
-//                }else {
-//                  completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, SMSMessageStatus.SENT, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus())); 
-//                }
-                
+                Boolean receiptRequired = (Boolean) ((NotificationManagerRequest)smsCorrelation.getDeliveryRequest()).getNotificationParameters().get("node.parameter.confirmationexpected");
+                if(receiptRequired == null || receiptRequired.booleanValue() == false) 
+                  {
+                    // now DR required, let complete the request now
+                    completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, MessageStatus.SENT, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus()));
+                  }
+                else 
+                  {
+                    // deliveryRequest expected
+                    updateDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, MessageStatus.SENT, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus())); 
+                  }                
                 logger.info("Feedback Call for Accept Handler for messageId "+ messageId + " SimpleSMSSender " + this.hashCode());
 
             }
@@ -968,13 +967,13 @@ public class SimpleSMSSender extends SMSSenderListener {
           if (logger.isWarnEnabled()) {
             logger.info("SimpleSMSSender.onSubmitSmResp: Message Queue Full for sms "+ packetSequenceNumber+" will try to resend in "+this.delay_on_queue_full+" sec");
           }
-          completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), SMSMessageStatus.QUEUE_FULL, DeliveryStatus.Failed,  PacketStatusUtils.getMessage(packet.getCommandStatus()));
+          completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), MessageStatus.QUEUE_FULL, DeliveryStatus.Failed,  PacketStatusUtils.getMessage(packet.getCommandStatus()));
           break;
         case PacketStatus.THROTTLING_ERROR:
             if (logger.isWarnEnabled()) {
                         logger.info("SimpleSMSSender.onSubmitSmResp: Throttling Error for sms "+ packetSequenceNumber+" will try to resend in "+this.delay_on_queue_full+" sec");
             }
-            completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), SMSMessageStatus.THROTTLING, DeliveryStatus.Failed,  PacketStatusUtils.getMessage(packet.getCommandStatus()));
+            completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), MessageStatus.THROTTLING, DeliveryStatus.Failed,  PacketStatusUtils.getMessage(packet.getCommandStatus()));
 
             logger.info("Feedback Call for Accept Handler for messageId "+packet.getMessageId() + " SimpleSMSSender " + this.hashCode());
             break;
@@ -989,7 +988,7 @@ public class SimpleSMSSender extends SMSSenderListener {
 //                    logger.debug("SimpleSMSSender.onSubmitSmResp No message Id " + packet + " " + packet.getMessageStatus());
 //                }
 //            }
-            completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), SMSMessageStatus.UNKNOWN, DeliveryStatus.Failed, PacketStatusUtils.getMessage(packet.getCommandStatus()));
+            completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), MessageStatus.UNKNOWN, DeliveryStatus.Failed, PacketStatusUtils.getMessage(packet.getCommandStatus()));
             
             logger.info("Feedback Call for Accept Handler for messageId "+packet.getMessageId() + "SimpleSMSSender "+ this.hashCode());
         break;
@@ -997,7 +996,7 @@ public class SimpleSMSSender extends SMSSenderListener {
     
   }
   
-  private void completeDeliveryRequest(SMSNotificationManagerRequest smsNotif, String messageId, SMSMessageStatus status, DeliveryStatus deliveryStatus, String returnCodeDetails){
+  private void completeDeliveryRequest(INotificationRequest smsNotif, String messageId, MessageStatus status, DeliveryStatus deliveryStatus, String returnCodeDetails){
     smsNotif.setCorrelator(messageId);
     smsNotif.setDeliveryStatus(deliveryStatus);
     smsNotif.setMessageStatus(status);
@@ -1006,7 +1005,7 @@ public class SimpleSMSSender extends SMSSenderListener {
     smsNotificationManager.completeDeliveryRequest(smsNotif);
   }
   
-  private void updateDeliveryRequest(SMSNotificationManagerRequest smsNotif, String messageId, SMSMessageStatus status, DeliveryStatus deliveryStatus, String returnCodeDetails){
+  private void updateDeliveryRequest(INotificationRequest smsNotif, String messageId, MessageStatus status, DeliveryStatus deliveryStatus, String returnCodeDetails){
     smsNotif.setCorrelator(messageId);
     smsNotif.setDeliveryStatus(deliveryStatus);
     smsNotif.setMessageStatus(status);
@@ -1096,9 +1095,9 @@ public class SimpleSMSSender extends SMSSenderListener {
                     logger.info("SimpleSMSSender.onDeliverSM: Statut of seqNum: "+seqNum+", idreceipt: "+messageId
                             + " = " + messageStatus+" ("+tmp+")");
                 
-                SMSMessageStatus evolutionCode = null;
+                MessageStatus evolutionCode = null;
                 if(tmp != null){
-                  evolutionCode = SMSMessageStatus.fromExternalRepresentation(tmp);
+                  evolutionCode = MessageStatus.fromExternalRepresentation(tmp);
                 }
                 if(evolutionCode != null){
                   sendFeedback(messageId, evolutionCode.getReturnCode());

@@ -34,7 +34,6 @@ public class CommunicationChannel extends GUIManagedObject
     String id;
     String name;
     String display;
-    String defaultSourceAddress;
     String profileAddressField;
     String deliveryType;
     NotificationDailyWindows notificationDailyWindows;
@@ -68,7 +67,6 @@ public class CommunicationChannel extends GUIManagedObject
     public String getID() { return id; }
     public String getName() { return name; }
     public String getDisplay() { return display; }
-    public String getDefaultSourceAddress() { return defaultSourceAddress; }
     public String getProfileAddressField() { return profileAddressField; }
     public String getDeliveryType () { return deliveryType; } 
     public NotificationDailyWindows getNotificationDailyWindows() { return notificationDailyWindows; }
@@ -149,7 +147,6 @@ public class CommunicationChannel extends GUIManagedObject
       this.id = JSONUtilities.decodeString(jsonRoot, "id", false);
       this.name = JSONUtilities.decodeString(jsonRoot, "name", false);
       this.display = JSONUtilities.decodeString(jsonRoot, "display", false);
-      this.defaultSourceAddress = JSONUtilities.decodeString(jsonRoot, "defaultSourceAddress", false);
       this.profileAddressField = JSONUtilities.decodeString(jsonRoot, "profileAddressField", false);
       this.deliveryType = JSONUtilities.decodeString(jsonRoot, "deliveryType", false);
       if(jsonRoot.get("notificationDailyWindows") != null) {

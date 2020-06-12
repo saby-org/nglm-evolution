@@ -22,6 +22,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
@@ -38,67 +39,8 @@ import com.evolving.nglm.evolution.toolbox.ParameterBuilder;
 import com.evolving.nglm.evolution.toolbox.ToolBoxBuilder;
 import com.evolving.nglm.evolution.toolbox.TransitionCriteriaBuilder;
 
-public class NotificationManager extends DeliveryManager implements Runnable
+public class NotificationManager extends DeliveryManagerForNotifications implements Runnable
 {
-  /*****************************************
-   *
-   * enum - status
-   *
-   *****************************************/
-
-  public enum MessageStatus
-  {
-    PENDING(10), SENT(1), NO_CUSTOMER_LANGUAGE(701), NO_CUSTOMER_CHANNEL(702), DELIVERED(0), EXPIRED(707), ERROR(706), UNDELIVERABLE(703), INVALID(704), QUEUE_FULL(705), RESCHEDULE(709), UNKNOWN(999);
-
-    private Integer returncode;
-
-    private MessageStatus(Integer returncode)
-      {
-        this.returncode = returncode;
-      }
-
-    public Integer getReturnCode()
-    {
-      return returncode;
-    }
-
-    public static MessageStatus fromReturnCode(Integer externalRepresentation)
-    {
-      for (MessageStatus enumeratedValue : MessageStatus.values())
-        {
-          if (enumeratedValue.getReturnCode().equals(externalRepresentation)) return enumeratedValue;
-        }
-      return UNKNOWN;
-    }
-  }
-
-  /*****************************************
-   *
-   * conversion method
-   *
-   *****************************************/
-
-  public DeliveryStatus getMessageStatus(MessageStatus status)
-  {
-    switch (status)
-      {
-      case PENDING:
-        return DeliveryStatus.Pending;
-      case SENT:
-        return DeliveryStatus.Delivered;
-      case RESCHEDULE:
-        return DeliveryStatus.Reschedule;
-      case NO_CUSTOMER_LANGUAGE:
-      case NO_CUSTOMER_CHANNEL:
-      case ERROR:
-      case UNDELIVERABLE:
-      case INVALID:
-      case QUEUE_FULL:
-      default:
-        return DeliveryStatus.Failed;
-      }
-  }
-
   /*****************************************
    *
    * configuration
@@ -149,7 +91,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       // superclass
       //
 
-      super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), NotificationManagerRequest.serde, Deployment.getDeliveryManagers().get("notificationManager"));
+      super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), NotificationManagerRequest.serde, Deployment.getDeliveryManagers().get("notificationmanager"));
 
       //
       // service
@@ -178,7 +120,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       ArrayList<String> channels = new ArrayList<>();
       if (channelsString != null)
         {
-          for (String channel : channelsString.split("."))
+          for (String channel : channelsString.split("\\."))
             {
               channels.add(channel);
             }
@@ -196,8 +138,8 @@ public class NotificationManager extends DeliveryManager implements Runnable
                   try
                     {
                       NotificationInterface pluginInstance = (NotificationInterface) (Class.forName(cc.getNotificationPluginClass()).newInstance());
-                      pluginInstance.init(cc.getNotificationPluginConfiguration());
-                      pluginInstances.put(cc.getID(), (NotificationInterface) (Class.forName(cc.getNotificationPluginClass()).newInstance()));
+                      pluginInstance.init(this, cc.getNotificationPluginConfiguration());
+                      pluginInstances.put(cc.getID(), pluginInstance);
                     }
                   catch (InstantiationException | IllegalAccessException | IllegalArgumentException e)
                     {
@@ -249,7 +191,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
    *
    *****************************************/
 
-  public static class NotificationManagerRequest extends DeliveryRequest implements MessageDelivery
+  public static class NotificationManagerRequest extends DeliveryRequest implements MessageDelivery, INotificationRequest
   {
     /*****************************************
      *
@@ -266,14 +208,13 @@ public class NotificationManager extends DeliveryManager implements Runnable
       {
         SchemaBuilder schemaBuilder = SchemaBuilder.struct();
         schemaBuilder.name("service_notification_request");
-        schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 1));
+        schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 2));
         for (Field field : commonSchema().fields())
           schemaBuilder.field(field.name(), field.schema());
         schemaBuilder.field("destination", Schema.STRING_SCHEMA);
         schemaBuilder.field("language", Schema.STRING_SCHEMA);
         schemaBuilder.field("templateID", Schema.STRING_SCHEMA);
         schemaBuilder.field("tags", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).name("notification_tags").schema());
-        schemaBuilder.field("confirmationExpected", Schema.BOOLEAN_SCHEMA);
         schemaBuilder.field("restricted", Schema.BOOLEAN_SCHEMA);
         schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
         schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
@@ -318,7 +259,6 @@ public class NotificationManager extends DeliveryManager implements Runnable
     private String language;
     private String templateID;
     private Map<String, List<String>> tags;
-    private boolean confirmationExpected;
     private boolean restricted;
     private MessageStatus status;
     private int returnCode;
@@ -348,11 +288,6 @@ public class NotificationManager extends DeliveryManager implements Runnable
     public Map<String, List<String>> getTags()
     {
       return tags;
-    }
-
-    public boolean getConfirmationExpected()
-    {
-      return confirmationExpected;
     }
 
     public boolean getRestricted()
@@ -399,10 +334,6 @@ public class NotificationManager extends DeliveryManager implements Runnable
     // setters
     //
 
-    public void setConfirmationExpected(boolean confirmationExpected)
-    {
-      this.confirmationExpected = confirmationExpected;
-    }
 
     public void setRestricted(boolean restricted)
     {
@@ -453,19 +384,19 @@ public class NotificationManager extends DeliveryManager implements Runnable
       return getEventID();
     }
 
-    /*****************************************
-     *
-     * getMessage
-     *
-     *****************************************/
-
-    public String getMessage(String messageField, SubscriberMessageTemplateService subscriberMessageTemplateService)
-    {
-      DialogTemplate dialogTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
-      DialogMessage dialogMessage = (dialogTemplate != null) ? dialogTemplate.getDialogMessage(messageField) : null;
-      String text = (dialogMessage != null) ? dialogMessage.resolve(language, tags.get(messageField)) : null;
-      return text;
-    }
+//    /*****************************************
+//     *
+//     * getMessage
+//     *
+//     *****************************************/
+//
+//    public String getMessage(String messageField, SubscriberMessageTemplateService subscriberMessageTemplateService)
+//    {
+//      DialogTemplate dialogTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+//      DialogMessage dialogMessage = (dialogTemplate != null) ? dialogTemplate.getDialogMessage(messageField) : null;
+//      String text = (dialogMessage != null) ? dialogMessage.resolve(language, tags.get(messageField)) : null;
+//      return text;
+//    }
 
     /*****************************************
      *
@@ -505,29 +436,29 @@ public class NotificationManager extends DeliveryManager implements Runnable
 //      this.returnCodeDetails = null;
 //      this.channelID = JSONUtilities.decodeString(jsonRoot, "channelID", true);
 //    }
-
-    /*****************************************
-     *
-     * decodeMessageTags
-     *
-     *****************************************/
-
-    private Map<String, List<String>> decodeTags(JSONArray jsonArray) // TODO SCH : A TESTER !!! !!! !!! !!! !!! !!! !!! !!! !!!
-    {
-      Map<String, List<String>> tags = new HashMap<String, List<String>>();
-      if (jsonArray != null)
-        {
-          for (int i = 0; i < jsonArray.size(); i++)
-            {
-              JSONObject messageTagJSON = (JSONObject) jsonArray.get(i);
-              String messageField = JSONUtilities.decodeString(messageTagJSON, "messageField", true);
-              List<String> messageTags = (List<String>) JSONUtilities.decodeJSONObject(messageTagJSON, "messageTags");
-              tags.put(messageField, messageTags);
-            }
-        }
-      return tags;
-
-    }
+//
+//    /*****************************************
+//     *
+//     * decodeMessageTags
+//     *
+//     *****************************************/
+//
+//    private Map<String, List<String>> decodeTags(JSONArray jsonArray) // TODO SCH : A TESTER !!! !!! !!! !!! !!! !!! !!! !!! !!!
+//    {
+//      Map<String, List<String>> tags = new HashMap<String, List<String>>();
+//      if (jsonArray != null)
+//        {
+//          for (int i = 0; i < jsonArray.size(); i++)
+//            {
+//              JSONObject messageTagJSON = (JSONObject) jsonArray.get(i);
+//              String messageField = JSONUtilities.decodeString(messageTagJSON, "messageField", true);
+//              List<String> messageTags = (List<String>) JSONUtilities.decodeJSONObject(messageTagJSON, "messageTags");
+//              tags.put(messageField, messageTags);
+//            }
+//        }
+//      return tags;
+//
+//    }
 
     /*****************************************
      *
@@ -535,14 +466,13 @@ public class NotificationManager extends DeliveryManager implements Runnable
      *
      *****************************************/
 
-    private NotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails, String channelID, ParameterMap notificationParameters)
+    private NotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean restricted, MessageStatus status, String returnCodeDetails, String channelID, ParameterMap notificationParameters)
       {
         super(schemaAndValue);
         this.destination = destination;
         this.language = language;
         this.templateID = templateID;
         this.tags = tags;
-        this.confirmationExpected = confirmationExpected;
         this.restricted = restricted;
         this.status = status;
         this.returnCode = status.getReturnCode();
@@ -564,7 +494,6 @@ public class NotificationManager extends DeliveryManager implements Runnable
         this.language = NotificationManagerRequest.getLanguage();
         this.templateID = NotificationManagerRequest.getTemplateID();
         this.tags = NotificationManagerRequest.getTags();
-        this.confirmationExpected = NotificationManagerRequest.getConfirmationExpected();
         this.restricted = NotificationManagerRequest.getRestricted();
         this.status = NotificationManagerRequest.getMessageStatus();
         this.returnCode = NotificationManagerRequest.getReturnCode();
@@ -599,7 +528,6 @@ public class NotificationManager extends DeliveryManager implements Runnable
       struct.put("language", notificationRequest.getLanguage());
       struct.put("templateID", notificationRequest.getTemplateID());
       struct.put("tags", notificationRequest.getTags());
-      struct.put("confirmationExpected", notificationRequest.getConfirmationExpected());
       struct.put("restricted", notificationRequest.getRestricted());
       struct.put("returnCode", notificationRequest.getReturnCode());
       struct.put("returnCodeDetails", notificationRequest.getReturnCodeDetails());
@@ -642,7 +570,6 @@ public class NotificationManager extends DeliveryManager implements Runnable
       String language = valueStruct.getString("language");
       String templateID = valueStruct.getString("templateID");
       Map<String, List<String>> tags = (Map<String, List<String>>) valueStruct.get("tags");
-      boolean confirmationExpected = valueStruct.getBoolean("confirmationExpected");
       boolean restricted = valueStruct.getBoolean("restricted");
       Integer returnCode = valueStruct.getInt32("returnCode");
       String returnCodeDetails = valueStruct.getString("returnCodeDetails");
@@ -654,7 +581,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
       // return
       //
 
-      return new NotificationManagerRequest(schemaAndValue, destination, language, templateID, tags, confirmationExpected, restricted, status, returnCodeDetails, channelID, notificationParameters);
+      return new NotificationManagerRequest(schemaAndValue, destination, language, templateID, tags, restricted, status, returnCodeDetails, channelID, notificationParameters);
     }
 
 //    /*****************************************
@@ -749,7 +676,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
     @Override
     public String toString()
     {
-      return "NotificationManagerRequest [destination=" + destination + ", language=" + language + ", templateID=" + templateID + ", tags=" + tags + ", confirmationExpected=" + confirmationExpected + ", restricted=" + restricted + ", status=" + status + ", returnCode=" + returnCode + ", returnCodeDetails=" + returnCodeDetails + ", channelID=" + channelID + "]";
+      return "NotificationManagerRequest [destination=" + destination + ", language=" + language + ", templateID=" + templateID + ", tags=" + tags + ", restricted=" + restricted + ", status=" + status + ", returnCode=" + returnCode + ", returnCodeDetails=" + returnCodeDetails + ", channelID=" + channelID + "]";
     }
 
   }
@@ -955,39 +882,80 @@ public class NotificationManager extends DeliveryManager implements Runnable
         log.info("NotificationManagerRequest run deliveryRequest" + deliveryRequest);
 
         NotificationManagerRequest dialogRequest = (NotificationManagerRequest) deliveryRequest;
-//        DialogTemplate DialogTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
-//        
-//        if (DialogTemplate != null) 
-//          {
-//            Date effectiveDeliveryTime = dialogRequest.getEffectiveDeliveryTime(this, DialogTemplate.getCommunicationChannelID(), now); 
-//            if(effectiveDeliveryTime.equals(now))
-//              {
-//                log.info("NotificationManagerRequest run deliveryRequest : sending notification now");
-//                notification.send(dialogRequest);
-//              }
-//            else
-//              {
-//                log.info("NotificationManagerRequest run deliveryRequest : notification rescheduled ("+effectiveDeliveryTime+")");
-//                dialogRequest.setRescheduledDate(effectiveDeliveryTime);
-//                dialogRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
-//                dialogRequest.setReturnCode(MessageStatus.RESCHEDULE.getReturnCode());
-//                dialogRequest.setMessageStatus(MessageStatus.RESCHEDULE);
-//                completeDeliveryRequest(dialogRequest);
-//              }
-//          }
-//        else
-//          {
-//            log.info("NotificationManagerRequest run deliveryRequest : ERROR : template with id '"+dialogRequest.getTemplateID()+"' not found");
-//            log.info("subscriberMessageTemplateService contains :");
-//            for(GUIManagedObject obj : subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now)){
-//              log.info("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
-//            }
-//            dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
-//            dialogRequest.setReturnCode(MessageStatus.UNKNOWN.getReturnCode());
-//            dialogRequest.setMessageStatus(MessageStatus.UNKNOWN);
-//            completeDeliveryRequest(dialogRequest);
-//          }
+        DialogTemplate dialogTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
+        
+        if (dialogTemplate != null) 
+          {
+            
+            if(dialogRequest.getRestricted()) 
+              {
+
+                Date effectiveDeliveryTime = now;
+                CommunicationChannel channel = (CommunicationChannel) Deployment.getCommunicationChannels().get(dialogRequest.getChannelID());
+                if(channel != null) 
+                  {
+                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(blackoutService, now);
+                  }
+
+                if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))
+                  {
+                    NotificationInterface plugin = pluginInstances.get(dialogRequest.getChannelID());
+                    if(plugin != null) {
+                      log.debug("NotificationManagerRequest SEND Immediately restricted " + dialogRequest);
+                      plugin.send(dialogRequest);
+                    }
+                    else {
+                      log.warn("NotificationManagerRequest Can't retrieve NotificationInterface plugin for channel " + dialogRequest.getChannelID());
+                      dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
+                      dialogRequest.setReturnCode(MessageStatus.ERROR.getReturnCode());
+                      dialogRequest.setMessageStatus(MessageStatus.ERROR);
+                      dialogRequest.setReturnCodeDetails("NoChannelConfig" + dialogRequest.getChannelID());
+                      completeDeliveryRequest((DeliveryRequest)dialogRequest);
+;
+                    }
+                  }
+                else
+                  {
+                    log.debug("NotificationManagerRequest RESCHEDULE to " + effectiveDeliveryTime + " restricted " + dialogRequest);
+                    dialogRequest.setRescheduledDate(effectiveDeliveryTime);
+                    dialogRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
+                    dialogRequest.setReturnCode(MessageStatus.RESCHEDULE.getReturnCode());
+                    dialogRequest.setMessageStatus(MessageStatus.RESCHEDULE);
+                    completeDeliveryRequest((DeliveryRequest)dialogRequest);
+                  }      
+              }
+            else {
+              NotificationInterface plugin = pluginInstances.get(dialogRequest.getChannelID());
+              if(plugin != null) {
+                log.debug("NotificationManagerRequest SEND Immediately NON restricted " + dialogRequest);
+                plugin.send(dialogRequest);
+              }
+              else {
+                log.warn("NotificationManagerRequest Can't retrieve NotificationInterface plugin for channel " + dialogRequest.getChannelID());
+                dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
+                dialogRequest.setReturnCode(MessageStatus.ERROR.getReturnCode());
+                dialogRequest.setMessageStatus(MessageStatus.ERROR);
+                dialogRequest.setReturnCodeDetails("NoChannelConfig" + dialogRequest.getChannelID());
+                completeDeliveryRequest((DeliveryRequest)dialogRequest);
+;
+              }
+            }
+          }
+        else
+          {
+            log.info("NotificationManagerRequest run deliveryRequest : ERROR : template with id '"+dialogRequest.getTemplateID()+"' not found");
+            log.info("subscriberMessageTemplateService contains :");
+            for(GUIManagedObject obj : subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now)){
+              log.info("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
+            }
+            dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
+            dialogRequest.setReturnCode(MessageStatus.UNKNOWN.getReturnCode());
+            dialogRequest.setMessageStatus(MessageStatus.UNKNOWN);
+            dialogRequest.setReturnCodeDetails("NoTemplate" + dialogRequest.getTemplateID());
+            completeDeliveryRequest((DeliveryRequest)dialogRequest);
+          }
       }
+
   }
 
   /*****************************************
@@ -996,6 +964,12 @@ public class NotificationManager extends DeliveryManager implements Runnable
    *
    *****************************************/
 
+  public void updateDeliveryRequest(INotificationRequest deliveryRequest)
+  {
+    log.info("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
+    updateRequest((DeliveryRequest)deliveryRequest);
+  }
+  
   public void updateDeliveryRequest(DeliveryRequest deliveryRequest)
   {
     log.info("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
@@ -1008,11 +982,17 @@ public class NotificationManager extends DeliveryManager implements Runnable
    *
    *****************************************/
 
+  public void completeDeliveryRequest(INotificationRequest deliveryRequest)
+  {
+    completeDeliveryRequest((DeliveryRequest)deliveryRequest);
+  }
+  
   public void completeDeliveryRequest(DeliveryRequest deliveryRequest)
   {
+    DeliveryRequest dr = (DeliveryRequest)deliveryRequest;
     log.info("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
-    completeRequest(deliveryRequest);
-    stats.updateMessageCount(channelsString, 1, deliveryRequest.getDeliveryStatus());
+    completeRequest(dr);
+    stats.updateMessageCount(channelsString, 1, dr.getDeliveryStatus());
   }
 
   /*****************************************
@@ -1041,7 +1021,7 @@ public class NotificationManager extends DeliveryManager implements Runnable
     if (dialogRequest != null)
       {
         dialogRequest.setMessageStatus(MessageStatus.fromReturnCode(result));
-        dialogRequest.setDeliveryStatus(getMessageStatus(dialogRequest.getMessageStatus()));
+        dialogRequest.setDeliveryStatus(getDeliveryStatus(dialogRequest.getMessageStatus()));
         dialogRequest.setDeliveryDate(SystemTime.getCurrentTime());
         completeRequest(dialogRequest);
       }
@@ -1172,8 +1152,8 @@ public class NotificationManager extends DeliveryManager implements Runnable
         tb.addFlatStringField("communicationChannelID", current.getID());
         tb.addOutputConnector(new OutputConnectorBuilder("delivered", "Delivered/Sent").addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'delivered', 'acknowledged' ]"))));
         tb.addOutputConnector(new OutputConnectorBuilder("failed", "Failed").addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'failed', 'indeterminate', 'failedTimeout' ]"))));
-        tb.addOutputConnector(new OutputConnectorBuilder("timeout", "Timeout").addTransitionCriteria(new TransitionCriteriaBuilder("evaluation.date", CriterionOperator.GreaterThanOrEqualOperator, new ArgumentBuilder("dateAdd(node.entryDate, 1, 'minute')").setTimeUnit(TimeUnit.Instant))));
-        tb.addOutputConnector(new OutputConnectorBuilder("unknown", "UnknownAppID").addTransitionCriteria(new TransitionCriteriaBuilder("subscriber.appID", CriterionOperator.IsNullOperator, null)));
+        tb.addOutputConnector(new OutputConnectorBuilder("timeout", "Timeout").addTransitionCriteria(new TransitionCriteriaBuilder("evaluation.date", CriterionOperator.GreaterThanOrEqualOperator, new ArgumentBuilder("dateAdd(node.entryDate, 1, 'hour')").setTimeUnit(TimeUnit.Instant))));
+        tb.addOutputConnector(new OutputConnectorBuilder("unknown", "Unknown " + current.getProfileAddressField()).addTransitionCriteria(new TransitionCriteriaBuilder(current.getProfileAddressField(), CriterionOperator.IsNullOperator, null)));
 
         // add manually all parameters common to any notification : contact type, from
         // address

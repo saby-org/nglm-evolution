@@ -140,7 +140,6 @@ public class DNBOProxy
   private SalesChannelService salesChannelService;
   private SubscriberProfileService subscriberProfileService;
   private ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader = null;
-  private ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader = null;
   private SegmentationDimensionService segmentationDimensionService;
   private DNBOMatrixService dnboMatrixService;
   private DynamicCriterionFieldService dynamicCriterionFieldService;
@@ -208,7 +207,6 @@ public class DNBOProxy
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "dnboproxy-saleschannelservice-" + apiProcessKey, Deployment.getSalesChannelTopic(), false);
     subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
     subscriberGroupEpochReader = ReferenceDataReader.<String, SubscriberGroupEpoch>startReader("dnboproxy-subscribergroupepoch", "dnboproxy-subscribergroupepochreader-"+apiProcessKey, Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
-    propensityDataReader = ReferenceDataReader.<PropensityKey, PropensityState>startReader("dnboproxy-propensitystate", "dnboproxy-propensityreader-"+apiProcessKey, Deployment.getBrokerServers(), Deployment.getPropensityLogTopic(), PropensityState::unpack);
     segmentationDimensionService = new SegmentationDimensionService(Deployment.getBrokerServers(), "dnboproxy-segmentationdimensionservice-"+apiProcessKey, Deployment.getSegmentationDimensionTopic(), false);
     dnboMatrixService = new DNBOMatrixService(Deployment.getBrokerServers(),"dnboproxy-matrixservice"+apiProcessKey,Deployment.getDNBOMatrixTopic(),false);
     subscriberIDService = new SubscriberIDService(Deployment.getRedisSentinels(), "dnboproxy-" + apiProcessKey);
@@ -639,7 +637,7 @@ public class DNBOProxy
             case getSubscriberOffers:
               jsonResponse = processGetSubscriberOffers(userID, jsonRoot,
                   productService, productTypeService, voucherService, voucherTypeService,
-                  catalogCharacteristicService, propensityDataReader, subscriberGroupEpochReader,
+                  catalogCharacteristicService, subscriberGroupEpochReader,
                   segmentationDimensionService, offerService);
               break;
               
@@ -723,7 +721,7 @@ public class DNBOProxy
   private JSONObject processGetSubscriberOffers(String userID, JSONObject jsonRoot,
       ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
-      ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
+      ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
       SegmentationDimensionService segmentationDimensionService, OfferService offerService) throws DNBOProxyException, SubscriberProfileServiceException
   {
     /*****************************************
@@ -812,7 +810,7 @@ public class DNBOProxy
         {
           JSONObject valueRes = getOffers(now, subscriberID, scoringStrategyID, salesChannelID, subscriberProfile, scoringStrategy,
               productService, productTypeService, voucherService, voucherTypeService,
-              catalogCharacteristicService, propensityDataReader, subscriberGroupEpochReader,
+              catalogCharacteristicService, subscriberGroupEpochReader,
               segmentationDimensionService, offerService,rangeValue.doubleValue());
           resArray.add(valueRes);
           allScoringStrategiesBad = false;
@@ -888,7 +886,7 @@ public class DNBOProxy
       ProductService productService, ProductTypeService productTypeService,
       VoucherService voucherService, VoucherTypeService voucherTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
-      ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
+      ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
       SegmentationDimensionService segmentationDimensionService, OfferService offerService, double rangeValue)
       throws DNBOProxyException
   {
@@ -912,14 +910,11 @@ public class DNBOProxy
     try {
 
       DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
-      Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo = null;
-      /*
-          TokenUtils.getOffers(now, salesChannelID,
-              subscriberProfile, scoringStrategy, productService, productTypeService, voucherService, voucherTypeService,
-              catalogCharacteristicService, propensityDataReader, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog,
-              msisdn);
-              */
-      
+      Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo = TokenUtils.getOffersWithScoringStrategy(
+          now, salesChannelID, subscriberProfile, scoringStrategy,
+          productService, productTypeService, voucherService, voucherTypeService,
+          catalogCharacteristicService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService,
+          returnedLog, msisdn);
       if (offerAvailabilityFromPropensityAlgo == null)
         {
           log.warn("DNBOProxy.getOffers Exception "+returnedLog);

@@ -168,6 +168,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("vouchers", subscriberProfile.getVouchersJSON());
       documentMap.put("subscriberJourneys", subscriberProfile.getSubscriberJourneysJSON());
       documentMap.put("lastUpdateDate", DatacubeGenerator.TIMESTAMP_FORMAT.format(now));
+      documentMap.put("relationships", subscriberProfile.getSubscriberRelationsJSON());
       addToDocumentMap(documentMap, subscriberProfile, now);
       
       //

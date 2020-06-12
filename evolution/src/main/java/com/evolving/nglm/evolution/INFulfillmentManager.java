@@ -50,6 +50,8 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     THROTTLING(23),
     THIRD_PARTY_ERROR(24),
     BONUS_NOT_FOUND(100),
+    CHECK_BALANCE_LT(300),
+    CHECK_BALANCE_GT(301),
     UNKNOWN(999);
     private Integer externalRepresentation;
     private INFulfillmentStatus(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -79,6 +81,10 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
         case TIMEOUT:
         case THROTTLING:
           return DeliveryStatus.FailedRetry;
+        case CHECK_BALANCE_LT:
+          return DeliveryStatus.CheckBalanceLowerThan;
+        case CHECK_BALANCE_GT:
+          return DeliveryStatus.CheckBalanceGreaterThan;
         default:
           return DeliveryStatus.Failed;
       }
@@ -551,6 +557,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     public INFulfillmentStatus activate(INFulfillmentRequest inFulfillmentRequest);
     public INFulfillmentStatus deactivate(INFulfillmentRequest inFulfillmentRequest);
     public INFulfillmentStatus set(INFulfillmentRequest inFulfillmentRequest);
+    public INFulfillmentStatus check(INFulfillmentRequest inFulfillmentRequest);
   }
 
   /*****************************************
@@ -595,6 +602,9 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
           break;
         case Set:
           status = inPlugin.set((INFulfillmentRequest)deliveryRequest);
+          break;
+        case Check:
+          status = inPlugin.check((INFulfillmentRequest)deliveryRequest);
           break;
         default:
           break;

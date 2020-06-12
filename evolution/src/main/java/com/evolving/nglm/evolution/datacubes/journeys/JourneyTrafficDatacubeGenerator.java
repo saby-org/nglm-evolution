@@ -147,13 +147,12 @@ public class JourneyTrafficDatacubeGenerator extends DatacubeGenerator
   * Run
   *
   *****************************************/
-  public void definitive(String journeyID, long journeyStartDateTime)
+  public void definitive(String journeyID, long journeyStartDateTime, Date publishDate)
   {
     this.journeyID = journeyID;
     
-    Date now = SystemTime.getCurrentTime();
-    String timestamp = TIMESTAMP_FORMAT.format(now);
-    long targetPeriod = now.getTime() - journeyStartDateTime;
+    String timestamp = TIMESTAMP_FORMAT.format(publishDate);
+    long targetPeriod = publishDate.getTime() - journeyStartDateTime;
     this.run(timestamp, targetPeriod);
   }
 }

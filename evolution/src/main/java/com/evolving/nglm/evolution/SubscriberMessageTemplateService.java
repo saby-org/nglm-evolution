@@ -232,12 +232,6 @@ public class SubscriberMessageTemplateService extends GUIService
                   result.add(template);
                 }
               break;
-            case DialogTemplate:
-              if (! externalOnly || ! template.getInternalOnly())
-                {
-                  result.add(template);
-                }
-              break;
           }
       }
     return result;

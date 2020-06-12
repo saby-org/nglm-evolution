@@ -568,4 +568,10 @@ public abstract class ExtendedSubscriberProfile implements StateStore
     b.append("," + subscriberTraceEnabled);
     return b.toString();
   }
+  
+  @Override
+  public String toString()
+  {
+    return "ExtendedSubscriberProfile [" + (subscriberID != null ? "subscriberID=" + subscriberID + ", " : "") + "subscriberTraceEnabled=" + subscriberTraceEnabled + ", " + (subscriberTrace != null ? "subscriberTrace=" + subscriberTrace : "") + "]";
+  }
 }

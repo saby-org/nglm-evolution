@@ -1,6 +1,8 @@
 package com.lumatagroup.expression.driver.SMTP;
 
 import java.util.Date;
+
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications;
 import com.evolving.nglm.evolution.MailNotificationManager;
 import com.lumatagroup.expression.driver.SMTP.util.Conf;
 import com.lumatagroup.expression.driver.dyn.PollFeedback;
@@ -11,9 +13,9 @@ public class FeedbackThread extends Thread {
 	private boolean usingFakeEmulator = false;
 	private Date from;
 	private String messageIdentifierMagic;
-	private MailNotificationManager mailNotificationManager;
+	private DeliveryManagerForNotifications mailNotificationManager;
 	
-	public FeedbackThread(MailNotificationManager mailNotificationManager, boolean usingFakeEmulator) {
+	public FeedbackThread(DeliveryManagerForNotifications mailNotificationManager, boolean usingFakeEmulator) {
 		logger.debug("FeedbackThread constructor");
 		if (logger.isDebugEnabled()) logger.debug("FeedbackThread messageIdentifierMagic = "+messageIdentifierMagic);
 		long now = new Date().getTime();

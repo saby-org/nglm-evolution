@@ -1,0 +1,722 @@
+/****************************************************************************
+*
+*  SuspenseProcessor.java
+*
+****************************************************************************/
+
+package com.evolving.nglm.core;
+
+import ConnectSerde;
+import NGLMRuntime;
+import RLMDateUtils;
+import ServerException;
+import ServerRuntimeException;
+import StringKey;
+import com.evolving.nglm.core.SuspenseEvent;
+import com.evolving.nglm.core.SuspenseAuditEntry;
+import com.evolving.nglm.core.SuspenseAuditEntry.SuspenseProcessResolution;
+import UtilitiesException;
+
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.serialization.Serializer;
+import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaAndValue;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Timestamp;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Method;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TimeZone;
+
+
+// Deprecated as SuspenseProcess not anymore used 
+@Deprecated
+
+public class SuspenseProcessor
+{
+  /*****************************************
+  *
+  *  configuration
+  *
+  *****************************************/
+
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(SuspenseProcessor.class);
+  
+  //
+  //  kafka configuration
+  //
+
+  private String applicationID;
+  private String bootstrapServers;
+  
+  //
+  //  attributes
+  //
+
+  private String suspenseTopic;
+  private String suspenseAuditTopic;
+  private String suspenseCronEntry;
+  private Map<String, SuspenseProcessEventConfiguration> suspenseProcessEventConfiguration;
+
+  //
+  //  calculated
+  //
+  
+  private Map<String, MethodHandle> eventParsingMethodHandles;
+  private Map<String, MethodHandle> ensureServicesMethodHandles;
+  private Map<String, MethodHandle> serdeMethodHandles;
+
+  /*****************************************
+  *
+  *  serdes
+  *
+  *****************************************/
+
+  private ConnectSerde<SuspenseEvent> suspenseEventSerde = SuspenseEvent.serde();
+  
+  /****************************************
+  *
+  *  main
+  *
+  *****************************************/
+
+  public static void main(String[] args) throws Exception
+  {
+    NGLMRuntime.initialize(true);
+    SuspenseProcessor service = new SuspenseProcessor();
+    service.start(args);
+  }
+
+  /****************************************
+  *
+  *  start
+  *
+  *****************************************/
+
+  private void start(String[] args)
+  {
+    /*****************************************
+    *
+    *  configuration
+    *
+    *****************************************/
+
+    //
+    //  kafka configuration
+    //
+
+    applicationID = "suspenseprocessor";
+    bootstrapServers = args[0];
+
+    //
+    //  configuration
+    //
+
+    suspenseTopic = Deployment.getSuspenseTopic();
+    suspenseAuditTopic = Deployment.getSuspenseAuditTopic();
+    suspenseCronEntry = Deployment.getSuspenseCronEntry();
+    suspenseProcessEventConfiguration = Deployment.getSuspenseProcessEventConfiguration();
+
+    //
+    //  log
+    //
+
+    log.info("main START: {} {} {} {} {}", args[0], suspenseTopic, suspenseAuditTopic, suspenseCronEntry, suspenseProcessEventConfiguration.toString());
+
+    /*****************************************
+    *
+    *  cron
+    *
+    *****************************************/
+
+    CronFormat cron;
+    try
+      {
+        cron = new CronFormat(this.suspenseCronEntry, TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+      }
+    catch (UtilitiesException e)
+      {
+        throw new ServerRuntimeException("Could not create cron entry", e);
+      }
+
+    //
+    //  validate parsing
+    //     parsing signature is "public static SubscriberStreamEvent eventParsingMethodName(SuspenseEvent event)" ...
+    //
+
+    eventParsingMethodHandles = new HashMap<String, MethodHandle>();
+    ensureServicesMethodHandles = new HashMap<String, MethodHandle>();
+    serdeMethodHandles = new HashMap<String, MethodHandle>();
+    for (String inputSource : suspenseProcessEventConfiguration.keySet())
+      {
+        //
+        //  build map for parsing
+        //
+
+        SuspenseProcessEventConfiguration configuration = suspenseProcessEventConfiguration.get(inputSource);
+        try
+          {
+            //
+            //  class
+            //
+
+            Class eventParsingClass = Class.forName(configuration.getEventParsingClass());
+
+            //
+            //  event parsing exists
+            //
+
+            MethodType methodType = MethodType.methodType(java.util.List.class, SuspenseEvent.class);
+            MethodHandle eventParsingMethodHandle = MethodHandles.lookup().findStatic(eventParsingClass, configuration.getEventParsingMethod(), methodType);
+            eventParsingMethodHandles.put(inputSource, eventParsingMethodHandle);
+
+            //
+            //  ensure services exists
+            //
+
+            MethodType ensureServicesMethodType = MethodType.methodType(Boolean.class, Properties.class);
+            MethodHandle ensureServicesMethodHandle = MethodHandles.lookup().findStatic(eventParsingClass, "ensureServicesForResubmit", ensureServicesMethodType);
+            ensureServicesMethodHandles.put(inputSource, ensureServicesMethodHandle);
+          }
+        catch (ClassNotFoundException e)
+          {
+            log.error ("Class not found {}", configuration.getEventParsingClass());
+            throw new ServerRuntimeException("Could not resolve specified parsing method", e);
+          }
+        catch (NoSuchMethodException | IllegalAccessException e)
+          {
+            log.error ("Method not found {} or {}", configuration.getEventParsingMethod(), "ensureServicesForResubmit");
+            throw new ServerRuntimeException("Could not resolve specified parsing method", e);
+          }
+
+        //
+        //  1. validate that all specified parsed events implement static "serde()" method
+        //  2. build map of serde method handles
+        //
+
+        for (String parsedEventClassName : configuration.getParsedEventClassNames())
+          {
+            try
+              {
+                Class parsedEventClass = Class.forName(parsedEventClassName);
+                MethodType methodType = MethodType.methodType(ConnectSerde.class);
+                MethodHandle serdeMethodHandle = MethodHandles.lookup().findStatic(parsedEventClass, "serde", methodType);
+                serdeMethodHandles.put(parsedEventClassName,serdeMethodHandle);
+              }
+            catch (ClassNotFoundException e)
+              {
+                log.error ("Class not found {}", parsedEventClassName);
+                throw new ServerRuntimeException("Could not resolve specified parsed event class " + parsedEventClassName, e);
+              }
+            catch (NoSuchMethodException | IllegalAccessException e)
+              {
+                log.error ("Class {} did not have a serde method", parsedEventClassName);
+                throw new ServerRuntimeException("Could not find serde class for " + parsedEventClassName, e);
+              }
+          }
+
+      }
+        
+    /*****************************************
+    *
+    *  suspense events
+    *
+    *****************************************/
+
+    Runnable suspenseEvents = new Runnable() { @Override public void run() { runProcessSuspenseEvents(cron); } };
+    Thread suspenseEventsThread = new Thread(suspenseEvents, "SuspenseEvents");
+    suspenseEventsThread.start();
+  }
+
+  /****************************************
+  *
+  *  runProcessSuspenseEvents
+  *
+  ****************************************/
+
+  private Object lockObject = new Object();
+  private Map<TopicPartition,Long> consumedOffsets = new HashMap<TopicPartition,Long>();
+  private Map<TopicPartition,Long> goalOffsets = new HashMap<TopicPartition,Long>();
+  Collection<TopicPartition> assignedPartitions = new HashSet<TopicPartition>();
+  KafkaConsumer<byte[], byte[]> suspenseEventConsumer;
+  private void runProcessSuspenseEvents(CronFormat cron)
+  {
+    /*****************************************
+    *
+    *  request consumer
+    *
+    *****************************************/
+
+    //
+    // set up request consumer
+    //
+
+    Properties consumerProperties = new Properties();
+    consumerProperties.put("bootstrap.servers", bootstrapServers);
+    consumerProperties.put("group.id", applicationID);
+    consumerProperties.put("auto.offset.reset", "earliest");
+    consumerProperties.put("enable.auto.commit", "false");
+    consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    KafkaConsumer<byte[], byte[]> suspenseEventConsumer = new KafkaConsumer<>(consumerProperties);
+    
+    //
+    //  subscribe to subscriber topic
+    //
+
+    ConsumerRebalanceListener listener = new ConsumerRebalanceListener()
+    {
+      @Override public void onPartitionsRevoked(Collection<TopicPartition> partitions)
+      {
+        synchronized(lockObject)
+          {
+            consumedOffsets.clear();
+            goalOffsets.clear();
+          }
+      }
+      @Override public void onPartitionsAssigned(Collection<TopicPartition> partitions)
+      {
+        synchronized(lockObject)
+          {
+            assignedPartitions = partitions;
+
+            //
+            //  set consumed for the new partition assignment
+            //
+
+            for (TopicPartition partition : partitions)
+              {
+                OffsetAndMetadata offsetInfo = suspenseEventConsumer.committed(partition);
+                if (offsetInfo != null)
+                  {
+                    consumedOffsets.put(partition, offsetInfo.offset());
+                  }
+              }
+
+            //
+            // re-assign goals on a rebalance
+            //
+
+            goalOffsets = suspenseEventConsumer.endOffsets(assignedPartitions);
+          }
+        log.info("OnPartitionsAssigned: {}", consumedOffsets);
+      }
+    };
+    suspenseEventConsumer.subscribe(Arrays.asList(suspenseTopic), listener);
+
+    /*****************************************
+    *
+    *  set up producer
+    *
+    *****************************************/
+
+    Properties producerProperties = new Properties();
+    producerProperties.put("bootstrap.servers", bootstrapServers);
+    producerProperties.put("acks", "all");
+    producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    KafkaProducer<byte[], byte[]> producer = new KafkaProducer<byte[], byte[]>(producerProperties);
+
+    /****************************************
+    *
+    *  run
+    *
+    ****************************************/
+    
+    NGLMRuntime.registerSystemTimeDependency(this);
+    while (true)
+      {
+        //
+        //  cron 
+        //
+
+        Date nextPollTime = cron.next();
+        log.info ("nextPollTime: {}", nextPollTime);
+
+        java.util.Date now = SystemTime.getCurrentTime();
+        while(now.before(nextPollTime))
+          {
+            long sleepTime = nextPollTime.getTime() - now.getTime();
+            synchronized(this)
+              {
+                try
+                  {
+                    this.wait(sleepTime);
+                  }
+                catch (InterruptedException e)
+                  {
+                    // nothing
+                  }
+              }
+            now = SystemTime.getCurrentTime();
+          }
+
+        //
+        //  ensure<< services are available 
+        //
+
+        ensureServicesForResubmit (suspenseProcessEventConfiguration);
+        
+        //
+        //  note offsets
+        //
+
+        synchronized (lockObject)
+          {
+            goalOffsets = suspenseEventConsumer.endOffsets(assignedPartitions);
+          }
+        log.info("Starting offsets: consumed {}, goal {}", consumedOffsets, goalOffsets);
+
+        //
+        //  read available records
+        //
+        
+        boolean consumedToGoal = false;
+        do
+          {
+            //
+            // poll
+            //
+
+            ConsumerRecords<byte[], byte[]> suspenseRecords = suspenseEventConsumer.poll(5000);
+
+            //
+            //  process
+            //
+
+            List<ProducerRecord> producerRecords = new LinkedList<ProducerRecord>();
+            for (ConsumerRecord<byte[], byte[]> suspenseRecord : suspenseRecords)
+              {
+                //
+                //  parse
+                //
+
+                SuspenseEvent suspenseEvent = suspenseEventSerde.deserializer().deserialize(suspenseRecord.topic(), suspenseRecord.value());
+                log.info("SuspenseEvent: source {}, record {}", suspenseEvent.getInputSource(), suspenseEvent.getInputRecord()); 
+
+                //
+                //  dispatch
+                //
+
+                String destinationTopic = null;
+                SuspenseProcessResolution suspenseProcessResolution = SuspenseProcessResolution.Failed; // will override if appropriate
+                SuspenseProcessEventConfiguration suspenseProcessConfig = suspenseProcessEventConfiguration.get(suspenseEvent.getInputSource());
+                if (suspenseProcessConfig != null)
+                  {
+                    List<ProducerRecord> currentEventProducerRecords = new LinkedList<ProducerRecord>();
+                    MethodHandle methodHandle = eventParsingMethodHandles.get(suspenseEvent.getInputSource());
+                    if (methodHandle != null)
+                      {
+                        try
+                          {
+                            //
+                            //  parse
+                            //
+                            
+                            List<Object> uncheckedParsedEvents = (List<Object>) methodHandle.invokeExact(suspenseEvent);
+                            log.info("uncheckedParsedEvents: count {}, events {}", (uncheckedParsedEvents != null) ? Integer.toString(uncheckedParsedEvents.size()) : "(null)", uncheckedParsedEvents); 
+
+                            //
+                            //  dispatch to configured topic
+                            //
+
+                            if (uncheckedParsedEvents != null)
+                              {
+                                for (Object uncheckedParsedEvent : uncheckedParsedEvents)
+                                  {
+                                    if (!(uncheckedParsedEvent instanceof SubscriberStreamEvent)) continue;
+                                    SubscriberStreamEvent parsedEvent = (SubscriberStreamEvent) uncheckedParsedEvent;
+                                    
+                                    //
+                                    // find destination topic and serde method
+                                    //
+
+                                    String parsedEventClassName = parsedEvent.getClass().getCanonicalName();
+                                    MethodHandle serdeMethodHandle = serdeMethodHandles.get(parsedEventClassName);
+                                    destinationTopic = suspenseProcessConfig.getTopicForParsedEvent(parsedEventClassName);
+                                    log.info("parsedEventClassName: {}, serdeMethodHandle: {}, destinationTopic: {}", parsedEventClassName, serdeMethodHandle, destinationTopic); 
+
+                                    //
+                                    //  producer record
+                                    //
+
+                                    if (destinationTopic != null && serdeMethodHandle != null)
+                                      {
+                                        ConnectSerde parsedEventSerde = (ConnectSerde) serdeMethodHandle.invokeExact();
+                                        currentEventProducerRecords.add(new ProducerRecord<byte[], byte[]>(destinationTopic, StringKey.serde().serializer().serialize(destinationTopic, new StringKey(parsedEvent.getSubscriberID())), parsedEventSerde.serializer().serialize(destinationTopic, parsedEvent)));
+                                        suspenseProcessResolution = SuspenseProcessResolution.Success;
+                                      }
+                                    else if (destinationTopic == null)
+                                      {
+                                        log.error("Could not find destination topic for event {}", parsedEventClassName);
+                                      }
+                                    else if (serdeMethodHandle == null)
+                                      {
+                                        log.error("Could not find serde for event {}", parsedEventClassName);
+                                      }
+                                  }
+                              }
+                          }
+                        catch (Throwable t)
+                          {
+                            StringWriter stackTraceWriter = new StringWriter();
+                            t.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                            log.info(stackTraceWriter.toString());
+                            log.error ("Could not parse suspense event from {}: {}", suspenseEvent.getInputSource(), t.getMessage());
+                          }
+                      }
+                    else
+                      {
+                        log.error ("No method available for {}", suspenseEvent.getInputSource());
+                      }
+
+                    //
+                    //  reprocess again, if indicated
+                    //
+
+                    if (currentEventProducerRecords.size() == 0 && suspenseEvent.getReprocessCount() < suspenseProcessConfig.getMaxReprocessCount() - 1)
+                      {
+                        SuspenseEvent newSuspenseEvent = new SuspenseEvent(suspenseEvent.getInputSource(), suspenseEvent.getInputRecord(), SystemTime.getCurrentTime(), suspenseEvent.getReprocessCount() + 1, suspenseEvent.getCause(), suspenseEvent.getEventReference());
+                        ConnectSerde<SuspenseEvent> eventSerde = SuspenseEvent.serde();
+                        producerRecords.add(new ProducerRecord<byte[], byte[]>(suspenseTopic, StringKey.serde().serializer().serialize(suspenseTopic, new StringKey(newSuspenseEvent.getEventReference())), eventSerde.serializer().serialize(suspenseTopic, newSuspenseEvent)));
+
+                        //
+                        //  override resolution
+                        //
+                        
+                        suspenseProcessResolution = SuspenseProcessResolution.Resubmitted;
+                      }
+                    else if (currentEventProducerRecords.size() == 0)
+                      {
+                        suspenseProcessResolution = SuspenseProcessResolution.Abandoned;
+                      }
+
+                    //
+                    //  add record
+                    //
+
+                    if (currentEventProducerRecords.size() > 0)
+                      {
+                        producerRecords.addAll(currentEventProducerRecords);
+                      }
+                  }
+                else
+                  {
+                    log.info("No suspense configuration provided for {}", suspenseEvent.getInputSource());
+                  }
+
+                //
+                // auditing
+                //
+
+                SuspenseAuditEntry auditEntry = new SuspenseAuditEntry(suspenseProcessResolution, suspenseEvent.getEventReference(), suspenseEvent.getInputSource(), suspenseEvent.getInputRecord(), destinationTopic, suspenseEvent.getReprocessCount(), SystemTime.getCurrentTime(), suspenseProcessResolution.getDisplayRepresentation() + " at " + SystemTime.getCurrentTime().toString() + ", original cause " + suspenseEvent.getCause());
+                ConnectSerde<SuspenseAuditEntry> auditEntrySerde = SuspenseAuditEntry.serde();
+                ProducerRecord auditRecord = new ProducerRecord<byte[], byte[]>(suspenseAuditTopic, StringKey.serde().serializer().serialize(suspenseAuditTopic, new StringKey(auditEntry.getEventReference())), auditEntrySerde.serializer().serialize(suspenseAuditTopic, auditEntry));
+                producerRecords.add(auditRecord);
+
+                //
+                //  statistics
+                //
+
+                updateStatistics(auditEntry);
+
+                //
+                //  offsets
+                //
+            
+                log.info("Consumed {}-{}={}", suspenseRecord.topic(), suspenseRecord.partition(), suspenseRecord.offset());
+                consumedOffsets.put(new TopicPartition(suspenseRecord.topic(), suspenseRecord.partition()), suspenseRecord.offset());
+              }
+
+            //
+            //  commit consumer offsets
+            //
+        
+            suspenseEventConsumer.commitSync();
+
+            //
+            //  consumed to goal?
+            //
+            
+            log.info("IntermediateOffsets: consumed {}, goal {}", consumedOffsets, goalOffsets);
+            consumedToGoal = true;
+            for (TopicPartition partition : goalOffsets.keySet())
+              {
+                Long goalOffsetForPartition = goalOffsets.get(partition);
+                Long consumedOffsetForPartition = (consumedOffsets.get(partition) != null) ? consumedOffsets.get(partition) : -1L;
+                if (consumedOffsetForPartition < goalOffsetForPartition-1)
+                  {
+                    consumedToGoal = false;
+                    break;
+                  }
+              }
+
+            //
+            //  send
+            //
+
+            for (ProducerRecord producerRecord : producerRecords)
+              {
+                producer.send(producerRecord);
+              }
+
+          }
+        while (! consumedToGoal);
+        log.info("FinishedOffsets: consumed {}, goal {}", consumedOffsets, goalOffsets);
+
+      }
+  }
+
+  /*****************************************
+  *
+  *  ensureServicesForResubmit
+  *
+  *****************************************/
+
+  private void ensureServicesForResubmit (Map<String, SuspenseProcessEventConfiguration> suspenseProcessEventConfiguration)
+  {
+    log.info("Checking availability of event parsing support services.");
+
+    boolean allServicesUp = false;
+    while (!allServicesUp)
+      {
+        //
+        // check all services
+        //
+        
+        allServicesUp = true;
+        for (SuspenseProcessEventConfiguration config : suspenseProcessEventConfiguration.values())
+          {
+            //
+            //  build properties for services
+            //
+            
+            Properties properties = new Properties();
+            if (config.getEventParsingConfig() != null)
+              {
+                String [] configItems = config.getEventParsingConfig().split("[|]");
+                for (int i=0;i<configItems.length; i++)
+                  {
+                    String [] item = configItems[i].split("=");
+                    if (item.length == 2)
+                      {
+                        properties.setProperty (item[0], item[1]);
+                      }
+                  }
+              }
+
+            //
+            //  call ensureServices method
+            //
+
+            Boolean serviceUp;
+            try
+              {
+                serviceUp = (Boolean) ensureServicesMethodHandles.get(config.getInputSource()).invokeExact(properties);
+                allServicesUp = allServicesUp && serviceUp;
+              }
+            catch (Throwable t)
+              {
+                log.error("Exception calling ensureServices method for {}", config.getInputSource());
+                serviceUp = Boolean.FALSE;
+              }
+            log.info("Resubmit service for {} is {}", config.getInputSource(), (serviceUp ? "up" : "down"));
+          }
+
+        //
+        // wait if needed
+        //
+
+        if (!allServicesUp)
+          {
+            log.info("Waiting on one or more services");
+            try
+              {
+                Thread.currentThread().sleep(60*1000);
+              }
+            catch (InterruptedException ie)
+              {
+                // nothing
+              }
+          }
+      }
+    log.info("All support services needed for suspense event parsing are available");
+  }
+  
+  /*****************************************
+  *
+  *  statistics management
+  *
+  *****************************************/
+
+  private Map<String,SuspenseProcessorStatistics> allSuspenseProcessorStatistics = new HashMap<String, SuspenseProcessorStatistics>();
+
+  //
+  //  updateStatistics
+  //  
+
+  private void updateStatistics(SuspenseAuditEntry auditEntry)
+  {
+    getStatistics(auditEntry.getInputSource()).updateStatistics(auditEntry.getResolution(), 1);
+  }
+
+  //
+  //  getStatistics
+  //
+
+  private SuspenseProcessorStatistics getStatistics(String inputSource)
+  {
+    synchronized (allSuspenseProcessorStatistics)
+      {
+        SuspenseProcessorStatistics suspenseProcessorStatistics = allSuspenseProcessorStatistics.get(inputSource);
+        if (suspenseProcessorStatistics == null)
+          {
+            try
+              {
+                suspenseProcessorStatistics = new SuspenseProcessorStatistics(inputSource);
+              }
+            catch (ServerException se)
+              {
+                throw new ServerRuntimeException("Could not create statistics object", se);
+              }
+            allSuspenseProcessorStatistics.put(inputSource, suspenseProcessorStatistics);
+          }
+        return suspenseProcessorStatistics;
+      }
+  }    
+}

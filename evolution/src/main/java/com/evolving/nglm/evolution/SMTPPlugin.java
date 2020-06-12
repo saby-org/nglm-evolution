@@ -17,9 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.MailNotificationManager.MAILMessageStatus;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.core.JSONUtilities;
 
 import com.lumatagroup.expression.driver.SMTP.FeedbackThread;
@@ -278,19 +278,23 @@ public class SMTPPlugin implements MailNotificationInterface
       {
         try
           {
-            senders[currentSenderIndex].sendEmail(mailNotificationRequest);
+            String emailText = mailNotificationRequest.getTextBody(mailNotificationManager.getSubscriberMessageTemplateService());
+            String toEmail = mailNotificationRequest.getDestination();
+            String fromAddress = mailNotificationRequest.getFromAddress();
+            boolean confirmationExpected = mailNotificationRequest.getConfirmationExpected();
+            senders[currentSenderIndex].sendEmail(mailNotificationRequest, emailText, toEmail, fromAddress, confirmationExpected);
           }
         catch (Exception mEx)
           {
             logger.error("Exception occured in SMTPDriver.send()."+mEx.getMessage(), mEx);
             if (logger.isDebugEnabled()) logger.debug("Setting it for retry...");
-            senders[currentSenderIndex].completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatus.ERROR.toString());
+            senders[currentSenderIndex].completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatus.ERROR.toString());
           }
       }
     else
       {
         if (logger.isDebugEnabled()) logger.debug("No Email Sender, can't send the email, return an error STATUS");
-        senders[currentSenderIndex].completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatus.ERROR.toString());
+        senders[currentSenderIndex].completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.ERROR, DeliveryStatus.Failed, NotificationStatus.ERROR.toString());
         try
           {
             Thread.sleep(1000);

@@ -89,193 +89,175 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
   public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
-    Map<String, Object> notifFieldsMap = reportElement.fields.get(0);
-    Map<String, Object> subscriberFields = reportElement.fields.get(1);
+    Map<String, Object> notifFields = reportElement.fields.get(0);
     LinkedHashMap<String, Object> notifRecs = new LinkedHashMap<>();
-    for (Object notifFieldsObj : notifFieldsMap.values()) // we don't care about the keys
+    if (notifFields != null && !notifFields.isEmpty())
       {
-        Map<String, Object> notifFields = (Map<String, Object>) notifFieldsObj;
-        if (notifFields != null && !notifFields.isEmpty() && subscriberFields != null && !subscriberFields.isEmpty())
+
+        if (notifFields.get(subscriberID) != null)
           {
-
-            if (notifFields.get(subscriberID) != null)
+            Object subscriberIDField = notifFields.get(subscriberID);
+            notifRecs.put(customerID, subscriberIDField);
+            notifFields.remove(subscriberID);
+          }
+        for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+          {
+            if (notifFields.get(alternateID.getID()) != null)
               {
-                Object subscriberIDField = notifFields.get(subscriberID);
-                notifRecs.put(customerID, subscriberIDField);
-                notifFields.remove(subscriberID);
-              }
-            for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-              {
-                if (subscriberFields.get(alternateID.getESField()) != null)
-                  {
-                    Object alternateId = subscriberFields.get(alternateID.getESField());
-                    notifRecs.put(alternateID.getName(), alternateId);
-                  }
-              }
-
-            // Compute featureName and ModuleName from ID
-
-            if (notifFields.containsKey(creationDate))
-              {
-                if (notifFields.get(creationDate) != null)
-                  {
-                    Object creationDateObj = notifFields.get(creationDate);
-                    if (creationDateObj instanceof String)
-                      {
-                        String creationDateStr = (String) creationDateObj;
-                        // TEMP fix for BLK : reformat date with correct
-                        // template.
-                        // current format comes from ES and is :
-                        // 2020-04-20T09:51:38.953Z
-                        SimpleDateFormat parseSDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-                        try
-                          {
-                            Date date = parseSDF.parse(creationDateStr);
-                            notifRecs.put(creationDate, ReportsCommonCode.getDateString(date)); // replace
-                                                                                             // with
-                                                                                             // new
-                                                                                             // value
-                          } catch (ParseException e1)
-                          {
-                            // Could also be 2019-11-27 15:39:30.276+0100
-                            SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
-                            try
-                              {
-                                Date date = parseSDF2.parse(creationDateStr);
-                                notifRecs.put(creationDate, ReportsCommonCode.getDateString(date)); // replace
-                                                                                                 // with
-                                                                                                 // new
-                                                                                                 // value
-                              } catch (ParseException e2)
-                              {
-                                log.info("Unable to parse " + creationDateStr);
-                              }
-                          }
-
-                      } else
-                      {
-                        log.info(creationDate + " is of wrong type : " + creationDateObj.getClass().getName());
-                      }
-                  } else
-                  {
-                    notifRecs.put(creationDate, "");
-                  }
-              }
-
-            if (notifFields.containsKey(deliveryDate))
-              {
-                if (notifFields.get(deliveryDate) != null)
-                  {
-                    Object deliveryDateObj = notifFields.get(deliveryDate);
-                    if (deliveryDateObj instanceof String)
-                      {
-                        String deliveryDateStr = (String) deliveryDateObj;
-                        // TEMP fix for BLK : reformat date with correct
-                        // template.
-                        // current format comes from ES and is :
-                        // 2020-04-20T09:51:38.953Z
-                        SimpleDateFormat parseSDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-                        try
-                          {
-                            Date date = parseSDF.parse(deliveryDateStr);
-                            notifRecs.put(deliveryDate, ReportsCommonCode.getDateString(date)); // replace
-                                                                                             // with
-                                                                                             // new
-                                                                                             // value
-                          } catch (ParseException e1)
-                          {
-                            // Could also be 2019-11-27 15:39:30.276+0100
-                            SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
-                            try
-                              {
-                                Date date = parseSDF2.parse(deliveryDateStr);
-                                notifRecs.put(deliveryDate, ReportsCommonCode.getDateString(date)); // replace
-                                                                                                 // with
-                                                                                                 // new
-                                                                                                 // value
-                              } catch (ParseException e2)
-                              {
-                                log.info("Unable to parse " + deliveryDateStr);
-                              }
-                          }
-
-                      } else
-                      {
-                        log.info(deliveryDate + " is of wrong type : " + deliveryDateObj.getClass().getName());
-                      }
-                  } else
-                  {
-                    notifRecs.put(deliveryDate, "");
-                  }
-              }
-
-            if (notifFields.containsKey(originatingDeliveryRequestID))
-              {
-                notifRecs.put(originatingDeliveryRequestID, notifFields.get(originatingDeliveryRequestID));
-              }
-            if (notifFields.containsKey(deliveryRequestID))
-              {
-                notifRecs.put(deliveryRequestID, notifFields.get(deliveryRequestID));
-              }
-            if (notifFields.containsKey(deliveryStatus))
-              {
-                notifRecs.put(deliveryStatus, notifFields.get(deliveryStatus));
-              }
-            if (notifFields.containsKey(eventID))
-              {
-                notifRecs.put(eventID, notifFields.get(eventID));
-              }
-            if (notifFields.containsKey(moduleId) && notifFields.containsKey(featureId))
-              {
-                String moduleID = (String) notifFields.get(moduleId);
-                Module module = null;
-                if (moduleID != null)
-                  {
-                    module = Module.fromExternalRepresentation(moduleID);
-                  } else
-                  {
-                    module = Module.Unknown;
-                  }
-                String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(notifFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
-                notifRecs.put(featureDisplay, feature);
-                notifRecs.put(moduleName, module.toString());
-                notifRecs.put(featureId, notifFields.get(featureId));
-                notifRecs.put(moduleId, notifFields.get(moduleId));
-
-                notifFields.remove(featureId);
-                notifFields.remove(moduleId);
-              }
-            if (notifFields.containsKey(returnCode))
-              {
-                Object code = notifFields.get(returnCode);
-                notifRecs.put(returnCode, code);
-                notifRecs.put(returnCodeDescription, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
-                notifRecs.put(returnCodeDetails, notifFields.get(returnCodeDetails));
-              }
-            if (notifFields.containsKey(source))
-              {
-                notifRecs.put(source, notifFields.get(source));
-              }
-            
-            //
-            // result
-            //
-
-            String rawEventDateTime = notifRecs.get(creationDate) == null ? null : notifRecs.get(creationDate).toString();
-            if (rawEventDateTime == null) log.warn("bad EventDateTime -- report will be generated in 'null' file name -- for record {} ", notifFieldsObj);
-            String evntDate = getEventDate(rawEventDateTime);
-            if (result.containsKey(evntDate))
-              {
-                result.get(evntDate).add(notifRecs);
-              } 
-            else
-              {
-                List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
-                elements.add(notifRecs);
-                result.put(evntDate, elements);
+                Object alternateId = notifFields.get(alternateID.getID());
+                notifRecs.put(alternateID.getName(), alternateId);
               }
           }
-      
+
+        // Compute featureName and ModuleName from ID
+
+        if (notifFields.containsKey(creationDate))
+          {
+            if (notifFields.get(creationDate) != null)
+              {
+                Object creationDateObj = notifFields.get(creationDate);
+                if (creationDateObj instanceof String)
+                  {
+                    String creationDateStr = (String) creationDateObj;
+                    // TEMP fix for BLK : reformat date with correct
+                    // template.
+                    // current format comes from ES and is :
+                    // 2020-04-20T09:51:38.953Z
+                    SimpleDateFormat parseSDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+                    try
+                    {
+                      Date date = parseSDF.parse(creationDateStr);
+                      notifRecs.put(creationDate, ReportsCommonCode.getDateString(date)); // replace with new value
+                    } catch (ParseException e1)
+                    {
+                      // Could also be 2019-11-27 15:39:30.276+0100
+                      SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
+                      try
+                      {
+                        Date date = parseSDF2.parse(creationDateStr);
+                        notifRecs.put(creationDate, ReportsCommonCode.getDateString(date)); // replace with new value
+                      } catch (ParseException e2)
+                      {
+                        log.info("Unable to parse " + creationDateStr);
+                      }
+                    }
+
+                  } else
+                    {
+                      log.info(creationDate + " is of wrong type : " + creationDateObj.getClass().getName());
+                    }
+              } else
+                {
+                  notifRecs.put(creationDate, "");
+                }
+          }
+
+        if (notifFields.containsKey(deliveryDate))
+          {
+            if (notifFields.get(deliveryDate) != null)
+              {
+                Object deliveryDateObj = notifFields.get(deliveryDate);
+                if (deliveryDateObj instanceof String)
+                  {
+                    String deliveryDateStr = (String) deliveryDateObj;
+                    // TEMP fix for BLK : reformat date with correct
+                    // template.
+                    // current format comes from ES and is :
+                    // 2020-04-20T09:51:38.953Z
+                    SimpleDateFormat parseSDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+                    try
+                    {
+                      Date date = parseSDF.parse(deliveryDateStr);
+                      notifRecs.put(deliveryDate, ReportsCommonCode.getDateString(date)); // replace with new value
+                    } catch (ParseException e1)
+                    {
+                      // Could also be 2019-11-27 15:39:30.276+0100
+                      SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
+                      try
+                      {
+                        Date date = parseSDF2.parse(deliveryDateStr);
+                        notifRecs.put(deliveryDate, ReportsCommonCode.getDateString(date)); // replace with new value
+                      } catch (ParseException e2)
+                      {
+                        log.info("Unable to parse " + deliveryDateStr);
+                      }
+                    }
+
+                  } else
+                    {
+                      log.info(deliveryDate + " is of wrong type : " + deliveryDateObj.getClass().getName());
+                    }
+              } else
+                {
+                  notifRecs.put(deliveryDate, "");
+                }
+          }
+
+        if (notifFields.containsKey(originatingDeliveryRequestID))
+          {
+            notifRecs.put(originatingDeliveryRequestID, notifFields.get(originatingDeliveryRequestID));
+          }
+        if (notifFields.containsKey(deliveryRequestID))
+          {
+            notifRecs.put(deliveryRequestID, notifFields.get(deliveryRequestID));
+          }
+        if (notifFields.containsKey(deliveryStatus))
+          {
+            notifRecs.put(deliveryStatus, notifFields.get(deliveryStatus));
+          }
+        if (notifFields.containsKey(eventID))
+          {
+            notifRecs.put(eventID, notifFields.get(eventID));
+          }
+        if (notifFields.containsKey(moduleId) && notifFields.containsKey(featureId))
+          {
+            String moduleID = (String) notifFields.get(moduleId);
+            Module module = null;
+            if (moduleID != null)
+              {
+                module = Module.fromExternalRepresentation(moduleID);
+              } else
+              {
+                module = Module.Unknown;
+              }
+            String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(notifFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
+            notifRecs.put(featureDisplay, feature);
+            notifRecs.put(moduleName, module.toString());
+            notifRecs.put(featureId, notifFields.get(featureId));
+            notifRecs.put(moduleId, notifFields.get(moduleId));
+
+            notifFields.remove(featureId);
+            notifFields.remove(moduleId);
+          }
+        if (notifFields.containsKey(returnCode))
+          {
+            Object code = notifFields.get(returnCode);
+            notifRecs.put(returnCode, code);
+            notifRecs.put(returnCodeDescription, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
+            notifRecs.put(returnCodeDetails, notifFields.get(returnCodeDetails));
+          }
+        if (notifFields.containsKey(source))
+          {
+            notifRecs.put(source, notifFields.get(source));
+          }
+
+        //
+        // result
+        //
+
+        String rawEventDateTime = notifRecs.get(creationDate) == null ? null : notifRecs.get(creationDate).toString();
+        if (rawEventDateTime == null) log.warn("bad EventDateTime -- report will be generated in 'null' file name -- for record {} ", notifFields);
+        String evntDate = getEventDate(rawEventDateTime);
+        if (result.containsKey(evntDate))
+          {
+            result.get(evntDate).add(notifRecs);
+          } 
+        else
+          {
+            List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
+            elements.add(notifRecs);
+            result.put(evntDate, elements);
+          }
       }
     return result;
   }

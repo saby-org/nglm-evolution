@@ -7,9 +7,15 @@
 package com.evolving.nglm.evolution;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
-import com.evolving.nglm.core.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -30,14 +36,17 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.StringKey;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
-import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
-import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 
 public class CommodityDeliveryManager extends DeliveryManager implements Runnable
 {
@@ -60,6 +69,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     Expire("expire"),
     Activate("activate"),
     Deactivate("deactivate"),
+    Check("check"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private CommodityDeliveryOperation(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -1097,7 +1107,31 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
               }
             }
             
+        }else if(operation.equals(CommodityDeliveryOperation.Check)){
+          
+          //
+          // Check => check in commodity list
+          //
+          
+          deliverable = deliverableService.getActiveDeliverable(commodityID, SystemTime.getCurrentTime());
+          if(deliverable == null){
+            log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
+            submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "commodity not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
+            continue;
           }else{
+            externalAccountID = deliverable.getExternalAccountID();
+            DeliveryManagerDeclaration provider = Deployment.getFulfillmentProviders().get(deliverable.getFulfillmentProviderID());
+            if(provider == null){
+              log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
+              submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "provider of deliverable not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
+              continue;
+            }else{
+              commodityType = provider.getProviderType();
+              deliveryType = provider.getDeliveryType();
+            }
+          }
+          
+        }else{
 
           //
           // unknown operation => return an error
@@ -1390,7 +1424,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       PointFulfillmentRequest pointRequest = new PointFulfillmentRequest(JSONUtilities.encodeObject(pointRequestData), Deployment.getDeliveryManagers().get(deliveryType));
       KafkaProducer pointProducer = providerRequestProducers.get(commodityDeliveryRequest.getProviderID());
       if(pointProducer != null){
-        pointProducer.send(new ProducerRecord<byte[], byte[]>(pointRequestTopic, StringKey.serde().serializer().serialize(pointRequestTopic, new StringKey(pointRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)pointManagerDeclaration.getRequestSerde()).serializer().serialize(pointRequestTopic, pointRequest))); 
+        pointProducer.send(new ProducerRecord<byte[], byte[]>(pointRequestTopic, StringKey.serde().serializer().serialize(pointRequestTopic, new StringKey(pointRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)pointManagerDeclaration.getRequestSerde()).serializer().serialize(pointRequestTopic, pointRequest))); 
       }else{
         submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.SYSTEM_ERROR, "Could not send delivery request to provider (providerID = "+commodityDeliveryRequest.getProviderID()+")", null);
       }

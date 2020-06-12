@@ -39,6 +39,8 @@ import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import org.elasticsearch.client.core.CountRequest;
+import org.elasticsearch.client.core.CountResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1227,9 +1229,9 @@ public class EvaluationCriterion
   // execute query
   //
   public static long esCountMatchCriteriaExecuteQuery(BoolQueryBuilder query, RestHighLevelClient elasticsearch) throws IOException, ElasticsearchStatusException {
-    SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(query).size(0));
-    SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
-    return searchResponse.getHits().getTotalHits().value;
+    CountRequest countRequest = new CountRequest("subscriberprofile").query(query);
+    CountResponse countResponse = elasticsearch.count(countRequest, RequestOptions.DEFAULT);
+    return countResponse.getCount();
   }
 
   /*****************************************

@@ -25,14 +25,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.3_0-SNAPSHOT</version>
+    <version>1.4.3_3-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>1.4.3_0-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.4.3_3-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
@@ -49,7 +49,6 @@
     <common.build.phase.generate-dnboproxy-image>none</common.build.phase.generate-dnboproxy-image>
     <common.build.phase.generate-evolutionengine-image>none</common.build.phase.generate-evolutionengine-image>
     <common.build.phase.generate-journeytrafficengine-image>none</common.build.phase.generate-journeytrafficengine-image>
-    <common.build.phase.generate-propensityengine-image>none</common.build.phase.generate-propensityengine-image>
     <common.build.phase.generate-subscribergroup-image>none</common.build.phase.generate-subscribergroup-image>
     <common.build.phase.generate-storeconfiguration-image>none</common.build.phase.generate-storeconfiguration-image>
     <common.build.phase.generate-ucgengine-image>none</common.build.phase.generate-ucgengine-image>
@@ -71,7 +70,6 @@
     <common.build.skip.docker-dnboproxy-image>true</common.build.skip.docker-dnboproxy-image>
     <common.build.skip.docker-evolutionengine-image>true</common.build.skip.docker-evolutionengine-image>
     <common.build.skip.docker-journeytrafficengine-image>true</common.build.skip.docker-journeytrafficengine-image>
-    <common.build.skip.docker-propensityengine-image>true</common.build.skip.docker-propensityengine-image>
     <common.build.skip.docker-subscribergroup-image>true</common.build.skip.docker-subscribergroup-image>
     <common.build.skip.docker-storeconfiguration-image>true</common.build.skip.docker-storeconfiguration-image>
     <common.build.skip.docker-ucgengine-image>true</common.build.skip.docker-ucgengine-image>
@@ -145,7 +143,6 @@
     <topic.acceptancelog>acceptancelog</topic.acceptancelog>
     <topic.acceptancelog_fileconnector>acceptancelog-fileconnector</topic.acceptancelog_fileconnector>
     <topic.tokenchange>tokenchange</topic.tokenchange>
-    <topic.propensitylog>propensitylog</topic.propensitylog>
     <topic.profilechangeevent>profilechangeevent</topic.profilechangeevent>
     <topic.profilesegmentchangeevent>profilesegmentchangeevent</topic.profilesegmentchangeevent>
     <topic.profileloyaltyprogramchangeevent>profileloyaltyprogramchangeevent</topic.profileloyaltyprogramchangeevent>
@@ -153,7 +150,6 @@
     <topic.pointfulfillment.request>pointfulfillment-request</topic.pointfulfillment.request>
     <topic.pointfulfillment.response>pointfulfillment-response</topic.pointfulfillment.response>
     <topic.pointfulfillment.rekeyed>pointfulfillmentrequest-rekeyed</topic.pointfulfillment.rekeyed>
-    <topic.propensityoutput>propensityoutput</topic.propensityoutput>
     <topic.journeytraffic>journeytraffic</topic.journeytraffic>
     <topic.target>target</topic.target>
     <topic.commoditydelivery.request>commoditydelivery-request</topic.commoditydelivery.request>
@@ -203,10 +199,6 @@
     <!-- journeytrafficengine -->
     <changelog.journeytrafficengine.journeytraffic>journeytraffic</changelog.journeytrafficengine.journeytraffic>
     <changelog.journeytrafficengine.journeytraffic.topic>streams-journeytrafficengine-${changelog.journeytrafficengine.journeytraffic}-changelog</changelog.journeytrafficengine.journeytraffic.topic>
-    
-    <!-- propensityengine -->
-    <changelog.propensityengine.propensitystate>propensitystate</changelog.propensityengine.propensitystate>
-    <changelog.propensityengine.propensitystate.topic>streams-propensityengine-${changelog.propensityengine.propensitystate}-changelog</changelog.propensityengine.propensitystate.topic>
     
     <!-- gui -->
     <gui.csr.display>true</gui.csr.display>

@@ -50,6 +50,8 @@ public class Deployment
   //  data
   //
 
+  private static int evolutionEngineStreamThreads;
+  private static int evolutionEngineInstanceNumbers;
   private static String subscriberGroupLoaderAlternateID;
   private static String getCustomerAlternateID;
   private static boolean subscriberGroupLoaderAutoProvision;
@@ -116,10 +118,6 @@ public class Deployment
   private static String deliverableSourceTopic;
   private static String presentationLogTopic;
   private static String acceptanceLogTopic;
-  private static String propensityLogTopic;
-  private static String propensityStateChangeLog;
-  private static String propensityStateChangeLogTopic;
-  private static String propensityOutputTopic;
   private static String profileLoyaltyProgramChangeEventTopic;
   private static String profileChangeEventTopic;
   private static String profileSegmentChangeEventTopic;
@@ -242,25 +240,18 @@ public class Deployment
   private static String weeklyReportCronEntryString;
   private static String monthlyReportCronEntryString;
   private static boolean enableEvaluateTargetRandomness;
+  private static int minExpiryDelayForVoucherDeliveryInHours;
+  private static int cleanUpExpiredVoucherDelayInDays;
+  private static int importVoucherFileBulkSize;
+  private static String cleanExpiredVoucherCronEntry;
+  private static int voucherESCacheCleanerFrequencyInSec;
+  private static int numberConcurrentVoucherAllocationToES;
+  private static int liveVoucherIndexNumberOfReplicas;
+  private static int liveVoucherIndexNumberOfShards;
+  private static int propensityReaderRefreshPeriodMs;
+  private static int propensityWriterRefreshPeriodMs;
 
-
-  // conf for voucher
-  // we won't deliver a voucher that expiry in lest than X hours from now :
-  private static int minExpiryDelayForVoucherDeliveryInHours=4;
-  // the number of day after we clean up Expired voucher, in ES and SubscriberProfile
-  private static int cleanUpExpiredVoucherDelayInDays=31;
-  // the bulk size when importing voucher file into ES
-  private static int importVoucherFileBulkSize=5000;
-  // the cache cleaner frequency in seconds for caching voucher with 0 stock from ES, and shrinking back "auto adjust concurrency number"
-  private static int voucherESCacheCleanerFrequencyInSec=300;
-  // an approximation of number of total concurrent process tyring to allocate Voucher in // to ES, but should not need to configure, algo should auto-adjust this
-  private static int numberConcurrentVoucherAllocationToES=10;
-  // the cron entry when the voucher cleaner run
-  private static String cleanExpiredVoucherCronEntry="0 3 * * *";
-  // the default number of replicas for voucher ES indices (might be quite customer dependent)
-  private static int liveVoucherIndexNumberOfReplicas=1;
-  // the default number of shards for voucher ES indices (might be quite customer dependent)
-  private static int liveVoucherIndexNumberOfShards=12;
+ private static boolean bypassJourneyTrafficEngine; // @rl Hack. TODO: remove later
 
   /*****************************************
    *
@@ -299,6 +290,8 @@ public class Deployment
 
   public static boolean getRegressionMode() { return System.getProperty("use.regression","0").equals("1"); }
   public static String getSubscriberProfileEndpoints() { return System.getProperty("subscriberprofile.endpoints",""); }
+  public static int getEvolutionEngineStreamThreads() { return evolutionEngineStreamThreads; }
+  public static int getEvolutionEngineInstanceNumbers() { return evolutionEngineInstanceNumbers; }
   public static String getSubscriberGroupLoaderAlternateID() { return subscriberGroupLoaderAlternateID; }
   public static String getGetCustomerAlternateID() { return getCustomerAlternateID; }
   public static boolean getSubscriberGroupLoaderAutoProvision() { return subscriberGroupLoaderAutoProvision; }
@@ -362,10 +355,6 @@ public class Deployment
   public static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
   public static String getPresentationLogTopic() { return presentationLogTopic; }
   public static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
-  public static String getPropensityLogTopic() { return propensityLogTopic; }
-  public static String getPropensityStateChangeLog() { return propensityStateChangeLog; }
-  public static String getPropensityStateChangeLogTopic() { return propensityStateChangeLogTopic; }
-  public static String getPropensityOutputTopic() { return propensityOutputTopic; }
   public static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
   public static String getProfileSegmentChangeEventTopic() { return profileSegmentChangeEventTopic;}
   public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
@@ -497,6 +486,9 @@ public class Deployment
   public static String getWeeklyReportCronEntryString() { return weeklyReportCronEntryString; }
   public static String getMonthlyReportCronEntryString() { return monthlyReportCronEntryString; }
   public static boolean getEnableEvaluateTargetRandomness() { return enableEvaluateTargetRandomness; }
+  public static int getPropensityReaderRefreshPeriodMs() { return propensityReaderRefreshPeriodMs; }
+  public static int getPropensityWriterRefreshPeriodMs() { return propensityWriterRefreshPeriodMs; }
+  public static boolean getBypassJourneyTrafficEngine() { return bypassJourneyTrafficEngine; }
   
   // addProfileCriterionField
   //
@@ -720,6 +712,20 @@ public class Deployment
        *  configuration
        *
        *****************************************/
+
+      try
+      {
+        evolutionEngineStreamThreads = Integer.parseInt(System.getProperty("evolutionengine.streamthreads","1"));
+      }
+      catch (NumberFormatException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+      evolutionEngineInstanceNumbers = getSubscriberProfileEndpoints().split(",").length;
+      if(evolutionEngineInstanceNumbers<1){
+        log.warn("Deployment: subscriberprofile.endpoints : '" + getSubscriberProfileEndpoints() + "' seems wrong");
+        evolutionEngineInstanceNumbers=1;
+      }
 
       //
       //  subscriberGroupLoaderAlternateID
@@ -1786,58 +1792,6 @@ public class Deployment
       try
         {
           acceptanceLogTopic = JSONUtilities.decodeString(jsonRoot, "acceptanceLogTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  propensityLogTopic
-      //
-
-      try
-        {
-          propensityLogTopic = JSONUtilities.decodeString(jsonRoot, "propensityLogTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  propensityStateChangeLog
-      //
-
-      try
-        {
-          propensityStateChangeLog = JSONUtilities.decodeString(jsonRoot, "propensityStateChangeLog", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  propensityStateChangeLogTopic
-      //
-
-      try
-        {
-          propensityStateChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "propensityStateChangeLogTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  propensityOutputTopic
-      //
-
-      try
-        {
-          propensityOutputTopic = JSONUtilities.decodeString(jsonRoot, "propensityOutputTopic", true);
         }
       catch (JSONUtilitiesException e)
         {
@@ -3307,13 +3261,72 @@ public class Deployment
       //
 
       try
+        {
+          enableEvaluateTargetRandomness = JSONUtilities.decodeBoolean(jsonRoot, "enableEvaluateTargetRandomness", Boolean.FALSE);
+        }
+      catch (JSONUtilitiesException e)
       {
-        enableEvaluateTargetRandomness = JSONUtilities.decodeBoolean(jsonRoot, "enableEvaluateTargetRandomness", Boolean.FALSE);
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+      //
+      // conf for voucher
+      //
+
+      try
+      {
+        // we won't deliver a voucher that expiry in less than X hours from now :
+        minExpiryDelayForVoucherDeliveryInHours = JSONUtilities.decodeInteger(jsonRoot, "minExpiryDelayForVoucherDeliveryInHours",4);
+        // the number of day after we clean up Expired voucher, in ES and SubscriberProfile
+        cleanUpExpiredVoucherDelayInDays = JSONUtilities.decodeInteger(jsonRoot, "cleanUpExpiredVoucherDelayInDays",31);
+        // the bulk size when importing voucher file into ES
+        importVoucherFileBulkSize = JSONUtilities.decodeInteger(jsonRoot, "importVoucherFileBulkSize",5000);
+        // the cron entry when the voucher cleaner run
+        cleanExpiredVoucherCronEntry = JSONUtilities.decodeString(jsonRoot, "monthlyReportCronEntryString","0 3 * * *");
+        // the cache cleaner frequency in seconds for caching voucher with 0 stock from ES, and shrinking back "auto adjust concurrency number"
+        voucherESCacheCleanerFrequencyInSec = JSONUtilities.decodeInteger(jsonRoot, "voucherESCacheCleanerFrequencyInSec",300);
+        // an approximation of number of total concurrent process tyring to allocate Voucher in // to ES, but should not need to configure, algo should auto-adjust this
+        numberConcurrentVoucherAllocationToES = JSONUtilities.decodeInteger(jsonRoot, "numberConcurrentVoucherAllocationToES",10);
+        // the default number of replicas for voucher ES indices
+        liveVoucherIndexNumberOfReplicas = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "liveVoucherIndexNumberOfReplicas","1"));
+        // the default number of shards for voucher ES indices
+        liveVoucherIndexNumberOfShards = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "liveVoucherIndexNumberOfShards","1"));
+      }
+      catch (JSONUtilitiesException|NumberFormatException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+      //
+      // conf for propensity service
+      //
+
+      try
+      {
+        // period in ms global propensity state will be read from zookeeper :
+        propensityReaderRefreshPeriodMs = JSONUtilities.decodeInteger(jsonRoot, "propensityReaderRefreshPeriodMs",10000);
+        // period in ms local propensity state will be write to zookeeper :
+        propensityWriterRefreshPeriodMs = JSONUtilities.decodeInteger(jsonRoot, "propensityWriterRefreshPeriodMs",10000);
       }
       catch (JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }
+
+
+      //
+      //  bypassJourneyTrafficEngine
+      //  @rl Hack TODO remove later
+      //  default to true
+
+      try
+        {
+          bypassJourneyTrafficEngine = JSONUtilities.decodeBoolean(jsonRoot, "bypassJourneyTrafficEngine", Boolean.TRUE);
+        }
+        catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
     }
 
   /*****************************************

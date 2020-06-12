@@ -1,5 +1,5 @@
-notification-<_KEY_>:
-  image: ${env.DOCKER_REGISTRY}ev-notificationmanager:${project.name}-${project.version}
+notificationmanager-<_KEY_>:
+  image: ${env.DOCKER_REGISTRY}ev-guimanager:${project.name}-${project.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
     KAFKA_BROKER_ID: ignored
@@ -17,13 +17,14 @@ notification-<_KEY_>:
     KEY: "<_KEY_>"
     PLUGIN_NAME: "<_PLUGIN_NAME_>"
     PLUGIN_CONFIGURATION: "<_PLUGIN_CONFIGURATION_>"
-    KAFKA_DEBUG: <_NOTIFICATIONMANAGER_PUSH_DEBUG_>
+    KAFKA_DEBUG: <_NOTIFICATIONMANAGER_DEBUG_>
     JAVA_DEBUG_OPTS: -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=<_DEBUG_PORT_>,suspend=n
-    KAFKA_HEAP_OPTS: <_NOTIFICATIONMANAGER_PUSH_HEAP_OPTS_>
-    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_MONITORING_PORT_>:/app/config/notificationmanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> 
-    KAFKA_LOG4J_OPTS: -Dlog4j.configuration=file:/app/config/log4j-notification-manager.properties
+    KAFKA_HEAP_OPTS: <_NOTIFICATIONMANAGER_HEAP_OPTS_>
+    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_MONITORING_PORT_>:/app/config/notificationmanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_> -Dredis.password=<_REDIS_PASSWORD_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> 
+    KAFKA_LOG4J_OPTS: -Dlog4j.configuration=file:/app/config/log4j-notificationmanager.xml
+    ENTRYPOINT: notificationmanager
   volumes:
-    - <_NGLM_CONFIG_LOGS_>/log4j-notification-manager-<_KEY_>.properties:/app/config/log4j-notification-manager.properties
+    - <_NGLM_CONFIG_LOGS_>/log4j-notificationmanager-<_KEY_>.xml:/app/config/log4j-notificationmanager.xml
     - type: bind
       source: <_NGLM_LOGS_>
       target: /app/logs

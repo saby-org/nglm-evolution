@@ -23,73 +23,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.SMSNotificationManager.SMSMessageStatus;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 
-public class SMSNotificationManager extends DeliveryManager implements Runnable
+public class SMSNotificationManager extends DeliveryManagerForNotifications implements Runnable
 {
-  /*****************************************
-  *
-  *  enum - status
-  *
-  *****************************************/
-
-  public enum SMSMessageStatus
-  {
-    PENDING(10),
-    SENT(1),
-    NO_CUSTOMER_LANGUAGE(701),
-    NO_CUSTOMER_CHANNEL(702),
-    DELIVERED(0),
-    EXPIRED(707),
-    ERROR(706),
-    UNDELIVERABLE(703),
-    INVALID(704),
-    QUEUE_FULL(705),
-    RESCHEDULE(709),
-    THROTTLING(23),
-    UNKNOWN(999);
-    private Integer returnCode;
-    private SMSMessageStatus(Integer externalRepresentation) { this.returnCode = externalRepresentation; }
-    public Integer getReturnCode() { return returnCode; }
-    public static SMSMessageStatus fromReturnCode(Integer externalRepresentation) { for (SMSMessageStatus enumeratedValue : SMSMessageStatus.values()) { if (enumeratedValue.getReturnCode().equals(externalRepresentation)) return enumeratedValue; } return UNKNOWN; }
-    public static SMSMessageStatus fromExternalRepresentation(String value) { for (SMSMessageStatus enumeratedValue : SMSMessageStatus.values()) { if (enumeratedValue.toString().equalsIgnoreCase(value)) return enumeratedValue; } return UNKNOWN; }
-  }
-
-  /*****************************************
-  *
-  *  conversion method
-  *
-  *****************************************/
-
-  public DeliveryStatus getMessageStatus(SMSMessageStatus status)
-  {
-    switch(status)
-      {
-        case PENDING:
-          return DeliveryStatus.Pending;
-        case SENT:
-        case DELIVERED:
-          return DeliveryStatus.Delivered;
-        case RESCHEDULE:
-          return DeliveryStatus.Reschedule;
-        case NO_CUSTOMER_LANGUAGE:
-        case NO_CUSTOMER_CHANNEL:
-        case ERROR:
-        case UNDELIVERABLE:
-        case INVALID:
-        case QUEUE_FULL:
-        default:
-          return DeliveryStatus.Failed;
-      }
-  }
-
   /*****************************************
   *
   *  data
@@ -99,11 +41,8 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
   private int threadNumber = 5;   //TODO : make this configurable
   private SMSNotificationInterface smsNotification;
   private ArrayList<Thread> threads = new ArrayList<Thread>();
-  private NotificationStatistics stats = null;
   private static String applicationID = "deliverymanager-notificationmanagersms";
   public String pluginName;
-  private SubscriberMessageTemplateService subscriberMessageTemplateService;
-  private CommunicationChannelBlackoutService blackoutService;
 
   //
   //  logger
@@ -117,8 +56,6 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
   *
   *****************************************/
 
-  public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
-  public CommunicationChannelBlackoutService getBlackoutService() { return blackoutService; }
 
   /*****************************************
   *
@@ -144,20 +81,6 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     log.info("SMSNotificationManager: plugin instanciation : smsPluginConfiguration = "+smsPluginConfiguration);
 
     //
-    //  service
-    //
-
-    subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "smsnotificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
-    subscriberMessageTemplateService.start();
-        
-    //
-    //  blackoutService
-    //
-        
-    blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "smsnotificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
-    blackoutService.start();
-
-    //
     //  manager
     //
     
@@ -178,20 +101,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
         throw new RuntimeException("SMSNotificationManager: could not find class " + smsPluginClassName, e);
       }
 
-    //
-    // statistics
-    //
-    
-    try
-      {
-        stats = new NotificationStatistics(applicationID, pluginName);
-      }
-    catch(Exception e)
-      {
-        log.error("SMSNotificationManager: could not load statistics ", e);
-        throw new RuntimeException("SMSNotificationManager: could not load statistics  ", e);
-      }
-      
+     
     //
     //  threads
     //
@@ -214,7 +124,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
   *
   *****************************************/
   
-  public static class SMSNotificationManagerRequest extends DeliveryRequest implements MessageDelivery
+  public static class SMSNotificationManagerRequest extends DeliveryRequest implements MessageDelivery, INotificationRequest
   {
     /*****************************************
     *
@@ -274,7 +184,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     private boolean confirmationExpected;
     private boolean restricted;
     private boolean flashSMS;
-    private SMSMessageStatus status;
+    private MessageStatus status;
     private int returnCode;
     private String returnCodeDetails;
 
@@ -290,7 +200,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     public boolean getConfirmationExpected() { return confirmationExpected; }
     public boolean getRestricted() { return restricted; }
     public boolean getFlashSMS() { return flashSMS; }
-    public SMSMessageStatus getMessageStatus() { return status; }
+    public MessageStatus getMessageStatus() { return status; }
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
 
@@ -307,7 +217,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     public void setConfirmationExpected(boolean confirmationExpected) { this.confirmationExpected = confirmationExpected; }
     public void setRestricted(boolean restricted) { this.restricted = restricted; }
     public void setFlashSMS(boolean flashSMS) { this.flashSMS = flashSMS; }
-    public void setMessageStatus(SMSMessageStatus status) { this.status = status; }
+    public void setMessageStatus(MessageStatus status) { this.status = status; }
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
 
@@ -348,7 +258,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       this.language = language;
       this.templateID = templateID;
       this.messageTags = messageTags;
-      this.status = SMSMessageStatus.PENDING;
+      this.status = MessageStatus.PENDING;
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = null;
     }
@@ -367,8 +277,8 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       this.language = JSONUtilities.decodeString(jsonRoot, "language", true);
       this.templateID = JSONUtilities.decodeString(jsonRoot, "templateID", true);
       this.messageTags = decodeMessageTags(JSONUtilities.decodeJSONArray(jsonRoot, "messageTags", new JSONArray()));
-      this.status = SMSMessageStatus.PENDING;
-      this.returnCode = SMSMessageStatus.PENDING.getReturnCode();
+      this.status = MessageStatus.PENDING;
+      this.returnCode = MessageStatus.PENDING.getReturnCode();
       this.returnCodeDetails = null;
     }
 
@@ -394,7 +304,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private SMSNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String language, String templateID, List<String> messageTags, boolean confirmationExpected, boolean restricted, boolean flashSMS, SMSMessageStatus status, String returnCodeDetails)
+    private SMSNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String language, String templateID, List<String> messageTags, boolean confirmationExpected, boolean restricted, boolean flashSMS, MessageStatus status, String returnCodeDetails)
     {
       super(schemaAndValue);
       this.destination = destination;
@@ -504,7 +414,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       boolean flashSMS = valueStruct.getBoolean("flashSMS");
       Integer returnCode = valueStruct.getInt32("returnCode");
       String returnCodeDetails = valueStruct.getString("returnCodeDetails");
-      SMSMessageStatus status = SMSMessageStatus.fromReturnCode(returnCode);
+      MessageStatus status = MessageStatus.fromReturnCode(returnCode);
       
       //
       //  return
@@ -536,7 +446,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(SOURCE, getSource());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
-      guiPresentationMap.put(RETURNCODEDETAILS, SMSMessageStatus.fromReturnCode(getReturnCode()).toString());
+      guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
       guiPresentationMap.put(NOTIFICATION_TEXT_BODY, getText(subscriberMessageTemplateService));
       guiPresentationMap.put(NOTIFICATION_CHANNEL, "SMS");
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
@@ -568,8 +478,8 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     @Override
     public void resetDeliveryRequestAfterReSchedule()
     {
-      this.setReturnCode(SMSMessageStatus.PENDING.getReturnCode());
-      this.setMessageStatus(SMSMessageStatus.PENDING);
+      this.setReturnCode(MessageStatus.PENDING.getReturnCode());
+      this.setMessageStatus(MessageStatus.PENDING);
       
     }
   }
@@ -714,7 +624,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
             CommunicationChannel channel = Deployment.getCommunicationChannels().get(channelID);
             if(channel != null) 
               {
-                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(blackoutService, now);
+                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(SMSNotificationManager.this.getBlackoutService(), now);
               }
             
             if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))
@@ -727,9 +637,9 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
                 log.debug("SMSNotificationManagerRequest RESCHEDULE to " + effectiveDeliveryTime + " restricted " + smsRequest);
                 smsRequest.setRescheduledDate(effectiveDeliveryTime);
                 smsRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
-                smsRequest.setReturnCode(SMSMessageStatus.RESCHEDULE.getReturnCode());
-                smsRequest.setMessageStatus(SMSMessageStatus.RESCHEDULE);
-                completeDeliveryRequest(smsRequest);
+                smsRequest.setReturnCode(MessageStatus.RESCHEDULE.getReturnCode());
+                smsRequest.setMessageStatus(MessageStatus.RESCHEDULE);
+                completeDeliveryRequest((DeliveryRequest)smsRequest);
               }
           }
         else
@@ -737,63 +647,6 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
             log.debug("SMSNotificationManagerRequest SEND Immediately NON restricted " + smsRequest);
             smsNotification.send(smsRequest);
           }
-      }
-  }
-
-  /*****************************************
-  *
-  *  updateDeliveryRequest
-  *
-  *****************************************/
-
-  public void updateDeliveryRequest(DeliveryRequest deliveryRequest)
-  {
-    log.debug("SMSNotificationManager.updateDeliveryRequest(deliveryRequest="+deliveryRequest+")");
-    updateRequest(deliveryRequest);
-  }
-  
-  /*****************************************
-  *
-  *  completeDeliveryRequest
-  *
-  *****************************************/
-
-  public void completeDeliveryRequest(DeliveryRequest deliveryRequest)
-  {
-    log.debug("SMSNotificationManager.updateDeliveryRequest(deliveryRequest="+deliveryRequest+")");
-    completeRequest(deliveryRequest);
-    stats.updateMessageCount(pluginName, 1, deliveryRequest.getDeliveryStatus());
-  }
-
-  /*****************************************
-  *
-  *  submitCorrelatorUpdateDeliveryRequest
-  *
-  *****************************************/
-
-  public void submitCorrelatorUpdateDeliveryRequest(String correlator, JSONObject correlatorUpdate)
-  {
-    log.debug("SMSNotificationManager.submitCorrelatorUpdateDeliveryRequest(correlator="+correlator+", correlatorUpdate="+correlatorUpdate.toJSONString()+")");
-    submitCorrelatorUpdate(correlator, correlatorUpdate);
-  }
-
-  /*****************************************
-  *
-  *  processCorrelatorUpdate
-  *
-  *****************************************/
-
-  @Override protected void processCorrelatorUpdate(DeliveryRequest deliveryRequest, JSONObject correlatorUpdate)
-  {
-    int result = JSONUtilities.decodeInteger(correlatorUpdate, "result", true);
-    SMSNotificationManagerRequest smsRequest = (SMSNotificationManagerRequest) deliveryRequest;
-    if (smsRequest != null)
-      {
-        log.debug("SMSNotificationManager.processCorrelatorUpdate(deliveryRequest="+deliveryRequest.toString()+", correlatorUpdate="+correlatorUpdate.toJSONString()+")");
-        smsRequest.setMessageStatus(SMSMessageStatus.fromReturnCode(result));
-        smsRequest.setDeliveryStatus(getMessageStatus(smsRequest.getMessageStatus()));
-        smsRequest.setDeliveryDate(SystemTime.getCurrentTime());
-        completeDeliveryRequest(smsRequest);
       }
   }
 

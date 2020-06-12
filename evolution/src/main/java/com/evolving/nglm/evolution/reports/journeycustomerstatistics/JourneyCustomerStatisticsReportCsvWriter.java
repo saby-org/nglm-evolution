@@ -1,31 +1,34 @@
 package com.evolving.nglm.evolution.reports.journeycustomerstatistics;
 
-import com.evolving.nglm.evolution.reports.ReportsCommonCode;
-import com.evolving.nglm.core.AlternateID;
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.*;
-import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
-import com.evolving.nglm.evolution.reports.ReportCsvFactory;
-import com.evolving.nglm.evolution.reports.ReportCsvWriter;
-import com.evolving.nglm.evolution.reports.ReportUtils;
-import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipOutputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.Journey;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
+import com.evolving.nglm.evolution.JourneyMetricDeclaration;
+import com.evolving.nglm.evolution.JourneyService;
+import com.evolving.nglm.evolution.reports.ReportCsvFactory;
+import com.evolving.nglm.evolution.reports.ReportCsvWriter;
+import com.evolving.nglm.evolution.reports.ReportUtils;
+import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
+import com.evolving.nglm.evolution.reports.ReportsCommonCode;
+
 public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactory
 {
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatisticsReportCsvWriter.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private static JourneyService journeyService;
+  private static JourneyService journeyServiceStatic;
   List<String> headerFieldsOrder = new ArrayList<String>();
   private final String subscriberID = "subscriberID";
   private final String customerID = "customerID";
@@ -53,15 +56,10 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     Map<String, Object> journeyStats = reportElement.fields.get(0);
-    Map<String, Object> subscriberFieldsMap = reportElement.fields.get(1);
-    Map<String, Object> journeyMetric = reportElement.fields.get(2);
-    for (Object subscriberFieldsObj : subscriberFieldsMap.values()) // we don't care about the keys
-      {
-        Map<String, Object> subscriberFields = (Map<String, Object>) subscriberFieldsObj;
-        if (journeyStats != null && !journeyStats.isEmpty() && subscriberFields != null && !subscriberFields.isEmpty() && journeyMetric != null && !journeyMetric.isEmpty())
+    Map<String, Object> journeyMetric = reportElement.fields.get(1);
+        if (journeyStats != null && !journeyStats.isEmpty() && journeyMetric != null && !journeyMetric.isEmpty())
           {
-
-            Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
+            Journey journey = journeyServiceStatic.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
             if (journey != null)
               {
                 Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
@@ -97,14 +95,14 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
                 if (journeyStats.get(subscriberID) != null)
                   {
                     Object subscriberIDField = journeyStats.get(subscriberID);
-                    subscriberFields.put(customerID, subscriberIDField);
+                    journeyInfo.put(customerID, subscriberIDField);
                   }
                 for (AlternateID alternateID : Deployment.getAlternateIDs().values())
                   {
-                    if (journeyStats.get(alternateID.getESField()) != null)
+                    if (journeyStats.get(alternateID.getID()) != null)
                       {
-                        Object alternateId = journeyStats.get(alternateID.getESField());
-                        subscriberFields.put(alternateID.getName(), alternateId);
+                        Object alternateId = journeyStats.get(alternateID.getID());
+                        journeyInfo.put(alternateID.getID(), alternateId);
                       }
                   }
 
@@ -121,7 +119,6 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
                 //
 
                 String journeyID = journeyInfo.get("journeyID").toString();
-                journeyInfo.putAll(subscriberFields);
                 if (result.containsKey(journeyID))
                   {
                     result.get(journeyID).add(journeyInfo);
@@ -135,11 +132,10 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
                 
               }
           }
-      }
     return result;
   }
 
-  public static void main(String[] args)
+  public static void main(String[] args, JourneyService journeyService)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -156,13 +152,10 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
     String topic = args[1];
     String csvfile = args[2];
     log.info("Reading data from " + topic + " topic on broker " + kafkaNode + " producing " + csvfile + " with '" + CSV_SEPARATOR + "' separator");
+    
+    journeyServiceStatic = journeyService;
     ReportCsvFactory reportFactory = new JourneyCustomerStatisticsReportCsvWriter();
     ReportCsvWriter reportWriter = new ReportCsvWriter(reportFactory, kafkaNode, topic);
-
-    String journeyTopic = Deployment.getJourneyTopic();
-
-    journeyService = new JourneyService(kafkaNode, "customerstatsreportcsvwriter-journeyservice-" + topic, journeyTopic, false);
-    journeyService.start();
 
     if (!reportWriter.produceReport(csvfile, true))
       {
