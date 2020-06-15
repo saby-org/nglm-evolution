@@ -230,7 +230,7 @@ public class SMTPGenericPlugin implements NotificationInterface
     MailSenderFactory mailSenderFactory = new MailSenderFactory(config);
     try
     {
-//      mailSenderFactory.init(mailNotificationManager);
+      mailSenderFactory.init(mailNotificationManager);
       senders = mailSenderFactory.getEmailSenders();  
       if(senders == null || senders.length==0)
         {

@@ -6,6 +6,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications;
 import com.evolving.nglm.evolution.MailNotificationManager;
 import com.lumatagroup.expression.driver.SMTP.constants.SMTPConstants;
 import com.lumatagroup.expression.driver.SMTP.util.SMTPUtil;
@@ -38,7 +39,7 @@ public class MailSenderFactory
    * 
    * @param SMTPDriver3rdParty driver
    */
-  public void init(MailNotificationManager mailNotificationManager)
+  public void init(DeliveryManagerForNotifications mailNotificationManager)
   {
     log.debug("MailSenderFactory.init() method execution started...");
 

@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.evolution.MailNotificationManager;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications;
 import com.evolving.nglm.evolution.INotificationRequest;
 import com.lumatagroup.expression.driver.dyn.NotificationStatus;
 import com.sun.mail.smtp.SMTPMessage;
@@ -28,9 +29,9 @@ public class SimpleEmailSender {
 	private String replyTo;
 
 	private String forceSubject;
-	private MailNotificationManager mailNotificationManager;
+	private DeliveryManagerForNotifications mailNotificationManager;
 
-	public SimpleEmailSender(MailNotificationManager mailNotificationManager, String name, SMTPConnection conn, String replyTo, String frmEmail, String forceSubject) {
+	public SimpleEmailSender(DeliveryManagerForNotifications mailNotificationManager, String name, SMTPConnection conn, String replyTo, String frmEmail, String forceSubject) {
 		if (logger.isTraceEnabled()) logger.trace("START: SimpleEmailSender ctor("+mailNotificationManager+" "+name+" "+conn+" "+replyTo+" "+frmEmail);
 		this.smtpConn = conn;
 		this.replyTo = replyTo;
