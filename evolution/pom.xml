@@ -267,6 +267,7 @@
                     <include>config/thirdpartymanager_jmx.yml</include>
                     <include>config/dnboproxy_jmx.yml</include>
                     <include>config/evolution-prometheus-application.yml</include>
+                    <include>config/extractmanager_jmx.yml</include>
                     <include>databases/_meta_gui/*</include>
                     <include>docker/prometheus-application/*</include>
                     <include>docker/prometheus-application-preamble.yml</include>
@@ -314,6 +315,8 @@
                     <include>docker/setup/*</include>
                     <include>docker/analyse-upgrade/*</include>
                     <include>support/*</include>
+                    <include>docker/extractmanager/*</include>
+                    <include>docker/extractmanager.yml</include>
                   </includes>
                   <filtering>false</filtering>
                 </resource>
@@ -345,6 +348,7 @@
                     <exclude>docker/datacubemanager.yml</exclude>
                     <exclude>docker/upgrade-preamble.yml</exclude>
                     <exclude>docker/upgrade-postamble.yml</exclude>
+                    <exclude>docker/extractmanager.yml</exclude>
                   </excludes>
                   <filtering>true</filtering>
                 </resource>

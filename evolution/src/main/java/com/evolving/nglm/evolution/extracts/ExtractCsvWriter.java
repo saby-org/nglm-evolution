@@ -4,7 +4,7 @@
  *
  ****************************************************************************/
 
-package com.evolving.nglm.evolution.reports.extracts;
+package com.evolving.nglm.evolution.extracts;
 
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.evolution.*;
@@ -12,14 +12,11 @@ import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportCsvWriter;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
-import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.reports.subscriber.SubscriberReportObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.zip.ZipOutputStream;
 
@@ -27,10 +24,10 @@ import java.util.zip.ZipOutputStream;
  * This implements the phase 3 for the Subscriber report.
  *
  */
-public class TargetExtractCsvWriter implements ReportCsvFactory
+public class ExtractCsvWriter implements ReportCsvFactory
 {
-  private static final Logger log = LoggerFactory.getLogger(TargetExtractCsvWriter.class);
-  final private static String CSV_SEPARATOR = ReportUtils.getSeparator();
+  private static final Logger log = LoggerFactory.getLogger(ExtractCsvWriter.class);
+  final private static String CSV_SEPARATOR = Deployment.getExtractManagerCsvSeparator();
   private final static String subscriberID = "subscriberID";
   private final static String customerID = "customerID";
 
@@ -131,7 +128,7 @@ public class TargetExtractCsvWriter implements ReportCsvFactory
     String csvfile = args[2];
     log.info("Reading data from " + topic + " topic on broker " + kafkaNode + " producing " + csvfile + " with '" + CSV_SEPARATOR + "' separator");
     
-    ReportCsvFactory reportFactory = new TargetExtractCsvWriter();
+    ReportCsvFactory reportFactory = new ExtractCsvWriter();
     ReportCsvWriter reportWriter = new ReportCsvWriter(reportFactory, kafkaNode, topic);
     if (!reportWriter.produceReport(csvfile))
       {

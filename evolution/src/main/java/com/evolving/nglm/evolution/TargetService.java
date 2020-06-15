@@ -5,6 +5,8 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import com.evolving.nglm.evolution.extracts.ExtractItem;
+import com.evolving.nglm.evolution.extracts.ExtractManager;
 import com.evolving.nglm.evolution.reports.ReportManager;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -370,18 +372,19 @@ public class TargetService extends GUIService
   /*
    * Called by GuiManager to trigger a one-time report
    */
-  public void launchTargetExtract(String targetName)
+  public void launchGenerateAndDownloadExtract(ExtractItem extractItem)
   {
-    log.trace("launchTarget : " + targetName);
-    String znode = ReportManager.getExtractCOntrolDir() + File.separator + "launchTarget-" + targetName + "-";
+    log.trace("launchTarget : " + extractItem.getExtractFileName());
+    String znode = ExtractManager.getControlDir()+ File.separator + "launchTarget-" + extractItem.getExtractFileName()+"-"+extractItem.getUserId() + "-";
     if (getZKConnection())
       {
-        log.debug("Trying to create ephemeral znode " + znode + " for " + targetName);
+        log.debug("Trying to create ephemeral znode " + znode + " for " + extractItem.getExtractFileName());
         try
           {
             // Create new file in control dir with reportName inside, to trigger
             // report generation
-            zk.create(znode, targetName.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
+            //ExtractItem extractItem = new ExtractItem(target.getTargetName(),target.getTargetingCriteria(),null);
+            zk.create(znode, extractItem.getJSONObjectAsString().getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
           }
         catch (KeeperException e)
           {
@@ -408,12 +411,12 @@ public class TargetService extends GUIService
       {
         if (getZKConnection())
           {
-            List<String> children = zk.getChildren(ReportManager.getExtractCOntrolDir(), false);
+            List<String> children = zk.getChildren(ExtractManager.getControlDir(), false);
             for(String child : children)
               {
                 if(child.contains(targetName))
                   {
-                    String znode = ReportManager.getExtractCOntrolDir() + File.separator+child;
+                    String znode = ExtractManager.getControlDir() + File.separator+child;
                     return (zk.exists(znode, false) != null);
                   }
               }

@@ -69,3 +69,7 @@ if [ "<_DATACUBEMANAGER_ENABLED_>" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-datacubemanager.yml <_DOCKER_STACK_>-datacubemanager
 fi
 
+if [ "<_EXTRACTMANAGER_ENABLED_>" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-extractmanager.yml <_DOCKER_STACK_>-extractmanager
+fi
+

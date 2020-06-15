@@ -260,6 +260,16 @@ public class Deployment
   // the default number of shards for voucher ES indices (might be quite customer dependent)
   private static int liveVoucherIndexNumberOfShards=12;
 
+  //extracts configuration
+  private static String extractManagerZookeeperDir;
+  private static String extractManagerOutputPath;
+  private static String extractManagerDateFormat;
+  private static String extractManagerFileExtension;
+  private static String extractManagerStreamsTempDir;
+  private static String extractManagerTopicsCreationProperties;
+  private static String extractManagerCsvSeparator;
+  private static String extractManagerFieldSurrounder;
+
   /*****************************************
    *
    *  accessors
@@ -494,6 +504,12 @@ public class Deployment
   public static String getDailyReportCronEntryString() { return dailyReportCronEntryString; }
   public static String getWeeklyReportCronEntryString() { return weeklyReportCronEntryString; }
   public static String getMonthlyReportCronEntryString() { return monthlyReportCronEntryString; }
+  public static String getExtractManagerZookeeperDir() { return extractManagerZookeeperDir; }
+  public static String getExtractManagerOutputPath() { return extractManagerOutputPath; }
+  public static String getExtractManagerDateFormat() { return extractManagerDateFormat; }
+  public static String getExtractManagerFileExtension() { return extractManagerFileExtension; }
+  public static String getExtractManagerCsvSeparator() { return extractManagerCsvSeparator; }
+  public static String getExtractManagerFieldSurrounder() { return extractManagerFieldSurrounder; }
   
   // addProfileCriterionField
   //
@@ -3183,6 +3199,46 @@ public class Deployment
       catch (JSONUtilitiesException e)
         {
           throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      //  Reports
+      //
+
+      try
+        {
+          JSONObject extractManager = JSONUtilities.decodeJSONObject(jsonRoot, "extractManager", false);
+          if (extractManager != null)
+            {
+              extractManagerZookeeperDir = JSONUtilities.decodeString(extractManager, "extractManagerZookeeperDir", true);
+              extractManagerOutputPath = JSONUtilities.decodeString(extractManager, "extractManagerOutputPath", "/app/reports");
+              extractManagerDateFormat = JSONUtilities.decodeString(extractManager, "extractManagerDateFormat", "yyyy-MM-dd_HH-mm-ss_SSSS");
+              extractManagerFileExtension = JSONUtilities.decodeString(extractManager, "extractManagerFileExtension", "csv");
+              extractManagerCsvSeparator = JSONUtilities.decodeString(extractManager, "extractManagerCsvSeparator", ";");
+              extractManagerFieldSurrounder = JSONUtilities.decodeString(extractManager, "extractManagerFieldSurrounder", "'");
+              extractManagerStreamsTempDir = JSONUtilities.decodeString(extractManager, "extractManagerStreamsTempDir", System.getProperty("java.io.tmpdir"));
+              extractManagerTopicsCreationProperties = JSONUtilities.decodeString(extractManager, "extractManagerTopicsCreationProperties", "cleanup.policy=delete segment.bytes=52428800 retention.ms=86400000");
+            }
+          else
+            {
+              extractManagerZookeeperDir = Deployment.getZookeeperRoot() + File.separator + "extracts";
+              extractManagerOutputPath = "/app/extracts";
+              extractManagerDateFormat = "yyyy-MM-dd_HH-mm-ss_SSSS";
+              extractManagerFileExtension = "csv";
+              extractManagerCsvSeparator = ";";
+              extractManagerFieldSurrounder = "'";
+              extractManagerStreamsTempDir = System.getProperty("java.io.tmpdir");
+              extractManagerTopicsCreationProperties = "cleanup.policy=delete segment.bytes=52428800 retention.ms=86400000";
+            }
+          if (extractManagerFieldSurrounder.length() > 1)
+            {
+              log.warn("extractManagerFieldSurrounder is not a single character, this would lead to errors in the extracts, truncating, please fix this : " + extractManagerFieldSurrounder);
+              extractManagerFieldSurrounder = extractManagerFieldSurrounder.substring(0, 1);
+            }
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment : extractManager", e);
         }
       
     }

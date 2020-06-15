@@ -4,11 +4,10 @@
  *
  ****************************************************************************/
 
-package com.evolving.nglm.evolution.reports.extracts;
+package com.evolving.nglm.evolution.extracts;
 
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Journey;
-import com.evolving.nglm.evolution.Target;
 import com.evolving.nglm.evolution.reports.ReportEsReader;
 import com.evolving.nglm.evolution.reports.subscriber.*;
 import com.evolving.nglm.evolution.reports.ReportUtils;
@@ -21,27 +20,29 @@ import java.text.SimpleDateFormat;
 import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
-public class TargetExtractDriver {
-	private static final Logger log = LoggerFactory.getLogger(TargetExtractDriver.class);
+public class ExtractDriver
+{
+	private static final Logger log = LoggerFactory.getLogger(ExtractDriver.class);
 
-	public void produceReport(
-            Target target,
+	public void produceExtract(
+            ExtractItem extractItem,
             String zookeeper, 
 			String kafka, 
 			String elasticSearch, 
-			String csvFilename,
-			String[] params) throws Exception
+			String csvFilename) throws Exception
 	{
 		try
 			{
-				log.debug("Processing Subscriber Report with " + target.getTargetName());
-				String topic = "Targets_" + target.getTargetName() + "_" + getTopicPrefixDate();
+				//this part is based on report mechanism and reuse code from there
+
+				log.debug("Processing extract " + extractItem.getExtractFileName());
+				String topic = "Targets_" + extractItem.getExtractFileName() + "_" + getTopicPrefixDate();
 				String esIndexSubscriber = "subscriberprofile";
 				//String defaultReportPeriodUnit = target.getDefaultReportPeriodUnit();
 				//int defaultReportPeriodQuantity = target.getDefaultReportPeriodQuantity();
 				log.debug("PHASE 1 : read ElasticSearch");
 				LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-				esIndexWithQuery.put(esIndexSubscriber, Journey.processEvaluateProfileCriteriaGetQuery(target.getTargetingCriteria()));
+				esIndexWithQuery.put(esIndexSubscriber, Journey.processEvaluateProfileCriteriaGetQuery(extractItem.getEvaluationCriterionList()));
 
 				ReportEsReader reportEsReader = new ReportEsReader(
 								SubscriberReportObjects.KEY_STR,
@@ -62,7 +63,7 @@ public class TargetExtractDriver {
 					}
 
 				log.debug("PHASE 2 : write csv file ");
-				TargetExtractCsvWriter.main(new String[]{
+				ExtractCsvWriter.main(new String[]{
 								kafka, topic, csvFilename
 				});
 				ReportUtils.cleanupTopics(topic);

@@ -20,7 +20,7 @@ case "${ENTRYPOINT}" in
 
   "guimanager" | "thirdpartymanager" | "notificationmanagermail" | "notificationmanagersms" | "notificationmanagerpush" | "infulfillmentmanager" | "purchasefulfillment" | "evolutionengine")
     ;;
-  "dnboproxy" | "datacubemanager" | "reportmanager" | "reportscheduler" | "emptyfulfillmentmanager" | "commoditydeliverymanager" | "ucgengine" | "propensityengine" | "journeytrafficengine")
+  "dnboproxy" | "datacubemanager" | "reportmanager" | "reportscheduler" | "emptyfulfillmentmanager" | "commoditydeliverymanager" | "ucgengine" | "propensityengine" | "journeytrafficengine" | "extractmanager")
 	#
 	#  wait for services
 	#
@@ -105,6 +105,9 @@ case "${ENTRYPOINT}" in
     ;;
   "journeytrafficengine")
     exec kafka-run-class -name journeytrafficengine -loggc com.evolving.nglm.evolution.JourneyTrafficEngine /app/runtime $BROKER_SERVERS $KEY $KAFKA_REPLICATION_FACTOR $KAFKA_STREAMS_STANDBY_REPLICAS $JOURNEYTRAFFICENGINE_STREAMTHREADS
+    ;;
+  "extractmanager")
+    exec kafka-run-class -name extractmanager -loggc com.evolving.nglm.evolution.extracts.ExtractManager $BROKER_SERVERS $MASTER_ESROUTER_SERVER $KAFKA_REPLICATION_FACTOR $SUBSCRIBER_PARTITIONS $KAFKA_STREAMS_STANDBY_REPLICAS
     ;;
   *)
     echo -n "unknown"

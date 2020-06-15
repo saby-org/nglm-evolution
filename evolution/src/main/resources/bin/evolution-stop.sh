@@ -75,6 +75,10 @@ if [ "<_DATACUBEMANAGER_ENABLED_>" = "true" ]; then
   docker stack rm <_DOCKER_STACK_>-datacubemanager
 fi
 
+if [ "<_EXTRACTMANAGER_ENABLED_>" = "true" ]; then
+  docker stack rm <_DOCKER_STACK_>-extractmanager
+fi
+
 #
 #  hack -- remove gui containers
 #

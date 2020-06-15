@@ -18,7 +18,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.invoke.SwitchPoint;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
@@ -35,6 +34,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.evolving.nglm.evolution.extracts.ExtractItem;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.FileUpload;
@@ -64,7 +64,6 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.ExistsQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -136,8 +135,6 @@ import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
-import com.evolving.nglm.evolution.ThirdPartyManager.API;
-import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyManagerException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
@@ -392,7 +389,7 @@ public class GUIManager
     putTarget("putTarget"),
     getTarget("getTarget"),
     removeTarget("removeTarget"),
-    launchTargetExtract("launchTargetExtract"),
+    downloadExtract("downloadExtract"),
     updateCustomer("updateCustomer"),
     updateCustomerParent("updateCustomerParent"),
     removeCustomerParent("removeCustomerParent"),
@@ -1174,7 +1171,7 @@ public class GUIManager
               {
                 JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
                 processPutReport("0", reportJSON);
-              }
+              } 
           }
         catch (JSONUtilitiesException e)
           {
@@ -1729,7 +1726,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getReportList", new APISimpleHandler(API.getReportList));
         restServer.createContext("/nglm-guimanager/putReport", new APISimpleHandler(API.putReport));
         restServer.createContext("/nglm-guimanager/launchReport", new APISimpleHandler(API.launchReport));
-        restServer.createContext("/nglm-guimanager/launchTargetExtract", new APISimpleHandler(API.launchTargetExtract));
+        restServer.createContext("/nglm-guimanager/downloadExtract", new APISimpleHandler(API.downloadExtract));
         restServer.createContext("/nglm-guimanager/downloadReport", new APIComplexHandler(API.downloadReport));
         restServer.createContext("/nglm-guimanager/downloadTargetExtract", new APIComplexHandler(API.downloadTargetExtract));
         restServer.createContext("/nglm-guimanager/getPresentationStrategySummaryList", new APISimpleHandler(API.getPresentationStrategySummaryList));
@@ -2634,8 +2631,8 @@ public class GUIManager
                   jsonResponse = processLaunchReport(userID, jsonRoot);
                   break;
 
-                case launchTargetExtract:
-                  jsonResponse = processLaunchTargetExtract(userID, jsonRoot);
+                case downloadExtract:
+                  jsonResponse = processLaunchExtract(userID, jsonRoot);
                   break;
 
                 case getPresentationStrategyList:
@@ -7573,6 +7570,7 @@ public class GUIManager
     *
     ****************************************/
 
+
     HashMap<String,Object> response = new HashMap<String,Object>();
 
     /*****************************************
@@ -8581,29 +8579,26 @@ public class GUIManager
    *
    *****************************************/
 
-  private JSONObject processLaunchTargetExtract(String userID, JSONObject jsonRoot)
+  private JSONObject processLaunchExtract(String userID, JSONObject jsonRoot)
   {
     log.trace("In processLaunchTargetExtract : "+jsonRoot);
     HashMap<String,Object> response = new HashMap<String,Object>();
-    String targetID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    Target target = (Target) targetService.getStoredTarget(targetID);
-    log.trace("Looking for "+targetID+" and got "+target);
-    String responseCode;
-    if (target == null)
+    String responseCode = "";
+    try
       {
-        responseCode = "target not found";
-      }
-    else
-      {
-        if (targetService.isTargetExtractRunning(target.getTargetName()))
+        ExtractItem extractItem = new ExtractItem(jsonRoot,userID);
+        if (targetService.isTargetExtractRunning(extractItem.getExtractFileName()+"-"+extractItem.getUserId()))
           {
             responseCode = "targetIsAlreadyRunning";
-          }
-        else
+          } else
           {
-            targetService.launchTargetExtract(target.getTargetName());
+            targetService.launchGenerateAndDownloadExtract(extractItem);
             responseCode = "ok";
           }
+      }catch (Exception ex)
+      {
+        response.put("responseCode", "errorProcessingExtractItem");
+        response.put("responseMessage", ex.getMessage());
       }
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
