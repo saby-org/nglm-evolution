@@ -6,6 +6,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.*;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
+import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportCsvWriter;
@@ -277,9 +278,17 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
                 msgContentJSON.put("textBody", truncateIfNecessary(actualTextBody));
                 msgContentJSON.put("htmlBody", truncateIfNecessary(actualHtmlBody));
               }
-            else
+            else if (templateObject instanceof PushTemplate)
               {
+                // TODO
                 log.info("Not Yet Implemented, template class : " + templateObject.getClass().getCanonicalName());
+              }
+            else // GenericTemplate
+              {
+                Map<String, List<String>> tags = getAllTagsList(notifFields);
+                NotificationManagerRequest req = new NotificationManagerRequest(tempID, lang, tags);
+                Map<String, String> resolvedParameters = req.getResolvedParameters(subscriberMessageTemplateService);
+                msgContentJSON.putAll(resolvedParameters);
               }
             notifRecs.put(messageContent, ReportUtils.formatJSON(msgContentJSON));
           }
@@ -340,6 +349,22 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
     if (tagsObj instanceof Map<?,?>)
       {
         tagsList = (Map<String,Object>) tagsObj;
+      }
+    else
+      {
+        tagsList = new HashMap<>();
+      }
+    return tagsList;
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String,List<String>> getAllTagsList(Map<String, Object> notifFields)
+  {
+    Object tagsObj = notifFields.get("tags");
+    Map<String,List<String>> tagsList = null;
+    if (tagsObj instanceof Map<?,?>)
+      {
+        tagsList = (Map<String,List<String>>) tagsObj;
       }
     else
       {

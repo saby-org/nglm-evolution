@@ -484,6 +484,19 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 //    }
 
     /*****************************************
+    *
+    *  constructor : minimum for reports
+    *
+    *****************************************/
+
+    public NotificationManagerRequest(String templateID, String language, Map<String, List<String>> tags)
+    {
+      this.language = language;
+      this.templateID = templateID;
+      this.tags = tags;
+    }
+
+    /*****************************************
      *
      * constructor -- unpack
      *
@@ -1094,7 +1107,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     log.info("NotificationManager: configuration " + Deployment.getDeliveryManagers());
 
     NotificationManager manager = new NotificationManager(deliveryManagerKey, listOfChannels);
-
+    new LoggerInitialization().initLogger();
+    
     //
     // run
     //

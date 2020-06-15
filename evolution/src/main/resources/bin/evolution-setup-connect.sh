@@ -333,7 +333,7 @@ prepare-curl -XPOST $CONNECT_URL_NOTIFICATION_ES/connectors -H "Content-Type: ap
       {
       "connector.class" : "com.evolving.nglm.evolution.NotificationSinkConnector",
       "tasks.max" : '$CONNECT_ES_NOTIFICATION_SINK_TASKS',
-      "topics" : "${topic.notificationmanagerpush.response},${topic.notificationmanagermail.response},${topic.notificationmanagersms.response}",
+      "topics" : "${topic.notificationmanager.response},${topic.notificationmanagerpush.response},${topic.notificationmanagermail.response},${topic.notificationmanagersms.response}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
       "indexName" : "detailedrecords_messages",
