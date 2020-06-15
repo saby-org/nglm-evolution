@@ -1,7 +1,6 @@
 package com.lumatagroup.expression.driver.SMTP;
 
 import java.io.ByteArrayOutputStream;
-
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Date;
@@ -20,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications;
-import com.evolving.nglm.evolution.MailNotificationManager;
 import com.lumatagroup.expression.driver.SMTP.constants.SMTPConstants;
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPTransport;
@@ -72,7 +70,7 @@ public class SMTPConnection {
 	 */
 	// Code Review- Need to remove the config parameter if not required in
 	// future - Done.
-	public SMTPConnection(DeliveryManagerForNotifications mailNotificationManager, String host, String port, String socketFactoryClass, 
+	public SMTPConnection(DeliveryManagerForNotifications deliveryManagerForNotifications, String host, String port, String socketFactoryClass, 
 									String smtpAuthFlag, final String userName, 
 									final String password, String protocol, String debugFlag, String frmEmail, String connectionTimeout, int connectionCheckTime, String htmlContentCharset, String subjectCharset) throws Exception{
 		if (host == null || port == null || socketFactoryClass == null

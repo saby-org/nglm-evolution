@@ -1,6 +1,7 @@
 package com.lumatagroup.expression.driver.SMTP;
 
 import java.util.Date;
+
 import javax.mail.AuthenticationFailedException;
 import javax.mail.MessagingException;
 import javax.mail.SendFailedException;
@@ -8,10 +9,9 @@ import javax.mail.SendFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.MailNotificationManager;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
-import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.evolution.INotificationRequest;
 import com.lumatagroup.expression.driver.dyn.NotificationStatus;
 import com.sun.mail.smtp.SMTPMessage;
@@ -29,15 +29,15 @@ public class SimpleEmailSender {
 	private String replyTo;
 
 	private String forceSubject;
-	private DeliveryManagerForNotifications mailNotificationManager;
+	private DeliveryManagerForNotifications deliveryManagerForNotifications;
 
-	public SimpleEmailSender(DeliveryManagerForNotifications mailNotificationManager, String name, SMTPConnection conn, String replyTo, String frmEmail, String forceSubject) {
-		if (logger.isTraceEnabled()) logger.trace("START: SimpleEmailSender ctor("+mailNotificationManager+" "+name+" "+conn+" "+replyTo+" "+frmEmail);
+	public SimpleEmailSender(DeliveryManagerForNotifications deliveryManagerForNotifications, String name, SMTPConnection conn, String replyTo, String frmEmail, String forceSubject) {
+		if (logger.isTraceEnabled()) logger.trace("START: SimpleEmailSender ctor("+deliveryManagerForNotifications+" "+name+" "+conn+" "+replyTo+" "+frmEmail);
 		this.smtpConn = conn;
 		this.replyTo = replyTo;
 		this.fromEmail = frmEmail;
 		this.forceSubject = forceSubject;
-		this.mailNotificationManager = mailNotificationManager;
+		this.deliveryManagerForNotifications = deliveryManagerForNotifications;
 		if (conn == null) {
 			throw new NullPointerException("Missing argument for SimpleMailSender constructor");
 		}
@@ -229,7 +229,7 @@ public class SimpleEmailSender {
 
 	private void updateDeliveryRequest(INotificationRequest deliveryRequest){
 	  logger.info("SimpleSMSSender.updateDeliveryRequest(message sent");
-	  mailNotificationManager.updateDeliveryRequest(deliveryRequest);
+	  deliveryManagerForNotifications.updateDeliveryRequest(deliveryRequest);
 	}
 
 	public void completeDeliveryRequest(INotificationRequest mailNotif, String messageId, MessageStatus status, DeliveryStatus deliveryStatus, String returnCodeDetails){
@@ -238,7 +238,7 @@ public class SimpleEmailSender {
 	  mailNotif.setMessageStatus(status);
 	  mailNotif.setReturnCode(status.getReturnCode());
 	  mailNotif.setReturnCodeDetails(returnCodeDetails);
-	  mailNotificationManager.completeDeliveryRequest(mailNotif);
+	  deliveryManagerForNotifications.completeDeliveryRequest(mailNotif);
 	}
 
 }

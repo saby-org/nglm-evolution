@@ -55,11 +55,11 @@ public class SMTPGenericPlugin implements NotificationInterface
   *
   *****************************************/
 
-  @Override public void init(DeliveryManagerForNotifications mailNotificationManager, JSONObject mailNotifSharedConfiguration)
+  @Override public void init(DeliveryManagerForNotifications deliveryManagerForNotifications, JSONObject mailNotifSharedConfiguration)
   {
     logger.info("SMTP Driver Loading Start...");
 
-    this.mailNotificationManager = mailNotificationManager;
+    this.mailNotificationManager = deliveryManagerForNotifications;
 
     Map<String, Object> config = new HashMap<String, Object>();
 
@@ -230,7 +230,7 @@ public class SMTPGenericPlugin implements NotificationInterface
     MailSenderFactory mailSenderFactory = new MailSenderFactory(config);
     try
     {
-      mailSenderFactory.init(mailNotificationManager);
+      mailSenderFactory.init(deliveryManagerForNotifications);
       senders = mailSenderFactory.getEmailSenders();  
       if(senders == null || senders.length==0)
         {
@@ -249,7 +249,7 @@ public class SMTPGenericPlugin implements NotificationInterface
         throw new RuntimeException("SMTP Driver Load Finished : Driver loading Failure. ");
       }
 
-    ft = new FeedbackThread(mailNotificationManager, usingFakeEmulator);
+    ft = new FeedbackThread(deliveryManagerForNotifications, usingFakeEmulator);
     ft.start();    
   }
 

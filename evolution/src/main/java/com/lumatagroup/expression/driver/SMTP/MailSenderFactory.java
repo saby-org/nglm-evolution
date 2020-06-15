@@ -39,7 +39,7 @@ public class MailSenderFactory
    * 
    * @param SMTPDriver3rdParty driver
    */
-  public void init(DeliveryManagerForNotifications mailNotificationManager)
+  public void init(DeliveryManagerForNotifications deliveryManagerForNotifications)
   {
     log.debug("MailSenderFactory.init() method execution started...");
 
@@ -53,7 +53,7 @@ public class MailSenderFactory
         log.debug("MailSenderFactory.init(): handle " + smtpDriverConfigurationMap);
         try
           {
-            SMTPConnection conn = new SMTPConnection(mailNotificationManager, SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.MAIL_SMTP_HOST)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.MAIL_SMTP_SOCKETFACTORY_PORT)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.MAIL_SMTP_SOCKETFACTORY_CLASS)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.MAIL_SMTP_AUTH)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.USER_NAME)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.PASSWORD)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.SMTP_PROTOCOL)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.DRIVER_SESSION_DEBUG_FLAG)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.SENDER_EMAIL_ADDRESS)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.CONNECTION_TIMEOUT_VAL)),
+            SMTPConnection conn = new SMTPConnection(deliveryManagerForNotifications, SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.MAIL_SMTP_HOST)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.MAIL_SMTP_SOCKETFACTORY_PORT)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.MAIL_SMTP_SOCKETFACTORY_CLASS)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.MAIL_SMTP_AUTH)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.USER_NAME)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.PASSWORD)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.SMTP_PROTOCOL)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.DRIVER_SESSION_DEBUG_FLAG)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.SENDER_EMAIL_ADDRESS)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.CONNECTION_TIMEOUT_VAL)),
                 SMTPUtil.convertInt(smtpDriverConfigurationMap.get(SMTPConstants.SMTP_DRIVER_CONNECTION_CHECKING_TIME)) == null ? SMTPConstants.DEFAULT_SMTP_DRIVER_CONNECTION_CHECKING_TIME_VAL : SMTPUtil.convertInt(smtpDriverConfigurationMap.get(SMTPConstants.SMTP_DRIVER_CONNECTION_CHECKING_TIME)).intValue(), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.HTML_CONTENT_CHARSET)), SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.SUBJECT_CHARSET)));
             String driverName = SMTPUtil.convertString(smtpDriverConfigurationMap.get("name"));
             String replyTo = SMTPUtil.convertString(smtpDriverConfigurationMap.get(SMTPConstants.REPLY_TO_EMAIL_ADDRESS));
@@ -62,7 +62,7 @@ public class MailSenderFactory
 
             if (log.isInfoEnabled()) log.info("MailSenderFactory.init() successfuly initialized SMTPConnection for " + SMTPUtil.convertString(smtpDriverConfigurationMap.get("name")));
             // Code review- Need to remove configuration map param -
-            SimpleEmailSender sender = new SimpleEmailSender(mailNotificationManager, driverName, conn, replyTo, fromEmail, forceSubject);
+            SimpleEmailSender sender = new SimpleEmailSender(deliveryManagerForNotifications, driverName, conn, replyTo, fromEmail, forceSubject);
 
             senders.add(sender);
           }
