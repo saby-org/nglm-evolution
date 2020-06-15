@@ -1,0 +1,2088 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": 7,
+  "iteration": 1589443616237,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 23,
+      "panels": [],
+      "repeat": null,
+      "title": "Evolution Engine",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-application",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 1
+      },
+      "hiddenSeries": false,
+      "id": 15,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "sort": "current",
+        "sortDesc": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(evolving_nglm_evolutionengine_eventprocessed_total[$interval]))",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Total EvE Events",
+          "metric": "",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "expr": "rate(evolving_nglm_evolutionengine_eventprocessed_total[$interval])",
+          "intervalFactor": 2,
+          "legendFormat": "{{instance}}",
+          "metric": "",
+          "refId": "B",
+          "step": 10
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Evolution Engine TPS By Instance",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-application",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "hiddenSeries": false,
+      "id": 22,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "sort": "current",
+        "sortDesc": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(evolving_nglm_evolutionengine_profileevent_total[$interval]))  by (evolutionEvent)",
+          "intervalFactor": 2,
+          "legendFormat": "{{evolutionEvent}}",
+          "metric": "",
+          "refId": "A",
+          "step": 4
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Evolution Engine Events By Topic",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "id": 62,
+      "panels": [],
+      "title": "GUI",
+      "type": "row"
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 33,
+      "panels": [],
+      "title": "JMR - Journey Manager",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-application",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "hiddenSeries": false,
+      "id": 35,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": true,
+        "min": true,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(messagegateway[$interval]))  by (channel_name,message_status)",
+          "legendFormat": "{{channel_name}} / {{message_status}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Message Delivery Manager",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "datasource": "prometheus-application",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 16
+      },
+      "id": 50,
+      "options": {
+        "displayMode": "gradient",
+        "fieldOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "defaults": {
+            "mappings": [],
+            "max": 100,
+            "min": 0,
+            "thresholds": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ],
+            "unit": "percent"
+          },
+          "override": {},
+          "values": false
+        },
+        "orientation": "vertical"
+      },
+      "pluginVersion": "6.5.2",
+      "targets": [
+        {
+          "expr": "increase(com_evolving_nglm_evolution_notificationstatistics_nbmessagesdelivered[$interval]) * 100 / (increase(com_evolving_nglm_evolution_notificationstatistics_nbmessagesdelivered[$interval]) + increase(com_evolving_nglm_evolution_notificationstatistics_nbmessagefailed[$interval]))",
+          "hide": false,
+          "legendFormat": "{{ instance }}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Notification Total Today - status OK",
+      "type": "bargauge"
+    },
+    {
+      "datasource": "prometheus-application",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 16
+      },
+      "id": 55,
+      "options": {
+        "displayMode": "gradient",
+        "fieldOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "defaults": {
+            "mappings": [],
+            "max": 100,
+            "min": 0,
+            "thresholds": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ],
+            "unit": "percent"
+          },
+          "override": {},
+          "values": false
+        },
+        "orientation": "vertical"
+      },
+      "pluginVersion": "6.5.2",
+      "targets": [
+        {
+          "expr": "increase(com_evolving_nglm_evolution_notificationstatistics_nbmessagefailed[$interval]) * 100 / (increase(com_evolving_nglm_evolution_notificationstatistics_nbmessagesdelivered[$interval]) + increase(com_evolving_nglm_evolution_notificationstatistics_nbmessagefailed[$interval]))",
+          "hide": false,
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Notifications Total Today - status KO",
+      "type": "bargauge"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-application",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "hiddenSeries": false,
+      "id": 57,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_notificationstatistics_nbmessagesdelivered[$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Delivered",
+          "metric": "",
+          "refId": "A",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_notificationstatistics_nbmessagesfailedretry[$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Failed Retry",
+          "metric": "",
+          "refId": "D",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_notificationstatistics_nbmessagefailed[$interval]))",
+          "intervalFactor": 2,
+          "legendFormat": "Failed",
+          "metric": "",
+          "refId": "B",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_notificationstatistics_nbmessagespending [$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Pending",
+          "metric": "",
+          "refId": "E",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_notificationstatistics_nbmessagesfailedtimeout [$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Failed Timeout",
+          "metric": "",
+          "refId": "F",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_notificationstatistics_nbmessagesindeterminate [$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Indeterminate",
+          "metric": "",
+          "refId": "G",
+          "step": 2
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Notifications - current / sec",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 40,
+      "panels": [],
+      "title": "BDR - Bonus Detail Records",
+      "type": "row"
+    },
+    {
+      "datasource": "prometheus-application",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 25
+      },
+      "id": 46,
+      "options": {
+        "displayMode": "gradient",
+        "fieldOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "defaults": {
+            "mappings": [],
+            "max": 100,
+            "min": 0,
+            "thresholds": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ],
+            "unit": "percent"
+          },
+          "override": {},
+          "values": false
+        },
+        "orientation": "vertical"
+      },
+      "pluginVersion": "6.5.2",
+      "targets": [
+        {
+          "expr": "increase(com_evolving_nglm_evolution_bdrstatistics_nbeventsdelivered{serviceName!~\".*deliverymanager.*\"}[$interval]) * 100 / (increase(com_evolving_nglm_evolution_bdrstatistics_nbeventsdelivered{serviceName!~\".*deliverymanager.*\"}[$interval]) + increase(com_evolving_nglm_evolution_bdrstatistics_nbeventsfailed{serviceName!~\".*deliverymanager.*\"}[$interval]))",
+          "hide": false,
+          "legendFormat": "{{serviceName}} - {{instance}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "BDRs Total Today - status OK",
+      "type": "bargauge"
+    },
+    {
+      "datasource": "prometheus-application",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 25
+      },
+      "id": 54,
+      "options": {
+        "displayMode": "gradient",
+        "fieldOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "defaults": {
+            "mappings": [],
+            "max": 100,
+            "min": 0,
+            "thresholds": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ],
+            "unit": "percent"
+          },
+          "override": {},
+          "values": false
+        },
+        "orientation": "vertical"
+      },
+      "pluginVersion": "6.5.2",
+      "targets": [
+        {
+          "expr": "increase(com_evolving_nglm_evolution_bdrstatistics_nbeventsdelivered{serviceName!~\".*deliverymanager.*\"}[$interval]) * 100 / (increase(com_evolving_nglm_evolution_bdrstatistics_nbeventsdelivered{serviceName!~\".*deliverymanager.*\"}[$interval]) + increase(com_evolving_nglm_evolution_bdrstatistics_nbeventsfailed{serviceName!~\".*deliverymanager.*\"}[$interval]))",
+          "hide": false,
+          "legendFormat": "{{serviceName}} - {{instance}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "BDRs Total Today - status OK",
+      "type": "bargauge"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-application",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 25
+      },
+      "hiddenSeries": false,
+      "id": 48,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_bdrstatistics_nbeventsdelivered[$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Delivered",
+          "metric": "",
+          "refId": "A",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_bdrstatistics_nbeventsfailedretry[$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Failed Retry",
+          "metric": "",
+          "refId": "D",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_bdrstatistics_nbeventsfailed[$interval])) ",
+          "intervalFactor": 2,
+          "legendFormat": "Failed",
+          "metric": "",
+          "refId": "B",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_bdrstatistics_nbeventspending [$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Pending",
+          "metric": "",
+          "refId": "E",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_bdrstatistics_nbeventsfailedtimeout [$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Failed Timeout",
+          "metric": "",
+          "refId": "F",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_bdrstatistics_nbeventsindeterminate [$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Indeterminate",
+          "metric": "",
+          "refId": "G",
+          "step": 2
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "BDRs - current / sec",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 33
+      },
+      "id": 38,
+      "panels": [],
+      "title": "ODR - Offer Detail Records",
+      "type": "row"
+    },
+    {
+      "datasource": "prometheus-application",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 34
+      },
+      "id": 49,
+      "options": {
+        "displayMode": "gradient",
+        "fieldOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "defaults": {
+            "mappings": [],
+            "max": 100,
+            "min": 0,
+            "thresholds": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ],
+            "unit": "percent"
+          },
+          "override": {},
+          "values": false
+        },
+        "orientation": "vertical"
+      },
+      "pluginVersion": "6.5.2",
+      "targets": [
+        {
+          "expr": "increase(com_evolving_nglm_evolution_odrstatistics_nbpurchasesdelivered[$interval]) * 100 / (increase(com_evolving_nglm_evolution_odrstatistics_nbpurchasesdelivered[$interval]) + increase(com_evolving_nglm_evolution_odrstatistics_nbpurchasesfailed[$interval]))",
+          "hide": false,
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "ODRs Total Today - status OK",
+      "type": "bargauge"
+    },
+    {
+      "datasource": "prometheus-application",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 34
+      },
+      "id": 52,
+      "options": {
+        "displayMode": "gradient",
+        "fieldOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "defaults": {
+            "mappings": [],
+            "max": 100,
+            "min": 0,
+            "thresholds": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ],
+            "unit": "percent"
+          },
+          "override": {},
+          "values": false
+        },
+        "orientation": "vertical"
+      },
+      "pluginVersion": "6.5.2",
+      "targets": [
+        {
+          "expr": "increase(com_evolving_nglm_evolution_odrstatistics_nbpurchasesdelivered[$interval]) * 100 / (increase(com_evolving_nglm_evolution_odrstatistics_nbpurchasesdelivered[$interval]) + increase(com_evolving_nglm_evolution_odrstatistics_nbpurchasesfailed[$interval]))",
+          "hide": false,
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "ODRs Total Today - status OK",
+      "type": "bargauge"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-application",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 34
+      },
+      "hiddenSeries": false,
+      "id": 36,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_odrstatistics_nbpurchasesdelivered[$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Delivered",
+          "metric": "",
+          "refId": "A",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_odrstatistics_nbpurchasesfailedretry[$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Failed Retry",
+          "metric": "",
+          "refId": "D",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_odrstatistics_nbpurchasesfailed[$interval])) ",
+          "intervalFactor": 2,
+          "legendFormat": "Failed",
+          "metric": "",
+          "refId": "B",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_odrstatistics_nbpurchasespending [$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Pending",
+          "metric": "",
+          "refId": "E",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_odrstatistics_nbpurchasesfailedtimeout [$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Failed Timeout",
+          "metric": "",
+          "refId": "F",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_odrstatistics_nbpurchasesindeterminate [$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Indeterminate",
+          "metric": "",
+          "refId": "G",
+          "step": 2
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "ODRs - current /sec",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
+      "id": 42,
+      "panels": [],
+      "title": "TDR - Token Detail Records",
+      "type": "row"
+    },
+    {
+      "datasource": "prometheus-application",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 43
+      },
+      "id": 47,
+      "options": {
+        "displayMode": "gradient",
+        "fieldOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "defaults": {
+            "mappings": [],
+            "max": 100,
+            "min": 0,
+            "thresholds": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ],
+            "unit": "percent"
+          },
+          "override": {},
+          "values": false
+        },
+        "orientation": "vertical"
+      },
+      "pluginVersion": "6.5.2",
+      "targets": [
+        {
+          "expr": "increase(com_evolving_nglm_evolution_tdrstatistics_nbpurchasesfailed[$interval]) * 100 / (increase(com_evolving_nglm_evolution_tdrstatistics_nbpurchasesdelivered[$interval]) + increase(com_evolving_nglm_evolution_tdrstatistics_nbpurchasesfailed[$interval]))",
+          "hide": false,
+          "legendFormat": "{{ instance }}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "TDRs Total Today - status KO",
+      "type": "bargauge"
+    },
+    {
+      "datasource": "prometheus-application",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 43
+      },
+      "id": 58,
+      "options": {
+        "displayMode": "gradient",
+        "fieldOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "defaults": {
+            "mappings": [],
+            "max": 100,
+            "min": 0,
+            "thresholds": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ],
+            "unit": "percent"
+          },
+          "override": {},
+          "values": false
+        },
+        "orientation": "vertical"
+      },
+      "pluginVersion": "6.5.2",
+      "targets": [
+        {
+          "expr": "increase(com_evolving_nglm_evolution_tdrstatistics_nbpurchasesfailed[$interval]) * 100 / (increase(com_evolving_nglm_evolution_tdrstatistics_nbpurchasesdelivered[$interval]) + increase(com_evolving_nglm_evolution_tdrstatistics_nbpurchasesfailed[$interval]))",
+          "hide": false,
+          "legendFormat": "{{ instance }}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "TDRs Total Today - status KO",
+      "type": "bargauge"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-application",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 43
+      },
+      "hiddenSeries": false,
+      "id": 53,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_tdrstatistics_nbpurchasesdelivered[$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Delivered",
+          "metric": "",
+          "refId": "A",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_tdrstatistics_nbpurchasesfailedretry[$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Failed Retry",
+          "metric": "",
+          "refId": "D",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_tdrstatistics_nbpurchasesfailed[$interval])) ",
+          "intervalFactor": 2,
+          "legendFormat": "Failed",
+          "metric": "",
+          "refId": "B",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_tdrstatistics_nbpurchasespending [$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Pending",
+          "metric": "",
+          "refId": "E",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_tdrstatistics_nbpurchasesfailedtimeout [$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Failed Timeout",
+          "metric": "",
+          "refId": "F",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_tdrstatistics_nbpurchasesindeterminate [$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Indeterminate",
+          "metric": "",
+          "refId": "G",
+          "step": 2
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "TDRs - current /sec",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 51
+      },
+      "id": 44,
+      "panels": [],
+      "title": "ThirdParty Events",
+      "type": "row"
+    },
+    {
+      "datasource": "prometheus-application",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 52
+      },
+      "id": 51,
+      "options": {
+        "displayMode": "gradient",
+        "fieldOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "defaults": {
+            "mappings": [],
+            "max": 100,
+            "min": 0,
+            "thresholds": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ],
+            "unit": "percent"
+          },
+          "override": {},
+          "values": false
+        },
+        "orientation": "vertical"
+      },
+      "pluginVersion": "6.5.2",
+      "targets": [
+        {
+          "expr": "increase(com_evolving_nglm_evolution_thirdpartyaccess_successfulapirequestcount[$interval]) * 100 / (increase(com_evolving_nglm_evolution_thirdpartyaccess_successfulapirequestcount[$interval]) + increase(com_evolving_nglm_evolution_thirdpartyaccess_failedapirequestcount[$interval]))",
+          "hide": false,
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "ThirdParty Total Today - status OK",
+      "type": "bargauge"
+    },
+    {
+      "datasource": "prometheus-application",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 52
+      },
+      "id": 59,
+      "options": {
+        "displayMode": "gradient",
+        "fieldOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "defaults": {
+            "mappings": [],
+            "max": 100,
+            "min": 0,
+            "thresholds": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ],
+            "unit": "percent"
+          },
+          "override": {},
+          "values": false
+        },
+        "orientation": "vertical"
+      },
+      "pluginVersion": "6.5.2",
+      "targets": [
+        {
+          "expr": "increase(com_evolving_nglm_evolution_thirdpartyaccess_failedapirequestcount[$interval]) * 100 / (increase(com_evolving_nglm_evolution_thirdpartyaccess_successfulapirequestcount[$interval]) + increase(com_evolving_nglm_evolution_thirdpartyaccess_failedapirequestcount[$interval]))",
+          "hide": false,
+          "legendFormat": "{{ instance }}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "ThirdParty Total Today - status KO",
+      "type": "bargauge"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-application",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 52
+      },
+      "hiddenSeries": false,
+      "id": 60,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_successfulapirequestcount[$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Success",
+          "metric": "",
+          "refId": "A",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_failedapirequestcount[$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "Failed",
+          "metric": "",
+          "refId": "D",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_pingcount[$interval])) ",
+          "intervalFactor": 2,
+          "legendFormat": "Ping",
+          "metric": "",
+          "refId": "B",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_getactiveoffercount[$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "get Active Offer",
+          "metric": "",
+          "refId": "E",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_getactiveofferscount[$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "get Active Offers",
+          "metric": "",
+          "refId": "F",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_getcustomercount[$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "get Customer",
+          "metric": "",
+          "refId": "G",
+          "step": 2
+        },
+        {
+          "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_getofferslistcount[$interval])) ",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "get Offers List",
+          "metric": "",
+          "refId": "C",
+          "step": 2
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "ThirdParty - current /sec",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 60
+      },
+      "id": 25,
+      "panels": [],
+      "title": "TriggerEngine",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-application",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 61
+      },
+      "hiddenSeries": false,
+      "id": 27,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(evolving_nglm_triggerengine_eventprocessed_total[$interval]))",
+          "legendFormat": "Trigger Engine Events",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(evolving_nglm_triggerengine_triggerproduced_total[$interval]) )",
+          "legendFormat": "Triggers Produced",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(rate(evolving_nglm_aggregates_eventprocessed_count[$interval]))",
+          "legendFormat": "Aggregate Events",
+          "refId": "C"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Trigger Engine Events",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorPrefix": false,
+      "colorValue": true,
+      "colors": [
+        "#299c46",
+        "rgba(237, 129, 40, 0.89)",
+        "#d44a3a"
+      ],
+      "datasource": "prometheus-application",
+      "decimals": 2,
+      "format": "short",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 12,
+        "y": 61
+      },
+      "id": 29,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "options": {},
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": false,
+        "ymax": null,
+        "ymin": null
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "sum(increase(evolving_nglm_triggerengine_eventprocessed_total[${__range_s}s]))",
+          "refId": "A"
+        }
+      ],
+      "thresholds": "",
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Trigger Engine Events",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "N/A",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorPrefix": false,
+      "colorValue": true,
+      "colors": [
+        "#299c46",
+        "rgba(237, 129, 40, 0.89)",
+        "#d44a3a"
+      ],
+      "datasource": "prometheus-application",
+      "decimals": 2,
+      "format": "short",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 16,
+        "y": 61
+      },
+      "id": 30,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "options": {},
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": false,
+        "ymax": null,
+        "ymin": null
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "sum(increase(evolving_nglm_aggregates_eventprocessed_count[${__range_s}s]))",
+          "refId": "A"
+        }
+      ],
+      "thresholds": "",
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Aggregate Events",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "N/A",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorPrefix": false,
+      "colorValue": true,
+      "colors": [
+        "#299c46",
+        "rgba(237, 129, 40, 0.89)",
+        "#d44a3a"
+      ],
+      "datasource": "prometheus-application",
+      "decimals": 2,
+      "format": "short",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 20,
+        "y": 61
+      },
+      "id": 31,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "options": {},
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": false,
+        "ymax": null,
+        "ymin": null
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "sum(increase(evolving_nglm_triggerengine_triggerproduced_total[${__range_s}s]))",
+          "refId": "A"
+        }
+      ],
+      "thresholds": "0,100",
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Triggers Produced",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "N/A",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 21,
+  "style": "light",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "auto": true,
+        "auto_count": 30,
+        "auto_min": "10s",
+        "current": {
+          "selected": false,
+          "text": "2m",
+          "value": "2m"
+        },
+        "hide": 2,
+        "label": "Interval",
+        "name": "interval",
+        "options": [
+          {
+            "selected": false,
+            "text": "auto",
+            "value": "$__auto_interval_interval"
+          },
+          {
+            "selected": false,
+            "text": "15s",
+            "value": "15s"
+          },
+          {
+            "selected": false,
+            "text": "30s",
+            "value": "30s"
+          },
+          {
+            "selected": false,
+            "text": "1m",
+            "value": "1m"
+          },
+          {
+            "selected": true,
+            "text": "2m",
+            "value": "2m"
+          },
+          {
+            "selected": false,
+            "text": "3m",
+            "value": "3m"
+          },
+          {
+            "selected": false,
+            "text": "5m",
+            "value": "5m"
+          },
+          {
+            "selected": false,
+            "text": "7m",
+            "value": "7m"
+          },
+          {
+            "selected": false,
+            "text": "10m",
+            "value": "10m"
+          },
+          {
+            "selected": false,
+            "text": "30m",
+            "value": "30m"
+          },
+          {
+            "selected": false,
+            "text": "1h",
+            "value": "1h"
+          },
+          {
+            "selected": false,
+            "text": "6h",
+            "value": "6h"
+          },
+          {
+            "selected": false,
+            "text": "12h",
+            "value": "12h"
+          },
+          {
+            "selected": false,
+            "text": "1d",
+            "value": "1d"
+          },
+          {
+            "selected": false,
+            "text": "7d",
+            "value": "7d"
+          },
+          {
+            "selected": false,
+            "text": "14d",
+            "value": "14d"
+          },
+          {
+            "selected": false,
+            "text": "30d",
+            "value": "30d"
+          }
+        ],
+        "query": "15s,30s,1m,2m,3m,5m,7m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
+      }
+    ]
+  },
+  "time": {
+    "from": "now/d",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "browser",
+  "title": "Support - Throughput",
+  "uid": "jJ93EsyZk",
+  "version": 3
+}
