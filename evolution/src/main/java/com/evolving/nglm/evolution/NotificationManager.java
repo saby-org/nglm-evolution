@@ -128,7 +128,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
       for (String channelName : channels)
         {
-          log.info("NotificationManager: Instanciate communication channel " + channelName);
+          log.info("-------> NotificationManager: Instanciate communication channel " + channelName);
           Map<String, CommunicationChannel> configuredChannels = Deployment.getCommunicationChannels();
           for (CommunicationChannel cc : configuredChannels.values())
             {

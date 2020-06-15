@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
+import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.core.JSONUtilities;
@@ -57,7 +58,7 @@ public class SMTPGenericPlugin implements NotificationInterface
 
   @Override public void init(DeliveryManagerForNotifications deliveryManagerForNotifications, JSONObject mailNotifSharedConfiguration)
   {
-    logger.info("SMTP Driver Loading Start...");
+    logger.info("SMTP Driver init()");
 
     this.mailNotificationManager = deliveryManagerForNotifications;
 
@@ -226,7 +227,7 @@ public class SMTPGenericPlugin implements NotificationInterface
     } 
     config.put("feedback.polling.try.constant.delay", feedback_polling_try_constant_delay);
 
-    logger.info("Configurition for SMTPGenericPlugin : " + config);
+    logger.info("Configuration for SMTPGenericPlugin : " + config);
     MailSenderFactory mailSenderFactory = new MailSenderFactory(config);
     try
     {
@@ -273,8 +274,13 @@ public class SMTPGenericPlugin implements NotificationInterface
       {
         try
           {
-            // TODO extract all parameters from the generic request
-//            senders[currentSenderIndex].sendEmail(mailNotificationRequest);
+            NotificationManagerRequest deliveryRequest = (NotificationManagerRequest) mailNotificationRequest;
+            Map<String,String> resolvedParameters = deliveryRequest.getResolvedParameters(mailNotificationManager.getSubscriberMessageTemplateService());
+            String body = resolvedParameters.get("node.parameter.body");
+            String toEmail = deliveryRequest.getDestination();
+            String fromAddress =  deliveryRequest.getDeliveryRequestSource(); // TODO check
+            boolean confirmationExpected = false ; // TODO : where to get it ?
+            senders[currentSenderIndex].sendEmail(mailNotificationRequest, body, toEmail, fromAddress, confirmationExpected);
           }
         catch (Exception mEx)
           {
