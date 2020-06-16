@@ -880,7 +880,7 @@ public class TimerService
         
         String journeyID = journeyService.generateJourneyID();
         journeyJSON.put("id", journeyID);
-        journeyJSON.put("name", recurrentJourney.getGUIManagedObjectName() + "_" + journeyID);
+        journeyJSON.put("name", recurrentJourney.getGUIManagedObjectName() + "_" + occurrenceNumber);
         journeyJSON.put("occurrenceNumber", ++occurrenceNumber);
         journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + "_" + occurrenceNumber);
         journeyJSON.put("effectiveStartDate", recurrentJourney.formatDateField(startDate));
@@ -891,6 +891,7 @@ public class TimerService
             //
             //  activate
             //
+            
             JSONObject journeyStartJSON = new JSONObject();
             journeyJSON.put("apiVersion", 1);
             journeyStartJSON.put("id", journeyID);
