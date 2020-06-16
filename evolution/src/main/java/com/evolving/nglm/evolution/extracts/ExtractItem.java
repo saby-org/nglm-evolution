@@ -80,12 +80,6 @@ public class ExtractItem
       }
   }
 
-  public ExtractItem(JSONObject jsonRoot,String userID) throws GUIManager.GUIManagerException
-  {
-    this(jsonRoot);
-    this.userID = userID;
-  }
-
   /****************************************
    *
    *  contructor

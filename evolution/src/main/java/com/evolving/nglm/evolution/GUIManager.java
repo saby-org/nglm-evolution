@@ -8586,7 +8586,7 @@ public class GUIManager
     String responseCode = "";
     try
       {
-        ExtractItem extractItem = new ExtractItem(jsonRoot,userID);
+        ExtractItem extractItem = new ExtractItem(jsonRoot);
         if (targetService.isTargetExtractRunning(extractItem.getExtractFileName()+"-"+extractItem.getUserId()))
           {
             responseCode = "targetIsAlreadyRunning";
