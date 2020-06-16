@@ -653,6 +653,23 @@ public class DNBOUtils
       
       /*****************************************
       *
+      *  Overiding subscriber ?
+      *
+      *****************************************/
+
+      String overidingSubscriberID = null;
+      String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.relationship");
+      if(hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer")) {
+        // retrieve the relationship 
+        SubscriberRelatives subscriberRelatives = evolutionEventContext.getSubscriberState().getSubscriberProfile().getRelations().get(hierarchyRelationship);
+        if(subscriberRelatives != null) {
+          overidingSubscriberID = subscriberRelatives.getParentSubscriberID();
+        }
+      }
+
+      
+      /*****************************************
+      *
       *  Effective purchase of the offer
       *
       *****************************************/
@@ -661,7 +678,7 @@ public class DNBOUtils
       String salesChannelID = token.getPresentedOffersSalesChannel();
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
 
-      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "", "");
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, overidingSubscriberID, deliveryRequestSource, offerID, quantity, salesChannelID, "", "");
       request.setModuleID(DeliveryRequest.Module.Journey_Manager.getExternalRepresentation());
       request.setFeatureID(deliveryRequestSource);
       result.add(request);

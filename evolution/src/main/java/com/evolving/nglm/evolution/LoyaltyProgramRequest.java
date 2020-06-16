@@ -111,9 +111,9 @@ public class LoyaltyProgramRequest extends DeliveryRequest implements BonusDeliv
   *
   *****************************************/
 
-  public LoyaltyProgramRequest(EvolutionEventContext context, String deliveryRequestSource, LoyaltyProgramOperation operation, String loyaltyProgramID)
+  public LoyaltyProgramRequest(EvolutionEventContext context, String overidingSubscriberID, String deliveryRequestSource, LoyaltyProgramOperation operation, String loyaltyProgramID)
   {
-    super(context, "loyaltyProgramFulfillment", deliveryRequestSource);
+    super(context, "loyaltyProgramFulfillment", deliveryRequestSource, overidingSubscriberID);
     this.operation = operation;
     this.loyaltyProgramRequestID = context.getUniqueKey();
     this.loyaltyProgramID = loyaltyProgramID;

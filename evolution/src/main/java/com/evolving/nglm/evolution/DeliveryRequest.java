@@ -393,7 +393,9 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   *
   *****************************************/
 
+  protected DeliveryRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String alternativeSubscriberID)
   protected DeliveryRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource)
+  protected DeliveryRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String overidingSubscriberID)
   {
     /*****************************************
     *
@@ -406,7 +408,17 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.originatingDeliveryRequestID = null;
     this.originatingRequest = true;
     this.creationDate = context.now();
-    this.subscriberID = context.getSubscriberState().getSubscriberID();
+    if(overidingSubscriberID != null) 
+      {
+        // This requets is not for the subscriber that initiated if, it is for the alternate SubscriberID
+        this.originatingSubscriberID = context.getSubscriberState().getSubscriberID();
+        this.subscriberID = overidingSubscriberID;
+      }
+    else 
+      {
+        this.subscriberID = context.getSubscriberState().getSubscriberID();
+        this.originatingSubscriberID = null;
+      }
     this.deliveryPriority = DeliveryPriority.Standard;
     this.eventID = this.deliveryRequestID;
     this.moduleID = null;
@@ -445,6 +457,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.originatingRequest = true;
     this.creationDate = SystemTime.getCurrentTime();
     this.subscriberID = subscriberID;
+    this.originatingSubscriberID = null; // consider from GUIManager no delivery request delegation
     this.deliveryPriority = DeliveryPriority.Standard;
     this.eventID = this.deliveryRequestID;
     this.moduleID = null;

@@ -250,9 +250,9 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     *
     *****************************************/
 
-    public SMSNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String source, String language, String templateID, List<String> messageTags)
+    public SMSNotificationManagerRequest(EvolutionEventContext context, String overidingSubscriberID, String deliveryType, String deliveryRequestSource, String destination, String source, String language, String templateID, List<String> messageTags)
     {
-      super(context, deliveryType, deliveryRequestSource);
+      super(context, deliveryType, deliveryRequestSource, overidingSubscriberID);
       this.destination = destination;
       this.source = source;
       this.language = language;
@@ -559,6 +559,22 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
 
       /*****************************************
       *
+      *  Overiding subscriber ?
+      *
+      *****************************************/
+
+      String overidingSubscriberID = null;
+      String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.relationship");
+      if(hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer")) {
+        // retrieve the relationship 
+        SubscriberRelatives subscriberRelatives = evolutionEventContext.getSubscriberState().getSubscriberProfile().getRelations().get(hierarchyRelationship);
+        if(subscriberRelatives != null) {
+          overidingSubscriberID = subscriberRelatives.getParentSubscriberID();
+        }
+      }
+      
+      /*****************************************
+      *
       *  request
       *
       *****************************************/
@@ -566,7 +582,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       SMSNotificationManagerRequest request = null;
       if (template != null && msisdn != null)
         {
-          request = new SMSNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, msisdn, source, language, template.getSMSTemplateID(), messageTags);
+          request = new SMSNotificationManagerRequest(evolutionEventContext, overidingSubscriberID, deliveryType, deliveryRequestSource, msisdn, source, language, template.getSMSTemplateID(), messageTags);
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
           request.setConfirmationExpected(confirmationExpected);

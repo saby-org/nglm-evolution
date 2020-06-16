@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.management.relation.RelationService;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -463,9 +465,9 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     *
     *****************************************/
 
-    public CommodityDeliveryRequest(EvolutionEventContext context, String externalSubscriberID, String deliveryRequestSource, Map<String, String> diplomaticBriefcase, String providerID, String commodityID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, Date deliverableExpirationDate)
+    public CommodityDeliveryRequest(EvolutionEventContext context, String overidingSubscriberID, String externalSubscriberID, String deliveryRequestSource, Map<String, String> diplomaticBriefcase, String providerID, String commodityID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, Date deliverableExpirationDate)
     {
-      super(context, "commodityDelivery", deliveryRequestSource);
+      super(context, "commodityDelivery", deliveryRequestSource, overidingSubscriberID);
       this.externalSubscriberID = externalSubscriberID;
       setDiplomaticBriefcase(diplomaticBriefcase);
       this.providerID = providerID;
@@ -1612,6 +1614,22 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
         CriterionField criterionField = Deployment.getProfileCriterionFields().get(profileExternalSubscriberIDField);
         externalSubscriberID = (String) criterionField.retrieveNormalized(subscriberEvaluationRequest);
       }
+      
+      /*****************************************
+      *
+      *  Overiding subscriber ?
+      *
+      *****************************************/
+      String overidingSubscriberID = null;
+      String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.relationship");
+      if(hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer")) {
+        // retrieve the relationship 
+        SubscriberRelatives subscriberRelatives = evolutionEventContext.getSubscriberState().getSubscriberProfile().getRelations().get(hierarchyRelationship);
+        if(subscriberRelatives != null) {
+          overidingSubscriberID = subscriberRelatives.getParentSubscriberID();
+        }
+      }
+      
 
       /*****************************************
       *
@@ -1619,7 +1637,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       *
       *****************************************/
 
-      CommodityDeliveryRequest request = new CommodityDeliveryRequest(evolutionEventContext, externalSubscriberID, deliveryRequestSource, null, providerID, commodityID, operation, amount, validityPeriodType, validityPeriodQuantity, null);
+      CommodityDeliveryRequest request = new CommodityDeliveryRequest(evolutionEventContext, overidingSubscriberID, externalSubscriberID, deliveryRequestSource, null, providerID, commodityID, operation, amount, validityPeriodType, validityPeriodQuantity, null);
       request.setModuleID(moduleID);
       request.setFeatureID(deliveryRequestSource);
 

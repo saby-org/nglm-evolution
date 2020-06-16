@@ -270,9 +270,9 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    public PushNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags)
+    public PushNotificationManagerRequest(EvolutionEventContext context, String overidingSubscriberID, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags)
     {
-      super(context, deliveryType, deliveryRequestSource);
+      super(context, deliveryType, deliveryRequestSource, overidingSubscriberID);
       this.destination = destination;
       this.language = language;
       this.templateID = templateID;
@@ -657,6 +657,23 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
         {
           log.info("PushNotificationManager unknown push template ");
         }
+      
+      /*****************************************
+      *
+      *  Overiding subscriber ?
+      *
+      *****************************************/
+
+      String overidingSubscriberID = null;
+      String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.relationship");
+      if(hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer")) {
+        // retrieve the relationship 
+        SubscriberRelatives subscriberRelatives = evolutionEventContext.getSubscriberState().getSubscriberProfile().getRelations().get(hierarchyRelationship);
+        if(subscriberRelatives != null) {
+          overidingSubscriberID = subscriberRelatives.getParentSubscriberID();
+        }
+      }
+
 
       /*****************************************
       *
@@ -667,7 +684,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       PushNotificationManagerRequest request = null;
       if (destAddress != null)
         {
-          request = new PushNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getPushTemplateID(), tags);
+          request = new PushNotificationManagerRequest(evolutionEventContext, overidingSubscriberID, deliveryType, deliveryRequestSource, destAddress, language, template.getPushTemplateID(), tags);
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
           request.setNotificationHistory(evolutionEventContext.getSubscriberState().getNotificationHistory());

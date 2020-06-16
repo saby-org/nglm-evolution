@@ -281,9 +281,9 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public EmptyFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String providerID, String commodityID, EmptyFulfillmentOperation operation, int amount)
+    public EmptyFulfillmentRequest(EvolutionEventContext context, String overidingSubscriberID, String deliveryType, String deliveryRequestSource, String providerID, String commodityID, EmptyFulfillmentOperation operation, int amount)
     {
-      super(context, deliveryType, deliveryRequestSource);
+      super(context, deliveryType, deliveryRequestSource, overidingSubscriberID);
       this.providerID = providerID;
       this.commodityID = commodityID;
       this.operation = operation;
@@ -562,7 +562,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
       *
       *****************************************/
 
-      EmptyFulfillmentRequest request = new EmptyFulfillmentRequest(evolutionEventContext, deliveryType, deliveryRequestSource, providerID, commodityID, operation, amount);
+      EmptyFulfillmentRequest request = new EmptyFulfillmentRequest(evolutionEventContext, null, deliveryType, deliveryRequestSource, providerID, commodityID, operation, amount);
 
       /*****************************************
       *

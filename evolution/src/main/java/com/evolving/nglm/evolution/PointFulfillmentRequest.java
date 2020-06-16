@@ -127,9 +127,9 @@ public class PointFulfillmentRequest extends DeliveryRequest implements BonusDel
   *
   *****************************************/
 
-  public PointFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String pointID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity)
+  public PointFulfillmentRequest(EvolutionEventContext context, String overidingSubscriberID, String deliveryType, String deliveryRequestSource, String pointID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity)
   {
-    super(context, deliveryType, deliveryRequestSource);
+    super(context, deliveryType, deliveryRequestSource, overidingSubscriberID);
     this.pointID = pointID;
     this.operation = operation;
     this.amount = amount;

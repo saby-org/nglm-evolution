@@ -7326,7 +7326,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      JourneyRequest request = new JourneyRequest(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource, journeyID);
+      JourneyRequest request = new JourneyRequest(evolutionEventContext, null, subscriberEvaluationRequest, deliveryRequestSource, journeyID);
 
       /*****************************************
       *
@@ -7427,7 +7427,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      JourneyRequest request = validParameters ? new JourneyRequest(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource, workflowParameter.getWorkflowID(), boundParameters) : null;
+      JourneyRequest request = validParameters ? new JourneyRequest(evolutionEventContext, null, subscriberEvaluationRequest, deliveryRequestSource, workflowParameter.getWorkflowID(), boundParameters) : null;
 
       /*****************************************
       *
@@ -7495,7 +7495,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      LoyaltyProgramRequest request = new LoyaltyProgramRequest(evolutionEventContext, deliveryRequestSource, operation, loyaltyProgramID);
+      LoyaltyProgramRequest request = new LoyaltyProgramRequest(evolutionEventContext, null, deliveryRequestSource, operation, loyaltyProgramID);
       request.setModuleID(moduleID);
       request.setFeatureID(deliveryRequestSource);
 

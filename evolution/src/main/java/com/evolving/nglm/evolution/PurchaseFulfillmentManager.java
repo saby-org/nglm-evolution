@@ -369,9 +369,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    public PurchaseFulfillmentRequest(EvolutionEventContext context, String deliveryRequestSource, String offerID, int quantity, String salesChannelID, String origin, String resellerID)
+    public PurchaseFulfillmentRequest(EvolutionEventContext context, String overidingSubscriberID, String deliveryRequestSource, String offerID, int quantity, String salesChannelID, String origin, String resellerID)
     {
-      super(context, "purchaseFulfillment", deliveryRequestSource);
+      super(context, "purchaseFulfillment", deliveryRequestSource, overidingSubscriberID);
       this.offerID = offerID;
       this.quantity = quantity;
       this.salesChannelID = salesChannelID;
@@ -2675,6 +2675,23 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      
+      /*****************************************
+      *
+      *  Overiding subscriber ?
+      *
+      *****************************************/
+
+      String overidingSubscriberID = null;
+      String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.relationship");
+      if(hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer")) {
+        // retrieve the relationship 
+        SubscriberRelatives subscriberRelatives = evolutionEventContext.getSubscriberState().getSubscriberProfile().getRelations().get(hierarchyRelationship);
+        if(subscriberRelatives != null) {
+          overidingSubscriberID = subscriberRelatives.getParentSubscriberID();
+        }
+      }
+
 
       /*****************************************
       *
@@ -2682,7 +2699,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *
       *****************************************/
 
-      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "", "");
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, overidingSubscriberID, deliveryRequestSource, offerID, quantity, salesChannelID, "", "");
       request.setModuleID(moduleID);
       request.setFeatureID(deliveryRequestSource);
 
