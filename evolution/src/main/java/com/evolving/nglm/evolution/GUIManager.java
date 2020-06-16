@@ -6145,7 +6145,7 @@ public class GUIManager
     *
     *****************************************/
     
-    response.put("responseCode", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+    response.put("responseCode", "ok");
     response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
     response.put("journeyNodeCount", JSONUtilities.encodeObject(result));
     return JSONUtilities.encodeObject(response);
@@ -13935,7 +13935,7 @@ public class GUIManager
           }
 
 
-        response.put("responseCode", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+        response.put("responseCode", "ok");
         response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
       } 
     catch (SubscriberProfileServiceException e)
