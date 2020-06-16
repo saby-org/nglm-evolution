@@ -13713,7 +13713,7 @@ public class GUIManager
                 //  respect manual campaigns only
                 //
 
-                activeCampaigns = activeCampaigns.stream().filter(activeJourney -> TargetingType.Manual == activeJourney.getTargetingType()).collect(Collectors.toList());
+                activeCampaigns = activeCampaigns.stream().filter(activeJourney -> activeJourney.getGUIManagedObjectType() == GUIManagedObjectType.Campaign && TargetingType.Manual == activeJourney.getTargetingType()).collect(Collectors.toList());
 
                 //
                 // list the eligible campaigns
