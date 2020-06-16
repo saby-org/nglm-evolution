@@ -54,7 +54,7 @@ public class ReportJob extends ScheduledJob
     else
       {
         log.info("reportJob " + report.getName() + " : launch report");
-        reportService.launchReport(report.getName());
+        reportService.launchReport(report);
       }
     log.info("reportJob " + report.getName() + " : end execution");
   }
