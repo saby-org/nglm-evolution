@@ -165,21 +165,6 @@ public class Journey extends GUIManagedObject implements StockableItem
     public static TargetingType fromExternalRepresentation(String externalRepresentation) { for (TargetingType enumeratedValue : TargetingType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 
-  //
-  //  BulkType
-  //
-  
-  public enum BulkType
-  {
-    Bulk_SMS("Bulk_SMS"),
-    Bulk_Bonus("Bulk_Bonus"),
-    Unknown("(unknown)");
-    private String externalRepresentation;
-    private BulkType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public static BulkType fromExternalRepresentation(String externalRepresentation) { for (BulkType enumeratedValue : BulkType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
-  }
-
   /*****************************************
   *
   *  schema

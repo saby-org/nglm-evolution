@@ -110,7 +110,6 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
-import com.evolving.nglm.evolution.Journey.BulkType;
 import com.evolving.nglm.evolution.Journey.GUINode;
 import com.evolving.nglm.evolution.Journey.JourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
@@ -5528,26 +5527,7 @@ public class GUIManager
     //
     //  get journey template
     //
-    BulkType bulkType = BulkType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "bulkType", false));
-    String journeyTemplateID = null;
-    if(bulkType != BulkType.Unknown) {
-      switch (bulkType) {
-      case Bulk_SMS:
-        journeyTemplateID = "Bulk_SMS";
-        break;
-
-      case Bulk_Bonus:
-        journeyTemplateID = "Bulk_Bonus";
-        break;
-
-      default:
-        break;
-      }
-    } 
-    else {
-      journeyTemplateID = JSONUtilities.decodeString(jsonRoot, "journeyTemplateID", false);
-    }
-    
+    String journeyTemplateID = JSONUtilities.decodeString(jsonRoot, "journeyTemplateID", false);
     if(journeyTemplateID == null || journeyTemplateID.isEmpty()){
       response.put("responseCode", "missingJourneyTemplate");
       return JSONUtilities.encodeObject(response);
@@ -5583,8 +5563,8 @@ public class GUIManager
     //
     long plannedCapacity = 0;
     for (GUIManagedObject journey : journeyService.getStoredJourneys(false)) {
-      if ( journey.getGUIManagedObjectType().equals(GUIManagedObjectType.BulkCampaign) && ((Journey) journey).getEffectiveStartDate() != null) {
-        Date startDate = RLMDateUtils.truncate(((Journey) journey).getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone());
+      if ( journey.getGUIManagedObjectType().equals(GUIManagedObjectType.BulkCampaign) && journey.getEffectiveStartDate() != null) {
+        Date startDate = RLMDateUtils.truncate(journey.getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone());
         Object templateIDObj = journey.getJSONRepresentation().get("journeyTemplateID"); // only in JSON representation
         String templateID = (templateIDObj != null && templateIDObj instanceof String) ? (String) templateIDObj : null;
         
@@ -5635,24 +5615,7 @@ public class GUIManager
     //  get journey template
     //
     
-    BulkType bulkType = BulkType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "bulkType", false));
-    String journeyTemplateID = null;
-    if(bulkType != BulkType.Unknown){
-      switch (bulkType) {
-      case Bulk_SMS:
-        journeyTemplateID = "Bulk_SMS";
-        break;
-
-      case Bulk_Bonus:
-        journeyTemplateID = "Bulk_Bonus";
-        break;
-
-      default:
-        break;
-      }
-    }else{
-      journeyTemplateID = JSONUtilities.decodeString(jsonRoot, "journeyTemplateID", true);
-    }
+    String journeyTemplateID = journeyTemplateID = JSONUtilities.decodeString(jsonRoot, "journeyTemplateID", false);
     if(journeyTemplateID == null || journeyTemplateID.isEmpty()){
       response.put("responseCode", "missingJourneyTemplate");
       return JSONUtilities.encodeObject(response);
@@ -5743,7 +5706,6 @@ public class GUIManager
         //  override with bulkCampaign attributes
         //
 
-        campaignJSONRepresentation.put("bulkType", bulkType.getExternalRepresentation());
         campaignJSONRepresentation.put("journeyTemplateID", journeyTemplateID);
         campaignJSONRepresentation.put("id", bulkCampaignID);
         campaignJSONRepresentation.put("name", bulkCampaignName);
