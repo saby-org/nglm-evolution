@@ -100,7 +100,8 @@ public class ReportEsReader
   private String esNode;
   private LinkedHashMap<String, QueryBuilder> esIndex;
   private String elasticKey;
-  private boolean onlyKeepAlternateIDs;
+  private boolean onlyKeepAlternateIDs; // when we read subscriberprofile, only keep info about alternateIDs
+  private boolean onlyKeepAlternateIDsExtended; // when we read subscriberprofile, only keep info about alternateIDs and a little more (for 2 specific reports)
 
   /**
    * Create a {@code ReportEsReader} instance.
@@ -126,7 +127,7 @@ public class ReportEsReader
    * @param esIndex
    *          a hashmap with each index to read and the associated query
    */
-  public ReportEsReader(String elasticKey, String topicName, String kafkaNodeList, String kzHostList, String esNode, LinkedHashMap<String, QueryBuilder> esIndex, boolean onlyKeepAlternateIDs)
+  public ReportEsReader(String elasticKey, String topicName, String kafkaNodeList, String kzHostList, String esNode, LinkedHashMap<String, QueryBuilder> esIndex, boolean onlyKeepAlternateIDs, boolean onlyKeepAlternateIDsExtended)
   {
     this.elasticKey = elasticKey;
     this.topicName = topicName;
@@ -134,6 +135,7 @@ public class ReportEsReader
     this.kzHostList = kzHostList;
     this.esNode = esNode;
     this.onlyKeepAlternateIDs = onlyKeepAlternateIDs;
+    this.onlyKeepAlternateIDsExtended = onlyKeepAlternateIDsExtended;
     // convert index names to lower case, because this is what ElasticSearch expects
     this.esIndex = new LinkedHashMap<>();
     for (Entry<String, QueryBuilder> elem : esIndex.entrySet())
@@ -145,7 +147,12 @@ public class ReportEsReader
 
   public ReportEsReader(String elasticKey, String topicName, String kafkaNodeList, String kzHostList, String esNode, LinkedHashMap<String, QueryBuilder> esIndex)
   {
-    this(elasticKey, topicName, kafkaNodeList, kzHostList, esNode, esIndex, false);
+    this(elasticKey, topicName, kafkaNodeList, kzHostList, esNode, esIndex, false, false);
+  }
+
+  public ReportEsReader(String elasticKey, String topicName, String kafkaNodeList, String kzHostList, String esNode, LinkedHashMap<String, QueryBuilder> esIndex, boolean onlyKeepAlternateIDs)
+  {
+    this(elasticKey, topicName, kafkaNodeList, kzHostList, esNode, esIndex, onlyKeepAlternateIDs, false);
   }
 
   public enum PERIOD
@@ -312,7 +319,6 @@ public class ReportEsReader
                               }
                             miniSourceMap = new HashMap<>();
                             miniSourceMap.put(elasticKey, sourceMap.get(elasticKey));
-                            miniSourceMap.put("pointBalances", sourceMap.get("pointBalances")); // keep this (for Customer Point Details report)
                             for (AlternateID alternateID : Deployment.getAlternateIDs().values())
                               {
                                 String name = alternateID.getName();
@@ -326,6 +332,12 @@ public class ReportEsReader
                                     miniSourceMap.put(name, sourceMap.get(name));
                                   }
                               }
+                            if (onlyKeepAlternateIDsExtended)
+                              {
+                                miniSourceMap.put("pointBalances", sourceMap.get("pointBalances")); // keep this (for Customer Point Details report)
+                                miniSourceMap.put("loyaltyPrograms", sourceMap.get("loyaltyPrograms")); // keep this (for Loyalty Program Customer States report)
+                              }
+                            sourceMap = null; // to help GC do its job
                           }
                         
                         ReportElement re = new ReportElement(i, miniSourceMap);
