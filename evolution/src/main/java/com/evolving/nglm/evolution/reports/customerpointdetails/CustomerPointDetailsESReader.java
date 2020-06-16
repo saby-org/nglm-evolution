@@ -42,7 +42,7 @@ public class CustomerPointDetailsESReader
         kzHostList,
         esNode,
         esIndexWithQuery,
-        true
+        true, true
         );
 
     reportEsReader.start();
