@@ -467,6 +467,7 @@ public class GUIManager
     getSourceAddress("getSourceAddress"),
     putSourceAddress("putSourceAddress"),
     removeSourceAddress("removeSourceAddress"),
+    getDependencies("getDependencies"),
     
     //
     //  structor
@@ -577,6 +578,10 @@ public class GUIManager
   //
 
   protected GUIManagerContext guiManagerContext;
+  
+  //
+  // helper classes
+  //
   
   private GUIManagerBaseManagement guiManagerBaseManagement;
   private GUIManagerLoyaltyReporting guiManagerLoyaltyReporting;
@@ -1953,6 +1958,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSourceAddress", new APISimpleHandler(API.getSourceAddress));
         restServer.createContext("/nglm-guimanager/putSourceAddress", new APISimpleHandler(API.putSourceAddress));
         restServer.createContext("/nglm-guimanager/removeSourceAddress", new APISimpleHandler(API.removeSourceAddress));
+        restServer.createContext("/nglm-guimanager/getDependencies", new APISimpleHandler(API.getDependencies));
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -3503,6 +3509,10 @@ public class GUIManager
 
                 case getTenantList:
                   jsonResponse = guiManagerGeneral.processGetTenantList(userID, jsonRoot, true, includeArchived);
+                  break;
+                  
+                case getDependencies:
+                  jsonResponse = guiManagerGeneral.processGetDependencies(userID, jsonRoot);
                   break;
 
               }
@@ -20034,7 +20044,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     revalidateVouchers(date);
   }
-
+  
   /****************************************
   *
   *  resolveSubscriberID
