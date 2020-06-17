@@ -1011,6 +1011,13 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         request.put("moduleID", moduleID);
         request.put("featureID", featureID);
         request.put("deliveryType", "loyaltyProgramFulfillment");
+        /*if (optIn == true) {
+          request.put("loyaltyProgramExitDate", null);
+          request.put("active", true);
+        }
+        else {
+          request.put("active", false);
+        }*/
 
         JSONObject valueRes = JSONUtilities.encodeObject(request);
 
