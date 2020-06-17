@@ -354,8 +354,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
         String dimensionID = groupID.getFirstElement();
         String segmentID = groupID.getSecondElement();
         SegmentationDimension segmentationDimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionID, evaluationDate);
-        if (segmentationDimension.getIsSimpleProfileDimension() == false) {
-        if (segmentationDimension != null)
+        if (segmentationDimension != null && segmentationDimension.getIsSimpleProfileDimension() == false)
           {
             if(segmentationDimension.getTargetingType().equals(SegmentationDimensionTargetingType.FILE))
               {
@@ -384,8 +383,6 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
                 }                
               }
           }
-        }
-        
       }
     return result;
   }
