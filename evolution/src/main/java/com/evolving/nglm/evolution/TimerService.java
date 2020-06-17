@@ -895,7 +895,8 @@ public class TimerService
             JSONObject journeyStartJSON = new JSONObject();
             journeyJSON.put("apiVersion", 1);
             journeyStartJSON.put("id", journeyID);
-            guiManagerService.processPOSTRequest(journeyStartJSON, "startCampaign");
+            JSONObject startResult = guiManagerService.processPOSTRequest(journeyStartJSON, "startCampaign");
+            log.info("RAJ K startResult {}", startResult);
           }
         else
           {
@@ -909,31 +910,41 @@ public class TimerService
   //  getExpectedCreationDates
   //
   
-  private List<Date> getExpectedCreationDates(Date firstDateOfThisWk, Date lastDateOfThisWk, String scheduling, List<String> runEveryDay)
+  private List<Date> getExpectedCreationDates(Date firstDate, Date lastDate, String scheduling, List<String> runEveryDay)
   {
     List<Date> result = new ArrayList<Date>();
-    while (firstDateOfThisWk.before(lastDateOfThisWk) || firstDateOfThisWk.compareTo(lastDateOfThisWk) == 0)
+    while (firstDate.before(lastDate) || firstDate.compareTo(lastDate) == 0)
       {
         int day = -1;
         switch (scheduling)
           {
             case "week":
-              day = RLMDateUtils.getField(firstDateOfThisWk, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
+              day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
               break;
               
             case "month":
-              day = RLMDateUtils.getField(firstDateOfThisWk, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
+              day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
               break;
 
             default:
               break;
         }
         String dayOf = String.valueOf(day);
-        if (runEveryDay.contains(dayOf))
+        if (runEveryDay.contains(dayOf)) result.add(new Date(firstDate.getTime()));
+        firstDate = RLMDateUtils.addDays(firstDate, 1, Deployment.getBaseTimeZone());
+      }
+    
+    //
+    //  handle last date of month
+    //
+    
+    if ("month".equalsIgnoreCase(scheduling))
+      {
+        int lastDayOfMonth = RLMDateUtils.getField(lastDate, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
+        for (String day : runEveryDay)
           {
-            result.add(new Date(firstDateOfThisWk.getTime()));
+            if (Integer.parseInt(day) > lastDayOfMonth) result.add(new Date(lastDate.getTime()));
           }
-        firstDateOfThisWk = RLMDateUtils.addDays(firstDateOfThisWk, 1, Deployment.getBaseTimeZone());
       }
     log.info("RAJ K getExpectedCreationDates {}", result);
     return result;
