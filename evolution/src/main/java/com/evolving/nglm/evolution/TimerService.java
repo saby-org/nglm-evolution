@@ -893,7 +893,7 @@ public class TimerService
             //
             
             JSONObject journeyStartJSON = new JSONObject();
-            journeyJSON.put("apiVersion", 1);
+            journeyStartJSON.put("apiVersion", 1);
             journeyStartJSON.put("id", journeyID);
             JSONObject startResult = guiManagerService.processPOSTRequest(journeyStartJSON, "startCampaign");
             log.info("RAJ K startResult {}", startResult);
