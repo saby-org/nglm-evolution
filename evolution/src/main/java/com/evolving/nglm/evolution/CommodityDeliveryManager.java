@@ -115,7 +115,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     SYSTEM_ERROR(21),
     TIMEOUT(22),
     THIRD_PARTY_ERROR(24),
-    BONUS_NOT_FOUND(101),
+    BONUS_NOT_FOUND(100),
     INSUFFICIENT_BALANCE(405),
     UNKNOWN(999);
     private Integer externalRepresentation;
@@ -750,8 +750,10 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(ORIGIN, "");
       thirdPartyPresentationMap.put(RETURNCODE, getCommodityDeliveryStatus().getReturnCode());
+      thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getCommodityDeliveryStatus().getReturnCode()).getGenericResponseMessage());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getCommodityDeliveryStatus().toString());
     }
+
     @Override
     public void resetDeliveryRequestAfterReSchedule()
     {

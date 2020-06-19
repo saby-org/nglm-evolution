@@ -6244,7 +6244,7 @@ public class GUIManager
     *
     *****************************************/
     
-    response.put("responseCode", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+    response.put("responseCode", "ok");
     response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
     response.put("journeyNodeCount", JSONUtilities.encodeObject(result));
     return JSONUtilities.encodeObject(response);
@@ -14034,7 +14034,7 @@ public class GUIManager
           }
 
 
-        response.put("responseCode", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+        response.put("responseCode", "ok");
         response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
       } 
     catch (SubscriberProfileServiceException e)
@@ -19028,6 +19028,19 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
                   availableValue.put("id", month.toLowerCase());
                   availableValue.put("display", month);
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+          
+        case "returnCodes":
+          if (includeDynamic)
+            {
+              for (RESTAPIGenericReturnCodes returnCode : RESTAPIGenericReturnCodes.values())
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", returnCode.getGenericResponseCode());
+                  availableValue.put("display", returnCode.getGenericResponseMessage());
                   result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }

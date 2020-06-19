@@ -67,7 +67,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
     TIMEOUT(22),
     THROTTLING(23),
     CUSTOMER_NOT_FOUND(20),
-    BONUS_NOT_FOUND(101),
+    BONUS_NOT_FOUND(100),
     UNKNOWN(999);
     private Integer externalRepresentation;
     private EmptyFulfillmentStatus(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -486,6 +486,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(ORIGIN, "");
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
+      thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
     }
     @Override

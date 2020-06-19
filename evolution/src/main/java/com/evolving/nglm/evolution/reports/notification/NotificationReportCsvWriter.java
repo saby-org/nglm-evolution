@@ -40,6 +40,7 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
   private static final String eventID = "eventID";
   private static final String returnCode = "returnCode";
   private static final String returnCodeDetails = "returnCodeDetails";
+  private static final String returnCodeDescription = "returnCodeDescription";
   private static final String source = "source";
   
   private static List<String> headerFieldsOrder = new LinkedList<String>();
@@ -61,6 +62,7 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(deliveryStatus);
     headerFieldsOrder.add(eventID);
     headerFieldsOrder.add(returnCode);
+    headerFieldsOrder.add(returnCodeDescription);
     headerFieldsOrder.add(returnCodeDetails);
     headerFieldsOrder.add(source);
   }
@@ -215,9 +217,9 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
               {
                 module = Module.fromExternalRepresentation(moduleID);
               } else
-                {
-                  module = Module.Unknown;
-                }
+              {
+                module = Module.Unknown;
+              }
             String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(notifFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
             notifRecs.put(featureDisplay, feature);
             notifRecs.put(moduleName, module.toString());
@@ -229,10 +231,9 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
           }
         if (notifFields.containsKey(returnCode))
           {
-            notifRecs.put(returnCode, notifFields.get(returnCode));
-          }
-        if (notifFields.get(returnCodeDetails) != null)
-          {
+            Object code = notifFields.get(returnCode);
+            notifRecs.put(returnCode, code);
+            notifRecs.put(returnCodeDescription, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
             notifRecs.put(returnCodeDetails, notifFields.get(returnCodeDetails));
           }
         if (notifFields.containsKey(source))

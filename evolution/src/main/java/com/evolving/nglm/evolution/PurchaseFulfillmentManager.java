@@ -48,7 +48,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     CUSTOMER_NOT_FOUND(20),
     SYSTEM_ERROR(21),
     THIRD_PARTY_ERROR(24),
-    BONUS_NOT_FOUND(101),
+    BONUS_NOT_FOUND(100),
     OFFER_NOT_FOUND(400),
     PRODUCT_NOT_FOUND(401),
     INVALID_PRODUCT(402),
@@ -836,7 +836,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(ORIGIN, getOrigin());
           thirdPartyPresentationMap.put(RESELLERID, getResellerID());
           thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
-          thirdPartyPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
+          thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
+          thirdPartyPresentationMap.put(RETURNCODEDETAILS, getOfferDeliveryReturnCodeDetails());
           thirdPartyPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
           thirdPartyPresentationMap.put(VOUCHERPARTNERID, getOfferDeliveryVoucherPartnerId());
         }
@@ -1741,7 +1742,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   public void handleCommodityDeliveryResponse(DeliveryRequest response)
   {
     
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) called ...");
+    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse() called with " + response);
 
     // ------------------------------------
     // Getting initial request status
