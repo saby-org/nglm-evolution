@@ -839,7 +839,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     for (String relationshipID : this.relations.keySet())
       {
         SubscriberRelatives relatives = this.relations.get(relationshipID);
-        if (relatives != null)
+        if (relatives != null && !(relatives.getParentSubscriberID() == null && relatives.getChildrenSubscriberIDs().isEmpty()))
           {
             hierarchyRelations.add(relatives.getJSONRepresentation(relationshipID, subscriberProfileService, subscriberGroupEpochReader));
           }
