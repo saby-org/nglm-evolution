@@ -39,6 +39,7 @@ import com.evolving.nglm.evolution.EvolutionEngineEvent;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration;
 import com.evolving.nglm.evolution.INotificationRequest;
 import com.evolving.nglm.evolution.MONotificationEvent;
+import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.lumatagroup.expression.driver.SMPP.SMPPConnection.SubmitSMCorrectionDeliveryRequest;
 import com.evolving.nglm.core.JSONUtilities;
@@ -941,7 +942,16 @@ public class SimpleSMSSender extends SMSSenderListener {
                 }
                 logger.info("SimpleSMSSender.onSubmitSmResp: seqnum: "+packetSequenceNumber+", idreceipt: "+ messageId);
 
-                Boolean receiptRequired = (Boolean) ((NotificationManagerRequest)smsCorrelation.getDeliveryRequest()).getNotificationParameters().get("node.parameter.confirmationexpected");
+                
+                
+                Boolean receiptRequired = null;
+                if(smsCorrelation.getDeliveryRequest() instanceof SMSNotificationManagerRequest) {
+                  receiptRequired = ((SMSNotificationManagerRequest)smsCorrelation.getDeliveryRequest()).getConfirmationExpected();
+                }
+                else {
+                  receiptRequired = (Boolean) ((NotificationManagerRequest)smsCorrelation.getDeliveryRequest()).getNotificationParameters().get("node.parameter.confirmationexpected");
+                }            
+                
                 if(receiptRequired == null || receiptRequired.booleanValue() == false) 
                   {
                     // now DR required, let complete the request now
