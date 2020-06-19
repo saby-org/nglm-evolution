@@ -41,7 +41,9 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
   private static final String returnCode = "returnCode";
   private static final String returnCodeDetails = "returnCodeDetails";
   private static final String source = "source";
-  
+  private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+  private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
+
   private static List<String> headerFieldsOrder = new LinkedList<String>();
   static
   {
@@ -121,15 +123,13 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
                     // template.
                     // current format comes from ES and is :
                     // 2020-04-20T09:51:38.953Z
-                    SimpleDateFormat parseSDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
                     try
                     {
-                      Date date = parseSDF.parse(creationDateStr);
+                      Date date = parseSDF1.parse(creationDateStr);
                       notifRecs.put(creationDate, ReportsCommonCode.getDateString(date)); // replace with new value
                     } catch (ParseException e1)
                     {
                       // Could also be 2019-11-27 15:39:30.276+0100
-                      SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
                       try
                       {
                         Date date = parseSDF2.parse(creationDateStr);
@@ -162,15 +162,13 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
                     // template.
                     // current format comes from ES and is :
                     // 2020-04-20T09:51:38.953Z
-                    SimpleDateFormat parseSDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
                     try
                     {
-                      Date date = parseSDF.parse(deliveryDateStr);
+                      Date date = parseSDF1.parse(deliveryDateStr);
                       notifRecs.put(deliveryDate, ReportsCommonCode.getDateString(date)); // replace with new value
                     } catch (ParseException e1)
                     {
                       // Could also be 2019-11-27 15:39:30.276+0100
-                      SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
                       try
                       {
                         Date date = parseSDF2.parse(deliveryDateStr);

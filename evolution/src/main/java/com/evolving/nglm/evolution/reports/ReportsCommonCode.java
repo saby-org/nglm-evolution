@@ -19,6 +19,10 @@ import java.util.TimeZone;
 
 public class ReportsCommonCode
 {
+  
+  public static List<SimpleDateFormat> standardDateFormats = null;
+  public static SimpleDateFormat deploymentDateFormat = null;
+      
   public static final Logger log = LoggerFactory.getLogger(ReportsCommonCode.class);
 
   /****************************************
@@ -27,19 +31,21 @@ public class ReportsCommonCode
   *
   ****************************************/
   
-  public static List<SimpleDateFormat> initializeDateFormats()
+  public static void initializeDateFormats()
   {
-    List<SimpleDateFormat> standardDateFormats = new ArrayList<SimpleDateFormat>();
+    standardDateFormats = new ArrayList<SimpleDateFormat>();
     standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSSXXX"));
     standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"));
     standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX"));
     standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX"));
-    
     for (SimpleDateFormat standardDateFormat : standardDateFormats)
       {
         standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
       }
-    return standardDateFormats;
+
+    deploymentDateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
+    deploymentDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+
   }
 
   /****************************************
@@ -48,7 +54,7 @@ public class ReportsCommonCode
   *
   ****************************************/
   
-  public static String parseDate(List<SimpleDateFormat> standardDateFormats, String dateString)
+  public static String parseDate(String dateString)
   {
     String result = dateString;
     if (dateString != null)
@@ -61,9 +67,7 @@ public class ReportsCommonCode
                 try
                   {
                     Date date = standardDateFormat.parse(dateString.trim());
-                    SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-                    dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-                    result = dateFormat.format(date);
+                    result = deploymentDateFormat.format(date);
                     ableToParse = true;
                     break;
                   }
@@ -97,9 +101,7 @@ public class ReportsCommonCode
    if (date == null) return result;
    try
    {
-     SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-     dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-     result = dateFormat.format(date);
+     result = deploymentDateFormat.format(date);
    }
    catch (Exception e)
    {

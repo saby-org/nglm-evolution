@@ -154,8 +154,7 @@ public class ODRReportCsvWriter implements ReportCsvFactory
 
                 // TEMP fix for BLK : reformat date with correct template.
 
-                List<SimpleDateFormat> standardDateFormats = ReportsCommonCode.initializeDateFormats();
-                oderRecs.put(eventDatetime, ReportsCommonCode.parseDate(standardDateFormats, (String) eventDatetimeObj));
+                oderRecs.put(eventDatetime, ReportsCommonCode.parseDate((String) eventDatetimeObj));
 
                 // END TEMP fix for BLK
 
