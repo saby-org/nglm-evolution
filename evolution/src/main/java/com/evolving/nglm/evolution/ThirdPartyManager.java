@@ -156,6 +156,7 @@ public class ThirdPartyManager
   private static Integer authResponseCacheLifetimeInMinutes = null;
   private static final String GENERIC_RESPONSE_CODE = "responseCode";
   private static final String GENERIC_RESPONSE_MSG = "responseMessage";
+  private static final String GENERIC_RESPONSE_DESCRIPTION = "description";
   private String getCustomerAlternateID;
   public static final String REQUEST_DATE_PATTERN = "\\d{4}-\\d{2}-\\d{2}"; //Represents exact yyyy-MM-dd
   public static final String REQUEST_DATE_FORMAT= "yyyy-MM-dd";
@@ -4311,9 +4312,9 @@ public class ThirdPartyManager
           else
             {            
               response.put(GENERIC_RESPONSE_CODE,
-                  RESTAPIGenericReturnCodes.SALSCHANNEL_RESELLER_MISMATCH.getGenericResponseCode());
+                  RESTAPIGenericReturnCodes.SALESCHANNEL_RESELLER_MISMATCH.getGenericResponseCode());
               response.put(GENERIC_RESPONSE_MSG,
-                  RESTAPIGenericReturnCodes.SALSCHANNEL_RESELLER_MISMATCH.getGenericResponseMessage());
+                  RESTAPIGenericReturnCodes.SALESCHANNEL_RESELLER_MISMATCH.getGenericResponseMessage());
               return JSONUtilities.encodeObject(response);
             }
         }

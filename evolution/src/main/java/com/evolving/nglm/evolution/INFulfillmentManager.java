@@ -49,7 +49,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     TIMEOUT(22),
     THROTTLING(23),
     THIRD_PARTY_ERROR(24),
-    BONUS_NOT_FOUND(101),
+    BONUS_NOT_FOUND(100),
     CHECK_BALANCE_LT(300),
     CHECK_BALANCE_GT(301),
     UNKNOWN(999);
@@ -531,6 +531,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(ORIGIN, "");
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
+      thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
     }
     @Override

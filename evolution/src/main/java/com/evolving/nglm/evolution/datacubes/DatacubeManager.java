@@ -28,9 +28,10 @@ import com.evolving.nglm.evolution.datacubes.subscriber.SubscriberProfileDatacub
 import com.evolving.nglm.evolution.datacubes.subscriber.SubscriberProfileDatacubesOnYesterdayJob;
 
 import org.apache.http.HttpHost;
-
+import org.apache.http.client.config.RequestConfig;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,9 +131,19 @@ public class DatacubeManager
     //
     // initialize ES client & GUI client
     //
+    // @rl TODO use ElasticsearchClientAPI ?
     try
       {
-        elasticsearchRestClient = new RestHighLevelClient(RestClient.builder(new HttpHost(elasticsearchServerHost, elasticsearchServerPort, "http")));
+        RestClientBuilder restClientBuilder = RestClient.builder(new HttpHost(elasticsearchServerHost, elasticsearchServerPort, "http"));
+        restClientBuilder.setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback()
+        {
+          @Override
+          public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder)
+          {
+            return requestConfigBuilder.setConnectTimeout(Deployment.getElasticSearchConnectTimeout()).setSocketTimeout(Deployment.getElasticSearchQueryTimeout());
+          }
+        });
+        elasticsearchRestClient = new RestHighLevelClient(restClientBuilder);
       }
     catch (ElasticsearchException e)
       {
