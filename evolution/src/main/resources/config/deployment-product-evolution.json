@@ -42,6 +42,9 @@
   "elasticSearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
   
   "elasticSearchScrollSize" : 1000,
+  
+  "elasticSearchConnectTimeout" : 5000,
+  "elasticSearchQueryTimeout" : 60000,
 
   "maxPollIntervalMsComment": "default is 30 seconds, which causes containers to stop during startup (heavy system load",
   "maxPollIntervalMs"       : 120000,
