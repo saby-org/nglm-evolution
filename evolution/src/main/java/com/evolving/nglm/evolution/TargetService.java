@@ -325,8 +325,13 @@ public class TargetService extends GUIService
                       {
                         AlternateID alternateID = Deployment.getAlternateIDs().get(uploadedFile.getCustomerAlternateID());
                         reader = new BufferedReader(new FileReader(UploadedFile.OUTPUT_FOLDER+uploadedFile.getDestinationFilename()));
-                        for (String line; (line = reader.readLine()) != null && !line.isEmpty();)
+                        for (String line; (line = reader.readLine()) != null;)
                           {
+                            if(line.trim().isEmpty())
+                              {
+                                if(log.isDebugEnabled()) log.debug("TargetService.run(skipping empty line)");
+                                continue;
+                              }
                             String subscriberID = (alternateID != null) ? subscriberIDService.getSubscriberID(alternateID.getID(), line) : line;
                             if(subscriberID != null)
                               {
