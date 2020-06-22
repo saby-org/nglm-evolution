@@ -21260,6 +21260,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         
         journeyJSON.remove("recurrence");
         journeyJSON.remove("scheduler");
+        journeyJSON.remove("status");
         
         //
         //  add
