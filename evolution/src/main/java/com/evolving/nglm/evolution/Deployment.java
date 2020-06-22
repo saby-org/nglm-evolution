@@ -1097,7 +1097,7 @@ public class Deployment
 
       try
         {
-          maxPollIntervalMs = JSONUtilities.decodeInteger(jsonRoot, "maxPollIntervalMs", 30000);
+          maxPollIntervalMs = JSONUtilities.decodeInteger(jsonRoot, "maxPollIntervalMs", 300000);
         }
       catch (JSONUtilitiesException e)
         {

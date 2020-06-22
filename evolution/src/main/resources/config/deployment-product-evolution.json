@@ -46,8 +46,8 @@
   "elasticSearchConnectTimeout" : 5000,
   "elasticSearchQueryTimeout" : 60000,
 
-  "maxPollIntervalMsComment": "default is 30 seconds, which causes containers to stop during startup (heavy system load",
-  "maxPollIntervalMs"       : 120000,
+  "maxPollIntervalMsComment": "Changed to 300s (5 minutes), kafka default is 30 seconds, which causes containers to stop during startup (heavy system load",
+  "maxPollIntervalMs"       : 300000,
   
   "purchaseTimeoutMsComment" : "timeout for completion when calling purchase in sync mode",
   "purchaseTimeoutMs" : 15000,
