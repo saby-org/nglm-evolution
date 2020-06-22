@@ -788,7 +788,7 @@ public class EvaluationCriterion
       {
         if (log.isDebugEnabled())
           {
-            log.info("EvaluationCriterion.evaluate Exception " + e.getClass().getName() + " while evaluating criterionField {} and argumentExpression {}", criterionField, argumentExpression);
+            log.debug("EvaluationCriterion.evaluate Exception " + e.getClass().getName() + " while evaluating criterionField {} and argumentExpression {}", criterionField, argumentExpression);
           }
         evaluationRequest.subscriberTrace("FalseCondition : invalid argument {0}", argumentExpression);
         return false;
@@ -1744,7 +1744,7 @@ public class EvaluationCriterion
     *
     *****************************************/
     
-    log.info("painless script: {}", script.toString());
+    if (log.isDebugEnabled()) log.debug("painless script: {}", script.toString());
     
     /*****************************************
     *
