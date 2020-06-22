@@ -658,7 +658,7 @@ public class TimerService
         *
         *****************************************/
 
-        createRecurrentJourneys();
+        //createRecurrentJourneys();
 
         /*****************************************
         *
