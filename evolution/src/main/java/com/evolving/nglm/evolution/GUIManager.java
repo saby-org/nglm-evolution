@@ -21253,9 +21253,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
   {
     log.info("RAJ K createingJourneys of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
     int daysBetween = RLMDateUtils.daysBetween(recurrentJourney.getEffectiveStartDate(), recurrentJourney.getEffectiveEndDate(), Deployment.getBaseTimeZone());
+    int occurrenceNumber = latestJourney.getOccurrenceNumber();
     for (Date startDate : journeyCreationDates)
       {
-        int occurrenceNumber = latestJourney.getOccurrenceNumber() + 1;
         JSONObject journeyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
         journeyJSON.put("apiVersion", 1);
         
@@ -21273,7 +21273,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         
         String journeyID = journeyService.generateJourneyID();
         journeyJSON.put("id", journeyID);
-        journeyJSON.put("occurrenceNumber", occurrenceNumber);
+        journeyJSON.put("occurrenceNumber", ++occurrenceNumber);
         journeyJSON.put("name", recurrentJourney.getGUIManagedObjectName() + "_" + occurrenceNumber);
         journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + "_" + occurrenceNumber);
         journeyJSON.put("effectiveStartDate", recurrentJourney.formatDateField(startDate));
