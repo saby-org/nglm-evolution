@@ -21085,7 +21085,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         *
         *****************************************/
 
-        //createRecurrentJourneys();
+        createRecurrentJourneys();
 
         /*****************************************
         *
@@ -21267,8 +21267,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         
         String journeyID = journeyService.generateJourneyID();
         journeyJSON.put("id", journeyID);
-        journeyJSON.put("name", recurrentJourney.getGUIManagedObjectName() + "_" + occurrenceNumber);
         journeyJSON.put("occurrenceNumber", ++occurrenceNumber);
+        journeyJSON.put("name", recurrentJourney.getGUIManagedObjectName() + "_" + occurrenceNumber);
         journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + "_" + occurrenceNumber);
         journeyJSON.put("effectiveStartDate", recurrentJourney.formatDateField(startDate));
         journeyJSON.put("effectiveEndDate", recurrentJourney.formatDateField(RLMDateUtils.addDays(startDate, daysBetween, Deployment.getBaseTimeZone())));
