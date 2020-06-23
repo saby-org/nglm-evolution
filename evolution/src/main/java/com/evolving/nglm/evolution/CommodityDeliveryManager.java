@@ -279,6 +279,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
               consumerProperties.put("enable.auto.commit", "false");
               consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
               consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+              consumerProperties.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, Deployment.getMaxPollIntervalMs());
               KafkaConsumer consumer = new KafkaConsumer<byte[], byte[]>(consumerProperties);
               consumer.subscribe(Arrays.asList(responseTopic));
               log.info("CommodityDeliveryManager.getCommodityAndPaymentMeanFromDM() : added kafka consumer for provider "+providerName+" (ID "+providerID+")");
@@ -314,7 +315,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
               // thread leaving the main loop !
               consumer.close();
-              log.warn(Thread.currentThread().getId()+" CommodityDeliveryManager : STOPPING reading response from "+commodityType+" "+responseTopic);
+			  log.warn(Thread.currentThread().getId()+" CommodityDeliveryManager : STOPPING reading response from "+commodityType+" "+responseTopic);
               }
           }, "consumer_"+prefix+"_"+deliveryManagerInstanceKey);
           consumerThread.start();
