@@ -21181,7 +21181,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                       exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone()) == 0;
                       if (exists) break;
                     }
-                  if(!exists) journeyCreationDates.add(expectedDate);
+                  if(!exists && limitCount > 0)
+                    {
+                      journeyCreationDates.add(expectedDate);
+                      limitCount--;
+                    }
                 }
               break;
               
