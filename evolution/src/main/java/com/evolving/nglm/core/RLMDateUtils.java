@@ -18,9 +18,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.lang3.time.DateUtils;
 
@@ -38,16 +35,7 @@ public class RLMDateUtils
 
   public static Date addYears(Date date, int amount, String timeZone)
   {
-    Calendar calendar = null;
-    try
-      {
-        calendar = getCalendar(timeZone);
-        return addYears(date, amount, calendar);
-      }
-    finally
-      {
-        if (calendar != null) returnCalendar(calendar);
-      }
+    return addYears(date, amount, getCalendar(timeZone));
   }
       
   //
@@ -67,16 +55,7 @@ public class RLMDateUtils
 
   public static Date addMonths(Date date, int amount, String timeZone)
   {
-    Calendar calendar = null;
-    try
-      {
-        calendar = getCalendar(timeZone);
-        return addMonths(date, amount, calendar);
-      }
-    finally
-      {
-        if (calendar != null) returnCalendar(calendar);
-      }
+    return addMonths(date, amount, getCalendar(timeZone));
   }
       
   //
@@ -96,18 +75,10 @@ public class RLMDateUtils
 
   public static Date addWeeks(Date date, int amount, String timeZone)
   {
-    Calendar calendar = null;
-    try
-      {
-        calendar = getCalendar(timeZone);
-        calendar.setTime(date);
-        calendar.add(Calendar.DATE, 7*amount);
-        return calendar.getTime();
-      }
-    finally
-      {
-        if (calendar != null) returnCalendar(calendar);
-      }
+    Calendar calendar = getCalendar(timeZone);
+    calendar.setTime(date);
+    calendar.add(Calendar.DATE, 7*amount);
+    return calendar.getTime();
   }
   
   //
@@ -116,16 +87,7 @@ public class RLMDateUtils
 
   public static Date addDays(Date date, int amount, String timeZone)
   {
-    Calendar calendar = null;
-    try
-      {
-        calendar = getCalendar(timeZone);
-        return addDays(date, amount, calendar);
-      }
-    finally
-      {
-        if (calendar != null) returnCalendar(calendar);
-      }
+    return addDays(date, amount, getCalendar(timeZone));
   }
       
   //
@@ -186,102 +148,94 @@ public class RLMDateUtils
     Calendar helperCalendar = null;
     Calendar first = null;
     Calendar second = null;
-    try
+
+    //
+    //  check cache, breaking out early if already exists
+    //
+
+    List<Object> requestKey = new ArrayList<Object>();
+    requestKey.add(firstDay);
+    requestKey.add(secondDay);
+    requestKey.add(timeZone);
+    Integer cachedResult = daysBetweenCache.get(requestKey);
+    if (cachedResult != null) return cachedResult.intValue();
+
+    //
+    //  initialize
+    //
+
+    helperCalendar = getCalendar(timeZone);
+    first = getCalendar(timeZone);
+    second = getCalendar(timeZone);
+    first.setTime(firstDay);
+    second.setTime(secondDay);
+
+    //
+    //  by thousands
+    //
+
+    int result = 0;
+    while (addDays(first.getTime(),1000,helperCalendar).before(second.getTime()))
       {
-        //
-        //  check cache, breaking out early if already exists
-        //
-
-        List<Object> requestKey = new ArrayList<Object>();
-        requestKey.add(firstDay);
-        requestKey.add(secondDay);
-        requestKey.add(timeZone);
-        Integer cachedResult = daysBetweenCache.get(requestKey);
-        if (cachedResult != null) return cachedResult.intValue();
-        
-        //
-        //  initialize
-        //  
-
-        helperCalendar = getCalendar(timeZone);
-        first = getCalendar(timeZone);
-        second = getCalendar(timeZone);
-        first.setTime(firstDay);
-        second.setTime(secondDay);
-
-        //
-        //  by thousands
-        //
-
-        int result = 0;
-        while (addDays(first.getTime(),1000,helperCalendar).before(second.getTime()))
-          {
-            first.add(Calendar.DATE,1000);
-            result += 1000;
-          }
-
-        //
-        //  by hundreds
-        //
-
-        while (addDays(first.getTime(),100,helperCalendar).before(second.getTime()))
-          {
-            first.add(Calendar.DATE,100);
-            result += 100;
-          }
-
-        //
-        //  by tens
-        //
-
-        while (addDays(first.getTime(),10,helperCalendar).before(second.getTime()))
-          {
-            first.add(Calendar.DATE,10);
-            result += 10;
-          }
-
-        //
-        //  by ones
-        //
-
-        while (addDays(first.getTime(),1,helperCalendar).before(second.getTime()))
-          {
-            first.add(Calendar.DATE,1);
-            result += 1;
-          }
-
-        //
-        //  final
-        //
-
-        while (first.getTime().before(second.getTime()))
-          {
-            first.add(Calendar.DATE,1);
-            result += 1;
-          }
-
-        //
-        //  update cache
-        //
-
-        synchronized (daysBetweenCacheForUpdate)
-          {
-            daysBetweenCacheForUpdate.put(requestKey, result);
-            daysBetweenCache = new HashMap<List<Object>, Integer>(daysBetweenCacheForUpdate);
-          }
-
-        //
-        //  return
-        //
-        
-        return result;
+        first.add(Calendar.DATE,1000);
+        result += 1000;
       }
-    finally
+
+    //
+    //  by hundreds
+    //
+
+    while (addDays(first.getTime(),100,helperCalendar).before(second.getTime()))
       {
-        if (helperCalendar != null) returnCalendar(helperCalendar);
-        if (first != null) returnCalendar(first);
-        if (second != null) returnCalendar(second);
+        first.add(Calendar.DATE,100);
+        result += 100;
       }
+
+    //
+    //  by tens
+    //
+
+    while (addDays(first.getTime(),10,helperCalendar).before(second.getTime()))
+      {
+        first.add(Calendar.DATE,10);
+        result += 10;
+      }
+
+    //
+    //  by ones
+    //
+
+    while (addDays(first.getTime(),1,helperCalendar).before(second.getTime()))
+      {
+        first.add(Calendar.DATE,1);
+        result += 1;
+      }
+
+    //
+    //  final
+    //
+
+    while (first.getTime().before(second.getTime()))
+      {
+        first.add(Calendar.DATE,1);
+        result += 1;
+      }
+
+    //
+    //  update cache
+    //
+
+    synchronized (daysBetweenCacheForUpdate)
+      {
+        daysBetweenCacheForUpdate.put(requestKey, result);
+        daysBetweenCache = new HashMap<List<Object>, Integer>(daysBetweenCacheForUpdate);
+      }
+
+    //
+    //  return
+    //
+
+    return result;
   }
 
   //
@@ -295,102 +249,94 @@ public class RLMDateUtils
     Calendar helperCalendar = null;
     Calendar first = null;
     Calendar second = null;
-    try
+
+    //
+    //  check cache, breaking out early if already exists
+    //
+
+    List<Object> requestKey = new ArrayList<Object>();
+    requestKey.add(firstDay);
+    requestKey.add(secondDay);
+    requestKey.add(timeZone);
+    Integer cachedResult = monthsBetweenCache.get(requestKey);
+    if (cachedResult != null) return cachedResult.intValue();
+
+    //
+    //  initialize
+    //
+
+    helperCalendar = getCalendar(timeZone);
+    first = getCalendar(timeZone);
+    second = getCalendar(timeZone);
+    first.setTime(firstDay);
+    second.setTime(secondDay);
+
+    //
+    //  by thousands
+    //
+
+    int result = 0;
+    while (addMonths(first.getTime(),1000,helperCalendar).before(second.getTime()))
       {
-        //
-        //  check cache, breaking out early if already exists
-        //
-
-        List<Object> requestKey = new ArrayList<Object>();
-        requestKey.add(firstDay);
-        requestKey.add(secondDay);
-        requestKey.add(timeZone);
-        Integer cachedResult = monthsBetweenCache.get(requestKey);
-        if (cachedResult != null) return cachedResult.intValue();
-        
-        //
-        //  initialize
-        //  
-
-        helperCalendar = getCalendar(timeZone);
-        first = getCalendar(timeZone);
-        second = getCalendar(timeZone);
-        first.setTime(firstDay);
-        second.setTime(secondDay);
-
-        //
-        //  by thousands
-        //
-
-        int result = 0;
-        while (addMonths(first.getTime(),1000,helperCalendar).before(second.getTime()))
-          {
-            first.add(Calendar.MONTH,1000);
-            result += 1000;
-          }
-
-        //
-        //  by hundreds
-        //
-
-        while (addMonths(first.getTime(),100,helperCalendar).before(second.getTime()))
-          {
-            first.add(Calendar.MONTH,100);
-            result += 100;
-          }
-
-        //
-        //  by tens
-        //
-
-        while (addMonths(first.getTime(),10,helperCalendar).before(second.getTime()))
-          {
-            first.add(Calendar.MONTH,10);
-            result += 10;
-          }
-
-        //
-        //  by ones
-        //
-
-        while (addMonths(first.getTime(),1,helperCalendar).before(second.getTime()))
-          {
-            first.add(Calendar.MONTH,1);
-            result += 1;
-          }
-
-        //
-        //  final
-        //
-
-        while (first.getTime().before(second.getTime()))
-          {
-            first.add(Calendar.MONTH,1);
-            result += 1;
-          }
-
-        //
-        //  update cache
-        //
-
-        synchronized (monthsBetweenCacheForUpdate)
-          {
-            monthsBetweenCacheForUpdate.put(requestKey, result);
-            monthsBetweenCache = new HashMap<List<Object>, Integer>(monthsBetweenCacheForUpdate);
-          }
-
-        //
-        //  return
-        //
-
-        return result;
+        first.add(Calendar.MONTH,1000);
+        result += 1000;
       }
-    finally
+
+    //
+    //  by hundreds
+    //
+
+    while (addMonths(first.getTime(),100,helperCalendar).before(second.getTime()))
       {
-        if (helperCalendar != null) returnCalendar(helperCalendar);
-        if (first != null) returnCalendar(first);
-        if (second != null) returnCalendar(second);
+        first.add(Calendar.MONTH,100);
+        result += 100;
       }
+
+    //
+    //  by tens
+    //
+
+    while (addMonths(first.getTime(),10,helperCalendar).before(second.getTime()))
+      {
+        first.add(Calendar.MONTH,10);
+        result += 10;
+      }
+
+    //
+    //  by ones
+    //
+
+    while (addMonths(first.getTime(),1,helperCalendar).before(second.getTime()))
+      {
+        first.add(Calendar.MONTH,1);
+        result += 1;
+      }
+
+    //
+    //  final
+    //
+
+    while (first.getTime().before(second.getTime()))
+      {
+        first.add(Calendar.MONTH,1);
+        result += 1;
+      }
+
+    //
+    //  update cache
+    //
+
+    synchronized (monthsBetweenCacheForUpdate)
+      {
+        monthsBetweenCacheForUpdate.put(requestKey, result);
+        monthsBetweenCache = new HashMap<List<Object>, Integer>(monthsBetweenCacheForUpdate);
+      }
+
+    //
+    //  return
+    //
+
+    return result;
   }
 
   //
@@ -408,29 +354,21 @@ public class RLMDateUtils
 
   public static Date ceiling(Date date, int field, int firstDayOfWeek, String timeZone)
   {
-    Calendar calendar = null;
-    try
+    Calendar calendar = getCalendar(timeZone);
+    calendar.setTime(date);
+    Calendar result;
+    switch (field)
       {
-        calendar = getCalendar(timeZone);
-        calendar.setTime(date);
-        Calendar result;
-        switch (field)
-          {
-            case Calendar.DAY_OF_WEEK:
-              Calendar day = DateUtils.ceiling(calendar,Calendar.DATE);
-              while (day.get(Calendar.DAY_OF_WEEK) != firstDayOfWeek) day.add(Calendar.DATE,1);
-              result = day;
-              break;
-            default:
-              result = truncate(date, field, timeZone).equals(date) ? calendar : DateUtils.ceiling(calendar, field);
-              break;
-          }
-        return result.getTime();
+        case Calendar.DAY_OF_WEEK:
+          Calendar day = DateUtils.ceiling(calendar,Calendar.DATE);
+          while (day.get(Calendar.DAY_OF_WEEK) != firstDayOfWeek) day.add(Calendar.DATE,1);
+          result = day;
+          break;
+        default:
+          result = truncate(date, field, timeZone).equals(date) ? calendar : DateUtils.ceiling(calendar, field);
+          break;
       }
-    finally
-      {
-        if (calendar != null) returnCalendar(calendar);
-      }
+    return result.getTime();
   }
 
   //
@@ -448,29 +386,21 @@ public class RLMDateUtils
 
   public static Date truncate(Date date, int field, int firstDayOfWeek, String timeZone)
   {
-    Calendar calendar = null;
-    try
+    Calendar calendar = getCalendar(timeZone);
+    calendar.setTime(date);
+    Calendar result;
+    switch (field)
       {
-        calendar = getCalendar(timeZone);
-        calendar.setTime(date);
-        Calendar result;
-        switch (field)
-          {
-            case Calendar.DAY_OF_WEEK:
-              Calendar day = DateUtils.truncate(calendar,Calendar.DATE);
-              while (day.get(Calendar.DAY_OF_WEEK) != firstDayOfWeek) day.add(Calendar.DATE,-1);
-              result = day;
-              break;
-            default:
-              result = DateUtils.truncate(calendar, field);
-              break;
-          }
-        return result.getTime();
+        case Calendar.DAY_OF_WEEK:
+          Calendar day = DateUtils.truncate(calendar,Calendar.DATE);
+          while (day.get(Calendar.DAY_OF_WEEK) != firstDayOfWeek) day.add(Calendar.DATE,-1);
+          result = day;
+          break;
+        default:
+          result = DateUtils.truncate(calendar, field);
+          break;
       }
-    finally
-      {
-        if (calendar != null) returnCalendar(calendar);
-      }
+    return result.getTime();
   }
   
   //
@@ -497,17 +427,9 @@ public class RLMDateUtils
 
   public static int getField(Date date, int field, String timeZone)
   {
-    Calendar calendar = null;
-    try
-      {
-        calendar = getCalendar(timeZone);
-        calendar.setTime(date);
-        return calendar.get(field);
-      }
-    finally
-      {
-        if (calendar != null) returnCalendar(calendar);
-      }
+    Calendar calendar = getCalendar(timeZone);
+    calendar.setTime(date);
+    return calendar.get(field);
   }
 
   //
@@ -516,18 +438,10 @@ public class RLMDateUtils
 
   public static Date setField(Date date, int field, int value, String timeZone)
   {
-    Calendar calendar = null;
-    try
-      {
-        calendar = getCalendar(timeZone);
-        calendar.setTime(date);
-        calendar.set(field, value);
-        return calendar.getTime();
-      }
-    finally
-      {
-        if (calendar != null) returnCalendar(calendar);
-      }
+    Calendar calendar = getCalendar(timeZone);
+    calendar.setTime(date);
+    calendar.set(field, value);
+    return calendar.getTime();
   }
 
   //
@@ -536,29 +450,21 @@ public class RLMDateUtils
 
   public static Date lastFullPeriod(Date startDate, Date endDate, int field, String timeZone)
   {
-    Calendar startDay = null;
-    try
-      {
-        startDay = getCalendar(timeZone);
-        startDay.setTime(DateUtils.truncate(startDate, Calendar.DATE));
+    Calendar startDay = getCalendar(timeZone);
+    startDay.setTime(DateUtils.truncate(startDate, Calendar.DATE));
 
-        Date endDay = DateUtils.truncate(endDate, Calendar.DATE);
-    
-        int periods=0;
-        int increment = (field == Calendar.DAY_OF_WEEK) ? 7 : 1;
-        while (startDay.getTime().before(endDay) || startDay.getTime().equals(endDay) )
-          {
-            startDay.add(Calendar.DATE,increment);
-            periods++;
-          }
-        Date result = DateUtils.addDays(startDate, increment*(periods-1));
+    Date endDay = DateUtils.truncate(endDate, Calendar.DATE);
 
-        return result;
-      }
-    finally
+    int periods=0;
+    int increment = (field == Calendar.DAY_OF_WEEK) ? 7 : 1;
+    while (startDay.getTime().before(endDay) || startDay.getTime().equals(endDay) )
       {
-        if (startDay != null) returnCalendar(startDay);
+        startDay.add(Calendar.DATE,increment);
+        periods++;
       }
+    Date result = DateUtils.addDays(startDate, increment*(periods-1));
+
+    return result;
   }
 
   /*****************************************
@@ -618,42 +524,16 @@ public class RLMDateUtils
   *
   *****************************************/
 
-  //
-  //  static pool
-  //
-  
-  private static Map<String, BlockingQueue<Calendar>> calendarPool = new ConcurrentHashMap<String, BlockingQueue<Calendar>>();
-
-  //
-  //  getCalendar
-  //
-
+  // TimeZone.getTimeZone(timeZone) is a synchronized method, which seems with contention on it
+  private static ThreadLocal<Map<String,TimeZone>> timezones = ThreadLocal.withInitial(HashMap::new);
   private static Calendar getCalendar(String timeZone)
   {
-    BlockingQueue<Calendar> timeZoneCalendarQueue = calendarPool.get(timeZone);
-    if (timeZoneCalendarQueue == null)
-      {
-        timeZoneCalendarQueue = new LinkedBlockingQueue<Calendar>();
-        calendarPool.put(timeZone, timeZoneCalendarQueue);
-      }
-    Calendar result = timeZoneCalendarQueue.poll();
-    if (result == null) result = Calendar.getInstance(TimeZone.getTimeZone(timeZone));
-    return result;
+    TimeZone toRetTimezone = timezones.get().get(timeZone);
+    if(toRetTimezone==null){
+      toRetTimezone = TimeZone.getTimeZone(timeZone);
+      timezones.get().put(timeZone,toRetTimezone);
+    }
+    return Calendar.getInstance(toRetTimezone);
   }
 
-  //
-  //  returnCalendar
-  //
-
-  private static void returnCalendar(Calendar calendar)
-  {
-    String timeZone = calendar.getTimeZone().getID();
-    BlockingQueue<Calendar> timeZoneCalendarQueue = calendarPool.get(timeZone);
-    if (timeZoneCalendarQueue == null)
-      {
-        timeZoneCalendarQueue = new LinkedBlockingQueue<Calendar>();
-        calendarPool.put(timeZone, timeZoneCalendarQueue);
-      }
-    timeZoneCalendarQueue.offer(calendar);
-  }
 }
