@@ -3645,9 +3645,11 @@ public class ThirdPartyManager
      if (presentedOffers.isEmpty())
        {
          generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, "no offers presented", API.getCustomerTokenAndNBO);
+         log.error(returnedLog.toString()); // is not expected, trace errors
        }
      else
        {
+         if (log.isTraceEnabled()) log.trace(returnedLog.toString()); 
          // Send a PresentationLog to EvolutionEngine
 
          String channelID = "channelID";
@@ -3865,9 +3867,11 @@ public class ThirdPartyManager
           if (presentedOffers.isEmpty())
             {
               generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, "no offers presented", API.getCustomerNBOs);
+              log.error(returnedLog.toString()); // is not expected, trace errors
             }
           else
             {
+              if (log.isTraceEnabled()) log.trace(returnedLog.toString());
               // Send a PresentationLog to EvolutionEngine
 
               String channelID = "channelID";

@@ -16657,9 +16657,11 @@ public class GUIManager
               if (presentedOffers.isEmpty())
                 {
                   generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, "no offers presented");
+                  log.error(returnedLog.toString()); // is not expected, trace errors
                 }
               else
                 {
+                  if (log.isTraceEnabled()) log.trace(returnedLog.toString());
                   // Send a PresentationLog to EvolutionEngine
 
                   String channelID = "channelID";
