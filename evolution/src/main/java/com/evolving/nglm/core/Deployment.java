@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.core;
 
+
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -19,8 +20,11 @@ import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -148,101 +152,195 @@ public class Deployment
         throw new RuntimeException("deployment");
       }
 
-    //
-    //  read configuration from zookeeper (this load file of deployment.json, which can be split in sub parts)
-    //
+
 
     DeploymentConfiguration deploymentConfiguration = null;
-    try
-      {
-        for (String node : zookeeper.getChildren(getZookeeperRoot(), null, null))
-          {
-            if(log.isDebugEnabled()) log.debug("checking for base conf "+node);
-            if (! node.startsWith("deployment")) continue;
-            byte[] bytes = zookeeper.getData(getZookeeperRoot() + "/" + node, null, null);
-            if (bytes == null || bytes.length <= 1) continue;
-            DeploymentConfigurationPart part = DeploymentConfigurationPart.process(node, bytes, true);
-            if (part == null) continue;
-            if (deploymentConfiguration == null)
-              {
-                deploymentConfiguration = new DeploymentConfiguration(part);
-              }
-            else
-              {
-                deploymentConfiguration.setPart(part);
-              }
-            if(log.isDebugEnabled()) log.debug("adding base conf read "+node);
-          }
-      }
-    catch (KeeperException|InterruptedException e)
-      {
-        throw new RuntimeException("deployment", e);
-      }
-    
-    //
-    //  read additional configuration from zookeeper (this load file of deployment-xxx.json, which can be splited in sub parts)
-    //
-
     TreeMap<String, DeploymentConfiguration> additionalDeploymentConfigurations = new TreeMap<String, DeploymentConfiguration>();
-    try
+    TreeMap<String, DeploymentConfiguration> productDeploymentConfigurations = new TreeMap<String, DeploymentConfiguration>();
+    
+    String localDeploymentFiles = System.getProperty("deployment.repository");
+    if(localDeploymentFiles != null) {
+      // for development environment, don't get deployment*.json from Zookeeper, but from local disk
+      File repository = new File(localDeploymentFiles);
+      //      deployment.json
+      
+      //      deployment-templates.json
+      //      deployment-toolbox.json
+            
+      //      deployment-product-evolution.json
+      //      deployment-product-toolbox.json
+
+      if(repository.exists()) {
+        for(File f : repository.listFiles()) {
+          if(f.getName().equals("deployment.json")) {
+            // deployment.json
+            try
+              {
+                String content = new String ( Files.readAllBytes( Paths.get(f.getAbsolutePath()) ) );
+                DeploymentConfigurationPart part = DeploymentConfigurationPart.process("deployment", content.getBytes(), true);
+                if (deploymentConfiguration == null)
+                  {
+                    deploymentConfiguration = new DeploymentConfiguration(part);
+                  }
+                else
+                  {
+                    deploymentConfiguration.setPart(part);
+                  }
+                
+              } 
+            catch (IOException e) 
+              {
+                e.printStackTrace();
+              }
+          }
+          else if(f.getName().startsWith("deployment-") && !f.getName().contains("-product") && f.getName().endsWith(".json")) {
+            // other that are NOT product-* so by example deployment-templates.json
+            try 
+              {
+                String content = new String ( Files.readAllBytes( Paths.get(f.getAbsolutePath()) ) );
+                DeploymentConfigurationPart part = DeploymentConfigurationPart.process(f.getName().substring("deployment-".length(),f.getName().indexOf(".json")), content.getBytes(), false);
+                DeploymentConfiguration additionalDeploymentConfiguration = additionalDeploymentConfigurations.get(part.getBaseName());
+                if (additionalDeploymentConfiguration == null)
+                  {
+                    additionalDeploymentConfiguration = new DeploymentConfiguration(part);
+                    additionalDeploymentConfigurations.put(part.getBaseName(), additionalDeploymentConfiguration);
+                  }
+                else
+                  {
+                    additionalDeploymentConfiguration.setPart(part);
+                  }
+              }
+            catch (IOException e) 
+              {
+                e.printStackTrace();
+              }            
+          }
+          else if(f.getName().startsWith("deployment-product") && f.getName().endsWith(".json")) {
+            //
+            try 
+              {
+                String content = new String ( Files.readAllBytes( Paths.get(f.getAbsolutePath()) ) );
+                String baseName = f.getName().substring(0,f.getName().indexOf(".json"));
+                baseName = baseName.substring("deployment-product-".length(), baseName.length());
+                DeploymentConfigurationPart part = DeploymentConfigurationPart.process(baseName, content.getBytes(), false);
+                DeploymentConfiguration productDeploymentConfiguration = productDeploymentConfigurations.get(part.getBaseName());
+                if (productDeploymentConfiguration == null)
+                {
+                  productDeploymentConfiguration = new DeploymentConfiguration(part);
+                  productDeploymentConfigurations.put(part.getBaseName(), productDeploymentConfiguration);
+                }
+                else
+                {
+                  productDeploymentConfiguration.setPart(part);
+                }
+              }
+            catch (IOException e) 
+              {
+                e.printStackTrace();
+              }  
+          }
+        }
+      }
+      else {
+        log.warn("Deployment repository gotten from System.getProperties deployment.repository " + localDeploymentFiles + " does not exist");
+        throw new RuntimeException("Deployment repository gotten from System.getProperties deployment.repository " + localDeploymentFiles + " does not exist");
+      }
+      
+    }
+    else {
+      
+      //
+      //  read configuration from zookeeper (this load file of deployment.json, which can be split in sub parts)
+      //
+      try
+        {
+          for (String node : zookeeper.getChildren(getZookeeperRoot(), null, null))
+            {
+              if(log.isDebugEnabled()) log.debug("checking for base conf "+node);
+              if (! node.startsWith("deployment")) continue;
+              byte[] bytes = zookeeper.getData(getZookeeperRoot() + "/" + node, null, null);
+              if (bytes == null || bytes.length <= 1) continue;
+              DeploymentConfigurationPart part = DeploymentConfigurationPart.process(node, bytes, true);
+              if (part == null) continue;
+              if (deploymentConfiguration == null)
+                {
+                  deploymentConfiguration = new DeploymentConfiguration(part);
+                }
+              else
+                {
+                  deploymentConfiguration.setPart(part);
+                }
+              if(log.isDebugEnabled()) log.debug("adding base conf read "+node);
+            }
+        }
+      catch (KeeperException|InterruptedException e)
+        {
+          throw new RuntimeException("deployment", e);
+        }
+      
+      //
+      //  read additional configuration from zookeeper (this load file of deployment-xxx.json, which can be splited in sub parts)
+      //
+  
+      try
+        {
+          for (String node : zookeeper.getChildren(getZookeeperRoot() + "/deployment", null, null))
+            {
+              if(log.isDebugEnabled()) log.debug("checking for additional conf "+node);
+              if (node.startsWith("product-")) continue;//skip the product ones
+              byte[] bytes = zookeeper.getData(getZookeeperRoot() + "/deployment/" + node, null, null);
+              if (bytes == null || bytes.length <= 1) continue;
+              DeploymentConfigurationPart part = DeploymentConfigurationPart.process(node, bytes, false);
+              if (part == null) continue;
+              DeploymentConfiguration additionalDeploymentConfiguration = additionalDeploymentConfigurations.get(part.getBaseName());
+              if (additionalDeploymentConfiguration == null)
+                {
+                  additionalDeploymentConfiguration = new DeploymentConfiguration(part);
+                  additionalDeploymentConfigurations.put(part.getBaseName(), additionalDeploymentConfiguration);
+                }
+              else
+                {
+                  additionalDeploymentConfiguration.setPart(part);
+                }
+              if(log.isDebugEnabled()) log.debug("adding additional conf read "+node);
+            }
+        }
+      catch (KeeperException|InterruptedException e)
+        {
+          throw new RuntimeException("deployment", e);
+        }
+  
+      //
+      //  (sorry for the 3rd copy/past...) this load file of deployment-product-xxx.json, which can be splited in sub parts
+      //
+  
+      try
       {
         for (String node : zookeeper.getChildren(getZookeeperRoot() + "/deployment", null, null))
+        {
+          if(log.isDebugEnabled()) log.debug("checking for product conf "+node);
+          if (!node.startsWith("product-")) continue;//takes only the product ones
+          byte[] bytes = zookeeper.getData(getZookeeperRoot() + "/deployment/" + node, null, null);
+          if (bytes == null || bytes.length <= 1) continue;
+          DeploymentConfigurationPart part = DeploymentConfigurationPart.process(node.replace("product-",""), bytes, false);
+          if (part == null) continue;
+          DeploymentConfiguration productDeploymentConfiguration = productDeploymentConfigurations.get(part.getBaseName());
+          if (productDeploymentConfiguration == null)
           {
-            if(log.isDebugEnabled()) log.debug("checking for additional conf "+node);
-            if (node.startsWith("product-")) continue;//skip the product ones
-            byte[] bytes = zookeeper.getData(getZookeeperRoot() + "/deployment/" + node, null, null);
-            if (bytes == null || bytes.length <= 1) continue;
-            DeploymentConfigurationPart part = DeploymentConfigurationPart.process(node, bytes, false);
-            if (part == null) continue;
-            DeploymentConfiguration additionalDeploymentConfiguration = additionalDeploymentConfigurations.get(part.getBaseName());
-            if (additionalDeploymentConfiguration == null)
-              {
-                additionalDeploymentConfiguration = new DeploymentConfiguration(part);
-                additionalDeploymentConfigurations.put(part.getBaseName(), additionalDeploymentConfiguration);
-              }
-            else
-              {
-                additionalDeploymentConfiguration.setPart(part);
-              }
-            if(log.isDebugEnabled()) log.debug("adding additional conf read "+node);
+            productDeploymentConfiguration = new DeploymentConfiguration(part);
+            productDeploymentConfigurations.put(part.getBaseName(), productDeploymentConfiguration);
           }
+          else
+          {
+            productDeploymentConfiguration.setPart(part);
+          }
+          if(log.isDebugEnabled()) log.debug("adding product conf read "+node);
+        }
       }
-    catch (KeeperException|InterruptedException e)
+      catch (KeeperException|InterruptedException e)
       {
         throw new RuntimeException("deployment", e);
       }
-
-    //
-    //  (sorry for the 3rd copy/past...) this load file of deployment-product-xxx.json, which can be splited in sub parts
-    //
-
-    TreeMap<String, DeploymentConfiguration> productDeploymentConfigurations = new TreeMap<String, DeploymentConfiguration>();
-    try
-    {
-      for (String node : zookeeper.getChildren(getZookeeperRoot() + "/deployment", null, null))
-      {
-        if(log.isDebugEnabled()) log.debug("checking for product conf "+node);
-        if (!node.startsWith("product-")) continue;//takes only the product ones
-        byte[] bytes = zookeeper.getData(getZookeeperRoot() + "/deployment/" + node, null, null);
-        if (bytes == null || bytes.length <= 1) continue;
-        DeploymentConfigurationPart part = DeploymentConfigurationPart.process(node.replace("product-",""), bytes, false);
-        if (part == null) continue;
-        DeploymentConfiguration productDeploymentConfiguration = productDeploymentConfigurations.get(part.getBaseName());
-        if (productDeploymentConfiguration == null)
-        {
-          productDeploymentConfiguration = new DeploymentConfiguration(part);
-          productDeploymentConfigurations.put(part.getBaseName(), productDeploymentConfiguration);
-        }
-        else
-        {
-          productDeploymentConfiguration.setPart(part);
-        }
-        if(log.isDebugEnabled()) log.debug("adding product conf read "+node);
-      }
-    }
-    catch (KeeperException|InterruptedException e)
-    {
-      throw new RuntimeException("deployment", e);
     }
 
     //
