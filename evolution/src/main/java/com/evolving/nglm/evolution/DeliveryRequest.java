@@ -394,8 +394,6 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   *
   *****************************************/
 
-  protected DeliveryRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String alternativeSubscriberID)
-  protected DeliveryRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource)
   protected DeliveryRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String overidingSubscriberID)
   {
     /*****************************************
