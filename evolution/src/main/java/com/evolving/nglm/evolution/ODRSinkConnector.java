@@ -209,9 +209,9 @@ public class ODRSinkConnector extends SimpleESSinkConnector
         documentMap.put("featureID", purchaseManager.getFeatureID());
         documentMap.put("origin", purchaseManager.getOrigin());
         documentMap.put("resellerID", purchaseManager.getResellerID());
-        documentMap.put("returnCode", purchaseManager.getReturnCode());
-        documentMap.put("deliveryStatus", purchaseManager.getDeliveryStatus());
-        documentMap.put("returnCodeDetails", PurchaseFulfillmentStatus.fromReturnCode(purchaseManager.getReturnCode()));
+        Object code = purchaseManager.getReturnCode();
+        documentMap.put("returnCode", code);
+        documentMap.put("returnCodeDescription", (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
         documentMap.put("voucherCode", voucherCodes);
         documentMap.put("voucherPartnerID", "");
       }

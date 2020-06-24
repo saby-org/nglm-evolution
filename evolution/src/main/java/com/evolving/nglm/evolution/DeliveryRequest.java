@@ -69,6 +69,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   public static final String CUSTOMERID = "customerId";
   public static final String RETURNCODE = "returnCode";
   public static final String RETURNCODEDETAILS = "returnCodeDetails";
+  public static final String RETURNCODEDESCRIPTION = "returnCodeDescription";
   
   //
   // BDRs

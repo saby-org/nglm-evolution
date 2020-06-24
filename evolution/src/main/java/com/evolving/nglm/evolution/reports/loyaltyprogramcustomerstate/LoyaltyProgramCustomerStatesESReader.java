@@ -46,7 +46,7 @@ public class LoyaltyProgramCustomerStatesESReader
         kzHostList,
         esNode,
         esIndexWithQuery,
-        true
+        true, true
         );
 
     reportEsReader.start();

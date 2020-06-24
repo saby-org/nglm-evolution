@@ -468,7 +468,8 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(SOURCE, getSource());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
-      thirdPartyPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
+      thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
+      thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
       thirdPartyPresentationMap.put(NOTIFICATION_TEXT_BODY, getText(subscriberMessageTemplateService));
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, "SMS");
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());

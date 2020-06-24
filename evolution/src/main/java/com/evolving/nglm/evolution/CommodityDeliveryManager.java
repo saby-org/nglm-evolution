@@ -117,7 +117,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     SYSTEM_ERROR(21),
     TIMEOUT(22),
     THIRD_PARTY_ERROR(24),
-    BONUS_NOT_FOUND(101),
+    BONUS_NOT_FOUND(100),
     INSUFFICIENT_BALANCE(405),
     UNKNOWN(999);
     private Integer externalRepresentation;
@@ -281,6 +281,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
               consumerProperties.put("enable.auto.commit", "false");
               consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
               consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+              consumerProperties.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, Deployment.getMaxPollIntervalMs());
               KafkaConsumer consumer = new KafkaConsumer<byte[], byte[]>(consumerProperties);
               consumer.subscribe(Arrays.asList(responseTopic));
               log.info("CommodityDeliveryManager.getCommodityAndPaymentMeanFromDM() : added kafka consumer for provider "+providerName+" (ID "+providerID+")");
@@ -316,7 +317,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
               // thread leaving the main loop !
               consumer.close();
-              log.warn(Thread.currentThread().getId()+" CommodityDeliveryManager : STOPPING reading response from "+commodityType+" "+responseTopic);
+			  log.warn(Thread.currentThread().getId()+" CommodityDeliveryManager : STOPPING reading response from "+commodityType+" "+responseTopic);
               }
           }, "consumer_"+prefix+"_"+deliveryManagerInstanceKey);
           consumerThread.start();
@@ -752,8 +753,10 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(ORIGIN, "");
       thirdPartyPresentationMap.put(RETURNCODE, getCommodityDeliveryStatus().getReturnCode());
+      thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getCommodityDeliveryStatus().getReturnCode()).getGenericResponseMessage());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getCommodityDeliveryStatus().toString());
     }
+
     @Override
     public void resetDeliveryRequestAfterReSchedule()
     {

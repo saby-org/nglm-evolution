@@ -229,6 +229,8 @@ public class Deployment
   private static String dynamicCriterionFieldsTopic;
   private static String elasticSearchDateFormat;
   private static int elasticSearchScrollSize;
+  private static int elasticSearchConnectTimeout;
+  private static int elasticSearchQueryTimeout;
   private static int maxPollIntervalMs;
   private static String criterionFieldAvailableValuesTopic;
   private static String sourceAddressTopic;
@@ -468,6 +470,8 @@ public class Deployment
   public static Map<String,BillingMode> getBillingModes() { return billingModes; }
   public static String getElasticSearchDateFormat() { return elasticSearchDateFormat; }
   public static int getElasticSearchScrollSize() {return elasticSearchScrollSize; }
+  public static int getElasticSearchConnectTimeout() { return elasticSearchConnectTimeout; }
+  public static int getElasticSearchQueryTimeout() { return elasticSearchQueryTimeout; }
   public static int getMaxPollIntervalMs() {return maxPollIntervalMs; }
   public static int getPurchaseTimeoutMs() {return purchaseTimeoutMs; }
   public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
@@ -1060,6 +1064,32 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
+      
+      //
+      //  elasticSearchConnectTimeout
+      //
+
+      try
+        {
+          elasticSearchConnectTimeout = JSONUtilities.decodeInteger(jsonRoot, "elasticSearchConnectTimeout", 0);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
+      //
+      //  elasticSearchQueryTimeout
+      //
+
+      try
+        {
+          elasticSearchQueryTimeout = JSONUtilities.decodeInteger(jsonRoot, "elasticSearchQueryTimeout", 0);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
 
       //
       //  maxPollIntervalMs
@@ -1067,7 +1097,7 @@ public class Deployment
 
       try
         {
-          maxPollIntervalMs = JSONUtilities.decodeInteger(jsonRoot, "maxPollIntervalMs", 30000);
+          maxPollIntervalMs = JSONUtilities.decodeInteger(jsonRoot, "maxPollIntervalMs", 300000);
         }
       catch (JSONUtilitiesException e)
         {

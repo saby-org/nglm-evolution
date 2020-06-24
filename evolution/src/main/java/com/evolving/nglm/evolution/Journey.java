@@ -2682,7 +2682,9 @@ public class Journey extends GUIManagedObject implements StockableItem
 
                 if((JSONObject) parameterJSON.get("value") != null)
                   {
-                    String workflowID = JSONUtilities.decodeString((JSONObject) parameterJSON.get("value"), "workflowID", true);
+                    JSONObject workflowJSON = (JSONObject) parameterJSON.get("value");
+                    if (workflowJSON == null) throw new GUIManagerException("no workflow", "null");
+                    String workflowID = JSONUtilities.decodeString(workflowJSON, "workflowID", true);
                     workflow = journeyService.getActiveJourney(workflowID, SystemTime.getCurrentTime());                    
                     if (workflow == null) throw new GUIManagerException("unknown workflow", workflowID);
                   }

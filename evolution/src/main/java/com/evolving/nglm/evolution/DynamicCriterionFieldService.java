@@ -225,6 +225,8 @@ public class DynamicCriterionFieldService extends GUIService
   public void addPointCriterionFields(Point point, boolean newPoint) throws GUIManagerException
   {
     addPointCriterionField(point, newPoint, "balance", CriterionDataType.IntegerCriterion, null);
+    addPointCriterionField(point, newPoint, "earliestexpirydate", CriterionDataType.DateCriterion, null);
+    addPointCriterionField(point, newPoint, "earliestexpiryquantity", CriterionDataType.IntegerCriterion, null);
   }
 
   /*****************************************
