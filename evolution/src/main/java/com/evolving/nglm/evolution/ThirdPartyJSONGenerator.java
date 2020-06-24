@@ -170,6 +170,7 @@ public class ThirdPartyJSONGenerator
           {
             if(channel.getSalesChannelIDs() != null) 
               {
+                OfferPrice offerPrice = channel.getPrice();
                 for(String salesChannelID : channel.getSalesChannelIDs()) 
                   {
                     SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, SystemTime.getCurrentTime());
@@ -178,7 +179,11 @@ public class ThirdPartyJSONGenerator
                         JSONObject channelObject = new JSONObject();
                         channelObject.put("salesChannelID", salesChannel.getSalesChannelID());
                         channelObject.put("salesChannelName", salesChannel.getSalesChannelName());
-
+                        if (offerPrice != null)
+                          {
+                            channelObject.put("paymentMeanID", offerPrice.getPaymentMeanID());
+                            channelObject.put("amount", offerPrice.getAmount());
+                          }
                         offerSalesChannels.add(channelObject);
 
                       }
