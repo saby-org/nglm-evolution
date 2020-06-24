@@ -39,6 +39,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import com.evolving.nglm.evolution.propensity.PropensityService;
+import com.evolving.nglm.evolution.ConfigUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -605,7 +606,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    Properties streamsProperties = new Properties();
+    Properties streamsProperties = ConfigUtils.envPropertiesWithPrefix("KAFKA_STREAMS");
     streamsProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationID);
     streamsProperties.put(StreamsConfig.STATE_DIR_CONFIG, stateDirectory);
     streamsProperties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -615,6 +616,7 @@ public class EvolutionEngine
     streamsProperties.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, Integer.toString(kafkaStreamsStandbyReplicas));
     streamsProperties.put(StreamsConfig.METRICS_RECORDING_LEVEL_CONFIG, Sensor.RecordingLevel.DEBUG.toString());
     streamsProperties.put(StreamsConfig.APPLICATION_SERVER_CONFIG, subscriberProfileHost + ":" + Integer.toString(internalPort));
+    // Can be safely replaced by the ConfigUtils.envPropertiesWithPrefix above
     streamsProperties.put("producer.batch.size", Integer.toString(100000));
     if(!isInMemoryStateStores && rocksDBCacheMBytes!=-1 && rocksDBMemTableMBytes!=-1)
       {
@@ -622,6 +624,8 @@ public class EvolutionEngine
         BoundedMemoryRocksDBConfig.setRocksDBMemTableMBytes(rocksDBMemTableMBytes);
         streamsProperties.put(StreamsConfig.ROCKSDB_CONFIG_SETTER_CLASS_CONFIG, BoundedMemoryRocksDBConfig.class);
       }
+    System.out.println(" -- Running streams with the following config");
+    System.out.println(streamsProperties);
     StreamsConfig streamsConfig = new StreamsConfig(streamsProperties);
 
     /*****************************************
