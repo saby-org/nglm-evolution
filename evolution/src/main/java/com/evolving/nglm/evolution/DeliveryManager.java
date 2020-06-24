@@ -1602,7 +1602,26 @@ public abstract class DeliveryManager
               {
                 try
                   {
-                    StringKey key = deliveryRequest.getOriginatingRequest() ? new StringKey(deliveryRequest.getSubscriberID()) : new StringKey(deliveryRequest.getDeliveryRequestID());
+                    StringKey key = null;
+                    if(deliveryRequest.getOriginatingRequest()) 
+                      {
+                        // index by subscriberID
+                        if(deliveryRequest.getOriginatingSubscriberID() != null) {
+                          // means this request has been made by originatingSubscriberID on behalf of current subscsriberID
+                          key = new StringKey(deliveryRequest.getOriginatingSubscriberID());
+                          deliveryRequest.setSubscriberID(deliveryRequest.getOriginatingSubscriberID());
+                      }
+                    else 
+                      {
+                        // normal case
+                        key = new StringKey(deliveryRequest.getSubscriberID());
+                      }
+                    }
+                    else 
+                      {
+                        // index by requestID
+                        key = new StringKey(deliveryRequest.getDeliveryRequestID());                      
+                      }
                     kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest))).get();
                     break;
                   }

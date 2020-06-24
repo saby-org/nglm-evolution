@@ -347,6 +347,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   public void setOriginatingDeliveryRequestID(String originatingDeliveryRequestID) { this.originatingDeliveryRequestID = originatingDeliveryRequestID; }
   public void setOriginatingSubscriberID(String originatingSubscriberID) { this.originatingSubscriberID = originatingSubscriberID; };
   public void setControl(boolean control) { this.control = control; }
+  public void setSubscriberID(String subscriberID) { this.subscriberID = subscriberID; }
   public void setDeliveryPartition(int deliveryPartition) { this.deliveryPartition = deliveryPartition; }
   public void setRetries(int retries) { this.retries = retries; }
   public void setTimeout(Date timeout) { this.timeout = timeout; }
