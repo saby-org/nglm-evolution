@@ -1,4 +1,4 @@
-package com.evolving.nglm.evolution.datacubes.loyalty;
+package com.evolving.nglm.evolution.datacubes.generator;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,8 +27,8 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
-import com.evolving.nglm.evolution.datacubes.subscriber.SubscriberProfileDatacubeMetric;
 
 public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
 {
@@ -347,6 +347,16 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     }
     
     return metrics;
+  }
+  
+  /*****************************************
+  *
+  * Datacube name for logs
+  *
+  *****************************************/
+  @Override
+  protected String getDatacubeName() {
+    return super.getDatacubeName() + (this.previewMode ? "(preview)" : "(definitive)");
   }
   
   /*****************************************

@@ -10,14 +10,21 @@
 
   "CronFormat_comment": "minute (0-59), hour (0-23), day of month (1-31), month of year (1-12:JAN-DEC case-insensitive), day of week (0-7:MON-SUN case-insensitive) 1 is always Monday",
 
-  "yesterdayODRDatacubePeriodCronEntryString"        : "0 1 * * *",
-  "todayODRDatacubePeriodCronEntryString"            : "0 * * * *",
-  "yesterdayLoyaltyDatacubePeriodCronEntryString"    : "0 1 * * *",
-  "todayLoyaltyDatacubePeriodCronEntryString"        : "0 * * * *",
-  "yesterdaySubscriberDatacubePeriodCronEntryString" : "0 1 * * *",
-  "todaySubscriberDatacubePeriodCronEntryString"     : "0 * * * *",
-  "journeyTrafficDatacubePeriodCronEntryString"      : "0 * * * *",
-  "subscriberProfileSnapshotPeriodCronEntryString"   : "5 0 * * *",
+  "datacubeJobsScheduling" : {
+    "ODR-preview"                    : { "enabled" : "false", "scheduledAtRestart" : "false", "cronEntry" : "0 * * * *" },
+    "ODR-definitive"                 : { "enabled" : "true",  "scheduledAtRestart" : "false", "cronEntry" : "0 1 * * *" },
+    "loyaltyPrograms-preview"        : { "enabled" : "false", "scheduledAtRestart" : "false", "cronEntry" : "0 * * * *" },
+    "loyaltyPrograms-definitive"     : { "enabled" : "true",  "scheduledAtRestart" : "false", "cronEntry" : "0 1 * * *" },
+    "subscriberProfile-preview"      : { "enabled" : "false", "scheduledAtRestart" : "false", "cronEntry" : "0 * * * *" },
+    "subscriberProfile-definitive"   : { "enabled" : "true",  "scheduledAtRestart" : "false", "cronEntry" : "0 1 * * *" },
+    "journeys"                       : { "enabled" : "true",  "scheduledAtRestart" : "false", "cronEntry" : "0 * * * *" }
+  },
+  "elasticsearchJobsScheduling" : {
+    "subscriberProfileSnapshot"      : { "enabled" : "true",  "scheduledAtRestart" : "false", "cronEntry" : "5 0 * * *" },
+    "journeystatisticCleanUp"        : { "enabled" : "true",  "scheduledAtRestart" : "false", "cronEntry" : "0 3 * * *" },
+    "journeymetricCleanUp"           : { "enabled" : "true",  "scheduledAtRestart" : "false", "cronEntry" : "0 3 * * *" },
+    "expiredVoucherCleanUp"          : { "enabled" : "true",  "scheduledAtRestart" : "false", "cronEntry" : "0 3 * * *" },
+  },
 
   "hourlyReportCronEntryString"   : "0 * * * *",
   "dailyReportCronEntryString"    : "5 2 * * *",
@@ -30,7 +37,6 @@
   "minExpiryDelayForVoucherDeliveryInHours" : 4,
   "cleanUpExpiredVoucherDelayInDays" : 31,
   "importVoucherFileBulkSize" : 5000,
-  "cleanExpiredVoucherCronEntry" : "0 3 * * *",
   "voucherESCacheCleanerFrequencyInSec" : 300,
   "numberConcurrentVoucherAllocationToES" : 10,
   "liveVoucherIndexNumberOfReplicas" : "<_ELASTICSEARCH_REPLICAS_>",

@@ -195,7 +195,17 @@ public abstract class ExtendedSubscriberProfile implements StateStore
   *  getHistory utilities
   *
   ****************************************/
+  
+  //
+  //  getToday
+  //
 
+  protected Long getToday(MetricHistory metricHistory, Date evaluationDate)
+  {
+    Date today = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+    return metricHistory.getValue(today, today);
+  }
+  
   //
   //  getYesterday
   //

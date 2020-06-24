@@ -18,17 +18,20 @@ import com.evolving.nglm.evolution.PaymentMeanService;
 import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
-import com.evolving.nglm.evolution.datacubes.journeys.JourneyDatacubesJob;
-import com.evolving.nglm.evolution.datacubes.loyalty.LoyaltyDatacubesOnTodayJob;
-import com.evolving.nglm.evolution.datacubes.loyalty.LoyaltyDatacubesOnYesterdayJob;
-import com.evolving.nglm.evolution.datacubes.odr.ODRDatacubeOnTodayJob;
-import com.evolving.nglm.evolution.datacubes.odr.ODRDatacubeOnYesterdayJob;
+import com.evolving.nglm.evolution.datacubes.generator.JourneyRewardsDatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.generator.JourneyTrafficDatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.generator.ODRDatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.generator.ProgramsChangesDatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.generator.ProgramsHistoryDatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.generator.SubscriberProfileDatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 import com.evolving.nglm.evolution.datacubes.snapshots.SubscriberProfileSnapshot;
-import com.evolving.nglm.evolution.datacubes.subscriber.SubscriberProfileDatacubesOnTodayJob;
-import com.evolving.nglm.evolution.datacubes.subscriber.SubscriberProfileDatacubesOnYesterdayJob;
+
+import java.util.Calendar;
+import java.util.Date;
 
 import org.apache.http.HttpHost;
-import org.apache.http.client.config.RequestConfig;
+
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
@@ -56,6 +59,9 @@ public class DatacubeManager
   * Static data (for the singleton instance)
   *
   *****************************************/
+  //
+  // Services
+  //
   private static DynamicCriterionFieldService dynamicCriterionFieldService; 
   private static JourneyService journeyService;
   private static LoyaltyProgramService loyaltyProgramService;
@@ -64,7 +70,22 @@ public class DatacubeManager
   private static SalesChannelService salesChannelService;
   private static PaymentMeanService paymentMeanService;
   private static RestHighLevelClient elasticsearchRestClient;
-
+  
+  //
+  // Maps
+  //
+  private static JourneysMap journeysMap;
+  
+  //
+  // Datacube generators
+  //
+  private static ProgramsHistoryDatacubeGenerator loyaltyHistoryDatacube;
+  private static ProgramsChangesDatacubeGenerator tierChangesDatacube;
+  private static JourneyTrafficDatacubeGenerator trafficDatacube;
+  private static JourneyRewardsDatacubeGenerator rewardsDatacube;
+  private static ODRDatacubeGenerator odrDatacube;
+  private static SubscriberProfileDatacubeGenerator subscriberProfileDatacube;
+  
   /*****************************************
   *
   * Constructor
@@ -79,54 +100,28 @@ public class DatacubeManager
     Integer elasticsearchServerPort = Integer.parseInt(args[4]);
     
     //
-    //  dynamicCriterionFieldsService
+    // Shutdown hook
+    //
+    NGLMRuntime.addShutdownHook(new ShutdownHook(this));
+    
+    //
+    // Services
     //
     dynamicCriterionFieldService = new DynamicCriterionFieldService(bootstrapServers, applicationID + "dynamiccriterionfieldservice-" + instanceID, Deployment.getDynamicCriterionFieldTopic(), false);
     dynamicCriterionFieldService.start();
     CriterionContext.initialize(dynamicCriterionFieldService); // Workaround: CriterionContext must be initialized before creating the JourneyService. (explain ?)
-
-    //
-    //  journeyService
-    //
     journeyService = new JourneyService(bootstrapServers, applicationID + "-journeyservice-" + instanceID, Deployment.getJourneyTopic(), false);
     journeyService.start();
-    
-    //
-    //  loyaltyProgramService
-    // 
-    
     loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, applicationID + "-loyaltyProgramService-" + instanceID, Deployment.getLoyaltyProgramTopic(), false);
     loyaltyProgramService.start();
-
-    //
-    //  segmentationDimensionService
-    //
     segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, applicationID + "-segmentationdimensionservice-" + instanceID, Deployment.getSegmentationDimensionTopic(), false);
     segmentationDimensionService.start();
-
-    //
-    //  offerService
-    //
     offerService = new OfferService(bootstrapServers, applicationID + "-offer-" + instanceID, Deployment.getOfferTopic(), false);
     offerService.start();
-
-    //
-    //  salesChannelService
-    //
     salesChannelService = new SalesChannelService(bootstrapServers, applicationID + "-saleschannel-" + instanceID, Deployment.getSalesChannelTopic(), false);
     salesChannelService.start();
-    
-    //
-    // pointService
-    //
     paymentMeanService = new PaymentMeanService(bootstrapServers, applicationID + "-paymentmeanservice-" + instanceID, Deployment.getPaymentMeanTopic(), false);
     paymentMeanService.start();
-
-
-    //
-    // shutdown hook
-    //
-    NGLMRuntime.addShutdownHook(new ShutdownHook(this));
     
     //
     // initialize ES client & GUI client
@@ -149,8 +144,257 @@ public class DatacubeManager
       {
         throw new ServerRuntimeException("could not initialize elasticsearch client", e);
       }
+    
+    //
+    // Maps 
+    //
+    journeysMap = new JourneysMap(journeyService);
+    
+    //
+    // Datacube generators
+    //
+    loyaltyHistoryDatacube = new ProgramsHistoryDatacubeGenerator("LoyaltyPrograms:History", elasticsearchRestClient, loyaltyProgramService);
+    tierChangesDatacube = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes", elasticsearchRestClient, loyaltyProgramService);
+    trafficDatacube = new JourneyTrafficDatacubeGenerator("Journey:Traffic", elasticsearchRestClient, segmentationDimensionService, journeyService);
+    rewardsDatacube = new JourneyRewardsDatacubeGenerator("Journey:Rewards", elasticsearchRestClient, segmentationDimensionService, journeyService);
+    odrDatacube = new ODRDatacubeGenerator("ODR", elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, loyaltyProgramService, journeyService);
+    subscriberProfileDatacube = new SubscriberProfileDatacubeGenerator("SubscriberProfile", elasticsearchRestClient, segmentationDimensionService);
   }
 
+  /*****************************************
+  *
+  * Datacube jobs
+  *
+  *****************************************/
+  /*
+   * Loyalty programs preview  
+   *
+   * This will generate a datacube preview of the day from the subscriberprofile index (not a snapshot one).
+   * Those data are not definitive, the day is not ended yet, metrics can still change.
+   */
+  private static long scheduleLoyaltyProgramsPreview(JobScheduler scheduler, long nextAvailableID) {
+    String datacubeName = "loyaltyPrograms-preview";
+    
+    ScheduledJob job = new ScheduledJob(nextAvailableID,
+        datacubeName, 
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+    {
+      @Override
+      protected void run()
+      {
+        loyaltyHistoryDatacube.preview();
+        tierChangesDatacube.preview();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+
+  /*
+   * Loyalty programs definitive  
+   *
+   * This will generated a datacube every day from the subscriberprofile snapshot index of the previous day.
+   */
+  private static long scheduleLoyaltyProgramsDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String datacubeName = "loyaltyPrograms-definitive";
+    
+    ScheduledJob job = new ScheduledJob(nextAvailableID,
+        datacubeName, 
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+    {
+      @Override
+      protected void run()
+      {
+        loyaltyHistoryDatacube.definitive();
+        tierChangesDatacube.definitive();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * SubscriberProfile preview
+   *
+   * This will generated a datacube preview of the day from the subscriberprofile index (not a snapshot one).
+   * Those data are not definitive, the day is not ended yet, metrics can still change.
+   */
+  private static long scheduleSubscriberProfilePreview(JobScheduler scheduler, long nextAvailableID) {
+    String datacubeName = "subscriberProfile-preview";
+    
+    ScheduledJob job = new ScheduledJob(nextAvailableID,
+        datacubeName, 
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+    {
+      @Override
+      protected void run()
+      {
+        subscriberProfileDatacube.preview();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * SubscriberProfile definitive
+   * 
+   * This will generated a datacube every day from the subscriberprofile snapshot index of the previous day.
+   */
+  private static long scheduleSubscriberProfileDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String datacubeName = "subscriberProfile-definitive";
+    
+    ScheduledJob job = new ScheduledJob(nextAvailableID,
+        datacubeName, 
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+    {
+      @Override
+      protected void run()
+      {
+        subscriberProfileDatacube.definitive();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * ODR preview
+   *
+   * This will generated a datacube preview of the day from the detailedrecords_offers-YYYY-MM-dd index of the day
+   * Those data are not definitive, the day is not ended yet, new ODR can still be added.
+   */
+  private static long scheduleODRPreview(JobScheduler scheduler, long nextAvailableID) {
+    String datacubeName = "odr-preview";
+    
+    ScheduledJob job = new ScheduledJob(nextAvailableID,
+        datacubeName, 
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+    {
+      @Override
+      protected void run()
+      {
+        odrDatacube.preview();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * ODR definitive
+   *
+   * This will generated a datacube every day from the detailedrecords_offers-YYYY-MM-dd index of the previous day.
+   */
+  private static long scheduleODRDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String datacubeName = "odr-definitive";
+    
+    ScheduledJob job = new ScheduledJob(nextAvailableID,
+        datacubeName, 
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+    {
+      @Override
+      protected void run()
+      {
+        odrDatacube.definitive();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * Journey datacube
+   *
+   * This will generated both datacube_journeytraffic and datacube_journeyrewards every hour from journeystatistic indexes
+   * /!\ Do not launch at start in production, there is no override mechanism for this datacube (no preview)
+   * /!\ Do not configure a cron period lower than 1 hour (require code changes)
+   */
+  private static long scheduleJourneyDatacubeDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String datacubeName = "journey-definitive";
+    
+    ScheduledJob job = new ScheduledJob(nextAvailableID,
+        datacubeName, 
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart()) 
+    {
+      @Override
+      protected void run()
+      {
+        // We need to push all journey datacubes at the same timestamp.
+        // For the moment we truncate at the HOUR. 
+        // Therefore, we must not configure a cron period lower than 1 hour
+        // If we want a lower period we will need to retrieve the schedule due date from the job !
+        Date now = SystemTime.getCurrentTime();
+        Date truncatedHour = RLMDateUtils.truncate(now, Calendar.HOUR, Deployment.getBaseTimeZone());
+        Date endOfLastHour = RLMDateUtils.addMilliseconds(truncatedHour, -1); // XX:59:59.999
+        
+        journeysMap.update();
+        for(String journeyID : journeysMap.keySet()) {
+          trafficDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
+          rewardsDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
+        }
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
   /*****************************************
   *
   * run
@@ -168,50 +412,17 @@ public class DatacubeManager
     //
     // Datacube previews (will be updated later by the definitive version)
     //
-    ScheduledJob temporaryODR = new ODRDatacubeOnTodayJob(uniqueID++, elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, loyaltyProgramService, journeyService);
-    if(temporaryODR.isProperlyConfigured())
-      {
-        datacubeScheduler.schedule(temporaryODR);
-      }
-    
-    ScheduledJob temporaryLoyalty = new LoyaltyDatacubesOnTodayJob(uniqueID++, elasticsearchRestClient, loyaltyProgramService);
-    if(temporaryLoyalty.isProperlyConfigured())
-      {
-        datacubeScheduler.schedule(temporaryLoyalty);
-      }
-    
-    ScheduledJob temporarySubscriber = new SubscriberProfileDatacubesOnTodayJob(uniqueID++, elasticsearchRestClient, segmentationDimensionService);
-    if(temporarySubscriber.isProperlyConfigured())
-      {
-        datacubeScheduler.schedule(temporarySubscriber);
-      }
+    uniqueID = scheduleLoyaltyProgramsPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleSubscriberProfilePreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleODRPreview(datacubeScheduler, uniqueID);
     
     //
     // Definitives datacubes 
     //
-    ScheduledJob definitiveODR = new ODRDatacubeOnYesterdayJob(uniqueID++, elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, loyaltyProgramService, journeyService);
-    if(definitiveODR.isProperlyConfigured())
-      {
-        datacubeScheduler.schedule(definitiveODR);
-      }
-    
-    ScheduledJob definitiveLoyalty = new LoyaltyDatacubesOnYesterdayJob(uniqueID++, elasticsearchRestClient, loyaltyProgramService);
-    if(definitiveLoyalty.isProperlyConfigured())
-      {
-        datacubeScheduler.schedule(definitiveLoyalty);
-      }
-    
-    ScheduledJob definitiveSubscriber = new SubscriberProfileDatacubesOnYesterdayJob(uniqueID++, elasticsearchRestClient, segmentationDimensionService);
-    if(definitiveSubscriber.isProperlyConfigured())
-      {
-        datacubeScheduler.schedule(definitiveSubscriber);
-      }
-    
-    ScheduledJob definitiveJourney = new JourneyDatacubesJob(uniqueID++, elasticsearchRestClient, segmentationDimensionService, journeyService);
-    if(definitiveJourney.isProperlyConfigured())
-      {
-        datacubeScheduler.schedule(definitiveJourney);
-      }
+    uniqueID = scheduleLoyaltyProgramsDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleSubscriberProfileDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleODRDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleJourneyDatacubeDefinitive(datacubeScheduler, uniqueID);
     
     //
     // Snapshots
@@ -278,7 +489,6 @@ public class DatacubeManager
     *  log
     *
     *****************************************/
-
     log.info("Stopped DatacubeManager");
   }
 
@@ -294,7 +504,6 @@ public class DatacubeManager
     //
     NGLMRuntime.initialize(true);
     DatacubeManager datacubemanager = new DatacubeManager(args);
-    
     log.info("Service initialized");
 
     //

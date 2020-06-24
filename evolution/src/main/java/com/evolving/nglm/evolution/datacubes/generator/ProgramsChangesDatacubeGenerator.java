@@ -1,4 +1,4 @@
-package com.evolving.nglm.evolution.datacubes.loyalty;
+package com.evolving.nglm.evolution.datacubes.generator;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -184,6 +184,16 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   @Override
   protected String getDocumentID(Map<String,Object> filters, String timestamp) {
     return this.extractDocumentIDFromFilter(filters, this.targetDay);
+  }
+  
+  /*****************************************
+  *
+  * Datacube name for logs
+  *
+  *****************************************/
+  @Override
+  protected String getDatacubeName() {
+    return super.getDatacubeName() + (this.previewMode ? "(preview)" : "(definitive)");
   }
   
   /*****************************************

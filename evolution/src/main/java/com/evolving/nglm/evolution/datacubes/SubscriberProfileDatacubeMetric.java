@@ -4,7 +4,7 @@
 *
 *****************************************************************************/
 
-package com.evolving.nglm.evolution.datacubes.subscriber;
+package com.evolving.nglm.evolution.datacubes;
 
 import com.evolving.nglm.core.DeploymentManagedObject;
 import com.evolving.nglm.core.JSONUtilities;

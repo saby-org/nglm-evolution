@@ -1,4 +1,4 @@
-package com.evolving.nglm.evolution.datacubes.subscriber;
+package com.evolving.nglm.evolution.datacubes.generator;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,6 +24,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
 import com.evolving.nglm.evolution.datacubes.mapping.SegmentationDimensionsMap;
 
 public class SubscriberProfileDatacubeGenerator extends DatacubeGenerator
@@ -207,6 +208,16 @@ public class SubscriberProfileDatacubeGenerator extends DatacubeGenerator
   @Override
   protected String getDocumentID(Map<String,Object> filters, String timestamp) {
     return this.extractDocumentIDFromFilter(filters, this.metricTargetDay);
+  }
+  
+  /*****************************************
+  *
+  * Datacube name for logs
+  *
+  *****************************************/
+  @Override
+  protected String getDatacubeName() {
+    return super.getDatacubeName() + (this.previewMode ? "(preview)" : "(definitive)");
   }
 
   /*****************************************
