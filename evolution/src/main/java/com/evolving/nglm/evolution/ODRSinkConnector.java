@@ -212,6 +212,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
         Object code = purchaseManager.getReturnCode();
         documentMap.put("returnCode", code);
         documentMap.put("returnCodeDescription", (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
+        documentMap.put("returnDescription", purchaseManager.getOfferDeliveryReturnCodeDetails());
         documentMap.put("voucherCode", voucherCodes);
         documentMap.put("voucherPartnerID", "");
       }

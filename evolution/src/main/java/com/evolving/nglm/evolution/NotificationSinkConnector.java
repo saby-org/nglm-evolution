@@ -140,6 +140,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("source", mailNotification.getFromAddress());
         documentMap.put("returnCode", mailNotification.getReturnCode());
         documentMap.put("returnCodeDetails", mailNotification.getReturnCodeDetails());
+        documentMap.put("returnDescription", mailNotification.getMessageDeliveryReturnCodeDetails());
       }else if(type.equals("notificationmanagerpush")){
         documentMap = new HashMap<String,Object>();
         PushNotificationManagerRequest pushNotification = PushNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
@@ -155,30 +156,14 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("source", ""); // TODO SCH : what is the source of push notifications ?
         documentMap.put("returnCode", pushNotification.getReturnCode());
         documentMap.put("returnCodeDetails", pushNotification.getReturnCodeDetails());
+        documentMap.put("returnDescription", pushNotification.getMessageDeliveryReturnCodeDetails());
       } else if(type.equals("notificationmanagersms"))
         {
           documentMap = new HashMap<String,Object>();
-          SMSNotificationManagerRequest notification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
-          documentMap = new HashMap<String,Object>();
-          documentMap.put("subscriberID", notification.getSubscriberID());
-          SinkConnectorUtils.putAlternateIDs(notification.getSubscriberID(), documentMap, subscriberProfileService);
-          documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
-          documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
-          documentMap.put("eventID", "");
-          documentMap.put("creationDate", notification.getCreationDate()!=null?dateFormat.format(notification.getCreationDate()):"");
-          documentMap.put("deliveryDate", notification.getDeliveryDate()!=null?dateFormat.format(notification.getDeliveryDate()):"");
-          documentMap.put("moduleID", notification.getModuleID());
-          documentMap.put("featureID", notification.getFeatureID());
-          documentMap.put("source", notification.getSource());
-          documentMap.put("returnCode", notification.getReturnCode());
-          documentMap.put("returnCodeDetails", MessageStatus.fromReturnCode(notification.getReturnCode()));
-        }
-        else if(type.equals("notificationmanager"))
-        {
-          documentMap = new HashMap<String,Object>();
-          NotificationManagerRequest smsNotification = NotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+          SMSNotificationManagerRequest smsNotification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", smsNotification.getSubscriberID());
+          SinkConnectorUtils.putAlternateIDs(smsNotification.getSubscriberID(), documentMap, subscriberProfileService);
           documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());
           documentMap.put("originatingDeliveryRequestID", smsNotification.getOriginatingDeliveryRequestID());
           documentMap.put("eventID", "");
@@ -186,17 +171,17 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           documentMap.put("deliveryDate", smsNotification.getDeliveryDate()!=null?dateFormat.format(smsNotification.getDeliveryDate()):"");
           documentMap.put("moduleID", smsNotification.getModuleID());
           documentMap.put("featureID", smsNotification.getFeatureID());
-          documentMap.put("source", smsNotification.getNotificationParameters().get("node.parameter.fromaddress"));
+          documentMap.put("source", smsNotification.getSource());
           documentMap.put("returnCode", smsNotification.getReturnCode());
-          documentMap.put("returnCodeDetails", MessageStatus.fromReturnCode(smsNotification.getReturnCode()));
+          documentMap.put("returnCodeDetails", smsNotification.getReturnCodeDetails());
+          documentMap.put("returnDescription", smsNotification.getMessageDeliveryReturnCodeDetails());
         }
-        else
+        else if(type.equals("notificationmanager"))
         {
           documentMap = new HashMap<String,Object>();
-          PushNotificationManagerRequest notification = PushNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+          NotificationManagerRequest notification = NotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", notification.getSubscriberID());
-          SinkConnectorUtils.putAlternateIDs(notification.getSubscriberID(), documentMap, subscriberProfileService);
           documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
           documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
           documentMap.put("eventID", "");
@@ -204,9 +189,14 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           documentMap.put("deliveryDate", notification.getDeliveryDate()!=null?dateFormat.format(notification.getDeliveryDate()):"");
           documentMap.put("moduleID", notification.getModuleID());
           documentMap.put("featureID", notification.getFeatureID());
-          documentMap.put("source", ""); // TODO SCH : what is the source of push notifications ?
+          documentMap.put("source", notification.getNotificationParameters().get("node.parameter.fromaddress"));
           documentMap.put("returnCode", notification.getReturnCode());
-          documentMap.put("returnCodeDetails", MessageStatus.fromReturnCode(notification.getReturnCode()));
+          documentMap.put("returnCodeDetails", notification.getReturnCodeDetails());
+          documentMap.put("returnDescription", notification.getMessageDeliveryReturnCodeDetails());
+        }
+        else
+        {
+          documentMap = new HashMap<String,Object>();
         }
       
       return documentMap;
