@@ -1480,7 +1480,7 @@ public class EvaluationCriterion
           break;
 
         case StringSetCriterion:
-          script.append("def left = new ArrayList(); for (int i=0;i<doc." + esField + ".size();i++) left.add(doc." + esField + ".get(i).value?.toLowerCase()); ");
+          script.append("def left = new ArrayList(); for (int i=0;i<doc." + esField + ".size();i++) left.add(doc." + esField + ".get(i)?.toLowerCase()); ");
           break;
 
         case IntegerSetCriterion:

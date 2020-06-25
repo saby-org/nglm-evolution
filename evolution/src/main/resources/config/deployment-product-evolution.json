@@ -39,6 +39,10 @@
   "ucgEngineESConnectTimeout" : 30000,
   "ucgEngineESSocketTimeout" : 60000,
   "ucgEngineESMasRetryTimeout" : 60000,
+  
+  "guiManagerESConnectTimeout" : 30000,
+  "guiManagerESSocketTimeout" : 60000,
+  
   "elasticSearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
   
   "elasticSearchScrollSize" : 1000,
