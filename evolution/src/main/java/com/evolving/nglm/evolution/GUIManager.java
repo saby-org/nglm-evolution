@@ -21338,9 +21338,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
   
   private Date getFirstDate(Date now, int dayOf)
   {
-    Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getBaseTimeZone());
     if (Calendar.DAY_OF_WEEK == dayOf)
       {
+        Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getBaseTimeZone());
         return RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getBaseTimeZone());
       }
     else
