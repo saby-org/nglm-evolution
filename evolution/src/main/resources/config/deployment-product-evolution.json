@@ -44,7 +44,7 @@
   "elasticSearchScrollSize" : 1000,
   
   "elasticSearchConnectTimeout" : 5000,
-  "elasticSearchQueryTimeout" : 60000,
+  "elasticSearchQueryTimeout" : 7200000,
 
   "maxPollIntervalMsComment": "Changed to 300s (5 minutes), kafka default is 30 seconds, which causes containers to stop during startup (heavy system load",
   "maxPollIntervalMs"       : 300000,
