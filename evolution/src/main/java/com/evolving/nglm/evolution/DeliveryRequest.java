@@ -540,7 +540,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.originatingRequest = JSONUtilities.decodeBoolean(jsonRoot, "originatingRequest", Boolean.TRUE);
     this.creationDate = SystemTime.getCurrentTime();
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
-    this.originatingSubscriberID = JSONUtilities.decodeString(jsonRoot, "originatingSubscriberID", true);
+    this.originatingSubscriberID = JSONUtilities.decodeString(jsonRoot, "originatingSubscriberID", false);
     this.deliveryPriority = DeliveryPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryPriority", "standard"));
     this.eventID = JSONUtilities.decodeString(jsonRoot, "eventID", true);
     this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", true);

@@ -1217,7 +1217,10 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
                 tb.addParameter(parameterBuilder);
                 // TODO EVPRO-146 Available Values
               }
-          }       
+          } 
+        
+        // add parameter relation to relationship
+        tb.addParameter(new ParameterBuilder("node.parameter.relationship", "Hierarchy Relationship", CriterionDataType.StringCriterion, false, true, "customer").addAvailableValue(new AvailableValueDynamicBuilder("#supportedRelationships#")));
 
         // Action:
         tb.setAction(new ActionBuilder("com.evolving.nglm.evolution.NotificationManager$ActionManager").addManagerClassConfigurationField("channelID", current.getID()).addManagerClassConfigurationField("moduleID", "1"));

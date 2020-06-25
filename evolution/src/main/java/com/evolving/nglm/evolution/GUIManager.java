@@ -19044,11 +19044,26 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   availableValue.put("id", returnCode.getGenericResponseCode());
                   availableValue.put("display", returnCode.getGenericResponseMessage());
                   result.add(JSONUtilities.encodeObject(availableValue));
-                }
+              }
+          }
+        break;
+
+        case "supportedRelationships":
+          HashMap<String, Object> availableValue = new HashMap<String, Object>();
+          availableValue.put("id", "customer");
+          availableValue.put("display", "customer");
+          result.add(JSONUtilities.encodeObject(availableValue));
+          
+          for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+            {
+              availableValue = new HashMap<String, Object>();
+              availableValue.put("id", supportedRelationship.getID());
+              availableValue.put("display", supportedRelationship.getDisplay());
+              result.add(JSONUtilities.encodeObject(availableValue));
             }
           break;
-          
-        default:
+
+      default:
           
           if(reference.startsWith("dialog_template_")) {
             // retrieve templates for the template id dialog_template_<template_id>
@@ -19065,7 +19080,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                           String communicationChannelID = referenceSplit[(referenceSplit.length)-1];
                           if (dialogTemplate.getCommunicationChannelID().equals(communicationChannelID))
                             {
-                              HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                              availableValue = new HashMap<String,Object>();
                               availableValue.put("id", messageTemplate.getSubscriberMessageTemplateID());                              
                               availableValue.put("display", ((messageTemplate.getSubscriberMessageTemplateDisplay() != null && !messageTemplate.getSubscriberMessageTemplateDisplay().isEmpty()) ? messageTemplate.getSubscriberMessageTemplateDisplay() : messageTemplate.getSubscriberMessageTemplateName()));
                               result.add(JSONUtilities.encodeObject(availableValue));
@@ -19088,7 +19103,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                       SourceAddress sourceAddress = (SourceAddress) sourceAddressUnchecked;
                       if (sourceAddress.getCommunicationChannelId().equals(communicationChannel.getID()))
                         {
-                          HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                          availableValue = new HashMap<String,Object>();
                           availableValue.put("id", sourceAddress.getSourceAddressId());
                           availableValue.put("display", sourceAddress.getGUIManagedObjectDisplay());
                           result.add(JSONUtilities.encodeObject(availableValue));
@@ -19104,7 +19119,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 {
                   if(availableValues.getGUIManagedObjectID().equals(reference))
                     {
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue = new HashMap<String,Object>();
                       if(availableValues.getAvailableValues() != null)
                         {
                           for(Pair<String, String> pair : availableValues.getAvailableValues())
