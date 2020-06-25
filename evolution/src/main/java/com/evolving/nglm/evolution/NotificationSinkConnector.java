@@ -140,7 +140,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("source", mailNotification.getFromAddress());
         documentMap.put("returnCode", mailNotification.getReturnCode());
         documentMap.put("returnCodeDetails", mailNotification.getReturnCodeDetails());
-        documentMap.put("description", mailNotification.getMessageDeliveryReturnCodeDetails());
+        documentMap.put("returnDescription", mailNotification.getMessageDeliveryReturnCodeDetails());
       }else if(type.equals("notificationmanagerpush")){
         documentMap = new HashMap<String,Object>();
         PushNotificationManagerRequest pushNotification = PushNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
@@ -156,7 +156,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("source", ""); // TODO SCH : what is the source of push notifications ?
         documentMap.put("returnCode", pushNotification.getReturnCode());
         documentMap.put("returnCodeDetails", pushNotification.getReturnCodeDetails());
-        documentMap.put("description", pushNotification.getMessageDeliveryReturnCodeDetails());
+        documentMap.put("returnDescription", pushNotification.getMessageDeliveryReturnCodeDetails());
       } else if(type.equals("notificationmanagersms"))
         {
           documentMap = new HashMap<String,Object>();
@@ -174,7 +174,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           documentMap.put("source", smsNotification.getSource());
           documentMap.put("returnCode", smsNotification.getReturnCode());
           documentMap.put("returnCodeDetails", smsNotification.getReturnCodeDetails());
-          documentMap.put("description", smsNotification.getMessageDeliveryReturnCodeDetails());
+          documentMap.put("returnDescription", smsNotification.getMessageDeliveryReturnCodeDetails());
         }
         else if(type.equals("notificationmanager"))
         {
@@ -192,7 +192,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           documentMap.put("source", notification.getNotificationParameters().get("node.parameter.fromaddress"));
           documentMap.put("returnCode", notification.getReturnCode());
           documentMap.put("returnCodeDetails", notification.getReturnCodeDetails());
-          documentMap.put("description", notification.getMessageDeliveryReturnCodeDetails());
+          documentMap.put("returnDescription", notification.getMessageDeliveryReturnCodeDetails());
         }
         else
         {
