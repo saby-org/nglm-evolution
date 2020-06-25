@@ -8,7 +8,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>1.4.3_6-235-SNAPSHOT</version>
+  <version>1.4.3_6-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
