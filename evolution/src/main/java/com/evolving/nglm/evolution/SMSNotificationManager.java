@@ -524,6 +524,39 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
 
     @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
+      
+      /*****************************************
+      *
+      *  Overiding subscriber ? i.e. must this be done for another subscriber ?
+      *
+      *****************************************/
+
+      String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.relationship");
+      if(hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer")) {
+        // retrieve the relationship 
+        SubscriberRelatives subscriberRelatives = evolutionEventContext.getSubscriberState().getSubscriberProfile().getRelations().get(hierarchyRelationship);
+        if(subscriberRelatives != null) {
+          // generate a new message that will go for the parrent
+          ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(
+              subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID(),
+              this.getClass().getName(),
+              subscriberRelatives.getParentSubscriberID(),
+              subscriberEvaluationRequest.getJourneyState().getJourneyID(),
+              subscriberEvaluationRequest.getJourneyNode().getNodeID(),
+              evolutionEventContext.getUniqueKey(),
+              subscriberEvaluationRequest.getJourneyState()
+              );
+          
+          
+
+        }
+        else {
+          // log a warning but don't send the request
+          log.warn("No relative subscriber for relationship " + hierarchyRelationship);
+          return Collections.<Action>emptyList();
+        }
+      }
+      
       /*****************************************
       *
       *  parameters
@@ -558,21 +591,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       DialogMessage messageText = (template != null) ? template.getMessageText() : null;
       List<String> messageTags = (messageText != null) ? messageText.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
 
-      /*****************************************
-      *
-      *  Overiding subscriber ?
-      *
-      *****************************************/
 
-      String overidingSubscriberID = null;
-      String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.relationship");
-      if(hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer")) {
-        // retrieve the relationship 
-        SubscriberRelatives subscriberRelatives = evolutionEventContext.getSubscriberState().getSubscriberProfile().getRelations().get(hierarchyRelationship);
-        if(subscriberRelatives != null) {
-          overidingSubscriberID = subscriberRelatives.getParentSubscriberID();
-        }
-      }
       
       /*****************************************
       *

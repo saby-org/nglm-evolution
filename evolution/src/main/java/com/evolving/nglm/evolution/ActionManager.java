@@ -7,7 +7,6 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -31,6 +30,7 @@ public abstract class ActionManager
   public enum ActionType
   {
     DeliveryRequest,
+    ExecuteActionOtherSubscriber,
     JourneyRequest,
     JourneyContextUpdate,
     ActionManagerContextUpdate,

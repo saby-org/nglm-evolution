@@ -280,6 +280,7 @@ public class EvolutionEngine
     String timedEvaluationTopic = Deployment.getTimedEvaluationTopic();
     String cleanupSubscriberTopic = Deployment.getCleanupSubscriberTopic();
     String subscriberProfileForceUpdateTopic = Deployment.getSubscriberProfileForceUpdateTopic();
+    String executeActionOtherSubscriberTopic = Deployment.getExecuteActionOtherSubscriberTopic();
     String profileChangeEventTopic = Deployment.getProfileChangeEventTopic();
     String profileSegmentChangeEventTopic = Deployment.getProfileSegmentChangeEventTopic();
     String profileLoyaltyProgramChangeEventTopic = Deployment.getProfileLoyaltyProgramChangeEventTopic();
@@ -681,6 +682,7 @@ public class EvolutionEngine
     final ConnectSerde<AcceptanceLog> acceptanceLogSerde = AcceptanceLog.serde();
     final ConnectSerde<PointFulfillmentRequest> pointFulfillmentRequestSerde = PointFulfillmentRequest.serde();
     final ConnectSerde<SubscriberProfileForceUpdate> subscriberProfileForceUpdateSerde = SubscriberProfileForceUpdate.serde();
+    final ConnectSerde<ExecuteActionOtherSubscriber> executeActionOtherSubscriberSerde = ExecuteActionOtherSubscriber.serde();
     final ConnectSerde<ProfileChangeEvent> profileChangeEventSerde = ProfileChangeEvent.serde();
     final ConnectSerde<ProfileSegmentChangeEvent> profileSegmentChangeEventSerde = ProfileSegmentChangeEvent.serde();
     final ConnectSerde<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventSerde = ProfileLoyaltyProgramChangeEvent.serde();
@@ -719,6 +721,7 @@ public class EvolutionEngine
     evolutionEventSerdes.add(timedEvaluationSerde);
     evolutionEventSerdes.add(cleanupSubscriberSerde);
     evolutionEventSerdes.add(subscriberProfileForceUpdateSerde);
+    evolutionEventSerdes.add(executeActionOtherSubscriberSerde);
     evolutionEventSerdes.add(recordSubscriberIDSerde);
     evolutionEventSerdes.add(journeyRequestSerde);
     evolutionEventSerdes.add(journeyStatisticSerde);
@@ -752,6 +755,7 @@ public class EvolutionEngine
     KStream<StringKey, TimedEvaluation> timedEvaluationSourceStream = builder.stream(timedEvaluationTopic, Consumed.with(stringKeySerde, timedEvaluationSerde));
     KStream<StringKey, CleanupSubscriber> cleanupSubscriberSourceStream = builder.stream(cleanupSubscriberTopic, Consumed.with(stringKeySerde, cleanupSubscriberSerde));
     KStream<StringKey, SubscriberProfileForceUpdate> subscriberProfileForceUpdateSourceStream = builder.stream(subscriberProfileForceUpdateTopic, Consumed.with(stringKeySerde, subscriberProfileForceUpdateSerde));
+    KStream<StringKey, ExecuteActionOtherSubscriber> executeActionOtherSubscriberSourceStream = builder.stream(executeActionOtherSubscriberTopic, Consumed.with(stringKeySerde, executeActionOtherSubscriberSerde));
     KStream<StringKey, RecordSubscriberID> recordSubscriberIDSourceStream = builder.stream(recordSubscriberIDTopic, Consumed.with(stringKeySerde, recordSubscriberIDSerde));
     KStream<StringKey, JourneyRequest> journeyRequestSourceStream = builder.stream(journeyRequestTopic, Consumed.with(stringKeySerde, journeyRequestSerde));
     KStream<StringKey, LoyaltyProgramRequest> loyaltyProgramRequestSourceStream = builder.stream(loyaltyProgramRequestTopic, Consumed.with(stringKeySerde, loyaltyProgramRequestSerde));
@@ -836,6 +840,7 @@ public class EvolutionEngine
     extendedProfileEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) cleanupSubscriberSourceStream);
     extendedProfileEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) recordSubscriberIDSourceStream);
     extendedProfileEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberProfileForceUpdateSourceStream);
+    extendedProfileEventStreams.add((KStream<StringKey, ? extends ExecuteActionOtherSubscriber>) executeActionOtherSubscriberSourceStream);
     extendedProfileEventStreams.addAll(extendedProfileEvolutionEngineEventStreams);
     KStream extendedProfileEvolutionEventCompositeStream = null;
     for (KStream<StringKey, ? extends SubscriberStreamEvent> eventStream : extendedProfileEventStreams)
@@ -884,6 +889,7 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) enhancedPeriodicEvaluationStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) cleanupSubscriberSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberProfileForceUpdateSourceStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) executeActionOtherSubscriberSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) recordSubscriberIDSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) journeyRequestSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) loyaltyProgramRequestSourceStream);

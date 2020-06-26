@@ -1,8 +1,3 @@
-
-
-
-
-
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.evolving.nglm</groupId>
@@ -132,6 +127,7 @@
     <topic.periodicevaluation_fileconnector>periodicevaluation-fileconnector</topic.periodicevaluation_fileconnector>
     <topic.subscriberprofileforceupdate>subscriberprofileforceupdate</topic.subscriberprofileforceupdate>
     <topic.subscriberprofileforceupdate_fileconnector>subscriberprofileforceupdate-fileconnector</topic.subscriberprofileforceupdate_fileconnector>
+    <topic.executeactionothersubscriber>executeactionothersubscriber</topic.executeactionothersubscriber>
     <topic.tokenredeemed>tokenredeemed</topic.tokenredeemed>
     <topic.tokenredeemed_fileconnector>tokenredeemed-fileconnector</topic.tokenredeemed_fileconnector>
     <topic.journeyrequest>journeyrequest</topic.journeyrequest>

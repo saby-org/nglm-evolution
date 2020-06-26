@@ -103,6 +103,7 @@ public class Deployment
   private static String timedEvaluationTopic;
   private static String evaluateTargetsTopic;
   private static String subscriberProfileForceUpdateTopic;
+  private static String executeActionOtherSubscriberTopic;
   private static String subscriberStateChangeLog;
   private static String subscriberStateChangeLogTopic;
   private static String extendedSubscriberProfileChangeLog;
@@ -344,6 +345,7 @@ public class Deployment
   public static String getTimedEvaluationTopic() { return timedEvaluationTopic; }
   public static String getEvaluateTargetsTopic() { return evaluateTargetsTopic; }
   public static String getSubscriberProfileForceUpdateTopic() { return subscriberProfileForceUpdateTopic; }
+  public static String getExecuteActionOtherSubscriberTopic() { return executeActionOtherSubscriberTopic; }
   public static String getSubscriberStateChangeLog() { return subscriberStateChangeLog; }
   public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
   public static String getExtendedSubscriberProfileChangeLog() { return extendedSubscriberProfileChangeLog; }
@@ -1637,6 +1639,19 @@ public class Deployment
           throw new ServerRuntimeException("deployment", e);
         }
 
+      //
+      //  executeActionOtherSubscriberTopic
+      //
+
+      try
+        {
+          executeActionOtherSubscriberTopic = JSONUtilities.decodeString(jsonRoot, "executeActionOtherSubscriberTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
       //
       //  subscriberStateChangeLog
       //
