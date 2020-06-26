@@ -1,6 +1,7 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -22,7 +23,6 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
-import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
@@ -1170,7 +1170,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         // address
         // node.parameter.contacttype
         ParameterBuilder parameterBuilder = new ParameterBuilder("node.parameter.contacttype", "Contact Type", CriterionDataType.StringCriterion, false, true, null);
-        for (ContactType currentContactType : ContactType.values())
+        // lambda filtering (only done once) to eliminate contact types with negative topic index
+        for (ContactType currentContactType : Arrays.stream(ContactType.values()).filter(ct -> ct.getDeliveryPriority().getTopicIndex() >= 0).toArray(ContactType[]::new))
           {
             parameterBuilder.addAvailableValue(new AvailableValueStaticStringBuilder(currentContactType.getExternalRepresentation(), currentContactType.getDisplay()));
           }
