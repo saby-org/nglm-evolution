@@ -826,6 +826,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
           
           // add also the mandatory parameters for all channels
           Object value = CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.contacttype");
+          ContactType contactType = ContactType.fromExternalRepresentation((String) value);
           notificationParameters.put("node.parameter.contacttype", value);
           value = CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.fromaddress");
           notificationParameters.put("node.parameter.fromaddress", value);
@@ -843,6 +844,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
              request = new NotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters);
              request.setModuleID(moduleID);
              request.setFeatureID(deliveryRequestSource);
+             request.setDeliveryPriority(contactType.getDeliveryPriority());
              request.setNotificationHistory(evolutionEventContext.getSubscriberState().getNotificationHistory());
            }
          else
@@ -1170,7 +1172,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         ParameterBuilder parameterBuilder = new ParameterBuilder("node.parameter.contacttype", "Contact Type", CriterionDataType.StringCriterion, false, true, null);
         for (ContactType currentContactType : ContactType.values())
           {
-            parameterBuilder.addAvailableValue(new AvailableValueStaticStringBuilder(currentContactType.name(), currentContactType.getExternalRepresentation()));
+            parameterBuilder.addAvailableValue(new AvailableValueStaticStringBuilder(currentContactType.getExternalRepresentation(), currentContactType.getDisplay()));
           }
         tb.addParameter(parameterBuilder);
 
