@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution.extracts;
 
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.EvaluationCriterion;
 import com.evolving.nglm.evolution.Journey;
 import com.evolving.nglm.evolution.reports.ReportEsReader;
 import com.evolving.nglm.evolution.reports.subscriber.*;
@@ -42,7 +43,7 @@ public class ExtractDriver
 				//int defaultReportPeriodQuantity = target.getDefaultReportPeriodQuantity();
 				log.debug("PHASE 1 : read ElasticSearch");
 				LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-				esIndexWithQuery.put(esIndexSubscriber, Journey.processEvaluateProfileCriteriaGetQuery(extractItem.getEvaluationCriterionList()));
+				esIndexWithQuery.put(esIndexSubscriber, EvaluationCriterion.esCountMatchCriteriaGetQuery(extractItem.getEvaluationCriterionList()));
 
 				ReportEsReader reportEsReader = new ReportEsReader(
 								SubscriberReportObjects.KEY_STR,
