@@ -1047,20 +1047,3 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_deliverables -H'Cont
       }
   }'
 echo
-
-#
-# rl: This mapping is not used at the moment
-#
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_paymentmeans -H'Content-Type: application/json' -d'
-  {
-    "index_patterns": ["mapping_paymentmeans"],
-    "mappings" : {
-        "properties" : {
-            "paymentMeanID" : { "type" : "keyword" },
-            "paymentMeanName" : { "type" : "keyword" },
-            "paymentMeanActive" : { "type" : "boolean" },
-            "paymentMeanProviderID" : { "type" : "keyword" }
-          }
-      }
-  }'
-echo

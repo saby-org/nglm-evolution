@@ -396,31 +396,6 @@ prepare-curl -XPOST $CONNECT_URL_DELIVERABLE_ES/connectors -H "Content-Type: app
   }' 
 
 #
-#  sink connector -- PaymentMean (elasticsearch)
-#
-
-export CONNECT_URL_PAYMENTMEAN_ES=${CONNECT_URL_PAYMENTMEAN_ES:-$DEFAULT_CONNECT_URL}
-export CONNECT_ES_PAYMENTMEAN_SINK_TASKS=${CONNECT_ES_PAYMENTMEAN_SINK_TASKS:-'1'}
-export CONNECT_ES_PAYMENTMEAN_BATCHRECORDCOUNT=${CONNECT_ES_PAYMENTMEAN_BATCHRECORDCOUNT:-'1000'}
-export CONNECT_ES_PAYMENTMEAN_BATCHSIZEMB=${CONNECT_ES_PAYMENTMEAN_BATCHSIZEMB:-'5'}
-prepare-curl -XPOST $CONNECT_URL_PAYMENTMEAN_ES/connectors -H "Content-Type: application/json" -d '
-  {
-    "name" : "paymentmean_es_sink_connector",
-    "config" :
-      {
-      "connector.class" : "com.evolving.nglm.evolution.PaymentMeanESSinkConnector",
-      "tasks.max" : '$CONNECT_ES_PAYMENTMEAN_SINK_TASKS',
-      "topics" : "${topic.paymentMean}",
-      "connectionHost" : "'$MASTER_ESROUTER_HOST'",
-      "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-      "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
-      "indexName" : "mapping_paymentmeans",
-      "batchRecordCount" : "'$CONNECT_ES_PAYMENTMEAN_BATCHRECORDCOUNT'",
-      "batchSize" : "'$CONNECT_ES_PAYMENTMEAN_BATCHSIZEMB'"
-      }
-  }' 
-
-#
 #  sink connector -- Journey (elasticsearch)
 #
 
@@ -440,8 +415,8 @@ prepare-curl -XPOST $CONNECT_URL_JOURNEY_ES/connectors -H "Content-Type: applica
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
       "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
       "indexName" : "mapping_journeys",
-   "batchRecordCount" : "'$CONNECT_ES_JOURNEY_BATCHRECORDCOUNT'",
-   "batchSize" : "'$CONNECT_ES_JOURNEY_BATCHSIZEMB'"
+      "batchRecordCount" : "'$CONNECT_ES_JOURNEY_BATCHRECORDCOUNT'",
+      "batchSize" : "'$CONNECT_ES_JOURNEY_BATCHSIZEMB'"
       }
   }' 
 
