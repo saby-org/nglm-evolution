@@ -463,23 +463,27 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
                   
                     if(this.pointBalances != null && !this.pointBalances.isEmpty()) 
                       { 
-                        if(loyaltyProgramPoints.getRewardPointsID() != null)
+                        String rewardPointsID = loyaltyProgramPoints.getRewardPointsID();
+                        if(rewardPointsID != null)
                           {
-                            loyalty.put("rewardPointID", loyaltyProgramPoints.getRewardPointsID());
-                            loyalty.put("rewardPointName", pointService.getStoredPoint(loyaltyProgramPoints.getRewardPointsID()).getJSONRepresentation().get("display").toString());
+                            loyalty.put("rewardPointID", rewardPointsID);
+                            GUIManagedObject point = pointService.getStoredPoint(rewardPointsID);
+                            loyalty.put("rewardPointName", (point!=null)?(point.getJSONRepresentation().get("display").toString()):"");
                             int balance = 0;
-                            if(this.pointBalances.get(loyaltyProgramPoints.getRewardPointsID()) != null){
-                              balance = this.pointBalances.get(loyaltyProgramPoints.getRewardPointsID()).getBalance(now);
+                            if(this.pointBalances.get(rewardPointsID) != null){
+                              balance = this.pointBalances.get(rewardPointsID).getBalance(now);
                             }
                             loyalty.put("rewardPointBalance", balance);
                           }
-                        if(loyaltyProgramPoints.getStatusPointsID() != null)
+                        String statusPointsID = loyaltyProgramPoints.getStatusPointsID();
+                        if(statusPointsID != null)
                           {
-                            loyalty.put("statusPointID", loyaltyProgramPoints.getStatusPointsID());
-                            loyalty.put("statusPointName", pointService.getStoredPoint(loyaltyProgramPoints.getStatusPointsID()).getJSONRepresentation().get("display").toString());
+                            loyalty.put("statusPointID", statusPointsID);
+                            GUIManagedObject point = pointService.getStoredPoint(statusPointsID);
+                            loyalty.put("statusPointName", (point!=null)?(point.getJSONRepresentation().get("display").toString()):"");
                             int balance = 0;
-                            if(this.pointBalances.get(loyaltyProgramPoints.getStatusPointsID()) != null){
-                              balance = this.pointBalances.get(loyaltyProgramPoints.getStatusPointsID()).getBalance(now);
+                            if(this.pointBalances.get(statusPointsID) != null){
+                              balance = this.pointBalances.get(statusPointsID).getBalance(now);
                             }
                             loyalty.put("statusPointBalance", balance);
                           } 

@@ -222,6 +222,8 @@ public class Deployment
   private static int ucgEngineESConnectTimeout;
   private static int ucgEngineESSocketTimeout;
   private static int ucgEngineESMasRetryTimeout;
+  private static int guiManagerESConnectTimeout;
+  private static int guiManagerESSocketTimeout;
   private static String exclusionInclusionTargetTopic;
   private static String dnboMatrixTopic;
   private static String segmentContactPolicyTopic;
@@ -461,6 +463,8 @@ public class Deployment
   public static int getUcgEngineESConnectTimeout() { return ucgEngineESConnectTimeout; }
   public static int getUcgEngineESSocketTimeout(){ return ucgEngineESSocketTimeout; }
   public static int getUcgEngineESMasRetryTimeout() { return ucgEngineESMasRetryTimeout; }
+  public static int getGUIManagerESConnectTimeout() { return guiManagerESConnectTimeout; }
+  public static int getGUIManagerESSocketTimeout(){ return guiManagerESSocketTimeout; }
   public static String getExclusionInclusionTargetTopic() { return exclusionInclusionTargetTopic; }
   public static String getDNBOMatrixTopic() { return dnboMatrixTopic; }
   public static String getSegmentContactPolicyTopic() { return segmentContactPolicyTopic; }
@@ -3208,6 +3212,34 @@ public class Deployment
         {
           Integer ucgEngineESMasRetryTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESMasRetryTimeout",false);
           ucgEngineESMasRetryTimeout = ucgEngineESMasRetryTimeoutJSON == null ? 60000:ucgEngineESMasRetryTimeoutJSON;
+        }
+      catch(JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment",e);
+        }
+
+      //
+      //  guiManagerESConnectTimeout
+      //
+
+      try
+        {
+          Integer guiManagerESConnectTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"guiManagerESConnectTimeout",false);
+          guiManagerESConnectTimeout = guiManagerESConnectTimeoutJSON == null ? 30000:guiManagerESConnectTimeoutJSON;
+        }
+      catch(JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment",e);
+        }
+
+      //
+      //  guiManagerESSocketTimeout
+      //
+
+      try
+        {
+          Integer guiManagerESSocketTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"guiManagerESSocketTimeout",false);
+          guiManagerESSocketTimeout = guiManagerESSocketTimeoutJSON == null ? 60000:guiManagerESSocketTimeoutJSON;
         }
       catch(JSONUtilitiesException e)
         {
