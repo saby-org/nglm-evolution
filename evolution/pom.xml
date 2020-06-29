@@ -28,7 +28,6 @@
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
     <version>1.4.3_7-SNAPSHOT</version>
-    <relativePath/>
   </parent>
 
   <properties>
