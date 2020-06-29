@@ -258,6 +258,7 @@ public class Deployment
   private static int propensityWriterRefreshPeriodMs;
 
  private static boolean bypassJourneyTrafficEngine; // @rl Hack. TODO: remove later
+  private static boolean enableContactPolicyProcessing;
 
   /*****************************************
    *
@@ -501,6 +502,7 @@ public class Deployment
   public static int getPropensityReaderRefreshPeriodMs() { return propensityReaderRefreshPeriodMs; }
   public static int getPropensityWriterRefreshPeriodMs() { return propensityWriterRefreshPeriodMs; }
   public static boolean getBypassJourneyTrafficEngine() { return bypassJourneyTrafficEngine; }
+  public static boolean getEnableContactPolicyProcessing(){ return  enableContactPolicyProcessing;}
   
   // addProfileCriterionField
   //
@@ -3408,6 +3410,15 @@ public class Deployment
           bypassJourneyTrafficEngine = JSONUtilities.decodeBoolean(jsonRoot, "bypassJourneyTrafficEngine", Boolean.TRUE);
         }
         catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      try
+        {
+          enableContactPolicyProcessing = JSONUtilities.decodeBoolean(jsonRoot, "enableContactPolicyProcessing", Boolean.TRUE);
+        }
+      catch (JSONUtilitiesException e)
         {
           throw new ServerRuntimeException("deployment", e);
         }
