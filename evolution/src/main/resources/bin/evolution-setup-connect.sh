@@ -421,31 +421,6 @@ prepare-curl -XPOST $CONNECT_URL_PAYMENTMEAN_ES/connectors -H "Content-Type: app
   }' 
 
 #
-#  sink connector -- Offer (elasticsearch)
-#
-
-export CONNECT_URL_OFFER_ES=${CONNECT_URL_OFFER_ES:-$DEFAULT_CONNECT_URL}
-export CONNECT_ES_OFFER_SINK_TASKS=${CONNECT_ES_OFFER_SINK_TASKS:-'1'}
-export CONNECT_ES_OFFER_BATCHRECORDCOUNT=${CONNECT_ES_OFFER_BATCHRECORDCOUNT:-'1000'}
-export CONNECT_ES_OFFER_BATCHSIZEMB=${CONNECT_ES_OFFER_BATCHSIZEMB:-'5'}
-prepare-curl -XPOST $CONNECT_URL_OFFER_ES/connectors -H "Content-Type: application/json" -d '
-  {
-    "name" : "offer_es_sink_connector",
-    "config" :
-      {
-      "connector.class" : "com.evolving.nglm.evolution.OfferESSinkConnector",
-      "tasks.max" : '$CONNECT_ES_OFFER_SINK_TASKS',
-      "topics" : "${topic.offer}",
-      "connectionHost" : "'$MASTER_ESROUTER_HOST'",
-      "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-      "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
-      "indexName" : "mapping_offers",
-      "batchRecordCount" : "'$CONNECT_ES_OFFER_BATCHRECORDCOUNT'",
-      "batchSize" : "'$CONNECT_ES_OFFER_BATCHSIZEMB'"
-      }
-  }' 
-  
-#
 #  sink connector -- Journey (elasticsearch)
 #
 

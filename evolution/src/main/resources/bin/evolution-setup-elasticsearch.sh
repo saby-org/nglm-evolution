@@ -1064,19 +1064,3 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_paymentmeans -H'Cont
       }
   }'
 echo
-
-#
-# rl: This mapping is not used at the moment
-#
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_offers -H'Content-Type: application/json' -d'
-  {
-    "index_patterns": ["mapping_offers"],
-    "mappings" : {
-        "properties" : {
-            "offerID" : { "type" : "keyword" },
-            "offerName" : { "type" : "keyword" },
-            "offerActive" : { "type" : "boolean" }
-          }
-      }
-  }'
-echo
