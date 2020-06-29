@@ -1080,19 +1080,3 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_offers -H'Content-Ty
       }
   }'
 echo
-
-#
-# rl: This mapping is not used at the moment
-#
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_products -H'Content-Type: application/json' -d'
-  {
-    "index_patterns": ["mapping_products"],
-    "mappings" : {
-        "properties" : {
-            "productID" : { "type" : "keyword" },
-            "productName" : { "type" : "keyword" },
-            "productActive" : { "type" : "boolean" }
-          }
-      }
-  }'
-echo
