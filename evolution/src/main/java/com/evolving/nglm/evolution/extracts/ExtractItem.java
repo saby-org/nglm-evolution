@@ -35,7 +35,7 @@ public class ExtractItem
    *
    ****************************************/
 
-  private String extractFileName;
+  private String extractName;
   private List<String> returnFields;
   private List<EvaluationCriterion> evaluationCriterionList;
   private Integer returnNoOfRecords;
@@ -47,10 +47,10 @@ public class ExtractItem
    *
    ****************************************/
 
-  public String getExtractFileName() { return extractFileName; }
+  public String getExtractName() { return extractName; }
   public List<String> getReturnFields() { return returnFields; }
   public List<EvaluationCriterion> getEvaluationCriterionList() { return evaluationCriterionList;}
-  public Integer getReturnNoOfRecords(){return returnNoOfRecords;}
+  public int getReturnNoOfRecords(){return returnNoOfRecords == null?0:returnNoOfRecords.intValue();}
   public String getUserId() {return userID;}
 
 
@@ -62,7 +62,7 @@ public class ExtractItem
 
   public ExtractItem(JSONObject jsonRoot) throws GUIManager.GUIManagerException
   {
-    this.extractFileName = JSONUtilities.decodeString(jsonRoot,"extractFileName",true);
+    this.extractName = JSONUtilities.decodeString(jsonRoot,"extractName",true);
     this.returnFields = JSONUtilities.decodeJSONArray(jsonRoot,"returnFileds",false);
     //this is used when the information is transfered in json between gui manager and extract manager
     //when is set from gui manager user id is comming as param at processing
@@ -86,9 +86,9 @@ public class ExtractItem
    *
    ****************************************/
 
-  public ExtractItem(String extractFileName,List<EvaluationCriterion> evaluationCriterionList,List<String> returnFields,Integer returnNoOfRecords,String userID)
+  public ExtractItem(String extractName,List<EvaluationCriterion> evaluationCriterionList,List<String> returnFields,Integer returnNoOfRecords,String userID)
   {
-    this.extractFileName = extractFileName;
+    this.extractName = extractName;
     this.evaluationCriterionList = evaluationCriterionList;
     this.returnFields = returnFields;
     this.returnNoOfRecords = returnNoOfRecords;
@@ -105,7 +105,7 @@ public class ExtractItem
   public String getJSONObjectAsString()
   {
     Map extractItemMap = new HashMap();
-    extractItemMap.put("extractFileName",this.extractFileName);
+    extractItemMap.put("extractName",this.extractName);
     extractItemMap.put("evaluationCriterionList",packCriteria());
     extractItemMap.put("returnFields",returnFields);
     extractItemMap.put("userID",userID);

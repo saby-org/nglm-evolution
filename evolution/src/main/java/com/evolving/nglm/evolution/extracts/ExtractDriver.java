@@ -35,8 +35,8 @@ public class ExtractDriver
 			{
 				//this part is based on report mechanism and reuse code from there
 
-				log.debug("Processing extract " + extractItem.getExtractFileName());
-				String topic = "Targets_" + extractItem.getExtractFileName() + "_" + getTopicPrefixDate();
+				log.debug("Processing extract " + extractItem.getExtractName());
+				String topic = "Targets_" + extractItem.getExtractName() + "_" + getTopicPrefixDate();
 				String esIndexSubscriber = "subscriberprofile";
 				//String defaultReportPeriodUnit = target.getDefaultReportPeriodUnit();
 				//int defaultReportPeriodQuantity = target.getDefaultReportPeriodQuantity();
@@ -51,7 +51,8 @@ public class ExtractDriver
 								zookeeper,
 								elasticSearch,
 								esIndexWithQuery,
-								true
+								true,
+								extractItem.getReturnNoOfRecords()
 				);
 				reportEsReader.start();
 				try
@@ -67,7 +68,7 @@ public class ExtractDriver
 								kafka, topic, csvFilename
 				});
 				ReportUtils.cleanupTopics(topic);
-				log.debug("Finished with Subscriber Report");
+				log.debug("Finished with extract");
 			}catch (Exception ex)
 			{
 				throw new Exception("Failed generate target ",ex);

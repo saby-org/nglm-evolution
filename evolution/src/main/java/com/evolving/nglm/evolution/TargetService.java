@@ -7,7 +7,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import com.evolving.nglm.evolution.extracts.ExtractItem;
 import com.evolving.nglm.evolution.extracts.ExtractManager;
-import com.evolving.nglm.evolution.reports.ReportManager;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.zookeeper.*;
@@ -364,100 +363,6 @@ public class TargetService extends GUIService
             log.warn("Exception processing listener: {}", stackTraceWriter.toString());
           }
       }
-  }
-
-  private ZooKeeper zk = null;
-  private static final int NB_TIMES_TO_TRY = 10;
-
-  /*
-   * Called by GuiManager to trigger a one-time report
-   */
-  public void launchGenerateAndDownloadExtract(ExtractItem extractItem)
-  {
-    log.trace("launchTarget : " + extractItem.getExtractFileName());
-    String znode = ExtractManager.getControlDir()+ File.separator + "launchTarget-" + extractItem.getExtractFileName()+"-"+extractItem.getUserId() + "-";
-    if (getZKConnection())
-      {
-        log.debug("Trying to create ephemeral znode " + znode + " for " + extractItem.getExtractFileName());
-        try
-          {
-            // Create new file in control dir with reportName inside, to trigger
-            // report generation
-            //ExtractItem extractItem = new ExtractItem(target.getTargetName(),target.getTargetingCriteria(),null);
-            zk.create(znode, extractItem.getJSONObjectAsString().getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
-          }
-        catch (KeeperException e)
-          {
-            log.info("Got " + e.getLocalizedMessage());
-          }
-        catch (InterruptedException e)
-          {
-            log.info("Got " + e.getLocalizedMessage());
-          }
-      }
-    else
-      {
-        log.info("There was a major issue connecting to zookeeper");
-      }
-  }
-
-  private boolean isConnectionValid(ZooKeeper zookeeper)
-  {
-    return (zookeeper != null) && (zookeeper.getState() == ZooKeeper.States.CONNECTED);
-  }
-
-  public boolean isTargetExtractRunning(String targetName) {
-    try
-      {
-        if (getZKConnection())
-          {
-            List<String> children = zk.getChildren(ExtractManager.getControlDir(), false);
-            for(String child : children)
-              {
-                if(child.contains(targetName))
-                  {
-                    String znode = ExtractManager.getControlDir() + File.separator+child;
-                    return (zk.exists(znode, false) != null);
-                  }
-              }
-          }
-        else
-          {
-            log.info("There was a major issue connecting to zookeeper");
-          }
-      }
-    catch (KeeperException e)
-      {
-        log.info(e.getLocalizedMessage());
-      }
-    catch (InterruptedException e) { }
-    return false;
-  }
-
-  private boolean getZKConnection()  {
-    if (!isConnectionValid(zk)) {
-      log.debug("Trying to acquire ZooKeeper connection to "+Deployment.getZookeeperConnect());
-      int nbLoop = 0;
-      do
-        {
-          try
-            {
-              zk = new ZooKeeper(Deployment.getZookeeperConnect(), 3000, new Watcher() { @Override public void process(WatchedEvent event) {} }, false);
-              try { Thread.sleep(1*1000); } catch (InterruptedException e) {}
-              if (!isConnectionValid(zk))
-                {
-                  log.info("Could not get a zookeeper connection, waiting... ("+(NB_TIMES_TO_TRY-nbLoop)+" more times to go)");
-                  try { Thread.sleep(5*1000); } catch (InterruptedException e) {}
-                }
-            }
-          catch (IOException e)
-            {
-              log.info("could not create zookeeper client using {}", Deployment.getZookeeperConnect());
-            }
-        }
-      while (!isConnectionValid(zk) && (nbLoop++ < NB_TIMES_TO_TRY));
-    }
-    return isConnectionValid(zk);
   }
 
   /*****************************************

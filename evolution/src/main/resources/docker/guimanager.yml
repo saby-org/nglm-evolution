@@ -52,3 +52,6 @@ guimanager:
     - type: bind
       source: <_NGLM_REPORTS_>
       target: /app/reports
+    - type: bind
+      source: <_NGLM_EXTRACTS_>
+      target: /app/extracts
