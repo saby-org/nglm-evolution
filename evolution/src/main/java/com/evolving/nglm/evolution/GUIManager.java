@@ -3564,7 +3564,7 @@ public class GUIManager
 
         StringWriter stackTraceWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.error("Exception processing REST api: {}", stackTraceWriter.toString());
+        log.error("Exception processing REST api: {}", stackTraceWriter.toString().replace('\n', '\u2028'));
 
         //
         //  send error response
