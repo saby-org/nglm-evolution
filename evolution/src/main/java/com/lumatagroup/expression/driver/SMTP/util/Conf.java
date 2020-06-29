@@ -6,8 +6,11 @@ import java.util.Map;
 import com.lumatagroup.expression.driver.SMTP.MailSenderFactory;
 import com.lumatagroup.expression.driver.SMTP.constants.SMTPConstants;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Conf {
-	private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(Conf.class);
+	private static Logger logger = LoggerFactory.getLogger(Conf.class);
 
 	private static int openFeedbackNumOfRetry;
 	private static int urlClickedRetry;

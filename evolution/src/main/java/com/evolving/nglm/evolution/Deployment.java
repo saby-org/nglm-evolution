@@ -199,6 +199,7 @@ public class Deployment
   private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private static Map<String,NotificationDailyWindows> notificationTimeWindowsMap = new LinkedHashMap<String,NotificationDailyWindows>();
   private static Integer authResponseCacheLifetimeInMinutes = null;
+  private static Integer reportManagerMaxMessageLength = null;
   private static int stockRefreshPeriod;
   private static String periodicEvaluationCronEntry;
   private static String ucgEvaluationCronEntry;
@@ -440,6 +441,7 @@ public class Deployment
   public static Map<String,ToolboxSection> getWorkflowToolbox() { return workflowToolbox; }
   public static Map<String,ThirdPartyMethodAccessLevel> getThirdPartyMethodPermissionsMap() { return thirdPartyMethodPermissionsMap; }
   public static Integer getAuthResponseCacheLifetimeInMinutes() { return authResponseCacheLifetimeInMinutes; }
+  public static Integer getReportManagerMaxMessageLength() { return reportManagerMaxMessageLength; }
   public static int getStockRefreshPeriod() { return stockRefreshPeriod; }
   public static String getPeriodicEvaluationCronEntry() { return periodicEvaluationCronEntry; }
   public static String getUCGEvaluationCronEntry() { return ucgEvaluationCronEntry; }
@@ -2924,7 +2926,7 @@ public class Deployment
               {
                 ToolboxSection section = journeyToolbox.get(cc.getJourneyGUINodeSectionID());
                 if(section == null) {
-                  log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getJourneyGUINodeSectionID() + " for communicationChannel " + cc.getID());
+                  log.warn("Deployment: Can't retrieve Journey ToolBoxSection for " + cc.getJourneyGUINodeSectionID() + " for communicationChannel " + cc.getID());
                 }
                 else {
                   JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
@@ -2937,7 +2939,7 @@ public class Deployment
                       items.add(item);
                     } 
                     else {
-                      log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                      log.warn("Deployment: Can't retrieve Journey NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
                     }
                   }
                   section.getJSONRepresentation().put("items", items);
@@ -2971,7 +2973,7 @@ public class Deployment
               {
                 ToolboxSection section = campaignToolbox.get(cc.getCampaignGUINodeSectionID());
                 if(section == null) {
-                  log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getCampaignGUINodeSectionID() + " for communicationChannel " + cc.getID());
+                  log.warn("Deployment: Can't retrieve Campaign ToolBoxSection for " + cc.getCampaignGUINodeSectionID() + " for communicationChannel " + cc.getID());
                 }
                 else {
                   JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
@@ -2984,7 +2986,7 @@ public class Deployment
                       items.add(item);
                     } 
                     else {
-                      log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                      log.warn("Deployment: Can't retrieve Campaign NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
                     }                    
                   }
                   section.getJSONRepresentation().put("items", items);
@@ -3077,6 +3079,15 @@ public class Deployment
           throw new ServerRuntimeException("deployment", e);
         }
 
+      try
+      {
+        reportManagerMaxMessageLength = JSONUtilities.decodeInteger(jsonRoot, "reportManagerMaxMessageLength", 200);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+      
       //
       //  stockRefreshPeriod
       //
