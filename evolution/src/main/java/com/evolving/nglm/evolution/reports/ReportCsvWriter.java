@@ -69,6 +69,7 @@ public class ReportCsvWriter
     this.reportFactory = factory;
     this.kafkaNodeList = kafkaNodeList;
     this.topicIn = topicIn;
+    ReportsCommonCode.initializeDateFormats();
   }
 
   private Consumer<String, ReportElement> createConsumer(String topic)
