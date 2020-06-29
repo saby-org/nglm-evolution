@@ -48,6 +48,17 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+//TBR
+import com.evolving.nglm.evolution.extracts.ExtractDownloader;
+import com.evolving.nglm.evolution.extracts.ExtractItem;
+import com.evolving.nglm.evolution.extracts.ExtractService;
+import org.apache.commons.fileupload.FileItemIterator;
+import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.fileupload.FileUpload;
+import org.apache.commons.fileupload.RequestContext;
+import org.apache.commons.fileupload.util.Streams;
+//end TBR
+
 import org.apache.http.HttpHost;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -435,6 +446,9 @@ public class GUIManager
     getTokenEventDetails("getTokenEventDetails"),
     getTenantList("getTenantList"),
     getOffersList("getOffersList"),
+    launchExtract("launchExtract"),
+    downloadExtractFile("downloadExtractFile"),
+    launchAndDownloadExtract("launchAndDownloadExtract"),
 
     //
     //  configAdaptor APIs
@@ -1953,6 +1967,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSourceAddress", new APISimpleHandler(API.getSourceAddress));
         restServer.createContext("/nglm-guimanager/putSourceAddress", new APISimpleHandler(API.putSourceAddress));
         restServer.createContext("/nglm-guimanager/removeSourceAddress", new APISimpleHandler(API.removeSourceAddress));
+
+        restServer.createContext("/nglm-guimanager/launchExtract", new APISimpleHandler(API.launchExtract));
+        restServer.createContext("/nglm-guimanager/downloadExtractFile", new APIComplexHandler(API.downloadExtractFile));
+        restServer.createContext("/nglm-guimanager/launchAndDownloadExtract", new APIComplexHandler(API.launchAndDownloadExtract));
+
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -2635,6 +2654,10 @@ public class GUIManager
 
                 case launchReport:
                   jsonResponse = guiManagerLoyaltyReporting.processLaunchReport(userID, jsonRoot);
+                  break;
+
+                case launchExtract:
+                  jsonResponse = processLaunchExtract(userID, jsonRoot);
                   break;
 
                 case getPresentationStrategyList:
@@ -3710,6 +3733,11 @@ public class GUIManager
                 case downloadReport:
                   guiManagerLoyaltyReporting.processDownloadReport(userID, jsonRoot, jsonResponse, exchange);
                   break;
+                case downloadExtractFile:
+                  processDownloadExtract(userID, jsonRoot, jsonResponse, exchange);
+                  break;
+                case launchAndDownloadExtract:
+                  processLaunchAndDownloadExtract(userID,jsonRoot,jsonResponse,exchange);
               }
           }
         else
@@ -17678,6 +17706,75 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       String str = "Timeout waiting purchase response";
       log.info(str);
       throw new GUIManagerException("Internal error", str);
+    }
+  }
+
+  /*****************************************
+   *
+   *  processLaunchReport
+   *
+   *****************************************/
+
+  private JSONObject processLaunchExtract(String userID, JSONObject jsonRoot)
+  {
+    log.trace("In processLaunchTargetExtract : "+jsonRoot);
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    String responseCode = "";
+    try
+      {
+        ExtractItem extractItem = new ExtractItem(jsonRoot);
+        if (ExtractService.isTargetExtractRunning(extractItem.getExtractName()+"-"+extractItem.getUserId()))
+          {
+            responseCode = "targetIsAlreadyRunning";
+          } else
+          {
+            ExtractService.launchGenerateExtract(extractItem);
+            responseCode = "ok";
+          }
+      }catch (Exception ex)
+      {
+        responseCode = "internalError";
+        response.put("responseMessage", ex.getMessage());
+      }
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+   *
+   *  processDownloadReport
+   *
+   *****************************************/
+
+  private void processDownloadExtract(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
+  {
+    ExtractDownloader extractDownloader = new ExtractDownloader(userID,jsonRoot,jsonResponse,exchange);
+    extractDownloader.start();
+  }
+
+  private void processLaunchAndDownloadExtract(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
+  {
+    JSONObject launchResponse = this.processLaunchExtract(userID,jsonRoot);
+    String responseCode = JSONUtilities.decodeString(launchResponse,"responseCode",true);
+    if(responseCode != "ok")
+    {
+      jsonResponse.put("responseCode",responseCode);
+      jsonResponse.put("responseMessage",JSONUtilities.decodeString(launchResponse,"responseMessage"));
+      try {
+        exchange.sendResponseHeaders(200, 0);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(jsonResponse.toString());
+        writer.close();
+        exchange.close();
+      }catch(Exception e) {
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+      }
+    }
+    else
+    {
+      processDownloadExtract(userID,jsonRoot,jsonResponse,exchange);
     }
   }
 

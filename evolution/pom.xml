@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>release-1.4.3_6-SNAPSHOT</version>
+  <version>release-1.4.3_6-EVPRO-207a-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -45,7 +45,7 @@
     <gui-iar.version>1.4.3</gui-iar.version>
     <gui-opr.version>1.4.2</gui-opr.version>
     <gui-stg.version>1.4.3</gui-stg.version>
-    <gui-sbm.version>1.4.3</gui-sbm.version>
+    <gui-sbm.version>1.4.13</gui-sbm.version>
     <gui-lpm.version>1.4.2</gui-lpm.version>
     <gui-tls.version>1.4.15</gui-tls.version>
     <gui-audit.version>1.0.3</gui-audit.version>
@@ -275,6 +275,7 @@
                     <include>config/thirdpartymanager_jmx.yml</include>
                     <include>config/dnboproxy_jmx.yml</include>
                     <include>config/evolution-prometheus-application.yml</include>
+                    <include>config/extractmanager_jmx.yml</include>
                     <include>databases/_meta_gui/*</include>
                     <include>docker/prometheus-application/*</include>
                     <include>docker/prometheus-application-preamble.yml</include>
@@ -322,6 +323,8 @@
                     <include>docker/setup/*</include>
                     <include>docker/analyse-upgrade/*</include>
                     <include>support/*</include>
+                    <include>docker/extractmanager/*</include>
+                    <include>docker/extractmanager.yml</include>
                   </includes>
                   <filtering>false</filtering>
                 </resource>
@@ -353,6 +356,7 @@
                     <exclude>docker/datacubemanager.yml</exclude>
                     <exclude>docker/upgrade-preamble.yml</exclude>
                     <exclude>docker/upgrade-postamble.yml</exclude>
+                    <exclude>docker/extractmanager.yml</exclude>
                   </excludes>
                   <filtering>true</filtering>
                 </resource>

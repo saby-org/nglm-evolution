@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>release-1.4.3_6-SNAPSHOT</version>
+  <version>release-1.4.3_6-EVPRO-207a-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -64,6 +64,7 @@
     <common.build.phase.generate-reportscheduler-image>none</common.build.phase.generate-reportscheduler-image>
     <common.build.phase.generate-datacubemanager-image>none</common.build.phase.generate-datacubemanager-image>
     <common.build.phase.generate-upgrade-image>none</common.build.phase.generate-upgrade-image>
+    <common.build.phase.generate-extractmanager-image>none</common.build.phase.generate-extractmanager-image>
     <common.build.skip.docker-guimanager-image>true</common.build.skip.docker-guimanager-image>
     <common.build.skip.docker-thirdpartymanager-image>true</common.build.skip.docker-thirdpartymanager-image>
     <common.build.skip.docker-dnboproxy-image>true</common.build.skip.docker-dnboproxy-image>
@@ -84,6 +85,7 @@
     <common.build.skip.docker-reportscheduler-image>true</common.build.skip.docker-reportscheduler-image>
     <common.build.skip.docker-datacubemanager-image>true</common.build.skip.docker-datacubemanager-image>
     <common.build.skip.docker-upgrade-image>true</common.build.skip.docker-upgrade-image>
+    <common.build.skip.docker-extractmanager-image>true</common.build.skip.docker-extractmanager-image>
     
     <!-- topics -->
     <topic.empty>empty</topic.empty>
