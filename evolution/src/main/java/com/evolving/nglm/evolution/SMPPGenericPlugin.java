@@ -6,6 +6,8 @@
 
 package com.evolving.nglm.evolution;
 
+import java.util.Map;
+
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -177,9 +179,8 @@ public class SMPPGenericPlugin implements NotificationInterface
   {
     
     NotificationManagerRequest deliveryRequest = (NotificationManagerRequest)deliveryNotificationRequest;
-    DialogTemplate smsTemplate = (DialogTemplate) smsNotificationManager.getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(deliveryRequest.getTemplateID(), SystemTime.getCurrentTime());
-    DialogMessage dialogMessage = smsTemplate.getDialogMessage("sms.body");
-    String text = (dialogMessage != null) ? dialogMessage.resolve(deliveryRequest.getLanguage(), deliveryRequest.getTags().get("sms.body")) : null;
+    Map<String,String> resolvedParameters = deliveryRequest.getResolvedParameters(smsNotificationManager.getSubscriberMessageTemplateService());
+    String text = resolvedParameters.get("sms.body");
         
     String destination = deliveryRequest.getDestination();
     

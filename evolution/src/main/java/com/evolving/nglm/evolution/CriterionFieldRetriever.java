@@ -259,6 +259,20 @@ public abstract class CriterionFieldRetriever
   *****************************************/
 
   //
+  // getLoyaltyProgramsTiers
+  //
+  
+  public static Object getLoyaltyProgramsTiers(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException {
+    Set<String> res = evaluationRequest.getSubscriberProfile().getLoyaltyPrograms().values().stream()
+        .filter(lps -> (lps.getLoyaltyProgramExitDate() == null))
+        .filter(lps -> (lps instanceof LoyaltyProgramPointsState))
+        .map(lps -> (LoyaltyProgramPointsState) lps)
+        .map(lps -> ((LoyaltyProgramPointsState) lps).getTierName())
+        .collect(Collectors.toSet());
+    return res;
+  }
+
+  //
   // getLoyaltyPrograms
   //
   
@@ -399,20 +413,46 @@ public abstract class CriterionFieldRetriever
     String criterionFieldBaseName = fieldNameMatcher.group(2);
     
     Object result = null;
-    switch (criterionFieldBaseName)
+    Date evaluationDate = evaluationRequest.getEvaluationDate();
+    Date earliestExpiration = evaluationDate;
+    int earliestExpiryQuantity = 0;
+    Integer balance = 0;
+    Map<String, PointBalance> pointBalances = evaluationRequest.getSubscriberProfile().getPointBalances();
+    if (pointBalances == null)
       {
-        case "balance":
-          PointBalance pointBalance = evaluationRequest.getSubscriberProfile().getPointBalances().get(pointID);
-          if(pointBalance != null)
-            {
-              result = new Integer(pointBalance.getBalance(evaluationRequest.getEvaluationDate()));
-            }
-          else
-            {
-              result = new Integer(0);
-            }
-          break;
+        log.info("invalid point balances, using default value");
       }
+    else
+      {
+        PointBalance pointBalance = pointBalances.get(pointID);
+        if (pointBalance == null)
+          {
+            log.info("invalid point balance, using default value");
+          }
+        else
+          {
+            balance = new Integer(pointBalance.getBalance(evaluationDate));
+            earliestExpiration = pointBalance.getFirstExpirationDate(evaluationDate);
+            earliestExpiryQuantity = pointBalance.getBalance(earliestExpiration);
+          }
+      }
+      switch (criterionFieldBaseName)
+        {
+          case "balance":
+            result = balance;
+            break;
+            
+          case "earliestexpirydate":
+            result = earliestExpiration;
+            break;
+
+          case "earliestexpiryquantity":
+            result = earliestExpiryQuantity;
+            break;
+
+          default:
+            throw new CriterionException("invalid criterionFieldBaseName " + criterionFieldBaseName);
+        }
 
     //
     //  return

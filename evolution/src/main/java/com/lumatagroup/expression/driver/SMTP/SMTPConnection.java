@@ -1,7 +1,6 @@
 package com.lumatagroup.expression.driver.SMTP;
 
 import java.io.ByteArrayOutputStream;
-
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Date;
@@ -16,9 +15,10 @@ import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
 import javax.security.sasl.AuthenticationException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.MailNotificationManager;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications;
 import com.lumatagroup.expression.driver.SMTP.constants.SMTPConstants;
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPTransport;
@@ -29,7 +29,7 @@ import com.sun.mail.smtp.SMTPTransport;
  *
  */
 public class SMTPConnection {
-	private static Logger logger = Logger.getLogger(SMTPConnection.class);
+	private static Logger logger = LoggerFactory.getLogger(SMTPConnection.class);
 	
 	private String host;
 	private String port;
@@ -70,7 +70,7 @@ public class SMTPConnection {
 	 */
 	// Code Review- Need to remove the config parameter if not required in
 	// future - Done.
-	public SMTPConnection(MailNotificationManager mailNotificationManager, String host, String port, String socketFactoryClass, 
+	public SMTPConnection(DeliveryManagerForNotifications deliveryManagerForNotifications, String host, String port, String socketFactoryClass, 
 									String smtpAuthFlag, final String userName, 
 									final String password, String protocol, String debugFlag, String frmEmail, String connectionTimeout, int connectionCheckTime, String htmlContentCharset, String subjectCharset) throws Exception{
 		if (host == null || port == null || socketFactoryClass == null
@@ -255,9 +255,6 @@ public class SMTPConnection {
 		logger.debug("START: SMTPConnection.getSMTPTransport() method execution");
 		SMTPTransport smtpTransport = new SMTPTransport(session, new URLName(this.host));
 		smtpTransport.setUseRset(true);
-		if (sessionDebugFlag) { 
-			logger.info(os); 
-		}
 		try {
 			if ((userName != null && !userName.isEmpty()) && (password != null && !password.isEmpty())) {
 				logger.debug("Going to connect SMTP Transport through credentials using host:{"+this.host+"}"+", port:{"+this.port+"}"+", userName:{"+userName+"}"+", password:{"+password+"}");
@@ -279,9 +276,6 @@ public class SMTPConnection {
 //				this.driver.sendConnectionStatusTrap(true, null);
 			}
 			logger.info("SMTP Transport connected successfully.");
-			if (sessionDebugFlag) { 
-				logger.info(os); 
-			}
 		}catch (AuthenticationFailedException mEx) {
 			smtpTransport = null;
 			logger.error("AuthenticationFailedException occured in SMTPConnection.getSMTPTransport(): "+ mEx);

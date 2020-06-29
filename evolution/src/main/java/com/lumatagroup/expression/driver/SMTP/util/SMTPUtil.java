@@ -6,6 +6,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.lumatagroup.expression.driver.SMTP.FeedbackThread;
 
 /**
@@ -14,7 +17,7 @@ import com.lumatagroup.expression.driver.SMTP.FeedbackThread;
  *
  */
 public class SMTPUtil {
-	private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(SMTPUtil.class);
+	private static Logger logger = LoggerFactory.getLogger(SMTPUtil.class);
 	public static  Date  getFeedBackDate(){
 		return new Date();
 	}

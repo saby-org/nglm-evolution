@@ -216,7 +216,7 @@ public class SubscriberGroupEpochService
         try
           {
             subscriberGroupEpochNodeExists = (zookeeper.exists(node, false) != null);
-            if (!subscriberGroupEpochNodeExists) log.info("subscriberGroupEpoch node with ID {} does not exist", primaryID);
+            if (!subscriberGroupEpochNodeExists) if (log.isDebugEnabled()) log.debug("subscriberGroupEpoch node with ID {} does not exist", primaryID);
           }
         catch (KeeperException e)
           {

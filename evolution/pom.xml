@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>release-1.4.3_6-SNAPSHOT</version>
+  <version>release_1.4.3_7-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -27,14 +27,13 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.3_5-SNAPSHOT</version>
-    <relativePath/>
+    <version>1.4.3_7-SNAPSHOT</version>
   </parent>
 
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>1.4.3_5-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.4.3_7-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.4.11</gui-fwk.version>
