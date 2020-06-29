@@ -1096,22 +1096,3 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_products -H'Content-
       }
   }'
 echo
-
-#
-# rl: This mapping is not used at the moment
-#
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_loyaltyprograms -H'Content-Type: application/json' -d'
-  {
-    "index_patterns": ["mapping_loyaltyprograms"],
-    "mappings" : {
-        "properties" : {
-            "loyaltyProgramID" : { "type" : "keyword" },
-            "loyaltyProgramName" : { "type" : "keyword" },
-            "loyaltyProgramType" : { "type" : "keyword" },
-            "rewardPointsID" : { "type" : "keyword" },
-            "statusPointsID" : { "type" : "keyword" },
-            "tiers" : { "type" : "nested" }
-          }
-      }
-  }'
-echo

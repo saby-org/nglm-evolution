@@ -471,31 +471,6 @@ prepare-curl -XPOST $CONNECT_URL_PRODUCT_ES/connectors -H "Content-Type: applica
   }' 
 
 #
-#  sink connector -- Loyalty Program (elasticsearch)
-#
-
-export CONNECT_URL_LOYALTYPROGRAM_ES=${CONNECT_URL_LOYALTYPROGRAM_ES:-$DEFAULT_CONNECT_URL}
-export CONNECT_ES_LOYALTYPROGRAM_SINK_TASKS=${CONNECT_ES_LOYALTYPROGRAM_SINK_TASKS:-'1'}
-export CONNECT_ES_LOYALTYPROGRAM_BATCHRECORDCOUNT=${CONNECT_ES_LOYALTYPROGRAM_BATCHRECORDCOUNT:-'1000'}
-export CONNECT_ES_LOYALTYPROGRAM_BATCHSIZEMB=${CONNECT_ES_LOYALTYPROGRAM_BATCHSIZEMB:-'5'}
-prepare-curl -XPOST $CONNECT_URL_LOYALTYPROGRAM_ES/connectors -H "Content-Type: application/json" -d '
-  {
-    "name" : "loyaltyprogram_es_sink_connector",
-    "config" :
-      {
-      "connector.class" : "com.evolving.nglm.evolution.LoyaltyProgramPointsESSinkConnector",
-      "tasks.max" : '$CONNECT_ES_LOYALTYPROGRAM_SINK_TASKS',
-      "topics" : "${topic.loyaltyprogram}",
-      "connectionHost" : "'$MASTER_ESROUTER_HOST'",
-      "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-      "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
-      "indexName" : "mapping_loyaltyprograms",
-      "batchRecordCount" : "'$CONNECT_ES_LOYALTYPROGRAM_BATCHRECORDCOUNT'",
-      "batchSize" : "'$CONNECT_ES_LOYALTYPROGRAM_BATCHSIZEMB'"
-      }
-  }' 
-
-#
 #  sink connector -- Journey (elasticsearch)
 #
 
