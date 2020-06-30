@@ -648,7 +648,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("contactPolicyCount", contactPolicyService.getStoredContactPolicies(includeArchived).size());
     response.put("communicationChannelCount", Deployment.getCommunicationChannels().size());
     response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived).size());
-    response.put("partnerCount", resellerService.getStoredResellers(includeArchived).size());
+    response.put("resellerCount", resellerService.getStoredResellers(includeArchived).size());
     return JSONUtilities.encodeObject(response);
   }
 

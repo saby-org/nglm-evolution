@@ -468,7 +468,10 @@ public class GUIManager
     getSourceAddressSummaryList("getSourceAddressSummaryList"),
     getSourceAddress("getSourceAddress"),
     putSourceAddress("putSourceAddress"),
-    removeSourceAddress("removeSourceAddress"),
+    removeSourceAddress("removeSourceAddress"),      
+    putSupplierOffer("putSupplierOffer"),
+    getSupplierOfferList("getSupplierOfferList"),
+    removeSupplierOffer("removeSupplierOffer"),
     
     //
     //  structor
@@ -1958,6 +1961,10 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSourceAddress", new APISimpleHandler(API.getSourceAddress));
         restServer.createContext("/nglm-guimanager/putSourceAddress", new APISimpleHandler(API.putSourceAddress));
         restServer.createContext("/nglm-guimanager/removeSourceAddress", new APISimpleHandler(API.removeSourceAddress));
+        
+        restServer.createContext("/nglm-guimanager/putSupplierOffer", new APISimpleHandler(API.putSupplierOffer));
+        restServer.createContext("/nglm-guimanager/getSupplierOfferList", new APISimpleHandler(API.getSupplierOfferList));
+        restServer.createContext("/nglm-guimanager/removeSupplierOffer", new APISimpleHandler(API.removeSupplierOffer));
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -3509,6 +3516,18 @@ public class GUIManager
                 case getTenantList:
                   jsonResponse = guiManagerGeneral.processGetTenantList(userID, jsonRoot, true, includeArchived);
                   break;
+                  
+                case putSupplierOffer:
+                  jsonResponse = processPutSupplierOffer(userID, jsonRoot);
+                  break;
+                  
+                case getSupplierOfferList:
+                  jsonResponse = processGetSupplierOfferList(userID, jsonRoot);
+                  break;
+                  
+                case removeSupplierOffer:
+                  jsonResponse = processRemoveSupplierOffer(userID, jsonRoot);
+                  break;   
 
               }
           }
@@ -14461,11 +14480,10 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> resellerList = new ArrayList<JSONObject>();
-    List<JSONObject> salesChannelsList = new ArrayList<JSONObject>();
-    for (GUIManagedObject reseller : resellerService.getStoredGUIManagedObjects(includeArchived))
+    for (GUIManagedObject reseller : resellerService.getStoredResellers(includeArchived))
       {
-        JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(reseller, fullDetails, now);
-        resellerList.add(loyaltyPro);
+        JSONObject resellerPro = resellerService.generateResponseJSON(reseller, fullDetails, now);
+        resellerList.add(resellerPro);
       } 
     
     /*****************************************
@@ -14560,6 +14578,16 @@ public class GUIManager
   
     /*****************************************
     *
+    *  existing Reseller
+    *
+    *****************************************/
+
+    GUIManagedObject existingReseller= resellerService.getStoredGUIManagedObject(resellerID);
+    
+    
+    
+    /*****************************************
+    *
     *  To check if the user is already in another reseller users list
     *
     *****************************************/
@@ -14575,7 +14603,7 @@ public class GUIManager
   
     List<String> userIDs = JSONUtilities.decodeJSONArray(jsonRoot, "userIDs", false);
  
-    if (userIDs.size() != 0) {
+    if (userIDs.size() != 0 && existingReseller == null) {
       for(String userId : userIDs) {
         if (existingResellersUserIDs.contains(userId))
           {
@@ -14585,15 +14613,6 @@ public class GUIManager
           }    
       }
     }  
-    
-    
-    /*****************************************
-    *
-    *  existing Reseller
-    *
-    *****************************************/
-
-    GUIManagedObject existingReseller= resellerService.getStoredGUIManagedObject(resellerID);
 
     /*****************************************
     *
@@ -14613,7 +14632,7 @@ public class GUIManager
 
     /*****************************************
     *
-    *  process Partner
+    *  process Reseller
     *
     *****************************************/
 
@@ -14622,7 +14641,7 @@ public class GUIManager
       {
         /****************************************
         *
-        *  instantiate Partner
+        *  instantiate Reseller
         *
         ****************************************/
 
@@ -14677,7 +14696,7 @@ public class GUIManager
         //
 
         response.put("id", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "loyaltyProgramNotValid");
+        response.put("responseCode", "ResellerInvalid");
         response.put("responseMessage", e.getMessage());
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
@@ -17583,6 +17602,620 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  *  processPutSupplierOffer
+  *
+  *****************************************/
+  
+  private JSONObject processPutSupplierOffer(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();  
+    String user = JSONUtilities.decodeString(jsonRoot, "loginName", false);
+    String activeSupplier = activeSupplierID(user);
+    boolean offerCanBeModified = true;
+    String existingproductID = null;
+    String existingVoucherID = null;
+    String existingSupplierID = null;
+    
+    /*****************************************
+     *
+     * offerID
+     *
+     *****************************************/
+
+    String offerID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (offerID == null)
+      {
+        offerID = offerService.generateOfferID();
+        jsonRoot.put("id", offerID);
+      }
+
+    /*****************************************
+     *
+     * existing offer
+     *
+     *****************************************/
+
+    GUIManagedObject existingOffer = offerService.getStoredOffer(offerID);
+    
+    
+    /**********************************************************************************************
+     * 
+     * The existing product or voucher ID
+     * 
+     * 
+     **********************************************************************************************/
+    if (existingOffer != null)
+      {
+        if (existingOffer instanceof Offer)
+          {
+            Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(
+                (Offer) existingOffer);
+            existingSupplierID = (String) OfferProductVoucherAndSupplierIDs.get("supplierID");
+            OfferProduct product = (OfferProduct) OfferProductVoucherAndSupplierIDs.get("offerProduct");
+            OfferVoucher voucher = (OfferVoucher) OfferProductVoucherAndSupplierIDs.get("offerVoucher");
+            if (product != null)
+              {
+                existingproductID = product.getProductID();
+              }
+            if (voucher != null)
+              {
+                existingVoucherID = voucher.getVoucherID();
+              }
+          }
+      }
+    
+
+    /*****************************************
+     *
+     * read-only
+     *
+     *****************************************/
+
+    if (existingOffer != null  && existingOffer.getReadOnly()) 
+      {
+        response.put("id", existingOffer.getGUIManagedObjectID());
+        response.put("accepted", existingOffer.getAccepted());
+        response.put("valid", existingOffer.getAccepted());
+        response.put("processing", offerService.isActiveOffer(existingOffer, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    if (existingOffer != null && !(activeSupplier.equals(existingSupplierID)))
+      {
+        if (existingOffer instanceof Offer) {
+
+        response.put("responseCode", RESTAPIGenericReturnCodes.OFFER_SUPPLIER_MISMATCH.getGenericResponseCode());
+        response.put("responseMessage",
+            RESTAPIGenericReturnCodes.OFFER_SUPPLIER_MISMATCH.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);
+        }
+
+      }
+
+    /*****************************************
+     *
+     * process offer
+     *
+     *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /*********************************************
+         * store offer for active supplier
+         * 
+         * 
+         **********************************************/
+
+        if (activeSupplier != null && activeSupplier.equals("InactiveReseller"))
+          {
+
+            response.put("responseCode", RESTAPIGenericReturnCodes.INACTIVE_SUPPLIER.getGenericResponseCode());
+            response.put("responseMessage", RESTAPIGenericReturnCodes.INACTIVE_SUPPLIER.getGenericResponseMessage());
+            return JSONUtilities.encodeObject(response);
+          }
+
+        else if (activeSupplier != null && activeSupplier != "InactiveReseller")
+          {
+
+            JSONArray productJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "products", false); // to separate the products from the input json
+            JSONArray voucherJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "vouchers", false); // to separate the voucher from the input json
+            
+            Map<String, JSONObject> OfferProductAndVoucher = OfferProductAndVoucher(productJSONArray, voucherJSONArray,
+                jsonRoot);
+            
+            JSONObject productJSON = OfferProductAndVoucher.get("productJSON"); // JSONObject to create a new product with offer name
+            JSONObject voucherJSON = OfferProductAndVoucher.get("voucherJSON"); // JSONObject to create a new voucher with offer name
+
+            JSONObject productsJSONObject = (JSONObject) (OfferProductAndVoucher.get("productJSONObject")); // to get the product quantity                                                                                                            
+            JSONObject vouchersJSONObject = (JSONObject) (OfferProductAndVoucher.get("voucherJSONObject")); // to get the voucher quantity                                                                                                          
+
+            JSONObject result = new JSONObject();
+
+            /***********************************
+             * 
+             * create Offer with product *
+             * 
+             ********************************/
+
+            if (productJSON != null && !(productJSON.isEmpty()))
+              {
+                /*****************************************
+                *
+                *  existing product
+                *
+                *****************************************/
+
+                GUIManagedObject existingProduct = productService.getStoredProduct(existingproductID);
+                GUIManagedObject existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
+                
+                if (existingVoucher != null) {
+                  voucherService.removeVoucher(existingVoucherID, userID, uploadedFileService);
+                }
+                
+
+                Product product = new Product(productJSON, epoch, existingProduct, deliverableService,
+                    catalogCharacteristicService);
+                /*****************************************
+                 *
+                 * store product
+                 *
+                 *****************************************/
+
+                productService.putProduct(product, supplierService, productTypeService, deliverableService, (existingProduct == null),
+                    userID);
+                
+                
+                /************************************************
+                 * 
+                 * store offer with the new product embedded
+                 * 
+                 ***********************************************/
+                JSONObject newProductJSONObject = new JSONObject();
+                newProductJSONObject.put("quantity", productsJSONObject.get("quantity"));              
+                newProductJSONObject.put("productID", productJSON.get("id"));
+                JSONArray newProductJSONArray = new JSONArray();
+                newProductJSONArray.add(newProductJSONObject);                
+                jsonRoot.replace("products", newProductJSONArray);
+
+                Offer productOffer = new Offer(jsonRoot, epoch, existingOffer, catalogCharacteristicService);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+
+                offerService.putOffer(productOffer, callingChannelService, salesChannelService, productService,
+                    voucherService, (existingOffer == null), userID);
+
+                /*****************************************
+                 *
+                 * response
+                 *
+                 *****************************************/
+
+                response.put("id", productOffer.getOfferID());
+                response.put("accepted", productOffer.getAccepted());
+                response.put("valid", productOffer.getAccepted());
+                response.put("processing", offerService.isActiveOffer(productOffer, now));
+                response.put("responseCode", "ok");
+              }
+            
+
+            /*******************************
+             * 
+             * create Offer with voucher
+             * 
+             * 
+             ******************************/
+
+            if (voucherJSON != null && !(voucherJSON.isEmpty()))
+              {
+                /*****************************************
+                 *
+                 * existing voucher
+                 *
+                 *****************************************/
+
+                GUIManagedObject existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
+                GUIManagedObject existingProduct = productService.getStoredProduct(existingproductID);
+                if (existingProduct != null) {
+                  productService.removeProduct(existingproductID, userID);
+                }
+
+                /**
+                 * ********************************
+                 * 
+                 * create a voucher with offer name
+                 * 
+                 * 
+                 **************************************/
+
+                VoucherType voucherType = voucherTypeService
+                    .getActiveVoucherType(JSONUtilities.decodeString(voucherJSON, "voucherTypeId", true), now);
+                if (log.isDebugEnabled())
+                  log.debug("will use voucherType " + voucherType);
+
+                // voucherType issue
+                if (voucherType == null || voucherType.getCodeType() == VoucherType.CodeType.Unknown)
+                  {
+                    response.put("responseCode", "voucherTypeNotFound");
+                    return JSONUtilities.encodeObject(response);
+                  }
+
+                Voucher voucher = null;
+                if (voucherType.getCodeType() == VoucherType.CodeType.Shared)
+                  {
+                    voucher = new VoucherShared(voucherJSON, epoch, existingVoucher);
+                    if (log.isDebugEnabled())
+                      log.debug("will put shared voucher " + voucher);
+                  }
+                if (voucher == null && voucherType.getCodeType() == VoucherType.CodeType.Personal)
+                  {
+                    voucher = new VoucherPersonal(voucherJSON, epoch, existingVoucher, voucherType);
+                    if (log.isDebugEnabled())
+                      log.debug("will put personal voucher " + voucher);
+                  }
+
+                voucher.validate(voucherTypeService, uploadedFileService, now);
+
+                /**
+                 * **********************
+                 * 
+                 * store voucher
+                 * 
+                 **********************/
+                voucherService.putVoucher(voucher, (existingVoucher == null), userID);
+
+                /************************************************
+                 * 
+                 * store offer with the new voucher embedded
+                 * 
+                 ***********************************************/
+
+                JSONObject newVoucherJSONObject = new JSONObject();
+                newVoucherJSONObject.put("quantity", vouchersJSONObject.get("quantity"));
+                newVoucherJSONObject.put("voucherID", voucherJSON.get("id"));
+                JSONArray newVoucherJSONArray = new JSONArray();
+                newVoucherJSONArray.add(newVoucherJSONObject);
+                jsonRoot.replace("vouchers", newVoucherJSONArray);
+
+                Offer voucherOffer = new Offer(jsonRoot, epoch, existingOffer, catalogCharacteristicService);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+
+                offerService.putOffer(voucherOffer, callingChannelService, salesChannelService, productService,
+                    voucherService, (existingOffer == null), userID);
+
+                /*****************************************
+                 *
+                 * response
+                 *
+                 *****************************************/
+
+                response.put("id", voucherOffer.getOfferID());
+                response.put("accepted", voucherOffer.getAccepted());
+                response.put("valid", voucherOffer.getAccepted());
+                response.put("processing", offerService.isActiveOffer(voucherOffer, now));
+                response.put("responseCode", "ok");
+
+              }
+
+            return JSONUtilities.encodeObject(response);
+
+          }
+
+        else
+          {
+            response.put("responseCode", RESTAPIGenericReturnCodes.USER_NOT_SUPPLIER.getGenericResponseCode());
+            response.put("responseMessage", RESTAPIGenericReturnCodes.USER_NOT_SUPPLIER.getGenericResponseMessage());
+            return JSONUtilities.encodeObject(response);
+          }
+      }
+    catch (JSONUtilitiesException | GUIManagerException e)
+      {
+        //
+        // incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        // store
+        //
+
+        offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService,
+            voucherService, (existingOffer == null), userID);
+
+        //
+        // log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        // response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "offerNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter",
+            (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+
+  /*****************************************
+  *
+  *  processGetSupplierOffers
+  *
+  *****************************************/
+  private JSONObject processGetSupplierOfferList(String userID, JSONObject jsonRoot)
+  {
+
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Map<String, Object> response = new HashMap<String, Object>();
+    List<Offer> offers = new ArrayList<>();
+    List<OfferProduct> products = new ArrayList<>();
+    List<OfferVoucher> vouchers = new ArrayList<>();
+    String user = JSONUtilities.decodeString(jsonRoot, "loginName", false);
+
+    String activeSupplier = activeSupplierID(user);
+
+    if (activeSupplier != null && activeSupplier.equals("InactiveReseller"))
+      {
+
+        response.put("responseCode", RESTAPIGenericReturnCodes.INACTIVE_SUPPLIER.getGenericResponseCode());
+        response.put("responseMessage", RESTAPIGenericReturnCodes.INACTIVE_SUPPLIER.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);
+      }
+
+    else if (activeSupplier != null && activeSupplier != "InactiveReseller")
+      {
+        for (GUIManagedObject offerObject : offerService.getStoredOffers())
+          {
+            if (offerObject instanceof Offer)
+              {
+                Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(
+                    (Offer) offerObject);
+                String supplierID = (String) OfferProductVoucherAndSupplierIDs.get("supplierID");
+                OfferProduct product = (OfferProduct) OfferProductVoucherAndSupplierIDs.get("offerProduct");
+                OfferVoucher voucher = (OfferVoucher) OfferProductVoucherAndSupplierIDs.get("offerVoucher");                
+                
+                Offer offer = (Offer) offerObject;
+                String offerName = offer.getGUIManagedObjectName();
+                
+               
+                if (product != null)
+                  {
+                    String productID = product.getProductID();
+                    String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
+                    
+                    if (activeSupplier.equals(supplierID) && offerName.equals(productName))
+                      {
+                        //products.add(product);
+                        offers.add(offer);
+                      }
+                    else
+                      {
+
+                        response.put("responseCode",
+                            RESTAPIGenericReturnCodes.OFFER_SUPPLIER_MISMATCH.getGenericResponseCode());
+                        response.put("responseMessage",
+                            RESTAPIGenericReturnCodes.OFFER_SUPPLIER_MISMATCH.getGenericResponseMessage());
+                        return JSONUtilities.encodeObject(response);
+
+                      }
+                  }
+                if (voucher != null)
+                  {
+                    String voucherID = voucher.getVoucherID();
+                    String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
+
+                    if (activeSupplier.equals(supplierID) && offerName.equals(voucherName))
+                      {
+                        vouchers.add(voucher);
+                        offers.add(offer);
+                      }
+                    else
+                      {
+
+                        response.put("responseCode",
+                            RESTAPIGenericReturnCodes.OFFER_SUPPLIER_MISMATCH.getGenericResponseCode());
+                        response.put("responseMessage",
+                            RESTAPIGenericReturnCodes.OFFER_SUPPLIER_MISMATCH.getGenericResponseMessage());
+                        return JSONUtilities.encodeObject(response);
+
+                      }
+
+                  }
+
+              }
+          }
+
+        /*****************************************
+         *
+         * decorate offers response
+         *
+         *****************************************/
+
+        List<JSONObject> offersJson = offers.stream()
+            .map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService,
+                offerObjectiveService, productService, voucherService, salesChannelService))
+            .collect(Collectors.toList());
+
+        response.put("offers", JSONUtilities.encodeArray(offersJson));
+        response.put("responseCode", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+        response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+
+      }
+
+    else
+      {
+        response.put("responseCode", RESTAPIGenericReturnCodes.USER_NOT_SUPPLIER.getGenericResponseCode());
+        response.put("responseMessage", RESTAPIGenericReturnCodes.USER_NOT_SUPPLIER.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);
+
+      }
+
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processRemoveSupplierOffer
+  *
+  *****************************************/
+
+  private JSONObject processRemoveSupplierOffer(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    HashMap<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+     *
+     * argument
+     *
+     ****************************************/
+
+    String offerID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    String user = JSONUtilities.decodeString(jsonRoot, "loginName", false);
+    String activeSupplier = activeSupplierID(user);
+
+    /*****************************************
+     *
+     * remove
+     *
+     *****************************************/
+    GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
+    String responseCode = null;
+
+    if (offerObject != null)
+      {
+
+        if (activeSupplier != null && activeSupplier.equals("InactiveReseller"))
+          {
+
+            response.put("responseCode", RESTAPIGenericReturnCodes.INACTIVE_SUPPLIER.getGenericResponseCode());
+            response.put("responseMessage", RESTAPIGenericReturnCodes.INACTIVE_SUPPLIER.getGenericResponseMessage());
+            return JSONUtilities.encodeObject(response);
+          }
+
+        else if (activeSupplier != null && activeSupplier != "InactiveReseller")
+          {
+            Offer offer = (Offer) offerObject;
+            Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(
+                (Offer) offerObject);
+            String supplierID = (String) OfferProductVoucherAndSupplierIDs.get("supplierID");
+            OfferProduct product = (OfferProduct) OfferProductVoucherAndSupplierIDs.get("offerProduct");
+            OfferVoucher voucher = (OfferVoucher) OfferProductVoucherAndSupplierIDs.get("offerVoucher");                   
+            
+            if (product != null)
+              {
+                if (activeSupplier.equals(supplierID))
+                  {
+                    String productId = product.getProductID();                  
+                    productService.removeProduct(productId, userID);
+                    offerService.removeOffer(offerID, userID);
+
+                    responseCode = "ok";
+
+                    response.put("responseCode", responseCode);
+                  }
+
+                else
+                  {
+
+                    response.put("responseCode",
+                        RESTAPIGenericReturnCodes.OFFER_SUPPLIER_MISMATCH.getGenericResponseCode());
+                    response.put("responseMessage",
+                        RESTAPIGenericReturnCodes.OFFER_SUPPLIER_MISMATCH.getGenericResponseMessage());
+                    return JSONUtilities.encodeObject(response);
+
+                  }
+              }
+            if (voucher != null)
+              {
+
+                if (activeSupplier.equals(supplierID))
+                  {
+                    String voucherId = voucher.getVoucherID();
+                    voucherService.removeVoucher(voucherId, userID, uploadedFileService);
+                    offerService.removeOffer(offerID, userID);
+
+                    responseCode = "ok";
+
+                    response.put("responseCode", responseCode);
+                  }
+
+                else
+                  {
+
+                    response.put("responseCode",
+                        RESTAPIGenericReturnCodes.OFFER_SUPPLIER_MISMATCH.getGenericResponseCode());
+                    response.put("responseMessage",
+                        RESTAPIGenericReturnCodes.OFFER_SUPPLIER_MISMATCH.getGenericResponseMessage());
+                    return JSONUtilities.encodeObject(response);
+
+                  }
+              }
+
+          }
+        else
+          {
+            response.put("responseCode", RESTAPIGenericReturnCodes.USER_NOT_SUPPLIER.getGenericResponseCode());
+            response.put("responseMessage", RESTAPIGenericReturnCodes.USER_NOT_SUPPLIER.getGenericResponseMessage());
+            return JSONUtilities.encodeObject(response);
+          }
+
+      }
+    else
+      {
+        responseCode = "offerNotFound";
+        response.put("responseCode", responseCode);
+      }
+
+    /*****************************************
+     *
+     * response
+     *
+     *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+
+  }
+  
   
   private static final Class<?> PURCHASE_FULFILLMENT_REQUEST_CLASS = com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest.class;
 
@@ -20970,6 +21603,156 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         keySerializer.serialize(topic, new StringKey(subscriberID)),
         valueSerializer.serialize(topic, tokenChange)
         ));
+  }
+  
+ public String activeSupplierID (String userID) {
+    
+    String activeSupplierID = null;      
+    HashMap<String,List<String>> response = new HashMap<String,List<String>>();
+    Date now = SystemTime.getCurrentTime();
+    
+    
+    for (GUIManagedObject storedSupplierObject : supplierService.getStoredSuppliers())
+      {
+        if (storedSupplierObject instanceof Supplier)
+          {
+            Supplier storedSupplier = (Supplier)storedSupplierObject;
+          
+            if (storedSupplier.getUserIDs() != null
+                && !((storedSupplier.getUserIDs()).isEmpty()))
+              {
+               List<String> supplierUserIds = storedSupplier.getUserIDs();
+
+                if (supplierUserIds.contains(userID))
+                  {
+                    if (supplierService.isActiveSupplier(storedSupplier, now))
+                      {
+                        activeSupplierID = storedSupplier.getSupplierID();                      
+                        break;
+                        
+                      }
+                    else
+                      {    
+                        activeSupplierID = "InactiveReseller";
+                        log.warn("The reseller is inactive" + storedSupplier.getSupplierID());
+                        break;                                                  
+                      }
+                  }
+              }
+
+          }
+      }
+   
+     return activeSupplierID;
+       
+      }
+  
+
+/************************************************************************
+ *
+ *  separate product and voucher  from offer json and 
+ *  form a new json to create new product and new voucher with offer name.
+ *
+ ************************************************************************/
+  public Map<String, JSONObject> OfferProductAndVoucher (JSONArray productJSONArray, JSONArray voucherJSONArray, JSONObject jsonRoot) {
+    HashMap<String, JSONObject> response = new HashMap<String,JSONObject>();
+    JSONObject productJSONObject = new JSONObject();
+    JSONObject voucherJSONObject = new JSONObject();
+    JSONObject productJSON = new JSONObject();
+    JSONObject voucherJSON = new JSONObject();
+    
+    
+    String userID = JSONUtilities.decodeString(jsonRoot, "loginName", true);
+    String activeSupplier = activeSupplierID(userID);
+    if (productJSONArray != null &&!(productJSONArray.isEmpty()))
+      {
+        productJSONObject = ((JSONObject) productJSONArray.get(0));
+        productJSON = JSONUtilities.decodeJSONObject(productJSONObject, "product", false);
+        String productID = productService.generateProductID();
+        productJSON.put("id", productID);
+        productJSON.put("supplierID", activeSupplier);        
+        productJSON.put("apiVersion", JSONUtilities.decodeInteger(jsonRoot, "apiVersion"));
+        productJSON.put("name", JSONUtilities.decodeString(jsonRoot, "name"));
+        productJSON.put("display", JSONUtilities.decodeString(jsonRoot, "name"));
+        productJSON.put("processing", JSONUtilities.decodeBoolean(jsonRoot, "processing"));
+        productJSON.put("accepted", JSONUtilities.decodeBoolean(jsonRoot, "accepted"));
+        productJSON.put("active", JSONUtilities.decodeBoolean(jsonRoot, "active"));
+        productJSON.put("readOnly", JSONUtilities.decodeBoolean(jsonRoot, "readonly"));
+        productJSON.put("valid", JSONUtilities.decodeBoolean(jsonRoot, "valid"));
+        productJSON.put("effectiveStartDate", JSONUtilities.decodeString(jsonRoot, "effectiveStartDate"));
+        productJSON.put("effectiveEndDate", JSONUtilities.decodeString(jsonRoot, "effectiveEndDate"));
+        productJSON.put("imageURL", JSONUtilities.decodeString(jsonRoot, "imageURL"));
+       
+      }
+    if (voucherJSONArray != null && !(voucherJSONArray.isEmpty()))
+      {
+        voucherJSONObject = ((JSONObject) voucherJSONArray.get(0));
+        voucherJSON = JSONUtilities.decodeJSONObject(voucherJSONObject, "voucher", false); 
+        String voucherID = voucherService.generateVoucherID();
+        voucherJSON.put("id", voucherID);
+        voucherJSON.put("supplierID", activeSupplier);
+        voucherJSON.put("apiVersion", JSONUtilities.decodeInteger(jsonRoot, "apiVersion"));
+        voucherJSON.put("name", JSONUtilities.decodeString(jsonRoot, "name"));
+        voucherJSON.put("display", JSONUtilities.decodeString(jsonRoot, "name"));
+        voucherJSON.put("processing", JSONUtilities.decodeBoolean(jsonRoot, "processing"));
+        voucherJSON.put("accepted", JSONUtilities.decodeBoolean(jsonRoot, "accepted"));
+        voucherJSON.put("active", JSONUtilities.decodeBoolean(jsonRoot, "active"));
+        voucherJSON.put("readOnly", JSONUtilities.decodeBoolean(jsonRoot, "readonly"));
+        voucherJSON.put("valid", JSONUtilities.decodeBoolean(jsonRoot, "valid"));
+        voucherJSON.put("effectiveStartDate", JSONUtilities.decodeString(jsonRoot, "effectiveStartDate"));
+        voucherJSON.put("effectiveEndDate", JSONUtilities.decodeString(jsonRoot, "effectiveEndDate"));
+        voucherJSON.put("imageURL", JSONUtilities.decodeString(jsonRoot, "imageURL"));
+        
+      }
+    
+    response.put("productJSONObject", productJSONObject);
+    response.put("productJSON",productJSON);
+    response.put("voucherJSONObject", voucherJSONObject);
+    response.put("voucherJSON",voucherJSON);
+
+
+    
+    
+    
+    return response;
+  }
+  
+  public Map<String, Object> OfferProductVoucherAndSupplierIDs(Offer offer) {
+    
+    Set<OfferProduct> offerProducts = offer.getOfferProducts();
+    Set<OfferVoucher> offerVouchers = offer.getOfferVouchers();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    String supplierID = null;
+    if (offerProducts.size() != 0 && offerProducts != null)
+      {
+        for (OfferProduct offerProduct : offerProducts)
+          {
+            String productId = offerProduct.getProductID();
+            GUIManagedObject productObject = productService.getStoredProduct(productId);
+            Product product = (Product) productObject;
+            supplierID = product.getSupplierID();
+            response.put("supplierID", supplierID);
+            response.put("offerProduct", offerProduct);          
+            break;
+            
+          }
+      }
+    
+    if (offerVouchers.size() != 0 && offerVouchers != null)
+      {
+        for (OfferVoucher offerVoucher : offerVouchers)
+          {
+            String voucherId = offerVoucher.getVoucherID();
+            GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherId);
+            Voucher voucher = (Voucher) voucherObject;
+            supplierID = voucher.getSupplierID();
+            response.put("supplierID", supplierID);          
+            response.put("offerVoucher", offerVoucher);
+            break;
+          }
+      }
+   
+    return response;
   }
 
 }

@@ -38,12 +38,14 @@ import java.util.stream.Stream;
 import com.evolving.nglm.core.*;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -173,7 +175,10 @@ public class ThirdPartyManager
 
   private int httpTimeout = 5000;
   private String fwkServer = null;
+  private String guimanagerHost = null;
+  private int guimanagerPort;
   RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(httpTimeout).setSocketTimeout(httpTimeout).setConnectionRequestTimeout(httpTimeout).build();
+  private HttpClient httpClient;
 
   /*****************************************
    *
@@ -211,7 +216,10 @@ public class ThirdPartyManager
     loyaltyProgramOptOut(28),
     validateVoucher(29),
     redeemVoucher(30),
-    getCustomerTokenAndNBO(31);
+    getCustomerTokenAndNBO(31),
+    putSupplierOffer(32),
+    getSupplierOfferList(33),
+    removeSupplierOffer(34);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -270,6 +278,8 @@ public class ThirdPartyManager
     int threadPoolSize = parseInteger("threadPoolSize", args[4]);
     String elasticsearchServerHost = args[5];
     int elasticsearchServerPort = Integer.parseInt(args[6]);
+    String guimanagerHost = args[7];
+    int guimanagerPort = Integer.parseInt(args[8]);
     String nodeID = System.getProperty("nglm.license.nodeid");
     String offerTopic = Deployment.getOfferTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
@@ -298,6 +308,8 @@ public class ThirdPartyManager
      *****************************************/
 
     this.fwkServer = fwkServer;
+    this.guimanagerHost = guimanagerHost;
+    this.guimanagerPort = guimanagerPort;
 
     //
     //  license
@@ -344,6 +356,28 @@ public class ThirdPartyManager
     {
       throw new ServerRuntimeException("could not initialize elasticsearch client", e);
     }
+    
+    /*****************************************
+    *
+    *  http
+    *
+    *****************************************/
+
+    //
+    //  default connections
+    //
+
+    PoolingHttpClientConnectionManager httpClientConnectionManager = new PoolingHttpClientConnectionManager();
+    httpClientConnectionManager.setDefaultMaxPerRoute(50);
+    httpClientConnectionManager.setMaxTotal(150);
+
+    //
+    //  httpClient
+    //
+
+    HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
+    httpClientBuilder.setConnectionManager(httpClientConnectionManager);
+    this.httpClient = httpClientBuilder.build();
 
 
 
@@ -500,6 +534,9 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/loyaltyProgramOptOut", new APIHandler(API.loyaltyProgramOptOut));
       restServer.createContext("/nglm-thirdpartymanager/validateVoucher", new APIHandler(API.validateVoucher));
       restServer.createContext("/nglm-thirdpartymanager/redeemVoucher", new APIHandler(API.redeemVoucher));
+      restServer.createContext("/nglm-thirdpartymanager/putSupplierOffer", new APIHandler(API.putSupplierOffer));
+      restServer.createContext("/nglm-thirdpartymanager/getSupplierOfferList", new APIHandler(API.getSupplierOfferList));
+      restServer.createContext("/nglm-thirdpartymanager/removeSupplierOffer", new APIHandler(API.removeSupplierOffer));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -843,6 +880,16 @@ public class ThirdPartyManager
               break;
             case redeemVoucher:
               jsonResponse = processRedeemVoucher(jsonRoot,sync);
+              break;
+            case putSupplierOffer:
+              jsonResponse = processPutSupplierOffer(jsonRoot);
+              break;
+            case getSupplierOfferList:
+              jsonResponse = processGetSupplierOfferList(jsonRoot);
+              break;
+              
+            case removeSupplierOffer:
+              jsonResponse = processRemoveSupplierOffer(jsonRoot);
               break;
           }
         }
@@ -4862,6 +4909,264 @@ public class ThirdPartyManager
 
     return new Pair<>(subscriberID,voucherStored);
 
+  }
+  
+
+  /*****************************************
+  *
+  *  processPutSupplierOffer
+  *
+  *****************************************/
+  
+  private JSONObject processPutSupplierOffer(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
+
+  {
+    try
+      {
+        //
+        // create request
+        //
+        /*****************************************
+        *
+        *  request
+        *
+        *****************************************/
+
+        HashMap<String,Object> request = new HashMap<String,Object>();
+        jsonRoot.put("apiVersion", 1);        
+        JSONObject result;
+
+
+        StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
+        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/putSupplierOffers");
+        httpPost.setEntity(stringEntity);
+
+        //
+        // submit request
+        //
+
+        HttpResponse httpResponse = httpClient.execute(httpPost);
+
+        //
+        // process response
+        //
+
+        if (httpResponse != null && httpResponse.getStatusLine() != null
+            && httpResponse.getStatusLine().getStatusCode() == 200)
+          {
+            String jsonResponse = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
+            log.info("GUIManager raw response : {}", jsonResponse);
+
+            //
+            // parse JSON response from GUI
+            //
+
+            result = (JSONObject) (new JSONParser()).parse(jsonResponse);
+
+          }
+        else if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 401)
+          {
+            log.error("GUI server HTTP reponse code {} message {} ", httpResponse.getStatusLine().getStatusCode(), EntityUtils.toString(httpResponse.getEntity(), "UTF-8"));
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.PUT_SUPPLIEROFFER_FAILED.getGenericResponseMessage(), RESTAPIGenericReturnCodes.PUT_SUPPLIEROFFER_FAILED.getGenericResponseCode());
+          }
+        else if (httpResponse != null && httpResponse.getStatusLine() != null)
+          {
+            log.error("GUI server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+          }
+        else
+          {
+            log.error("GUI server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse, httpResponse.getStatusLine());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+          }
+        return result;
+      }
+    catch (ParseException pe)
+      {
+        log.error("failed to Parse ParseException {} ", pe.getMessage());
+        throw pe;
+      }
+    catch (IOException e)
+      {        
+        log.error("IOException: {}", e.getMessage());
+        throw e;
+      }
+
+  }
+
+  /*****************************************
+  *
+  *  processGetSupplierOffers
+  *
+  *****************************************/
+  
+  private JSONObject processGetSupplierOfferList(JSONObject jsonRoot)  throws ThirdPartyManagerException, ParseException, IOException
+
+  {
+    try 
+      {
+        //
+        // create request
+        //
+        /*****************************************
+         *
+         * request
+         *
+         *****************************************/
+
+        HashMap<String, Object> request = new HashMap<String, Object>();
+        jsonRoot.put("apiVersion", 1);
+        JSONObject result;
+
+        StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
+        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/getSupplierOfferList");
+        httpPost.setEntity(stringEntity);
+
+        //
+        // submit request
+        //
+
+        HttpResponse httpResponse = httpClient.execute(httpPost);
+
+        //
+        // process response
+        //
+
+        if (httpResponse != null && httpResponse.getStatusLine() != null
+            && httpResponse.getStatusLine().getStatusCode() == 200)
+          {
+            String jsonResponse = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
+            log.info("GUI response : {}", jsonResponse);
+
+            //
+            // parse JSON response from GUI
+            //
+
+            result = (JSONObject) (new JSONParser()).parse(jsonResponse);
+
+          }
+        else if (httpResponse != null && httpResponse.getStatusLine() != null
+            && httpResponse.getStatusLine().getStatusCode() == 401)
+          {
+            log.error("GUI server HTTP reponse code {} message {} ", httpResponse.getStatusLine().getStatusCode(),
+                EntityUtils.toString(httpResponse.getEntity(), "UTF-8"));
+            throw new ThirdPartyManagerException(
+                RESTAPIGenericReturnCodes.GET_SUPPLIEROFFERS_FAILED.getGenericResponseMessage(),
+                RESTAPIGenericReturnCodes.GET_SUPPLIEROFFERS_FAILED.getGenericResponseCode());
+          }
+        else if (httpResponse != null && httpResponse.getStatusLine() != null)
+          {
+            log.error("GUI server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(),
+                RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+          }
+        else
+          {
+            log.error("GUI server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse,
+                httpResponse.getStatusLine());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(),
+                RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+          }
+        return result;
+      }
+    catch (ParseException pe)
+      {
+        log.error("failed to Parse ParseException {} ", pe.getMessage());
+        throw pe;
+      }
+    catch (IOException e)
+      {
+        log.error("IOException: {}", e.getMessage());
+        throw e;
+      }
+
+  }
+
+  /*****************************************
+  *
+  *  processRemoveSupplierOffer
+  *
+  *****************************************/
+  
+  private JSONObject processRemoveSupplierOffer(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
+
+  {
+    try 
+      {
+        //
+        // create request
+        //
+        /*****************************************
+         *
+         * request
+         *
+         *****************************************/
+
+        HashMap<String, Object> request = new HashMap<String, Object>();
+        jsonRoot.put("apiVersion", 1);
+        JSONObject result;
+
+        StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
+        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/removeSupplierOffers");
+        httpPost.setEntity(stringEntity);
+
+        //
+        // submit request
+        //
+
+        HttpResponse httpResponse = httpClient.execute(httpPost);
+
+        //
+        // process response
+        //
+
+        if (httpResponse != null && httpResponse.getStatusLine() != null
+            && httpResponse.getStatusLine().getStatusCode() == 200)
+          {
+            String jsonResponse = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
+            log.info("GUImanager response : {}", jsonResponse);
+
+            //
+            // parse JSON response from GUI
+            //
+
+            result = (JSONObject) (new JSONParser()).parse(jsonResponse);
+
+          }
+        else if (httpResponse != null && httpResponse.getStatusLine() != null
+            && httpResponse.getStatusLine().getStatusCode() == 401)
+          {
+            log.error("GUI server HTTP reponse code {} message {} ", httpResponse.getStatusLine().getStatusCode(),
+                EntityUtils.toString(httpResponse.getEntity(), "UTF-8"));
+            throw new ThirdPartyManagerException(
+                RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseMessage(),
+                RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseCode());
+          }
+        else if (httpResponse != null && httpResponse.getStatusLine() != null)
+          {
+            log.error("GUI server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(),
+                RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+          }
+        else
+          {
+            log.error("GUI server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse,
+                httpResponse.getStatusLine());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(),
+                RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+          }
+        return result;
+      }
+    catch (ParseException pe)
+      {
+        log.error("failed to Parse ParseException {} ", pe.getMessage());
+        throw pe;
+      }
+    catch (IOException e)
+      {
+        log.error("IOException: {}", e.getMessage());
+        throw e;
+      }
   }
 
 
