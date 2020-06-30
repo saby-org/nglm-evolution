@@ -149,9 +149,9 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   *****************************************/
 
-  public JourneyRequest(EvolutionEventContext context, String overidingSubscriberID, SubscriberEvaluationRequest subscriberEvaluationRequest, String deliveryRequestSource, String journeyID)
+  public JourneyRequest(EvolutionEventContext context, SubscriberEvaluationRequest subscriberEvaluationRequest, String deliveryRequestSource, String journeyID)
   {
-    super(context, "journeyFulfillment", deliveryRequestSource, overidingSubscriberID);
+    super(context, "journeyFulfillment", deliveryRequestSource);
     this.journeyRequestID = context.getUniqueKey();
     this.eventDate = context.now();
     this.journeyID = journeyID;
@@ -170,9 +170,9 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   *****************************************/
 
-  public JourneyRequest(EvolutionEventContext context, String overidingSubscriberID, SubscriberEvaluationRequest subscriberEvaluationRequest, String deliveryRequestSource, String workflowID, SimpleParameterMap boundParameters)
+  public JourneyRequest(EvolutionEventContext context, SubscriberEvaluationRequest subscriberEvaluationRequest, String deliveryRequestSource, String workflowID, SimpleParameterMap boundParameters)
   {
-    super(context, "journeyFulfillment", deliveryRequestSource, overidingSubscriberID);
+    super(context, "journeyFulfillment", deliveryRequestSource);
     this.journeyRequestID = context.getUniqueKey();
     this.eventDate = context.now();
     this.journeyID = workflowID;

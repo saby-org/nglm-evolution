@@ -99,6 +99,7 @@ import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
@@ -164,7 +165,7 @@ public class EvolutionEngine
   //
 
   public static String baseTimeZone = Deployment.getBaseTimeZone();
-
+  
   /*****************************************
   *
   *  data
@@ -946,12 +947,14 @@ public class EvolutionEngine
         (key,value) -> (value instanceof SubscriberTrace),
 
         (key,value) -> (value instanceof ExternalAPIOutput),
-	    (key,value) -> (value instanceof ProfileChangeEvent),
+	      (key,value) -> (value instanceof ProfileChangeEvent),
         (key,value) -> (value instanceof ProfileSegmentChangeEvent),
         (key,value) -> (value instanceof ProfileLoyaltyProgramChangeEvent),
         (key,value) -> (value instanceof TokenChange),
 
-        (key,value) -> (value instanceof VoucherChange));
+        (key,value) -> (value instanceof VoucherChange),
+        
+        (key,value) -> (value instanceof ExecuteActionOtherSubscriber));
 
     KStream<StringKey, JourneyRequest> journeyResponseStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[0];
     KStream<StringKey, JourneyRequest> journeyRequestStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[1];
@@ -972,6 +975,8 @@ public class EvolutionEngine
     KStream<StringKey, TokenChange> tokenChangeStream = (KStream<StringKey, TokenChange>) branchedEvolutionEngineOutputs[14];
 
     KStream<StringKey, VoucherChange> voucherChangeStream = (KStream<StringKey, VoucherChange>) branchedEvolutionEngineOutputs[15];
+    
+    KStream<StringKey, ExecuteActionOtherSubscriber> executeActionOtherSubscriberStream = (KStream<StringKey, ExecuteActionOtherSubscriber>) branchedEvolutionEngineOutputs[16];
 
 
     //
@@ -1082,6 +1087,7 @@ public class EvolutionEngine
     rekeyedJourneyStatisticStream.to(journeyTrafficTopic, Produced.with(stringKeySerde, journeyStatisticWrapperSerde));
     tokenChangeStream.to(tokenChangeTopic, Produced.with(stringKeySerde, tokenChangeSerde));
     voucherChangeStream.to(voucherChangeResponseTopic, Produced.with(stringKeySerde, voucherChangeSerde));
+    executeActionOtherSubscriberStream.to(executeActionOtherSubscriberTopic, Produced.with(stringKeySerde, executeActionOtherSubscriberSerde));
 
     //
     //  sink - delivery request streams
@@ -1867,6 +1873,14 @@ public class EvolutionEngine
     *****************************************/
 
     subscriberStateUpdated = updateSubscriberProfile(context, evolutionEvent) || subscriberStateUpdated;
+    
+    /*****************************************
+    *
+    *  executeActionOtherSubscriber : Actions triggered by another subscriber for this one.
+    *
+    *****************************************/
+    
+    subscriberStateUpdated = executeActionOtherSubscriber(context, evolutionEvent) || subscriberStateUpdated;
 
     /*****************************************
     *
@@ -2153,6 +2167,17 @@ public class EvolutionEngine
         subscriberState.getDeliveryRequests().clear();
         subscriberStateUpdated = true;
       }
+    
+    //
+    //  executeActionsOtherSubscriber
+    //
+
+    if (subscriberState.getExecuteActionsOtherSubscriber().size() > 0)
+      {
+        subscriberState.getExecuteActionsOtherSubscriber().clear();
+        subscriberStateUpdated = true;
+      }
+    
 
     //
     //  journeyStatistics
@@ -3332,6 +3357,45 @@ public class EvolutionEngine
     *****************************************/
 
     return subscriberProfileUpdated;
+  }
+  
+  
+  private static boolean executeActionOtherSubscriber(EvolutionEventContext evolutionEventContext, SubscriberStreamEvent evolutionEvent)
+  {
+    if(evolutionEvent instanceof ExecuteActionOtherSubscriber)
+      {
+        // This the request of an action (cf ActionManager)
+        ExecuteActionOtherSubscriber executeActionOtherSubscriber = (ExecuteActionOtherSubscriber)evolutionEvent;
+        
+        evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(executeActionOtherSubscriber.getOutstandingDeliveryRequestID());
+        
+        JourneyState originalJourneyState = executeActionOtherSubscriber.getOriginatedJourneyState();
+        Journey originalJourney = evolutionEventContext.getJourneyService().getActiveJourney(executeActionOtherSubscriber.getOriginalJourneyID(), evolutionEventContext.now());
+        ActionManager actionManager = null;
+        JourneyNode originalJourneyNode = null;
+        if(executeActionOtherSubscriber.getOriginatingNodeID() != null)
+          {
+            originalJourneyNode = originalJourney.getJourneyNode(executeActionOtherSubscriber.getOriginatingNodeID()); 
+            actionManager = originalJourneyNode.getNodeType().getActionManager();
+          }
+        
+        if(actionManager != null) {
+          // build new SubscriberEvaluationRequest
+          SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(
+              evolutionEventContext.getSubscriberState().getSubscriberProfile(), 
+              (ExtendedSubscriberProfile) null, 
+              subscriberGroupEpochReader, 
+              originalJourneyState, 
+              originalJourneyNode, 
+              null, 
+              null, 
+              evolutionEventContext.now);
+          List<Action> actions = actionManager.executeOnEntry(evolutionEventContext, subscriberEvaluationRequest);
+          handleExecuteOnEntryActions(evolutionEventContext.getSubscriberState(), originalJourneyState, originalJourney, actions);
+          return true;
+        }
+      }
+    return false;
   }
 
   private static void checkForLoyaltyProgramStateChanges(SubscriberState subscriberState, String deliveryRequestID, Date now)
@@ -5096,95 +5160,41 @@ public class EvolutionEngine
                   {
                     try
                       {
-                        //
-                        //  evaluate action
-                        //
-
+                        
+                        List<Action> actions = new ArrayList<>();
                         SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now);
-                        List<Action> actions = journeyNode.getNodeType().getActionManager().executeOnEntry(context, entryActionEvaluationRequest);
-                        context.getSubscriberTraceDetails().addAll(entryActionEvaluationRequest.getTraceDetails());
+                        
 
-                        //
-                        //  execute action
-                        //
-
-                        for (Action action : actions)
+                        String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(entryActionEvaluationRequest, "node.parameter.relationship");
+                        if (hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer"))
                           {
-                            switch (action.getActionType())
+                            //
+                            // evaluate hierarchy relationship
+                            //
+
+                            SubscriberRelatives subscriberRelatives = context.getSubscriberState().getSubscriberProfile().getRelations().get(hierarchyRelationship);
+                            if (subscriberRelatives != null)
                               {
-                                case DeliveryRequest:
-                                  DeliveryRequest deliveryRequest = (DeliveryRequest) action;
-                                  subscriberState.getDeliveryRequests().add(deliveryRequest);
-                                  journeyState.setJourneyOutstandingDeliveryRequestID(deliveryRequest.getDeliveryRequestID());
-                                  break;
-
-                                case JourneyRequest:
-                                  JourneyRequest journeyRequest = (JourneyRequest) action;
-                                  subscriberState.getJourneyRequests().add(journeyRequest);
-                                  break;
-
-                                case JourneyContextUpdate:
-                                  ContextUpdate journeyContextUpdate = (ContextUpdate) action;
-                                  journeyState.getJourneyParameters().putAll(journeyContextUpdate.getParameters());
-                                  break;
-
-                                case ActionManagerContextUpdate:
-                                  ContextUpdate actionManagerContext = (ContextUpdate) action;
-                                  journeyState.getJourneyActionManagerContext().putAll(actionManagerContext.getParameters());
-                                  break;
-
-                                case TokenUpdate:
-                                  Token token = (Token) action;
-                                  subscriberState.getSubscriberProfile().getTokens().add(token);
-                                  int featureID = 0;
-                                  try
-                                  {
-                                    featureID = Integer.parseInt(journey.getJourneyID());
-                                  }
-                                  catch (NumberFormatException e)
-                                  {
-                                    log.warn("journeyID is not an integer : "+journey.getJourneyID()+" using "+featureID);
-                                  }
-                                  token.setFeatureID(featureID);
-                                  switch (token.getTokenStatus())
-                                  {
-                                    case New:
-                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, "JourneyToken"));
-                                      break;
-                                    case Bound: // must record the token creation
-                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, "JourneyNBO"));
-                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID, "JourneyNBO"));
-                                      break;
-                                    case Redeemed: // must record the token creation & allocation
-                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, "JourneyBestOffer"));
-                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID, "JourneyBestOffer"));
-                                      subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getRedeemedDate(), TokenChange.REDEEM, token, featureID, "JourneyBestOffer"));
-                                      break;
-                                    case Expired :
-                                      // TODO
-                                      break;
-                                    default :
-                                      log.error("unsupported token status {} for {} on actionManager.executeOnExit", token.getTokenStatus(), token.getTokenCode());
-                                      break;
-                                  }
-                                  break;
-
-                                case TokenChange:
-                                  TokenChange tokenChange = (TokenChange) action;
-                                  subscriberState.getTokenChanges().add(tokenChange);
-                                  break;
-                                  
-                                case TriggerEvent:
-                                  JourneyTriggerEventAction triggerEventAction = (JourneyTriggerEventAction) action;
-                                  EvolutionEngineEventDeclaration eventDeclaration =  triggerEventAction.getEventDeclaration();
-                                  kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventDeclaration.getEventTopic(), StringKey.serde().serializer().serialize(eventDeclaration.getEventTopic(), new StringKey(subscriberState.getSubscriberProfile().getSubscriberID())), eventDeclaration.getEventSerde().serializer().serialize(eventDeclaration.getEventTopic(), triggerEventAction.getEventToTrigger())));
-                                  break;
-                                  
-                                default:
-                                  log.error("unsupported action {} on actionManager.executeOnExit", action.getActionType());
-                                  break;
+                                // generate a new message that will go for the parrent
+                                ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), subscriberRelatives.getParentSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
+                                actions.add(action);
                               }
                           }
+                        else 
+                          {
+                            //
+                            // evaluate action normally as no hierarchy
+                            //
+    
+                            actions = journeyNode.getNodeType().getActionManager().executeOnEntry(context, entryActionEvaluationRequest);
+                            context.getSubscriberTraceDetails().addAll(entryActionEvaluationRequest.getTraceDetails());
+                          }
+    
+                          //
+                          // execute action
+                          //
+    
+                          handleExecuteOnEntryActions(subscriberState, journeyState, journey, actions);
                       }
                     catch (RuntimeException e)
                       {
@@ -5479,6 +5489,92 @@ public class EvolutionEngine
     *****************************************/
 
     return subscriberStateUpdated;
+  }
+
+  private static void handleExecuteOnEntryActions(SubscriberState subscriberState, JourneyState journeyState, Journey journey, List<Action> actions)
+  {
+    for (Action action : actions)
+      {
+        switch (action.getActionType())
+          {
+            case DeliveryRequest:
+              DeliveryRequest deliveryRequest = (DeliveryRequest) action;
+              subscriberState.getDeliveryRequests().add(deliveryRequest);
+              journeyState.setJourneyOutstandingDeliveryRequestID(deliveryRequest.getDeliveryRequestID());
+              break;
+            
+            case ExecuteActionOtherSubscriber:
+              ExecuteActionOtherSubscriber executeActionOtherSubscriber = (ExecuteActionOtherSubscriber) action;
+              subscriberState.getExecuteActionsOtherSubscriber().add(executeActionOtherSubscriber);
+              if(executeActionOtherSubscriber.getOutstandingDeliveryRequestID() != null) { journeyState.setJourneyOutstandingDeliveryRequestID(executeActionOtherSubscriber.getOutstandingDeliveryRequestID()); }              
+
+            case JourneyRequest:
+              JourneyRequest journeyRequest = (JourneyRequest) action;
+              subscriberState.getJourneyRequests().add(journeyRequest);
+              break;
+
+            case JourneyContextUpdate:
+              ContextUpdate journeyContextUpdate = (ContextUpdate) action;
+              journeyState.getJourneyParameters().putAll(journeyContextUpdate.getParameters());
+              break;
+
+            case ActionManagerContextUpdate:
+              ContextUpdate actionManagerContext = (ContextUpdate) action;
+              journeyState.getJourneyActionManagerContext().putAll(actionManagerContext.getParameters());
+              break;
+
+            case TokenUpdate:
+              Token token = (Token) action;
+              subscriberState.getSubscriberProfile().getTokens().add(token);
+              int featureID = 0;
+              try
+              {
+                featureID = Integer.parseInt(journey.getJourneyID());
+              }
+              catch (NumberFormatException e)
+              {
+                log.warn("journeyID is not an integer : "+journey.getJourneyID()+" using "+featureID);
+              }
+              token.setFeatureID(featureID);
+              switch (token.getTokenStatus())
+              {
+                case New:
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, "JourneyToken"));
+                  break;
+                case Bound: // must record the token creation
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, "JourneyNBO"));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID, "JourneyNBO"));
+                  break;
+                case Redeemed: // must record the token creation & allocation
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), TokenChange.CREATE, token, featureID, "JourneyBestOffer"));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getBoundDate(), TokenChange.ALLOCATE, token, featureID, "JourneyBestOffer"));
+                  subscriberState.getTokenChanges().add(generateTokenChange(subscriberState.getSubscriberID(), token.getRedeemedDate(), TokenChange.REDEEM, token, featureID, "JourneyBestOffer"));
+                  break;
+                case Expired :
+                  // TODO
+                  break;
+                default :
+                  log.error("unsupported token status {} for {} on actionManager.executeOnExit", token.getTokenStatus(), token.getTokenCode());
+                  break;
+              }
+              break;
+
+            case TokenChange:
+              TokenChange tokenChange = (TokenChange) action;
+              subscriberState.getTokenChanges().add(tokenChange);
+              break;
+              
+            case TriggerEvent:
+              JourneyTriggerEventAction triggerEventAction = (JourneyTriggerEventAction) action;
+              EvolutionEngineEventDeclaration eventDeclaration =  triggerEventAction.getEventDeclaration();
+              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventDeclaration.getEventTopic(), StringKey.serde().serializer().serialize(eventDeclaration.getEventTopic(), new StringKey(subscriberState.getSubscriberProfile().getSubscriberID())), eventDeclaration.getEventSerde().serializer().serialize(eventDeclaration.getEventTopic(), triggerEventAction.getEventToTrigger())));
+              break;
+              
+            default:
+              log.error("unsupported action {} on actionManager.executeOnExit", action.getActionType());
+              break;
+          }
+      }
   }
 
   private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String action, Token token, int journeyID, String origin)
@@ -5998,6 +6094,7 @@ public class EvolutionEngine
         result.addAll(subscriberState.getLoyaltyProgramRequests());
         result.addAll(subscriberState.getPointFulfillmentResponses());
         result.addAll(subscriberState.getDeliveryRequests());
+        result.addAll(subscriberState.getExecuteActionsOtherSubscriber());
         result.addAll(subscriberState.getJourneyStatisticWrappers());
         for (JourneyStatisticWrapper wrapper: subscriberState.getJourneyStatisticWrappers()) 
           {
@@ -6430,6 +6527,7 @@ public class EvolutionEngine
     private SubscriberState subscriberState;
     private ExtendedSubscriberProfile extendedSubscriberProfile;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+    private String executeActionOtherUserDeliveryRequestID;
     private JourneyService journeyService;
     private SubscriberMessageTemplateService subscriberMessageTemplateService;
     private DeliverableService deliverableService;
@@ -6495,6 +6593,7 @@ public class EvolutionEngine
     public SubscriberState getSubscriberState() { return subscriberState; }
     public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
     public ReferenceDataReader<String,SubscriberGroupEpoch> getSubscriberGroupEpochReader() { return subscriberGroupEpochReader; }
+    public String getExecuteActionOtherSubscriberDeliveryRequestID() { return executeActionOtherUserDeliveryRequestID; }
     public JourneyService getJourneyService() { return journeyService; }
     public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
     public DeliverableService getDeliverableService() { return deliverableService; }
@@ -6517,6 +6616,8 @@ public class EvolutionEngine
     public Date now() { return now; }
     public boolean getSubscriberTraceEnabled() { return subscriberState.getSubscriberProfile().getSubscriberTraceEnabled(); }
 
+    public void setExecuteActionOtherSubscriberDeliveryRequestID(String requestID) { this.executeActionOtherUserDeliveryRequestID = requestID; }
+    
     /*****************************************
     *
     *  getUniqueKey
@@ -7332,7 +7433,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      JourneyRequest request = new JourneyRequest(evolutionEventContext, null, subscriberEvaluationRequest, deliveryRequestSource, journeyID);
+      JourneyRequest request = new JourneyRequest(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource, journeyID);
 
       /*****************************************
       *
@@ -7433,7 +7534,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      JourneyRequest request = validParameters ? new JourneyRequest(evolutionEventContext, null, subscriberEvaluationRequest, deliveryRequestSource, workflowParameter.getWorkflowID(), boundParameters) : null;
+      JourneyRequest request = validParameters ? new JourneyRequest(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource, workflowParameter.getWorkflowID(), boundParameters) : null;
 
       /*****************************************
       *
@@ -7501,7 +7602,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      LoyaltyProgramRequest request = new LoyaltyProgramRequest(evolutionEventContext, null, deliveryRequestSource, operation, loyaltyProgramID);
+      LoyaltyProgramRequest request = new LoyaltyProgramRequest(evolutionEventContext, deliveryRequestSource, operation, loyaltyProgramID);
       request.setModuleID(moduleID);
       request.setFeatureID(deliveryRequestSource);
 

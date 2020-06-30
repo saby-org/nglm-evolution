@@ -220,13 +220,10 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     schemaBuilder.field("originatingRequest", SchemaBuilder.bool().defaultValue(true).schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     
-    /*
-     * originatingSubscriberID most of the time null, can be not null if the event that generated this request
-     * is not related to the same subscriberID than the one who benefits from this request, by example in the case 
-     * of Hierarchy.
-     * So the request goes with a SubscriberID 2 and the response with SubscriberID 1
-     */
+    /* In case the request is triggered for another subscriber: originating and targeted subscriber (mainly hierachy relation) */
     schemaBuilder.field("originatingSubscriberID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("targetedSubscriberID", Schema.OPTIONAL_STRING_SCHEMA);
+    
     schemaBuilder.field("deliveryPriority", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventID", Schema.STRING_SCHEMA);
     schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
@@ -285,16 +282,17 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
 
   private String deliveryRequestID;
   private String deliveryRequestSource;
-  private String originatingDeliveryRequestID;
-  private boolean originatingRequest;
+  private String originatingDeliveryRequestID; // for BDRs and Notification reference
+  private boolean originatingRequest; // for commodityDeliveryManager and delegation of request
   private Date creationDate;
   private String subscriberID;
-  private String originatingSubscriberID;
+  private String originatingSubscriberID;   // in case of executeActionForOtherSubscriber
+  private String targetedSubscriberID; // in case of executeActionForOtherSubscriber
   private DeliveryPriority deliveryPriority;
   private String eventID;
   private String moduleID;
   private String featureID;
-  private Integer deliveryPartition;
+  private Integer deliveryPartition; // internal to DeliveryManager
   private int retries;
   private Date timeout;
   private String correlator;
@@ -320,6 +318,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   public Date getCreationDate() { return creationDate; }
   public String getSubscriberID() { return subscriberID; }
   public String getOriginatingSubscriberID() { return originatingSubscriberID; }
+  public String getTargetedSubscriberID() { return targetedSubscriberID; }
   public DeliveryPriority getDeliveryPriority() { return deliveryPriority; }
   public String getEventID() { return eventID; }
   public String getModuleID() { return moduleID; }
@@ -346,6 +345,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
 
   public void setOriginatingDeliveryRequestID(String originatingDeliveryRequestID) { this.originatingDeliveryRequestID = originatingDeliveryRequestID; }
   public void setOriginatingSubscriberID(String originatingSubscriberID) { this.originatingSubscriberID = originatingSubscriberID; };
+  public void setTargetedSubscriberID(String targetedSubscriberID) { this.targetedSubscriberID = targetedSubscriberID; };
   public void setControl(boolean control) { this.control = control; }
   public void setSubscriberID(String subscriberID) { this.subscriberID = subscriberID; }
   public void setDeliveryPartition(int deliveryPartition) { this.deliveryPartition = deliveryPartition; }
@@ -406,7 +406,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   *
   *****************************************/
 
-  protected DeliveryRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String overidingSubscriberID)
+  protected DeliveryRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource)
   {
     /*****************************************
     *
@@ -414,22 +414,20 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     *
     *****************************************/
 
-    this.deliveryRequestID = context.getUniqueKey();
+    if(context.getExecuteActionOtherSubscriberDeliveryRequestID() == null)
+      {
+        this.deliveryRequestID = context.getUniqueKey();
+      }
+    else 
+      {
+        // the deliveryRequestID has already been defined and registered into a Journey of another subscriber
+        this.deliveryRequestID = context.getExecuteActionOtherSubscriberDeliveryRequestID();
+      }
     this.deliveryRequestSource = deliveryRequestSource;
     this.originatingDeliveryRequestID = null;
     this.originatingRequest = true;
     this.creationDate = context.now();
-    if(overidingSubscriberID != null) 
-      {
-        // This requets is not for the subscriber that initiated if, it is for the alternate SubscriberID
-        this.originatingSubscriberID = context.getSubscriberState().getSubscriberID();
-        this.subscriberID = overidingSubscriberID;
-      }
-    else 
-      {
-        this.subscriberID = context.getSubscriberState().getSubscriberID();
-        this.originatingSubscriberID = null;
-      }
+    this.subscriberID = context.getSubscriberState().getSubscriberID();
     this.deliveryPriority = DeliveryPriority.Standard;
     this.eventID = this.deliveryRequestID;
     this.moduleID = null;
@@ -469,6 +467,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.creationDate = SystemTime.getCurrentTime();
     this.subscriberID = subscriberID;
     this.originatingSubscriberID = null; // consider from GUIManager no delivery request delegation
+    this.targetedSubscriberID = null; // consider from GUIManager no delivery request delegation
     this.deliveryPriority = DeliveryPriority.Standard;
     this.eventID = this.deliveryRequestID;
     this.moduleID = null;
@@ -502,6 +501,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.creationDate = deliveryRequest.getCreationDate();
     this.subscriberID = deliveryRequest.getSubscriberID();
     this.originatingSubscriberID = deliveryRequest.getOriginatingSubscriberID();
+    this.targetedSubscriberID = deliveryRequest.getTargetedSubscriberID();
     this.deliveryPriority = deliveryRequest.getDeliveryPriority();
     this.eventID = deliveryRequest.getEventID();
     this.moduleID = deliveryRequest.getModuleID();
@@ -541,6 +541,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.creationDate = SystemTime.getCurrentTime();
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
     this.originatingSubscriberID = JSONUtilities.decodeString(jsonRoot, "originatingSubscriberID", false);
+    this.targetedSubscriberID = JSONUtilities.decodeString(jsonRoot, "targetedSubscriberID", false);
     this.deliveryPriority = DeliveryPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryPriority", "standard"));
     this.eventID = JSONUtilities.decodeString(jsonRoot, "eventID", true);
     this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", true);
@@ -574,6 +575,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     struct.put("creationDate", deliveryRequest.getCreationDate().getTime());
     struct.put("subscriberID", deliveryRequest.getSubscriberID());
     struct.put("originatingSubscriberID", deliveryRequest.getOriginatingSubscriberID());
+    struct.put("targetedSubscriberID", deliveryRequest.getTargetedSubscriberID());
     struct.put("deliveryPriority", deliveryRequest.getDeliveryPriority().getExternalRepresentation());
     struct.put("eventID", deliveryRequest.getEventID());
     struct.put("moduleID", deliveryRequest.getModuleID());
@@ -620,6 +622,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     Date creationDate = (schemaVersion >= 3) ? new Date(valueStruct.getInt64("creationDate")) : ((schemaVersion >= 2) ? (Date) valueStruct.get("creationDate") : SystemTime.getCurrentTime());
     String subscriberID = valueStruct.getString("subscriberID");
     String originatingSubscriberID = (schemaVersion >=5) ? valueStruct.getString("originatingSubscriberID") : null;
+    String targetedSubscriberID = (schemaVersion >=5) ? valueStruct.getString("targetedSubscriberID") : null;
     DeliveryPriority deliveryPriority = DeliveryPriority.fromExternalRepresentation(valueStruct.getString("deliveryPriority"));
     String eventID = valueStruct.getString("eventID");
     String moduleID = valueStruct.getString("moduleID");
@@ -648,6 +651,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.creationDate = creationDate;
     this.subscriberID = subscriberID;
     this.originatingSubscriberID = originatingSubscriberID;
+    this.targetedSubscriberID = targetedSubscriberID;
     this.deliveryPriority = deliveryPriority;
     this.eventID = eventID;
     this.moduleID = moduleID;
@@ -864,6 +868,8 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     b.append("," + deliveryDate);
     b.append("," + diplomaticBriefcase);
     b.append("," + rescheduledDate);
+    b.append("," + originatingSubscriberID);
+    b.append("," + targetedSubscriberID);
     return b.toString();
   }
 

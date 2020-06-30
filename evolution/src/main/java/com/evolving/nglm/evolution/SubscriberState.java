@@ -124,6 +124,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   private List<LoyaltyProgramRequest> loyaltyProgramResponses;
   private List<PointFulfillmentRequest> pointFulfillmentResponses;
   private List<DeliveryRequest> deliveryRequests;
+  private List<ExecuteActionOtherSubscriber> executeActionsOtherSubscriber;
   private List<JourneyStatisticWrapper> journeyStatisticWrappers;
   private List<JourneyMetric> journeyMetrics;
   private List<ProfileChangeEvent> profileChangeEvents;
@@ -162,6 +163,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   public List<LoyaltyProgramRequest> getLoyaltyProgramResponses() { return loyaltyProgramResponses; }
   public List<PointFulfillmentRequest> getPointFulfillmentResponses() { return pointFulfillmentResponses; }
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
+  public List<ExecuteActionOtherSubscriber> getExecuteActionsOtherSubscriber() { return executeActionsOtherSubscriber; }
   public List<JourneyStatisticWrapper> getJourneyStatisticWrappers() { return journeyStatisticWrappers; }
   public List<JourneyMetric> getJourneyMetrics() { return journeyMetrics; }
   public List<ProfileChangeEvent> getProfileChangeEvents() { return profileChangeEvents; }

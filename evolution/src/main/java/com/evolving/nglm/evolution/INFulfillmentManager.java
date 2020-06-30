@@ -298,9 +298,9 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public INFulfillmentRequest(EvolutionEventContext context, String overidingSubscriberID, String deliveryType, String deliveryRequestSource, String providerID, String commodityID, String commodityName, String externalAccountID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity)
+    public INFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String providerID, String commodityID, String commodityName, String externalAccountID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity)
     {
-      super(context, deliveryType, deliveryRequestSource, overidingSubscriberID);
+      super(context, deliveryType, deliveryRequestSource);
       this.providerID = providerID;
       this.commodityID = commodityID;
       this.commodityName = commodityName;

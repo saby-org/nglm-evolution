@@ -307,9 +307,9 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    public MailNotificationManagerRequest(EvolutionEventContext context, String overidingSubscriberID, String deliveryType, String deliveryRequestSource, String destination, String fromAddress, String language, String templateID, List<String> subjectTags, List<String> htmlBodyTags, List<String> textBodyTags)
+    public MailNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String fromAddress, String language, String templateID, List<String> subjectTags, List<String> htmlBodyTags, List<String> textBodyTags)
     {
-      super(context, deliveryType, deliveryRequestSource, overidingSubscriberID);
+      super(context, deliveryType, deliveryRequestSource);
       this.destination = destination;
       this.fromAddress = fromAddress;
       this.language = language;
@@ -638,23 +638,6 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       
       /*****************************************
       *
-      *  Overiding subscriber ?
-      *
-      *****************************************/
-
-      String overidingSubscriberID = null;
-      String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.relationship");
-      if(hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer")) {
-        // retrieve the relationship 
-        SubscriberRelatives subscriberRelatives = evolutionEventContext.getSubscriberState().getSubscriberProfile().getRelations().get(hierarchyRelationship);
-        if(subscriberRelatives != null) {
-          overidingSubscriberID = subscriberRelatives.getParentSubscriberID();
-        }
-      }
-      
-      
-      /*****************************************
-      *
       *  request
       *
       *****************************************/
@@ -662,7 +645,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       MailNotificationManagerRequest request = null;
       if (template != null && email != null)
         {
-          request = new MailNotificationManagerRequest(evolutionEventContext, overidingSubscriberID, deliveryType, deliveryRequestSource, email, fromAddress, language, template.getMailTemplateID(), subjectTags, htmlBodyTags, textBodyTags);
+          request = new MailNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, email, fromAddress, language, template.getMailTemplateID(), subjectTags, htmlBodyTags, textBodyTags);
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
           request.setConfirmationExpected(confirmationExpected);

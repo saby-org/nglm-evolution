@@ -250,9 +250,9 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     *
     *****************************************/
 
-    public SMSNotificationManagerRequest(EvolutionEventContext context, String overidingSubscriberID, String deliveryType, String deliveryRequestSource, String destination, String source, String language, String templateID, List<String> messageTags)
+    public SMSNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String source, String language, String templateID, List<String> messageTags)
     {
-      super(context, deliveryType, deliveryRequestSource, overidingSubscriberID);
+      super(context, deliveryType, deliveryRequestSource);
       this.destination = destination;
       this.source = source;
       this.language = language;
@@ -525,37 +525,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
       
-      /*****************************************
-      *
-      *  Overiding subscriber ? i.e. must this be done for another subscriber ?
-      *
-      *****************************************/
 
-      String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.relationship");
-      if(hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer")) {
-        // retrieve the relationship 
-        SubscriberRelatives subscriberRelatives = evolutionEventContext.getSubscriberState().getSubscriberProfile().getRelations().get(hierarchyRelationship);
-        if(subscriberRelatives != null) {
-          // generate a new message that will go for the parrent
-          ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(
-              subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID(),
-              this.getClass().getName(),
-              subscriberRelatives.getParentSubscriberID(),
-              subscriberEvaluationRequest.getJourneyState().getJourneyID(),
-              subscriberEvaluationRequest.getJourneyNode().getNodeID(),
-              evolutionEventContext.getUniqueKey(),
-              subscriberEvaluationRequest.getJourneyState()
-              );
-          
-          
-
-        }
-        else {
-          // log a warning but don't send the request
-          log.warn("No relative subscriber for relationship " + hierarchyRelationship);
-          return Collections.<Action>emptyList();
-        }
-      }
       
       /*****************************************
       *
@@ -602,7 +572,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       SMSNotificationManagerRequest request = null;
       if (template != null && msisdn != null)
         {
-          request = new SMSNotificationManagerRequest(evolutionEventContext, overidingSubscriberID, deliveryType, deliveryRequestSource, msisdn, source, language, template.getSMSTemplateID(), messageTags);
+          request = new SMSNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, msisdn, source, language, template.getSMSTemplateID(), messageTags);
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
           request.setConfirmationExpected(confirmationExpected);

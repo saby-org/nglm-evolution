@@ -152,9 +152,9 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
   *
   *****************************************/
 
-  public RewardManagerRequest(EvolutionEventContext context, String overidingSubscriberID, String deliveryType, String deliveryRequestSource, String msisdn, String providerID, String deliverableID, String deliverableName, double amount, int periodQuantity, TimeUnit periodType)
+  public RewardManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String msisdn, String providerID, String deliverableID, String deliverableName, double amount, int periodQuantity, TimeUnit periodType)
   {
-    super(context, deliveryType, deliveryRequestSource, overidingSubscriberID);
+    super(context, deliveryType, deliveryRequestSource);
     this.msisdn = msisdn;
     this.providerID = providerID;
     this.deliverableID = deliverableID;

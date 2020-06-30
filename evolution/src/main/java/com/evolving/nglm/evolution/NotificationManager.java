@@ -404,9 +404,9 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
      *
      *****************************************/
 
-    public NotificationManagerRequest(EvolutionEventContext context, String overidingSubscriberID, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags, String channelID, ParameterMap notificationParameters)
+    public NotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags, String channelID, ParameterMap notificationParameters)
       {
-        super(context, deliveryType, deliveryRequestSource, overidingSubscriberID);
+        super(context, deliveryType, deliveryRequestSource);
         this.destination = destination;
         this.language = language;
         this.templateID = templateID;
@@ -832,22 +832,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
           
           /*****************************************
           *
-          *  Overiding subscriber ?
-          *
-          *****************************************/
-          String overidingSubscriberID = null;
-          String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.relationship");
-          if(hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer")) {
-            // retrieve the relationship 
-            SubscriberRelatives subscriberRelatives = evolutionEventContext.getSubscriberState().getSubscriberProfile().getRelations().get(hierarchyRelationship);
-            if(subscriberRelatives != null) {
-              overidingSubscriberID = subscriberRelatives.getParentSubscriberID();
-            }
-          }
-          
-          
-          /*****************************************
-          *
           * request
           *
           *****************************************/
@@ -855,7 +839,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
          NotificationManagerRequest request = null;
          if (destAddress != null)
            {
-             request = new NotificationManagerRequest(evolutionEventContext, overidingSubscriberID, deliveryType, deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters);
+             request = new NotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters);
              request.setModuleID(moduleID);
              request.setFeatureID(deliveryRequestSource);
              request.setNotificationHistory(evolutionEventContext.getSubscriberState().getNotificationHistory());
@@ -1185,7 +1169,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         ParameterBuilder parameterBuilder = new ParameterBuilder("node.parameter.contacttype", "Contact Type", CriterionDataType.StringCriterion, false, true, null);
         for (ContactType currentContactType : ContactType.values())
           {
-            parameterBuilder.addAvailableValue(new AvailableValueStaticStringBuilder(currentContactType.name(), currentContactType.getExternalRepresentation()));
+            parameterBuilder.addAvailableValue(new AvailableValueStaticStringBuilder(currentContactType.getExternalRepresentation(), currentContactType.getDisplay()));
           }
         tb.addParameter(parameterBuilder);
 

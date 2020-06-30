@@ -10,11 +10,12 @@ import org.apache.kafka.connect.data.Struct;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
+import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 
-public class ExecuteActionOtherSubscriber implements SubscriberStreamEvent, Action
+public class ExecuteActionOtherSubscriber implements SubscriberStreamEvent, Action, SubscriberStreamOutput
 {
   
 
@@ -35,7 +36,6 @@ public class ExecuteActionOtherSubscriber implements SubscriberStreamEvent, Acti
       schemaBuilder.name("execute_action_other_subscriber");
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
       schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
-      schemaBuilder.field("actionManagerClassName", Schema.STRING_SCHEMA);
       schemaBuilder.field("originatingSubscriberID", Schema.STRING_SCHEMA);
       schemaBuilder.field("originalJourneyID", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("originatingNodeID", Schema.OPTIONAL_STRING_SCHEMA);
@@ -76,7 +76,6 @@ public class ExecuteActionOtherSubscriber implements SubscriberStreamEvent, Acti
    *
    *****************************************/
   private String subscriberID;
-  private String actionManagerClassName;
   private String originatingSubscriberID;
   private String originalJourneyID;
   private String originatingNodeID;
@@ -93,16 +92,6 @@ public class ExecuteActionOtherSubscriber implements SubscriberStreamEvent, Acti
     return subscriberID;
   }
   
-  public String getActionManagerClassName()
-  {
-    return actionManagerClassName;
-  }
-
-  public void setActionManagerClassName(String actionManagerClassName)
-  {
-    this.actionManagerClassName = actionManagerClassName;
-  }
-
   public String getOriginatingSubscriberID()
   {
     return originatingSubscriberID;
@@ -169,10 +158,9 @@ public class ExecuteActionOtherSubscriber implements SubscriberStreamEvent, Acti
    *
    *****************************************/
 
-  public ExecuteActionOtherSubscriber(String subscriberID, String actionManagerClassName, String originatingSubscriberID, String originalJourneyID, String originatingNodeID, String outstandingDeliveryRequestID, JourneyState originatedJourneyState)
+  public ExecuteActionOtherSubscriber(String subscriberID, String originatingSubscriberID, String originalJourneyID, String originatingNodeID, String outstandingDeliveryRequestID, JourneyState originatedJourneyState)
     {
       this.subscriberID = subscriberID;
-      this.actionManagerClassName = actionManagerClassName;
       this.originatingSubscriberID = getOriginatingSubscriberID();
       this.originalJourneyID = originalJourneyID;
       this.originatingNodeID = originatingNodeID;
@@ -191,7 +179,6 @@ public class ExecuteActionOtherSubscriber implements SubscriberStreamEvent, Acti
     ExecuteActionOtherSubscriber executeActionOtherSubscriber = (ExecuteActionOtherSubscriber) value;
     Struct struct = new Struct(schema);
     struct.put("subscriberID", executeActionOtherSubscriber.getSubscriberID());
-    struct.put("actionManagerClassName", executeActionOtherSubscriber.getActionManagerClassName());
     struct.put("originatingSubscriberID", executeActionOtherSubscriber.getOriginatingSubscriberID());
     struct.put("originalJourneyID", executeActionOtherSubscriber.getOriginalJourneyID());
     struct.put("originatingNodeID", executeActionOtherSubscriber.getOriginatingNodeID());
@@ -231,7 +218,6 @@ public class ExecuteActionOtherSubscriber implements SubscriberStreamEvent, Acti
 
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
-    String actionManagerClassName = valueStruct.getString("actionManagerClassName");
     String originatingSubscriberID = valueStruct.getString("originatingSubscriberID");
     String originalJourneyID = valueStruct.getString("originalJourneyID");
     String originatingNodeID = valueStruct.getString("originatingNodeID");
@@ -241,13 +227,13 @@ public class ExecuteActionOtherSubscriber implements SubscriberStreamEvent, Acti
     // return
     //
 
-    return new ExecuteActionOtherSubscriber(subscriberID, actionManagerClassName, originatingSubscriberID, originalJourneyID, originatingNodeID, outstandingDeliveryRequestID, originatedJourneyState);
+    return new ExecuteActionOtherSubscriber(subscriberID, originatingSubscriberID, originalJourneyID, originatingNodeID, outstandingDeliveryRequestID, originatedJourneyState);
   }
 
   @Override
   public String toString()
   {
-    return "ExecuteActionOtherSubscriber [subscriberID=" + subscriberID + ", actionManagerClassName=" + actionManagerClassName + ", originatingSubscriberID=" + originatingSubscriberID + ", originalJourneyID=" + originalJourneyID + ", originatingNodeID=" + originatingNodeID + ", outstandingDeliveryRequestID=" + outstandingDeliveryRequestID + ", originatedJourneyState=" + originatedJourneyState + "]";
+    return "ExecuteActionOtherSubscriber [subscriberID=" + subscriberID + ", originatingSubscriberID=" + originatingSubscriberID + ", originalJourneyID=" + originalJourneyID + ", originatingNodeID=" + originatingNodeID + ", outstandingDeliveryRequestID=" + outstandingDeliveryRequestID + ", originatedJourneyState=" + originatedJourneyState + "]";
   }
 
   @Override
