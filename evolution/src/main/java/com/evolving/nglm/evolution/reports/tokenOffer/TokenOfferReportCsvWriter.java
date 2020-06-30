@@ -126,10 +126,8 @@ public class TokenOfferReportCsvWriter implements ReportCsvFactory
                               }
 
                             String line = ReportUtils.formatResult(result);
-                            log.trace("Writing to csv file : " + line);
+                            if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
                             writer.write(line.getBytes());
-                            writer.write("\n".getBytes());
-
                           }
                         else if (token.getTokenStatus() == TokenStatus.Bound)
                           {
@@ -162,9 +160,8 @@ public class TokenOfferReportCsvWriter implements ReportCsvFactory
                                     addHeaders = false;
                                   }
                                 String line = ReportUtils.formatResult(result);
-                                log.trace("Writing to csv file : " + line);
+                                if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
                                 writer.write(line.getBytes());
-                                writer.write("\n".getBytes());
                               }
                             else
                               {
@@ -238,10 +235,8 @@ public class TokenOfferReportCsvWriter implements ReportCsvFactory
                                         addHeaders = false;
                                       }
                                     String line = ReportUtils.formatResult(result);
-                                    log.trace("Writing to csv file : " + line);
+                                    if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
                                     writer.write(line.getBytes());
-                                    writer.write("\n".getBytes());
-
                                   }
                               }
                           }
@@ -332,10 +327,8 @@ public class TokenOfferReportCsvWriter implements ReportCsvFactory
                                 addHeaders = false;
                               }
                             String line = ReportUtils.formatResult(result);
-                            log.trace("Writing to csv file : " + line);
+                            if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
                             writer.write(line.getBytes());
-                            writer.write("\n".getBytes());
-
                           }
                         else if (token.getTokenStatus() == TokenStatus.Expired)
                           {
@@ -365,9 +358,8 @@ public class TokenOfferReportCsvWriter implements ReportCsvFactory
                                 addHeaders = false;
                               }
                             String line = ReportUtils.formatResult(result);
-                            log.trace("Writing to csv file : " + line);
+                            if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
                             writer.write(line.getBytes());
-                            writer.write("\n".getBytes());
                           }
 
                       }

@@ -330,7 +330,6 @@ public class OfferReportDriver extends ReportDriver
             }
           String line = ReportUtils.formatResult(offerFields);
           writer.write(line.getBytes());
-          writer.write("\n".getBytes());
         }
     }
     catch (Exception ex)

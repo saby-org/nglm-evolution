@@ -194,13 +194,12 @@ public class LoyaltyProgramCustomerStatesCsvWriter implements ReportCsvFactory
             String line = ReportUtils.formatResult(headerFieldsOrder, record);
             if (!line.isEmpty())
               {
-                log.trace("Writing to csv file : " + line);
+                if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
                 writer.write(line.getBytes());
-                writer.write("\n".getBytes());
               }
             else
               {
-                log.trace("Empty line => not writing");
+                if (log.isTraceEnabled()) log.trace("Empty line => not writing");
               }
           }
       }

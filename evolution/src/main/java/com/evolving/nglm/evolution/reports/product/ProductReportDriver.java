@@ -188,7 +188,6 @@ public class ProductReportDriver extends ReportDriver
               }
             String line = ReportUtils.formatResult(productFields);
             writer.write(line.getBytes());
-            writer.write("\n".getBytes());
           }
       }
     catch (Exception ex)
