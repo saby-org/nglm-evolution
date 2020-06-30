@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
 public class BDRReportCsvWriter implements ReportCsvFactory
@@ -101,16 +102,18 @@ public class BDRReportCsvWriter implements ReportCsvFactory
   public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
-    LinkedHashMap<String, Object> bdrRecs = new LinkedHashMap<>();
+    List<LinkedHashMap<String, Object>> bdrRecsList = new ArrayList<LinkedHashMap<String,Object>>();
     Map<String, Object> bdrFields = reportElement.fields.get(0);
     if (bdrFields != null && !bdrFields.isEmpty())
       {
+        LinkedHashMap<String, Object> bdrRecs = new LinkedHashMap<>();
         // rename subscriberID
-        if(bdrFields.get(subscriberID) != null) {
-          Object subscriberIDField = bdrFields.get(subscriberID);
-          bdrRecs.put(customerID, subscriberIDField);
-          //bdrFields.remove(subscriberID);
-        }
+        if (bdrFields.get(subscriberID) != null)
+          {
+            Object subscriberIDField = bdrFields.get(subscriberID);
+            bdrRecs.put(customerID, subscriberIDField);
+            // bdrFields.remove(subscriberID);
+          }
         for (AlternateID alternateID : Deployment.getAlternateIDs().values())
           {
             if (bdrFields.get(alternateID.getID()) != null)
@@ -118,25 +121,27 @@ public class BDRReportCsvWriter implements ReportCsvFactory
                 Object alternateId = bdrFields.get(alternateID.getID());
                 bdrRecs.put(alternateID.getName(), alternateId);
               }
-          } 
-        if (bdrFields.containsKey(eventID)) {
-          bdrRecs.put(eventID, bdrFields.get(eventID));
-        }
-        if (bdrFields.containsKey(deliverableID)) {
-          bdrRecs.put(deliverableID, bdrFields.get(deliverableID));
-        }
+          }
+        if (bdrFields.containsKey(eventID))
+          {
+            bdrRecs.put(eventID, bdrFields.get(eventID));
+          }
+        if (bdrFields.containsKey(deliverableID))
+          {
+            bdrRecs.put(deliverableID, bdrFields.get(deliverableID));
+          }
 
         if (bdrFields.containsKey(deliverableID))
-          {               
-            GUIManagedObject deliverableObject = deliverableService
-                .getStoredDeliverable(String.valueOf(bdrFields.get(deliverableID)));
+          {
+            GUIManagedObject deliverableObject = deliverableService.getStoredDeliverable(String.valueOf(bdrFields.get(deliverableID)));
             if (deliverableObject instanceof Deliverable)
               {
-                bdrRecs.put(deliverableDisplay, ((Deliverable) deliverableObject).getDeliverableDisplay());                   
+                bdrRecs.put(deliverableDisplay, ((Deliverable) deliverableObject).getDeliverableDisplay());
+              } 
+            else
+              {
+                bdrRecs.put(deliverableDisplay, "");
               }
-            else {
-              bdrRecs.put(deliverableDisplay, "");
-            }
           }
         if (bdrFields.containsKey(deliverableQty))
           {
@@ -160,7 +165,7 @@ public class BDRReportCsvWriter implements ReportCsvFactory
                     }
                     catch (ParseException e1)
                     {
-                      // Could also be 2019-11-27 15:39:30.276+0100
+                   // Could also be 2019-11-27 15:39:30.276+0100
                       try
                       {
                         Date date = parseSDF2.parse(deliverableExpirationDateStr);
@@ -172,16 +177,16 @@ public class BDRReportCsvWriter implements ReportCsvFactory
                       }
                     }
 
-                  }
+                    } 
                 else
                   {
-                    log.info(deliverableExpirationDate + " is of wrong type : "
-                        + deliverableExpirationDateObj.getClass().getName());
+                    log.info(deliverableExpirationDate + " is of wrong type : " + deliverableExpirationDateObj.getClass().getName());
                   }
+              } 
+            else
+              {
+                bdrRecs.put(deliverableExpirationDate, "");
               }
-            else {
-              bdrRecs.put(deliverableExpirationDate, "");
-            }
           }
 
         if (bdrFields.containsKey(deliveryRequestID))
@@ -209,23 +214,23 @@ public class BDRReportCsvWriter implements ReportCsvFactory
                     bdrRecs.put(eventDatetime, ReportsCommonCode.parseDate((String) eventDatetimeObj));
 
                     // END TEMP fix for BLK
-                  }
+                  } 
                 else
                   {
                     log.info(eventDatetime + " is of wrong type : " + eventDatetimeObj.getClass().getName());
                   }
 
-              }
+              } 
             else {
-              bdrRecs.put(eventDatetime, "");
-            }
+                bdrRecs.put(eventDatetime, "");
+              }
           }
 
         // Compute featureName and ModuleName from ID
         if (bdrFields.containsKey(moduleId) && bdrFields.containsKey(featureId))
           {
             Module module = Module.fromExternalRepresentation(String.valueOf(bdrFields.get(moduleId)));
-            String featureDis = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);                
+            String featureDis = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
             bdrRecs.put(featureDisplay, featureDis);
             bdrRecs.put(moduleName, module.toString());
             bdrRecs.put(featureId, bdrFields.get(featureId));
@@ -259,33 +264,24 @@ public class BDRReportCsvWriter implements ReportCsvFactory
             // result
             //
 
-        //
-        // result
-        //
-
-        String rawEventDateTime = bdrRecs.get(eventDatetime) == null ? null : bdrRecs.get(eventDatetime).toString();
-        if (rawEventDateTime == null) log.warn("bad EventDateTime -- report will be generated in 'null' file name -- for record {} ", bdrFields);
-        String evntDate = getEventDate(rawEventDateTime);
-        if (result.containsKey(evntDate))
-          {
-            result.get(evntDate).add(bdrRecs);
-          } 
-        else
-          {
-            List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
-            elements.add(bdrRecs);
-            result.put(evntDate, elements);
-          }
+        bdrRecsList.add(bdrRecs);
       }
+    if (!bdrRecsList.isEmpty()) result = bdrRecsList.stream().collect(Collectors.groupingBy(a-> getEventDate(a.get(eventDatetime))));
     return result;
   }
 
-  private String getEventDate(String rawEventDateTime)
+  private String getEventDate(Object object)
   {
-    String result = "null";
-    if (rawEventDateTime == null || rawEventDateTime.trim().isEmpty()) return result;
     String eventDateTimeFormat = "yyyy-MM-dd";
-    result = rawEventDateTime.substring(0, eventDateTimeFormat.length());
+    String result = "null";
+    if (object != null && (object instanceof String))
+      {
+        String eventDateDateString = (String) object;
+        if (!eventDateDateString.trim().isEmpty())
+          {
+            result = eventDateDateString.substring(0, eventDateTimeFormat.length());
+          }
+      }
     return result;
   }
 
