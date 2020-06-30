@@ -4,6 +4,10 @@ stg-web-<_KEY_>:
     stg_api_server_path: "http://<_GUI_STG_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_STG_API_SERVER_PORT_>/api/"
     stg_fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
     stg_api_server_path_for_upload_files: "http://<_GUI_STG_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_STG_API_SERVER_PORT_>/api/file/flowupload"
+    DIALOG_TEMPLATE_SMS: '<_DIALOG_TEMPLATE_SMS_>' 
+    DIALOG_TEMPLATE_EMAIL: '<_DIALOG_TEMPLATE_EMAIL_>' 
+    DIALOG_TEMPLATE_PUSH: '<_DIALOG_TEMPLATE_PUSH_>'  
+    DIALOG_TEMPLATE_GENERIC: '<_DIALOG_TEMPLATE_GENERIC_>'
     TZ: <_DEPLOYMENT_TIMEZONE_>
     STG_WEB_PORT: <_PORT_>
   deploy:
