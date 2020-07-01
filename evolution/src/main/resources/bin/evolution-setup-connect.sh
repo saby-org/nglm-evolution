@@ -73,32 +73,7 @@ prepare-curl -XPOST $CONNECT_URL_JOURNEYSTATISTIC_ES/connectors -H "Content-Type
       "batchSize" : "'$CONNECT_ES_JOURNEYSTATISTIC_BATCHSIZEMB'"
       }
   }' 
-
-#
-#  sink connector -- journeyTraffic (elasticsearch)
-#
-
-export CONNECT_URL_JOURNEYTRAFFIC_ES=${CONNECT_URL_JOURNEYTRAFFIC_ES:-$DEFAULT_CONNECT_URL}
-export CONNECT_ES_JOURNEYTRAFFIC_SINK_TASKS=${CONNECT_ES_JOURNEYTRAFFIC_SINK_TASKS:-'1'}
-export CONNECT_ES_JOURNEYTRAFFIC_BATCHRECORDCOUNT=${CONNECT_ES_JOURNEYTRAFFIC_BATCHRECORDCOUNT:-'1'}
-export CONNECT_ES_JOURNEYTRAFFIC_BATCHSIZEMB=${CONNECT_ES_JOURNEYTRAFFIC_BATCHSIZEMB:-'5'}
-prepare-curl -XPOST $CONNECT_URL_JOURNEYTRAFFIC_ES/connectors -H "Content-Type: application/json" -d '
-  {
-    "name" : "journeytraffic_es_sink_connector",
-    "config" :
-      {
-      "connector.class" : "com.evolving.nglm.evolution.JourneyTrafficESSinkConnector",
-      "tasks.max" : '$CONNECT_ES_JOURNEYTRAFFIC_SINK_TASKS',
-      "topics" : "${changelog.journeytrafficengine.journeytraffic.topic}",
-      "connectionHost" : "'$MASTER_ESROUTER_HOST'",
-      "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-      "indexName" : "datacube_journeytraffic",
-      "batchRecordCount" : "'$CONNECT_ES_JOURNEYTRAFFIC_BATCHRECORDCOUNT'",
-      "batchSize" : "'$CONNECT_ES_JOURNEYTRAFFIC_BATCHSIZEMB'"
-      }
-  }' 
   
-
 #
 #  sink connector -- journeyMetric (elasticsearch)
 #
@@ -117,7 +92,6 @@ prepare-curl -XPOST $CONNECT_URL_JOURNEYMETRIC_ES/connectors -H "Content-Type: a
       "topics" : "${topic.journeymetric}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-      "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
       "indexName" : "journeymetric",
       "batchRecordCount" : "'$CONNECT_ES_JOURNEYMETRIC_BATCHRECORDCOUNT'",
       "batchSize" : "'$CONNECT_ES_JOURNEYMETRIC_BATCHSIZEMB'"
