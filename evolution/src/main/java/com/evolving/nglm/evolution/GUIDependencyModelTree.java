@@ -60,7 +60,7 @@ public class GUIDependencyModelTree
     for (Class guiDependencyDefClass : guiDependencyDefClassList)
       {
         GUIDependencyDef guiDependencyDef = (GUIDependencyDef) guiDependencyDefClass.getAnnotation(GUIDependencyDef.class);
-        if (!guiManagedObjectType.equalsIgnoreCase(guiDependencyDef.objectType()) && (guiDependencyDef.dependencies().length > 0))
+        if (guiDependencyDef.dependencies().length > 0)
           {
             Set<String> thisDependencies = new HashSet<>(Arrays.asList(guiDependencyDef.dependencies()));
             if (thisDependencies.contains(guiManagedObjectType)) result.add(guiDependencyDef.objectType());
