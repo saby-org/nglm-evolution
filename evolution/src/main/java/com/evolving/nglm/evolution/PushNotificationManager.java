@@ -225,6 +225,29 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
 
+    
+    /*****************************************
+    *
+    *  getResolvedParameters
+    *
+    *****************************************/
+
+    public Map<String, String> getResolvedParameters(SubscriberMessageTemplateService subscriberMessageTemplateService)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      PushTemplate template = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      if(template.getDialogMessages() != null)
+        {
+          for(Map.Entry<String, DialogMessage> dialogMessageEntry : template.getDialogMessages().entrySet())
+            {
+              DialogMessage dialogMessage = dialogMessageEntry.getValue();
+              String parameterName = dialogMessageEntry.getKey();
+              String resolved = dialogMessage.resolve(language, tags.get(parameterName));
+              result.put(parameterName, resolved);
+            }
+        }
+      return result;
+    }
     //
     //  abstract
     //
@@ -250,19 +273,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     public String getMessageDeliveryOrigin() { return ""; }
     public String getMessageDeliveryMessageId() { return getEventID(); }
 
-    /*****************************************
-    *
-    *  getMessage
-    *
-    *****************************************/
 
-    public String getMessage(String messageField, SubscriberMessageTemplateService subscriberMessageTemplateService)
-    {
-      PushTemplate pushTemplate = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
-      DialogMessage dialogMessage = (pushTemplate != null) ? pushTemplate.getDialogMessage(messageField) : null;
-      String text = (dialogMessage != null) ? dialogMessage.resolve(language, tags.get(messageField)) : null;
-      return text;
-    }
 
     /*****************************************
     *

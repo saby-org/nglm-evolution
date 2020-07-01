@@ -49,6 +49,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.http.HttpHost;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -65,6 +66,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -568,6 +570,9 @@ public class GUIManager
   protected KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
   protected int httpTimeout = Deployment.getPurchaseTimeoutMs();
   
+  private static final int connectTimeout = Deployment.getGUIManagerESConnectTimeout();
+  private static final int socketTimeout = Deployment.getGUIManagerESSocketTimeout();
+
   protected static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   protected static final String FILE_REQUEST = "file"; 
   protected static final String FILE_UPLOAD_META_DATA= "fileUploadMetaData"; 
@@ -743,7 +748,7 @@ public class GUIManager
 
     try
     {
-      elasticsearch = new RestHighLevelClient(RestClient.builder(new HttpHost(elasticsearchServerHost, elasticsearchServerPort, "http")));
+      elasticsearch = new RestHighLevelClient(RestClient.builder(new HttpHost(elasticsearchServerHost, elasticsearchServerPort, "http")).setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() { @Override public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder builder) { return builder.setConnectTimeout(connectTimeout).setSocketTimeout(socketTimeout); } } ));
     }
     catch (ElasticsearchException e)
     {
@@ -3559,7 +3564,7 @@ public class GUIManager
 
         StringWriter stackTraceWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.error("Exception processing REST api: {}", stackTraceWriter.toString());
+        log.error("Exception processing REST api: {}", stackTraceWriter.toString().replace('\n', '\u2028'));
 
         //
         //  send error response

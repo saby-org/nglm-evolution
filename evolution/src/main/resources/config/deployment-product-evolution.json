@@ -39,6 +39,10 @@
   "ucgEngineESConnectTimeout" : 30000,
   "ucgEngineESSocketTimeout" : 60000,
   "ucgEngineESMasRetryTimeout" : 60000,
+  
+  "guiManagerESConnectTimeout" : 30000,
+  "guiManagerESSocketTimeout" : 60000,
+  
   "elasticSearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
   
   "elasticSearchScrollSize" : 1000,
@@ -848,6 +852,7 @@
     "reportManagerFileExtension"  : "csv",
     "reportManagerCsvSeparator"   : ";",
     "reportManagerFieldSurrounder": "'",
+    "reportManagerMaxMessageLength": 200,
     "reportManagerStreamsTempDir" : "/tmp",
     "reportManagerTopicsCreationProperties" : "cleanup.policy=delete segment.bytes=52428800 retention.ms=64800000"
   },
@@ -1081,7 +1086,9 @@
     "subscriberProfileDatacubeMetrics" : [],
     
     "enableProfileSegmentChange" : true,
-    "enableEvaluateTargetRandomness" : false
+    "enableEvaluateTargetRandomness" : false,
+
+    "enableContactPolicyProcessing" : true
      
     
     
