@@ -1,13 +1,13 @@
 package com.evolving.nglm.evolution;
 
 import java.util.Date;
+import java.util.Map;
 
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 
 public interface INotificationRequest
 {
-
   public void setCorrelator(String messageId);
 
   public void setDeliveryStatus(DeliveryStatus deliveryStatus);
@@ -27,5 +27,5 @@ public interface INotificationRequest
   public String getDeliveryRequestID();
 
   public String getCorrelator();
-
+  
 }

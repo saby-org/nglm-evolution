@@ -9,13 +9,15 @@ package com.evolving.nglm.evolution.offeroptimizer;
 import java.util.Map;
 
 import com.evolving.nglm.evolution.*;
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
 
 public class PriceAlgo implements IOfferOptimizerAlgorithm {
 
-  private static Logger logger = Logger.getLogger(PriceAlgo.class);
+  private static Logger logger = LoggerFactory.getLogger(PriceAlgo.class);
 
   @Override
   public ProposedOfferDetails getOfferPropensityScore(

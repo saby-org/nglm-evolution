@@ -2,7 +2,8 @@ package com.lumatagroup.expression.driver.SMTP;
 
 import javax.mail.PasswordAuthentication;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -11,7 +12,7 @@ import org.apache.log4j.Logger;
  *
  */
 public class SMTPAuthenticator extends javax.mail.Authenticator {
-	private static Logger logger = Logger.getLogger(SMTPAuthenticator.class);
+	private static Logger logger = LoggerFactory.getLogger(SMTPAuthenticator.class);
     private String smtpAuthUserName;
     private String smtpAuthPassword;
     private PasswordAuthentication authentication;

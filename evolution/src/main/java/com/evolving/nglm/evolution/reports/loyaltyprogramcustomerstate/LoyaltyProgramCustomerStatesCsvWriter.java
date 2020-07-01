@@ -42,7 +42,6 @@ public class LoyaltyProgramCustomerStatesCsvWriter implements ReportCsvFactory
     LinkedHashMap<String, Object> fullFields = new LinkedHashMap<String, Object>();
     if (subscriberFields != null && !subscriberFields.isEmpty())
       {
-
         String subscriberID = subscriberFields.get("subscriberID").toString();
         Date now = SystemTime.getCurrentTime();
         if (subscriberID != null)

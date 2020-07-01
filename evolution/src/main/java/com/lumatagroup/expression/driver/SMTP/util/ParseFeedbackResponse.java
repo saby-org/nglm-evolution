@@ -1,6 +1,7 @@
 package com.lumatagroup.expression.driver.SMTP.util;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -12,7 +13,7 @@ import com.lumatagroup.expression.driver.dyn.Response;
 
 public class ParseFeedbackResponse {
 	
-	private static Logger logger = Logger.getLogger(ParseFeedbackResponse.class);
+	private static Logger logger = LoggerFactory.getLogger(ParseFeedbackResponse.class);
 	
 	public Response parse(String responseString){
 		Response responseObj = null;

@@ -17,10 +17,12 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HttpUtil {
-	private static Logger logger = Logger.getLogger(HttpUtil.class);
+	private static Logger logger = LoggerFactory.getLogger(HttpUtil.class);
 	
 	public static String doGet(String url, String callingMethod, Date from, Date to) {
 		if (logger.isDebugEnabled()) logger.debug("HttpUtil.doGet() start " + url + " " + from + " " + to);

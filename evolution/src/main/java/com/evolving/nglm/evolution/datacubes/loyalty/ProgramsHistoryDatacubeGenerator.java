@@ -200,6 +200,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     
     filters.put("tier", tierName);
     filters.put("redeemer", Boolean.parseBoolean(redeemer));
+    filters.put("loyaltyProgramID", loyaltyProgramID); // @rl: Hack, this will be removed in extractMetrics function. Really ugly and not consistent with the pattern...
     filters.put("loyaltyProgram", loyaltyProgramsMap.getDisplay(loyaltyProgramID, "loyaltyProgram"));
   }
 
@@ -304,7 +305,8 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
       return metrics;
     }
 
-    String programID = (String) contextFilters.get("loyaltyProgram.id");
+    String programID = (String) contextFilters.get("loyaltyProgramID");
+    contextFilters.remove("loyaltyProgramID"); // @rl: it was just kept for that purpose, do not push it at the end.
     String pointID = loyaltyProgramsMap.getRewardPointsID(programID, "loyaltyProgram");
     if (pointID == null) {
       log.error("Unable to extract "+programID+" points information from loyalty programs mapping.");
