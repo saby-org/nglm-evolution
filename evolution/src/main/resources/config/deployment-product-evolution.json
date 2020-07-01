@@ -687,158 +687,158 @@
     {
       "id"           : "ping",
       "methodName"   : "ping",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "permissions"  : ["API-PING"],
       "byPassAuth"   : true
     },
     {
       "id"           : "getCustomer",
       "methodName"   : "getCustomer",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER"]
     },
     {
       "id"           : "getCustomerBDRs",
       "methodName"   : "getCustomerBDRs",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-BDRS"]
     },
     {
       "id"           : "getCustomerODRs",
       "methodName"   : "getCustomerODRs",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-ODRS"]
     },
     {
       "id"           : "getCustomerPoints",
       "methodName"   : "getCustomerPoints",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-POINTS"]
     },
     {
       "id"           : "creditBonus",
       "methodName"   : "creditBonus",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-CREDIT-BONUS"]
     },
     {
       "id"           : "debitBonus",
       "methodName"   : "debitBonus",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-DEBIT-BONUS"]
     },
     {
       "id"           : "getCustomerMessages",
       "methodName"   : "getCustomerMessages",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-MESSAGES"]
     },
     {
       "id"           : "getOffersList",
       "methodName"   : "getOffersList",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-OFFERS-LIST"]
     },
     {
       "id"           : "getActiveOffer",
       "methodName"   : "getActiveOffer",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["?????"]
     },
     {
       "id"           : "getActiveOffers",
       "methodName"   : "getActiveOffers",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["??????"]
     },
     {
       "id"           : "getCustomerJourneys",
       "methodName"   : "getCustomerJourneys",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-JOURNEYS"]
     },
     {
       "id"           : "getCustomerCampaigns",
       "methodName"   : "getCustomerCampaigns",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-CAMPAIGNS"]
     },
     {
       "id"           : "getCustomerAvailableCampaigns",
       "methodName"   : "getCustomerAvailableCampaigns",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-AVAILABLE-CAMPAIGNS"]
     },
     {
       "id"           : "getLoyaltyProgram",
       "methodName"   : "getLoyaltyProgram",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-LOYALTY-PROGRAM"]
     },
     {
       "id"           : "getLoyaltyProgramList",
       "methodName"   : "getLoyaltyProgramList",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-LOYALTY-PROGRAM-LIST"]
     },
     {
       "id"           : "getCustomerLoyaltyPrograms",
       "methodName"   : "getCustomerLoyaltyPrograms",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-LOYALTY-PROGRAMS"]
     },
     {
       "id"           : "updateCustomer",
       "methodName"   : "updateCustomer",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-UPDATE-CUSTOMER"]
     },
     {
       "id"           : "getCustomerNBOs",
       "methodName"   : "getCustomerNBOs",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-NBOS"]
     },
     {
       "id"           : "getTokensCodesList",
       "methodName"   : "getTokensCodesList",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-TOKENS-CODES-LIST"]
     },
     {
       "id"           : "acceptOffer",
       "methodName"   : "acceptOffer",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-ACCEPT-OFFER"]
     },
     {
       "id"           : "purchaseOffer",
       "methodName"   : "purchaseOffer",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-PURCHASE-OFFER"]
     },
     {
       "id"           : "triggerEvent",
       "methodName"   : "triggerEvent",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-TRIGGER-EVENT"]
     },
     {
       "id"           : "updateCustomerParent",
       "methodName"   : "updateCustomerParent",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-UPDATE-CUSTOMER-PARENT"]
     },
     {
       "id"           : "removeCustomerParent",
       "methodName"   : "removeCustomerParent",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-REMOVE-CUSTOMER-PARENT"]
     },
     {
       "id"           : "enterCampaign",
       "methodName"   : "enterCampaign",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-ENTER-CAMPAIGN"]
     },
     {
       "id"           : "loyaltyProgramOptIn",
       "methodName"   : "loyaltyProgramOptIn",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-LOYALTY-PROGRAM-OPTIN"]
     },
     {
       "id"           : "loyaltyProgramOptOut",
       "methodName"   : "loyaltyProgramOptOut",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-LOYALTY-PROGRAM-OPTOUT"]
     },
     {
       "id"           : "getCustomerTokenAndNBO",
       "methodName"   : "getCustomerTokenAndNBO",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-TOKEN-AND-NBO"]
     },
     {
       "id"           : "validateVoucher",
       "methodName"   : "validateVoucher",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-VALIDATE-VOUCHER"]
     },
     {
       "id"           : "redeemVoucher",
       "methodName"   : "redeemVoucher",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-REDEEM-VOUCHER"]
     }
 
   ],
