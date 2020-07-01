@@ -42,9 +42,8 @@ public class ODRSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
   
-  public static class ODRSinkConnectorTask extends StreamESSinkTask
+  public static class ODRSinkConnectorTask extends StreamESSinkTask<PurchaseFulfillmentRequest>
   {
-
     private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
     private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
@@ -77,7 +76,6 @@ public class ODRSinkConnector extends SimpleESSinkConnector
 
       paymentMeanService = new PaymentMeanService(Deployment.getBrokerServers(), "ordsinkconnector-paymentmeanservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getPaymentMeanTopic(), false);
       paymentMeanService.start();
-
     }
 
     /*****************************************
@@ -103,6 +101,20 @@ public class ODRSinkConnector extends SimpleESSinkConnector
 
       super.stop();
     }
+
+    /*****************************************
+    *
+    *  unpackRecord
+    *
+    *****************************************/
+    
+    @Override public PurchaseFulfillmentRequest unpackRecord(SinkRecord sinkRecord) 
+    {
+      Object purchaseManagertValue = sinkRecord.value();
+      Schema purchaseManagerValueSchema = sinkRecord.valueSchema();
+      return PurchaseFulfillmentRequest.unpack(new SchemaAndValue(purchaseManagerValueSchema, purchaseManagertValue)); 
+    }
+    
     
     /*****************************************
     *
@@ -111,100 +123,87 @@ public class ODRSinkConnector extends SimpleESSinkConnector
     *****************************************/
     
     @Override
-    public Map<String, Object> getDocumentMap(SinkRecord sinkRecord)
+    public Map<String, Object> getDocumentMap(PurchaseFulfillmentRequest purchaseManager)
     {
-      /******************************************
-      *
-      *  extract INFulfillmentRequest
-      *
-      *******************************************/ 
-
-      Object purchaseManagertValue = sinkRecord.value();
-      Schema purchaseManagerValueSchema = sinkRecord.valueSchema();
-      PurchaseFulfillmentRequest purchaseManager = PurchaseFulfillmentRequest.unpack(new SchemaAndValue(purchaseManagerValueSchema, purchaseManagertValue)); 
-
       Date now = SystemTime.getCurrentTime();
       Offer offer = offerService.getActiveOffer(purchaseManager.getOfferID(), now);
-      Map<String,Object> documentMap = null;
-
-      if(purchaseManager != null){
-        documentMap = new HashMap<String,Object>();
-        documentMap.put("subscriberID", purchaseManager.getSubscriberID());
-        SinkConnectorUtils.putAlternateIDs(purchaseManager.getAlternateIDs(), documentMap);
-        documentMap.put("deliveryRequestID", purchaseManager.getDeliveryRequestID());
-        documentMap.put("originatingDeliveryRequestID", purchaseManager.getOriginatingDeliveryRequestID());
-        documentMap.put("eventDatetime", purchaseManager.getEventDate()!=null?dateFormat.format(purchaseManager.getEventDate()):"");
-        documentMap.put("eventID", purchaseManager.getEventID());
-        documentMap.put("offerID", purchaseManager.getOfferID());
-        documentMap.put("offerQty", purchaseManager.getQuantity());
-        documentMap.put("salesChannelID", purchaseManager.getSalesChannelID());
-        String voucherCodes = "";
-          if (offer != null)
-            {
-              if (offer.getOfferSalesChannelsAndPrices() != null)
-                {
-                  for (OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
-                    {
-                      if (channel.getSalesChannelIDs() != null)
-                        {
-                          for (String salesChannelID : channel.getSalesChannelIDs())
-                            {
-                              if (salesChannelID.equals(purchaseManager.getSalesChannelID()))
-                                {
-                                  OfferPrice price = channel.getPrice();
-                                  if (price != null)
-                                    {
-                                      PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(price.getPaymentMeanID());
-                                      if (paymentMean != null)
-                                        {
-                                          documentMap.put("offerPrice", price.getAmount());
-                                          documentMap.put("meanOfPayment", paymentMean.getDisplay());
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-          documentMap.put("offerStock", offer.getStock());
-          StringBuilder sb = new StringBuilder();
-          if(offer.getOfferProducts() != null) {
-            for(OfferProduct offerProduct : offer.getOfferProducts()) {
-              Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
-              sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():"product"+offerProduct.getProductID()).append(",");
-            }
-          }
-          if(purchaseManager.getVoucherDeliveries()!=null){
-            StringBuilder voucherCodeSb=new StringBuilder("");//ready for several vouchers in 1 purchase, though might only just allow one for simplicity
-            for(VoucherDelivery voucherDelivery:purchaseManager.getVoucherDeliveries()){
-              Voucher voucher = (Voucher) voucherService.getStoredVoucher(voucherDelivery.getVoucherID());
-              sb.append("1 ").append(voucher!=null?voucher.getVoucherDisplay():"voucher"+voucherDelivery.getVoucherID()).append(",");
-              if(voucherDelivery.getVoucherCode()!=null&&!voucherDelivery.getVoucherCode().isEmpty()){
-                voucherCodeSb.append(voucherDelivery.getVoucherCode()).append(",");
+      
+      Map<String,Object> documentMap = new HashMap<String,Object>();
+      documentMap.put("subscriberID", purchaseManager.getSubscriberID());
+      SinkConnectorUtils.putAlternateIDs(purchaseManager.getSubscriberID(), documentMap);
+      documentMap.put("deliveryRequestID", purchaseManager.getDeliveryRequestID());
+      documentMap.put("originatingDeliveryRequestID", purchaseManager.getOriginatingDeliveryRequestID());
+      documentMap.put("eventDatetime", purchaseManager.getEventDate()!=null?dateFormat.format(purchaseManager.getEventDate()):"");
+      documentMap.put("eventID", purchaseManager.getEventID());
+      documentMap.put("offerID", purchaseManager.getOfferID());
+      documentMap.put("offerQty", purchaseManager.getQuantity());
+      documentMap.put("salesChannelID", purchaseManager.getSalesChannelID());
+      String voucherCodes = "";
+        if (offer != null)
+          {
+            if (offer.getOfferSalesChannelsAndPrices() != null)
+              {
+                for (OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
+                  {
+                    if (channel.getSalesChannelIDs() != null)
+                      {
+                        for (String salesChannelID : channel.getSalesChannelIDs())
+                          {
+                            if (salesChannelID.equals(purchaseManager.getSalesChannelID()))
+                              {
+                                OfferPrice price = channel.getPrice();
+                                if (price != null)
+                                  {
+                                    PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(price.getPaymentMeanID());
+                                    if (paymentMean != null)
+                                      {
+                                        documentMap.put("offerPrice", price.getAmount());
+                                        documentMap.put("meanOfPayment", paymentMean.getDisplay());
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  }
               }
-            }
-            voucherCodes = voucherCodeSb.length()>0?voucherCodeSb.toString().substring(0,voucherCodeSb.toString().length()-1):"";
+        documentMap.put("offerStock", offer.getStock());
+        StringBuilder sb = new StringBuilder();
+        if(offer.getOfferProducts() != null) {
+          for(OfferProduct offerProduct : offer.getOfferProducts()) {
+            Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
+            sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():"product"+offerProduct.getProductID()).append(",");
           }
-          String offerContent = sb.length()>0?sb.toString().substring(0, sb.toString().length()-1):"";
-          documentMap.put("offerContent", offerContent);
         }
-
-        // populate with default values (for reports)
-        if (documentMap.get("offerPrice") == null) documentMap.put("offerPrice", 0L);
-        if (documentMap.get("meanOfPayment") == null) documentMap.put("meanOfPayment", "");
-        if (documentMap.get("offerStock") == null) documentMap.put("offerStock", -1);
-        if (documentMap.get("offerContent") == null) documentMap.put("offerContent", "");
-        
-        documentMap.put("moduleID", purchaseManager.getModuleID());
-        documentMap.put("featureID", purchaseManager.getFeatureID());
-        documentMap.put("origin", purchaseManager.getOrigin());
-        documentMap.put("resellerID", purchaseManager.getResellerID());
-        Object code = purchaseManager.getReturnCode();
-        documentMap.put("returnCode", code);
-        documentMap.put("returnCodeDetails", purchaseManager.getOfferDeliveryReturnCodeDetails());
-        documentMap.put("voucherCode", voucherCodes);
-        documentMap.put("voucherPartnerID", "");
+        if(purchaseManager.getVoucherDeliveries()!=null){
+          StringBuilder voucherCodeSb=new StringBuilder("");//ready for several vouchers in 1 purchase, though might only just allow one for simplicity
+          for(VoucherDelivery voucherDelivery:purchaseManager.getVoucherDeliveries()){
+            Voucher voucher = (Voucher) voucherService.getStoredVoucher(voucherDelivery.getVoucherID());
+            sb.append("1 ").append(voucher!=null?voucher.getVoucherDisplay():"voucher"+voucherDelivery.getVoucherID()).append(",");
+            if(voucherDelivery.getVoucherCode()!=null&&!voucherDelivery.getVoucherCode().isEmpty()){
+              voucherCodeSb.append(voucherDelivery.getVoucherCode()).append(",");
+            }
+          }
+          voucherCodes = voucherCodeSb.length()>0?voucherCodeSb.toString().substring(0,voucherCodeSb.toString().length()-1):"";
+        }
+        String offerContent = sb.length()>0?sb.toString().substring(0, sb.toString().length()-1):"";
+        documentMap.put("offerContent", offerContent);
       }
+
+      // populate with default values (for reports)
+      if (documentMap.get("offerPrice") == null) documentMap.put("offerPrice", 0L);
+      if (documentMap.get("meanOfPayment") == null) documentMap.put("meanOfPayment", "");
+      if (documentMap.get("offerStock") == null) documentMap.put("offerStock", -1);
+      if (documentMap.get("offerContent") == null) documentMap.put("offerContent", "");
+      
+      documentMap.put("moduleID", purchaseManager.getModuleID());
+      documentMap.put("featureID", purchaseManager.getFeatureID());
+      documentMap.put("origin", purchaseManager.getOrigin());
+      documentMap.put("resellerID", purchaseManager.getResellerID());
+      Object code = purchaseManager.getReturnCode();
+      documentMap.put("returnCode", code);
+      documentMap.put("returnCodeDetails", purchaseManager.getOfferDeliveryReturnCodeDetails());
+      documentMap.put("voucherCode", voucherCodes);
+      documentMap.put("voucherPartnerID", "");
       
       return documentMap;
     }

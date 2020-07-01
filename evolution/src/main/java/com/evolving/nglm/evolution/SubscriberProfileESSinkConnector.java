@@ -30,7 +30,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
   *
   ****************************************/
   
-  public static abstract class SubscriberProfileESSinkTask extends ChangeLogESSinkTask
+  public static abstract class SubscriberProfileESSinkTask extends ChangeLogESSinkTask<SubscriberState>
   {
     /*****************************************
     *
@@ -82,6 +82,19 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
 
       super.stop();
     }
+
+    /*****************************************
+    *
+    *  unpackRecord
+    *
+    *****************************************/
+    
+    @Override public SubscriberState unpackRecord(SinkRecord sinkRecord) 
+    {
+      Object subscriberStateValue = sinkRecord.value();
+      Schema subscriberStateValueSchema = sinkRecord.valueSchema();
+      return SubscriberState.unpack(new SchemaAndValue(subscriberStateValueSchema, subscriberStateValue));
+    }
     
     /*****************************************
     *
@@ -89,24 +102,8 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
     *
     *****************************************/
 
-    @Override public String getDocumentID(SinkRecord sinkRecord)
+    @Override public String getDocumentID(SubscriberState subscriberState)
     {
-      /****************************************
-      *
-      *  extract SubscriberProfile
-      *
-      ****************************************/
-
-      Object subscriberStateValue = sinkRecord.value();
-      Schema subscriberStateValueSchema = sinkRecord.valueSchema();
-      SubscriberState subscriberState = SubscriberState.unpack(new SchemaAndValue(subscriberStateValueSchema, subscriberStateValue));
-
-      /****************************************
-      *
-      *  use subscriberID
-      *
-      ****************************************/
-
       return subscriberState.getSubscriberID();
     }
 
@@ -124,17 +121,14 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
     *
     *****************************************/
 
-    @Override public Map<String,Object> getDocumentMap(SinkRecord sinkRecord)
+    @Override public Map<String,Object> getDocumentMap(SubscriberState subscriberState)
     {
       /****************************************
       *
       *  extract SubscriberProfile
       *
       ****************************************/
-
-      Object subscriberStateValue = sinkRecord.value();
-      Schema subscriberStateValueSchema = sinkRecord.valueSchema();
-      SubscriberState subscriberState = SubscriberState.unpack(new SchemaAndValue(subscriberStateValueSchema, subscriberStateValue));
+      
       SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
 
       /*****************************************

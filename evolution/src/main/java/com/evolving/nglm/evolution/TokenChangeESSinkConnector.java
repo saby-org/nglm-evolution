@@ -8,17 +8,14 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
-import com.evolving.nglm.evolution.Token.TokenStatus;
 
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,7 +39,7 @@ public class TokenChangeESSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
   
-  public static class TokenChangeESSinkTask extends StreamESSinkTask
+  public static class TokenChangeESSinkTask extends StreamESSinkTask<TokenChange>
   {
 
     private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
@@ -50,30 +47,17 @@ public class TokenChangeESSinkConnector extends SimpleESSinkConnector
 
     public static final String ES_FIELD_SUBSCRIBER_ID = "subscriberID";
     public static final String ES_FIELD_TOKEN_CODE = "tokenCode";
-
-    @Override public Map<String,Object> getDocumentMap(SinkRecord sinkRecord)
+    
+    @Override public TokenChange unpackRecord(SinkRecord sinkRecord) 
     {
-      /****************************************
-      *
-      *  extract JourneyMetric
-      *
-      ****************************************/
-
       Object tokenChangeValue = sinkRecord.value();
       Schema tokenChangeValueSchema = sinkRecord.valueSchema();
-      TokenChange tokenChange = TokenChange.unpack(new SchemaAndValue(tokenChangeValueSchema, tokenChangeValue));
+      return TokenChange.unpack(new SchemaAndValue(tokenChangeValueSchema, tokenChangeValue));
+    }
 
-      /****************************************
-      *
-      *  documentMap
-      *
-      ****************************************/
-
+    @Override public Map<String,Object> getDocumentMap(TokenChange tokenChange)
+    {
       Map<String,Object> documentMap = new HashMap<String,Object>();
-
-      //
-      //  flat fields
-      //
       
       documentMap.put(ES_FIELD_TOKEN_CODE, tokenChange.getTokenCode());
       documentMap.put(ES_FIELD_SUBSCRIBER_ID, tokenChange.getSubscriberID());
@@ -84,12 +68,8 @@ public class TokenChangeESSinkConnector extends SimpleESSinkConnector
       documentMap.put("origin", tokenChange.getOrigin());
       documentMap.put("moduleID", tokenChange.getModuleID());
       documentMap.put("featureID", tokenChange.getFeatureID());
-
-      //
-      //  return
-      //
       
       return documentMap;
-    }    
+    }
   }
 }

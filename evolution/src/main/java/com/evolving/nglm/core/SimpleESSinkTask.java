@@ -81,7 +81,7 @@ public abstract class SimpleESSinkTask extends SinkTask
   *****************************************/
 
   public int getTaskNumber() { return taskNumber; }
-  protected String getIndexName() { return indexName; }
+  protected String getDefaultIndexName() { return indexName; }
   protected String getPipelineName() { return pipelineName; }
   
   /****************************************

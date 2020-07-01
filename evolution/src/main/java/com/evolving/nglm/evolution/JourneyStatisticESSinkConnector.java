@@ -11,7 +11,6 @@ import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
-import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -23,8 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Random;
 
 public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
 {
@@ -46,7 +43,7 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
   
-  public static class JourneyStatisticESSinkTask extends ChangeLogESSinkTask
+  public static class JourneyStatisticESSinkTask extends ChangeLogESSinkTask<JourneyStatistic>
   {
     private final Logger log = LoggerFactory.getLogger(JourneyStatisticESSinkConnector.class);
     
@@ -76,57 +73,38 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
 
       super.stop();
     }
-    
-    /*****************************************
-    *
-    *  getDocumentIndexName
-    *
-    *****************************************/
-    
-    @Override
-    protected String getDocumentIndexName(SinkRecord sinkRecord)
-    { 
-      /****************************************
-      *
-      *  extract JourneyStatistic
-      *
-      ****************************************/
+
+    @Override public JourneyStatistic unpackRecord(SinkRecord sinkRecord) 
+    {
       Object journeyStatisticValue = sinkRecord.value();
       Schema journeyStatisticValueSchema = sinkRecord.valueSchema();
-      JourneyStatistic journeyStatistic = JourneyStatistic.unpack(new SchemaAndValue(journeyStatisticValueSchema, journeyStatisticValue));
-      
-      String suffix = journeyStatistic.getJourneyID().toLowerCase();
-      
-      if (suffix.matches("[a-z0-9_-]*")) 
-        {
-          return this.getIndexName() + "-" + suffix; 
-        }
-      else
-        {
-          log.error("Unable to insert document in elasticsearch index: " + this.getIndexName() + "-" + suffix + ". This is not a valid index name.");
-          return this.getIndexName() + "_unclassified"; 
-        }
+      return JourneyStatistic.unpack(new SchemaAndValue(journeyStatisticValueSchema, journeyStatisticValue));
     }
     
-    @Override public Map<String,Object> getDocumentMap(SinkRecord sinkRecord)
+    @Override
+    protected String getDocumentIndexName(JourneyStatistic journeyStatistic)
     {
+      String suffix = journeyStatistic.getJourneyID().toLowerCase();
+      
+      if (suffix.matches("[a-z0-9_-]*")) {
+        return this.getDefaultIndexName() + "-" + suffix; 
+      }
+      else {
+        log.error("Unable to insert document in elasticsearch index: " + this.getDefaultIndexName() + "-" + suffix + ". This is not a valid index name.");
+        return this.getDefaultIndexName() + "_unclassified"; 
+      }
+    }
 
-      /****************************************
-      *
-      *  extract JourneyStatistic
-      *
-      ****************************************/
-
-      Object journeyStatisticValue = sinkRecord.value();
-      Schema journeyStatisticValueSchema = sinkRecord.valueSchema();
-      JourneyStatistic journeyStatistic = JourneyStatistic.unpack(new SchemaAndValue(journeyStatisticValueSchema, journeyStatisticValue));
-
-      /****************************************
-      *
-      *  documentMap
-      *
-      ****************************************/
-
+    @Override
+    public String getDocumentID(JourneyStatistic journeyStatistic)
+    {
+      StringBuilder sb = new StringBuilder();
+      sb.append(journeyStatistic.getSubscriberID()).append("_").append(journeyStatistic.getJourneyID()).append("_").append(journeyStatistic.getJourneyInstanceID());
+      return sb.toString();
+    }
+    
+    @Override public Map<String,Object> getDocumentMap(JourneyStatistic journeyStatistic)
+    {
       Map<String,Object> documentMap = new HashMap<String,Object>();
 
       //
@@ -185,17 +163,5 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       
       return documentMap;
     }
-
-    @Override
-    public String getDocumentID(SinkRecord sinkRecord)
-    {
-      Object journeyStatisticValue = sinkRecord.value();
-      Schema journeyStatisticValueSchema = sinkRecord.valueSchema();
-      JourneyStatistic journeyStatistic = JourneyStatistic.unpack(new SchemaAndValue(journeyStatisticValueSchema, journeyStatisticValue));
-      StringBuilder sb = new StringBuilder();
-      sb.append(journeyStatistic.getSubscriberID()).append("_").append(journeyStatistic.getJourneyID()).append("_").append(journeyStatistic.getJourneyInstanceID());
-      return sb.toString();
-    }
-   
   }
 }
