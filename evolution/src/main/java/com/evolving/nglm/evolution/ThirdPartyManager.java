@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.evolving.nglm.core.*;
+import com.evolving.nglm.evolution.statistics.EvolutionDurationStatistics;
+import com.evolving.nglm.evolution.statistics.Stats;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
@@ -61,12 +63,9 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
-import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
-import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
@@ -75,7 +74,6 @@ import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
-import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
@@ -224,10 +222,12 @@ public class ThirdPartyManager
   private LicenseChecker licenseChecker = null;
 
   //
-  //  statistics
+  // stats
   //
 
-  ThirdPartyAccessStatistics accessStatistics = null;
+  private EvolutionDurationStatistics statsOK = null;
+  private EvolutionDurationStatistics statsKO = null;
+  private EvolutionDurationStatistics statsUnknown = null;
 
   //
   //  authCache
@@ -309,14 +309,9 @@ public class ThirdPartyManager
     //  statistics
     //
 
-    try
-    {
-      accessStatistics = new ThirdPartyAccessStatistics("thirdpartymanager-" + apiProcessKey);
-    }
-    catch (ServerException e)
-    {
-      throw new ServerRuntimeException("could not initialize access statistics", e);
-    }
+    statsOK = Stats.getEvolutionDurationStatistics("thirdPartySuccess","thirdpartymanager-" + apiProcessKey);
+    statsKO = Stats.getEvolutionDurationStatistics("thirdPartyFailed","thirdpartymanager-" + apiProcessKey);
+    statsUnknown = Stats.getEvolutionDurationStatistics("thirdPartyUnknown","thirdpartymanager-" + apiProcessKey);
 
     //
     // authCache
@@ -667,6 +662,9 @@ public class ThirdPartyManager
 
   private void handleAPI(API api, HttpExchange exchange) throws IOException
   {
+    // save start time for call latency stats
+    long startTime = statsOK.startTime();
+
     try
     {
       /*****************************************
@@ -858,6 +856,7 @@ public class ThirdPartyManager
 
       if (jsonResponse == null)
         {
+          statsUnknown.add(api.name(),startTime);
           throw new ServerException("no handler for " + api);
         }
 
@@ -878,7 +877,7 @@ public class ThirdPartyManager
       //
 
       if (log.isDebugEnabled()) log.debug("API (raw response): {}", jsonResponse.toString());
-      updateStatistics(api);
+      statsOK.add(api.name(),startTime);
 
       //
       //  send
@@ -906,7 +905,7 @@ public class ThirdPartyManager
       //  statistics
       //
 
-      updateStatistics(api, ex);
+      statsKO.add(api.name(),startTime);
 
       //
       //  send error response
@@ -956,7 +955,7 @@ public class ThirdPartyManager
         //  statistics
         //
 
-        updateStatistics(api, exception);
+        statsKO.add(api.name(),startTime);
 
         //
         //  send error response
@@ -999,7 +998,7 @@ public class ThirdPartyManager
         //  statistics
         //
 
-        updateStatistics(api, e);
+        statsKO.add(api.name(),startTime);
 
         //
         //  send error response
@@ -4862,60 +4861,6 @@ public class ThirdPartyManager
 
     return new Pair<>(subscriberID,voucherStored);
 
-  }
-
-
-
-  /*****************************************
-   *
-   *  updateStatistics
-   *
-   *****************************************/
-
-  private void updateStatistics(API api)
-  {
-    updateStatistics(api, null);
-  }
-
-  private void updateStatistics(API api, Exception exception)
-  {
-    synchronized (accessStatistics)
-    {
-      accessStatistics.updateTotalAPIRequestCount(1);
-      if (exception == null)
-        {
-          accessStatistics.updateSuccessfulAPIRequestCount(1);
-          switch (api)
-          {
-            case ping:
-              accessStatistics.updatePingCount(1);
-              break;
-
-            case getCustomer:
-              accessStatistics.updateGetCustomerCount(1);
-              break;
-
-            case getOffersList:
-              accessStatistics.updateGetOffersListCount(1);
-              break;
-
-            case getLoyaltyProgramList:
-              accessStatistics.updateGetLoyaltyProgramListCount(1);
-              break;
-
-            case validateVoucher:
-              accessStatistics.updateValidateVoucherCount(1);
-              break;
-            case redeemVoucher:
-              accessStatistics.updateRedeemVoucherCount(1);
-              break;
-          }
-        }
-      else
-        {
-          accessStatistics.updateFailedAPIRequestCount(1);
-        }
-    }
   }
 
   private JSONObject constructThirdPartyResponse(RESTAPIGenericReturnCodes genericCode, Map<String,Object> response){
