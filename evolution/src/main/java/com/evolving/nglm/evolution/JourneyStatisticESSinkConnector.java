@@ -25,6 +25,29 @@ import java.util.Map;
 
 public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
 {
+  /****************************************
+  *
+  *  static
+  *
+  ****************************************/
+  
+  public static String getJourneyStatisticIndex(String journeyID, String defaultIndexName) {
+    String suffix = journeyID.toLowerCase(); /////////////////////////////////////////
+    
+    if (suffix.matches("[a-z0-9_-]*")) {
+      return defaultIndexName + "-" + suffix; 
+    }
+    else {
+      log.error("Unable to insert document in elasticsearch index: " + defaultIndexName + "-" + suffix + ". This is not a valid index name.");
+      return defaultIndexName + "_unclassified"; 
+    }
+  }
+  
+  public static String getJourneyStatisticID(String subscriberID, String journeyID, String journeyInstanceID) {
+    StringBuilder sb = new StringBuilder();
+    sb.append(subscriberID).append("_").append(journeyID).append("_").append(journeyInstanceID);
+    return sb.toString();
+  }
   
   /****************************************
   *
@@ -84,23 +107,13 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
     @Override
     protected String getDocumentIndexName(JourneyStatistic journeyStatistic)
     {
-      String suffix = journeyStatistic.getJourneyID().toLowerCase();
-      
-      if (suffix.matches("[a-z0-9_-]*")) {
-        return this.getDefaultIndexName() + "-" + suffix; 
-      }
-      else {
-        log.error("Unable to insert document in elasticsearch index: " + this.getDefaultIndexName() + "-" + suffix + ". This is not a valid index name.");
-        return this.getDefaultIndexName() + "_unclassified"; 
-      }
+      return JourneyStatisticESSinkConnector.getJourneyStatisticIndex(journeyStatistic.getJourneyID(), this.getDefaultIndexName());
     }
 
     @Override
     public String getDocumentID(JourneyStatistic journeyStatistic)
     {
-      StringBuilder sb = new StringBuilder();
-      sb.append(journeyStatistic.getSubscriberID()).append("_").append(journeyStatistic.getJourneyID()).append("_").append(journeyStatistic.getJourneyInstanceID());
-      return sb.toString();
+      return JourneyStatisticESSinkConnector.getJourneyStatisticID(journeyStatistic.getSubscriberID(), journeyStatistic.getJourneyID(), journeyStatistic.getJourneyInstanceID());
     }
     
     @Override public Map<String,Object> getDocumentMap(JourneyStatistic journeyStatistic)

@@ -560,50 +560,9 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/journeystatistic -H'Content-
               "statusTargetGroup" : { "type" : "boolean" },
               "statusControlGroup" : { "type" : "boolean" },
               "statusUniversalControlGroup" : { "type" : "boolean" },
-              "journeyComplete" : { "type" : "boolean" }
+              "journeyComplete" : { "type" : "boolean" },
+              "journeyExitDate" : { "type" : "date" }
             }
-      }
-  }'
-echo
-
-#
-#  manually create journeymetric index
-#   - these settings are for index heavy load
-#
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/journeymetric -H'Content-Type: application/json' -d'
-  {
-    "index_patterns": ["journeymetric*"],
-    "settings" :
-      {
-        "index" :
-          {
-            "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
-            "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
-            "refresh_interval" : "30s",
-            "translog" : 
-              { 
-                "durability" : "async", 
-                "sync_interval" : "10s" 
-              },
-            "routing" : 
-              {
-                "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
-              },
-            "merge" : 
-              {
-                "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
-              }
-          }
-      },
-    "mappings" :
-      {
-            "properties" :
-              {
-                "journeyInstanceID" : { "type" : "keyword" },
-                "journeyID" : { "type" : "keyword" },
-                "subscriberID" : { "type" : "keyword" },
-                "journeyExitDate" : { "type" : "date" }
-              }
       }
   }'
 echo

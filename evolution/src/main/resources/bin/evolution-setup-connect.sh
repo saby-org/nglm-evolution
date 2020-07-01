@@ -92,7 +92,7 @@ prepare-curl -XPOST $CONNECT_URL_JOURNEYMETRIC_ES/connectors -H "Content-Type: a
       "topics" : "${topic.journeymetric}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-      "indexName" : "journeymetric",
+      "indexName" : "journeystatistic",
       "batchRecordCount" : "'$CONNECT_ES_JOURNEYMETRIC_BATCHRECORDCOUNT'",
       "batchSize" : "'$CONNECT_ES_JOURNEYMETRIC_BATCHSIZEMB'"
       }

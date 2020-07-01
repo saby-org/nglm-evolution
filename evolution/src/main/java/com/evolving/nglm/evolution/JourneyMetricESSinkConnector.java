@@ -6,8 +6,8 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.ChangeLogESSinkTask;
 import com.evolving.nglm.core.SimpleESSinkConnector;
-import com.evolving.nglm.core.StreamESSinkTask;
 
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
@@ -17,6 +17,10 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Extension of JourneyStatistic.
+ * Those metrics are pushed in the journeystatistic index after the end of the journey. 
+ */
 public class JourneyMetricESSinkConnector extends SimpleESSinkConnector
 {
   /****************************************
@@ -36,7 +40,7 @@ public class JourneyMetricESSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
   
-  public static class JourneyMetricESSinkTask extends StreamESSinkTask<JourneyMetric>
+  public static class JourneyMetricESSinkTask extends ChangeLogESSinkTask<JourneyMetric>
   {
     @Override public JourneyMetric unpackRecord(SinkRecord sinkRecord) 
     {
@@ -48,15 +52,13 @@ public class JourneyMetricESSinkConnector extends SimpleESSinkConnector
     @Override
     protected String getDocumentIndexName(JourneyMetric journeyMetric)
     {
-      String suffix = journeyMetric.getJourneyID().toLowerCase();
-      
-      if (suffix.matches("[a-z0-9_-]*"))  {
-        return this.getDefaultIndexName() + "-" + suffix; 
-      }
-      else {
-        log.error("Unable to insert document in elasticsearch index: " + this.getDefaultIndexName() + "-" + suffix + ". This is not a valid index name.");
-        return this.getDefaultIndexName() + "_unclassified"; 
-      }
+      return JourneyStatisticESSinkConnector.getJourneyStatisticIndex(journeyMetric.getJourneyID(), this.getDefaultIndexName());
+    }
+
+    @Override
+    public String getDocumentID(JourneyMetric journeyMetric)
+    {
+      return JourneyStatisticESSinkConnector.getJourneyStatisticID(journeyMetric.getSubscriberID(), journeyMetric.getJourneyID(), journeyMetric.getJourneyInstanceID());
     }
     
     @Override public Map<String,Object> getDocumentMap(JourneyMetric journeyMetric)
