@@ -69,6 +69,8 @@ public class OfferReportDriver extends ReportDriver
 
     catalogCharacteristicService = new CatalogCharacteristicService(kafka, "offerReportDriver-catalogcharacteristicservice-" + apiProcessKey, Deployment.getCatalogCharacteristicTopic(), false);
     catalogCharacteristicService.start();
+    
+    ReportsCommonCode.initializeDateFormats();
 
     boolean header = true;
     int first = 0;
@@ -238,9 +240,8 @@ public class OfferReportDriver extends ReportDriver
         offerFields.put("offerObjectives", ReportUtils.formatJSON(outputJSON));
       }
       
-      List<SimpleDateFormat> standardDateFormats = ReportsCommonCode.initializeDateFormats();
-      offerFields.put("startDate", ReportsCommonCode.parseDate(standardDateFormats, (String) recordJson.get("effectiveStartDate")));
-      offerFields.put("endDate", ReportsCommonCode.parseDate(standardDateFormats, (String) recordJson.get("effectiveEndDate")));      
+      offerFields.put("startDate", ReportsCommonCode.parseDate((String) recordJson.get("effectiveStartDate")));
+      offerFields.put("endDate", ReportsCommonCode.parseDate((String) recordJson.get("effectiveEndDate")));      
       offerFields.put("availableStock", recordJson.get("presentationStock"));
       offerFields.put("availableStockThreshold", recordJson.get("presentationStockAlertThreshold"));
 

@@ -10,7 +10,9 @@ import java.util.Set;
 
 import com.evolving.nglm.evolution.*;
 import com.evolving.nglm.evolution.propensity.PropensityService;
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SystemTime;
@@ -25,7 +27,7 @@ import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationA
  *
  */
 public class OfferOptimizerAlgoManager {
-  private static Logger logger = Logger.getLogger(OfferOptimizerAlgoManager.class);
+  private static Logger logger = LoggerFactory.getLogger(OfferOptimizerAlgoManager.class);
   private static OfferOptimizerAlgoManager instance;
   private static PropensityService propensityService;
   private static Object lock = new Object();
