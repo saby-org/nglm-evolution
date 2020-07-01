@@ -2695,6 +2695,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
       return Collections.<Action>singletonList(request);
     }
+    
+    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      String offerID = (String) journeyNode.getNodeParameters().get("node.parameter.offerid");
+      if (offerID != null) result.put("offer", offerID);
+      return result;
+    }
   }
 }
 

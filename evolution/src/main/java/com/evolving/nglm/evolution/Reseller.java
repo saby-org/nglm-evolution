@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+@GUIDependencyDef(objectType = "reseller", serviceClass = ResellerService.class, dependencies = { })
 public class Reseller extends GUIManagedObject
 {
   /*****************************************
@@ -338,5 +340,11 @@ public class Reseller extends GUIManagedObject
         BillingMode billingMode = Deployment.getBillingModes().get(billingModeID);
         if (billingMode == null) throw new GUIManagerException("unknown billingModeID ", billingModeID);
       } 
+  }
+  
+  @Override public Map<String, List<String>> getGUIDependencies()
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    return result;
   }
 }
