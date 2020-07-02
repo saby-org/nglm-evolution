@@ -21030,7 +21030,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         {
           List<Date> journeyCreationDates = new ArrayList<Date>();
           JourneyScheduler journeyScheduler = recurrentJourney.getJourneyScheduler();
-          //Journey latestJourney = journeyService.getLatestRecurrentJourney(recurrentJourney.getGUIManagedObjectID());
           int limitCount = journeyScheduler.getNumberOfOccurrences() - recurrentJourney.getLastCreatedOccurrenceNumber();
 
           //
