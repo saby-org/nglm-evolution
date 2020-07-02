@@ -36,6 +36,7 @@ public interface ReportCsvFactory
    *           When an error related to filesystem access occurs.
    */
   default boolean dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeader) throws IOException {return false;}
+  default boolean dumpElementToCsvMono(String key, Map<String,Object> map, ZipOutputStream writer, boolean addHeader) throws IOException {return false;}
   
   default void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)  {}
 
