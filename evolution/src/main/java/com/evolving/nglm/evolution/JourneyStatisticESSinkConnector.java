@@ -31,8 +31,15 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
   
+  /**
+   * Format journeyID to use it in an ES index name.
+   */
+  public static String journeyIDFormatterForESIndex(String journeyID) {
+    return journeyID.toLowerCase();
+  }
+  
   public static String getJourneyStatisticIndex(String journeyID, String defaultIndexName) {
-    String suffix = journeyID.toLowerCase(); /////////////////////////////////////////
+    String suffix = JourneyStatisticESSinkConnector.journeyIDFormatterForESIndex(journeyID);
     
     if (suffix.matches("[a-z0-9_-]*")) {
       return defaultIndexName + "-" + suffix; 

@@ -15,6 +15,7 @@ import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.Pa
 
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.JourneyService;
+import com.evolving.nglm.evolution.JourneyStatisticESSinkConnector;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
@@ -64,15 +65,14 @@ public class JourneyTrafficDatacubeGenerator extends DatacubeGenerator
   * Elasticsearch indices settings
   *
   *****************************************/
-  // We need to lowerCase the journeyID, cf. JourneyStatisticESSinkConnector (we will follow the same rule)
   @Override protected String getDataESIndex() 
   { 
-    return DATA_ES_INDEX_PREFIX + this.journeyID.toLowerCase(); 
+    return DATA_ES_INDEX_PREFIX + JourneyStatisticESSinkConnector.journeyIDFormatterForESIndex(this.journeyID); 
   }
   
   @Override protected String getDatacubeESIndex() 
   { 
-    return DATACUBE_ES_INDEX_PREFIX + this.journeyID.toLowerCase(); 
+    return DATACUBE_ES_INDEX_PREFIX + JourneyStatisticESSinkConnector.journeyIDFormatterForESIndex(this.journeyID); 
   }
 
   /*****************************************
