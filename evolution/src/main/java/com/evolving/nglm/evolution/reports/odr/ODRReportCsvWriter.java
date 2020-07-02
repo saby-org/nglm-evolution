@@ -82,7 +82,7 @@ public class ODRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(origin);
     headerFieldsOrder.add(voucherCode);
     headerFieldsOrder.add(returnCode);
-    headerFieldsOrder.add(returnCodeDetails);
+    headerFieldsOrder.add(returnCodeDescription);
   }
 
   @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)

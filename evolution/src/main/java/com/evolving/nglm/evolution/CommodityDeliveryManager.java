@@ -110,7 +110,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     SUCCESS(0),
     MISSING_PARAMETERS(4),
     BAD_FIELD_VALUE(5),
-    PENDING(10),
+    PENDING(708),
     CUSTOMER_NOT_FOUND(20),
     SYSTEM_ERROR(21),
     TIMEOUT(22),
