@@ -117,7 +117,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     THIRD_PARTY_ERROR(24),
     BONUS_NOT_FOUND(100),
     INSUFFICIENT_BALANCE(405),
-    UNKNOWN(999);
+    UNKNOWN(-1);
     private Integer externalRepresentation;
     private CommodityDeliveryStatus(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public Integer getReturnCode() { return externalRepresentation; }

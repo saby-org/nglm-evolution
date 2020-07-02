@@ -33,7 +33,7 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
     QUEUE_FULL(705, DeliveryStatus.Failed), 
     RESCHEDULE(709, DeliveryStatus.Reschedule), 
     THROTTLING(23, DeliveryStatus.Failed), 
-    UNKNOWN(999, DeliveryStatus.Unknown);
+    UNKNOWN(-1, DeliveryStatus.Unknown);
    
     private Integer returncode;
     private DeliveryStatus associatedDeliveryStatus;

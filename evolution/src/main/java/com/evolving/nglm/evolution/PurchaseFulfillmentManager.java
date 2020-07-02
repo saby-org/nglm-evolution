@@ -61,7 +61,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     CHANNEL_DEACTIVATED(409),
     CUSTOMER_OFFER_LIMIT_REACHED(410),
     BAD_OFFER_DATES(411),
-    UNKNOWN(999);
+    UNKNOWN(-1);
     private Integer externalRepresentation;
     private PurchaseFulfillmentStatus(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public Integer getReturnCode() { return externalRepresentation; }
