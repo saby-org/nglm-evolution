@@ -3659,7 +3659,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           //
           //  offer
           //
-          
+          List<String> pointIDs = new ArrayList<String>();
           List<String> offerIDs = new ArrayList<String>();
           for (JourneyNode offerNode : getJourneyNodes().values())
             {
@@ -3667,11 +3667,20 @@ public class Journey extends GUIManagedObject implements StockableItem
                 {
                   String offerID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("offer");
                   if (offerID != null) offerIDs.add(offerID);
+                  String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("point");
+                  if (pointID != null) pointIDs.add(pointID);
                 }
             }
           result.put("offer", offerIDs);
           break;
 
+        case BulkCampaign:
+            List<String> blkpointIDs = new ArrayList<String>();
+         if (this.boundParameters.containsKey("journey.deliverableID") && boundParameters.get("journey.deliverableID").toString().startsWith(CommodityDeliveryManager.POINT_PREFIX))
+        	 blkpointIDs.add(boundParameters.get("journey.deliverableID").toString().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
+             result.put("point", blkpointIDs);            
+            break;
+            
         default:
           break;
       }

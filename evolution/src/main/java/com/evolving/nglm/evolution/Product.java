@@ -33,7 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-@GUIDependencyDef(objectType = "product", serviceClass = ProductService.class, dependencies = { "supplier" })
+@GUIDependencyDef(objectType = "product", serviceClass = ProductService.class, dependencies = { "supplier" , "point" })
 public class Product extends GUIManagedObject implements StockableItem
 {
   /*****************************************
@@ -379,8 +379,12 @@ public class Product extends GUIManagedObject implements StockableItem
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> supplierIDs = new ArrayList<String>();
+    List<String> pointIDs = new ArrayList<String>();
     supplierIDs.add(getSupplierID());
     result.put("supplier", supplierIDs);
+    String pointID=getDeliverableID().startsWith(CommodityDeliveryManager.POINT_PREFIX)?getDeliverableID().replace(CommodityDeliveryManager.POINT_PREFIX, ""):"";
+    pointIDs.add(pointID);
+    result.put("point", pointIDs);
     return result;
   }
 }
