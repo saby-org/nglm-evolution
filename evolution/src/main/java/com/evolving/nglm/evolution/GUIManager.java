@@ -1999,7 +1999,7 @@ public class GUIManager
     JobScheduler guiManagerJobScheduler = new JobScheduler("GUIManager");
     long uniqueID = 0;
     String periodicGenerationCronEntry = "1,5,10,15,20,25,30,35,40,45,50,55 * * * *";
-    ScheduledJob recurrnetCampaignCreationJob = new RecurrnetCampaignCreationJob(uniqueID++, "Recurrect(create campaign)", periodicGenerationCronEntry, Deployment.getBaseTimeZone(), false);
+    ScheduledJob recurrnetCampaignCreationJob = new RecurrnetCampaignCreationJob(uniqueID++, "Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getBaseTimeZone(), false);
     if(recurrnetCampaignCreationJob.isProperlyConfigured()) guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
     guiManagerJobScheduler.runScheduler();
     
