@@ -39,8 +39,8 @@
   "importVoucherFileBulkSize" : 5000,
   "voucherESCacheCleanerFrequencyInSec" : 300,
   "numberConcurrentVoucherAllocationToES" : 10,
-  "liveVoucherIndexNumberOfReplicas" : "<_ELASTICSEARCH_REPLICAS_>",
-  "liveVoucherIndexNumberOfShards" : "<_ELASTICSEARCH_SHARDS_LARGE_>",
+  "liveVoucherIndexNumberOfReplicas" : "1",
+  "liveVoucherIndexNumberOfShards" : "1",
 
   "ucgEngineESConnectTimeout" : 30000,
   "ucgEngineESSocketTimeout" : 60000,
