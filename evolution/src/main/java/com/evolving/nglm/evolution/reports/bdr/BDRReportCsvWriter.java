@@ -30,7 +30,6 @@ public class BDRReportCsvWriter implements ReportCsvFactory
   private static final String featureId = "featureID";
   private static final String deliverableID = "deliverableID";
   private static final String deliverableQty = "deliverableQty";
-  private static final String deliveryStatus = "deliveryStatus";
   private static final String moduleName = "moduleName";
   private static final String featureDisplay = "featureName";
   private static final String deliverableDisplay = "deliverableName";
@@ -57,7 +56,6 @@ public class BDRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(featureId);
     headerFieldsOrder.add(deliverableID);
     headerFieldsOrder.add(deliverableQty);
-    headerFieldsOrder.add(deliveryStatus);
     headerFieldsOrder.add(moduleName);
     headerFieldsOrder.add(featureDisplay);
     headerFieldsOrder.add(deliverableDisplay);
@@ -190,10 +188,6 @@ public class BDRReportCsvWriter implements ReportCsvFactory
         if (bdrFields.containsKey(originatingDeliveryRequestID))
           {
             bdrRecs.put(originatingDeliveryRequestID, bdrFields.get(originatingDeliveryRequestID));
-          }
-        if (bdrFields.containsKey(deliveryStatus))
-          {
-            bdrRecs.put(deliveryStatus, bdrFields.get(deliveryStatus));
           }
         if (bdrFields.containsKey(eventDatetime))
           {

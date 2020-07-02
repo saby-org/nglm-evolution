@@ -41,7 +41,6 @@ public class ODRReportCsvWriter implements ReportCsvFactory
   private static final String eventDatetime = "eventDatetime";
   private static final String originatingDeliveryRequestID = "originatingDeliveryRequestID";
   private static final String deliveryRequestID = "deliveryRequestID";
-  private static final String deliveryStatus = "deliveryStatus";
   private static final String eventID = "eventID";
   private static final String meanOfPayment = "meanOfPayment";
   private static final String offerPrice = "offerPrice";
@@ -73,7 +72,6 @@ public class ODRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(eventDatetime);
     headerFieldsOrder.add(originatingDeliveryRequestID);
     headerFieldsOrder.add(deliveryRequestID);
-    headerFieldsOrder.add(deliveryStatus);
     headerFieldsOrder.add(eventID);
     headerFieldsOrder.add(meanOfPayment);
     headerFieldsOrder.add(offerPrice);
@@ -130,10 +128,6 @@ public class ODRReportCsvWriter implements ReportCsvFactory
         if (odrFields.containsKey(deliveryRequestID))
           {
             oderRecs.put(deliveryRequestID, odrFields.get(deliveryRequestID));
-          }
-        if (odrFields.containsKey(deliveryStatus))
-          {
-            oderRecs.put(deliveryStatus, odrFields.get(deliveryStatus));
           }
         if (odrFields.containsKey(eventID))
           {
