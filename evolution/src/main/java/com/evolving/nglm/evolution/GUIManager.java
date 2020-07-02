@@ -4964,6 +4964,7 @@ public class GUIManager
     boolean recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
     String recurrenceID = JSONUtilities.decodeString(jsonRoot, "recurrenceId", false);
     if (recurrence && recurrenceID == null) jsonRoot.put("recurrenceId", journeyID);
+    if (recurrence && JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false) == null) jsonRoot.put("lastCreatedOccurrenceNumber", 1);
     
     //
     // initial approval
@@ -21029,8 +21030,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         {
           List<Date> journeyCreationDates = new ArrayList<Date>();
           JourneyScheduler journeyScheduler = recurrentJourney.getJourneyScheduler();
-          Journey latestJourney = journeyService.getLatestRecurrentJourney(recurrentJourney.getGUIManagedObjectID());
-          int limitCount = journeyScheduler.getNumberOfOccurrences() - latestJourney.getOccurrenceNumber();
+          //Journey latestJourney = journeyService.getLatestRecurrentJourney(recurrentJourney.getGUIManagedObjectID());
+          int limitCount = journeyScheduler.getNumberOfOccurrences() - recurrentJourney.getLastCreatedOccurrenceNumber();
 
           //
           // limit reached
@@ -21148,7 +21149,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           // createJourneys
           //
 
-          if (!journeyCreationDates.isEmpty()) createJourneys(recurrentJourney, journeyCreationDates, latestJourney);
+          if (!journeyCreationDates.isEmpty()) createJourneys(recurrentJourney, journeyCreationDates, recurrentJourney.getLastCreatedOccurrenceNumber());
         }
       if (log.isInfoEnabled())log.info("created recurrent campaigns");
     }
@@ -21157,11 +21158,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     //  createJourneys
     //
     
-    private void createJourneys(Journey recurrentJourney, List<Date> journeyCreationDates, Journey latestJourney)
+    private void createJourneys(Journey recurrentJourney, List<Date> journeyCreationDates, Integer lastCreatedOccurrenceNumber)
     {
       log.info("RAJ K createingJourneys of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
       int daysBetween = RLMDateUtils.daysBetween(recurrentJourney.getEffectiveStartDate(), recurrentJourney.getEffectiveEndDate(), Deployment.getBaseTimeZone());
-      int occurrenceNumber = latestJourney.getOccurrenceNumber();
+      int occurrenceNumber = lastCreatedOccurrenceNumber;
       for (Date startDate : journeyCreationDates)
         {
           JSONObject journeyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
@@ -21194,6 +21195,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           processPutJourney("0", journeyJSON, recurrentJourney.getGUIManagedObjectType());
           processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), true);
         }
+      
+      //
+      //  lastCreatedOccurrenceNumber
+      //
+      
+      JSONObject journeyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
+      journeyJSON.put("lastCreatedOccurrenceNumber", occurrenceNumber);
+      processPutJourney("0", journeyJSON, recurrentJourney.getGUIManagedObjectType());
     }
     
     //
