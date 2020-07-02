@@ -144,8 +144,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("featureID", notification.getFeatureID());
         documentMap.put("source", notification.getFromAddress());
         documentMap.put("returnCode", notification.getReturnCode());
-        documentMap.put("returnCodeDetails", notification.getReturnCodeDetails());
-        documentMap.put("returnDescription", notification.getMessageDeliveryReturnCodeDetails());
+        documentMap.put("returnCodeDetails", notification.getMessageDeliveryReturnCodeDetails());
 	      documentMap.put("templateID", notification.getTemplateID());
         documentMap.put("language", notification.getLanguage());
         Map<String,List<String>> tags = new HashMap<>();
@@ -170,8 +169,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           documentMap.put("featureID", notification.getFeatureID());
           documentMap.put("source", notification.getSource());
           documentMap.put("returnCode", notification.getReturnCode());
-          documentMap.put("returnCodeDetails", notification.getReturnCodeDetails());
-          documentMap.put("returnDescription", notification.getMessageDeliveryReturnCodeDetails());
+          documentMap.put("returnCodeDetails", notification.getMessageDeliveryReturnCodeDetails());
 	        documentMap.put("templateID", notification.getTemplateID());
           documentMap.put("language", notification.getLanguage());
           documentMap.put("tags", notification.getMessageTags());
@@ -194,8 +192,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           documentMap.put("featureID", notification.getFeatureID());
           documentMap.put("source", notification.getNotificationParameters().get("node.parameter.fromaddress"));
           documentMap.put("returnCode", notification.getReturnCode());
-          documentMap.put("returnCodeDetails", notification.getReturnCodeDetails());
-          documentMap.put("returnDescription", notification.getMessageDeliveryReturnCodeDetails());
+          documentMap.put("returnCodeDetails", notification.getMessageDeliveryReturnCodeDetails());
 	        documentMap.put("templateID", notification.getTemplateID());
           documentMap.put("language", notification.getLanguage());
           documentMap.put("tags", notification.getTags());
@@ -215,8 +212,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           documentMap.put("featureID", notification.getFeatureID());
           documentMap.put("source", ""); // TODO SCH : what is the source of push notifications ?
           documentMap.put("returnCode", notification.getReturnCode());
-          documentMap.put("returnCodeDetails", notification.getReturnCodeDetails());
-          documentMap.put("returnDescription", notification.getMessageDeliveryReturnCodeDetails());
+          documentMap.put("returnCodeDetails", notification.getMessageDeliveryReturnCodeDetails());
 	        documentMap.put("templateID", notification.getTemplateID());
           documentMap.put("language", notification.getLanguage());
           documentMap.put("tags", notification.getTags()); // TODO

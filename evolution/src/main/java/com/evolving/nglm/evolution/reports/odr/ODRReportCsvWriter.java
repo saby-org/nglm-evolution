@@ -50,7 +50,7 @@ public class ODRReportCsvWriter implements ReportCsvFactory
   private static final String origin = "origin";
   private static final String voucherCode = "voucherCode";
   private static final String returnCode = "returnCode";
-  private static final String returnCodeDetails = "returnCodeDetails";
+  private static final String returnCodeDescription  = "returnCodeDescription ";
 
   private static List<String> headerFieldsOrder = new LinkedList<String>();
   static 
@@ -243,13 +243,9 @@ public class ODRReportCsvWriter implements ReportCsvFactory
           }
         if (odrFields.containsKey(returnCode))
           {
-            oderRecs.put(returnCode, odrFields.get(returnCode));
-          }
-        if (odrFields.containsKey(returnCodeDetails))
-          {
             Object code = odrFields.get(returnCode);
             oderRecs.put(returnCode, code);
-            oderRecs.put(returnCodeDetails, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
+            oderRecs.put(returnCodeDescription , (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
           }    
 
         //

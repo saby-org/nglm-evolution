@@ -101,8 +101,10 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryManagerAccount.Account;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
@@ -121,6 +123,7 @@ import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.JourneyService.JourneyListener;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
@@ -19024,14 +19027,40 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             }
           break;
           
-        case "returnCodes":
+        case "returnCodesBDR":
           if (includeDynamic)
             {
-              for (RESTAPIGenericReturnCodes returnCode : RESTAPIGenericReturnCodes.values())
+              for (CommodityDeliveryStatus returnCode : CommodityDeliveryStatus.values())
                 {
                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                  availableValue.put("id", returnCode.getGenericResponseCode());
-                  availableValue.put("display", returnCode.getGenericResponseMessage());
+                  availableValue.put("id", returnCode.getReturnCode());
+                  availableValue.put("display", RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode.getReturnCode()));
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+          
+        case "returnCodesODR":
+          if (includeDynamic)
+            {
+              for (MessageStatus returnCode : MessageStatus.values())
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", returnCode.getReturnCode());
+                  availableValue.put("display", RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode.getReturnCode()));
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+          
+        case "returnCodesMDR":
+          if (includeDynamic)
+            {
+              for (CommodityDeliveryStatus returnCode : CommodityDeliveryStatus.values())
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", returnCode.getReturnCode());
+                  availableValue.put("display", RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode.getReturnCode()));
                   result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }
