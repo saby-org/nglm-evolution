@@ -8,11 +8,13 @@ public final class ConfigUtils {
         if (prefix == null || "" == prefix.trim()) {
             throw new UnsupportedOperationException("ENV properties prefix should be non empty");
         }
-        final Properties properties = new Properties();
+        final Properties props = new Properties();
         System.getenv().keySet().stream()
                 .filter(key -> key.startsWith(prefix))
-                .forEach(key -> properties.setProperty(envVarToProp(key, prefix), System.getenv(key)));
-        return properties;
+                // filter out all empty values, that'll result in using the defaults for them
+                .filter(key -> System.getenv(key) != null && System.getenv(key).trim() != "")
+                .forEach(key -> props.setProperty(envVarToProp(key, prefix), System.getenv(key)));
+        return props;
     }
 
     private static final String envVarToProp(String name, String prefix) {
