@@ -176,10 +176,10 @@ public class JourneyService extends GUIService
     return activeJourney;
   }
   public Collection<Journey> getActiveRecurrentJourneys(Date date) { return getActiveJourneys(date).stream().filter( journey -> journey.getRecurrence()).collect(Collectors.toList()); }
-  public Collection<Journey> getAllRecurrentJourneysByID(String parentJourneyID) 
+  public Collection<Journey> getAllRecurrentJourneysByID(String parentJourneyID, boolean includeArchived) 
   { 
     Collection<Journey> subJourneys = new ArrayList<Journey>();
-    for (GUIManagedObject uncheckedJourney : getStoredJourneys())
+    for (GUIManagedObject uncheckedJourney : getStoredJourneys(includeArchived))
       {
         if (uncheckedJourney.getAccepted())
           {
@@ -191,22 +191,6 @@ public class JourneyService extends GUIService
     return subJourneys;
   }
   
-  public Journey getLatestRecurrentJourney(String parentJourneyID)
-  {
-    Journey result = null;
-    int occurrenceNumber  = -1;
-    for (Journey journey : getAllRecurrentJourneysByID(parentJourneyID))
-      {
-        if (journey.getOccurrenceNumber() > occurrenceNumber)
-          {
-            occurrenceNumber = journey.getOccurrenceNumber();
-            result = journey;
-          }
-      }
-    return result;
-  }
-  
-
   /*****************************************
   *
   *  putJourney

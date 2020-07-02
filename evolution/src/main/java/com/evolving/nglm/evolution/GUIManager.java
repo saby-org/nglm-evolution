@@ -21079,7 +21079,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               // journeyCreationDates
               //
 
-              Collection<Journey> recurrentSubJourneys = journeyService.getAllRecurrentJourneysByID(recurrentJourney.getJourneyID());
+              Collection<Journey> recurrentSubJourneys = journeyService.getAllRecurrentJourneysByID(recurrentJourney.getJourneyID(), true);
               for (Date expectedDate : expectedCreationDates)
                 {
                   boolean exists = false;
@@ -21127,7 +21127,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               // journeyCreationDates
               //
 
-              Collection<Journey> recurrentSubJourneys = journeyService.getAllRecurrentJourneysByID(recurrentJourney.getJourneyID());
+              Collection<Journey> recurrentSubJourneys = journeyService.getAllRecurrentJourneysByID(recurrentJourney.getJourneyID(), true);
               for (Date expectedDate : expectedCreationDates)
                 {
                   boolean exists = false;
