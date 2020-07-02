@@ -4962,11 +4962,8 @@ public class GUIManager
     //
     
     boolean recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
-    String recurrenceID = JSONUtilities.decodeString(jsonRoot, "recurrenceId", recurrence);
-    if (recurrence && recurrenceID == null)
-      {
-        jsonRoot.put("recurrenceId", journeyID);
-      }
+    String recurrenceID = JSONUtilities.decodeString(jsonRoot, "recurrenceId", false);
+    if (recurrence && recurrenceID == null) jsonRoot.put("recurrenceId", journeyID);
     
     //
     // initial approval
@@ -21022,8 +21019,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
      *
      ************************************/
 
-    @Override
-    protected void run()
+    @Override protected void run()
     {
       if (log.isInfoEnabled()) log.info("creating recurrent campaigns");
       Date now = SystemTime.getCurrentTime();
