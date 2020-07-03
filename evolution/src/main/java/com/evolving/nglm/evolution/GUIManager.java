@@ -19034,7 +19034,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 {
                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
                   availableValue.put("id", returnCode.getReturnCode());
-                  availableValue.put("display", RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode.getReturnCode()));
+                  availableValue.put("display", RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode.getReturnCode()).getGenericResponseMessage());
                   result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }
@@ -19043,11 +19043,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         case "returnCodesODR":
           if (includeDynamic)
             {
-              for (MessageStatus returnCode : MessageStatus.values())
+              for (PurchaseFulfillmentStatus returnCode : PurchaseFulfillmentStatus.values())
                 {
                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
                   availableValue.put("id", returnCode.getReturnCode());
-                  availableValue.put("display", RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode.getReturnCode()));
+                  availableValue.put("display", RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode.getReturnCode()).getGenericResponseMessage());
                   result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }
@@ -19056,11 +19056,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         case "returnCodesMDR":
           if (includeDynamic)
             {
-              for (CommodityDeliveryStatus returnCode : CommodityDeliveryStatus.values())
+              for (MessageStatus returnCode : MessageStatus.values())
                 {
                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
                   availableValue.put("id", returnCode.getReturnCode());
-                  availableValue.put("display", RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode.getReturnCode()));
+                  availableValue.put("display", RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode.getReturnCode()).getGenericResponseMessage());
                   result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }
