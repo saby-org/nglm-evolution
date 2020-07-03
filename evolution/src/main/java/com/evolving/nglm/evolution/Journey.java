@@ -3654,6 +3654,11 @@ public class Journey extends GUIManagedObject implements StockableItem
             }
           result.put("campaign", campaignIDs);
           
+          List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+          result.put("journeyobjective", journeyObjectiveIDs);
+            
+          break;
+          
         case Campaign:
           
           //
@@ -3672,6 +3677,12 @@ public class Journey extends GUIManagedObject implements StockableItem
                 }
             }
           result.put("offer", offerIDs);
+          result.put("point", pointIDs);
+          
+          List<String> journeyObjIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+          result.put("journeyobjective", journeyObjIDs);
+            
+          
           break;
 
         case BulkCampaign:
@@ -3685,17 +3696,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           break;
       }
     
-    //
-    //  journeyObjective
-    //
-    
-  List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
-  result.put("journeyobjective", journeyObjectiveIDs);
-    
-    //
-    //  return
-    //
-    
+  
     return result;
   }
 }

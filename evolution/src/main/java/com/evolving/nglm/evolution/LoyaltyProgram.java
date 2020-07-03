@@ -26,7 +26,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "loyaltyprogram", serviceClass = LoyaltyProgramService.class, dependencies = {"point"})
+//@GUIDependencyDef(objectType = "loyaltyprogram", serviceClass = LoyaltyProgramService.class, dependencies = {"point"})
 public abstract class LoyaltyProgram extends GUIManagedObject
 {
   /*****************************************

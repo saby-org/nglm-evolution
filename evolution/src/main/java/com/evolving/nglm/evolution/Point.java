@@ -21,7 +21,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "point", serviceClass = PointService.class, dependencies = {""})
+@GUIDependencyDef(objectType = "point", serviceClass = PointService.class, dependencies = {})
 public class Point extends GUIManagedObject
 {
   
