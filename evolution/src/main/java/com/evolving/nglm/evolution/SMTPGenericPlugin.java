@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
+import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.core.JSONUtilities;
@@ -55,11 +56,11 @@ public class SMTPGenericPlugin implements NotificationInterface
   *
   *****************************************/
 
-  @Override public void init(DeliveryManagerForNotifications mailNotificationManager, JSONObject mailNotifSharedConfiguration)
+  @Override public void init(DeliveryManagerForNotifications deliveryManagerForNotifications, JSONObject mailNotifSharedConfiguration)
   {
-    logger.info("SMTP Driver Loading Start...");
+    logger.info("SMTP Driver init()");
 
-    this.mailNotificationManager = mailNotificationManager;
+    this.mailNotificationManager = deliveryManagerForNotifications;
 
     Map<String, Object> config = new HashMap<String, Object>();
 
@@ -226,35 +227,30 @@ public class SMTPGenericPlugin implements NotificationInterface
     } 
     config.put("feedback.polling.try.constant.delay", feedback_polling_try_constant_delay);
 
+    logger.info("Configuration for SMTPGenericPlugin : " + config);
     MailSenderFactory mailSenderFactory = new MailSenderFactory(config);
     try
     {
-//      mailSenderFactory.init(mailNotificationManager);
+      mailSenderFactory.init(deliveryManagerForNotifications);
       senders = mailSenderFactory.getEmailSenders();  
       if(senders == null || senders.length==0)
         {
-          //          TrapSenderUtils.sendTrap(SnmpTrapSeverity.WARNING, 
-          //                  SnmpTrapType.COMMUNICATION_SERVER_CONNECTION, "SMTP3rdPartyConnection", "SMTPConnection to 3rdParty SMTPServer Loading Fail on host "+getSystemInfo());
-          throw new Exception("SMTP Driver Load Finished : Driver loading Failure. SMTPConnection to 3rdParty SMTPServer Loading Fail on host ");
-          }
+          // TrapSenderUtils.sendTrap(SnmpTrapSeverity.WARNING, SnmpTrapType.COMMUNICATION_SERVER_CONNECTION, "SMTP3rdPartyConnection", "SMTPConnection to 3rdParty SMTPServer Loading Fail on host "+getSystemInfo());
+          throw new Exception("SMTPGenericPlugin no senders : " + senders);
+        }
         else
-          {
-            logger.info("SMTP Driver Loaded Successfully.");
-            //          TrapSenderUtils.sendTrap(SnmpTrapSeverity.CLEAR, 
-            //                  SnmpTrapType.COMMUNICATION_SERVER_CONNECTION, "SMTP3rdPartyConnection", "SMTPConnection to 3rdParty SMTPServer Loaded Successfully on host "+getSystemInfo());
-            if (logger.isInfoEnabled())
-              {
-                logger.info("SMTPDriver3rdPartyNDM.init SMTP3rdPartyConnection SMTPConnection to 3rdParty SMTPServer Loaded Successfully on host ");                  
-              }
-          }
+        {
+          // TrapSenderUtils.sendTrap(SnmpTrapSeverity.CLEAR, SnmpTrapType.COMMUNICATION_SERVER_CONNECTION, "SMTP3rdPartyConnection", "SMTPConnection to 3rdParty SMTPServer Loaded Successfully on host "+getSystemInfo());
+          logger.info("SMTP Driver Loaded Successfully.");
+        }
     }
     catch(Exception ex)
       {
-        logger.error("Exception occured in SMTPDriver.asyncCall() : "+ex);
+        logger.error("Exception occured in SMTPDriver.init() : "+ex);
         throw new RuntimeException("SMTP Driver Load Finished : Driver loading Failure. ");
       }
 
-    ft = new FeedbackThread(mailNotificationManager, usingFakeEmulator);
+    ft = new FeedbackThread(deliveryManagerForNotifications, usingFakeEmulator);
     ft.start();    
   }
 
@@ -278,8 +274,13 @@ public class SMTPGenericPlugin implements NotificationInterface
       {
         try
           {
-            // TODO extract all parameters from the generic request
-//            senders[currentSenderIndex].sendEmail(mailNotificationRequest);
+            NotificationManagerRequest deliveryRequest = (NotificationManagerRequest) mailNotificationRequest;
+            Map<String,String> resolvedParameters = deliveryRequest.getResolvedParameters(mailNotificationManager.getSubscriberMessageTemplateService());
+            String body = resolvedParameters.get("node.parameter.body");
+            String toEmail = deliveryRequest.getDestination();
+            String fromAddress =  deliveryRequest.getDeliveryRequestSource(); // TODO check
+            boolean confirmationExpected = false ; // TODO : where to get it ?
+            senders[currentSenderIndex].sendEmail(mailNotificationRequest, body, toEmail, fromAddress, confirmationExpected);
           }
         catch (Exception mEx)
           {

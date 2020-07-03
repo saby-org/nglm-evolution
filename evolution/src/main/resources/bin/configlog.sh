@@ -55,7 +55,7 @@ elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-notificationmanagersms_notification
 elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-notificationmanagerpush_notificationpush ]]; then
   FILE=push
 elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-notificationmanager_notification ]]; then
- 56   FILE=notification
+  FILE=notificationmanager
 elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-commoditydeliverymanager_commoditydeliverymanager ]]; then
   FILE=comoditydelivery
 elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-infulfillmentmanager_infulfillmentmanager ]]; then
@@ -97,7 +97,6 @@ fi
 echo "--> changing log config file in container..."
 echo "docker exec -i $CONTAINERID ls -la $LOGFILE"
 docker exec -i $CONTAINERID ls -la $LOGFILE
-
 docker cp $TEMPFILE $CONTAINERID:${LOGFILE}.tmp
 if [ $? -ne 0 ]
 then

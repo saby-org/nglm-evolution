@@ -7,8 +7,11 @@ import com.evolving.nglm.evolution.MailNotificationManager;
 import com.lumatagroup.expression.driver.SMTP.util.Conf;
 import com.lumatagroup.expression.driver.dyn.PollFeedback;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class FeedbackThread extends Thread {
-	private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(FeedbackThread.class);
+	private static Logger logger = LoggerFactory.getLogger(FeedbackThread.class);
 	private boolean mustStop = false;
 	private boolean usingFakeEmulator = false;
 	private Date from;

@@ -128,7 +128,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
       for (String channelName : channels)
         {
-          log.info("NotificationManager: Instanciate communication channel " + channelName);
+          log.info("-------> NotificationManager: Instanciate communication channel " + channelName);
           Map<String, CommunicationChannel> configuredChannels = Deployment.getCommunicationChannels();
           for (CommunicationChannel cc : configuredChannels.values())
             {
@@ -319,6 +319,29 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     {
       return notificationParameters;
     }
+    
+    /*****************************************
+    *
+    *  getResolvedParameters
+    *
+    *****************************************/
+
+    public Map<String, String> getResolvedParameters(SubscriberMessageTemplateService subscriberMessageTemplateService)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      if(template.getDialogMessages() != null)
+        {
+          for(Map.Entry<String, DialogMessage> dialogMessageEntry : template.getDialogMessages().entrySet())
+            {
+              DialogMessage dialogMessage = dialogMessageEntry.getValue();
+              String parameterName = dialogMessageEntry.getKey();
+              String resolved = dialogMessage.resolve(language, tags.get(parameterName));
+              result.put(parameterName, resolved);
+            }
+        }
+      return result;
+    }
 
     //
     // abstract
@@ -459,6 +482,19 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 //      return tags;
 //
 //    }
+
+    /*****************************************
+    *
+    *  constructor : minimum for reports
+    *
+    *****************************************/
+
+    public NotificationManagerRequest(String templateID, String language, Map<String, List<String>> tags)
+    {
+      this.language = language;
+      this.templateID = templateID;
+      this.tags = tags;
+    }
 
     /*****************************************
      *
@@ -652,6 +688,9 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       //todo check NOTIFICATION_CHANNEL is ID or display
       guiPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(getChannelID()).getDisplay());
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
+      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
+      guiPresentationMap.putAll(resolvedParameters);
+      
     }
 
     //
@@ -675,6 +714,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       //todo check NOTIFICATION_CHANNEL is ID or display
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(getChannelID()).getDisplay());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
+      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
+      thirdPartyPresentationMap.putAll(resolvedParameters);
     }
 
     public void resetDeliveryRequestAfterReSchedule()
@@ -1080,7 +1121,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     log.info("NotificationManager: configuration " + Deployment.getDeliveryManagers());
 
     NotificationManager manager = new NotificationManager(deliveryManagerKey, listOfChannels);
-
+    new LoggerInitialization().initLogger();
+    
     //
     // run
     //

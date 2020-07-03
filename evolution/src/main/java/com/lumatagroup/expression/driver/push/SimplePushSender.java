@@ -2,7 +2,10 @@ package com.lumatagroup.expression.driver.push;
 
 import javax.mail.MessagingException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications;
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
@@ -15,7 +18,7 @@ import com.lumatagroup.expression.driver.dyn.NotificationStatus;
  *
  */
 public class SimplePushSender {
-	private static Logger logger = Logger.getLogger(SimplePushSender.class);
+	private static Logger logger = LoggerFactory.getLogger(SimplePushSender.class);
 
 	private DeliveryManagerForNotifications pushNotificationManager;
 

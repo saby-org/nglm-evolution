@@ -1,12 +1,14 @@
 package com.lumatagroup.expression.driver.push;
 
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications;
 
 
 public class PushSenderFactory {
-  private static Logger logger = Logger.getLogger(PushSenderFactory.class);
+  private static Logger logger = LoggerFactory.getLogger(PushSenderFactory.class);
   private SimplePushSender sender = null;
 
   /**
