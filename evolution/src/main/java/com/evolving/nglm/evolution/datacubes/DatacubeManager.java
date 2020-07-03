@@ -173,7 +173,7 @@ public class DatacubeManager
    * Those data are not definitive, the day is not ended yet, metrics can still change.
    */
   private static long scheduleLoyaltyProgramsPreview(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "loyaltyPrograms-preview";
+    String datacubeName = "LoyaltyPrograms-preview";
     
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
@@ -204,7 +204,7 @@ public class DatacubeManager
    * This will generated a datacube every day from the subscriberprofile snapshot index of the previous day.
    */
   private static long scheduleLoyaltyProgramsDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "loyaltyPrograms-definitive";
+    String datacubeName = "LoyaltyPrograms-definitive";
     
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
@@ -236,7 +236,7 @@ public class DatacubeManager
    * Those data are not definitive, the day is not ended yet, metrics can still change.
    */
   private static long scheduleSubscriberProfilePreview(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "subscriberProfile-preview";
+    String datacubeName = "SubscriberProfile-preview";
     
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
@@ -266,7 +266,7 @@ public class DatacubeManager
    * This will generated a datacube every day from the subscriberprofile snapshot index of the previous day.
    */
   private static long scheduleSubscriberProfileDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "subscriberProfile-definitive";
+    String datacubeName = "SubscriberProfile-definitive";
     
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
@@ -297,7 +297,7 @@ public class DatacubeManager
    * Those data are not definitive, the day is not ended yet, new ODR can still be added.
    */
   private static long scheduleODRPreview(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "odr-preview";
+    String datacubeName = "ODR-preview";
     
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
@@ -327,7 +327,7 @@ public class DatacubeManager
    * This will generated a datacube every day from the detailedrecords_offers-YYYY-MM-dd index of the previous day.
    */
   private static long scheduleODRDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "odr-definitive";
+    String datacubeName = "ODR-definitive";
     
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 
@@ -359,7 +359,7 @@ public class DatacubeManager
    * /!\ Do not configure a cron period lower than 1 hour (require code changes)
    */
   private static long scheduleJourneyDatacubeDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "journey-definitive";
+    String datacubeName = "Journeys";
     
     ScheduledJob job = new ScheduledJob(nextAvailableID,
         datacubeName, 

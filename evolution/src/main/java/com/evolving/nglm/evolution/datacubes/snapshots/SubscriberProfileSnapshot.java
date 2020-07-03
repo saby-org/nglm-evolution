@@ -25,14 +25,14 @@ public class SubscriberProfileSnapshot extends ScheduledJob
   *  constructor
   *
   *****************************************/
-  
+  // @rl: TODO: move in Elasticsearch scheduler
   public SubscriberProfileSnapshot(long schedulingUniqueID, RestHighLevelClient elasticsearch) 
   {
     super(schedulingUniqueID, 
         "Snapshot-SubscriberProfile", 
-        Deployment.getSubscriberProfileSnapshotPeriodCronEntryString(), 
+        Deployment.getElasticsearchJobsScheduling().get("SubscriberProfileSnapshot").getCronEntry(), 
         Deployment.getBaseTimeZone(),
-        false);
+        Deployment.getElasticsearchJobsScheduling().get("SubscriberProfileSnapshot").isScheduledAtRestart());
     this.snapshot = new SnapshotTask(this.jobName, "subscriberprofile", "subscriberprofile_snapshot", elasticsearch);
   }
   

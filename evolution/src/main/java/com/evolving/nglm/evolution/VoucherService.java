@@ -89,8 +89,8 @@ public class VoucherService extends GUIService {
       processVoucherFileThread.start();
 
       // a thread scheduled for clean up expired voucher
-      cleanUpExpiredVouchersScheduler=new JobScheduler("cleanUpExpiredVouchers");
-      cleanUpExpiredVouchersScheduler.schedule(new ScheduledJob(0,"cleanUpExpiredVouchers",Deployment.getCleanExpiredVoucherCronEntry(),Deployment.getBaseTimeZone(),false) {
+      cleanUpExpiredVouchersScheduler=new JobScheduler("cleanUpExpiredVouchers"); // @rl: TODO: move in Elasticsearch scheduler
+      cleanUpExpiredVouchersScheduler.schedule(new ScheduledJob(0,"cleanUpExpiredVouchers",Deployment.getElasticsearchJobsScheduling().get("ExpiredVoucherCleanUp").getCronEntry(),Deployment.getBaseTimeZone(),false) {
         @Override
         protected void run() {
           log.info("VoucherPersonalESService-cleanUpExpiredVouchers : start execution");

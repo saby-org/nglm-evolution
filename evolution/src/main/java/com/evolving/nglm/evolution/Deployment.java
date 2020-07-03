@@ -131,8 +131,8 @@ public class Deployment
   private static String subscriberProfileRegistrySubject;
   private static int journeyTrafficArchivePeriodInSeconds;
   private static int journeyTrafficArchiveMaxNumberOfPeriods;
-  private static Map<String,ScheduledJobConfiguration> datacubeJobsScheduling;
-  private static Map<String,ScheduledJobConfiguration> elasticsearchJobsScheduling;
+  private static Map<String,ScheduledJobConfiguration> datacubeJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
+  private static Map<String,ScheduledJobConfiguration> elasticsearchJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
   private static PropensityRule propensityRule;
   private static Map<String,Long> journeyTemplateCapacities = new LinkedHashMap<String,Long>();
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
