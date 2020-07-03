@@ -17,14 +17,14 @@ public class SubscriberReportMonoDriver extends ReportDriver{
 
 	@Override
 	public void produceReport(
-            Report report, 
-            String zookeeper, 
+      Report report, 
+      String zookeeper, 
 			String kafka, 
 			String elasticSearch, 
 			String csvFilename,
 			String[] params) {
-    	log.debug("Processing Subscriber Report with "+report.getName());
-    	String esIndexSubscriber = "subscriberprofile";
+   log.debug("Processing Subscriber Report with "+report.getName());
+   String esIndexSubscriber = "subscriberprofile";
     	
 		SubscriberReportMonoPhase.main(new String[]{
 		    kafka, elasticSearch, esIndexSubscriber, csvFilename

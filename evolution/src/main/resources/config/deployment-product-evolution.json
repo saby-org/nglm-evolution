@@ -863,7 +863,7 @@
       "name"                : "journeyCustomerStatesReport",
       "display"             : "Journey Customer States Report",
       "description"         : "Description of the Journey Customer States Report",
-      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {

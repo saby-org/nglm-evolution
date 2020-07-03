@@ -60,15 +60,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
   *  dumpElementToCsv
   *
   ****************************************/
-
-  /**
-   * This methods writes a single {@link ReportElement} to the report (csv
-   * file).
-   * 
-   * @throws IOException in case anything goes wrong while writing to the
-   * report.
-   */
-  public boolean dumpElementToCsvMono(String key, Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
+  public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
 
     LinkedHashMap<String, Object> result = new LinkedHashMap<>();
@@ -247,7 +239,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
 	public static void main(String[] args) {
 	  log.info("received " + args.length + " args");
 	  for(String arg : args){
-	    log.info("SubscriberReportESReader: arg " + arg);
+	    log.info("SubscriberReportMonoPhase: arg " + arg);
 	  }
 
 	  if (args.length < 4) {
@@ -267,7 +259,6 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
       esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
       
       ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
-              SubscriberReportObjects.KEY_STR,
               esNode,
               esIndexWithQuery,
               reportFactory,
