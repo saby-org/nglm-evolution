@@ -496,6 +496,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
+      //todo check NOTIFICATION_CHANNEL is ID or display
       guiPresentationMap.put(NOTIFICATION_CHANNEL, "PUSH");  // TODO SCH : should this be more specific (communication channel name ?) ?
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
@@ -518,6 +519,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
+      //todo check NOTIFICATION_CHANNEL is ID or display
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, "PUSH");  // TODO SCH : should this be more specific (communication channel name ?) ?
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
@@ -719,6 +721,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
               {
 
                 Date effectiveDeliveryTime = now;
+                //todo Not sure if this key (push) really exists
                 CommunicationChannel channel = (CommunicationChannel) Deployment.getCommunicationChannels().get("push");
                 if(channel != null) 
                   {
