@@ -104,12 +104,25 @@ public class ReportManager implements Watcher
   }
 
   /*****************************************
+   *
+   *  constructor
+   *
+   *****************************************/
+  public ReportManager()
+  {
+    DynamicCriterionFieldService dynamicCriterionFieldService = new DynamicCriterionFieldService(brokerServers, "reportmanager-dynamiccriterionfieldservice-001", Deployment.getDynamicCriterionFieldTopic(), false);
+    dynamicCriterionFieldService.start();
+    CriterionContext.initialize(dynamicCriterionFieldService);
+  }
+
+  /*****************************************
   *
-  *  constructor
+  *  initializeReportManager
+  *  this part were defined in default constructor. Because ExtractManager extend this class default contructor is called so the code were moved in method
   *
   *****************************************/
   
-  public ReportManager() throws Exception
+  private void initializeReportManager() throws Exception
   {
     log.debug("controlDir = "+controlDir+" , lockDir = "+lockDir);
 
@@ -123,10 +136,6 @@ public class ReportManager implements Watcher
         log.trace("report deactivated: " + guiManagedObjectID);
       }
     };
-
-    DynamicCriterionFieldService dynamicCriterionFieldService = new DynamicCriterionFieldService(brokerServers, "reportmanager-dynamiccriterionfieldservice-001", Deployment.getDynamicCriterionFieldTopic(), false);
-    dynamicCriterionFieldService.start();
-    CriterionContext.initialize(dynamicCriterionFieldService);
 
     log.trace("Creating ReportService");
     reportService = new ReportService(Deployment.getBrokerServers(), "reportmanager-reportservice-001", Deployment.getReportTopic(), false, reportListener);
@@ -430,6 +439,7 @@ public class ReportManager implements Watcher
     {
       reportManagerStatistics = new ReportManagerStatistics("reportmanager");
       ReportManager rm = new ReportManager();
+      rm.initializeReportManager();
       log.debug("ZK client created");
       while (true) 
         { //  sleep forever

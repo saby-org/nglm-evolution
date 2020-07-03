@@ -32,25 +32,8 @@ import java.util.*;
 public class ExtractManager extends ReportManager
 {
 
-  //public static final String CONTROL_SUBDIR = "control"; // used in ReportScheduler
-  //private static final String LOCK_SUBDIR = "lock";
-  //private static final int sessionTimeout = 10*1000; // 60 seconds
-  //
-  //private static String controlDir = null;
-  //private String lockDir = null;
-  //private ZooKeeper zk = null;
-  //private static String zkHostList;
-  //private static String brokerServers;
-  //private static String esNode;
-  //private DateFormat dfrm = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z z");
   private static final Logger log = LoggerFactory.getLogger(ExtractManager.class);
   private static ExtractManagerStatistics extractManagerStatistics;
-  //private TargetService targetService;
-  //
-  //public static short replicationFactor;
-  //public static int nbPartitions;
-  //public static int standbyReplicas;
-
   //because control dir is used in gui manager this have to be defined as private and cannot set value from base class
   private static String controlDir;
   private static String lockDir;
@@ -121,53 +104,6 @@ public class ExtractManager extends ReportManager
     }
     zk.getChildren(serviceControlDir, this); // sets watch
   }
-
-  ///*****************************************
-  //*
-  //*  createZKNode
-  //*
-  //*****************************************/
-  //
-  //private void createZKNode(String znode, boolean canExist) {
-  //  log.info("Trying to create znode "	+ znode + " (" + (canExist?"may":"must not")+" already exist)");
-  //  try
-  //  {
-  //    zk.create(znode, "".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-  //  }
-  //  catch (KeeperException e)
-  //  {
-  //    if (canExist && (e.code() == KeeperException.Code.NODEEXISTS))
-  //      {
-  //        log.trace(znode+" already exists, this is OK");
-  //      }
-  //    else
-  //      {
-  //        log.info("Got "+e.getLocalizedMessage());
-  //      }
-  //  }
-  //  catch (InterruptedException e)
-  //  {
-  //    log.info("Got "+e.getLocalizedMessage(), e);
-  //  }
-  //}
-
-  //@Override
-  //public void process(WatchedEvent event)
-  //{
-  //  log.trace("Got event : "+event);
-  //  try
-  //  {
-  //    if (event.getType().equals(EventType.NodeChildrenChanged))
-  //      {
-  //        List<String> children = zk.getChildren(controlDir, this); // get the children and renew watch
-  //        processChildren(children);
-  //      }
-  //  }
-  //  catch (KeeperException | InterruptedException e)
-  //  {
-  //    log.error("Error processing extract", e);
-  //  }
-  //}
   
   /*****************************************
   *
@@ -196,14 +132,14 @@ public class ExtractManager extends ReportManager
 
   public static void main(String[] args) 
   {
-    log.info("ReportManager: received " + args.length + " args");
+    log.info("ExtractManager: received " + args.length + " args");
     for(String arg : args)
       {
-        log.info("ReportManager main : arg " + arg);
+        log.info("ExtractManager main : arg " + arg);
       }
     if (args.length < 5) 
       {
-        log.error("Usage : ReportManager BrokerServers ESNode replication partitions standby");
+        log.error("Usage : ExtractManager BrokerServers ESNode replication partitions standby");
         System.exit(1);
       }
     brokerServers = args[0];
@@ -217,7 +153,7 @@ public class ExtractManager extends ReportManager
     try 
     {
       extractManagerStatistics = new ExtractManagerStatistics("extractmanager");
-      ExtractManager rm = new ExtractManager();
+      ExtractManager extractManager = new ExtractManager();
       log.debug("ZK client created");
       while (true) 
         { //  sleep forever
