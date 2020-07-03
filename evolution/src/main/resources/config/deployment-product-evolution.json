@@ -877,7 +877,7 @@
       "name"                : "BDRReport",
       "display"             : "BDR Report",
       "description"         : "Description of the BDR Report",
-      "class"               : "com.evolving.nglm.evolution.reports.bdr.BDRReportDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.bdr.BDRReportMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
@@ -942,7 +942,7 @@
       "name"                : "loyaltyProgramCustomerStates",
       "display"             : "Loyalty Program Customer States",
       "description"         : "Description of the Loyalty Program Customer States Report",
-      "class"               : "com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate.LoyaltyProgramCustomerStatesDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate.LoyaltyProgramCustomerStatesMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {

@@ -30,17 +30,7 @@ import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 import com.evolving.nglm.evolution.reports.subscriber.SubscriberReportMonoPhase;
 
-/**
- * This implements phase 1 of the Journey report. All it does is specifying
- * <ol>
- * <li>Which field in Elastic Search is used as the key in the Kafka topic that
- * is produced, and
- * <li>Which Elastic Search indexes have to be read (passed as an array to the
- * {@link ReportEsReader} constructor.
- * </ol>
- * <p>
- * All data is written to a single topic.
- */
+
 public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
 {
 
@@ -280,7 +270,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
         log.info("JourneyCustomerStatesReportonoPhase: arg " + arg);
       }
 
-    if (args.length < 5)
+    if (args.length < 4)
       {
         log.warn("Usage : JourneyCustomerStatesReportMonoPhase <ESNode> <ES customer index> <csvfile> <defaultReportPeriodQuantity> <defaultReportPeriodUnit>");
         return;
@@ -314,7 +304,6 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
         csvfile
     );
 
-    //ReportEsReader reportEsReader = new ReportEsReader("subscriberID", topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery, false);
     if (!reportMonoPhase.startOneToOne(true))
       {
         log.warn("An error occured, the report might be corrupted");
