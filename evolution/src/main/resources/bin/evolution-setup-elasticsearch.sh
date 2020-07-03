@@ -395,7 +395,7 @@ echo
 
 # -------------------------------------------------------------------------------
 #
-# journeystatistic, campaigninfo
+# journeystatistic
 #
 # -------------------------------------------------------------------------------
 #
@@ -431,33 +431,16 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/journeystatistic -H'Content-
 }'
 echo
 
-#
-#  manually create campaigninfo index
-#
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/campaigninfo -H'Content-Type: application/json' -d'
-{
-  "index_patterns": ["campaigninfo"],
-  "mappings" : {
-    "properties" : {
-      "campaignName" : { "type" : "keyword" },
-      "campaignID" : { "type" : "keyword" },
-      "startDate" : { "type" : "date" },
-      "endDate" : { "type" : "date" }
-    }
-  }
-}'
-echo
-
 # -------------------------------------------------------------------------------
 #
-# reg_criteria, regr_counter
+# reg_criteria, regr_counter (for test environment ONLY)
 #
 # -------------------------------------------------------------------------------
-#
-#  manually create regr_criteria index
-#
 if [ "${env.USE_REGRESSION}" = "1" ]
 then
+  #
+  #  manually create regr_criteria index
+  #
   curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/regr_criteria -H'Content-Type: application/json' -d'
   {
     "index_patterns": ["regr_criteria"],
@@ -471,13 +454,10 @@ then
     }
   }'
   echo
-fi
 
-#
-#  manually create regr_counter index
-#
-if [ "${env.USE_REGRESSION}" = "1" ]
-then
+  #
+  #  manually create regr_counter index
+  #
   curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/regr_counter -H'Content-Type: application/json' -d'
   {
     "index_patterns": ["regr_counter"],
