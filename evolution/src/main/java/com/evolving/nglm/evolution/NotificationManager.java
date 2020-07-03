@@ -683,9 +683,11 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       guiPresentationMap.put(FEATUREID, getFeatureID());
       guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      String fromAddress = "";//todo (String)getNotificationParameters().get("node.parameter.fromaddress");
+      guiPresentationMap.put(SOURCE, fromAddress);
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
-      //todo check NOTIFICATION_CHANNEL is ID or display
+      //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
       guiPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(getChannelID()).getDisplay());
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
       Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
@@ -708,10 +710,12 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
       thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      String fromAddress = "";//todo (String)getNotificationParameters().get("node.parameter.fromaddress");
+      thirdPartyPresentationMap.put(SOURCE, fromAddress);
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
-      //todo check NOTIFICATION_CHANNEL is ID or display
+      //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(getChannelID()).getDisplay());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
       Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
