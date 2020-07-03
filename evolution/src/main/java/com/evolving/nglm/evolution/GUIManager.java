@@ -21023,8 +21023,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     @Override protected void run()
     {
       if (log.isInfoEnabled()) log.info("creating recurrent campaigns");
-      Date now = SystemTime.getCurrentTime();
-      now = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
+      Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, Deployment.getBaseTimeZone());
       Collection<Journey> recurrentJourneys = journeyService.getActiveRecurrentJourneys(now);
       for (Journey recurrentJourney : recurrentJourneys)
         {
