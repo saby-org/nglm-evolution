@@ -211,7 +211,8 @@ public class ThirdPartyManager
     loyaltyProgramOptOut(28),
     validateVoucher(29),
     redeemVoucher(30),
-    getCustomerTokenAndNBO(31);
+    getCustomerTokenAndNBO(31),
+    getResellerDetails(32);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -500,6 +501,7 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/loyaltyProgramOptOut", new APIHandler(API.loyaltyProgramOptOut));
       restServer.createContext("/nglm-thirdpartymanager/validateVoucher", new APIHandler(API.validateVoucher));
       restServer.createContext("/nglm-thirdpartymanager/redeemVoucher", new APIHandler(API.redeemVoucher));
+      restServer.createContext("/nglm-thirdpartymanager/getResellerDetails", new APIHandler(API.getResellerDetails));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -843,6 +845,9 @@ public class ThirdPartyManager
               break;
             case redeemVoucher:
               jsonResponse = processRedeemVoucher(jsonRoot,sync);
+              break;              
+            case getResellerDetails:
+              jsonResponse = processGetResellerDetails(jsonRoot);
               break;
           }
         }
@@ -4793,6 +4798,45 @@ public class ThirdPartyManager
     return constructThirdPartyResponse(RESTAPIGenericReturnCodes.SUCCESS,null);
   }
 
+  /*****************************************
+   *
+   * processGetResellerDetails
+   *
+   *****************************************/
+
+  private JSONObject processGetResellerDetails(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Map<String, Object> response = new HashMap<String, Object>();
+    String user = readString(jsonRoot, "loginName", true);
+    for (GUIManagedObject reseller : resellerService.getStoredResellers())
+      {
+        if (reseller instanceof Reseller)
+          {
+            List<String> userIDs = ((Reseller) reseller).getUserIDs();
+            for (String userId : userIDs)
+              {
+                if (user.equals(userId))
+                  {
+                    JSONObject resellerJson = ThirdPartyJSONGenerator
+                        .generateResellerJSONForThirdParty((Reseller) reseller, resellerService);
+                    response.put("resellerDetails", JSONUtilities.encodeObject(resellerJson));
+                    updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+
+                  }
+              }
+          }
+      }
+
+    return JSONUtilities.encodeObject(response);
+  }
+ 
   private Pair<String,VoucherProfileStored> getStoredVoucher(JSONObject jsonRoot) throws ThirdPartyManagerException {
 
     Date now = SystemTime.getCurrentTime();
