@@ -4,8 +4,6 @@ jmr-web-<_KEY_>:
     jmr_api_server_path: "http://<_GUI_JMR_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_JMR_API_SERVER_PORT_>/api/"
     jmr_fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
     jmr_fwk_api_server_path_for_upload_files: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/file/flowupload"
-    TZ: <_DEPLOYMENT_TIMEZONE_>
-    JMR_WEB_PORT: <_PORT_>
     JMR_URL_ELASTICSEARCH_PATH: "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>"
     JMR_URL_KIBANA_PATH: "http://<_MONITORING_HOST_IP_>:<_KIBANA_PORT_>"
     TEST_ENVIRONMENT: '<_JMR_WEB_TEST_ENVIROMENT_>'
@@ -15,6 +13,8 @@ jmr-web-<_KEY_>:
     DIALOG_TEMPLATE_PUSH: '<_DIALOG_TEMPLATE_PUSH_>'  
     DIALOG_TEMPLATE_GENERIC: '<_DIALOG_TEMPLATE_GENERIC_>'
     EXPORT_IMPORT_ENABLED: '<_EXPORT_IMPORT_ENABLED_>' 
+    TZ: <_DEPLOYMENT_TIMEZONE_>
+    JMR_WEB_PORT: <_PORT_>
   deploy:
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>

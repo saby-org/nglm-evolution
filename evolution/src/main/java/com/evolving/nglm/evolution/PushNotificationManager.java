@@ -507,8 +507,12 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
-      guiPresentationMap.put(NOTIFICATION_CHANNEL, "PUSH");  // TODO SCH : should this be more specific (communication channel name ?) ?
+      //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
+      PushTemplate template = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      guiPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(template.getCommunicationChannelID()).getDisplay());
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
+      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
+      guiPresentationMap.putAll(resolvedParameters);
     }
     
     //
@@ -529,8 +533,12 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
-      thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, "PUSH");  // TODO SCH : should this be more specific (communication channel name ?) ?
+      //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
+      PushTemplate template = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(template.getCommunicationChannelID()).getDisplay());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
+      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
+      thirdPartyPresentationMap.putAll(resolvedParameters);
     }
     
     @Override
@@ -730,6 +738,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
               {
 
                 Date effectiveDeliveryTime = now;
+                //todo Not sure if this key (push) really exists
                 CommunicationChannel channel = (CommunicationChannel) Deployment.getCommunicationChannels().get("push");
                 if(channel != null) 
                   {
