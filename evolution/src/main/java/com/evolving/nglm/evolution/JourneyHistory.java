@@ -373,6 +373,15 @@ public class JourneyHistory
       
       history = new RewardHistory(deliverableDisplay, request.getAmount(), request.getDeliveryDate());
     } 
+    else if(deliveryRequest instanceof RewardManagerRequest) {
+      RewardManagerRequest request = (RewardManagerRequest) deliveryRequest;
+      // THIS IS SHITTY a FUCKING hack for the RewardManager
+      // This part was based on addFieldsForGUIPresentation of CommodityDeliveryManager class, this could be factorized.
+      Deliverable deliverable = deliverableService.getActiveDeliverable(request.getDeliverableID(), now);
+      String deliverableDisplay = deliverable != null ? deliverable.getGUIManagedObjectDisplay() : request.getDeliverableID();
+      
+      history = new RewardHistory(deliverableDisplay, (int)request.getAmount(), request.getDeliveryDate());
+    } 
     // Special case for offers. 
     // PurchaseFulfillmentRequest are not managed by the CommodityManager (which is a proxy for a lot of requests)
     else if(deliveryRequest instanceof PurchaseFulfillmentRequest) {
