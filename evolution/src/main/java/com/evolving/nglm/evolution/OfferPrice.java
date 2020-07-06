@@ -40,8 +40,8 @@ public class OfferPrice
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("amount", Schema.INT64_SCHEMA);
     schemaBuilder.field("supportedCurrencyID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("providerID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("paymentMeanID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("providerID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("paymentMeanID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.optional().build();
   };
 
@@ -167,8 +167,8 @@ public class OfferPrice
   {  
     this.amount = JSONUtilities.decodeLong(jsonRoot, "amount", true);
     this.supportedCurrencyID = JSONUtilities.decodeString(jsonRoot, "supportedCurrencyID", true);
-    this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
-    this.paymentMeanID = JSONUtilities.decodeString(jsonRoot, "paymentMeanID", true);
+    this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", false);
+    this.paymentMeanID = JSONUtilities.decodeString(jsonRoot, "paymentMeanID", false);
   }
   
   /*****************************************
