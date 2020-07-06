@@ -42,7 +42,6 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
   private static final String deliveryDate = "deliveryDate";
   private static final String originatingDeliveryRequestID = "originatingDeliveryRequestID";
   private static final String deliveryRequestID = "deliveryRequestID";
-  private static final String deliveryStatus = "deliveryStatus";
   private static final String eventID = "eventID";
   private static final String returnCode = "returnCode";
   private static final String returnCodeDetails = "returnCodeDetails";
@@ -72,7 +71,6 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(deliveryDate);
     headerFieldsOrder.add(originatingDeliveryRequestID);
     headerFieldsOrder.add(deliveryRequestID);
-    headerFieldsOrder.add(deliveryStatus);
     headerFieldsOrder.add(eventID);
     headerFieldsOrder.add(returnCode);
     headerFieldsOrder.add(returnCodeDescription);
@@ -90,9 +88,8 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
             addHeaders(writer, headerFieldsOrder, 1);
           }
         String line = ReportUtils.formatResult(headerFieldsOrder, lineMap);
-        log.trace("Writing to csv file : " + line);
+        if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
         writer.write(line.getBytes());
-        writer.write("\n".getBytes());
       } 
     catch (IOException e)
       {
@@ -210,10 +207,6 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
         if (notifFields.containsKey(deliveryRequestID))
           {
             notifRecs.put(deliveryRequestID, notifFields.get(deliveryRequestID));
-          }
-        if (notifFields.containsKey(deliveryStatus))
-          {
-            notifRecs.put(deliveryStatus, notifFields.get(deliveryStatus));
           }
         if (notifFields.containsKey(eventID))
           {

@@ -151,7 +151,6 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
     
     String line = ReportUtils.formatResult(allFields);
     writer.write(line.getBytes());
-    writer.write("\n".getBytes());
   }
   
   private Map<String, Object> formatSimpleFields(JSONObject jsonObject)

@@ -393,7 +393,7 @@ public class ReportUtils {
   //
   // format regular field
   //
-  public static void format(StringBuilder sb, String s)
+  private static void format(StringBuilder sb, String s)
   {
     String fieldSurrounder = Deployment.getReportManagerFieldSurrounder();
     // Surround s with fieldSurrounder, and escape fieldSurrounder inside it
@@ -406,7 +406,7 @@ public class ReportUtils {
   //
   // format empty field
   //
-  public static void format(StringBuilder sb)
+  private static void format(StringBuilder sb)
   {
     String fieldSurrounder = Deployment.getReportManagerFieldSurrounder();
     if (!fieldSurrounder.isEmpty()) sb.append(fieldSurrounder).append(fieldSurrounder);
@@ -417,18 +417,10 @@ public class ReportUtils {
   //
   public static String formatResult(Map<String, Object> result)
   {
-    boolean first = true;
     StringBuilder line = new StringBuilder();
     for (String field : result.keySet())
       {
-        if (first)
-          {
-            first = false;
-          }
-        else
-          {
-            line.append(getSeparator());
-          }
+        line.append(getSeparator());
         if (result.get(field) != null)
           {
             format(line, result.get(field).toString());
@@ -438,7 +430,7 @@ public class ReportUtils {
             format(line);
           }
       }
-    return line.toString();
+    return line.append("\n").toString().substring(1);
   }
 
   //
@@ -446,18 +438,10 @@ public class ReportUtils {
   //
   public static String formatResult(List<String> headerFieldsOrder, Map<String, Object> info, Map<String, Object> subscriberFields)
   {
-    boolean first = true;
     StringBuilder line = new StringBuilder();
     for (String field : headerFieldsOrder)
       {
-        if (first)
-          {
-            first = false;
-          }
-        else 
-          {
-            line.append(getSeparator());
-          }
+        line.append(getSeparator());
         if (info.get(field) != null)
           {
             format(line, info.get(field).toString());
@@ -471,7 +455,7 @@ public class ReportUtils {
             format(line);
           }
       }
-    return line.toString();
+    return line.append("\n").toString().substring(1);
   }
 
   //
@@ -479,18 +463,10 @@ public class ReportUtils {
   //
   public static String formatResult(List<String> headerFieldsOrder, Map<String, Object> info)
   {
-    boolean first = true;
     StringBuilder line = new StringBuilder();
     for (String field : headerFieldsOrder)
       {
-        if (first)
-          {
-            first = false;
-          }
-        else 
-          {
-            line.append(getSeparator());
-          }
+        line.append(getSeparator());
         if (info.get(field) != null)
           {
             format(line, info.get(field).toString());
@@ -500,7 +476,7 @@ public class ReportUtils {
             format(line);
           }
       }
-    return line.toString();
+    return line.append("\n").toString().substring(1);
   }
   
   //

@@ -134,9 +134,8 @@ public class CustomerPointDetailsCsvWriter implements ReportCsvFactory
       for(Map<String, Object> oneElement : elementsToBeDump){
         String line = ReportUtils.formatResult(oneElement);
         if(!line.isEmpty()){
-          log.trace("Writing to csv file : "+line);
+          if (log.isTraceEnabled()) log.trace("Writing to csv file : "+line);
           writer.write(line.getBytes());
-          writer.write("\n".getBytes());
         }
         else
           {

@@ -42,9 +42,8 @@ public class JourneyImpactReportCsvWriter implements ReportCsvFactory
           addHeaders(writer, lineMap, 1);
         }
       String line = ReportUtils.formatResult(lineMap);
-      log.trace("Writing to csv file : " + line);
+      if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
       writer.write(line.getBytes());
-      writer.write("\n".getBytes());
     } 
   catch (IOException e)
     {
