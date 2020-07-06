@@ -186,6 +186,7 @@ public class GUIManager
     putJourney("putJourney"),
     removeJourney("removeJourney"),
     startJourney("startJourney"),
+    setStatusJourney("setStatusJourney"),
     stopJourney("stopJourney"),
     getCampaignToolbox("getCampaignToolbox"),
     getCampaignList("getCampaignList"),
@@ -193,6 +194,7 @@ public class GUIManager
     getCampaign("getCampaign"),
     putCampaign("putCampaign"),
     removeCampaign("removeCampaign"),
+    setStatusCampaign("setStatusCampaign"),
     startCampaign("startCampaign"),
     stopCampaign("stopCampaign"),
     getWorkflowToolbox("getWorkflowToolbox"),
@@ -202,12 +204,14 @@ public class GUIManager
     getWorkflow("getWorkflow"),
     putWorkflow("putWorkflow"),
     removeWorkflow("removeWorkflow"),
+    setStatusWorkflow("setStatusWorkflow"),
     getBulkCampaignList("getBulkCampaignList"),
     getBulkCampaignSummaryList("getBulkCampaignSummaryList"),
     getBulkCampaign("getBulkCampaign"),
     getBulkCampaignCapacity("getBulkCampaignCapacity"),
     putBulkCampaign("putBulkCampaign"),
     removeBulkCampaign("removeBulkCampaign"),
+    setStatusBulkCampaign("setStatusBulkCampaign"),
     startBulkCampaign("startBulkCampaign"),
     stopBulkCampaign("stopBulkCampaign"),
     getJourneyTemplateList("getJourneyTemplateList"),
@@ -215,12 +219,14 @@ public class GUIManager
     getJourneyTemplate("getJourneyTemplate"),
     putJourneyTemplate("putJourneyTemplate"),
     removeJourneyTemplate("removeJourneyTemplate"),
+    setStatusJourneyTemplate("setStatusJourneyTemplate"),
     getJourneyNodeCount("getJourneyNodeCount"),
     getSegmentationDimensionList("getSegmentationDimensionList"),
     getSegmentationDimensionSummaryList("getSegmentationDimensionSummaryList"),
     getSegmentationDimension("getSegmentationDimension"),
     putSegmentationDimension("putSegmentationDimension"),
     removeSegmentationDimension("removeSegmentationDimension"),
+    setStatusSegmentationDimension("setStatusSegmentationDimension"),
     getCountBySegmentationRanges("getCountBySegmentationRanges"),
     getCountBySegmentationEligibility("getCountBySegmentationEligibility"),
     evaluateProfileCriteria("evaluateProfileCriteria"),
@@ -230,11 +236,13 @@ public class GUIManager
     getPoint("getPoint"),
     putPoint("putPoint"),
     removePoint("removePoint"),
+    setStatusPoint("setStatusPoint"),
     getOfferList("getOfferList"),
     getOfferSummaryList("getOfferSummaryList"),
     getOffer("getOffer"),
     putOffer("putOffer"),
     removeOffer("removeOffer"),
+    setStatusOffer("setStatusOffer"),
     getReportGlobalConfiguration("getReportGlobalConfiguration"),
     getReportList("getReportList"),
     putReport("putReport"),
@@ -245,83 +253,99 @@ public class GUIManager
     getPresentationStrategy("getPresentationStrategy"),
     putPresentationStrategy("putPresentationStrategy"),
     removePresentationStrategy("removePresentationStrategy"),
+    setStatusPresentationStrategy("setStatusPresentationStrategy"),
     getScoringStrategyList("getScoringStrategyList"),
     getScoringStrategySummaryList("getScoringStrategySummaryList"),
     getScoringStrategy("getScoringStrategy"),
     putScoringStrategy("putScoringStrategy"),
     removeScoringStrategy("removeScoringStrategy"),
+    setStatusScoringStrategy("putScoringStrategy"),
     getDNBOMatrixList("getDNBOMatrixList"),
     getDNBOMatrixSummaryList("getDNBOMatrixSummaryList"),
     getDNBOMatrix("getDNBOMatrix"),
     putDNBOMatrix("putDNBOMatrix"),
     removeDNBOMatrix("removeDNBOMatrix"),
+    setStatusDNBOMatrix("putDNBOMatrix"),
     getScoringTypesList("getScoringTypesList"),
     getDNBOMatrixVariablesList("getDNBOMatrixVariablesList"),
     getCallingChannelList("getCallingChannelList"),
     getCallingChannelSummaryList("getCallingChannelSummaryList"),
     getCallingChannel("getCallingChannel"),
     putCallingChannel("putCallingChannel"),
+    setStatusCallingChannel("setStatusCallingChannel"),
     removeCallingChannel("removeCallingChannel"),
     getSalesChannelList("getSalesChannelList"),
     getSalesChannelSummaryList("getSalesChannelSummaryList"),
     getSalesChannel("getSalesChannel"),
     putSalesChannel("putSalesChannel"),
     removeSalesChannel("removeSalesChannel"),
+    setStatusSalesChannel("setStatusSalesChannel"),
     getSupplierList("getSupplierList"),
     getSupplierSummaryList("getSupplierSummaryList"),
     getSupplier("getSupplier"),
     putSupplier("putSupplier"),
     removeSupplier("removeSupplier"),
+    setStatusSupplier("setStatusSupplier"),
     getProductList("getProductList"),
     getProductSummaryList("getProductSummaryList"),
     getProduct("getProduct"),
     putProduct("putProduct"),
     removeProduct("removeProduct"),
+    setStatusProduct("setStatusProduct"),
     getCatalogCharacteristicList("getCatalogCharacteristicList"),
     getCatalogCharacteristicSummaryList("getCatalogCharacteristicSummaryList"),
     getCatalogCharacteristic("getCatalogCharacteristic"),
     putCatalogCharacteristic("putCatalogCharacteristic"),
     removeCatalogCharacteristic("removeCatalogCharacteristic"),
+    setStatusCatalogCharacteristic("setStatusCatalogCharacteristic"),
     getContactPolicyList("getContactPolicyList"),
     getContactPolicySummaryList("getContactPolicySummaryList"),
     getContactPolicy("getContactPolicy"),
     putContactPolicy("putContactPolicy"),
     removeContactPolicy("removeContactPolicy"),
+    setStatusContactPolicy("setStatusContactPolicy"),
     getJourneyObjectiveList("getJourneyObjectiveList"),
     getJourneyObjectiveSummaryList("getJourneyObjectiveSummaryList"),
     getJourneyObjective("getJourneyObjective"),
     putJourneyObjective("putJourneyObjective"),
     removeJourneyObjective("removeJourneyObjective"),
+    setStatusJourneyObjective("setStatusJourneyObjective"),
     getOfferObjectiveList("getOfferObjectiveList"),
     getOfferObjectiveSummaryList("getOfferObjectiveSummaryList"),
     getOfferObjective("getOfferObjective"),
     putOfferObjective("putOfferObjective"),
     removeOfferObjective("removeOfferObjective"),
+    setStatusOfferObjective("setStatusOfferObjective"),
     getProductTypeList("getProductTypeList"),
     getProductTypeSummaryList("getProductTypeSummaryList"),
     getProductType("getProductType"),
     putProductType("putProductType"),
     removeProductType("removeProductType"),
+    setStatusProductType("setStatusProductType"),
     getUCGRuleList("getUCGRuleList"),
     getUCGRuleSummaryList("getUCGRuleSummaryList"),
     getUCGRule("getUCGRule"),
     putUCGRule("putUCGRule"),
     removeUCGRule("removeUCGRule"),
+    setStatusUCGRule("setStatusUCGRule"),
     getDeliverableList("getDeliverableList"),
     getDeliverableSummaryList("getDeliverableSummaryList"),
     getDeliverable("getDeliverable"),
+    setStatusDeliverable("setStatusDeliverable"),
     getDeliverableByName("getDeliverableByName"),
     getTokenTypeList("getTokenTypeList"),
     getTokenTypeSummaryList("getTokenTypeSummaryList"),
     putTokenType("putTokenType"),
     getTokenType("getTokenType"),
     removeTokenType("removeTokenType"),
+    setStatusTokenType("setStatusTokenType"),
     getTokenCodesFormats("getTokenCodesFormats"),
     
     getVoucherTypeList("getVoucherTypeList"),
     getVoucherTypeSummaryList("getVoucherTypeSummaryList"),
     putVoucherType("putVoucherType"),
     getVoucherType("getVoucherType"),
+    setStatusVoucherType("setStatusVoucherType"),
     removeVoucherType("removeVoucherType"),
 
     getVoucherCodeFormatList("getVoucherCodeFormatList"),
@@ -331,6 +355,7 @@ public class GUIManager
     putVoucher("putVoucher"),
     getVoucher("getVoucher"),
     removeVoucher("removeVoucher"),
+    setStatusVoucher("setStatusVoucher"),
 
     getMailTemplateList("getMailTemplateList"),
     getFullMailTemplateList("getFullMailTemplateList"),
@@ -338,12 +363,14 @@ public class GUIManager
     getMailTemplate("getMailTemplate"),
     putMailTemplate("putMailTemplate"),
     removeMailTemplate("removeMailTemplate"),
+    setStatusMailTemplate("setStatusMailTemplate"),
     getSMSTemplateList("getSMSTemplateList"),
     getFullSMSTemplateList("getFullSMSTemplateList"),
     getSMSTemplateSummaryList("getSMSTemplateSummaryList"),
     getSMSTemplate("getSMSTemplate"),
     putSMSTemplate("putSMSTemplate"),
     removeSMSTemplate("removeSMSTemplate"),
+    setStatusSMSTemplate("setStatusSMSTemplate"),
     
     getPushTemplateList("getPushTemplateList"),
     getFullPushTemplateList("getFullPushTemplateList"),
@@ -351,6 +378,7 @@ public class GUIManager
     getPushTemplate("getPushTemplate"),
     putPushTemplate("putPushTemplate"),
     removePushTemplate("removePushTemplate"),
+    setStatusPushTemplate("setStatusPushTemplate"),
     
     getDialogTemplateList("getDialogTemplateList"),
     getFullDialogTemplateList("getFullDialogTemplateList"),
@@ -358,6 +386,7 @@ public class GUIManager
     getDialogTemplate("getDialogTemplate"),
     putDialogTemplate("putDialogTemplate"),
     removeDialogTemplate("removeDialogTemplate"),
+    setStatusDialogTemplate("setStatusDialogTemplate"),
     
     getFulfillmentProviders("getFulfillmentProviders"),
     getPaymentMeans("getPaymentMeans"),
@@ -366,6 +395,7 @@ public class GUIManager
     getPaymentMean("getPaymentMean"),
     putPaymentMean("putPaymentMean"),
     removePaymentMean("removePaymentMean"),
+    setStatusPaymentMean("setStatusPaymentMean"),
     getDashboardCounts("getDashboardCounts"),
     getCustomer("getCustomer"),
     getCustomerMetaData("getCustomerMetaData"),
@@ -388,6 +418,7 @@ public class GUIManager
     getTargetSummaryList("getTargetSummaryList"),
     putTarget("putTarget"),
     getTarget("getTarget"),
+    setStatusTarget("setStatusTarget"),
     removeTarget("removeTarget"),
     updateCustomer("updateCustomer"),
     updateCustomerParent("updateCustomerParent"),
@@ -400,17 +431,20 @@ public class GUIManager
     getBlackoutPeriods("getBlackoutPeriods"),
     putBlackoutPeriods("putBlackoutPeriods"),
     removeBlackoutPeriods("removeBlackoutPeriods"),
+    setStatusBlackoutPeriods("setStatusBlackoutPeriods"),
     getLoyaltyProgramTypeList("getLoyaltyProgramTypeList"),
     getLoyaltyProgramList("getLoyaltyProgramList"),
     getLoyaltyProgramSummaryList("getLoyaltyProgramSummaryList"),
     getLoyaltyProgram("getLoyaltyProgram"),
     putLoyaltyProgram("putLoyaltyProgram"),
     removeLoyaltyProgram("removeLoyaltyProgram"),
+    setStatusLoyaltyProgram("setStatusLoyaltyProgram"),
     getResellerList("getResellerList"),
     getResellerSummaryList("getResellerSummaryList"),
     getReseller("getReseller"),
     putReseller("putReseller"),
     removeReseller("removeReseller"),
+    setStatusReseller("setStatusReseller"),
     enterCampaign("enterCampaign"),
     creditBonus("creditBonus"),
     debitBonus("debitBonus"),
@@ -419,11 +453,13 @@ public class GUIManager
     putExclusionInclusionTarget("putExclusionInclusionTarget"),
     getExclusionInclusionTarget("getExclusionInclusionTarget"),
     removeExclusionInclusionTarget("removeExclusionInclusionTarget"),
+    setStatusExclusionInclusionTarget("setStatusExclusionInclusionTarget"),
     getSegmentContactPolicyList("getSegmentContactPolicyList"),
     getSegmentContactPolicySummaryList("getSegmentContactPolicySummaryList"),
     putSegmentContactPolicy("putSegmentContactPolicy"),
     getSegmentContactPolicy("getSegmentContactPolicy"),
     removeSegmentContactPolicy("removeSegmentContactPolicy"),
+    setStatusSegmentContactPolicy("setStatusSegmentContactPolicy"),
     getBillingModes("getBillingModes"),
     getPartnerTypes("getPartnerTypes"),
     getCriterionFieldAvailableValuesList("getCriterionFieldAvailableValuesList"),
@@ -431,6 +467,7 @@ public class GUIManager
     getCriterionFieldAvailableValues("getCriterionFieldAvailableValues"),
     putCriterionFieldAvailableValues("putCriterionFieldAvailableValues"),
     removeCriterionFieldAvailableValues("removeCriterionFieldAvailableValues"),
+    setStatusCriterionFieldAvailableValues("setStatusCriterionFieldAvailableValues"),
     getEffectiveSystemTime("getEffectiveSystemTime"),
     getCustomerNBOs("getCustomerNBOs"),
     getTokensCodesList("getTokensCodesList"),
@@ -471,6 +508,7 @@ public class GUIManager
     getSourceAddress("getSourceAddress"),
     putSourceAddress("putSourceAddress"),
     removeSourceAddress("removeSourceAddress"),
+    setStatusSourceAddress("setStatusSourceAddress"),
 
     putSupplierOffer("putSupplierOffer"),
     getSupplierOfferList("getSupplierOfferList"),
@@ -478,6 +516,7 @@ public class GUIManager
 
     loyaltyProgramOptIn("loyaltyProgramOptIn"),
     loyaltyProgramOptOut("loyaltyProgramOptOut"),
+
     
     //
     //  structor
@@ -1689,6 +1728,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getJourney", new APISimpleHandler(API.getJourney));
         restServer.createContext("/nglm-guimanager/putJourney", new APISimpleHandler(API.putJourney));
         restServer.createContext("/nglm-guimanager/removeJourney", new APISimpleHandler(API.removeJourney));
+        restServer.createContext("/nglm-guimanager/setStatusJourney", new APISimpleHandler(API.setStatusJourney));
         restServer.createContext("/nglm-guimanager/startJourney", new APISimpleHandler(API.startJourney));
         restServer.createContext("/nglm-guimanager/stopJourney", new APISimpleHandler(API.stopJourney));
         restServer.createContext("/nglm-guimanager/getCampaignToolbox", new APISimpleHandler(API.getCampaignToolbox));
@@ -1697,6 +1737,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCampaign", new APISimpleHandler(API.getCampaign));
         restServer.createContext("/nglm-guimanager/putCampaign", new APISimpleHandler(API.putCampaign));
         restServer.createContext("/nglm-guimanager/removeCampaign", new APISimpleHandler(API.removeCampaign));
+        restServer.createContext("/nglm-guimanager/setStatusCampaign", new APISimpleHandler(API.setStatusCampaign));
         restServer.createContext("/nglm-guimanager/startCampaign", new APISimpleHandler(API.startCampaign));
         restServer.createContext("/nglm-guimanager/stopCampaign", new APISimpleHandler(API.stopCampaign));
         restServer.createContext("/nglm-guimanager/getWorkflowToolbox", new APISimpleHandler(API.getWorkflowToolbox));
@@ -1706,12 +1747,14 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getWorkflow", new APISimpleHandler(API.getWorkflow));
         restServer.createContext("/nglm-guimanager/putWorkflow", new APISimpleHandler(API.putWorkflow));
         restServer.createContext("/nglm-guimanager/removeWorkflow", new APISimpleHandler(API.removeWorkflow));
+        restServer.createContext("/nglm-guimanager/setStatusWorkflow", new APISimpleHandler(API.setStatusWorkflow));
         restServer.createContext("/nglm-guimanager/getBulkCampaignList", new APISimpleHandler(API.getBulkCampaignList));
         restServer.createContext("/nglm-guimanager/getBulkCampaignSummaryList", new APISimpleHandler(API.getBulkCampaignSummaryList));
         restServer.createContext("/nglm-guimanager/getBulkCampaign", new APISimpleHandler(API.getBulkCampaign));
         restServer.createContext("/nglm-guimanager/getBulkCampaignCapacity", new APISimpleHandler(API.getBulkCampaignCapacity));
         restServer.createContext("/nglm-guimanager/putBulkCampaign", new APISimpleHandler(API.putBulkCampaign));
         restServer.createContext("/nglm-guimanager/removeBulkCampaign", new APISimpleHandler(API.removeBulkCampaign));
+        restServer.createContext("/nglm-guimanager/setStatusBulkCampaign", new APISimpleHandler(API.setStatusBulkCampaign));
         restServer.createContext("/nglm-guimanager/startBulkCampaign", new APISimpleHandler(API.startBulkCampaign));
         restServer.createContext("/nglm-guimanager/stopBulkCampaign", new APISimpleHandler(API.stopBulkCampaign));
         restServer.createContext("/nglm-guimanager/getJourneyTemplateList", new APISimpleHandler(API.getJourneyTemplateList));
@@ -1719,12 +1762,14 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getJourneyTemplate", new APISimpleHandler(API.getJourneyTemplate));
         restServer.createContext("/nglm-guimanager/putJourneyTemplate", new APISimpleHandler(API.putJourneyTemplate));
         restServer.createContext("/nglm-guimanager/removeJourneyTemplate", new APISimpleHandler(API.removeJourneyTemplate));
+        restServer.createContext("/nglm-guimanager/setStatusJourneyTemplate", new APISimpleHandler(API.setStatusJourneyTemplate));
         restServer.createContext("/nglm-guimanager/getJourneyNodeCount", new APISimpleHandler(API.getJourneyNodeCount));
         restServer.createContext("/nglm-guimanager/getSegmentationDimensionList", new APISimpleHandler(API.getSegmentationDimensionList));
         restServer.createContext("/nglm-guimanager/getSegmentationDimensionSummaryList", new APISimpleHandler(API.getSegmentationDimensionSummaryList));
         restServer.createContext("/nglm-guimanager/getSegmentationDimension", new APISimpleHandler(API.getSegmentationDimension));
         restServer.createContext("/nglm-guimanager/putSegmentationDimension", new APISimpleHandler(API.putSegmentationDimension));
         restServer.createContext("/nglm-guimanager/removeSegmentationDimension", new APISimpleHandler(API.removeSegmentationDimension));
+        restServer.createContext("/nglm-guimanager/setStatusSegmentationDimension", new APISimpleHandler(API.setStatusSegmentationDimension));
         restServer.createContext("/nglm-guimanager/getCountBySegmentationRanges", new APISimpleHandler(API.getCountBySegmentationRanges));
         restServer.createContext("/nglm-guimanager/getCountBySegmentationEligibility", new APISimpleHandler(API.getCountBySegmentationEligibility));
         restServer.createContext("/nglm-guimanager/evaluateProfileCriteria", new APISimpleHandler(API.evaluateProfileCriteria));
@@ -1734,11 +1779,13 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getPoint", new APISimpleHandler(API.getPoint));
         restServer.createContext("/nglm-guimanager/putPoint", new APISimpleHandler(API.putPoint));
         restServer.createContext("/nglm-guimanager/removePoint", new APISimpleHandler(API.removePoint));
+        restServer.createContext("/nglm-guimanager/setStatusPoint", new APISimpleHandler(API.setStatusPoint));
         restServer.createContext("/nglm-guimanager/getOfferList", new APISimpleHandler(API.getOfferList));
         restServer.createContext("/nglm-guimanager/getOfferSummaryList", new APISimpleHandler(API.getOfferSummaryList));
         restServer.createContext("/nglm-guimanager/getOffer", new APISimpleHandler(API.getOffer));
         restServer.createContext("/nglm-guimanager/putOffer", new APISimpleHandler(API.putOffer));
         restServer.createContext("/nglm-guimanager/removeOffer", new APISimpleHandler(API.removeOffer));
+        restServer.createContext("/nglm-guimanager/setStatusOffer", new APISimpleHandler(API.setStatusOffer));
         restServer.createContext("/nglm-guimanager/getPresentationStrategyList", new APISimpleHandler(API.getPresentationStrategyList));
         restServer.createContext("/nglm-guimanager/getReportGlobalConfiguration", new APISimpleHandler(API.getReportGlobalConfiguration));
         restServer.createContext("/nglm-guimanager/getReportList", new APISimpleHandler(API.getReportList));
@@ -1749,10 +1796,12 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getPresentationStrategy", new APISimpleHandler(API.getPresentationStrategy));
         restServer.createContext("/nglm-guimanager/putPresentationStrategy", new APISimpleHandler(API.putPresentationStrategy));
         restServer.createContext("/nglm-guimanager/removePresentationStrategy", new APISimpleHandler(API.removePresentationStrategy));
+        restServer.createContext("/nglm-guimanager/setStatusPresentationStrategy", new APISimpleHandler(API.setStatusPresentationStrategy));
         restServer.createContext("/nglm-guimanager/getDNBOMatrixList", new APISimpleHandler(API.getDNBOMatrixList));
         restServer.createContext("/nglm-guimanager/getDNBOMatrixSummaryList", new APISimpleHandler(API.getDNBOMatrixSummaryList));
         restServer.createContext("/nglm-guimanager/getDNBOMatrix", new APISimpleHandler(API.getDNBOMatrix));
         restServer.createContext("/nglm-guimanager/putDNBOMatrix", new APISimpleHandler(API.putDNBOMatrix));
+        restServer.createContext("/nglm-guimanager/setStatusDNBOMatrix", new APISimpleHandler(API.setStatusDNBOMatrix));
         restServer.createContext("/nglm-guimanager/removeDNBOMatrix", new APISimpleHandler(API.removeDNBOMatrix));
         restServer.createContext("/nglm-guimanager/getScoringTypesList", new APISimpleHandler(API.getScoringTypesList));
         restServer.createContext("/nglm-guimanager/getDNBOMatrixVariablesList", new APISimpleHandler(API.getDNBOMatrixVariablesList));
@@ -1761,59 +1810,71 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getScoringStrategy", new APISimpleHandler(API.getScoringStrategy));
         restServer.createContext("/nglm-guimanager/putScoringStrategy", new APISimpleHandler(API.putScoringStrategy));
         restServer.createContext("/nglm-guimanager/removeScoringStrategy", new APISimpleHandler(API.removeScoringStrategy));
+        restServer.createContext("/nglm-guimanager/setStatusScoringStrategy", new APISimpleHandler(API.setStatusScoringStrategy));
         restServer.createContext("/nglm-guimanager/getCallingChannelList", new APISimpleHandler(API.getCallingChannelList));
         restServer.createContext("/nglm-guimanager/getCallingChannelSummaryList", new APISimpleHandler(API.getCallingChannelSummaryList));
         restServer.createContext("/nglm-guimanager/getCallingChannel", new APISimpleHandler(API.getCallingChannel));
         restServer.createContext("/nglm-guimanager/putCallingChannel", new APISimpleHandler(API.putCallingChannel));
         restServer.createContext("/nglm-guimanager/removeCallingChannel", new APISimpleHandler(API.removeCallingChannel));
+        restServer.createContext("/nglm-guimanager/setStatusCallingChannel", new APISimpleHandler(API.setStatusCallingChannel));
         restServer.createContext("/nglm-guimanager/getSalesChannelList", new APISimpleHandler(API.getSalesChannelList));
         restServer.createContext("/nglm-guimanager/getSalesChannelSummaryList", new APISimpleHandler(API.getSalesChannelSummaryList));
         restServer.createContext("/nglm-guimanager/getSalesChannel", new APISimpleHandler(API.getSalesChannel));
         restServer.createContext("/nglm-guimanager/putSalesChannel", new APISimpleHandler(API.putSalesChannel));
         restServer.createContext("/nglm-guimanager/removeSalesChannel", new APISimpleHandler(API.removeSalesChannel));
+        restServer.createContext("/nglm-guimanager/setStatusSalesChannel", new APISimpleHandler(API.setStatusSalesChannel));
         restServer.createContext("/nglm-guimanager/getSupplierList", new APISimpleHandler(API.getSupplierList));
         restServer.createContext("/nglm-guimanager/getSupplierSummaryList", new APISimpleHandler(API.getSupplierSummaryList));
         restServer.createContext("/nglm-guimanager/getSupplier", new APISimpleHandler(API.getSupplier));
         restServer.createContext("/nglm-guimanager/putSupplier", new APISimpleHandler(API.putSupplier));
         restServer.createContext("/nglm-guimanager/removeSupplier", new APISimpleHandler(API.removeSupplier));
+        restServer.createContext("/nglm-guimanager/setStatusSupplier", new APISimpleHandler(API.setStatusSupplier));
         restServer.createContext("/nglm-guimanager/getProductList", new APISimpleHandler(API.getProductList));
         restServer.createContext("/nglm-guimanager/getProductSummaryList", new APISimpleHandler(API.getProductSummaryList));
         restServer.createContext("/nglm-guimanager/getProduct", new APISimpleHandler(API.getProduct));
         restServer.createContext("/nglm-guimanager/putProduct", new APISimpleHandler(API.putProduct));
+        restServer.createContext("/nglm-guimanager/setStatusProduct", new APISimpleHandler(API.setStatusProduct));
         restServer.createContext("/nglm-guimanager/removeProduct", new APISimpleHandler(API.removeProduct));
         restServer.createContext("/nglm-guimanager/getCatalogCharacteristicList", new APISimpleHandler(API.getCatalogCharacteristicList));
         restServer.createContext("/nglm-guimanager/getCatalogCharacteristicSummaryList", new APISimpleHandler(API.getCatalogCharacteristicSummaryList));
         restServer.createContext("/nglm-guimanager/getCatalogCharacteristic", new APISimpleHandler(API.getCatalogCharacteristic));
         restServer.createContext("/nglm-guimanager/putCatalogCharacteristic", new APISimpleHandler(API.putCatalogCharacteristic));
         restServer.createContext("/nglm-guimanager/removeCatalogCharacteristic", new APISimpleHandler(API.removeCatalogCharacteristic));
+        restServer.createContext("/nglm-guimanager/setStatusCatalogCharacteristic", new APISimpleHandler(API.setStatusCatalogCharacteristic));
         restServer.createContext("/nglm-guimanager/getContactPolicyList", new APISimpleHandler(API.getContactPolicyList));
         restServer.createContext("/nglm-guimanager/getContactPolicySummaryList", new APISimpleHandler(API.getContactPolicySummaryList));
         restServer.createContext("/nglm-guimanager/getContactPolicy", new APISimpleHandler(API.getContactPolicy));
         restServer.createContext("/nglm-guimanager/putContactPolicy", new APISimpleHandler(API.putContactPolicy));
         restServer.createContext("/nglm-guimanager/removeContactPolicy", new APISimpleHandler(API.removeContactPolicy));
+        restServer.createContext("/nglm-guimanager/setStatusContactPolicy", new APISimpleHandler(API.setStatusContactPolicy));
         restServer.createContext("/nglm-guimanager/getJourneyObjectiveList", new APISimpleHandler(API.getJourneyObjectiveList));
         restServer.createContext("/nglm-guimanager/getJourneyObjectiveSummaryList", new APISimpleHandler(API.getJourneyObjectiveSummaryList));
         restServer.createContext("/nglm-guimanager/getJourneyObjective", new APISimpleHandler(API.getJourneyObjective));
         restServer.createContext("/nglm-guimanager/putJourneyObjective", new APISimpleHandler(API.putJourneyObjective));
+        restServer.createContext("/nglm-guimanager/setStatusJourneyObjective", new APISimpleHandler(API.setStatusJourneyObjective));
         restServer.createContext("/nglm-guimanager/removeJourneyObjective", new APISimpleHandler(API.removeJourneyObjective));
         restServer.createContext("/nglm-guimanager/getOfferObjectiveList", new APISimpleHandler(API.getOfferObjectiveList));
         restServer.createContext("/nglm-guimanager/getOfferObjectiveSummaryList", new APISimpleHandler(API.getOfferObjectiveSummaryList));
         restServer.createContext("/nglm-guimanager/getOfferObjective", new APISimpleHandler(API.getOfferObjective));
         restServer.createContext("/nglm-guimanager/putOfferObjective", new APISimpleHandler(API.putOfferObjective));
         restServer.createContext("/nglm-guimanager/removeOfferObjective", new APISimpleHandler(API.removeOfferObjective));
+        restServer.createContext("/nglm-guimanager/setStatusOfferObjective", new APISimpleHandler(API.setStatusOfferObjective));
         restServer.createContext("/nglm-guimanager/getProductTypeList", new APISimpleHandler(API.getProductTypeList));
         restServer.createContext("/nglm-guimanager/getProductTypeSummaryList", new APISimpleHandler(API.getProductTypeSummaryList));
         restServer.createContext("/nglm-guimanager/getProductType", new APISimpleHandler(API.getProductType));
         restServer.createContext("/nglm-guimanager/putProductType", new APISimpleHandler(API.putProductType));
         restServer.createContext("/nglm-guimanager/removeProductType", new APISimpleHandler(API.removeProductType));
+        restServer.createContext("/nglm-guimanager/setStatusProductType", new APISimpleHandler(API.setStatusProductType));
         restServer.createContext("/nglm-guimanager/getUCGRuleList", new APISimpleHandler(API.getUCGRuleList));
         restServer.createContext("/nglm-guimanager/getUCGRuleSummaryList",new APISimpleHandler(API.getUCGRuleSummaryList));
         restServer.createContext("/nglm-guimanager/getUCGRule", new APISimpleHandler(API.getUCGRule));
         restServer.createContext("/nglm-guimanager/putUCGRule", new APISimpleHandler(API.putUCGRule));
         restServer.createContext("/nglm-guimanager/removeUCGRule", new APISimpleHandler(API.removeUCGRule));
+        restServer.createContext("/nglm-guimanager/setStatusUCGRule", new APISimpleHandler(API.setStatusUCGRule));
         restServer.createContext("/nglm-guimanager/getDeliverableList", new APISimpleHandler(API.getDeliverableList));
         restServer.createContext("/nglm-guimanager/getDeliverableSummaryList", new APISimpleHandler(API.getDeliverableSummaryList));
         restServer.createContext("/nglm-guimanager/getDeliverable", new APISimpleHandler(API.getDeliverable));
+        restServer.createContext("/nglm-guimanager/setStatusDeliverable", new APISimpleHandler(API.setStatusDeliverable));
         restServer.createContext("/nglm-guimanager/getDeliverableByName", new APISimpleHandler(API.getDeliverableByName));
         restServer.createContext("/nglm-guimanager/getTokenTypeList", new APISimpleHandler(API.getTokenTypeList));
         restServer.createContext("/nglm-guimanager/getTokenTypeSummaryList", new APISimpleHandler(API.getTokenTypeSummaryList));
@@ -1821,13 +1882,14 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getTokenType", new APISimpleHandler(API.getTokenType));
         restServer.createContext("/nglm-guimanager/removeTokenType", new APISimpleHandler(API.removeTokenType));
         restServer.createContext("/nglm-guimanager/getTokenCodesFormats", new APISimpleHandler(API.getTokenCodesFormats));
+        restServer.createContext("/nglm-guimanager/setStatusTokenType", new APISimpleHandler(API.setStatusTokenType));
         
         restServer.createContext("/nglm-guimanager/getVoucherTypeList", new APISimpleHandler(API.getVoucherTypeList));
         restServer.createContext("/nglm-guimanager/getVoucherTypeSummaryList", new APISimpleHandler(API.getVoucherTypeSummaryList));
         restServer.createContext("/nglm-guimanager/putVoucherType", new APISimpleHandler(API.putVoucherType));
         restServer.createContext("/nglm-guimanager/getVoucherType", new APISimpleHandler(API.getVoucherType));
         restServer.createContext("/nglm-guimanager/removeVoucherType", new APISimpleHandler(API.removeVoucherType));
-
+        restServer.createContext("/nglm-guimanager/setStatusVoucherType", new APISimpleHandler(API.setStatusVoucherType));
         restServer.createContext("/nglm-guimanager/getVoucherCodeFormatList", new APISimpleHandler(API.getVoucherCodeFormatList));
         
         restServer.createContext("/nglm-guimanager/getVoucherList", new APISimpleHandler(API.getVoucherList));
@@ -1835,6 +1897,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putVoucher", new APISimpleHandler(API.putVoucher));
         restServer.createContext("/nglm-guimanager/getVoucher", new APISimpleHandler(API.getVoucher));
         restServer.createContext("/nglm-guimanager/removeVoucher", new APISimpleHandler(API.removeVoucher));
+        restServer.createContext("/nglm-guimanager/setStatusVoucher", new APISimpleHandler(API.setStatusVoucher));
 
         restServer.createContext("/nglm-guimanager/getMailTemplateList", new APISimpleHandler(API.getMailTemplateList));
         restServer.createContext("/nglm-guimanager/getFullMailTemplateList", new APISimpleHandler(API.getFullMailTemplateList));
@@ -1842,12 +1905,14 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getMailTemplate", new APISimpleHandler(API.getMailTemplate));
         restServer.createContext("/nglm-guimanager/putMailTemplate", new APISimpleHandler(API.putMailTemplate));
         restServer.createContext("/nglm-guimanager/removeMailTemplate", new APISimpleHandler(API.removeMailTemplate));
+        restServer.createContext("/nglm-guimanager/setStatusMailTemplate", new APISimpleHandler(API.setStatusMailTemplate));
         restServer.createContext("/nglm-guimanager/getSMSTemplateList", new APISimpleHandler(API.getSMSTemplateList));
         restServer.createContext("/nglm-guimanager/getFullSMSTemplateList", new APISimpleHandler(API.getFullSMSTemplateList));
         restServer.createContext("/nglm-guimanager/getSMSTemplateSummaryList", new APISimpleHandler(API.getSMSTemplateSummaryList));
         restServer.createContext("/nglm-guimanager/getSMSTemplate", new APISimpleHandler(API.getSMSTemplate));
         restServer.createContext("/nglm-guimanager/putSMSTemplate", new APISimpleHandler(API.putSMSTemplate));
         restServer.createContext("/nglm-guimanager/removeSMSTemplate", new APISimpleHandler(API.removeSMSTemplate));
+        restServer.createContext("/nglm-guimanager/setStatusSMSTemplate", new APISimpleHandler(API.setStatusSMSTemplate));
         
         restServer.createContext("/nglm-guimanager/getPushTemplateList", new APISimpleHandler(API.getPushTemplateList));
         restServer.createContext("/nglm-guimanager/getFullPushTemplateList", new APISimpleHandler(API.getFullPushTemplateList));
@@ -1855,13 +1920,15 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getPushTemplate", new APISimpleHandler(API.getPushTemplate));
         restServer.createContext("/nglm-guimanager/putPushTemplate", new APISimpleHandler(API.putPushTemplate));
         restServer.createContext("/nglm-guimanager/removePushTemplate", new APISimpleHandler(API.removePushTemplate));
+        restServer.createContext("/nglm-guimanager/setStatusPushTemplate", new APISimpleHandler(API.setStatusPushTemplate));
         
         restServer.createContext("/nglm-guimanager/getDialogTemplateList", new APISimpleHandler(API.getDialogTemplateList));
         restServer.createContext("/nglm-guimanager/getDialogTemplateSummaryList", new APISimpleHandler(API.getDialogTemplateSummaryList));
         restServer.createContext("/nglm-guimanager/getDialogTemplate", new APISimpleHandler(API.getDialogTemplate));
         restServer.createContext("/nglm-guimanager/putDialogTemplate", new APISimpleHandler(API.putDialogTemplate));
         restServer.createContext("/nglm-guimanager/removeDialogTemplate", new APISimpleHandler(API.removeDialogTemplate));
-
+        restServer.createContext("/nglm-guimanager/setStatusDialogTemplate", new APISimpleHandler(API.setStatusDialogTemplate));
+        
         restServer.createContext("/nglm-guimanager/getFulfillmentProviders", new APISimpleHandler(API.getFulfillmentProviders));
         restServer.createContext("/nglm-guimanager/getPaymentMeans", new APISimpleHandler(API.getPaymentMeans));
         restServer.createContext("/nglm-guimanager/getPaymentMeanList", new APISimpleHandler(API.getPaymentMeanList));
@@ -1869,6 +1936,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getPaymentMean", new APISimpleHandler(API.getPaymentMean));
         restServer.createContext("/nglm-guimanager/putPaymentMean", new APISimpleHandler(API.putPaymentMean));
         restServer.createContext("/nglm-guimanager/removePaymentMean", new APISimpleHandler(API.removePaymentMean));
+        restServer.createContext("/nglm-guimanager/setStatusPaymentMean", new APISimpleHandler(API.setStatusPaymentMean));
         restServer.createContext("/nglm-guimanager/getDashboardCounts", new APISimpleHandler(API.getDashboardCounts));
         restServer.createContext("/nglm-guimanager/getCustomer", new APISimpleHandler(API.getCustomer));
         restServer.createContext("/nglm-guimanager/getCustomerMetaData", new APISimpleHandler(API.getCustomerMetaData));
@@ -1891,6 +1959,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getTargetSummaryList", new APISimpleHandler(API.getTargetSummaryList));
         restServer.createContext("/nglm-guimanager/putTarget", new APISimpleHandler(API.putTarget));
         restServer.createContext("/nglm-guimanager/getTarget", new APISimpleHandler(API.getTarget));
+        restServer.createContext("/nglm-guimanager/setStatusTarget", new APISimpleHandler(API.setStatusTarget));
         restServer.createContext("/nglm-guimanager/removeTarget", new APISimpleHandler(API.removeTarget));
         restServer.createContext("/nglm-guimanager/updateCustomer", new APISimpleHandler(API.updateCustomer));
         restServer.createContext("/nglm-guimanager/updateCustomerParent", new APISimpleHandler(API.updateCustomerParent));
@@ -1902,6 +1971,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getBlackoutPeriodsSummaryList", new APISimpleHandler(API.getBlackoutPeriodsSummaryList));
         restServer.createContext("/nglm-guimanager/getBlackoutPeriods", new APISimpleHandler(API.getBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/putBlackoutPeriods", new APISimpleHandler(API.putBlackoutPeriods));
+        restServer.createContext("/nglm-guimanager/setStatusBlackoutPeriods", new APISimpleHandler(API.setStatusBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/removeBlackoutPeriods", new APISimpleHandler(API.removeBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramTypeList", new APISimpleHandler(API.getLoyaltyProgramTypeList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramList", new APISimpleHandler(API.getLoyaltyProgramList));
@@ -1909,10 +1979,12 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getLoyaltyProgram", new APISimpleHandler(API.getLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/putLoyaltyProgram", new APISimpleHandler(API.putLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/removeLoyaltyProgram", new APISimpleHandler(API.removeLoyaltyProgram));
+        restServer.createContext("/nglm-guimanager/setStatusLoyaltyProgram", new APISimpleHandler(API.setStatusLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/getResellerList", new APISimpleHandler(API.getResellerList));
         restServer.createContext("/nglm-guimanager/getResellerSummaryList", new APISimpleHandler(API.getResellerSummaryList));
         restServer.createContext("/nglm-guimanager/getReseller", new APISimpleHandler(API.getReseller));
         restServer.createContext("/nglm-guimanager/putReseller", new APISimpleHandler(API.putReseller));
+        restServer.createContext("/nglm-guimanager/setStatusReseller", new APISimpleHandler(API.setStatusReseller));
         restServer.createContext("/nglm-guimanager/removeReseller", new APISimpleHandler(API.removeReseller));
         restServer.createContext("/nglm-guimanager/enterCampaign", new APISimpleHandler(API.enterCampaign));
         restServer.createContext("/nglm-guimanager/creditBonus", new APISimpleHandler(API.creditBonus));
@@ -1923,10 +1995,12 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getExclusionInclusionTarget", new APISimpleHandler(API.getExclusionInclusionTarget));
         restServer.createContext("/nglm-guimanager/removeExclusionInclusionTarget", new APISimpleHandler(API.removeExclusionInclusionTarget));
         restServer.createContext("/nglm-guimanager/getSegmentContactPolicyList", new APISimpleHandler(API.getSegmentContactPolicyList));
+        restServer.createContext("/nglm-guimanager/setStatusExclusionInclusionTarget", new APISimpleHandler(API.setStatusExclusionInclusionTarget));
         restServer.createContext("/nglm-guimanager/getSegmentContactPolicySummaryList", new APISimpleHandler(API.getSegmentContactPolicySummaryList));
         restServer.createContext("/nglm-guimanager/putSegmentContactPolicy", new APISimpleHandler(API.putSegmentContactPolicy));
         restServer.createContext("/nglm-guimanager/getSegmentContactPolicy", new APISimpleHandler(API.getSegmentContactPolicy));
-        restServer.createContext("/nglm-guimanager/removeSegmentContactPolicy", new APISimpleHandler(API.removeSegmentContactPolicy));     
+        restServer.createContext("/nglm-guimanager/removeSegmentContactPolicy", new APISimpleHandler(API.removeSegmentContactPolicy)); 
+        restServer.createContext("/nglm-guimanager/setStatusSegmentContactPolicy", new APISimpleHandler(API.setStatusSegmentContactPolicy));
         restServer.createContext("/nglm-configadaptor/getSupportedLanguages", new APISimpleHandler(API.configAdaptorSupportedLanguages));
         restServer.createContext("/nglm-configadaptor/getSubscriberMessageTemplate", new APISimpleHandler(API.configAdaptorSubscriberMessageTemplate));
         restServer.createContext("/nglm-configadaptor/getOffer", new APISimpleHandler(API.configAdaptorOffer));
@@ -1955,6 +2029,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCriterionFieldAvailableValues", new APISimpleHandler(API.getCriterionFieldAvailableValues));
         restServer.createContext("/nglm-guimanager/putCriterionFieldAvailableValues", new APISimpleHandler(API.putCriterionFieldAvailableValues));
         restServer.createContext("/nglm-guimanager/removeCriterionFieldAvailableValues", new APISimpleHandler(API.removeCriterionFieldAvailableValues));
+        restServer.createContext("/nglm-guimanager/setStatusCriterionFieldAvailableValues", new APISimpleHandler(API.setStatusCriterionFieldAvailableValues));
         restServer.createContext("/nglm-guimanager/getEffectiveSystemTime", new APISimpleHandler(API.getEffectiveSystemTime));
         restServer.createContext("/nglm-guimanager/getCustomerNBOs", new APISimpleHandler(API.getCustomerNBOs));
         restServer.createContext("/nglm-guimanager/getTokensCodesList", new APISimpleHandler(API.getTokensCodesList));
@@ -1970,6 +2045,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSourceAddress", new APISimpleHandler(API.getSourceAddress));
         restServer.createContext("/nglm-guimanager/putSourceAddress", new APISimpleHandler(API.putSourceAddress));
         restServer.createContext("/nglm-guimanager/removeSourceAddress", new APISimpleHandler(API.removeSourceAddress));
+        restServer.createContext("/nglm-guimanager/setStatusSourceAddress", new APISimpleHandler(API.setStatusSourceAddress));
         
         restServer.createContext("/nglm-guimanager/putSupplierOffer", new APISimpleHandler(API.putSupplierOffer));
         restServer.createContext("/nglm-guimanager/getSupplierOfferList", new APISimpleHandler(API.getSupplierOfferList));
@@ -2443,6 +2519,10 @@ public class GUIManager
                 case removeJourney:
                   jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.Journey);
                   break;
+                  
+                case setStatusJourney:
+                  jsonResponse = processSetStatusJourney(userID, jsonRoot, GUIManagedObjectType.Journey);
+                  break;
 
                 case startJourney:
                   jsonResponse = processSetActive(userID, jsonRoot, GUIManagedObjectType.Journey, true);
@@ -2474,6 +2554,10 @@ public class GUIManager
 
                 case removeCampaign:
                   jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.Campaign);
+                  break;
+                  
+                case setStatusCampaign:
+                  jsonResponse = processSetStatusJourney(userID, jsonRoot, GUIManagedObjectType.Campaign);
                   break;
 
                 case startCampaign:
@@ -2511,6 +2595,10 @@ public class GUIManager
                 case removeWorkflow:
                   jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.Workflow);
                   break;
+                  
+                case setStatusWorkflow:
+                  jsonResponse = processSetStatusJourney(userID, jsonRoot, GUIManagedObjectType.Workflow);
+                  break;
 
                 case getBulkCampaignList:
                   jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, true, true, includeArchived);
@@ -2534,6 +2622,10 @@ public class GUIManager
 
                 case removeBulkCampaign:
                   jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.BulkCampaign);
+                  break;
+                  
+                case setStatusBulkCampaign:
+                  jsonResponse = processSetStatusJourney(userID, jsonRoot, GUIManagedObjectType.BulkCampaign);
                   break;
 
                 case startBulkCampaign:
@@ -2563,6 +2655,10 @@ public class GUIManager
                 case removeJourneyTemplate:
                   jsonResponse = processRemoveJourneyTemplate(userID, jsonRoot);
                   break;
+                  
+                case setStatusJourneyTemplate:
+                  jsonResponse = processSetStatusJourneyTemplate(userID, jsonRoot);
+                  break;
 
                 case getJourneyNodeCount:
                   jsonResponse = processGetJourneyNodeCount(userID, jsonRoot);
@@ -2586,6 +2682,10 @@ public class GUIManager
 
                 case removeSegmentationDimension:
                   jsonResponse = guiManagerBaseManagement.processRemoveSegmentationDimension(userID, jsonRoot);
+                  break;
+                  
+                case setStatusSegmentationDimension:
+                  jsonResponse = guiManagerBaseManagement.processSetStatusSegmentationDimension(userID, jsonRoot);
                   break;
 
                 case getCountBySegmentationRanges:
@@ -2623,6 +2723,10 @@ public class GUIManager
                 case removePoint:
                   jsonResponse = guiManagerGeneral.processRemovePoint(userID, jsonRoot);
                   break;
+                  
+                case setStatusPoint:
+                  jsonResponse = guiManagerGeneral.processSetStatusPoint(userID, jsonRoot);
+                  break;
 
                 case getOfferList:
                   jsonResponse = processGetOfferList(userID, jsonRoot, true, includeArchived);
@@ -2642,6 +2746,10 @@ public class GUIManager
 
                 case removeOffer:
                   jsonResponse = processRemoveOffer(userID, jsonRoot);
+                  break;
+                  
+                case setStatusOffer:
+                  jsonResponse = processSetStatusOffer(userID, jsonRoot);
                   break;
 
                 case getReportGlobalConfiguration:
@@ -2679,6 +2787,10 @@ public class GUIManager
                 case removePresentationStrategy:
                   jsonResponse = processRemovePresentationStrategy(userID, jsonRoot);
                   break;
+                  
+                case setStatusPresentationStrategy:
+                  jsonResponse = processSetStatusPresentationStrategy(userID, jsonRoot);
+                  break;
 
                 case getDNBOMatrixList:
                   jsonResponse = processGetDNBOMatrixList(userID, jsonRoot, true, includeArchived);
@@ -2698,6 +2810,10 @@ public class GUIManager
 
                 case removeDNBOMatrix:
                   jsonResponse = processRemoveDNBOMatrix(userID, jsonRoot);
+                  break;
+                  
+                case setStatusDNBOMatrix:
+                  jsonResponse = processSetStatusDNBOMatrix(userID, jsonRoot);
                   break;
                   
                 case getScoringTypesList:
@@ -2727,6 +2843,10 @@ public class GUIManager
                 case removeScoringStrategy:
                   jsonResponse = processRemoveScoringStrategy(userID, jsonRoot);
                   break;
+                  
+                case setStatusScoringStrategy:
+                  jsonResponse = processSetStatusScoringStrategy(userID, jsonRoot);
+                  break;
 
                 case getCallingChannelList:
                   jsonResponse = processGetCallingChannelList(userID, jsonRoot, true, includeArchived);
@@ -2746,6 +2866,10 @@ public class GUIManager
 
                 case removeCallingChannel:
                   jsonResponse = processRemoveCallingChannel(userID, jsonRoot);
+                  break;
+                  
+                case setStatusCallingChannel:
+                  jsonResponse = processSetStatusCallingChannel(userID, jsonRoot);
                   break;
 
                 case getSalesChannelList:
@@ -2767,6 +2891,10 @@ public class GUIManager
                 case removeSalesChannel:
                   jsonResponse = processRemoveSalesChannel(userID, jsonRoot);
                   break;
+                  
+                case setStatusSalesChannel:
+                  jsonResponse = processSetStatusSalesChannel(userID, jsonRoot);
+                  break;
 
                 case getSupplierList:
                   jsonResponse = processGetSupplierList(userID, jsonRoot, true, includeArchived);
@@ -2786,6 +2914,10 @@ public class GUIManager
 
                 case removeSupplier:
                   jsonResponse = processRemoveSupplier(userID, jsonRoot);
+                  break;
+                  
+                case setStatusSupplier:
+                  jsonResponse = processSetStatusSupplier(userID, jsonRoot);
                   break;
 
                 case getProductList:
@@ -2807,6 +2939,10 @@ public class GUIManager
                 case removeProduct:
                   jsonResponse = processRemoveProduct(userID, jsonRoot);
                   break;
+                  
+                case setStatusProduct:
+                  jsonResponse = processSetStatusProduct(userID, jsonRoot);
+                  break;
 
                 case getCatalogCharacteristicList:
                   jsonResponse = guiManagerGeneral.processGetCatalogCharacteristicList(userID, jsonRoot, true, includeArchived);
@@ -2826,6 +2962,10 @@ public class GUIManager
 
                 case removeCatalogCharacteristic:
                   jsonResponse = guiManagerGeneral.processRemoveCatalogCharacteristic(userID, jsonRoot);
+                  break;
+                  
+                case setStatusCatalogCharacteristic:
+                  jsonResponse = guiManagerGeneral.processSetStatusCatalogCharacteristic(userID, jsonRoot);
                   break;
 
                 case getContactPolicyList:
@@ -2847,6 +2987,10 @@ public class GUIManager
                 case removeContactPolicy:
                   jsonResponse = processRemoveContactPolicy(userID, jsonRoot);
                   break;
+                  
+                case setStatusContactPolicy:
+                  jsonResponse = processSetStatusContactPolicy(userID, jsonRoot);
+                  break;
 
                 case getJourneyObjectiveList:
                   jsonResponse = processGetJourneyObjectiveList(userID, jsonRoot, true, includeArchived);
@@ -2866,6 +3010,10 @@ public class GUIManager
 
                 case removeJourneyObjective:
                   jsonResponse = processRemoveJourneyObjective(userID, jsonRoot);
+                  break;
+                  
+                case setStatusJourneyObjective:
+                  jsonResponse = processSetStatusJourneyObjective(userID, jsonRoot);
                   break;
 
                 case getOfferObjectiveList:
@@ -2887,6 +3035,10 @@ public class GUIManager
                 case removeOfferObjective:
                   jsonResponse = processRemoveOfferObjective(userID, jsonRoot);
                   break;
+                  
+                case setStatusOfferObjective:
+                  jsonResponse = processSetStatusOfferObjective(userID, jsonRoot);
+                  break;
 
                 case getProductTypeList:
                   jsonResponse = processGetProductTypeList(userID, jsonRoot, true, includeArchived);
@@ -2906,6 +3058,10 @@ public class GUIManager
 
                 case removeProductType:
                   jsonResponse = processRemoveProductType(userID, jsonRoot);
+                  break;
+                  
+                case setStatusProductType:
+                  jsonResponse = processSetStatusProductType(userID, jsonRoot);
                   break;
 
                 case getUCGRuleList:
@@ -2927,6 +3083,10 @@ public class GUIManager
                 case removeUCGRule:
                   jsonResponse = guiManagerBaseManagement.processRemoveUCGRule(userID, jsonRoot);
                   break;
+                  
+                case setStatusUCGRule:
+                  jsonResponse = guiManagerBaseManagement.processSetStatusUCGRule(userID, jsonRoot);
+                  break;
 
                 case getDeliverableList:
                   jsonResponse = processGetDeliverableList(userID, jsonRoot, true, includeArchived);
@@ -2939,7 +3099,11 @@ public class GUIManager
                 case getDeliverable:
                   jsonResponse = guiManagerGeneral.processGetDeliverable(userID, jsonRoot, includeArchived);
                   break;
-
+                  
+                case setStatusDeliverable:
+                  jsonResponse = guiManagerGeneral.processSetStatusDeliverable(userID, jsonRoot);
+                  break;
+                 
                 case getDeliverableByName:
                   jsonResponse = guiManagerGeneral.processGetDeliverableByName(userID, jsonRoot, includeArchived);
                   break;
@@ -2962,6 +3126,10 @@ public class GUIManager
 
                 case removeTokenType:
                   jsonResponse = guiManagerGeneral.processRemoveTokenType(userID, jsonRoot);
+                  break;
+                  
+                case setStatusTokenType:
+                  jsonResponse = guiManagerGeneral.processSetStatusTokenType(userID, jsonRoot);
                   break;
 
                 case getTokenCodesFormats:
@@ -2987,6 +3155,10 @@ public class GUIManager
                 case removeVoucherType:
                   jsonResponse = processRemoveVoucherType(userID, jsonRoot);
                   break;
+                  
+                case setStatusVoucherType:
+                  jsonResponse = processSetStatusVoucherType(userID, jsonRoot);
+                  break;
 
                 case getVoucherCodeFormatList:
                   jsonResponse = processGetVoucherCodeFormatList(userID, jsonRoot);
@@ -3010,6 +3182,10 @@ public class GUIManager
 
                 case removeVoucher:
                   jsonResponse = processRemoveVoucher(userID, jsonRoot);
+                  break;
+                  
+                case setStatusVoucher:
+                  jsonResponse = processSetStatusVoucher(userID, jsonRoot);
                   break;
 
                 case getMailTemplateList:
@@ -3035,6 +3211,10 @@ public class GUIManager
                 case removeMailTemplate:
                   jsonResponse = processRemoveMailTemplate(userID, jsonRoot);
                   break;
+                  
+                case setStatusMailTemplate:
+                  jsonResponse = processSetStatusMailTemplate(userID, jsonRoot);
+                  break;
 
                 case getSMSTemplateList:
                   jsonResponse = processGetSMSTemplateList(userID, jsonRoot, true, true, includeArchived);
@@ -3058,6 +3238,10 @@ public class GUIManager
 
                 case removeSMSTemplate:
                   jsonResponse = processRemoveSMSTemplate(userID, jsonRoot);
+                  break;
+                  
+                case setStatusSMSTemplate:
+                  jsonResponse = processSetStatusSMSTemplate(userID, jsonRoot);
                   break;
 
                 case getPushTemplateList:
@@ -3084,6 +3268,10 @@ public class GUIManager
                   jsonResponse = processRemovePushTemplate(userID, jsonRoot);
                   break;
                   
+                case setStatusPushTemplate:
+                  jsonResponse = processSetStatusPushTemplate(userID, jsonRoot);
+                  break;
+                  
                 case getDialogTemplateList:
                   jsonResponse = processGetDialogTemplateList(userID, jsonRoot, true, true, includeArchived);
                   break;
@@ -3106,6 +3294,10 @@ public class GUIManager
 
                 case removeDialogTemplate:
                   jsonResponse = processRemoveDialogTemplate(userID, jsonRoot);
+                  break;
+                  
+                case setStatusDialogTemplate:
+                  jsonResponse = processSetStatusDialogTemplate(userID, jsonRoot);
                   break;
 
                 case getFulfillmentProviders:
@@ -3223,6 +3415,10 @@ public class GUIManager
                 case removeTarget:
                   jsonResponse = guiManagerBaseManagement.processRemoveTarget(userID, jsonRoot);
                   break;
+                  
+                case setStatusTarget:
+                  jsonResponse = guiManagerBaseManagement.processSetStatusTarget(userID, jsonRoot);
+                  break;
 
                 case updateCustomer:
                   jsonResponse = processUpdateCustomer(userID, jsonRoot);
@@ -3291,6 +3487,10 @@ public class GUIManager
                 case removeLoyaltyProgram:
                   jsonResponse = guiManagerLoyaltyReporting.processRemoveLoyaltyProgram(userID, jsonRoot);
                   break;
+                  
+                case setStatusLoyaltyProgram:
+                  jsonResponse = guiManagerLoyaltyReporting.processSetStatusLoyaltyProgram(userID, jsonRoot);
+                  break;
 
                 case getResellerList:
                   jsonResponse = processGetResellerList(userID, jsonRoot, true, includeArchived);
@@ -3311,6 +3511,10 @@ public class GUIManager
                 case removeReseller:
                   jsonResponse = processRemoveReseller(userID, jsonRoot);
                   break;
+                  
+                case setStatusReseller:
+                  jsonResponse = processSetStatusReseller(userID, jsonRoot);
+                  break;  
 
                 case enterCampaign:
                   jsonResponse = processEnterCampaign(userID, jsonRoot);
@@ -3344,6 +3548,10 @@ public class GUIManager
                   jsonResponse = guiManagerBaseManagement.processRemoveExclusionInclusionTarget(userID, jsonRoot);
                   break;
                   
+                case setStatusExclusionInclusionTarget:
+                  jsonResponse = guiManagerBaseManagement.processSetStatusExclusionInclusionTarget(userID, jsonRoot);
+                  break;
+                  
                 case getSegmentContactPolicyList:  
                   jsonResponse = processGetSegmentContactPolicyList(userID, jsonRoot, true, includeArchived);
                   break;
@@ -3362,6 +3570,10 @@ public class GUIManager
                   
                 case removeSegmentContactPolicy:
                   jsonResponse = processRemoveSegmentContactPolicy(userID, jsonRoot);
+                  break;
+                  
+                case setStatusSegmentContactPolicy:
+                  jsonResponse = processSetStatusSegmentContactPolicy(userID, jsonRoot);
                   break;
                   
                 case getBillingModes:
@@ -3475,6 +3687,10 @@ public class GUIManager
                 case removeCriterionFieldAvailableValues:
                   jsonResponse = processRemoveCriterionFieldAvailableValues(userID, jsonRoot);
                   break;
+                  
+                case setStatusCriterionFieldAvailableValues:
+                  jsonResponse = processSetStatusCriterionFieldAvailableValues(userID, jsonRoot);
+                  break;
 
                 case getEffectiveSystemTime:
                   jsonResponse = guiManagerGeneral.processGetEffectiveSystemTime(userID, jsonRoot);
@@ -3522,6 +3738,10 @@ public class GUIManager
 
                 case removeSourceAddress:
                   jsonResponse = processRemoveSourceAddress(userID, jsonRoot);
+                  break;
+                  
+                case setStatusSourceAddress:
+                  jsonResponse = processSetStatusSourceAddress(userID, jsonRoot);
                   break;
 
                 case getTenantList:
@@ -4803,7 +5023,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> journeys = new ArrayList<JSONObject>();
-    for (GUIManagedObject journey : journeyService.getStoredJourneys(includeArchived))
+    Collection <GUIManagedObject> journeyObjects = new ArrayList<GUIManagedObject>();
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray journeyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < journeyIDs.size(); i++)
+          {
+            String journeyID = journeyIDs.get(i).toString();
+            GUIManagedObject journey = journeyService.getStoredJourney(journeyID, includeArchived);
+            if (journey != null)
+              {
+                journeyObjects.add(journey);
+              }
+
+          }
+      }
+    else
+      {
+        journeyObjects = journeyService.getStoredJourneys(includeArchived);
+      }
+    for (GUIManagedObject journey : journeyObjects)
       {
         if (journey.getGUIManagedObjectType().equals(objectType) && (! externalOnly || ! journey.getInternalOnly()))
           {
@@ -4959,7 +5198,19 @@ public class GUIManager
     ****************************************/
 
     Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
+    HashMap<String,Object> response = new HashMap<String,Object>();    
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
+
 
     /*****************************************
     *
@@ -5045,58 +5296,69 @@ public class GUIManager
         *  store
         *
         *****************************************/
-
-        journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourney == null), userID);
-
-        /*****************************************
-        *
-        *  handle related deliverable
-        *
-        *****************************************/
-
-        if (GUIManagedObjectType.Campaign.equals(objectType))
+        if (!dryRun)
           {
-            DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
-            JSONObject deliveryManagerJSON = (deliveryManager != null) ? deliveryManager.getJSONRepresentation() : null;
-            String providerID = (deliveryManagerJSON != null) ? (String) deliveryManagerJSON.get("providerID") : null;
-            if (providerID != null)
+
+            journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService,
+                (existingJourney == null), userID);
+
+            /*****************************************
+             *
+             * handle related deliverable
+             *
+             *****************************************/
+
+            if (GUIManagedObjectType.Campaign.equals(objectType))
               {
-                if (journey.getTargetingType().equals(TargetingType.Manual))
+                DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
+                JSONObject deliveryManagerJSON = (deliveryManager != null) ? deliveryManager.getJSONRepresentation()
+                    : null;
+                String providerID = (deliveryManagerJSON != null) ? (String) deliveryManagerJSON.get("providerID")
+                    : null;
+                if (providerID != null)
                   {
-
-                    //
-                    // create deliverable  --  only if campaign has "manual provisioning"
-                    //
-
-                    Map<String, Object> deliverableMap = new HashMap<String, Object>();
-                    deliverableMap.put("id", "journey-" + journey.getJourneyID());
-                    deliverableMap.put("fulfillmentProviderID", providerID);
-                    deliverableMap.put("externalAccountID", journey.getJourneyID());
-                    deliverableMap.put("name", journey.getJourneyName());
-                    deliverableMap.put("display", journey.getJourneyName());
-                    deliverableMap.put("active", true);
-                    deliverableMap.put("unitaryCost", 0);
-                    Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
-                    deliverableService.putDeliverable(deliverable, true, userID);
-                  }
-                else
-                  {
-
-                    //
-                    // delete deliverable  --  only if campaign does NOT have "manual provisioning"
-                    //
-
-                    // TODO SCH : may need to check that deliverable is not used in any offer
-
-                    for (GUIManagedObject deliverableObject : deliverableService.getStoredDeliverables())
+                    if (journey.getTargetingType().equals(TargetingType.Manual))
                       {
-                        Deliverable deliverable = (Deliverable) deliverableObject;
-                        if (deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getExternalAccountID().equals(journey.getJourneyID()))
-                          {
-                            deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
-                          }
-                      }
 
+                        //
+                        // create deliverable -- only if campaign has "manual
+                        // provisioning"
+                        //
+
+                        Map<String, Object> deliverableMap = new HashMap<String, Object>();
+                        deliverableMap.put("id", "journey-" + journey.getJourneyID());
+                        deliverableMap.put("fulfillmentProviderID", providerID);
+                        deliverableMap.put("externalAccountID", journey.getJourneyID());
+                        deliverableMap.put("name", journey.getJourneyName());
+                        deliverableMap.put("display", journey.getJourneyName());
+                        deliverableMap.put("active", true);
+                        deliverableMap.put("unitaryCost", 0);
+                        Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch,
+                            null);
+                        deliverableService.putDeliverable(deliverable, true, userID);
+                      }
+                    else
+                      {
+
+                        //
+                        // delete deliverable -- only if campaign does NOT have
+                        // "manual provisioning"
+                        //
+
+                        // TODO SCH : may need to check that deliverable is not
+                        // used in any offer
+
+                        for (GUIManagedObject deliverableObject : deliverableService.getStoredDeliverables())
+                          {
+                            Deliverable deliverable = (Deliverable) deliverableObject;
+                            if (deliverable.getFulfillmentProviderID().equals(providerID)
+                                && deliverable.getExternalAccountID().equals(journey.getJourneyID()))
+                              {
+                                deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
+                              }
+                          }
+
+                      }
                   }
               }
           }
@@ -5125,9 +5387,11 @@ public class GUIManager
         //
         //  store
         //
-
-        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourney == null), userID);
-
+        if (!dryRun)
+          {
+            journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService,
+                targetService, (existingJourney == null), userID);
+          }
         //
         //  log
         //
@@ -5170,54 +5434,115 @@ public class GUIManager
   }
 
   /*****************************************
-  *
-  *  processRemoveJourney
-  *
-  *****************************************/
+   *
+   * processRemoveJourney
+   *
+   *****************************************/
 
   private JSONObject processRemoveJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType)
   {
     /****************************************
-    *
-    *  response
-    *
-    ****************************************/
+     *
+     * response
+     *
+     ****************************************/
 
-    HashMap<String,Object> response = new HashMap<String,Object>();
+    HashMap<String, Object> response = new HashMap<String, Object>();
 
     /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
+     *
+     * now
+     *
+     *****************************************/
+    
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
     Date now = SystemTime.getCurrentTime();
+    JSONArray journeyIDs = new JSONArray();
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> journeys = new ArrayList<>();
+    List<String> removedIDs = new ArrayList<>();
 
     /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
-    journey = (journey != null && journey.getGUIManagedObjectType() == objectType) ? journey : null;
-    if (journey != null && (force || !journey.getReadOnly())) 
+     *
+     * argument
+     *
+     ****************************************/
+    //
+    //remove single journey
+    //
+    if (jsonRoot.containsKey("id"))
       {
+        String journeyID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        journeyIDs.add(journeyID);
+        GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+        if (journey != null && (force || !journey.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (journey != null)
+          singleIDresponseCode = "failedReadOnly";
+        else
+          {
+            switch (objectType)
+              {
+                case Journey:
+                  singleIDresponseCode = "journeyNotFound";
+                  break;
 
+                case Campaign:
+                  singleIDresponseCode = "campaignNotFound";
+                  break;
+
+                case Workflow:
+                  singleIDresponseCode = "workflowNotFound";
+                  break;
+
+                case BulkCampaign:
+                  singleIDresponseCode = "bulkCampaignNotFound";
+                  break;
+
+                default:
+                  singleIDresponseCode = "notFound";
+                  break;
+              }
+          }
+
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        journeyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+   
+    for (int i = 0; i < journeyIDs.size(); i++)
+      {
+        String journeyID = journeyIDs.get(i).toString();
+        GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+
+        if (journey != null && (force || !journey.getReadOnly()))
+          {
+            journeys.add(journey);
+            removedIDs.add(journeyID);
+          }
+      }
+        
+  
+    /*****************************************
+     *
+     * remove
+     *
+     *****************************************/
+    for (int i = 0; i < journeys.size(); i++)
+      {
+        GUIManagedObject journey = journeys.get(i);
+        journey = (journey != null && journey.getGUIManagedObjectType() == objectType) ? journey : null;
         //
         // remove journey
         //
 
-        journeyService.removeJourney(journeyID, userID);
+        journeyService.removeJourney(journey.getGUIManagedObjectID(), userID);
 
         //
         // remove related deliverable
@@ -5228,16 +5553,17 @@ public class GUIManager
             //
             // TODO SCH : what if deliverable is used in an offer ?
             //
-            
+
             DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
             JSONObject deliveryManagerJSON = (deliveryManager != null) ? deliveryManager.getJSONRepresentation() : null;
             String providerID = (deliveryManagerJSON != null) ? (String) deliveryManagerJSON.get("providerID") : null;
             if (providerID != null)
               {
-                for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
+                for (GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
                   {
-                    Deliverable deliverable = (Deliverable)deliverableOgbject;
-                    if (deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getExternalAccountID().equals(journeyID))
+                    Deliverable deliverable = (Deliverable) deliverableOgbject;
+                    if (deliverable.getFulfillmentProviderID().equals(providerID)
+                        && deliverable.getExternalAccountID().equals(journey.getGUIManagedObjectID()))
                       {
                         deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
                       }
@@ -5246,249 +5572,386 @@ public class GUIManager
           }
       }
 
+        /*****************************************
+         *
+         * responseCode
+         *
+         *****************************************/
+        if (jsonRoot.containsKey("id"))
+          {
+            response.put("responseCode", singleIDresponseCode);
+            return JSONUtilities.encodeObject(response);
+          }
+        else
+          {
+            response.put("responseCode", "ok");
+          }
+
     /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
 
-    String responseCode;
-    if (journey != null && (force || !journey.getReadOnly()))
-      responseCode = "ok";
-    else if (journey != null)
-      responseCode = "failedReadOnly";
-    else {
-      switch (objectType) {
-          case Journey:
-            responseCode = "journeyNotFound";
-            break;
+    response.put("removedJourneyIDS", JSONUtilities.encodeArray(removedIDs));
+    return JSONUtilities.encodeObject(response);
+    
+  }
+  
+  /*****************************************
+   *
+   * processSetStatusJourney
+   *
+   *****************************************/
 
-          case Campaign:
-            responseCode = "campaignNotFound";
-            break;
+  private JSONObject processSetStatusJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
 
-          case Workflow:
-            responseCode = "workflowNotFound";
-            break;
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray journeyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
 
-          case BulkCampaign:
-            responseCode = "bulkCampaignNotFound";
-            break;
+    for (int i = 0; i < journeyIDs.size(); i++)
+      {
 
-          default:
-            responseCode = "notFound";
-            break;
+        String journeyID = journeyIDs.get(i).toString();
+        GUIManagedObject existingElement = journeyService.getStoredJourney(journeyID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(journeyID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+
+                /****************************************
+                 *
+                 * instantiate journey
+                 *
+                 ****************************************/
+
+                Journey journey = new Journey(elementRoot, objectType, epoch, existingElement, journeyService,
+                    catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+
+                journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService,
+                    (existingElement == null), userID);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, objectType, epoch);
+
+                //
+                // store
+                //
+                journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService,
+                    targetService, (existingElement == null), userID);
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
       }
-    }
 
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
     return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
-  *
-  *  processSetActive
-  *
-  *****************************************/
+   *
+   * processSetActive
+   *
+   *****************************************/
 
   private JSONObject processSetActive(String userID, JSONObject jsonRoot, GUIManagedObjectType type, boolean active)
   {
     /****************************************
-    *
-    *  response
-    *
-    ****************************************/
+     *
+     * response
+     *
+     ****************************************/
 
-    HashMap<String,Object> response = new HashMap<String,Object>();
+    HashMap<String, Object> response = new HashMap<String, Object>();
 
     /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
+     *
+     * now
+     *
+     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
+    List<GUIManagedObject> journeys = new ArrayList<>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray elementIDs = new JSONArray();
 
     /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
+     *
+     * argument
+     *
+     ****************************************/
+    //
+    // single element
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String elementID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        elementIDs.add(elementID);
 
-    String elementID = JSONUtilities.decodeString(jsonRoot, "id", true);
+      }
+    //
+    // multiple element
+    //
+
+    if (jsonRoot.containsKey("ids"))
+      {
+        elementIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+
     String approvalStatusString = JSONUtilities.decodeString(jsonRoot, "status", false);
     JourneyStatus approval = JourneyStatus.fromExternalRepresentation(approvalStatusString);
 
     /*****************************************
-    *
-    *  validate existing object (journey, campaign or bulk campaign)
-    *  - exists
-    *  - valid
-    *  - not read-only
-    *
-    *****************************************/
-
-    GUIManagedObject existingElement = journeyService.getStoredJourney(elementID);
-    String responseCode = null;
-    switch (type)
+     *
+     * validate existing object (journey, campaign or bulk campaign) - exists -
+     * valid - not read-only
+     *
+     *****************************************/
+    for (int i = 0; i < elementIDs.size(); i++)
       {
-        case Journey:
-          responseCode = (responseCode == null && existingElement == null) ? "journeyNotFound" : responseCode;
-          responseCode = (responseCode == null && existingElement.getGUIManagedObjectType() != GUIManagedObjectType.Journey) ? "journeyNotFound" : responseCode;
-          responseCode = (responseCode == null && ! existingElement.getAccepted()) ? "journeyNotValid" : responseCode;
-          responseCode = (responseCode == null && existingElement.getReadOnly()) ? "failedReadOnly" : responseCode;
-          break;
+        String elementID = elementIDs.get(i).toString();
+        GUIManagedObject existingElement = journeyService.getStoredJourney(elementID);
+        if (existingElement != null && !(existingElement.getReadOnly()) && existingElement.getAccepted()) {
 
-        case Campaign:
-          responseCode = (responseCode == null && existingElement == null) ? "campaignNotFound" : responseCode;
-          responseCode = (responseCode == null && existingElement.getGUIManagedObjectType() != GUIManagedObjectType.Campaign) ? "campaignNotFound" : responseCode;
-          responseCode = (responseCode == null && ! existingElement.getAccepted()) ? "campaignNotValid" : responseCode;
-          responseCode = (responseCode == null && existingElement.getReadOnly()) ? "failedReadOnly" : responseCode;
-          break;
+          journeys.add(existingElement);
+          validIDs.add(elementID);
+        }
+        String responseCode = null;
+        if (jsonRoot.containsKey("id"))
+          {
+            if (existingElement == null)
+              {
+                switch (type)
+                  {
+                    case Journey:
+                      responseCode = (responseCode == null && existingElement == null) ? "journeyNotFound"
+                          : responseCode;
+                      responseCode = (responseCode == null
+                          && existingElement.getGUIManagedObjectType() != GUIManagedObjectType.Journey)
+                              ? "journeyNotFound"
+                              : responseCode;
+                      responseCode = (responseCode == null && !existingElement.getAccepted()) ? "journeyNotValid"
+                          : responseCode;
+                      responseCode = (responseCode == null && existingElement.getReadOnly()) ? "failedReadOnly"
+                          : responseCode;
+                      break;
 
-        case BulkCampaign:
-          responseCode = (responseCode == null && existingElement == null) ? "bulkCampaignNotFound" : responseCode;
-          responseCode = (responseCode == null && existingElement.getGUIManagedObjectType() != GUIManagedObjectType.BulkCampaign) ? "bulkCampaignNotFound" : responseCode;
-          responseCode = (responseCode == null && ! existingElement.getAccepted()) ? "bulkCampaignNotValid" : responseCode;
-          responseCode = (responseCode == null && existingElement.getReadOnly()) ? "failedReadOnly" : responseCode;
-          break;
+                    case Campaign:
+                      responseCode = (responseCode == null && existingElement == null) ? "campaignNotFound"
+                          : responseCode;
+                      responseCode = (responseCode == null
+                          && existingElement.getGUIManagedObjectType() != GUIManagedObjectType.Campaign)
+                              ? "campaignNotFound"
+                              : responseCode;
+                      responseCode = (responseCode == null && !existingElement.getAccepted()) ? "campaignNotValid"
+                          : responseCode;
+                      responseCode = (responseCode == null && existingElement.getReadOnly()) ? "failedReadOnly"
+                          : responseCode;
+                      break;
 
-        default:
-          throw new ServerRuntimeException("invalid guimanagedobject type");
-      }
-    
-    if (responseCode != null)
-      {
-        response.put("id", elementID);
-        if (existingElement != null) response.put("accepted", existingElement.getAccepted());
-        if (existingElement != null) response.put("valid", existingElement.getAccepted());
-        if (existingElement != null) response.put("processing", journeyService.isActiveJourney(existingElement, now));
-        response.put("responseCode", responseCode);
-        return JSONUtilities.encodeObject(response);
+                    case BulkCampaign:
+                      responseCode = (responseCode == null && existingElement == null) ? "bulkCampaignNotFound"
+                          : responseCode;
+                      responseCode = (responseCode == null
+                          && existingElement.getGUIManagedObjectType() != GUIManagedObjectType.BulkCampaign)
+                              ? "bulkCampaignNotFound"
+                              : responseCode;
+                      responseCode = (responseCode == null && !existingElement.getAccepted()) ? "bulkCampaignNotValid"
+                          : responseCode;
+                      responseCode = (responseCode == null && existingElement.getReadOnly()) ? "failedReadOnly"
+                          : responseCode;
+                      break;
+
+                    default:
+                      throw new ServerRuntimeException("invalid guimanagedobject type");
+                  }
+
+                if (responseCode != null)
+                  {
+                    response.put("id", elementID);
+                    if (existingElement != null)
+                      response.put("accepted", existingElement.getAccepted());
+                    if (existingElement != null)
+                      response.put("valid", existingElement.getAccepted());
+                    if (existingElement != null)
+                      response.put("processing", journeyService.isActiveJourney(existingElement, now));
+                    response.put("responseCode", responseCode);
+                    return JSONUtilities.encodeObject(response);
+                  }
+              }
+          }
       }
 
     /*****************************************
-    *
-    *  process element (journey, campaign or bulk campaign)
-    *
-    *****************************************/
-
-    JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
-    long epoch = epochServer.getKey();
-    try
+     *
+     * process element (journey, campaign or bulk campaign)
+     *
+     *****************************************/
+    for (GUIManagedObject journey : journeys)
       {
-        
-        switch (approval)
+        GUIManagedObject existingJourneyElement = journey;
+        JSONObject elementRoot = (JSONObject) existingJourneyElement.getJSONRepresentation().clone();
+        long epoch = epochServer.getKey();
+        try
           {
-            case Unknown:
-            case StartedApproved:
-              elementRoot.put("active", active);
-              approval = JourneyStatus.StartedApproved;
-              break;
-              
-            case WaitingForApproval:
-            case PendingNotApproved:
-              elementRoot.put("active", false);
-              break;
-              
-            default:
-              throw new ServerRuntimeException("invalid approvalStatus " + approval);
-        }
 
-        /****************************************
-        *
-        *  instantiate element (journey, campaign or bulk campaign)
-        *
-        ****************************************/
+            switch (approval)
+              {
+                case Unknown:
+                case StartedApproved:
+                  elementRoot.put("active", active);
+                  approval = JourneyStatus.StartedApproved;
+                  break;
 
-        Journey element = new Journey(elementRoot, type, epoch, existingElement, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, approval);
+                case WaitingForApproval:
+                case PendingNotApproved:
+                  elementRoot.put("active", false);
+                  break;
 
-        /*****************************************
-        *
-        *  store
-        *
-        *****************************************/
+                default:
+                  throw new ServerRuntimeException("invalid approvalStatus " + approval);
+              }
 
-        journeyService.putJourney(element, journeyObjectiveService, catalogCharacteristicService, targetService, (existingElement == null), userID);
+            /****************************************
+             *
+             * instantiate element (journey, campaign or bulk campaign)
+             *
+             ****************************************/
 
-        /*****************************************
-        *
-        *  evaluate targets
-        *
-        *****************************************/
+            Journey element = new Journey(elementRoot, type, epoch, existingJourneyElement, journeyService,
+                catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService,
+                approval);
 
-        if (active && element.getTargetID() != null)
-          {
-            EvaluateTargets evaluateTargets = new EvaluateTargets(Collections.<String>singleton(element.getJourneyID()), element.getTargetID());
-            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getEvaluateTargetsTopic(), EvaluateTargets.serde().serializer().serialize(Deployment.getEvaluateTargetsTopic(), evaluateTargets)));
+            /*****************************************
+             *
+             * store
+             *
+             *****************************************/
+
+            journeyService.putJourney(element, journeyObjectiveService, catalogCharacteristicService, targetService,
+                (existingJourneyElement == null), userID);
+
+            /*****************************************
+             *
+             * evaluate targets
+             *
+             *****************************************/
+
+            if (active && element.getTargetID() != null)
+              {
+                EvaluateTargets evaluateTargets = new EvaluateTargets(
+                    Collections.<String>singleton(element.getJourneyID()), element.getTargetID());
+                kafkaProducer
+                    .send(new ProducerRecord<byte[], byte[]>(Deployment.getEvaluateTargetsTopic(), EvaluateTargets
+                        .serde().serializer().serialize(Deployment.getEvaluateTargetsTopic(), evaluateTargets)));
+              }
+
+            /*****************************************
+             *
+             * response
+             *
+             *****************************************/
+            if (jsonRoot.containsKey("id"))
+              {
+
+                response.put("id", element.getJourneyID());
+                response.put("accepted", element.getAccepted());
+                response.put("valid", element.getAccepted());
+                response.put("processing", journeyService.isActiveJourney(element, now));
+                response.put("responseCode", "ok");
+                return JSONUtilities.encodeObject(response);
+              }
+            else
+              {
+                response.put("responseCode", "ok");                
+              }
           }
-        
-        /*****************************************
-        *
-        *  response
-        *
-        *****************************************/
+        catch (GUIManagerException e)
+          {
+            //
+            // incompleteObject
+            //
 
-        response.put("id", element.getJourneyID());
-        response.put("accepted", element.getAccepted());
-        response.put("valid", element.getAccepted());
-        response.put("processing", journeyService.isActiveJourney(element, now));
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
+            IncompleteObject incompleteObject = new IncompleteObject(elementRoot, type, epoch);
+
+            //
+            // store
+            //
+
+            journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService,
+                targetService, (existingJourneyElement == null), userID);
+
+            //
+            // log
+            //
+
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+            //
+            // response
+            //
+            if (jsonRoot.containsKey("id"))
+              {
+
+                switch (type)
+                  {
+                    case Journey:
+                      response.put("journeyID", incompleteObject.getGUIManagedObjectID());
+                      response.put("responseCode", "journeyNotValid");
+                      break;
+
+                    case Campaign:
+                      response.put("campaignID", incompleteObject.getGUIManagedObjectID());
+                      response.put("responseCode", "campaignNotValid");
+                      break;
+
+                    case BulkCampaign:
+                      response.put("bulkCampaignID", incompleteObject.getGUIManagedObjectID());
+                      response.put("responseCode", "bulkCampaignNotValid");
+                      break;
+                  }
+                response.put("responseMessage", e.getMessage());
+                response.put("responseParameter",
+                    (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+                return JSONUtilities.encodeObject(response);
+              }
+
+          }
       }
-    catch (GUIManagerException e)
-      {
-        //
-        //  incompleteObject
-        //
-
-        IncompleteObject incompleteObject = new IncompleteObject(elementRoot, type, epoch);
-
-        //
-        //  store
-        //
-
-        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingElement == null), userID);
-
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-        //
-        //  response
-        //
-
-        switch (type) {
-        case Journey:
-          response.put("journeyID", incompleteObject.getGUIManagedObjectID());
-          response.put("responseCode", "journeyNotValid");
-          break;
-
-        case Campaign:
-          response.put("campaignID", incompleteObject.getGUIManagedObjectID());
-          response.put("responseCode", "campaignNotValid");
-          break;
-
-        case BulkCampaign:
-          response.put("bulkCampaignID", incompleteObject.getGUIManagedObjectID());
-          response.put("responseCode", "bulkCampaignNotValid");
-          break;
-        }
-        
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
+    response.put("validIDs", validIDs);
+    return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
@@ -5647,6 +6110,17 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+
+    /*****************************************
+     *
+     * dryRun
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("dryRun"))
+      {
+        dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+      }
 
     /*****************************************
     *
@@ -5792,9 +6266,12 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        journeyService.putJourney(bulkCampaign, journeyObjectiveService, catalogCharacteristicService, targetService, (existingBulkCampaign == null), userID);
-
+            journeyService.putJourney(bulkCampaign, journeyObjectiveService, catalogCharacteristicService,
+                targetService, (existingBulkCampaign == null), userID);
+          }
         /*****************************************
         *
         *  response
@@ -5819,9 +6296,11 @@ public class GUIManager
         //
         //  store
         //
-
-        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingBulkCampaign == null), userID);
-
+        if (!dryRun)
+          {
+            journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService,
+                targetService, (existingBulkCampaign == null), userID);
+          }
         //
         //  log
         //
@@ -5858,7 +6337,25 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> journeyTemplates = new ArrayList<JSONObject>();
-    for (GUIManagedObject journeyTemplate : journeyTemplateService.getStoredJourneyTemplates(includeArchived))
+    Collection <GUIManagedObject> journeyTemplateObjects = new ArrayList<GUIManagedObject>();
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray journeyTemplateIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < journeyTemplateIDs.size(); i++)
+          {
+            String journeyTemplateID = journeyTemplateIDs.get(i).toString();
+            GUIManagedObject journeyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID, includeArchived);                
+            if (journeyTemplate != null)
+              {
+                journeyTemplateObjects.add(journeyTemplate);
+              }            
+          }
+      }
+    else
+      {
+        journeyTemplateObjects = journeyTemplateService.getStoredJourneyTemplates(includeArchived);
+      }
+    for (GUIManagedObject journeyTemplate : journeyTemplateObjects)
       {
         switch (journeyTemplate.getGUIManagedObjectType())
           {
@@ -5948,7 +6445,18 @@ public class GUIManager
     ****************************************/
 
     Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    Boolean dryRun = false;
+
+    /*****************************************
+     *
+     * dryRun
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("dryRun"))
+      {
+        dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+      }
 
     /*****************************************
     *
@@ -6010,8 +6518,12 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        journeyTemplateService.putJourneyTemplate(journeyTemplate, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourneyTemplate == null), userID);
+            journeyTemplateService.putJourneyTemplate(journeyTemplate, journeyObjectiveService,
+                catalogCharacteristicService, targetService, (existingJourneyTemplate == null), userID);
+          }
 
         /*****************************************
         *
@@ -6037,9 +6549,11 @@ public class GUIManager
         //
         //  store
         //
-
-        journeyTemplateService.putJourneyTemplate(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourneyTemplate == null), userID);
-
+        if (!dryRun)
+          {
+            journeyTemplateService.putJourneyTemplate(incompleteObject, journeyObjectiveService,
+                catalogCharacteristicService, targetService, (existingJourneyTemplate == null), userID);
+          }
         //
         //  log
         //
@@ -6083,49 +6597,178 @@ public class GUIManager
     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
+    JSONArray journeyTemplateIDs = new JSONArray();
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> journeyTemplates = new ArrayList<>();
+    List<String> validIDs = new ArrayList<>();
 
     /****************************************
     *
     *  argument
     *
     ****************************************/
-
-    String journeyTemplateID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single journeyTemplate
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String journeyTemplateID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        journeyTemplateIDs.add(journeyTemplateID);
+        GUIManagedObject journeyTemplate = journeyService.getStoredJourney(journeyTemplateID);
+
+        if (journeyTemplate != null && (force || !journeyTemplate.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (journeyTemplate != null)
+          singleIDresponseCode = "failedReadOnly";
+        else
+          {
+            singleIDresponseCode = "journeyTemplateNotFound";
+
+          }
+      }
+    //
+    // multiple deletion journeyTemplate
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        journeyTemplateIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }    
+       
+    for (int i = 0; i < journeyTemplateIDs.size(); i++)
+      {
+        String journeyTemplateID = journeyTemplateIDs.get(i).toString();
+        GUIManagedObject journeyTemplate = journeyService.getStoredJourney(journeyTemplateID);
+
+        if (journeyTemplate != null && (force || !journeyTemplate.getReadOnly()))
+          {
+            journeyTemplates.add(journeyTemplate);
+            validIDs.add(journeyTemplateID);
+          }
+      }
 
     /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
+     *
+     * remove
+     *
+     *****************************************/
+    for (int i = 0; i < journeyTemplates.size(); i++)
+      {
+        GUIManagedObject journeyTemplate = journeyTemplates.get(i);
+        journeyTemplate = (journeyTemplate != null
+            && journeyTemplate.getGUIManagedObjectType() == GUIManagedObjectType.JourneyTemplate) ? journeyTemplate
+                : null;
+        journeyTemplateService.removeJourneyTemplate(journeyTemplate.getGUIManagedObjectID(), userID);
+      }
 
-    GUIManagedObject journeyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID);
-    journeyTemplate = (journeyTemplate != null && journeyTemplate.getGUIManagedObjectType() == GUIManagedObjectType.JourneyTemplate) ? journeyTemplate: null;
-    if (journeyTemplate != null && (force || !journeyTemplate.getReadOnly())) journeyTemplateService.removeJourneyTemplate(journeyTemplateID, userID);
+        /*****************************************
+         *
+         * responseCode
+         *
+         *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (journeyTemplate != null && (force || !journeyTemplate.getReadOnly()))
-      responseCode = "ok";
-    else if (journeyTemplate != null)
-      responseCode = "failedReadOnly";
     else
-      responseCode = "journeyTemplateNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedTemplateJourneyIDS", JSONUtilities.encodeArray(validIDs));
     return JSONUtilities.encodeObject(response);
   }  
+  
+  /*****************************************
+   *
+   * processSetStatusJourneyTemplate
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusJourneyTemplate(String userID, JSONObject jsonRoot)
+   {
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray journeyTemplateIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < journeyTemplateIDs.size(); i++)
+      {
+
+        String journeyTemplateID = journeyTemplateIDs.get(i).toString();
+        GUIManagedObject existingElement = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(journeyTemplateID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate journeyTemplate
+                 *
+                 ****************************************/
+
+                Journey journeyTemplate = new Journey(elementRoot, GUIManagedObjectType.JourneyTemplate, epoch,
+                    existingElement, journeyService, catalogCharacteristicService, subscriberMessageTemplateService,
+                    dynamicEventDeclarationsService);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+
+                journeyTemplateService.putJourneyTemplate(journeyTemplate, journeyObjectiveService,
+                    catalogCharacteristicService, targetService, (existingElement == null), userID);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot,
+                    GUIManagedObjectType.JourneyTemplate, epoch);
+
+                //
+                // store
+                //
+
+                journeyTemplateService.putJourneyTemplate(incompleteObject, journeyObjectiveService,
+                    catalogCharacteristicService, targetService, (existingElement == null), userID);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
+    return JSONUtilities.encodeObject(response);
+  }
 
   /*****************************************
   *
@@ -6267,7 +6910,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> offers = new ArrayList<JSONObject>();
-    for (GUIManagedObject offer : offerService.getStoredOffers(includeArchived))
+    Collection <GUIManagedObject> offerObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray offerIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < offerIDs.size(); i++)
+          {
+            String offerID = offerIDs.get(i).toString();
+            GUIManagedObject offer = offerService.getStoredOffer(offerID, includeArchived);
+            if (offer != null)
+              {
+                offerObjects.add(offer);
+              }
+          }
+      }
+    else
+      {
+        offerObjects = offerService.getStoredOffers(includeArchived);
+      }
+    for (GUIManagedObject offer : offerObjects)
       {
         offers.add(offerService.generateResponseJSON(offer, fullDetails, now));
       }
@@ -6344,6 +7006,17 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
 
     /*****************************************
     *
@@ -6404,9 +7077,12 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        offerService.putOffer(offer, callingChannelService, salesChannelService, productService, voucherService, (existingOffer == null), userID);
-
+            offerService.putOffer(offer, callingChannelService, salesChannelService, productService, voucherService,
+                (existingOffer == null), userID);
+          }
         /*****************************************
         *
         *  response
@@ -6431,9 +7107,11 @@ public class GUIManager
         //
         //  store
         //
-
-        offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService, voucherService, (existingOffer == null), userID);
-
+        if (!dryRun)
+          {
+            offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService,
+                voucherService, (existingOffer == null), userID);
+          }
         //
         //  log
         //
@@ -6476,41 +7154,183 @@ public class GUIManager
     *
     ****************************************/
 
-    String offerID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> offers = new ArrayList<>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray offerIDs = new JSONArray();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single offer
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String offerID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        offerIDs.add(offerID);
+        GUIManagedObject offer = offerService.getStoredOffer(offerID);
+        if (offer != null && (force || !offer.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (offer != null)
+          singleIDresponseCode = "failedReadOnly";
+        else
+          {
+            singleIDresponseCode = "offerNotFound";
+
+          }
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        offerIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+    
+    for (int i = 0; i < offerIDs.size(); i++)
+      {
+        String offerID = offerIDs.get(i).toString();
+        GUIManagedObject offer = offerService.getStoredOffer(offerID);
+
+        if (offer != null && (force || !offer.getReadOnly()))
+          {
+
+            offers.add(offer);
+            validIDs.add(offerID);
+          }
+      }
+        
 
     /*****************************************
     *
     *  remove
     *
     *****************************************/
+    for (int i = 0; i < offers.size(); i++)
+      {
+        GUIManagedObject offer = offers.get(i);
 
-    GUIManagedObject offer = offerService.getStoredOffer(offerID);
-    if (offer != null && (force || !offer.getReadOnly())) offerService.removeOffer(offerID, userID);
+        offerService.removeOffer(offer.getGUIManagedObjectID(), userID);
+      }
 
     /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    String responseCode;
-    if (offer != null && (force || !offer.getReadOnly()))
-      responseCode = "ok";
-    else if (offer != null)
-      responseCode = "failedReadOnly";
     else
-      responseCode = "offerNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
 
-    response.put("responseCode", responseCode);
+    response.put("removedOfferIDs", JSONUtilities.encodeArray(validIDs));
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+   *
+   * processSetStatusOffer
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusOffer(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray offerIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < offerIDs.size(); i++)
+      {
+
+        String offerID = offerIDs.get(i).toString();
+        GUIManagedObject existingElement = offerService.getStoredOffer(offerID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(offerID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate offer
+                 *
+                 ****************************************/
+
+                Offer offer = new Offer(elementRoot, epoch, existingElement, catalogCharacteristicService);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+
+                offerService.putOffer(offer, callingChannelService, salesChannelService, productService, voucherService,
+                    (existingElement == null), userID);
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+
+                offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService,
+                    voucherService, (existingElement == null), userID);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
+    return JSONUtilities.encodeObject(response);
+  }
+
 
   /*****************************************
   *
@@ -6528,7 +7348,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> presentationStrategies = new ArrayList<JSONObject>();
-    for (GUIManagedObject presentationStrategy : presentationStrategyService.getStoredPresentationStrategies(includeArchived))
+    Collection <GUIManagedObject> presentationStrategieObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray presentationStrategieIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < presentationStrategieIDs.size(); i++)
+          {
+            String presentationStrategieID = presentationStrategieIDs.get(i).toString();
+            GUIManagedObject presentationStrategie = presentationStrategyService.getStoredPresentationStrategy(presentationStrategieID, includeArchived);
+            if (presentationStrategie != null)
+              {
+                presentationStrategieObjects.add(presentationStrategie);
+              }
+          }
+      }
+    else
+      {
+        presentationStrategieObjects = presentationStrategyService.getStoredPresentationStrategies(includeArchived);
+      }
+    for (GUIManagedObject presentationStrategy : presentationStrategieObjects)
       {
         presentationStrategies.add(presentationStrategyService.generateResponseJSON(presentationStrategy, fullDetails, now));
       }
@@ -6605,6 +7444,17 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
 
     /*****************************************
     *
@@ -6665,9 +7515,12 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        presentationStrategyService.putPresentationStrategy(presentationStrategy, scoringStrategyService, (existingPresentationStrategy == null), userID);
-
+            presentationStrategyService.putPresentationStrategy(presentationStrategy, scoringStrategyService,
+                (existingPresentationStrategy == null), userID);
+          }
         /*****************************************
         *
         *  response
@@ -6692,9 +7545,11 @@ public class GUIManager
         //
         //  store
         //
-
-        presentationStrategyService.putPresentationStrategy(incompleteObject, scoringStrategyService, (existingPresentationStrategy == null), userID);
-
+        if (!dryRun)
+          {
+            presentationStrategyService.putPresentationStrategy(incompleteObject, scoringStrategyService,
+                (existingPresentationStrategy == null), userID);
+          }
         //
         //  log
         //
@@ -6737,41 +7592,177 @@ public class GUIManager
     *
     ****************************************/
 
-    String presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> presentationStrategies = new ArrayList<>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray presentationStrategyIDs = new JSONArray();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single presentationStrategy
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        presentationStrategyIDs.add(presentationStrategyID);
+        GUIManagedObject presentationStrategy = presentationStrategyService
+            .getStoredPresentationStrategy(presentationStrategyID);
+        if (presentationStrategy != null && (force || !presentationStrategy.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (presentationStrategy != null)
+          singleIDresponseCode = "failedReadOnly";
+        else
+          singleIDresponseCode = "presentationStrategyNotFound";
+
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        presentationStrategyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+   
+    for (int i = 0; i < presentationStrategyIDs.size(); i++)
+      {
+        String presentationStrategyID = presentationStrategyIDs.get(i).toString();
+        GUIManagedObject presentationStrategy = presentationStrategyService
+            .getStoredPresentationStrategy(presentationStrategyID);
+
+        if (presentationStrategy != null && (force || !presentationStrategy.getReadOnly()))
+          {
+
+            presentationStrategies.add(presentationStrategy);
+            validIDs.add(presentationStrategyID);
+          }
+      }
+        
 
     /*****************************************
     *
     *  remove
     *
     *****************************************/
-
-    GUIManagedObject presentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
-    if (presentationStrategy != null && (force || !presentationStrategy.getReadOnly())) presentationStrategyService.removePresentationStrategy(presentationStrategyID, userID);
-
+    for (int i = 0; i < presentationStrategies.size(); i++)
+      {
+        GUIManagedObject presentationStrategy = presentationStrategies.get(i);
+        presentationStrategyService.removePresentationStrategy(presentationStrategy.getGUIManagedObjectID(), userID);
+      }
     /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    String responseCode;
-    if (presentationStrategy != null && (force || !presentationStrategy.getReadOnly()))
-      responseCode = "ok";
-    else if (presentationStrategy != null)
-      responseCode = "failedReadOnly";
     else
-      responseCode = "presentationStrategyNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
 
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
+    response.put("removedPresentationStrategyIDs", JSONUtilities.encodeArray(validIDs));
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+   *
+   * processSetStatusPresentationStrategy
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusPresentationStrategy(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray presentationStrategyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < presentationStrategyIDs.size(); i++)
+      {
+        String presentationStrategyID = presentationStrategyIDs.get(i).toString();
+        GUIManagedObject existingElement = presentationStrategyService
+            .getStoredPresentationStrategy(presentationStrategyID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(presentationStrategyID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate presentationStrategy
+                 *
+                 ****************************************/
+
+                PresentationStrategy presentationStrategy = new PresentationStrategy(elementRoot, epoch,
+                    existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+
+                presentationStrategyService.putPresentationStrategy(presentationStrategy, scoringStrategyService,
+                    (existingElement == null), userID);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+
+                presentationStrategyService.putPresentationStrategy(incompleteObject, scoringStrategyService,
+                    (existingElement == null), userID);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
+    return JSONUtilities.encodeObject(response);
+  }
+
   
   /*****************************************
   *
@@ -6789,7 +7780,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> dnboMatrixes = new ArrayList<JSONObject>();
-    for (GUIManagedObject dnboMatrix : dnboMatrixService.getStoredDNBOMatrixes(includeArchived))
+    Collection <GUIManagedObject> dnboMatrixeObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray dnboMatrixeIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < dnboMatrixeIDs.size(); i++)
+          {
+            String dnboMatrixeID = dnboMatrixeIDs.get(i).toString();
+            GUIManagedObject dnboMatrixe = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixeID, includeArchived);
+            if (dnboMatrixe != null)
+              {
+                dnboMatrixeObjects.add(dnboMatrixe);
+              }
+          }
+      }
+    else
+      {
+        dnboMatrixeObjects = dnboMatrixService.getStoredDNBOMatrixes(includeArchived);
+      }
+    for (GUIManagedObject dnboMatrix : dnboMatrixeObjects)
       {
         dnboMatrixes.add(presentationStrategyService.generateResponseJSON(dnboMatrix, fullDetails, now));
       }
@@ -6866,6 +7876,17 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
 
     /*****************************************
     *
@@ -6926,9 +7947,10 @@ public class GUIManager
         *  store
         *
         *****************************************/
-
-        dnboMatrixService.putDNBOMatrix(dnboMatrix, (existingDNBOMatrix == null), userID);
-
+        if (!dryRun)
+          {
+            dnboMatrixService.putDNBOMatrix(dnboMatrix, (existingDNBOMatrix == null), userID);
+          }
         /*****************************************
         *
         *  response
@@ -6953,9 +7975,10 @@ public class GUIManager
         //
         //  store
         //
-
-        dnboMatrixService.putDNBOMatrix(incompleteObject, (existingDNBOMatrix == null), userID);
-
+        if (!dryRun)
+          {
+            dnboMatrixService.putDNBOMatrix(incompleteObject, (existingDNBOMatrix == null), userID);
+          }
         //
         //  log
         //
@@ -6991,6 +8014,11 @@ public class GUIManager
     ****************************************/
 
     HashMap<String,Object> response = new HashMap<String,Object>();
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> dnboMatrixs = new ArrayList<>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray dnboMatrixIDs = new JSONArray();
 
     /****************************************
     *
@@ -6998,41 +8026,161 @@ public class GUIManager
     *
     ****************************************/
 
-    String dnboMatrixID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single dnboMatrix
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String dnboMatrixID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        dnboMatrixIDs.add(dnboMatrixID);
+        GUIManagedObject dnboMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID);
+        if (dnboMatrix != null && (force || !dnboMatrix.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (dnboMatrix != null)
+          singleIDresponseCode = "failedReadOnly";
+        else
+
+          singleIDresponseCode = "dnboMatrixNotFound";
+
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        dnboMatrixIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+    
+
+    for (int i = 0; i < dnboMatrixIDs.size(); i++)
+      {
+        String dnboMatrixID = dnboMatrixIDs.get(i).toString();
+        GUIManagedObject dnboMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID);
+
+        if (dnboMatrix != null && (force || !dnboMatrix.getReadOnly()))
+          {
+            dnboMatrixs.add(dnboMatrix);
+            validIDs.add(dnboMatrixID);
+          }
+      }
+        
+  
 
     /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
+     *
+     * remove
+     *
+     *****************************************/
+    for (int i = 0; i < dnboMatrixs.size(); i++)
+      {
+        GUIManagedObject dnboMatrix = dnboMatrixs.get(i);
+        dnboMatrixService.removeDNBOMatrix(dnboMatrix.getGUIManagedObjectID(), userID);
+      }
+                   
 
-    GUIManagedObject dnboMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID);
-    if (dnboMatrix != null && (force || !dnboMatrix.getReadOnly())) dnboMatrixService.removeDNBOMatrix(dnboMatrixID, userID);
+        /*****************************************
+         *
+         * responseCode
+         *
+         *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (dnboMatrix != null && (force || !dnboMatrix.getReadOnly()))
-      responseCode = "ok";
-    else if (dnboMatrix != null)
-      responseCode = "failedReadOnly";
     else
-      responseCode = "dnboMatrixNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
 
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
+    response.put("removeddnboMatrixIDS", JSONUtilities.encodeArray(validIDs));
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+   *
+   * processSetStatusDNBOMatrix
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusDNBOMatrix(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray DNBOMatrixIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < DNBOMatrixIDs.size(); i++)
+      {
+
+        String dnboMatrixID = DNBOMatrixIDs.get(i).toString();
+        GUIManagedObject existingElement = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(dnboMatrixID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate DNBOMatrix
+                 *
+                 ****************************************/
+
+                DNBOMatrix dnboMatrix = new DNBOMatrix(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                dnboMatrixService.putDNBOMatrix(dnboMatrix, (existingElement == null), userID);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+                dnboMatrixService.putDNBOMatrix(incompleteObject, (existingElement == null), userID);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
+    return JSONUtilities.encodeObject(response);
+  }
+
 
   /*****************************************
   *
@@ -7050,7 +8198,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> scoringStrategies = new ArrayList<JSONObject>();
-    for (GUIManagedObject scoringStrategy : scoringStrategyService.getStoredScoringStrategies(includeArchived))
+    Collection <GUIManagedObject> scoringStrategyObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray scoringStrategyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < scoringStrategyIDs.size(); i++)
+          {
+            String scoringStrategyID = scoringStrategyIDs.get(i).toString();
+            GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID, includeArchived);
+            if (scoringStrategy != null)
+              {
+                scoringStrategyObjects.add(scoringStrategy);
+              }
+          }
+      }
+    else
+      {
+        scoringStrategyObjects = scoringStrategyService.getStoredScoringStrategies(includeArchived);
+      }
+    for (GUIManagedObject scoringStrategy : scoringStrategyObjects)
       {
         scoringStrategies.add(scoringStrategyService.generateResponseJSON(scoringStrategy, fullDetails, now));
       }
@@ -7127,6 +8294,18 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
+
 
     /*****************************************
     *
@@ -7187,16 +8366,18 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
+            scoringStrategyService.putScoringStrategy(scoringStrategy, (existingScoringStrategy == null), userID);
 
-        scoringStrategyService.putScoringStrategy(scoringStrategy, (existingScoringStrategy == null), userID);
+            /*****************************************
+             *
+             * revalidatePresentationStrategies
+             *
+             *****************************************/
 
-        /*****************************************
-        *
-        *  revalidatePresentationStrategies
-        *
-        *****************************************/
-
-        revalidatePresentationStrategies(now);
+            revalidatePresentationStrategies(now);
+          }
 
         /*****************************************
         *
@@ -7222,9 +8403,10 @@ public class GUIManager
         //
         //  store
         //
-
-        scoringStrategyService.putScoringStrategy(incompleteObject, (existingScoringStrategy == null), userID);
-
+        if (!dryRun)
+          {
+            scoringStrategyService.putScoringStrategy(incompleteObject, (existingScoringStrategy == null), userID);
+          }
         //
         //  revalidatePresentationStrategies
         //
@@ -7274,6 +8456,11 @@ public class GUIManager
     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> scoringStrategies = new ArrayList<>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray scoringStrategyIDs = new JSONArray();
 
     /****************************************
     *
@@ -7281,49 +8468,182 @@ public class GUIManager
     *
     ****************************************/
 
-    String scoringStrategyID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single scoring strategy
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String scoringStrategyID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        scoringStrategyIDs.add(scoringStrategyID);
+        GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
+        if (scoringStrategy != null && (force || !scoringStrategy.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (scoringStrategy != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "scoringStrategyNotFound";
+
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        scoringStrategyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+   
+    for (int i = 0; i < scoringStrategyIDs.size(); i++)
+      {
+        String scoringStrategyID = scoringStrategyIDs.get(i).toString();
+        GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
+        if (scoringStrategy != null && (force || !scoringStrategy.getReadOnly()))
+          {
+            scoringStrategies.add(scoringStrategy);
+            validIDs.add(scoringStrategyID);
+          }
+
+      }
+        
+  
 
     /*****************************************
     *
     *  remove
     *
     *****************************************/
+    for (int i = 0; i < scoringStrategies.size(); i++)
+      {
 
-    GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
-    if (scoringStrategy != null && (force || !scoringStrategy.getReadOnly())) scoringStrategyService.removeScoringStrategy(scoringStrategyID, userID);
+        GUIManagedObject scoringStrategy = scoringStrategies.get(i);
+        scoringStrategyService.removeScoringStrategy(scoringStrategy.getGUIManagedObjectID(), userID);
+
+        /*****************************************
+         *
+         * revalidatePresentationStrategies
+         *
+         *****************************************/
+
+        revalidatePresentationStrategies(now);
+      }
 
     /*****************************************
-    *
-    *  revalidatePresentationStrategies
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
 
-    revalidatePresentationStrategies(now);
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (scoringStrategy != null && (force || !scoringStrategy.getReadOnly()))
-      responseCode = "ok";
-    else if (scoringStrategy != null)
-      responseCode = "failedReadOnly";
     else
-      responseCode = "scoringStrategyNotFound";
+      {
 
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
+        response.put("responseCode", "ok");
+      }
+    response.put("removedScoringStrategyIDS", JSONUtilities.encodeArray(validIDs));
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+   *
+   * processSetStatusScoringStrategy
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusScoringStrategy(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    Date now = SystemTime.getCurrentTime();
+    JSONArray scoringStrategyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < scoringStrategyIDs.size(); i++)
+      {
+
+        String scoringStrategyID = scoringStrategyIDs.get(i).toString();
+        GUIManagedObject existingElement = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(scoringStrategyID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate scoringStrategy
+                 *
+                 ****************************************/
+
+                ScoringStrategy scoringStrategy = new ScoringStrategy(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                scoringStrategyService.putScoringStrategy(scoringStrategy, (existingElement == null), userID);
+
+                /*****************************************
+                 *
+                 * revalidatePresentationStrategies
+                 *
+                 *****************************************/
+
+                revalidatePresentationStrategies(now);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+
+                scoringStrategyService.putScoringStrategy(incompleteObject, (existingElement == null), userID);
+
+                //
+                // revalidatePresentationStrategies
+                //
+
+                revalidatePresentationStrategies(now);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
+    return JSONUtilities.encodeObject(response);
+  }
+
 
   /*****************************************
   *
@@ -7341,7 +8661,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> callingChannels = new ArrayList<JSONObject>();
-    for (GUIManagedObject callingChannel : callingChannelService.getStoredCallingChannels(includeArchived))
+    Collection <GUIManagedObject> callingChannelObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray callingChannelIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < callingChannelIDs.size(); i++)
+          {
+            String callingChannelID = callingChannelIDs.get(i).toString();
+            GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID, includeArchived);
+            if (callingChannel != null)
+              {
+                callingChannelObjects.add(callingChannel);
+              }
+          }
+      }
+    else
+      {
+        callingChannelObjects = callingChannelService.getStoredCallingChannels(includeArchived);
+      }
+    for (GUIManagedObject callingChannel : callingChannelObjects)
       {
         callingChannels.add(callingChannelService.generateResponseJSON(callingChannel, fullDetails, now));
       }
@@ -7418,6 +8757,18 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
+
 
     /*****************************************
     *
@@ -7474,21 +8825,23 @@ public class GUIManager
         CallingChannel callingChannel = new CallingChannel(jsonRoot, epoch, existingCallingChannel);
 
         /*****************************************
-        *
-        *  store
-        *
-        *****************************************/
+         *
+         * store
+         *
+         *****************************************/
+        if (!dryRun)
+          {
+            callingChannelService.putCallingChannel(callingChannel, (existingCallingChannel == null), userID);
 
-        callingChannelService.putCallingChannel(callingChannel, (existingCallingChannel == null), userID);
+            /*****************************************
+             *
+             * revalidateOffers
+             *
+             *****************************************/
 
-        /*****************************************
-        *
-        *  revalidateOffers
-        *
-        *****************************************/
-
-        revalidateSalesChannels(now);
-        revalidateOffers(now);
+            revalidateSalesChannels(now);
+            revalidateOffers(now);
+          }
 
         /*****************************************
         *
@@ -7514,15 +8867,18 @@ public class GUIManager
         //
         //  store
         //
+        if (!dryRun)
+          {
 
-        callingChannelService.putCallingChannel(incompleteObject, (existingCallingChannel == null), userID);
+            callingChannelService.putCallingChannel(incompleteObject, (existingCallingChannel == null), userID);
 
-        //
-        //  revalidateOffers
-        //
+            //
+            // revalidateOffers
+            //
 
-        revalidateSalesChannels(now);
-        revalidateOffers(now);
+            revalidateSalesChannels(now);
+            revalidateOffers(now);
+          }
 
         //
         //  log
@@ -7568,54 +8924,196 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
 
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> callingChannels = new ArrayList<>();
+    JSONArray callingChannelIDs = new JSONArray();
+    List<String> validIDs = new ArrayList<>();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
 
-    String callingChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single callingChannel
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String callingChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        callingChannelIDs.add(callingChannelID);
+        GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
+
+        if (callingChannel != null && (force || !callingChannel.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (callingChannel != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "callingChannelNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        callingChannelIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+    
+    for (int i = 0; i < callingChannelIDs.size(); i++)
+      {
+        String callingChannelID = callingChannelIDs.get(i).toString();
+        GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
+
+        if (callingChannel != null && (force || !callingChannel.getReadOnly()))
+          {
+            callingChannels.add(callingChannel);
+            validIDs.add(callingChannelID);
+          }
+      }
+        
+  
+    /*****************************************
+     *
+     * remove
+     *
+     *****************************************/
+    for (int i = 0; i < callingChannels.size(); i++)
+      {
+        GUIManagedObject callingChannel = callingChannels.get(i);
+        callingChannelService.removeCallingChannel(callingChannel.getGUIManagedObjectID(), userID);
+
+        /*****************************************
+         *
+         * revalidateOffers
+         *
+         *****************************************/
+
+        revalidateSalesChannels(now);
+        revalidateOffers(now);
+      }
 
     /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
-    if (callingChannel != null && (force || !callingChannel.getReadOnly()) )callingChannelService.removeCallingChannel(callingChannelID, userID);
-
-    /*****************************************
-    *
-    *  revalidateOffers
-    *
-    *****************************************/
-
-    revalidateSalesChannels(now);
-    revalidateOffers(now);
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (callingChannel != null && (force || !callingChannel.getReadOnly()))
-      responseCode = "ok";
-    else if (callingChannel != null)
-      responseCode = "failedReadOnly";
     else
-      responseCode = "callingChannelNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedcallingChannelIDS", JSONUtilities.encodeArray(validIDs));
 
-    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+   *
+   * processSetStatusCallingChannel
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusCallingChannel(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray callingChannelIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < callingChannelIDs.size(); i++)
+      {
+
+        String callingChannelID = callingChannelIDs.get(i).toString();
+        GUIManagedObject existingElement = callingChannelService.getStoredCallingChannel(callingChannelID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(callingChannelID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate callingChannel
+                 *
+                 ****************************************/
+
+                CallingChannel callingChannel = new CallingChannel(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                callingChannelService.putCallingChannel(callingChannel, (existingElement == null), userID);
+
+                /*****************************************
+                 *
+                 * revalidateOffers
+                 *
+                 *****************************************/
+
+                revalidateSalesChannels(now);
+                revalidateOffers(now);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+
+                callingChannelService.putCallingChannel(incompleteObject, (existingElement == null), userID);
+
+                //
+                // revalidateOffers
+                //
+
+                revalidateSalesChannels(now);
+                revalidateOffers(now);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
     return JSONUtilities.encodeObject(response);
   }
   
@@ -7635,7 +9133,28 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> criterionFieldAvailableValuesList = new ArrayList<JSONObject>();
-    for (GUIManagedObject criterionFieldAvailableValues : criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValuesList(includeArchived))
+    Collection <GUIManagedObject> criterionFieldAvailableValueObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray criterionFieldAvailableValueIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < criterionFieldAvailableValueIDs.size(); i++)
+          {
+            String criterionFieldAvailableValueID = criterionFieldAvailableValueIDs.get(i).toString();
+            GUIManagedObject criterionFieldAvailableValue = criterionFieldAvailableValuesService
+                .getStoredCriterionFieldAvailableValues(criterionFieldAvailableValueID, includeArchived);
+            if (criterionFieldAvailableValue != null)
+              {
+                criterionFieldAvailableValueObjects.add(criterionFieldAvailableValue);
+
+              }
+          }
+      }
+    else
+      {
+        criterionFieldAvailableValueObjects = criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValuesList(includeArchived);
+      }
+    for (GUIManagedObject criterionFieldAvailableValues : criterionFieldAvailableValueObjects)
       {
         criterionFieldAvailableValuesList.add(criterionFieldAvailableValuesService.generateResponseJSON(criterionFieldAvailableValues, fullDetails, now));
       }
@@ -7675,46 +9194,86 @@ public class GUIManager
     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> criterionFieldsAvailableValues = new ArrayList<>();
+    JSONArray criterionFieldsAvailableValueIDs = new JSONArray();
+    List<String> validIDs = new ArrayList<>();
 
     /****************************************
     *
     *  argument
     *
     ****************************************/
-
-    String criterionFieldAvailableValuesID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single criterion field
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String criterionFieldsAvailableValueID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        criterionFieldsAvailableValueIDs.add(criterionFieldsAvailableValueID);
+        GUIManagedObject criterionFieldsAvailableValue = criterionFieldAvailableValuesService
+            .getStoredCriterionFieldAvailableValues(criterionFieldsAvailableValueID);
+
+        if (criterionFieldsAvailableValue != null && (force || !criterionFieldsAvailableValue.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (criterionFieldsAvailableValue != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "criterionFieldAvailableValueNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        criterionFieldsAvailableValueIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+       
+
+    for (int i = 0; i < criterionFieldsAvailableValueIDs.size(); i++)
+      {
+        String criterionFieldsAvailableValueID = criterionFieldsAvailableValueIDs.get(i).toString();
+        GUIManagedObject criterionFieldsAvailableValue = criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValues(criterionFieldsAvailableValueID);
+        
+        if (criterionFieldsAvailableValue != null && (force || !criterionFieldsAvailableValue.getReadOnly())) 
+          {
+            criterionFieldsAvailableValues.add(criterionFieldsAvailableValue);
+            validIDs.add(criterionFieldsAvailableValueID);
+          }        
+      }
+        
+  
 
     /*****************************************
     *
     *  remove
     *
     *****************************************/
+    for (int i = 0; i < criterionFieldsAvailableValues.size(); i++)
+      {
 
-    GUIManagedObject criterionFieldAvailableValues = criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValues(criterionFieldAvailableValuesID);
-    if (criterionFieldAvailableValues != null && (force || !criterionFieldAvailableValues.getReadOnly())) criterionFieldAvailableValuesService.removeCriterionFieldAvailableValues(criterionFieldAvailableValuesID, userID);
-
+        GUIManagedObject criterionFieldAvailableValues = criterionFieldsAvailableValues.get(i);
+        criterionFieldAvailableValuesService.removeCriterionFieldAvailableValues(criterionFieldAvailableValues.getGUIManagedObjectID(), userID);
+      }
     /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    String responseCode;
-    if (criterionFieldAvailableValues != null && (force || !criterionFieldAvailableValues.getReadOnly()))
-      responseCode = "ok";
-    else if (criterionFieldAvailableValues != null)
-      responseCode = "failedReadOnly";
     else
-      responseCode = "criterionFieldAvailableValuesNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
+    response.put("removedcriterionFieldAvailableValueIDS", JSONUtilities.encodeArray(validIDs));
 
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
   
@@ -7734,6 +9293,18 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
+
 
     /*****************************************
     *
@@ -7794,9 +9365,12 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        criterionFieldAvailableValuesService.putCriterionFieldAvailableValues(criterionFieldAvailableValues, (existingCriterionFieldAvailableValues == null), userID);
-
+            criterionFieldAvailableValuesService.putCriterionFieldAvailableValues(criterionFieldAvailableValues,
+                (existingCriterionFieldAvailableValues == null), userID);
+          }
         /*****************************************
         *
         *  response
@@ -7821,9 +9395,11 @@ public class GUIManager
         //
         //  store
         //
-
-        criterionFieldAvailableValuesService.putCriterionFieldAvailableValues(incompleteObject, (existingCriterionFieldAvailableValues == null), userID);
-
+        if (!dryRun)
+          {
+            criterionFieldAvailableValuesService.putCriterionFieldAvailableValues(incompleteObject,
+                (existingCriterionFieldAvailableValues == null), userID);
+          }
         //
         //  log
         //
@@ -7887,6 +9463,94 @@ public class GUIManager
     if (criterionFieldAvailableValues != null) response.put("criterionFieldAvailableValues", criterionFieldAvailableValuesJSON);
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+   *
+   * processSetStatusCriterionFieldAvailableValues
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusCriterionFieldAvailableValues(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    Date now = SystemTime.getCurrentTime();
+    JSONArray criterionFieldIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < criterionFieldIDs.size(); i++)
+      {
+
+        String criterionFieldID = criterionFieldIDs.get(i).toString();
+        GUIManagedObject existingElement = criterionFieldAvailableValuesService
+            .getStoredCriterionFieldAvailableValues(criterionFieldID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(criterionFieldID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate CriterionFieldAvailableValues
+                 *
+                 ****************************************/
+
+                CriterionFieldAvailableValues criterionFieldAvailableValues = new CriterionFieldAvailableValues(
+                    elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+
+                criterionFieldAvailableValuesService.putCriterionFieldAvailableValues(criterionFieldAvailableValues,
+                    (existingElement == null), userID);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+
+                criterionFieldAvailableValuesService.putCriterionFieldAvailableValues(incompleteObject,
+                    (existingElement == null), userID);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
+    return JSONUtilities.encodeObject(response);
+  }
+  
 
   /*****************************************
   *
@@ -7904,9 +9568,28 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> salesChannels = new ArrayList<JSONObject>(); 
-    HashMap<String,Object> response = new HashMap<String,Object>(); 
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    Collection <GUIManagedObject> salesChannelObjects = new ArrayList<GUIManagedObject>();
     
-    for (GUIManagedObject salesChannel : salesChannelService.getStoredSalesChannels(includeArchived))
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray salesChannelIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < salesChannelIDs.size(); i++)
+          {
+            String salesChannelID = salesChannelIDs.get(i).toString();
+            GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID, includeArchived);
+            if (salesChannel != null)
+              {
+                salesChannelObjects.add(salesChannel);
+              }
+          }
+      }
+    else
+      {
+        salesChannelObjects = salesChannelService.getStoredSalesChannels(includeArchived);
+      }
+    
+    for (GUIManagedObject salesChannel : salesChannelObjects)
       {       
         JSONObject salesChannelJSON = salesChannelService.generateResponseJSON(salesChannel, fullDetails, now);       
         
@@ -8005,6 +9688,18 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
+
 
     /*****************************************
     *
@@ -8061,20 +9756,23 @@ public class GUIManager
         SalesChannel salesChannel = new SalesChannel(jsonRoot, epoch, existingSalesChannel);
         
         /*****************************************
-        *
-        *  store
-        *
-        *****************************************/
+         *
+         * store
+         *
+         *****************************************/
+        if (!dryRun)
+          {
+            salesChannelService.putSalesChannel(salesChannel, callingChannelService, resellerService,
+                (existingSalesChannel == null), userID);
 
-        salesChannelService.putSalesChannel(salesChannel, callingChannelService, resellerService, (existingSalesChannel == null), userID);
+            /*****************************************
+             *
+             * revalidateOffers
+             *
+             *****************************************/
 
-        /*****************************************
-        *
-        *  revalidateOffers
-        *
-        *****************************************/
-
-        revalidateOffers(now);
+            revalidateOffers(now);
+          }
 
         /*****************************************
         *
@@ -8100,14 +9798,18 @@ public class GUIManager
         //
         //  store
         //
+        if (!dryRun)
+          {
 
-        salesChannelService.putSalesChannel(incompleteObject, callingChannelService, resellerService, (existingSalesChannel == null), userID);
+            salesChannelService.putSalesChannel(incompleteObject, callingChannelService, resellerService,
+                (existingSalesChannel == null), userID);
 
-        //
-        //  revalidateOffers
-        //
+            //
+            // revalidateOffers
+            //
 
-        revalidateOffers(now);
+            revalidateOffers(now);
+          }
 
         //
         //  log
@@ -8152,6 +9854,11 @@ public class GUIManager
     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> salesChannels = new ArrayList<>();
+    JSONArray salesChannelIDs = new JSONArray();
+    List<String> validIDs = new ArrayList<>();
 
     /****************************************
     *
@@ -8159,47 +9866,183 @@ public class GUIManager
     *
     ****************************************/
 
-    String salesChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single salesChannel
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String salesChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        salesChannelIDs.add(salesChannelID);
+        GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID);
+        if (salesChannel != null && (force || !salesChannel.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (salesChannel != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "salesChannelNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        salesChannelIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+  
+    for (int i = 0; i < salesChannelIDs.size(); i++)
+      {
+        String salesChannelID = salesChannelIDs.get(i).toString();
+        GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID);
+        if (salesChannel != null && (force || !salesChannel.getReadOnly()))
+          {
+            salesChannels.add(salesChannel);
+            validIDs.add(salesChannelID);
+          }
+      }
+        
+  
 
     /*****************************************
     *
     *  remove
     *
     *****************************************/
+    for (int i = 0; i < salesChannels.size(); i++)
+      {
 
-    GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID);
-    if (salesChannel != null && (force || !salesChannel.getReadOnly())) salesChannelService.removeSalesChannel(salesChannelID, userID);
+        GUIManagedObject salesChannel = salesChannels.get(i);
+        salesChannelService.removeSalesChannel(salesChannel.getGUIManagedObjectID(), userID);
 
+        /*****************************************
+         *
+         * revalidateOffers
+         *
+         *****************************************/
+
+        revalidateOffers(now);
+      }
+    
     /*****************************************
-    *
-    *  revalidateOffers
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    revalidateOffers(now);
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (salesChannel != null && (force || !salesChannel.getReadOnly()))
-      responseCode = "ok";
-    else if (salesChannel != null)
-      responseCode = "failedReadOnly";
     else
-      responseCode = "salesChannelNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedsalesChannelIDS", JSONUtilities.encodeArray(validIDs));
 
-    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processSetStatusSalesChannel
+  *
+  *****************************************/
+
+  private JSONObject processSetStatusSalesChannel(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray salesChannelIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < salesChannelIDs.size(); i++)
+      {
+
+        String salesChannelID = salesChannelIDs.get(i).toString();
+        GUIManagedObject existingElement = salesChannelService.getStoredSalesChannel(salesChannelID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(salesChannelID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate salesChannel
+                 *
+                 ****************************************/
+
+                SalesChannel salesChannel = new SalesChannel(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                salesChannelService.putSalesChannel(salesChannel, callingChannelService, resellerService,
+                    (existingElement == null), userID);
+
+                /*****************************************
+                 *
+                 * revalidateOffers
+                 *
+                 *****************************************/
+
+                revalidateOffers(now);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+                salesChannelService.putSalesChannel(incompleteObject, callingChannelService, resellerService,
+                    (existingElement == null), userID);
+
+                //
+                // revalidateOffers
+                //
+
+                revalidateOffers(now);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -8218,8 +10061,27 @@ public class GUIManager
     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
-    List<JSONObject> suppliers = new ArrayList<JSONObject>();
-    for (GUIManagedObject supplier : supplierService.getStoredSuppliers(includeArchived))
+    List<JSONObject> suppliers = new ArrayList<JSONObject>();    
+    Collection <GUIManagedObject> supplierObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray supplierIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < supplierIDs.size(); i++)
+          {
+            String supplierID = supplierIDs.get(i).toString();
+            GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID, includeArchived);
+            if (supplier != null)
+              {
+                supplierObjects.add(supplier);
+              }
+          }
+      }
+    else
+      {
+        supplierObjects = supplierService.getStoredSuppliers(includeArchived);
+      }
+    for (GUIManagedObject supplier : supplierObjects)
       {
         suppliers.add(supplierService.generateResponseJSON(supplier, fullDetails, now));
       }
@@ -8296,6 +10158,18 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
+
 
     /*****************************************
     *
@@ -8356,17 +10230,20 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        supplierService.putSupplier(supplier, (existingSupplier == null), userID);
+            supplierService.putSupplier(supplier, (existingSupplier == null), userID);
 
-        /*****************************************
-        *
-        *  revalidateProducts
-        *
-        *****************************************/
+            /*****************************************
+             *
+             * revalidateProducts
+             *
+             *****************************************/
 
-        revalidateProducts(now);
-        revalidateVouchers(now);
+            revalidateProducts(now);
+            revalidateVouchers(now);
+          }
 
         /*****************************************
         *
@@ -8392,15 +10269,17 @@ public class GUIManager
         //
         //  store
         //
+        if (!dryRun)
+          {
+            supplierService.putSupplier(incompleteObject, (existingSupplier == null), userID);
 
-        supplierService.putSupplier(incompleteObject, (existingSupplier == null), userID);
+            //
+            // revalidateProducts
+            //
 
-        //
-        //  revalidateProducts
-        //
-
-        revalidateProducts(now);
-        revalidateVouchers(now);
+            revalidateProducts(now);
+            revalidateVouchers(now);
+          }
 
         //
         //  log
@@ -8446,61 +10325,205 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
 
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> suppliers = new ArrayList<>();
+    JSONArray supplierIDs = new JSONArray();
+    List<String> validIDs = new ArrayList<>();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
-
-    String supplierID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single supplier
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String supplierID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        supplierIDs.add(supplierID);
+        GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID);
+        if (supplier != null && (force || !supplier.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (supplier != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "supplierNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        supplierIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+       
+    for (int i = 0; i < supplierIDs.size(); i++)
+      {
+        String supplierID = supplierIDs.get(i).toString();
+        GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID);
+        
+        if (supplier != null && (force || !supplier.getReadOnly()))
+          {
+            suppliers.add(supplier);
+            validIDs.add(supplierID);
+          }
+      }
+        
+  
 
     /*****************************************
     *
     *  remove
     *
     *****************************************/
+    for (int i = 0; i < suppliers.size(); i++)
+      {
 
-    GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID);
-    if (supplier != null && (force || !supplier.getReadOnly())) supplierService.removeSupplier(supplierID, userID);
+        GUIManagedObject supplier = suppliers.get(i);
+        supplierService.removeSupplier(supplier.getGUIManagedObjectID(), userID);
+
+        /*****************************************
+         *
+         * revalidateProducts
+         *
+         *****************************************/
+
+        revalidateProducts(now);
+
+        /*****************************************
+         *
+         * revalidateVouchers
+         *
+         *****************************************/
+
+        revalidateVouchers(now);
+      }
 
     /*****************************************
-    *
-    *  revalidateProducts
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
 
-    revalidateProducts(now);
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    /*****************************************
-    *
-    *  revalidateVouchers
-    *
-    *****************************************/
-
-    revalidateVouchers(now);
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (supplier != null && (force || !supplier.getReadOnly()))
-      responseCode = "ok";
-    else if (supplier != null)
-      responseCode = "failedReadOnly";
     else
-      responseCode = "supplierNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedSupplierIDS", JSONUtilities.encodeArray(validIDs));
 
-    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+   *
+   * processSetStatusSupplier
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusSupplier(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray supplierIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < supplierIDs.size(); i++)
+      {
+
+        String supplierID = supplierIDs.get(i).toString();
+        GUIManagedObject existingElement = supplierService.getStoredSupplier(supplierID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(supplierID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate supplier
+                 *
+                 ****************************************/
+
+                Supplier supplier = new Supplier(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+
+                supplierService.putSupplier(supplier, (existingElement == null), userID);
+
+                /*****************************************
+                 *
+                 * revalidateProducts
+                 *
+                 *****************************************/
+
+                revalidateProducts(now);
+                revalidateVouchers(now);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+                supplierService.putSupplier(incompleteObject, (existingElement == null), userID);
+
+                //
+                // revalidateProducts
+                //
+
+                revalidateProducts(now);
+                revalidateVouchers(now);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -8520,7 +10543,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> products = new ArrayList<JSONObject>();
-    for (GUIManagedObject product : productService.getStoredProducts(includeArchived))
+    Collection <GUIManagedObject> productsObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray productIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < productIDs.size(); i++)
+          {
+            String productID = productIDs.get(i).toString();
+            GUIManagedObject product = productService.getStoredProduct(productID, includeArchived);
+            if (product != null)
+              {
+                productsObjects.add(product);
+              }
+          }
+      }
+    else
+      {
+        productsObjects = productService.getStoredProducts(includeArchived);
+      }
+    for (GUIManagedObject product : productsObjects)
       {
         products.add(productService.generateResponseJSON(product, fullDetails, now));
       }
@@ -8597,6 +10639,17 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
 
     /*****************************************
     *
@@ -8657,16 +10710,20 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        productService.putProduct(product, supplierService, productTypeService, deliverableService, (existingProduct == null), userID);
+            productService.putProduct(product, supplierService, productTypeService, deliverableService,
+                (existingProduct == null), userID);
 
-        /*****************************************
-        *
-        *  revalidateOffers
-        *
-        *****************************************/
+            /*****************************************
+             *
+             * revalidateOffers
+             *
+             *****************************************/
 
-        revalidateOffers(now);
+            revalidateOffers(now);
+          }
 
         /*****************************************
         *
@@ -8692,14 +10749,18 @@ public class GUIManager
         //
         //  store
         //
+        if (!dryRun)
+          {
 
-        productService.putProduct(incompleteObject, supplierService, productTypeService, deliverableService, (existingProduct == null), userID);
+            productService.putProduct(incompleteObject, supplierService, productTypeService, deliverableService,
+                (existingProduct == null), userID);
 
-        //
-        //  revalidateOffers
-        //
+            //
+            // revalidateOffers
+            //
 
-        revalidateOffers(now);
+            revalidateOffers(now);
+          }
 
         //
         //  log
@@ -8744,6 +10805,11 @@ public class GUIManager
     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> products = new ArrayList<>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray productIDs = new JSONArray();
 
     /****************************************
     *
@@ -8751,49 +10817,195 @@ public class GUIManager
     *
     ****************************************/
 
-    String productID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single product
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String productID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        productIDs.add(productID);
+        GUIManagedObject product = productService.getStoredProduct(productID);
+        if (product != null && (force || !product.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (product != null)
+          singleIDresponseCode = "failedReadOnly";
+        else
+          {
+            singleIDresponseCode = "productNotFound";
+
+          }
+
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        productIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+   
+    for (int i = 0; i < productIDs.size(); i++)
+      {
+        String productID = productIDs.get(i).toString();
+        GUIManagedObject product = productService.getStoredProduct(productID);
+        if (product != null && (force || !product.getReadOnly())) 
+          {
+            products.add(product);
+            validIDs.add(productID);
+          }
+      }
+        
+  
 
     /*****************************************
     *
     *  remove
     *
     *****************************************/
+    for (int i = 0; i < products.size(); i++)
+      {
 
-    GUIManagedObject product = productService.getStoredProduct(productID);
-    if (product != null && (force || !product.getReadOnly())) productService.removeProduct(productID, userID);
+        GUIManagedObject product = products.get(i);
+        productService.removeProduct(product.getGUIManagedObjectID(), userID);
+
+        /*****************************************
+         *
+         * revalidateOffers
+         *
+         *****************************************/
+
+        revalidateOffers(now);
+      }
 
     /*****************************************
-    *
-    *  revalidateOffers
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
 
-    revalidateOffers(now);
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (product != null && (force || !product.getReadOnly()))
-      responseCode = "ok";
-    else if (product != null)
-      responseCode = "failedReadOnly";
     else
-      responseCode = "productNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedProductIDS", JSONUtilities.encodeArray(validIDs));
 
-    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+   *
+   * processSetStatusProduct
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusProduct(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray productIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < productIDs.size(); i++)
+      {
+
+        String productID = productIDs.get(i).toString();
+        GUIManagedObject existingElement = productService.getStoredProduct(productID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(productID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate product
+                 *
+                 ****************************************/
+
+                Product product = new Product(elementRoot, epoch, existingElement, deliverableService,
+                    catalogCharacteristicService);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                productService.putProduct(product, supplierService, productTypeService, deliverableService,
+                    (existingElement == null), userID);
+
+                /*****************************************
+                 *
+                 * revalidateOffers
+                 *
+                 *****************************************/
+
+                revalidateOffers(now);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+
+                productService.putProduct(incompleteObject, supplierService, productTypeService, deliverableService,
+                    (existingElement == null), userID);
+
+                //
+                // revalidateOffers
+                //
+
+                revalidateOffers(now);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
+    return JSONUtilities.encodeObject(response);
+  }
+
 
 
   /*****************************************
@@ -8812,7 +11024,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> contactPolicies = new ArrayList<JSONObject>();
-    for (GUIManagedObject contactPolicy : contactPolicyService.getStoredContactPolicies(includeArchived))
+    Collection <GUIManagedObject> contactPolicyObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray contactPolicyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < contactPolicyIDs.size(); i++)
+          {
+            String contactPolicyID = contactPolicyIDs.get(i).toString();
+            GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID, includeArchived);
+            if (contactPolicy != null)
+              {
+                contactPolicyObjects.add(contactPolicy);
+              }
+          }
+      }
+    else
+      {
+        contactPolicyObjects = contactPolicyService.getStoredContactPolicies(includeArchived);
+      }
+    for (GUIManagedObject contactPolicy : contactPolicyObjects)
       {
         contactPolicies.add(contactPolicyService.generateResponseJSON(contactPolicy, fullDetails, now));
       }
@@ -8889,6 +11120,18 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
+    
 
     /*****************************************
     *
@@ -8949,16 +11192,19 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        contactPolicyService.putContactPolicy(contactPolicy, (existingContactPolicy == null), userID);
+            contactPolicyService.putContactPolicy(contactPolicy, (existingContactPolicy == null), userID);
 
-        /*****************************************
-        *
-        *  revalidate dependent objects
-        *
-        *****************************************/
+            /*****************************************
+             *
+             * revalidate dependent objects
+             *
+             *****************************************/
 
-        revalidateJourneyObjectives(now);
+            revalidateJourneyObjectives(now);
+          }
 
         /*****************************************
         *
@@ -8984,14 +11230,16 @@ public class GUIManager
         //
         //  store
         //
+        if (!dryRun)
+          {
+            contactPolicyService.putContactPolicy(incompleteObject, (existingContactPolicy == null), userID);
 
-        contactPolicyService.putContactPolicy(incompleteObject, (existingContactPolicy == null), userID);
+            //
+            // revalidate dependent objects
+            //
 
-        //
-        //  revalidate dependent objects
-        //
-
-        revalidateJourneyObjectives(now);
+            revalidateJourneyObjectives(now);
+          }
 
         //
         //  log
@@ -9037,53 +11285,189 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
 
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> contactPolicies = new ArrayList<>();
+    JSONArray contactPolicyIDs = new JSONArray();
+    List<String> validIDs = new ArrayList<>();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
 
-    String contactPolicyID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single contactPolicy
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String contactPolicyID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        contactPolicyIDs.add(contactPolicyID);
+        GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID);
+        if (contactPolicy != null && (force || !contactPolicy.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (contactPolicy != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "contactPolicyNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        contactPolicyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }    
 
+    for (int i = 0; i < contactPolicyIDs.size(); i++)
+      {
+        String contactPolicyID = contactPolicyIDs.get(i).toString();
+        GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID);
+        if (contactPolicy != null && (force || !contactPolicy.getReadOnly()))
+          {
+            contactPolicies.add(contactPolicy);
+            validIDs.add(contactPolicyID);
+          }
+      }
+        
+  
     /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
+     *
+     * remove
+     *
+     *****************************************/
+    for (int i = 0; i < contactPolicies.size(); i++)
+      {
 
-    GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID);
-    if (contactPolicy != null && (force || !contactPolicy.getReadOnly())) contactPolicyService.removeContactPolicy(contactPolicyID, userID);
+        GUIManagedObject contactPolicy = contactPolicies.get(i);
+        contactPolicyService.removeContactPolicy(contactPolicy.getGUIManagedObjectID(), userID);
 
-    /*****************************************
-    *
-    *  revalidate dependent objects
-    *
-    *****************************************/
+        /*****************************************
+         *
+         * revalidate dependent objects
+         *
+         *****************************************/
 
-    revalidateJourneyObjectives(now);
+        revalidateJourneyObjectives(now);
+      }
 
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
+        /*****************************************
+         *
+         * responseCode
+         *
+         *****************************************/
 
-    String responseCode;
-    if (contactPolicy != null && (force || !contactPolicy.getReadOnly()))
-      responseCode = "ok";
-    else if (contactPolicy != null)
-      responseCode = "failedReadOnly";
-    else
-      responseCode = "contactPolicyNotFound";
+        if (jsonRoot.containsKey("id"))
+          {
+            response.put("responseCode", singleIDresponseCode);
+            return JSONUtilities.encodeObject(response);
+          }
 
+        else
+          {
+            response.put("responseCode", "ok");
+          }      
     /*****************************************
     *
     *  response
     *
     *****************************************/
+    response.put("removedContactPolicyIDS", JSONUtilities.encodeArray(validIDs));
+    return JSONUtilities.encodeObject(response);
+  }
 
-    response.put("responseCode", responseCode);
+  /*****************************************
+   *
+   * processSetStatusContactPolicy
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusContactPolicy(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray contactPolicyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < contactPolicyIDs.size(); i++)
+      {
+
+        String contactPolicyID = contactPolicyIDs.get(i).toString();
+        GUIManagedObject existingElement = contactPolicyService.getStoredContactPolicy(contactPolicyID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(contactPolicyID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate contactPolicy
+                 *
+                 ****************************************/
+
+                ContactPolicy contactPolicy = new ContactPolicy(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                contactPolicyService.putContactPolicy(contactPolicy, (existingElement == null), userID);
+
+                /*****************************************
+                 *
+                 * revalidate dependent objects
+                 *
+                 *****************************************/
+
+                revalidateJourneyObjectives(now);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+                contactPolicyService.putContactPolicy(incompleteObject, (existingElement == null), userID);
+
+                //
+                // revalidate dependent objects
+                //
+
+                revalidateJourneyObjectives(now);
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -9103,7 +11487,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> journeyObjectives = new ArrayList<JSONObject>();
-    for (GUIManagedObject journeyObjective : journeyObjectiveService.getStoredJourneyObjectives(includeArchived))
+    Collection <GUIManagedObject> journeyObjectiveObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray journeyObjectiveIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < journeyObjectiveIDs.size(); i++)
+          {
+            String journeyObjectiveID = journeyObjectiveIDs.get(i).toString();
+            GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID, includeArchived);
+            if (journeyObjective != null)
+              {
+                journeyObjectiveObjects.add(journeyObjective);
+              }
+          }
+      }
+    else
+      {
+        journeyObjectiveObjects = journeyObjectiveService.getStoredJourneyObjectives(includeArchived);
+      }
+    for (GUIManagedObject journeyObjective : journeyObjectiveObjects)
       {
         journeyObjectives.add(journeyObjectiveService.generateResponseJSON(journeyObjective, fullDetails, now));
       }
@@ -9181,6 +11584,18 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
+
 
     /*****************************************
     *
@@ -9241,17 +11656,20 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
+            journeyObjectiveService.putJourneyObjective(journeyObjective, journeyObjectiveService, contactPolicyService,
+                catalogCharacteristicService, (existingJourneyObjective == null), userID);
 
-        journeyObjectiveService.putJourneyObjective(journeyObjective, journeyObjectiveService, contactPolicyService, catalogCharacteristicService, (existingJourneyObjective == null), userID);
+            /*****************************************
+             *
+             * revalidate dependent objects
+             *
+             *****************************************/
 
-        /*****************************************
-        *
-        *  revalidate dependent objects
-        *
-        *****************************************/
-
-        revalidateJourneys(now);
-        revalidateJourneyObjectives(now);
+            revalidateJourneys(now);
+            revalidateJourneyObjectives(now);
+          }
 
         /*****************************************
         *
@@ -9277,15 +11695,18 @@ public class GUIManager
         //
         //  store
         //
+        if (!dryRun)
+          {
+            journeyObjectiveService.putJourneyObjective(incompleteObject, journeyObjectiveService, contactPolicyService,
+                catalogCharacteristicService, (existingJourneyObjective == null), userID);
 
-        journeyObjectiveService.putJourneyObjective(incompleteObject, journeyObjectiveService, contactPolicyService, catalogCharacteristicService, (existingJourneyObjective == null), userID);
+            //
+            // revalidate dependent objects
+            //
 
-        //
-        //  revalidate dependent objects
-        //
-
-        revalidateJourneys(now);
-        revalidateJourneyObjectives(now);
+            revalidateJourneys(now);
+            revalidateJourneyObjectives(now);
+          }
 
         //
         //  log
@@ -9305,6 +11726,108 @@ public class GUIManager
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
       }
+  }
+  
+
+  /*****************************************
+  *
+  *  processSetStatusJourneyObjective
+  *
+  *****************************************/
+
+  private JSONObject processSetStatusJourneyObjective(String userID, JSONObject jsonRoot)
+  
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray journeyObjectiveIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    Date now = SystemTime.getCurrentTime();
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < journeyObjectiveIDs.size(); i++)
+      {
+
+        String journeyObjectiveID = journeyObjectiveIDs.get(i).toString();
+        GUIManagedObject existingElement = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(journeyObjectiveID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate journeyObjective
+                 *
+                 ****************************************/
+
+                JourneyObjective journeyObjective = new JourneyObjective(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+
+                journeyObjectiveService.putJourneyObjective(journeyObjective, journeyObjectiveService,
+                    contactPolicyService, catalogCharacteristicService, (existingElement == null), userID);
+
+                /*****************************************
+                 *
+                 * revalidate dependent objects
+                 *
+                 *****************************************/
+
+                revalidateJourneys(now);
+                revalidateJourneyObjectives(now);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+                //
+                // store
+                //
+
+                journeyObjectiveService.putJourneyObjective(incompleteObject, journeyObjectiveService,
+                    contactPolicyService, catalogCharacteristicService, (existingElement == null), userID);
+
+                //
+                // revalidate dependent objects
+                //
+
+                revalidateJourneys(now);
+                revalidateJourneyObjectives(now);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
+    return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
@@ -9331,54 +11854,101 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
 
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> journeyObjectives = new ArrayList<>();
+    JSONArray journeyObjectiveIDs = new JSONArray();
+    List<String> validIDs = new ArrayList<>();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
-
-    String journeyObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    
+    //
+    //remove single journeyObjective
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String journeyObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        journeyObjectiveIDs.add(journeyObjectiveID);
+        GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
+
+        if (journeyObjective != null && (force || !journeyObjective.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (journeyObjective != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "journeyObjectiveNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        journeyObjectiveIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+   
+    for (int i = 0; i < journeyObjectiveIDs.size(); i++)
+      {
+        String journeyObjectiveID = journeyObjectiveIDs.get(i).toString();
+        GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
+        
+        if (journeyObjective != null && (force || !journeyObjective.getReadOnly()))
+          {
+            journeyObjectives.add(journeyObjective);
+            validIDs.add(journeyObjectiveID);
+          }
+      }
+        
+  
 
     /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
+     *
+     * remove
+     *
+     *****************************************/
+    for (int i = 0; i < journeyObjectives.size(); i++)
+      {
 
-    GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
-    if (journeyObjective != null && (force || !journeyObjective.getReadOnly())) journeyObjectiveService.removeJourneyObjective(journeyObjectiveID, userID);
+        GUIManagedObject journeyObjective = journeyObjectives.get(i);
+        journeyObjectiveService.removeJourneyObjective(journeyObjective.getGUIManagedObjectID(), userID);
+
+        /*****************************************
+         *
+         * revalidate dependent objects
+         *
+         *****************************************/
+
+        revalidateJourneys(now);
+        revalidateJourneyObjectives(now);
+      }
 
     /*****************************************
-    *
-    *  revalidate dependent objects
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    revalidateJourneys(now);
-    revalidateJourneyObjectives(now);
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (journeyObjective != null && (force || !journeyObjective.getReadOnly()))
-      responseCode = "ok";
-    else if (journeyObjective != null)
-      responseCode = "failedReadOnly";
     else
-      responseCode = "journeyObjectiveNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedJourneyObjectiveIDS", JSONUtilities.encodeArray(validIDs));
 
-    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -9398,7 +11968,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> offerObjectives = new ArrayList<JSONObject>();
-    for (GUIManagedObject offerObjective : offerObjectiveService.getStoredOfferObjectives(includeArchived))
+    Collection <GUIManagedObject> offerObjectiveObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray offerObjectiveIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < offerObjectiveIDs.size(); i++)
+          {
+            String offerObjectiveID = offerObjectiveIDs.get(i).toString();
+            GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID, includeArchived);
+            if (offerObjective != null)
+              {
+                offerObjectiveObjects.add(offerObjective);
+              }
+          }
+      }
+    else
+      {
+        offerObjectiveObjects = offerObjectiveService.getStoredOfferObjectives(includeArchived);
+      }
+    for (GUIManagedObject offerObjective : offerObjectiveObjects)
       {
         offerObjectives.add(offerObjectiveService.generateResponseJSON(offerObjective, fullDetails, now));
       }
@@ -9475,6 +12064,17 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
 
     /*****************************************
     *
@@ -9535,17 +12135,20 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        offerObjectiveService.putOfferObjective(offerObjective, (existingOfferObjective == null), userID);
+            offerObjectiveService.putOfferObjective(offerObjective, (existingOfferObjective == null), userID);
 
-        /*****************************************
-        *
-        *  revalidate dependent objects
-        *
-        *****************************************/
+            /*****************************************
+             *
+             * revalidate dependent objects
+             *
+             *****************************************/
 
-        revalidateOffers(now);
-        revalidateScoringStrategies(now);
+            revalidateOffers(now);
+            revalidateScoringStrategies(now);
+          }
 
         /*****************************************
         *
@@ -9571,15 +12174,17 @@ public class GUIManager
         //
         //  store
         //
+        if (!dryRun)
+          {
+            offerObjectiveService.putOfferObjective(incompleteObject, (existingOfferObjective == null), userID);
 
-        offerObjectiveService.putOfferObjective(incompleteObject, (existingOfferObjective == null), userID);
+            //
+            // revalidate dependent objects
+            //
 
-        //
-        //  revalidate dependent objects
-        //
-
-        revalidateOffers(now);
-        revalidateScoringStrategies(now);
+            revalidateOffers(now);
+            revalidateScoringStrategies(now);
+          }
 
         //
         //  log
@@ -9625,54 +12230,197 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
 
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> offerObjectives = new ArrayList<>();
+    JSONArray offerObjectiveIDs = new JSONArray();
+    List<String> validIDs = new ArrayList<>();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
-
-    String offerObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single offerObjective
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String offerObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        offerObjectiveIDs.add(offerObjectiveID);
+        GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
+        if (offerObjective != null && (force || !offerObjective.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (offerObjective != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "offerObjectiveNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        offerObjectiveIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+       
+    for (int i = 0; i < offerObjectiveIDs.size(); i++)
+      {
+        String offerObjectiveID = offerObjectiveIDs.get(i).toString();
+        GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
+        if (offerObjective != null && (force || !offerObjective.getReadOnly()))
+          {
+            offerObjectives.add(offerObjective);
+            validIDs.add(offerObjectiveID);
+          }
+      }
+        
+  
 
     /*****************************************
     *
     *  remove
     *
     *****************************************/
+    for (int i = 0; i < offerObjectives.size(); i++)
+      {
 
-    GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
-    if (offerObjective != null && (force || !offerObjective.getReadOnly())) offerObjectiveService.removeOfferObjective(offerObjectiveID, userID);
+        GUIManagedObject offerObjective = offerObjectives.get(i);
+        
+          offerObjectiveService.removeOfferObjective(offerObjective.getGUIManagedObjectID(), userID);
+
+        /*****************************************
+         *
+         * revalidate dependent objects
+         *
+         *****************************************/
+
+        revalidateOffers(now);
+        revalidateScoringStrategies(now);
+      }
 
     /*****************************************
-    *
-    *  revalidate dependent objects
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
 
-    revalidateOffers(now);
-    revalidateScoringStrategies(now);
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (offerObjective != null && (force || !offerObjective.getReadOnly()))
-      responseCode = "ok";
-    else if (offerObjective != null)
-      responseCode = "failedReadOnly";
     else
-      responseCode = "offerObjectiveNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedOfferObjectiveIDS", JSONUtilities.encodeArray(validIDs));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+   *
+   * processSetStatusOfferObjective
+   *
+   *****************************************/
 
-    response.put("responseCode", responseCode);
+  private JSONObject processSetStatusOfferObjective(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray offerObjectiveIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < offerObjectiveIDs.size(); i++)
+      {
+
+        String offerObjectiveID = offerObjectiveIDs.get(i).toString();
+        GUIManagedObject existingElement = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(offerObjectiveID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate offerObjective
+                 *
+                 ****************************************/
+
+                OfferObjective offerObjective = new OfferObjective(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                offerObjectiveService.putOfferObjective(offerObjective, (existingElement == null), userID);
+
+                /*****************************************
+                 *
+                 * revalidate dependent objects
+                 *
+                 *****************************************/
+
+                revalidateOffers(now);
+                revalidateScoringStrategies(now);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+
+                offerObjectiveService.putOfferObjective(incompleteObject, (existingElement == null), userID);
+
+                //
+                // revalidate dependent objects
+                //
+
+                revalidateOffers(now);
+                revalidateScoringStrategies(now);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -9692,7 +12440,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> productTypes = new ArrayList<JSONObject>();
-    for (GUIManagedObject productType : productTypeService.getStoredProductTypes(includeArchived))
+    Collection <GUIManagedObject> productTypeObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray productTypeIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < productTypeIDs.size(); i++)
+          {
+            String productTypeID = productTypeIDs.get(i).toString();
+            GUIManagedObject productType = productService.getStoredProduct(productTypeID, includeArchived);
+            if (productType != null)
+              {
+                productTypeObjects.add(productType);
+              }
+          }
+      }
+    else
+      {
+        productTypeObjects = productTypeService.getStoredProductTypes(includeArchived);
+      }
+    for (GUIManagedObject productType : productTypeObjects)
       {
         productTypes.add(productTypeService.generateResponseJSON(productType, fullDetails, now));
       }
@@ -9769,6 +12536,18 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
+
 
     /*****************************************
     *
@@ -9829,16 +12608,19 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        productTypeService.putProductType(productType, (existingProductType == null), userID);
+            productTypeService.putProductType(productType, (existingProductType == null), userID);
 
-        /*****************************************
-        *
-        *  revalidateProducts
-        *
-        *****************************************/
+            /*****************************************
+             *
+             * revalidateProducts
+             *
+             *****************************************/
 
-        revalidateProducts(now);
+            revalidateProducts(now);
+          }
 
         /*****************************************
         *
@@ -9864,14 +12646,16 @@ public class GUIManager
         //
         //  store
         //
+        if (!dryRun)
+          {
+            productTypeService.putProductType(incompleteObject, (existingProductType == null), userID);
 
-        productTypeService.putProductType(incompleteObject, (existingProductType == null), userID);
+            //
+            // revalidateProducts
+            //
 
-        //
-        //  revalidateProducts
-        //
-
-        revalidateProducts(now);
+            revalidateProducts(now);
+          }
 
         //
         //  log
@@ -9917,53 +12701,193 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
 
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> productTypes = new ArrayList<>();
+    JSONArray productTypeIDs = new JSONArray();
+    List<String> validIDs = new ArrayList<>();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
 
-    String productTypeID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single productType
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String productTypeID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        productTypeIDs.add(productTypeID);
+        GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID);
+
+        if (productType != null && (force || !productType.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (productType != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "productTypeNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        productTypeIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+   
+    for (int i = 0; i < productTypeIDs.size(); i++)
+      {
+        String productTypeID = productTypeIDs.get(i).toString();
+        GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID);
+        
+        if (productType != null && (force || !productType.getReadOnly()))
+          {
+            productTypes.add(productType);
+            validIDs.add(productTypeID);
+          }
+      }
+        
+  
+    /*****************************************
+     *
+     * remove
+     *
+     *****************************************/
+    for (int i = 0; i < productTypes.size(); i++)
+      {
+
+        GUIManagedObject productType = productTypes.get(i);
+        productTypeService.removeProductType(productType.getGUIManagedObjectID(), userID);
+
+        /*****************************************
+         *
+         * revalidateProducts
+         *
+         *****************************************/
+
+        revalidateProducts(now);
+      }
 
     /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID);
-    if (productType != null && (force || !productType.getReadOnly())) productTypeService.removeProductType(productTypeID, userID);
-
-    /*****************************************
-    *
-    *  revalidateProducts
-    *
-    *****************************************/
-
-    revalidateProducts(now);
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (productType != null && (force || !productType.getReadOnly()))
-      responseCode = "ok";
-    else if (productType != null)
-      responseCode = "failedReadOnly";
     else
-      responseCode = "productTypeNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedProductTypeIDS", JSONUtilities.encodeArray(validIDs));
 
-    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+   *
+   * processSetStatusProductType
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusProductType(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray productTypeIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < productTypeIDs.size(); i++)
+      {
+
+        String productTypeID = productTypeIDs.get(i).toString();
+        GUIManagedObject existingElement = productTypeService.getStoredProductType(productTypeID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(productTypeID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate productType
+                 *
+                 ****************************************/
+
+                ProductType productType = new ProductType(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                productTypeService.putProductType(productType, (existingElement == null), userID);
+
+                /*****************************************
+                 *
+                 * revalidateProducts
+                 *
+                 *****************************************/
+
+                revalidateProducts(now);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+
+                productTypeService.putProductType(incompleteObject, (existingElement == null), userID);
+
+                //
+                // revalidateProducts
+                //
+
+                revalidateProducts(now);
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
     return JSONUtilities.encodeObject(response);
   }
  
@@ -9984,7 +12908,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> deliverables = new ArrayList<JSONObject>();
-    for (GUIManagedObject deliverable : deliverableService.getStoredDeliverables(includeArchived))
+    Collection <GUIManagedObject> deliverableObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray deliverableIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < deliverableIDs.size(); i++)
+          {
+            String deliverableID = deliverableIDs.get(i).toString();
+            GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, includeArchived);
+            if (deliverable != null)
+              {
+                deliverableObjects.add(deliverable);
+              }
+          }
+      }
+    else
+      {
+        deliverableObjects = deliverableService.getStoredDeliverables(includeArchived);
+      }
+    for (GUIManagedObject deliverable : deliverableObjects)
       {
         deliverables.add(deliverableService.generateResponseJSON(deliverable, fullDetails, now));
       }
@@ -10017,7 +12960,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> voucherTypes = new ArrayList<JSONObject>();
-    for (GUIManagedObject voucherType : voucherTypeService.getStoredVoucherTypes(includeArchived))
+    Collection <GUIManagedObject> voucherTypeObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray voucherTypeIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < voucherTypeIDs.size(); i++)
+          {
+            String voucherTypeID = voucherTypeIDs.get(i).toString();
+            GUIManagedObject voucherType = voucherTypeService.getStoredVoucherType(voucherTypeID, includeArchived);
+            if (voucherType != null)
+              {
+                voucherTypeObjects.add(voucherType);
+              }
+          }
+      }
+    else
+      {
+        voucherTypeObjects = voucherTypeService.getStoredVoucherTypes(includeArchived);
+      }
+    for (GUIManagedObject voucherType : voucherTypeObjects)
       {
         voucherTypes.add(voucherTypeService.generateResponseJSON(voucherType, fullDetails, now));
       }
@@ -10094,6 +13056,17 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
 
     /*****************************************
     *
@@ -10154,10 +13127,13 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        voucherTypeService.putVoucherType(voucherType, (existingVoucherType == null), userID);
+            voucherTypeService.putVoucherType(voucherType, (existingVoucherType == null), userID);
 
-        revalidateVouchers(now);
+            revalidateVouchers(now);
+          }
 
         /*****************************************
         *
@@ -10183,9 +13159,10 @@ public class GUIManager
         //
         //  store
         //
-
-        voucherTypeService.putVoucherType(incompleteObject, (existingVoucherType == null), userID);
-
+        if (!dryRun)
+          {
+            voucherTypeService.putVoucherType(incompleteObject, (existingVoucherType == null), userID);
+          }
         //
         //  log
         //
@@ -10230,55 +13207,192 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
 
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> voucherTypes = new ArrayList<>();
+    JSONArray voucherTypeIDs = new JSONArray();
+    List<String> validIDs = new ArrayList<>();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
 
-    String voucherTypeID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
+    //
+    //remove single voucherType
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String voucherTypeID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        voucherTypeIDs.add(voucherTypeID);
+        GUIManagedObject voucherType = voucherTypeService.getStoredVoucherType(voucherTypeID);
+
+        if (voucherType != null && (force || !voucherType.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (voucherType != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "voucherTypeNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        voucherTypeIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+    
+    //
+    // If one of the voucherTypeID is wrong it should reject the request
+    //
+
+    for (int i = 0; i < voucherTypeIDs.size(); i++)
+      {
+        String voucherTypeID = voucherTypeIDs.get(i).toString();
+        GUIManagedObject voucherType = voucherTypeService.getStoredVoucherType(voucherTypeID);
+        
+        if (voucherType != null && (force || !voucherType.getReadOnly()))
+          {
+            voucherTypes.add(voucherType);
+            validIDs.add(voucherTypeID);
+          }
+      }
+        
+  
+
     /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
+     *
+     * remove
+     *
+     *****************************************/
+    for (int i = 0; i < voucherTypes.size(); i++)
+      {
+        GUIManagedObject voucherType = voucherTypes.get(i);
+        
+        voucherTypeService.removeVoucherType(voucherType.getGUIManagedObjectID(), userID);
 
-    GUIManagedObject voucherType = voucherTypeService.getStoredVoucherType(voucherTypeID);
-    if (voucherType != null && (force || !voucherType.getReadOnly())) voucherTypeService.removeVoucherType(voucherTypeID, userID);
+        /*****************************************
+         *
+         * revalidateVouchers
+         *
+         *****************************************/
+
+        revalidateVouchers(now);
+      }
 
     /*****************************************
-    *
-    *  revalidateVouchers
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
 
-    revalidateVouchers(now);
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (voucherType != null && (force || !voucherType.getReadOnly()))
-      responseCode = "ok";
-    else if (voucherType != null)
-      responseCode = "failedReadOnly";
     else
-      responseCode = "voucherTypeNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedVoucherTypeIDS", JSONUtilities.encodeArray(validIDs));
 
-    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+   *
+   * processSetStatusVoucherType
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusVoucherType(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray voucherTypeIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < voucherTypeIDs.size(); i++)
+      {
+
+        String voucherTypeID = voucherTypeIDs.get(i).toString();
+        GUIManagedObject existingElement = voucherTypeService.getStoredVoucherType(voucherTypeID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(voucherTypeID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate voucherType
+                 *
+                 ****************************************/
+
+                VoucherType voucherType = new VoucherType(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                voucherTypeService.putVoucherType(voucherType, (existingElement == null), userID);
+
+                revalidateVouchers(now);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+
+                voucherTypeService.putVoucherType(incompleteObject, (existingElement == null), userID);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
+    return JSONUtilities.encodeObject(response);
+  }
+
 
   /*****************************************
   *
@@ -10324,7 +13438,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> vouchers = new ArrayList<JSONObject>();
-    for (GUIManagedObject voucher : voucherService.getStoredVouchers(includeArchived))
+    Collection <GUIManagedObject> voucherObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray voucherIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < voucherIDs.size(); i++)
+          {
+            String voucherID = voucherIDs.get(i).toString();
+            GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID, includeArchived);
+            if (voucher != null)
+              {
+                voucherObjects.add(voucher);
+              }
+          }
+      }
+    else
+      {
+        voucherObjects = voucherService.getStoredVouchers(includeArchived);
+      }
+    for (GUIManagedObject voucher : voucherObjects)
       {
         vouchers.add(voucherService.generateResponseJSON(voucher, fullDetails, now));
       }
@@ -10401,6 +13534,18 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
+
 
     /*****************************************
     *
@@ -10477,9 +13622,12 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        voucherService.putVoucher(voucher, (existingVoucher == null), userID);
-        revalidateOffers(now);
+            voucherService.putVoucher(voucher, (existingVoucher == null), userID);
+            revalidateOffers(now);
+          }
 
         /*****************************************
         *
@@ -10504,9 +13652,11 @@ public class GUIManager
         //
         //  store
         //
-
-        voucherService.putVoucher(incompleteObject, (existingVoucher == null), userID);
-        revalidateOffers(now);
+        if (!dryRun)
+          {
+            voucherService.putVoucher(incompleteObject, (existingVoucher == null), userID);
+            revalidateOffers(now);
+          }
 
         //
         //  log
@@ -10552,45 +13702,192 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
 
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> vouchers = new ArrayList<>();
+    JSONArray voucherIDs = new JSONArray();
+    List<String> validIDs = new ArrayList<>();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
 
-    String voucherID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single voucher
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String voucherID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        voucherIDs.add(voucherID);
+        GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID);
+        if (voucher != null && (force || !voucher.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (voucher != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "voucherNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        voucherIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+  
+    for (int i = 0; i < voucherIDs.size(); i++)
+      {
+        String voucherID = voucherIDs.get(i).toString();
+        GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID);
+        
+        if (voucher != null && (force || !voucher.getReadOnly()))
+          {
+            vouchers.add(voucher);
+            validIDs.add(voucherID);
+          }
+      }
+        
+  
 
     /*****************************************
     *
     *  remove
     *
     *****************************************/
+    for (int i = 0; i < vouchers.size(); i++)
+      {
 
-    GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID);
-    if (voucher != null && (force || !voucher.getReadOnly())) voucherService.removeVoucher(voucherID, userID, uploadedFileService);
+        GUIManagedObject voucher = vouchers.get(i);
 
+        voucherService.removeVoucher(voucher.getGUIManagedObjectID(), userID, uploadedFileService);
+      }
+    
     /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    String responseCode;
-    if (voucher != null && (force || !voucher.getReadOnly()))
-      responseCode = "ok";
-    else if (voucher != null)
-      responseCode = "failedReadOnly";
     else
-      responseCode = "voucherNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedVoucherIDS", JSONUtilities.encodeArray(validIDs));
 
-    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+   *
+   * processSetStatusVoucher
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusVoucher(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray voucherIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < voucherIDs.size(); i++)
+      {
+
+        String voucherID = voucherIDs.get(i).toString();
+        GUIManagedObject existingElement = voucherService.getStoredVoucher(voucherID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(voucherID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+
+            try
+              {
+
+                // get the voucher type to instantiate
+                VoucherType voucherType = voucherTypeService
+                    .getActiveVoucherType(JSONUtilities.decodeString(elementRoot, "voucherTypeId", true), now);
+                if (log.isDebugEnabled())
+                  log.debug("will use voucherType " + voucherType);
+
+                Voucher voucher = null;
+                if (voucherType.getCodeType() == VoucherType.CodeType.Shared)
+                  {
+                    voucher = new VoucherShared(elementRoot, epoch, existingElement);
+                    if (log.isDebugEnabled())
+                      log.debug("will put shared voucher " + voucher);
+                  }
+                if (voucher == null && voucherType.getCodeType() == VoucherType.CodeType.Personal)
+                  {
+                    voucher = new VoucherPersonal(elementRoot, epoch, existingElement, voucherType);
+                    if (log.isDebugEnabled())
+                      log.debug("will put personal voucher " + voucher);
+                  }
+
+                voucher.validate(voucherTypeService, uploadedFileService, now);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                voucherService.putVoucher(voucher, (existingElement == null), userID);
+                revalidateOffers(now);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+
+                voucherService.putVoucher(incompleteObject, (existingElement == null), userID);
+                revalidateOffers(now);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -10610,7 +13907,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> templates = new ArrayList<JSONObject>();
-    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredMailTemplates(externalOnly, includeArchived))
+    Collection <GUIManagedObject> templateObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray templateIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < templateIDs.size(); i++)
+          {
+            String templateID = templateIDs.get(i).toString();
+            GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
+            if (template != null)
+              {
+                templateObjects.add(template);
+              }
+          }
+      }
+    else
+      {
+        templateObjects = subscriberMessageTemplateService.getStoredMailTemplates(externalOnly, includeArchived);
+      }
+    for (GUIManagedObject template : templateObjects)
       {
         templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
       }
@@ -10688,6 +14004,17 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
 
     /*****************************************
     *
@@ -10784,9 +14111,12 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        subscriberMessageTemplateService.putSubscriberMessageTemplate(mailTemplate, (existingTemplate == null), userID);
-
+            subscriberMessageTemplateService.putSubscriberMessageTemplate(mailTemplate, (existingTemplate == null),
+                userID);
+          }
         /*****************************************
         *
         *  response
@@ -10810,9 +14140,11 @@ public class GUIManager
         //
         //  store
         //
-
-        subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject, (existingTemplate == null), userID);
-
+        if (!dryRun)
+          {
+            subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject,
+                (existingTemplate == null), userID);
+          }
         //
         //  log
         //
@@ -10849,46 +14181,183 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
 
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> mailTemplates = new ArrayList<>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray mailTemplateIDs = new JSONArray();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
 
-    String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single mailTemplate
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String mailTemplateID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        mailTemplateIDs.add(mailTemplateID);
+        GUIManagedObject mailTemplate = subscriberMessageTemplateService
+            .getStoredSubscriberMessageTemplate(mailTemplateID);
+
+        if (mailTemplate != null && (force || !mailTemplate.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (mailTemplate != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "templateNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        mailTemplateIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+   
+    for (int i = 0; i < mailTemplateIDs.size(); i++)
+      {
+        String mailTemplateID = mailTemplateIDs.get(i).toString();
+        GUIManagedObject mailTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(mailTemplateID);
+        
+        if (mailTemplate != null && (force || !mailTemplate.getReadOnly()))
+          {
+            mailTemplates.add(mailTemplate);
+            validIDs.add(mailTemplateID);
+          }
+      }
+        
+  
 
     /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
+     *
+     * remove
+     *
+     *****************************************/
+    for (int i = 0; i < mailTemplates.size(); i++)
+      {
 
-    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
-    template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.MailMessageTemplate) ? template : null;
-    if (template != null && (force || !template.getReadOnly())) subscriberMessageTemplateService.removeSubscriberMessageTemplate(templateID, userID);
+        GUIManagedObject template = mailTemplates.get(i);
+        template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.MailMessageTemplate)
+            ? template
+            : null;
 
+        subscriberMessageTemplateService.removeSubscriberMessageTemplate(template.getGUIManagedObjectID(), userID);
+      
+      }
     /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
 
-    String responseCode;
-    if (template != null && (force || !template.getReadOnly()))
-      responseCode = "ok";
-    else if (template != null)
-      responseCode = "failedReadOnly";
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
+
     else
-      responseCode = "templateNotFound";
-
+      {
+        response.put("responseCode", "ok");
+      }
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
 
-    response.put("responseCode", responseCode);
+    response.put("removedTemplateDS", JSONUtilities.encodeArray(validIDs));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+   *
+   * processSetStatusMailTemplate
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusMailTemplate(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray templateIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < templateIDs.size(); i++)
+      {
+
+        String templateID = templateIDs.get(i).toString();
+        GUIManagedObject existingElement = subscriberMessageTemplateService
+            .getStoredSubscriberMessageTemplate(templateID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(templateID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate template
+                 *
+                 ****************************************/
+
+                MailTemplate mailTemplate = new MailTemplate(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                subscriberMessageTemplateService.putSubscriberMessageTemplate(mailTemplate, (existingElement == null),
+                    userID);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot,
+                    GUIManagedObjectType.MailMessageTemplate, epoch);
+
+                //
+                // store
+                //
+
+                subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject,
+                    (existingElement == null), userID);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -10908,7 +14377,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> templates = new ArrayList<JSONObject>();
-    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredSMSTemplates(externalOnly, includeArchived))
+    Collection <GUIManagedObject> templateObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray templateIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < templateIDs.size(); i++)
+          {
+            String templateID = templateIDs.get(i).toString();
+            GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
+            if (template != null)
+              {
+                templateObjects.add(template);
+              }
+          }
+      }
+    else
+      {
+        templateObjects = subscriberMessageTemplateService.getStoredSMSTemplates(externalOnly, includeArchived);
+      }
+    for (GUIManagedObject template : templateObjects)
       {
         templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
       }
@@ -10986,6 +14474,17 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
 
     /*****************************************
     *
@@ -11082,9 +14581,12 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        subscriberMessageTemplateService.putSubscriberMessageTemplate(smsTemplate, (existingTemplate == null), userID);
-
+            subscriberMessageTemplateService.putSubscriberMessageTemplate(smsTemplate, (existingTemplate == null),
+                userID);
+          }
         /*****************************************
         *
         *  response
@@ -11108,9 +14610,11 @@ public class GUIManager
         //
         //  store
         //
-
-        subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject, (existingTemplate == null), userID);
-
+        if (!dryRun)
+          {
+            subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject,
+                (existingTemplate == null), userID);
+          }
         //
         //  log
         //
@@ -11147,46 +14651,183 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
 
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> smsTemplates = new ArrayList<>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray smsTemplateIDs = new JSONArray();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
 
-    String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single smsTemplate
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String smsTemplateID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        smsTemplateIDs.add(smsTemplateID);
+        GUIManagedObject smsTemplate = subscriberMessageTemplateService
+            .getStoredSubscriberMessageTemplate(smsTemplateID);
+
+        if (smsTemplate != null && (force || !smsTemplate.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (smsTemplate != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "templateNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        smsTemplateIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+   
+    for (int i = 0; i < smsTemplateIDs.size(); i++)
+      {
+        String smsTemplateID = smsTemplateIDs.get(i).toString();
+        GUIManagedObject smsTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(smsTemplateID);
+        
+        if (smsTemplate != null && (force || !smsTemplate.getReadOnly()))
+          {
+            smsTemplates.add(smsTemplate);
+            validIDs.add(smsTemplateID);
+          }
+      }
+        
+  
 
     /*****************************************
     *
     *  remove
     *
     *****************************************/
+    for (int i = 0; i < smsTemplates.size(); i++)
+      {
 
-    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
-    template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.SMSMessageTemplate) ? template : null;
-    if (template != null && (force || !template.getReadOnly())) subscriberMessageTemplateService.removeSubscriberMessageTemplate(templateID, userID);
+        GUIManagedObject template = smsTemplates.get(i);
+        template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.SMSMessageTemplate)
+            ? template
+            : null;
 
+        subscriberMessageTemplateService.removeSubscriberMessageTemplate(template.getGUIManagedObjectID(), userID);
+
+      }
     /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
 
-    String responseCode;
-    if (template != null && (force || !template.getReadOnly()))
-      responseCode = "ok";
-    else if (template != null)
-      responseCode = "failedReadOnly";
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
+
     else
-      responseCode = "templateNotFound";
-
+      {
+        response.put("responseCode", "ok");
+      }
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedTemplateIDS", JSONUtilities.encodeArray(validIDs));
 
-    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+   *
+   * processSetStatusSMSTemplate
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusSMSTemplate(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray templateIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < templateIDs.size(); i++)
+      {
+
+        String templateID = templateIDs.get(i).toString();
+        GUIManagedObject existingElement = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(templateID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate template
+                 *
+                 ****************************************/
+
+                SMSTemplate smsTemplate = new SMSTemplate(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+
+                subscriberMessageTemplateService.putSubscriberMessageTemplate(smsTemplate, (existingElement == null),
+                    userID);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot,
+                    GUIManagedObjectType.SMSMessageTemplate, epoch);
+
+                //
+                // store
+                //
+
+                subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject,
+                    (existingElement == null), userID);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -11215,7 +14856,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> templates = new ArrayList<JSONObject>();
-    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredPushTemplates(externalOnly, includeArchived))
+    Collection <GUIManagedObject> templateObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray templateIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < templateIDs.size(); i++)
+          {
+            String templateID = templateIDs.get(i).toString();
+            GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
+            if (template != null)
+              {
+                templateObjects.add(template);
+              }
+          }
+      }
+    else
+      {
+        templateObjects = subscriberMessageTemplateService.getStoredPushTemplates(externalOnly, includeArchived);
+      }
+    for (GUIManagedObject template : templateObjects)
       {
         String templateCommunicationChannelID = (String) template.getJSONRepresentation().get("communicationChannelID");
         if(communicationChannelID == null || communicationChannelID.isEmpty() || communicationChannelID.equals(templateCommunicationChannelID)){
@@ -11297,6 +14957,17 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
 
     /*****************************************
     *
@@ -11393,9 +15064,12 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        subscriberMessageTemplateService.putSubscriberMessageTemplate(pushTemplate, (existingTemplate == null), userID);
-
+            subscriberMessageTemplateService.putSubscriberMessageTemplate(pushTemplate, (existingTemplate == null),
+                userID);
+          }
         /*****************************************
         *
         *  response
@@ -11419,9 +15093,11 @@ public class GUIManager
         //
         //  store
         //
-
-        subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject, (existingTemplate == null), userID);
-
+        if (!dryRun)
+          {
+            subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject,
+                (existingTemplate == null), userID);
+          }
         //
         //  log
         //
@@ -11458,49 +15134,185 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
 
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> templates = new ArrayList<>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray templateIDs = new JSONArray();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
 
-    String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single journey
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String templateID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        templateIDs.add(templateID);
+        GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+
+        if (template != null && (force || !template.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (template != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "templateNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        templateIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+   
+    for (int i = 0; i < templateIDs.size(); i++)
+      {
+        String templateID = templateIDs.get(i).toString();
+        GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+        
+        if (template != null && (force || !template.getReadOnly()))
+          {
+            templates.add(template);
+            validIDs.add(templateID);
+          }
+      }
+        
+  
 
     /*****************************************
     *
     *  remove
     *
     *****************************************/
+    for (int i = 0; i < templates.size(); i++)
+      {
 
-    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
-    template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate) ? template : null;
-    if (template != null && (force || !template.getReadOnly())) subscriberMessageTemplateService.removeSubscriberMessageTemplate(templateID, userID);
+        GUIManagedObject template = templates.get(i);
+        template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate)
+            ? template
+            : null;
 
+        subscriberMessageTemplateService.removeSubscriberMessageTemplate(template.getGUIManagedObjectID(), userID);
+
+      }
     /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
 
-    String responseCode;
-    if (template != null && (force || !template.getReadOnly()))
-      responseCode = "ok";
-    else if (template != null)
-      responseCode = "failedReadOnly";
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
+
     else
-      responseCode = "templateNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedTemplateIDS", JSONUtilities.encodeArray(validIDs));
 
-    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
   
+  /*****************************************
+   *
+   * processSetStatusPushTemplate
+   *
+   *****************************************/
+  private JSONObject processSetStatusPushTemplate(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray templateIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < templateIDs.size(); i++)
+      {
+
+        String templateID = templateIDs.get(i).toString();
+        GUIManagedObject existingElement = subscriberMessageTemplateService
+            .getStoredSubscriberMessageTemplate(templateID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(templateID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate template
+                 *
+                 ****************************************/
+
+                PushTemplate pushTemplate = new PushTemplate(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                subscriberMessageTemplateService.putSubscriberMessageTemplate(pushTemplate, (existingElement == null),
+                    userID);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot,
+                    GUIManagedObjectType.PushMessageTemplate, epoch);
+
+                //
+                // store
+                //
+
+                subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject,
+                    (existingElement == null), userID);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
+    return JSONUtilities.encodeObject(response);
+  }
+
   /*****************************************
   *
   *  processGetDialogTemplateList
@@ -11526,7 +15338,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> templates = new ArrayList<JSONObject>();
-    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredDialogTemplates(externalOnly, includeArchived))
+    Collection <GUIManagedObject> templateObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray templateIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < templateIDs.size(); i++)
+          {
+            String templateID = templateIDs.get(i).toString();
+            GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
+            if (template != null)
+              {
+                templateObjects.add(template);
+              }
+          }
+      }
+    else
+      {
+        templateObjects = subscriberMessageTemplateService.getStoredDialogTemplates(externalOnly, includeArchived);
+      }
+    for (GUIManagedObject template : templateObjects)
       {
         String templateCommunicationChannelID = (String) template.getJSONRepresentation().get("communicationChannelID");
         if(communicationChannelID == null || communicationChannelID.isEmpty() || communicationChannelID.equals(templateCommunicationChannelID)){
@@ -11609,6 +15440,17 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
 
     /*****************************************
     *
@@ -11705,9 +15547,12 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        subscriberMessageTemplateService.putSubscriberMessageTemplate(dialogTemplate, (existingTemplate == null), userID);
-
+            subscriberMessageTemplateService.putSubscriberMessageTemplate(dialogTemplate, (existingTemplate == null),
+                userID);
+          }
         /*****************************************
         *
         *  response
@@ -11731,9 +15576,11 @@ public class GUIManager
         //
         //  store
         //
-
-        subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject, (existingTemplate == null), userID);
-
+        if (!dryRun)
+          {
+            subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject,
+                (existingTemplate == null), userID);
+          }
         //
         //  log
         //
@@ -11770,48 +15617,187 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
 
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> templates = new ArrayList<>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray templateIDs = new JSONArray();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
 
-    String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single dialogTemplate
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String templateID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        templateIDs.add(templateID);
+        GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+
+        if (template != null && (force || !template.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (template != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "templateNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        templateIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+   
+    for (int i = 0; i < templateIDs.size(); i++)
+      {
+        String templateID = templateIDs.get(i).toString();
+        GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+        
+        if (template != null && (force || !template.getReadOnly()))
+          {
+            templates.add(template);
+            validIDs.add(templateID);
+          }
+      }
+        
+  
 
     /*****************************************
     *
     *  remove
     *
     *****************************************/
+    for (int i = 0; i < templates.size(); i++)
+      {
 
-    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
-    template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.DialogTemplate) ? template : null;
-    if (template != null && (force || !template.getReadOnly())) subscriberMessageTemplateService.removeSubscriberMessageTemplate(templateID, userID);
+        GUIManagedObject template = templates.get(i);
+        template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.DialogTemplate)
+            ? template
+            : null;
 
+        subscriberMessageTemplateService.removeSubscriberMessageTemplate(template.getGUIManagedObjectID(), userID);
+
+      }
     /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
 
-    String responseCode;
-    if (template != null && (force || !template.getReadOnly()))
-      responseCode = "ok";
-    else if (template != null)
-      responseCode = "failedReadOnly";
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
+
     else
-      responseCode = "templateNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
 
-    response.put("responseCode", responseCode);
+    response.put("removedtemplateIDS", JSONUtilities.encodeArray(validIDs));
     return JSONUtilities.encodeObject(response);
   }
+  
+
+  /*****************************************
+   *
+   * processSetStatusDialogTemplate
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusDialogTemplate(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray templateIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < templateIDs.size(); i++)
+      {
+
+        String templateID = templateIDs.get(i).toString();
+        GUIManagedObject existingElement = subscriberMessageTemplateService
+            .getStoredSubscriberMessageTemplate(templateID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(templateID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate template
+                 *
+                 ****************************************/
+
+                DialogTemplate dialogTemplate = new DialogTemplate(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                subscriberMessageTemplateService.putSubscriberMessageTemplate(dialogTemplate, (existingElement == null),
+                    userID);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot,
+                    GUIManagedObjectType.DialogTemplate, epoch);
+
+                //
+                // store
+                //
+
+                subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject,
+                    (existingElement == null), userID);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
+    return JSONUtilities.encodeObject(response);
+  }
+
 
 
   /*****************************************
@@ -11869,7 +15855,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> paymentMeans = new ArrayList<JSONObject>();
-    for (GUIManagedObject paymentMean : paymentMeanService.getStoredPaymentMeans(includeArchived))
+    Collection <GUIManagedObject> paymentMeanObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray paymentMeanIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < paymentMeanIDs.size(); i++)
+          {
+            String paymentMeanID = paymentMeanIDs.get(i).toString();
+            GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID, includeArchived);
+            if (paymentMean != null)
+              {
+                paymentMeanObjects.add(paymentMean);
+              }
+          }
+      }
+    else
+      {
+        paymentMeanObjects = paymentMeanService.getStoredPaymentMeans(includeArchived);
+      }
+    for (GUIManagedObject paymentMean : paymentMeanObjects)
       {
         paymentMeans.add(paymentMeanService.generateResponseJSON(paymentMean, fullDetails, now));
       }
@@ -14108,7 +18113,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> communicationChannelList = new ArrayList<JSONObject>();
-    for (CommunicationChannel communicationChannel : Deployment.getCommunicationChannels().values())
+    Collection <CommunicationChannel> communicationChannelObjects = new ArrayList<CommunicationChannel>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray communicationChannelIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < communicationChannelIDs.size(); i++)
+          {
+            String communicationChannelID = communicationChannelIDs.get(i).toString();
+            CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(communicationChannelID);
+            if (communicationChannel != null)
+              {
+                communicationChannelObjects.add(communicationChannel);
+              }
+          }
+      }
+    else
+      {
+        communicationChannelObjects = Deployment.getCommunicationChannels().values();
+      }
+    for (CommunicationChannel communicationChannel : communicationChannelObjects)
       {
         JSONObject channel = communicationChannel.generateResponseJSON(fullDetails, now);
         communicationChannelList.add(channel);
@@ -14190,7 +18214,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> communicationChannelBlackoutList = new ArrayList<JSONObject>();
-    for (GUIManagedObject blackoutPeriods : communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived))
+    Collection <GUIManagedObject> communicationChannelBlackoutObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray communicationChannelBlackoutIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < communicationChannelBlackoutIDs.size(); i++)
+          {
+            String communicationChannelBlackoutID = communicationChannelBlackoutIDs.get(i).toString();
+            GUIManagedObject communicationChannelBlackout = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutID, includeArchived);
+            if (communicationChannelBlackout != null)
+              {
+                communicationChannelBlackoutObjects.add(communicationChannelBlackout);
+              }            
+          }
+      }
+    else
+      {
+        communicationChannelBlackoutObjects = communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived);
+      }
+    for (GUIManagedObject blackoutPeriods : communicationChannelBlackoutObjects)
       {
         JSONObject blackoutPeriod = communicationChannelBlackoutService.generateResponseJSON(blackoutPeriods, fullDetails, now);
         communicationChannelBlackoutList.add(blackoutPeriod);
@@ -14268,6 +18311,17 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
 
     /*****************************************
     *
@@ -14328,9 +18382,12 @@ public class GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        communicationChannelBlackoutService.putCommunicationChannelBlackout(communicationChannelBlackoutPeriod, (existingCommunicationChannelBlackoutPeriod == null), userID);
-
+            communicationChannelBlackoutService.putCommunicationChannelBlackout(communicationChannelBlackoutPeriod,
+                (existingCommunicationChannelBlackoutPeriod == null), userID);
+          }
         /*****************************************
         *
         *  response
@@ -14355,9 +18412,12 @@ public class GUIManager
         //
         //  store
         //
+        if (!dryRun)
+          {
 
-        communicationChannelBlackoutService.putCommunicationChannelBlackout(incompleteObject, (existingCommunicationChannelBlackoutPeriod == null), userID);
-
+            communicationChannelBlackoutService.putCommunicationChannelBlackout(incompleteObject,
+                (existingCommunicationChannelBlackoutPeriod == null), userID);
+          }
         //
         //  log
         //
@@ -14394,56 +18454,186 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
 
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> blackoutPeriods = new ArrayList<>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray blackoutPeriodsIDS = new JSONArray();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
 
-    String blackoutPeriodID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single communicationChannel
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String blackoutPeriodsID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        blackoutPeriodsIDS.add(blackoutPeriodsID);
+        GUIManagedObject blackoutPeriod = communicationChannelBlackoutService
+            .getStoredCommunicationChannelBlackout(blackoutPeriodsID);
+
+        if (blackoutPeriod != null && (force || !blackoutPeriod.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (blackoutPeriod != null)
+          singleIDresponseCode = "failedReadOnly";
+        else
+
+          singleIDresponseCode = "existingBlackoutPeriodNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        blackoutPeriodsIDS = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+    
+    for (int i = 0; i < blackoutPeriodsIDS.size(); i++)
+      {
+        String blackoutPeriodID = blackoutPeriodsIDS.get(i).toString();
+        GUIManagedObject blackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(blackoutPeriodID);
+        if (blackoutPeriod != null && (force || !blackoutPeriod.getReadOnly()))
+          {
+            blackoutPeriods.add(blackoutPeriod);
+            validIDs.add(blackoutPeriodID);
+          }
+      }
+        
+  
 
     /*****************************************
     *
     *  remove
     *
     *****************************************/
-
-    GUIManagedObject existingBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(blackoutPeriodID);
-    if (existingBlackoutPeriod != null && (force || !existingBlackoutPeriod.getReadOnly()))
+    for (int i = 0; i < blackoutPeriods.size(); i++)
       {
-        communicationChannelBlackoutService.removeCommunicationChannelBlackout(blackoutPeriodID, userID);
-      }
 
+        GUIManagedObject existingBlackoutPeriod = blackoutPeriods.get(i);
+
+        communicationChannelBlackoutService
+            .removeCommunicationChannelBlackout(existingBlackoutPeriod.getGUIManagedObjectID(), userID);
+
+      }
     /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
 
-    String responseCode;
-    if (existingBlackoutPeriod != null && (force || !existingBlackoutPeriod.getReadOnly()))
+    if (jsonRoot.containsKey("id"))
       {
-        responseCode = "ok";
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
       }
-    else if (existingBlackoutPeriod != null)
-      {
-        responseCode = "failedReadOnly";
-      }
+
     else
       {
-        responseCode = "communicationChannelBlackoutNotFound";
+        response.put("responseCode", "ok");
       }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedExistingBlackoutPeriodIDS", JSONUtilities.encodeArray(validIDs));
 
-    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
+
+  /*****************************************
+   *
+   * processSetStatusBlackoutPeriods
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusBlackoutPeriods(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray blackoutIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < blackoutIDs.size(); i++)
+      {
+
+        String blackoutID = blackoutIDs.get(i).toString();
+        GUIManagedObject existingElement = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(blackoutID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(blackoutID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate CommunicationChannelBlackoutPeriod
+                 *
+                 ****************************************/
+
+                CommunicationChannelBlackoutPeriod communicationChannelBlackoutPeriod = new CommunicationChannelBlackoutPeriod(
+                    elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                communicationChannelBlackoutService.putCommunicationChannelBlackout(communicationChannelBlackoutPeriod,
+                    (existingElement == null), userID);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+
+                communicationChannelBlackoutService.putCommunicationChannelBlackout(incompleteObject,
+                    (existingElement == null), userID);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
+    return JSONUtilities.encodeObject(response);
+  }
+
 
   /*****************************************
   *
@@ -14455,13 +18645,32 @@ public class GUIManager
   {
     /*****************************************
     *
-    *  retrieve sales partner list
+    *  retrieve Reseller list
     *
     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> resellerList = new ArrayList<JSONObject>();
-    for (GUIManagedObject reseller : resellerService.getStoredResellers(includeArchived))
+    Collection <GUIManagedObject> resellerObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray resellerIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < resellerIDs.size(); i++)
+          {
+            String resellerID = resellerIDs.get(i).toString();
+            GUIManagedObject reseller = resellerService.getStoredReseller(resellerID, includeArchived);
+            if (reseller != null)
+              {
+                resellerObjects.add(reseller);
+              }
+          }
+      }
+    else
+      {
+        resellerObjects = resellerService.getStoredResellers(includeArchived);
+      }
+    for (GUIManagedObject reseller : resellerObjects)
       {
         JSONObject resellerPro = resellerService.generateResponseJSON(reseller, fullDetails, now);
         resellerList.add(resellerPro);
@@ -14539,8 +18748,19 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
-    List<String>existingResellersUserIDs = new ArrayList<>();    
-   
+    List<String>existingResellersUserIDs = new ArrayList<>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
+  
      
 
     /*****************************************
@@ -14634,8 +18854,11 @@ public class GUIManager
         *  store
         *
         *****************************************/
-        
-        resellerService.putReseller(reseller, (existingReseller == null), userID);
+        if (!dryRun)
+          {
+
+            resellerService.putReseller(reseller, (existingReseller == null), userID);
+          }
 
         /*****************************************
         *
@@ -14661,8 +18884,10 @@ public class GUIManager
         //
         //  store
         //
-
-        resellerService.putReseller(incompleteObject, (existingReseller == null), userID);
+        if (!dryRun)
+          {
+            resellerService.putReseller(incompleteObject, (existingReseller == null), userID);
+          }
 
         //
         //  log
@@ -14683,6 +18908,78 @@ public class GUIManager
         return JSONUtilities.encodeObject(response);
       }
   }
+  
+  /*****************************************
+   *
+   * processSetResellerStatus
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusReseller(String userID, JSONObject jsonRoot)
+  {
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray resellerIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < resellerIDs.size(); i++)
+      {
+
+        String resellerID = resellerIDs.get(i).toString();
+        GUIManagedObject existingElement = resellerService.getStoredReseller(resellerID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(resellerID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+
+            try
+              {
+
+                Reseller reseller = new Reseller(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                resellerService.putReseller(reseller, (existingElement == null), userID);
+                
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+                resellerService.putReseller(incompleteObject, (existingElement == null), userID);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
+    return JSONUtilities.encodeObject(response);
+
+  }
 
   /*****************************************
   *
@@ -14700,7 +18997,26 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> segmentContactPolicys = new ArrayList<JSONObject>();
-    for (GUIManagedObject segmentContactPolicy : segmentContactPolicyService.getStoredSegmentContactPolicys(includeArchived))
+    Collection <GUIManagedObject> segmentContactPolicyObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray segmentContactPolicyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < segmentContactPolicyIDs.size(); i++)
+          {
+            String segmentContactPolicyID = segmentContactPolicyIDs.get(i).toString();
+            GUIManagedObject segmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(segmentContactPolicyID, includeArchived);
+            if (segmentContactPolicy != null)
+              {
+                segmentContactPolicyObjects.add(segmentContactPolicy);
+              }
+          }
+      }
+    else
+      {
+        segmentContactPolicyObjects = segmentContactPolicyService.getStoredSegmentContactPolicys(includeArchived);
+      }
+    for (GUIManagedObject segmentContactPolicy : segmentContactPolicyObjects)
       {
         segmentContactPolicys.add(segmentContactPolicyService.generateResponseJSON(segmentContactPolicy, fullDetails, now));
       }
@@ -14733,6 +19049,17 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
 
     /*****************************************
     *
@@ -14789,9 +19116,11 @@ public class GUIManager
         *  store
         *
         *****************************************/
-
-        segmentContactPolicyService.putSegmentContactPolicy(segmentContactPolicy, contactPolicyService, segmentationDimensionService, (existingSegmentContactPolicy == null), userID);
-
+        if (!dryRun)
+          {
+            segmentContactPolicyService.putSegmentContactPolicy(segmentContactPolicy, contactPolicyService,
+                segmentationDimensionService, (existingSegmentContactPolicy == null), userID);
+          }
         /*****************************************
         *
         *  response
@@ -14816,9 +19145,11 @@ public class GUIManager
         //
         //  store
         //
-
-        segmentContactPolicyService.putSegmentContactPolicy(incompleteObject, contactPolicyService, segmentationDimensionService, (existingSegmentContactPolicy == null), userID);
-
+        if (!dryRun)
+          {
+            segmentContactPolicyService.putSegmentContactPolicy(incompleteObject, contactPolicyService,
+                segmentationDimensionService, (existingSegmentContactPolicy == null), userID);
+          }
         //
         //  log
         //
@@ -14907,45 +19238,180 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
 
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> segmentContactPolicies = new ArrayList<>();
+    JSONArray segmentContactPolicyIDs = new JSONArray();
+    List<String> validIDs = new ArrayList<>();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
 
-    String segmentContactPolicyID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single segmentContactPolicy
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String segmentContactPolicyID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        segmentContactPolicyIDs.add(segmentContactPolicyID);
+        GUIManagedObject segmentContactPolicy = segmentContactPolicyService
+            .getStoredSegmentContactPolicy(segmentContactPolicyID);
+
+        if (segmentContactPolicy != null && (force || !segmentContactPolicy.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (segmentContactPolicy != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "segmentContactPolicyNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        segmentContactPolicyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+  
+    for (int i = 0; i < segmentContactPolicyIDs.size(); i++)
+      {
+        String segmentContactPolicyID = segmentContactPolicyIDs.get(i).toString();
+        GUIManagedObject segmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(segmentContactPolicyID);
+        
+        if (segmentContactPolicy != null && (force || !segmentContactPolicy.getReadOnly()))
+          {
+            segmentContactPolicies.add(segmentContactPolicy);
+            validIDs.add(segmentContactPolicyID);
+          }
+      }
+        
+  
 
     /*****************************************
     *
     *  remove
     *
     *****************************************/
+    for (int i = 0; i < segmentContactPolicies.size(); i++)
+      {
 
-    GUIManagedObject segmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(segmentContactPolicyID);
-    if (segmentContactPolicy != null && (force || !segmentContactPolicy.getReadOnly())) segmentContactPolicyService.removeSegmentContactPolicy(segmentContactPolicyID, userID);
+        GUIManagedObject segmentContactPolicy = segmentContactPolicies.get(i);
 
+        segmentContactPolicyService.removeSegmentContactPolicy(segmentContactPolicy.getGUIManagedObjectID(), userID);
+
+      }
+    
     /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
 
-    String responseCode;
-    if (segmentContactPolicy != null && (force || !segmentContactPolicy.getReadOnly()))
-      responseCode = "ok";
-    else if (segmentContactPolicy != null)
-      responseCode = "failedReadOnly";
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
+
     else
-      responseCode = "segmentContactPolicyNotFound";
+      {
+        response.put("responseCode", "ok");
+      }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedSegmentContactPolicyIDS", JSONUtilities.encodeArray(validIDs));
 
-    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+   *
+   * processSetStatusSegmentContactPolicy
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusSegmentContactPolicy(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray segmentContactPolicyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < segmentContactPolicyIDs.size(); i++)
+      {
+
+        String segmentContactPolicyID = segmentContactPolicyIDs.get(i).toString();
+        GUIManagedObject existingElement = segmentContactPolicyService
+            .getStoredSegmentContactPolicy(segmentContactPolicyID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(segmentContactPolicyID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate existingSegmentContactPolicy
+                 *
+                 ****************************************/
+
+                SegmentContactPolicy segmentContactPolicy = new SegmentContactPolicy(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                segmentContactPolicyService.putSegmentContactPolicy(segmentContactPolicy, contactPolicyService,
+                    segmentationDimensionService, (existingElement == null), userID);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+
+                segmentContactPolicyService.putSegmentContactPolicy(incompleteObject, contactPolicyService,
+                    segmentationDimensionService, (existingElement == null), userID);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
     return JSONUtilities.encodeObject(response);
   }
   
@@ -15286,110 +19752,160 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     Date now = SystemTime.getCurrentTime();
 
+    String responseCode = "";
+    List<GUIManagedObject> existingResellers = new ArrayList<>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray resellerIDs = new JSONArray();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
 
-    String resellerID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single reseller
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String resellerID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        resellerIDs.add(resellerID);
+
+      }
+    //
+    // multiple deletion
+    //
     
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject existingReseller = resellerService.getStoredGUIManagedObject(resellerID);
-    long epoch = epochServer.getKey();
-    if (existingReseller != null && (force || !existingReseller.getReadOnly()))
+    if (jsonRoot.containsKey("ids"))
       {
-        resellerService.removeReseller(resellerID, userID);
+        resellerIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
       }
-    List<SalesChannel> storedSalesChannels = new ArrayList<SalesChannel>();
-    for (GUIManagedObject storedSalesChannel : salesChannelService.getStoredSalesChannels())
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+   
+    for (int i = 0; i < resellerIDs.size(); i++)
       {
-       if (storedSalesChannel instanceof SalesChannel ) storedSalesChannels.add((SalesChannel) storedSalesChannel); 
-      }    
-    for(SalesChannel sChannel : storedSalesChannels) {
-      List<String> resellers = sChannel.getResellerIDs();     
-      if (resellers!= null && resellers.size() > 0 && resellers.contains(resellerID))
-        {
-          try {           
-          JSONObject salesChannelJSON = sChannel.getJSONRepresentation();
-          JSONArray newResellers = new JSONArray();
-          resellers.remove(resellerID);      
-          for (String reseller : resellers) {
-            newResellers.add(reseller);
-          }
-          
-          /*****************************************
-          *
-          *  Remove the old Reseller list and update with the new resellers 
-          *
-          *****************************************/
-          salesChannelJSON.replace("resellerIDs", newResellers);   
-          
-          SalesChannel newSalesChannel = new SalesChannel(salesChannelJSON, epoch, sChannel);         
-          
-
-          /*****************************************
-          *
-          *  store
-          *
-          *****************************************/
-
-          salesChannelService.putSalesChannel(newSalesChannel, callingChannelService, resellerService, true, userID);
-
-          /*****************************************
-          *
-          *  revalidateOffers
-          *
-          *****************************************/
-
-          revalidateOffers(now);
+        String resellerID = resellerIDs.get(i).toString();
+        GUIManagedObject reseller = resellerService.getStoredGUIManagedObject(resellerID);
         
-          
+        if (reseller != null && (force || !reseller.getReadOnly()))
+          {
+            existingResellers.add(reseller);
+            validIDs.add(resellerID);
           }
-          catch (JSONUtilitiesException|GUIManagerException e){
-            
-            log.error("JSONUtilitiesException "+e.getMessage());
-          
-          }           
-          
-        }     
-      }     
-
+      }
+        
+  
 
     /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
+     *
+     * remove
+     *
+     *****************************************/
+    for (int i = 0; i < existingResellers.size(); i++)
+      {
 
-    String responseCode;
-    if (existingReseller != null && (force || !existingReseller.getReadOnly()))
-      {
-        responseCode = "ok";
+        GUIManagedObject existingReseller = existingResellers.get(i);
+        long epoch = epochServer.getKey();
+
+        resellerService.removeReseller(existingReseller.getGUIManagedObjectID(), userID);
+
+        List<SalesChannel> storedSalesChannels = new ArrayList<SalesChannel>();
+        for (GUIManagedObject storedSalesChannel : salesChannelService.getStoredSalesChannels())
+          {
+            if (storedSalesChannel instanceof SalesChannel)
+              storedSalesChannels.add((SalesChannel) storedSalesChannel);
+          }
+        for (SalesChannel sChannel : storedSalesChannels)
+          {
+            List<String> resellers = sChannel.getResellerIDs();
+            if (resellers != null && resellers.size() > 0
+                && resellers.contains(existingReseller.getGUIManagedObjectID()))
+              {
+                try
+                  {
+                    JSONObject salesChannelJSON = sChannel.getJSONRepresentation();
+                    JSONArray newResellers = new JSONArray();
+                    resellers.remove(existingReseller.getGUIManagedObjectID());
+                    for (String reseller : resellers)
+                      {
+                        newResellers.add(reseller);
+                      }
+
+                    /*****************************************
+                     *
+                     * Remove the old Reseller list and update with the new
+                     * resellers
+                     *
+                     *****************************************/
+                    salesChannelJSON.replace("resellerIDs", newResellers);
+
+                    SalesChannel newSalesChannel = new SalesChannel(salesChannelJSON, epoch, sChannel);
+
+                    /*****************************************
+                     *
+                     * store
+                     *
+                     *****************************************/
+
+                    salesChannelService.putSalesChannel(newSalesChannel, callingChannelService, resellerService, true,
+                        userID);
+
+                    /*****************************************
+                     *
+                     * revalidateOffers
+                     *
+                     *****************************************/
+
+                    revalidateOffers(now);
+
+                  }
+                catch (JSONUtilitiesException | GUIManagerException e)
+                  {
+
+                    log.error("JSONUtilitiesException " + e.getMessage());
+
+                  }
+
+              }
+          }
       }
-    else if (existingReseller != null)
+
+    /*****************************************
+     *
+     * responseCode
+     *
+     *****************************************/
+
+    if (jsonRoot.containsKey("id"))
       {
-        responseCode = "failedReadOnly";
+        String resellerID = resellerIDs.get(0).toString();
+        GUIManagedObject reseller = resellerService.getStoredGUIManagedObject(resellerID);
+        if (reseller != null && (force || !reseller.getReadOnly()))
+          responseCode = "ok";
+        else if (reseller != null)
+          responseCode = "failedReadOnly";
+        else
+          {
+            responseCode = "resellerNotFound";
+
+          }
+
+        response.put("responseCode", responseCode);
+        return JSONUtilities.encodeObject(response);
       }
+
     else
       {
-        responseCode = "resellerNotFound";
+        response.put("responseCode", "ok");
       }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedResellerIDS", JSONUtilities.encodeArray(validIDs));
 
-    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
   
@@ -17315,7 +21831,26 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
      ****************************************/
 
     List<JSONObject> sourceAddresses = new ArrayList<JSONObject>(); 
-    HashMap<String,Object> response = new HashMap<String,Object>(); 
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    Collection <GUIManagedObject> sourceAddressObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray sourceAddressIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < sourceAddressIDs.size(); i++)
+          {
+            String sourceAddressID = sourceAddressIDs.get(i).toString();
+            GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID, includeArchived);
+            if (sourceAddress != null)
+              {
+                sourceAddressObjects.add(sourceAddress);
+              }
+          }
+      }
+    else
+      {
+        sourceAddressObjects = sourceAddressService.getStoredSourceAddresses(includeArchived);
+      }
     
     /*****************************************
     *
@@ -17324,7 +21859,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     *****************************************/
     Date now = SystemTime.getCurrentTime();
     
-    for (GUIManagedObject sourceAddress : sourceAddressService.getStoredSourceAddresses(includeArchived))
+    for (GUIManagedObject sourceAddress : sourceAddressObjects)
       {
         JSONObject sourceAddressJSON = sourceAddressService.generateResponseJSON(sourceAddress, fullDetails, now); 
         sourceAddresses.add(sourceAddressJSON);
@@ -17401,6 +21936,17 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
 
     /*****************************************
     *
@@ -17468,9 +22014,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         *  store
         *
         *****************************************/
-        
-        sourceAddressService.putSourceAddress(sourceAddress, (existingSourceAddress == null), userID);
+        if (!dryRun)
+          {
 
+            sourceAddressService.putSourceAddress(sourceAddress, (existingSourceAddress == null), userID);
+          }
         /*****************************************
         *
         *  response
@@ -17495,9 +22043,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         //
         //  store
         //
-
-        sourceAddressService.putSourceAddress(incompleteObject, (existingSourceAddress == null), userID);
-
+        if (!dryRun)
+          {
+            sourceAddressService.putSourceAddress(incompleteObject, (existingSourceAddress == null), userID);
+          }
         //
         //  log
         //
@@ -17542,45 +22091,177 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     Date now = SystemTime.getCurrentTime();
 
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> sourceAddresses = new ArrayList<>();
+    JSONArray sourceAddressIDs = new JSONArray();
+    List<String> validIDs = new ArrayList<>();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
 
-    String sourceAddressID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single sourceAddress
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String sourceAddressID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        sourceAddressIDs.add(sourceAddressID);
+        GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID);
+        if (sourceAddress != null && (force || !sourceAddress.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (sourceAddress != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "sourceAddressNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        sourceAddressIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+   
+    for (int i = 0; i < sourceAddressIDs.size(); i++)
+      {
+        String sourceAddressID = sourceAddressIDs.get(i).toString();
+        GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID);
+        
+        if (sourceAddress != null && (force || !sourceAddress.getReadOnly()))
+          {
+            sourceAddresses.add(sourceAddress);
+            validIDs.add(sourceAddressID);
+          }
+      }
+        
+  
 
     /*****************************************
     *
     *  remove
     *
     *****************************************/
+    for (int i = 0; i < sourceAddresses.size(); i++)
+      {
 
-    GUIManagedObject sourceAddress = sourceAddressService.getStoredSourceAddress(sourceAddressID);
-    if (sourceAddress != null && (force || !sourceAddress.getReadOnly())) sourceAddressService.removeSourceAddress(sourceAddressID, userID);
+        GUIManagedObject sourceAddress = sourceAddresses.get(i);
 
+        sourceAddressService.removeSourceAddress(sourceAddress.getGUIManagedObjectID(), userID);
+      }
+    
     /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    String responseCode;
-    if (sourceAddress != null && (force || !sourceAddress.getReadOnly()))
-      responseCode = "ok";
-    else if (sourceAddress != null)
-      responseCode = "failedReadOnly";
     else
-      responseCode = "sourceAddressNotFound";
-
+      {
+        response.put("responseCode", "ok");
+      }
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
 
-    response.put("responseCode", responseCode);
+    response.put("removedSourceAddressIDS", JSONUtilities.encodeArray(validIDs));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+   *
+   * processSetStatusSourceAddress
+   *
+   *****************************************/
+
+  private JSONObject processSetStatusSourceAddress(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray sourceAddressIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < sourceAddressIDs.size(); i++)
+      {
+
+        String sourceAddressID = sourceAddressIDs.get(i).toString();
+        GUIManagedObject existingElement = sourceAddressService.getStoredSourceAddress(sourceAddressID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(sourceAddressID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                //
+                // isDefault
+                //
+
+                /****************************************
+                 *
+                 * instantiate sourceAddress
+                 *
+                 ****************************************/
+
+                SourceAddress sourceAddress = new SourceAddress(elementRoot, epoch, existingElement);
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                sourceAddressService.putSourceAddress(sourceAddress, (existingElement == null), userID);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+
+                sourceAddressService.putSourceAddress(incompleteObject, (existingElement == null), userID);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
     return JSONUtilities.encodeObject(response);
   }
   
