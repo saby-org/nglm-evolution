@@ -884,7 +884,7 @@
       "name"                : "ODRReport",
       "display"             : "ODR Report",
       "description"         : "Description of the ODR Report",
-      "class"               : "com.evolving.nglm.evolution.reports.odr.ODRReportDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.odr.ODRReportDriverMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ],
       "defaultReportPeriodQuantity" : 1,
       "defaultReportPeriodUnit"     : "DAYS"
@@ -893,7 +893,7 @@
       "name"                : "notificationReport",
       "display"             : "Notification Report",
       "description"         : "Description of the Notification Report",
-      "class"               : "com.evolving.nglm.evolution.reports.notification.NotificationReportDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.notification.NotificationReportDriverMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {

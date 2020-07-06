@@ -382,7 +382,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
         log.info("BDRReportESReader: arg " + arg);
       }
 
-    if (args.length < 5)
+    if (args.length < 3)
       {
         log.warn("Usage : BDRReportMonoPhase <ESNode> <ES BDR index> <csvfile> <defaultReportPeriodQuantity> <defaultReportPeriodUnit>");
         return;
@@ -445,7 +445,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
         return;
       }
     
-    log.info("Finished BDRReportESReader");
+    log.info("Finished BDRReport");
   }
   
   

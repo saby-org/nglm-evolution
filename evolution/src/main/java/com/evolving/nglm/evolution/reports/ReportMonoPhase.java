@@ -212,8 +212,8 @@ public class ReportMonoPhase
                   log.trace("getSkippedShards = " + searchResponse.getSkippedShards());
                   log.trace("getTotalShards = " + searchResponse.getTotalShards());
                   log.trace("getTook = " + searchResponse.getTook());
-                  log.info("for " + Arrays.toString(indicesToRead) + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
                 }
+                log.info("for " + Arrays.toString(indicesToRead) + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
             }
           boolean alreadyTraced = false;
           while (searchHits != null && searchHits.length > 0)

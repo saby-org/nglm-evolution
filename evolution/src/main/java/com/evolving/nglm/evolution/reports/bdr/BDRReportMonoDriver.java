@@ -20,7 +20,6 @@ public class BDRReportMonoDriver extends ReportDriver{
   {
     log.debug("Processing "+report.getName());
     String esIndexBdr = "detailedrecords_bonuses-";
-    log.debug("PHASE 1 : read ElasticSearch");
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
     BDRReportMonoPhase.main(new String[]{
