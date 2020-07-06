@@ -470,15 +470,22 @@ public class GUIManager
     getSourceAddressSummaryList("getSourceAddressSummaryList"),
     getSourceAddress("getSourceAddress"),
     putSourceAddress("putSourceAddress"),
-    removeSourceAddress("removeSourceAddress"),      
+    removeSourceAddress("removeSourceAddress"),
+
     putSupplierOffer("putSupplierOffer"),
     getSupplierOfferList("getSupplierOfferList"),
     removeSupplierOffer("removeSupplierOffer"),
+
+    loyaltyProgramOptIn("loyaltyProgramOptIn"),
+    loyaltyProgramOptOut("loyaltyProgramOptOut"),
     
     //
     //  structor
     //
     Unknown("(unknown)");
+    private int methodIndex;
+    private API(int methodIndex) { this.methodIndex = methodIndex; }
+    public int getMethodIndex() { return methodIndex; }
     private String externalRepresentation;
     private API(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public String getExternalRepresentation() { return externalRepresentation; }
@@ -1967,6 +1974,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putSupplierOffer", new APISimpleHandler(API.putSupplierOffer));
         restServer.createContext("/nglm-guimanager/getSupplierOfferList", new APISimpleHandler(API.getSupplierOfferList));
         restServer.createContext("/nglm-guimanager/removeSupplierOffer", new APISimpleHandler(API.removeSupplierOffer));
+        restServer.createContext("/nglm-guimanager/loyaltyProgramOptIn", new APISimpleHandler(API.loyaltyProgramOptIn));
+        restServer.createContext("/nglm-guimanager/loyaltyProgramOptOut", new APISimpleHandler(API.loyaltyProgramOptOut));
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -3530,6 +3539,13 @@ public class GUIManager
                 case removeSupplierOffer:
                   jsonResponse = processRemoveSupplierOffer(userID, jsonRoot);
                   break;   
+                case loyaltyProgramOptIn:
+                  jsonResponse = guiManagerLoyaltyReporting.processLoyaltyProgramOptInOut(jsonRoot, true);
+                  break;
+                  
+                case loyaltyProgramOptOut:
+                  jsonResponse = guiManagerLoyaltyReporting.processLoyaltyProgramOptInOut(jsonRoot, false);
+                  break;
 
               }
           }
@@ -20669,7 +20685,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
   *
   ****************************************/
 
-  private String resolveSubscriberID(String customerID)
+  protected String resolveSubscriberID(String customerID)
   {
     String result = null;
     try
