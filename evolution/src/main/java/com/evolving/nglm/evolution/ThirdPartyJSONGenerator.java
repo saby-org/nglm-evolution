@@ -242,15 +242,15 @@ public class ThirdPartyJSONGenerator
       return JSONUtilities.encodeObject(resellerDetailsMap);
     resellerDetailsMap.put("resellerDisplay", reseller.getGUIManagedObjectDisplay());
     resellerDetailsMap.put("resellerName", reseller.getGUIManagedObjectName());
-    resellerDetailsMap.put("description", reseller.getJSONRepresentation().get("description"));
-    resellerDetailsMap.put("website", reseller.getWebsite());
-    resellerDetailsMap.put("active",
+    resellerDetailsMap.put("resellerDescription", reseller.getJSONRepresentation().get("description"));
+    resellerDetailsMap.put("resellerWebsite", reseller.getWebsite());
+    resellerDetailsMap.put("resellerActive",
         resellerService.isActiveReseller(reseller, SystemTime.getCurrentTime()) ? "active" : "inactive");
-    resellerDetailsMap.put("createdDate", getDateString(reseller.getCreatedDate()));
-    resellerDetailsMap.put("updatedDate", getDateString(reseller.getUpdatedDate()));
-    resellerDetailsMap.put("userIDs", reseller.getUserIDs());
-    resellerDetailsMap.put("email", reseller.getEmail());
-    resellerDetailsMap.put("parentID", reseller.getParentResellerID());
+    resellerDetailsMap.put("resellerCreatedDate", getDateString(reseller.getCreatedDate()));
+    resellerDetailsMap.put("resellerUpdatedDate", getDateString(reseller.getUpdatedDate()));
+    resellerDetailsMap.put("resellerUserIDs", reseller.getUserIDs());
+    resellerDetailsMap.put("resellerEmail", reseller.getEmail());
+    resellerDetailsMap.put("resellerParentID", reseller.getParentResellerID());
     return JSONUtilities.encodeObject(resellerDetailsMap);
   }
 

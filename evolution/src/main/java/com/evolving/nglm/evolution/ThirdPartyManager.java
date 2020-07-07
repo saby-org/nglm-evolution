@@ -4752,6 +4752,7 @@ public class ThirdPartyManager
     response.put("deliveryDate",getDateString(voucherProfileStored.getVoucherDeliveryDate()));
     response.put("expiryDate",getDateString(voucherProfileStored.getVoucherExpiryDate()));
     response.put("status",voucherProfileStored.getVoucherStatus().getExternalRepresentation());
+    response.put("offerID",voucherProfileStored.getOfferID());
 
     return constructThirdPartyResponse(RESTAPIGenericReturnCodes.SUCCESS,response);
 
