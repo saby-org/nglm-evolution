@@ -238,6 +238,31 @@ public class ThirdPartyJSONGenerator
     voucherMap.put("quantity", offerVoucher.getQuantity());
     return JSONUtilities.encodeObject(voucherMap);
   }
+  
+  /*****************************************
+  *
+  *  getResellerJson
+  *
+  *****************************************/
+  
+  protected static JSONObject generateResellerJSONForThirdParty(Reseller reseller, ResellerService resellerService)
+  {
+    HashMap<String, Object> resellerDetailsMap = new HashMap<String, Object>();
+    if (null == reseller)
+      return JSONUtilities.encodeObject(resellerDetailsMap);
+    resellerDetailsMap.put("resellerDisplay", reseller.getGUIManagedObjectDisplay());
+    resellerDetailsMap.put("resellerName", reseller.getGUIManagedObjectName());
+    resellerDetailsMap.put("resellerDescription", reseller.getJSONRepresentation().get("description"));
+    resellerDetailsMap.put("resellerWebsite", reseller.getWebsite());
+    resellerDetailsMap.put("resellerActive",
+        resellerService.isActiveReseller(reseller, SystemTime.getCurrentTime()) ? "active" : "inactive");
+    resellerDetailsMap.put("resellerCreatedDate", getDateString(reseller.getCreatedDate()));
+    resellerDetailsMap.put("resellerUpdatedDate", getDateString(reseller.getUpdatedDate()));
+    resellerDetailsMap.put("resellerUserIDs", reseller.getUserIDs());
+    resellerDetailsMap.put("resellerEmail", reseller.getEmail());
+    resellerDetailsMap.put("resellerParentID", reseller.getParentResellerID());
+    return JSONUtilities.encodeObject(resellerDetailsMap);
+  }
 
   /*****************************************
   *

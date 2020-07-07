@@ -44,7 +44,7 @@ public class Reseller extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("reseller");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("website", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("phone", Schema.OPTIONAL_STRING_SCHEMA);
@@ -58,6 +58,7 @@ public class Reseller extends GUIManagedObject
     schemaBuilder.field("billingCode", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("paymentDetails", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("userIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).optional().schema());
+    schemaBuilder.field("parentResellerID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -92,7 +93,7 @@ public class Reseller extends GUIManagedObject
   private String billingCode; 
   private String paymentDetails; 
   private List<String> userIDs;
-  
+  private String parentResellerID; 
   /****************************************
   *
   *  accessors
@@ -112,6 +113,7 @@ public class Reseller extends GUIManagedObject
   public String getContractNumber() { return contractNumber; }
   public String getBillingCode() { return billingCode; }
   public String getPaymentDetails() { return paymentDetails; }
+  public String getParentResellerID() { return parentResellerID; }
   public List<String> getUserIDs() { return userIDs; }
 
   /*****************************************
@@ -120,7 +122,7 @@ public class Reseller extends GUIManagedObject
   *
   *****************************************/
 
-  public Reseller(SchemaAndValue schemaAndValue, String website, String phone, String email, String contactPerson, String address, String mobile, String alternateMobile, String billingModeID, String contractNumber, String billingCode, String paymentDetails, List<String> userIDs)
+  public Reseller(SchemaAndValue schemaAndValue, String website, String phone, String email, String contactPerson, String address, String mobile, String alternateMobile, String billingModeID, String contractNumber, String billingCode, String paymentDetails, List<String> userIDs, String parentResellerID)
   {
     super(schemaAndValue);
     this.website = website;
@@ -135,6 +137,7 @@ public class Reseller extends GUIManagedObject
     this.billingCode = billingCode;
     this.paymentDetails = paymentDetails;
     this.userIDs = userIDs;
+    this.parentResellerID = parentResellerID;
   }
 
   /*****************************************
@@ -160,6 +163,7 @@ public class Reseller extends GUIManagedObject
     struct.put("billingCode", reseller.getBillingCode());
     struct.put("paymentDetails", reseller.getPaymentDetails());
     struct.put("userIDs", reseller.getUserIDs());
+    struct.put("parentResellerID", reseller.getParentResellerID());
     return struct;
   }
 
@@ -196,6 +200,7 @@ public class Reseller extends GUIManagedObject
     String billingCode = valueStruct.getString("billingCode");
     String paymentDetails = valueStruct.getString("paymentDetails");    
     List<String> userIDs = (schemaVersion >= 2) ? (List<String>) valueStruct.get("userIDs"):new ArrayList<String>();
+    String parentResellerID = (schemaVersion >= 3) ? valueStruct.getString("parentResellerID") : null;
     //List<String> users = schemaVersion >= 2 ? unpackTokenChanges(schema.field("users").schema(), valueStruct.get("users")) : new ArrayList<TokenChange>();
 
     
@@ -203,7 +208,7 @@ public class Reseller extends GUIManagedObject
     //  return
     //
 
-    return new Reseller(schemaAndValue, website, phone, email, contactPerson, address, mobile, alternateMobile, billingModeID, contractNumber, billingCode, paymentDetails, userIDs);
+    return new Reseller(schemaAndValue, website, phone, email, contactPerson, address, mobile, alternateMobile, billingModeID, contractNumber, billingCode, paymentDetails, userIDs, parentResellerID);
   }
   
   /*****************************************
@@ -248,6 +253,7 @@ public class Reseller extends GUIManagedObject
     this.billingCode = JSONUtilities.decodeString(jsonRoot, "billingCode", false);
     this.paymentDetails = JSONUtilities.decodeString(jsonRoot, "paymentDetails", false);
     this.userIDs = decodeUsers(JSONUtilities.decodeJSONArray(jsonRoot, "userIDs", false));
+    this.parentResellerID = JSONUtilities.decodeString(jsonRoot, "parentResellerID", false);
 
     /*****************************************
     *
@@ -306,6 +312,7 @@ public class Reseller extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(getBillingCode(), existingReseller.getBillingCode());
         epochChanged = epochChanged || ! Objects.equals(getPaymentDetails(), existingReseller.getPaymentDetails());
         epochChanged = epochChanged || ! Objects.equals(getUserIDs(), existingReseller.getUserIDs());
+        epochChanged = epochChanged || ! Objects.equals(getParentResellerID(), existingReseller.getParentResellerID());
         return epochChanged;
       }
     else
@@ -320,7 +327,7 @@ public class Reseller extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(Date date) throws GUIManagerException
+  public void validate(ResellerService resellerService, Date date) throws GUIManagerException
   {
     /*****************************************
     *
