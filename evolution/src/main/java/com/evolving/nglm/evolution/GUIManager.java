@@ -356,6 +356,9 @@ public class GUIManager
     getVoucher("getVoucher"),
     removeVoucher("removeVoucher"),
     setStatusVoucher("setStatusVoucher"),
+    redeemVoucher("redeemVoucher"),
+    extendVoucherValidity("extendVoucherValidity"),
+    expireVoucher("expireVoucher"),
 
     getMailTemplateList("getMailTemplateList"),
     getFullMailTemplateList("getFullMailTemplateList"),
@@ -618,7 +621,9 @@ public class GUIManager
   protected static Method externalAPIMethodJourneyDeactivated;
   
   protected ZookeeperUniqueKeyServer zuks;
+  protected ZookeeperUniqueKeyServer zuksVoucherChange;
   protected KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
+  protected KafkaResponseListenerService<StringKey,VoucherChange> voucherChangeResponseListenerService;
   protected int httpTimeout = Deployment.getPurchaseTimeoutMs();
   
   private static final int connectTimeout = Deployment.getGUIManagerESConnectTimeout();
@@ -792,6 +797,7 @@ public class GUIManager
     //
  
     zuks = new ZookeeperUniqueKeyServer("commoditydelivery");
+    zuksVoucherChange = new ZookeeperUniqueKeyServer("voucherchange");
 
     //
     // RestHighLevelClient
@@ -943,6 +949,8 @@ public class GUIManager
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
     purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(),StringKey.serde(),PurchaseFulfillmentRequest.serde());
     purchaseResponseListenerService.start();
+    voucherChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getVoucherChangeResponseTopic(),StringKey.serde(),VoucherChange.serde());
+    voucherChangeResponseListenerService.start();
 
     guiManagerBaseManagement = new GUIManagerBaseManagement(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader);
     guiManagerLoyaltyReporting = new GUIManagerLoyaltyReporting(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader);
@@ -1898,6 +1906,9 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getVoucher", new APISimpleHandler(API.getVoucher));
         restServer.createContext("/nglm-guimanager/removeVoucher", new APISimpleHandler(API.removeVoucher));
         restServer.createContext("/nglm-guimanager/setStatusVoucher", new APISimpleHandler(API.setStatusVoucher));
+        restServer.createContext("/nglm-guimanager/redeemVoucher", new APISimpleHandler(API.redeemVoucher));
+        restServer.createContext("/nglm-guimanager/extendVoucherValidity", new APISimpleHandler(API.extendVoucherValidity));
+        restServer.createContext("/nglm-guimanager/expireVoucher", new APISimpleHandler(API.expireVoucher));
 
         restServer.createContext("/nglm-guimanager/getMailTemplateList", new APISimpleHandler(API.getMailTemplateList));
         restServer.createContext("/nglm-guimanager/getFullMailTemplateList", new APISimpleHandler(API.getFullMailTemplateList));
@@ -3186,6 +3197,18 @@ public class GUIManager
                   
                 case setStatusVoucher:
                   jsonResponse = processSetStatusVoucher(userID, jsonRoot);
+                  break;
+
+                case redeemVoucher:
+                  jsonResponse = processVoucherChange(userID, jsonRoot, VoucherChange.VoucherChangeAction.Redeem);
+                  break;
+
+                case extendVoucherValidity:
+                  jsonResponse = processVoucherChange(userID, jsonRoot, VoucherChange.VoucherChangeAction.Extend);
+                  break;
+
+                case expireVoucher:
+                  jsonResponse = processVoucherChange(userID, jsonRoot, VoucherChange.VoucherChangeAction.Expire);
                   break;
 
                 case getMailTemplateList:
@@ -13893,6 +13916,68 @@ public class GUIManager
 
   /*****************************************
   *
+  *  process voucher change action
+  *
+  *****************************************/
+
+  private JSONObject processVoucherChange(String userID, JSONObject jsonRoot, VoucherChange.VoucherChangeAction voucherChangeAction) throws GUIManagerException
+  {
+
+    // response
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    Date now = SystemTime.getCurrentTime();
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String voucherCode = JSONUtilities.decodeString(jsonRoot, "voucherCode", true);
+    String voucherID = JSONUtilities.decodeString(jsonRoot, "voucherID", true);
+    Date newExpiryDate = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "expiryDate", voucherChangeAction.equals(VoucherChange.VoucherChangeAction.Extend)));
+    String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+
+    /*****************************************
+     *
+     *  resolve subscriberID
+     *
+     *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+    {
+      log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+      response.put("responseCode", "CustomerNotFound");
+      return JSONUtilities.encodeObject(response);
+    }
+    //build the request to send
+    VoucherChange request = new VoucherChange(
+            subscriberID,
+            SystemTime.getCurrentTime(),
+            newExpiryDate,
+            zuksVoucherChange.getStringKey(),
+            voucherChangeAction,
+            voucherCode,
+            voucherID,
+            null,
+            DeliveryRequest.Module.Customer_Care.getExternalRepresentation(),
+            (userID != null) ? userID : "1",//for PTT tests, never happens when called by browser
+            origin,
+            RESTAPIGenericReturnCodes.UNKNOWN);
+
+    // put a listener on the reponse topic
+    Future<VoucherChange> waitingResponse=voucherChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
+    // send the request
+    String requestTopic = Deployment.getVoucherChangeRequestTopic();
+    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
+            requestTopic,
+            StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)),
+            VoucherChange.serde().serializer().serialize(requestTopic, request)
+    ));
+    // check response
+    VoucherChange voucherChangeResponse = handleWaitingResponse(waitingResponse);
+    response.put("responseCode",voucherChangeResponse.getReturnStatus().equals(RESTAPIGenericReturnCodes.SUCCESS)?"ok":voucherChangeResponse.getReturnStatus().getGenericDescription());
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
   *  processGetMailTemplateList
   *
   *****************************************/
@@ -22957,11 +23042,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       if(log.isDebugEnabled()) log.debug("response processed : "+response);
       return response;
     } catch (InterruptedException|ExecutionException e) {
-      String str = "Error waiting purchase response"; 
+      String str = "Error waiting response";
       log.warn(str);
       throw new GUIManagerException("Internal error", str);
     } catch (TimeoutException e) {
-      String str = "Timeout waiting purchase response";
+      String str = "Timeout waiting response";
       log.info(str);
       throw new GUIManagerException("Internal error", str);
     }

@@ -3379,7 +3379,7 @@ public class Deployment
         // the bulk size when importing voucher file into ES
         importVoucherFileBulkSize = JSONUtilities.decodeInteger(jsonRoot, "importVoucherFileBulkSize",5000);
         // the cron entry when the voucher cleaner run
-        cleanExpiredVoucherCronEntry = JSONUtilities.decodeString(jsonRoot, "monthlyReportCronEntryString","0 3 * * *");
+        cleanExpiredVoucherCronEntry = JSONUtilities.decodeString(jsonRoot, "cleanExpiredVoucherCronEntry","0 3 * * *");
         // the cache cleaner frequency in seconds for caching voucher with 0 stock from ES, and shrinking back "auto adjust concurrency number"
         voucherESCacheCleanerFrequencyInSec = JSONUtilities.decodeInteger(jsonRoot, "voucherESCacheCleanerFrequencyInSec",300);
         // an approximation of number of total concurrent process tyring to allocate Voucher in // to ES, but should not need to configure, algo should auto-adjust this

@@ -13,20 +13,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TimeZone;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -43,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
@@ -51,7 +38,6 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
@@ -239,7 +225,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   private boolean universalControlGroup;
   private List<Token> tokens;
   private Map<String,PointBalance> pointBalances;
-  private List<VoucherProfileStored> vouchers;
+  private List<VoucherProfileStored> vouchers; // vouchers action rely on this being ordered (soonest expiry date first)
   private String languageID;
   private ExtendedSubscriberProfile extendedSubscriberProfile;
   private SubscriberHistory subscriberHistory;
@@ -813,6 +799,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
         {
           HashMap<String, Object> voucherPresentation = new HashMap<String,Object>();
           voucherPresentation.put("voucher", voucher.getVoucherDisplay());
+          voucherPresentation.put("voucherID", voucher.getVoucherID());
           voucherPresentation.put("type", voucherType.getCodeType().getExternalRepresentation());
           String codeFormat="";
           if(voucherType.getCodeType()==VoucherType.CodeType.Shared){
@@ -828,7 +815,8 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
           }
           voucherPresentation.put("format", codeFormat);
           voucherPresentation.put("code", storedVoucher.getVoucherCode());
-          voucherPresentation.put("expiration", storedVoucher.getVoucherExpiryDate());
+          // NOTE : DATE OUTPUT FOR GUI HERE MISMATCH OTHER DATE OUTPUT OF THIS OBJECT, WHICH ACTUALLY SEEMS THEY ARE USELESS...
+          voucherPresentation.put("expiryDate", getDateString(storedVoucher.getVoucherExpiryDate()));
           // can be not updated yet
           if(storedVoucher.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Expired && storedVoucher.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Redeemed && storedVoucher.getVoucherExpiryDate().before(now)){
             storedVoucher.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
@@ -1377,7 +1365,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.universalControlGroup = false;
     this.tokens = new ArrayList<Token>();
     this.pointBalances = new HashMap<String,PointBalance>();
-    this.vouchers = new ArrayList<VoucherProfileStored>();
+    this.vouchers = new LinkedList<>();
     this.languageID = null;
     this.extendedSubscriberProfile = null;
     this.subscriberHistory = null;
@@ -1667,7 +1655,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     //  unpack
     //
 
-    List<VoucherProfileStored> result = new ArrayList<VoucherProfileStored>();
+    List<VoucherProfileStored> result = new LinkedList<>();
     List<Object> valueArray = (List<Object>) value;
     for (Object voucherProfileStored : valueArray)
     {
@@ -1702,7 +1690,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.universalControlGroup = subscriberProfile.getUniversalControlGroup();
     this.tokens = new ArrayList<Token>(subscriberProfile.getTokens());
     this.pointBalances = new HashMap<String,PointBalance>(subscriberProfile.getPointBalances()); // WARNING:  NOT a deep copy, PointBalance must be copied before update
-    this.vouchers = new ArrayList<VoucherProfileStored>(subscriberProfile.getVouchers());
+    this.vouchers = new LinkedList<VoucherProfileStored>(subscriberProfile.getVouchers());
     this.languageID = subscriberProfile.getLanguageID();
     this.extendedSubscriberProfile = subscriberProfile.getExtendedSubscriberProfile() != null ? ExtendedSubscriberProfile.copy(subscriberProfile.getExtendedSubscriberProfile()) : null;
     this.subscriberHistory = subscriberProfile.getSubscriberHistory() != null ? new SubscriberHistory(subscriberProfile.getSubscriberHistory()) : null;

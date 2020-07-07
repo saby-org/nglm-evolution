@@ -18,22 +18,8 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -2390,6 +2376,8 @@ public class EvolutionEngine
               purchaseFulfillmentRequest.getOrigin()
             );
             subscriberProfile.getVouchers().add(voucherToStore);
+			// we keep voucher ordered by expiry data, this is important when we will apply change
+            sortVouchersPerExpiryDate(subscriberProfile);
             subscriberUpdated = true;
           }
         }
@@ -2443,6 +2431,7 @@ public class EvolutionEngine
         if(subscriberProfile.getVouchers()!=null && !subscriberProfile.getVouchers().isEmpty()){
           boolean voucherFound=false;
           for(VoucherProfileStored voucherStored:subscriberProfile.getVouchers()){
+            // note that this check can still match more than one voucher, but subscriberProfile.getVouchers() should be ordered soonest expiry date first
             if(voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID())){
               voucherFound=true;
               if(log.isDebugEnabled()) log.debug("need to apply to stored voucher "+voucherStored);
@@ -2450,46 +2439,54 @@ public class EvolutionEngine
               // redeem
               if(voucherChange.getAction()==VoucherChange.VoucherChangeAction.Redeem){
                 if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
+                  // already redeemed
                   voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
-                }
-                if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired){
+                } else if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired){
+                  // already expired
                   voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
-                }
-                // redeem voucher OK
-                if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Delivered){
+                } else if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Delivered){
+                  // redeem voucher OK
                   voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Redeemed);
                   voucherStored.setVoucherRedeemDate(now);
                   voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-                  break;//NOTE WE DO NOT ORDER VOUCHER PER EXPIRY DATE OR, WE TAKE THE FISRT ONE OK
+                  break;
+                } else{
+                  // default KO
+                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NON_REDEEMABLE);
                 }
-                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NON_REDEEMABLE);
               }
 
               // extend
               if(voucherChange.getAction()==VoucherChange.VoucherChangeAction.Extend){
                 if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
+                  // already redeemed
                   voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
+                } else{
+                  // extend voucher OK
+                  voucherStored.setVoucherExpiryDate(voucherChange.getNewVoucherExpiryDate());
+                  sortVouchersPerExpiryDate(subscriberProfile);
+                  if(voucherStored.getVoucherExpiryDate().after(now)) voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Delivered);
+                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+                  break;
                 }
-                // extend voucher OK
-                voucherStored.setVoucherExpiryDate(voucherChange.getNewVoucherExpiryDate());
-                if(voucherStored.getVoucherExpiryDate().after(now)) voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Delivered);
-                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-                break;//NOTE WE DO NOT ORDER VOUCHER PER EXPIRY DATE OR, WE TAKE THE FISRT ONE OK
               }
 
               // delete (expire it)
               if(voucherChange.getAction()==VoucherChange.VoucherChangeAction.Expire){
                 if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
+                  // already redeemed
                   voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
-                }
-                if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired){
+                } else if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired){
+                  // already expired
                   voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
+                } else {
+                  // expire voucher OK
+                  voucherStored.setVoucherExpiryDate(now);
+                  sortVouchersPerExpiryDate(subscriberProfile);
+                  voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
+                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+                  break;
                 }
-                // expire voucher OK
-                voucherStored.setVoucherExpiryDate(now);
-                if(voucherStored.getVoucherExpiryDate().after(now)) voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
-                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-                break;//NOTE WE DO NOT ORDER VOUCHER PER EXPIRY DATE OR, WE TAKE THE FISRT ONE OK
               }
 
             }
@@ -2506,6 +2503,14 @@ public class EvolutionEngine
     }
 
     return subscriberUpdated;
+  }
+
+  // sort vouchers stored in subscriberProfile soones expiry date first
+  private static void sortVouchersPerExpiryDate(SubscriberProfile subscriberProfile)
+  {
+    if(log.isTraceEnabled()) log.trace("sorting vouchers on expiry date, from soonest expiry to latest "+subscriberProfile.getVouchers());
+    subscriberProfile.getVouchers().sort(Comparator.comparing(VoucherProfileStored::getVoucherExpiryDate));
+    if(log.isTraceEnabled()) log.trace("sorting vouchers result "+subscriberProfile.getVouchers());
   }
 
   /*****************************************

@@ -53,7 +53,7 @@ public class VoucherChange implements EvolutionEngineEvent, SubscriberStreamOutp
     Struct struct = new Struct(schema);
     struct.put("subscriberID",voucherChange.getSubscriberID());
     struct.put("eventDate",voucherChange.getEventDate());
-    struct.put("newVoucherExpiryDate",voucherChange.getEventDate());
+    struct.put("newVoucherExpiryDate",voucherChange.getNewVoucherExpiryDate());
     struct.put("eventID", voucherChange.getEventID());
     struct.put("action", voucherChange.getAction().getExternalRepresentation());
     struct.put("voucherCode", voucherChange.getVoucherCode());
