@@ -1,6 +1,7 @@
 package com.evolving.nglm.evolution.reports.journeycustomerstates;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedHashMap;
 
 import org.elasticsearch.index.query.QueryBuilder;
@@ -33,7 +34,7 @@ public class JourneyCustomerStatesReportESReader
 
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatesReportESReader.class);
 
-  public static void main(String[] args, JourneyService journeyService)
+  public static void main(String[] args, JourneyService journeyService, final Date reportGenerationDate)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -52,7 +53,7 @@ public class JourneyCustomerStatesReportESReader
     String esNode = args[3];
     String esIndexJourney = args[4];
 
-    Collection<Journey> activeJourneys = journeyService.getActiveJourneys(SystemTime.getCurrentTime());
+    Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate);
     StringBuilder activeJourneyEsIndex = new StringBuilder();
     boolean firstEntry = true;
     for (Journey journey : activeJourneys)

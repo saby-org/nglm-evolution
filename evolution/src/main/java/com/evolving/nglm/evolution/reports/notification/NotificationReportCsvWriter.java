@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
 public class NotificationReportCsvWriter implements ReportCsvFactory
@@ -47,14 +47,12 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
   private static final String returnCodeDetails = "returnCodeDetails";
   private static final String returnCodeDescription = "returnCodeDescription";
   private static final String source = "source";
-  
   private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
   private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
 
   private static final String messageContent = "messageContent";
   private static final String templateID = "templateID";
   private static final String language = "language";
-  
   private static List<String> headerFieldsOrder = new LinkedList<String>();
   static
   {
@@ -100,11 +98,11 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
   public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
+    List<LinkedHashMap<String, Object>> notifRecsList = new ArrayList<LinkedHashMap<String,Object>>();
     Map<String, Object> notifFields = reportElement.fields.get(0);
-    LinkedHashMap<String, Object> notifRecs = new LinkedHashMap<>();
     if (notifFields != null && !notifFields.isEmpty())
       {
-
+        LinkedHashMap<String, Object> notifRecs = new LinkedHashMap<>();
         if (notifFields.get(subscriberID) != null)
           {
             Object subscriberIDField = notifFields.get(subscriberID);
@@ -288,23 +286,17 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
           }
 
         //
-        // result
+        // add
         //
 
-        String rawEventDateTime = notifRecs.get(creationDate) == null ? null : notifRecs.get(creationDate).toString();
-        if (rawEventDateTime == null) log.warn("bad EventDateTime -- report will be generated in 'null' file name -- for record {} ", notifFields);
-        String evntDate = getEventDate(rawEventDateTime);
-        if (result.containsKey(evntDate))
-          {
-            result.get(evntDate).add(notifRecs);
-          } 
-        else
-          {
-            List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
-            elements.add(notifRecs);
-            result.put(evntDate, elements);
-          }
+        notifRecsList.add(notifRecs);
       }
+    
+    //
+    //  result
+    //
+    
+    if (!notifRecsList.isEmpty()) result = notifRecsList.stream().collect(Collectors.groupingBy(a-> getEventDate(a.get(creationDate))));
     return result;
   }
   
@@ -367,12 +359,18 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
     return tagsList;
   }
 
-  private String getEventDate(String rawEventDateTime)
+  private String getEventDate(Object object)
   {
-    String result = "null";
-    if (rawEventDateTime == null || rawEventDateTime.trim().isEmpty()) return result;
     String eventDateTimeFormat = "yyyy-MM-dd";
-    result = rawEventDateTime.substring(0, eventDateTimeFormat.length());
+    String result = "null";
+    if (object != null && (object instanceof String))
+      {
+        String creatDateString = (String) object;
+        if (!creatDateString.trim().isEmpty())
+          {
+            result = creatDateString.substring(0, eventDateTimeFormat.length());
+          }
+      }
     return result;
   }
 
