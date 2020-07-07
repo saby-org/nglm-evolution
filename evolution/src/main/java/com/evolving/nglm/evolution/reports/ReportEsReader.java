@@ -12,10 +12,7 @@ import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.SystemTime;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -103,6 +100,7 @@ public class ReportEsReader
   private boolean onlyOneIndex;
   private boolean onlyKeepAlternateIDs; // when we read subscriberprofile, only keep info about alternateIDs
   private boolean onlyKeepAlternateIDsExtended; // when we read subscriberprofile, only keep info about alternateIDs and a little more (for 2 specific reports)
+  private int returnSize; //used when a desired size of subscriber base is returned
 
   /**
    * Create a {@code ReportEsReader} instance.
@@ -157,6 +155,12 @@ public class ReportEsReader
     this(elasticKey, topicName, kafkaNodeList, kzHostList, esNode, esIndex, onlyKeepAlternateIDs, false);
   }
 
+  public ReportEsReader(String elasticKey, String topicName, String kafkaNodeList, String kzHostList, String esNode, LinkedHashMap<String, QueryBuilder> esIndex,boolean onlyKeepAlternateIDs,int returnSize)
+  {
+    this(elasticKey, topicName, kafkaNodeList, kzHostList, esNode, esIndex, onlyKeepAlternateIDs);
+    this.returnSize = returnSize;
+  }
+
   public enum PERIOD
   {
     DAYS("DAYS"), WEEKS("WEEKS"), MONTHS("MONTHS"), UNKNOWN("UNKNOWN");
@@ -194,9 +198,13 @@ public class ReportEsReader
   {
 
     String indexes = "";
+    int scrollSize = getScrollSize();
     for (String s : esIndex.keySet())
       indexes += s + " ";
     log.info("Reading data from ES in \"" + indexes + "\" indexes and writing to \"" + topicName + "\" topic.");
+
+    //if returnSize is zero all record will be returned
+    if(returnSize == 0) returnSize = Integer.MAX_VALUE;
 
     ReportUtils.createTopic(topicName, kzHostList); // In case it does not exist
 
@@ -288,7 +296,9 @@ public class ReportEsReader
               }
             boolean alreadyTraced1 = false;
             boolean alreadyTraced2 = false;
-            while (searchHits != null && searchHits.length > 0)
+            //label for break. When return size is beccoming zero out from for and while
+            returnSizeCompleted:
+            while (searchHits != null && searchHits.length > 0 )
               {
                 log.debug("got " + searchHits.length + " hits");
                 for (SearchHit searchHit : searchHits)
@@ -363,6 +373,11 @@ public class ReportEsReader
                             // + " lastTS : "+d(lastTS.get())
                             + " speed = " + d((int) speed) + " messages/sec" + " ( " + key + " , " + record.value() + " )");
                           }
+                      }
+                    returnSize --;
+                    if(returnSize == 0)
+                      {
+                        break returnSizeCompleted;
                       }
                   }
                 SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
