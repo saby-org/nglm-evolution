@@ -259,6 +259,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
         this.loyaltyProgramResponses = new ArrayList<LoyaltyProgramRequest>();
         this.pointFulfillmentResponses = new ArrayList<PointFulfillmentRequest>();
         this.deliveryRequests = new ArrayList<DeliveryRequest>();
+        this.executeActionsOtherSubscriber = new ArrayList<ExecuteActionOtherSubscriber>();
         this.journeyStatisticWrappers = new ArrayList<JourneyStatisticWrapper>();
         this.journeyMetrics = new ArrayList<JourneyMetric>();
         this.profileChangeEvents = new ArrayList<ProfileChangeEvent>();
