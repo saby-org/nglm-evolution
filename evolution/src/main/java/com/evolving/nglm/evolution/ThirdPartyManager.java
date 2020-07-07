@@ -219,8 +219,8 @@ public class ThirdPartyManager
     getCustomerTokenAndNBO(31),
     putSupplierOffer(32),
     getSupplierOfferList(33),
-    removeSupplierOffer(34);
-    getResellerDetails(32);
+    removeSupplierOffer(34),
+    getResellerDetails(35);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
