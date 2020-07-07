@@ -22,7 +22,6 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
   public enum MessageStatus
   {
     PENDING(708, DeliveryStatus.Pending), 
-    SENT(700, DeliveryStatus.Delivered), 
     NO_CUSTOMER_LANGUAGE(701, DeliveryStatus.Failed), 
     NO_CUSTOMER_CHANNEL(702, DeliveryStatus.Failed), 
     DELIVERED(0, DeliveryStatus.Delivered), 

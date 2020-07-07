@@ -39,7 +39,7 @@ public class SimplePushSender {
 	    deliveryRequest.setReturnCodeDetails(MessageStatus.DELIVERED.toString());
 	    updateDeliveryRequest(deliveryRequest);
 	  }else {
-	    completeDeliveryRequest(deliveryRequest, deliveryRequest.getDeliveryRequestID(), MessageStatus.SENT, DeliveryStatus.Acknowledged, NotificationStatus.SENT.toString());
+	    completeDeliveryRequest(deliveryRequest, deliveryRequest.getDeliveryRequestID(), MessageStatus.DELIVERED, DeliveryStatus.Acknowledged, NotificationStatus.SENT.toString());
 	  }
 	}
 

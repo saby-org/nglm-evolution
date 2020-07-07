@@ -1,5 +1,7 @@
 package com.lumatagroup.expression.driver.SMPP;
 
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications;
+
 import ie.omk.smpp.message.SMPPPacket;
 import ie.omk.smpp.util.PacketStatus;
 
@@ -7,13 +9,13 @@ public class PacketStatusUtils {
 
 	public static String getStatus(int messageStatus) {
 		switch (messageStatus) {
-			case SMPPPacket.SM_STATE_DELIVERED: return "DELIVERED";
-			case SMPPPacket.SM_STATE_ACCEPTED: return "DELIVERED";
-			case SMPPPacket.SM_STATE_EXPIRED: return "EXPIRED";
-			case SMPPPacket.SM_STATE_DELETED: return "EXPIRED";
-			case SMPPPacket.SM_STATE_UNDELIVERABLE: return "UNDELIVERABLE";
-			case SMPPPacket.SM_STATE_EN_ROUTE: return "PENDING";
-			case SMPPPacket.SM_STATE_INVALID: return "INVALID";
+			case SMPPPacket.SM_STATE_DELIVERED: return DeliveryManagerForNotifications.MessageStatus.DELIVERED.name();
+			case SMPPPacket.SM_STATE_ACCEPTED: return DeliveryManagerForNotifications.MessageStatus.DELIVERED.name();
+			case SMPPPacket.SM_STATE_EXPIRED: return DeliveryManagerForNotifications.MessageStatus.EXPIRED.name();
+			case SMPPPacket.SM_STATE_DELETED: return DeliveryManagerForNotifications.MessageStatus.EXPIRED.name();
+			case SMPPPacket.SM_STATE_UNDELIVERABLE: return DeliveryManagerForNotifications.MessageStatus.UNDELIVERABLE.name();
+			case SMPPPacket.SM_STATE_EN_ROUTE: return DeliveryManagerForNotifications.MessageStatus.PENDING.name();
+			case SMPPPacket.SM_STATE_INVALID: return DeliveryManagerForNotifications.MessageStatus.INVALID.name();
 			case 8: return "REJECTED";
 			default: return "UNKNOWN";
 		}

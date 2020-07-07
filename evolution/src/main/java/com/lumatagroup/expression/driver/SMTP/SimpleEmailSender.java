@@ -108,7 +108,7 @@ public class SimpleEmailSender {
                           mailNotificationRequest.setReturnCode(MessageStatus.DELIVERED.getReturnCode());
                           updateDeliveryRequest(mailNotificationRequest);
                       }else {
-                          completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.SENT, DeliveryStatus.Acknowledged, NotificationStatusCode.fromReturnCode(NotificationStatusCode.EMAIL_SENT.getReturnCode()).toString());
+                          completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.DELIVERED, DeliveryStatus.Acknowledged, NotificationStatusCode.fromReturnCode(NotificationStatusCode.EMAIL_SENT.getReturnCode()).toString());
                         }
 						smtpConn.setLastActiveTime(System.currentTimeMillis());
 						logger.info("Email sent successfully of X-messageId: "+mailNotificationRequest.getDeliveryRequestID()+" to the recepient address "+toEmail );
@@ -128,7 +128,7 @@ public class SimpleEmailSender {
                                mailNotificationRequest.setReturnCodeDetails(MessageStatus.DELIVERED.toString());
                                updateDeliveryRequest(mailNotificationRequest);
                            }else {
-                             completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.SENT, DeliveryStatus.Acknowledged, NotificationStatusCode.fromReturnCode(NotificationStatusCode.EMAIL_SENT.getReturnCode()).toString());
+                             completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.DELIVERED, DeliveryStatus.Acknowledged, NotificationStatusCode.fromReturnCode(NotificationStatusCode.EMAIL_SENT.getReturnCode()).toString());
                            }
 							smtpConn.setLastActiveTime(System.currentTimeMillis());
 							logger.info("Email sent successfully of X-messageId: "+mailNotificationRequest.getDeliveryRequestID()+" to the recepient address "+toEmail);
