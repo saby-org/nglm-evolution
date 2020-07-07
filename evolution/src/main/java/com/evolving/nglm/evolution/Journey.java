@@ -175,7 +175,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   //  schema
   //
 
-  private static int currentSchemaVersion = 6;
+  private static int currentSchemaVersion = 7;
   private static Schema schema = null;
   static
   {
@@ -201,6 +201,13 @@ public class Journey extends GUIManagedObject implements StockableItem
     schemaBuilder.field("appendExclusionLists", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("approval", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("maxNoOfCustomers", Schema.OPTIONAL_INT32_SCHEMA);
+    
+    schemaBuilder.field("recurrence", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("recurrenceId", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("occurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("scheduler", JourneyScheduler.serde().optionalSchema());
+    schemaBuilder.field("lastCreatedOccurrenceNumber", Schema.OPTIONAL_INT32_SCHEMA);
+    
     schema = schemaBuilder.build();
   };
 
@@ -241,6 +248,17 @@ public class Journey extends GUIManagedObject implements StockableItem
   private boolean appendExclusionLists;
   private JourneyStatus approval;
   private Integer maxNoOfCustomers;
+  
+  //
+  //  recurrence
+  //
+  
+  private boolean recurrence;
+  private String recurrenceId;
+  private Integer occurrenceNumber;
+  private JourneyScheduler journeyScheduler;
+  private Integer lastCreatedOccurrenceNumber;
+  
 
   /****************************************
   *
@@ -274,9 +292,23 @@ public class Journey extends GUIManagedObject implements StockableItem
   public JourneyStatus getApproval() {return JourneyStatus.Unknown == approval ? JourneyStatus.Pending : approval; }
   public void setApproval(JourneyStatus approval) { this.approval = approval; }
   public Integer getMaxNoOfCustomers(){return maxNoOfCustomers;}
+  
+  //
   // journey customers limit implemented thanks to stocks :
+  //
+  
   @Override public String getStockableItemID() { return "maxNoOfCustomers-journey-"+getJourneyID(); }
   @Override public Integer getStock() { return getMaxNoOfCustomers(); }
+  
+  //
+  // recurrence
+  //
+  
+  public boolean getRecurrence() { return recurrence ; }
+  public String getRecurrenceId() { return recurrenceId ; }
+  public Integer getOccurrenceNumber() { return occurrenceNumber ; }
+  public JourneyScheduler getJourneyScheduler() { return journeyScheduler ; }
+  public Integer getLastCreatedOccurrenceNumber() {return lastCreatedOccurrenceNumber; }
 
   //
   //  package protected
@@ -585,7 +617,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, JourneyStatus approval, Integer maxNoOfCustomers)
+  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, JourneyStatus approval, Integer maxNoOfCustomers, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber)
   {
     super(schemaAndValue);
     this.effectiveEntryPeriodEndDate = effectiveEntryPeriodEndDate;
@@ -606,6 +638,11 @@ public class Journey extends GUIManagedObject implements StockableItem
     this.appendExclusionLists = appendExclusionLists;
     this.approval = approval;
     this.maxNoOfCustomers = maxNoOfCustomers;
+    this.recurrence = recurrence;
+    this.recurrenceId = recurrenceId;
+    this.occurrenceNumber = occurrenceNumber;
+    this.journeyScheduler = scheduler;
+    this.lastCreatedOccurrenceNumber = lastCreatedOccurrenceNumber;
   }
 
   /*****************************************
@@ -637,6 +674,11 @@ public class Journey extends GUIManagedObject implements StockableItem
     struct.put("appendExclusionLists", journey.getAppendExclusionLists());
     struct.put("approval", journey.getApproval().getExternalRepresentation());
     struct.put("maxNoOfCustomers", journey.getMaxNoOfCustomers());
+    struct.put("recurrence", journey.getRecurrence());
+    struct.put("recurrenceId", journey.getRecurrenceId());
+    struct.put("occurrenceNumber", journey.getOccurrenceNumber());
+    struct.put("scheduler", JourneyScheduler.serde().packOptional(journey.getJourneyScheduler()));
+    struct.put("lastCreatedOccurrenceNumber", journey.getLastCreatedOccurrenceNumber());
     return struct;
   }
 
@@ -781,7 +823,12 @@ public class Journey extends GUIManagedObject implements StockableItem
     boolean appendExclusionLists = (schemaVersion >= 3) ? valueStruct.getBoolean("appendExclusionLists") : false;
     JourneyStatus approval = (schemaVersion >= 5) ? JourneyStatus.fromExternalRepresentation(valueStruct.getString("approval")) : JourneyStatus.Pending;
     Integer maxNoOfCustomers = (schemaVersion >=6) ? valueStruct.getInt32("maxNoOfCustomers") : null;
-
+    
+    boolean recurrence = (schemaVersion >= 7) ? valueStruct.getBoolean("recurrence") : false;
+    String recurrenceId = (schemaVersion >= 7) ? valueStruct.getString("recurrenceId") : null;
+    Integer occurrenceNumber = (schemaVersion >= 7) ? valueStruct.getInt32("occurrenceNumber") : null;
+    JourneyScheduler scheduler = (schemaVersion >= 7) ? JourneyScheduler.serde().unpackOptional(new SchemaAndValue(schema.field("scheduler").schema(),valueStruct.get("scheduler"))) : null;
+    Integer lastCreatedOccurrenceNumber = (schemaVersion >= 7) ? valueStruct.getInt32("lastCreatedOccurrenceNumber") : null;
     /*****************************************
     *
     *  validate
@@ -842,7 +889,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, approval, maxNoOfCustomers);
+    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, approval, maxNoOfCustomers, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber);
   }
   
   /*****************************************
@@ -1094,7 +1141,18 @@ public class Journey extends GUIManagedObject implements StockableItem
         throw new GUIManagerException("maxNoOfCustomers has bad field value",maxNoOfCustomersString);
       }
     }
-
+    
+    //
+    //  recurrence
+    //
+    
+    this.recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
+    this.recurrenceId = JSONUtilities.decodeString(jsonRoot, "recurrenceId", recurrence);
+    this.occurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "occurrenceNumber", recurrence);
+    if (recurrence) this.journeyScheduler = new JourneyScheduler(JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence));
+    this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", recurrence);
+    
+    
     /*****************************************
     *
     *  contextVariables
