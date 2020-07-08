@@ -31,7 +31,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 import org.apache.http.HttpHost;
-
+import org.apache.http.client.config.RequestConfig;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
