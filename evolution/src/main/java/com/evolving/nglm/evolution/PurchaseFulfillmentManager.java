@@ -755,8 +755,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           guiPresentationMap.put(FEATUREID, getFeatureID());
           guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
           guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-          guiPresentationMap.put(ORIGIN, getOrigin());
-          guiPresentationMap.put(RESELLERID, getResellerID());
+          guiPresentationMap.put(ORIGIN, getOrigin());          
           GUIManagedObject reseller = resellerService.getStoredReseller(resellerID);
           if (reseller instanceof Reseller) {
             String display = ((Reseller)reseller).getGUIManagedObjectDisplay();
