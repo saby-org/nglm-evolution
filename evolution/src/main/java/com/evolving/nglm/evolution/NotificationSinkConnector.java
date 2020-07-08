@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
-import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
@@ -135,7 +134,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("source", mailNotification.getFromAddress());
         documentMap.put("returnCode", mailNotification.getReturnCode());
         documentMap.put("returnCodeDetails", mailNotification.getMessageDeliveryReturnCodeDetails());
-	documentMap.put("templateID", mailNotification.getTemplateID());
+        documentMap.put("templateID", mailNotification.getTemplateID());
         documentMap.put("language", mailNotification.getLanguage());
         Map<String,List<String>> tags = new HashMap<>();
         tags.put("subjectTags", mailNotification.getSubjectTags());
@@ -157,7 +156,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("source", smsNotification.getSource());
         documentMap.put("returnCode", smsNotification.getReturnCode());
         documentMap.put("returnCodeDetails", smsNotification.getMessageDeliveryReturnCodeDetails());
-	documentMap.put("templateID", smsNotification.getTemplateID());
+        documentMap.put("templateID", smsNotification.getTemplateID());
         documentMap.put("language", smsNotification.getLanguage());
         documentMap.put("tags", smsNotification.getMessageTags());
         Map<String,List<String>> tags = new HashMap<>();
@@ -171,14 +170,14 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("deliveryRequestID", notifNotification.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", notifNotification.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", "");
-        documentMap.put("creationDate", notifNotification.getCreationDate()!=null?dateFormat.format(smsNotification.getCreationDate()):"");
-        documentMap.put("deliveryDate", notifNotification.getDeliveryDate()!=null?dateFormat.format(smsNotification.getDeliveryDate()):"");
+        documentMap.put("creationDate", notifNotification.getCreationDate()!=null?dateFormat.format(notifNotification.getCreationDate()):"");
+        documentMap.put("deliveryDate", notifNotification.getDeliveryDate()!=null?dateFormat.format(notifNotification.getDeliveryDate()):"");
         documentMap.put("moduleID", notifNotification.getModuleID());
         documentMap.put("featureID", notifNotification.getFeatureID());
         documentMap.put("source", notifNotification.getNotificationParameters().get("node.parameter.fromaddress"));
         documentMap.put("returnCode", notifNotification.getReturnCode());
         documentMap.put("returnCodeDetails", notifNotification.getMessageDeliveryReturnCodeDetails());
-	documentMap.put("templateID", notifNotification.getTemplateID());
+        documentMap.put("templateID", notifNotification.getTemplateID());
         documentMap.put("language", notifNotification.getLanguage());
         documentMap.put("tags", notifNotification.getTags());
       }
@@ -196,7 +195,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("source", ""); // TODO SCH : what is the source of push notifications ?
         documentMap.put("returnCode", pushNotification.getReturnCode());
         documentMap.put("returnCodeDetails", pushNotification.getMessageDeliveryReturnCodeDetails());
-	documentMap.put("templateID", pushNotification.getTemplateID());
+        documentMap.put("templateID", pushNotification.getTemplateID());
         documentMap.put("language", pushNotification.getLanguage());
         documentMap.put("tags", pushNotification.getTags()); // TODO
       }
