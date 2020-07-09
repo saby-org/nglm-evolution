@@ -841,7 +841,7 @@ public class EvolutionEngine
     extendedProfileEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) cleanupSubscriberSourceStream);
     extendedProfileEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) recordSubscriberIDSourceStream);
     extendedProfileEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberProfileForceUpdateSourceStream);
-    extendedProfileEventStreams.add((KStream<StringKey, ? extends ExecuteActionOtherSubscriber>) executeActionOtherSubscriberSourceStream);
+    extendedProfileEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) executeActionOtherSubscriberSourceStream);
     extendedProfileEventStreams.addAll(extendedProfileEvolutionEngineEventStreams);
     KStream extendedProfileEvolutionEventCompositeStream = null;
     for (KStream<StringKey, ? extends SubscriberStreamEvent> eventStream : extendedProfileEventStreams)
@@ -952,9 +952,7 @@ public class EvolutionEngine
         (key,value) -> (value instanceof ProfileLoyaltyProgramChangeEvent),
         (key,value) -> (value instanceof TokenChange),
 
-        (key,value) -> (value instanceof VoucherChange),
-        
-        (key,value) -> (value instanceof ExecuteActionOtherSubscriber));
+        (key,value) -> (value instanceof VoucherChange));
 
     KStream<StringKey, JourneyRequest> journeyResponseStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[0];
     KStream<StringKey, JourneyRequest> journeyRequestStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[1];
@@ -975,9 +973,6 @@ public class EvolutionEngine
     KStream<StringKey, TokenChange> tokenChangeStream = (KStream<StringKey, TokenChange>) branchedEvolutionEngineOutputs[14];
 
     KStream<StringKey, VoucherChange> voucherChangeStream = (KStream<StringKey, VoucherChange>) branchedEvolutionEngineOutputs[15];
-    
-    KStream<StringKey, ExecuteActionOtherSubscriber> executeActionOtherSubscriberStream = (KStream<StringKey, ExecuteActionOtherSubscriber>) branchedEvolutionEngineOutputs[16];
-
 
     //
     //  build predicates for delivery requests
@@ -1087,7 +1082,6 @@ public class EvolutionEngine
     rekeyedJourneyStatisticStream.to(journeyTrafficTopic, Produced.with(stringKeySerde, journeyStatisticWrapperSerde));
     tokenChangeStream.to(tokenChangeTopic, Produced.with(stringKeySerde, tokenChangeSerde));
     voucherChangeStream.to(voucherChangeResponseTopic, Produced.with(stringKeySerde, voucherChangeSerde));
-    executeActionOtherSubscriberStream.to(executeActionOtherSubscriberTopic, Produced.with(stringKeySerde, executeActionOtherSubscriberSerde));
 
     //
     //  sink - delivery request streams
@@ -2167,17 +2161,6 @@ public class EvolutionEngine
         subscriberState.getDeliveryRequests().clear();
         subscriberStateUpdated = true;
       }
-    
-    //
-    //  executeActionsOtherSubscriber
-    //
-
-    if (subscriberState.getExecuteActionsOtherSubscriber().size() > 0)
-      {
-        subscriberState.getExecuteActionsOtherSubscriber().clear();
-        subscriberStateUpdated = true;
-      }
-    
 
     //
     //  journeyStatistics
@@ -5173,10 +5156,10 @@ public class EvolutionEngine
                             //
 
                             SubscriberRelatives subscriberRelatives = context.getSubscriberState().getSubscriberProfile().getRelations().get(hierarchyRelationship);
-                            if (subscriberRelatives != null)
+                            if (subscriberRelatives != null && subscriberRelatives.getParentSubscriberID() != null)
                               {
                                 // generate a new message that will go for the parrent
-                                ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), subscriberRelatives.getParentSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
+                                ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(subscriberRelatives.getParentSubscriberID(), entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
                                 actions.add(action);
                               }
                           }
@@ -5505,8 +5488,9 @@ public class EvolutionEngine
             
             case ExecuteActionOtherSubscriber:
               ExecuteActionOtherSubscriber executeActionOtherSubscriber = (ExecuteActionOtherSubscriber) action;
-              subscriberState.getExecuteActionsOtherSubscriber().add(executeActionOtherSubscriber);
-              if(executeActionOtherSubscriber.getOutstandingDeliveryRequestID() != null) { journeyState.setJourneyOutstandingDeliveryRequestID(executeActionOtherSubscriber.getOutstandingDeliveryRequestID()); }              
+              if(executeActionOtherSubscriber.getOutstandingDeliveryRequestID() != null) { journeyState.setJourneyOutstandingDeliveryRequestID(executeActionOtherSubscriber.getOutstandingDeliveryRequestID()); }
+              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getExecuteActionOtherSubscriberTopic(), StringKey.serde().serializer().serialize(Deployment.getExecuteActionOtherSubscriberTopic(), new StringKey(executeActionOtherSubscriber.getSubscriberID())), ExecuteActionOtherSubscriber.serde().serializer().serialize(Deployment.getExecuteActionOtherSubscriberTopic(), executeActionOtherSubscriber)));
+              break;
 
             case JourneyRequest:
               JourneyRequest journeyRequest = (JourneyRequest) action;
@@ -6094,7 +6078,6 @@ public class EvolutionEngine
         result.addAll(subscriberState.getLoyaltyProgramRequests());
         result.addAll(subscriberState.getPointFulfillmentResponses());
         result.addAll(subscriberState.getDeliveryRequests());
-        result.addAll(subscriberState.getExecuteActionsOtherSubscriber());
         result.addAll(subscriberState.getJourneyStatisticWrappers());
         for (JourneyStatisticWrapper wrapper: subscriberState.getJourneyStatisticWrappers()) 
           {
@@ -6528,6 +6511,7 @@ public class EvolutionEngine
     private ExtendedSubscriberProfile extendedSubscriberProfile;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private String executeActionOtherUserDeliveryRequestID;
+    private String executeActionOtherUserDeliveryOriginalSubscriberID;
     private JourneyService journeyService;
     private SubscriberMessageTemplateService subscriberMessageTemplateService;
     private DeliverableService deliverableService;
@@ -6594,6 +6578,7 @@ public class EvolutionEngine
     public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
     public ReferenceDataReader<String,SubscriberGroupEpoch> getSubscriberGroupEpochReader() { return subscriberGroupEpochReader; }
     public String getExecuteActionOtherSubscriberDeliveryRequestID() { return executeActionOtherUserDeliveryRequestID; }
+    public String getExecuteActionOtherUserDeliveryOriginalSubscriberID() { return executeActionOtherUserDeliveryOriginalSubscriberID; }
     public JourneyService getJourneyService() { return journeyService; }
     public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
     public DeliverableService getDeliverableService() { return deliverableService; }
@@ -6617,6 +6602,7 @@ public class EvolutionEngine
     public boolean getSubscriberTraceEnabled() { return subscriberState.getSubscriberProfile().getSubscriberTraceEnabled(); }
 
     public void setExecuteActionOtherSubscriberDeliveryRequestID(String requestID) { this.executeActionOtherUserDeliveryRequestID = requestID; }
+    public void setExecuteActionOtherUserDeliveryOriginalSubscriberID(String subscriberID) { this.executeActionOtherUserDeliveryOriginalSubscriberID = subscriberID; }
     
     /*****************************************
     *

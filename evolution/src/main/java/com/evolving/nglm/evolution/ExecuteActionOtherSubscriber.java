@@ -161,7 +161,7 @@ public class ExecuteActionOtherSubscriber implements SubscriberStreamEvent, Acti
   public ExecuteActionOtherSubscriber(String subscriberID, String originatingSubscriberID, String originalJourneyID, String originatingNodeID, String outstandingDeliveryRequestID, JourneyState originatedJourneyState)
     {
       this.subscriberID = subscriberID;
-      this.originatingSubscriberID = getOriginatingSubscriberID();
+      this.originatingSubscriberID = originatingSubscriberID;
       this.originalJourneyID = originalJourneyID;
       this.originatingNodeID = originatingNodeID;
       this.outstandingDeliveryRequestID = outstandingDeliveryRequestID;

@@ -422,6 +422,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
       {
         // the deliveryRequestID has already been defined and registered into a Journey of another subscriber
         this.deliveryRequestID = context.getExecuteActionOtherSubscriberDeliveryRequestID();
+        this.originatingSubscriberID = context.getExecuteActionOtherUserDeliveryOriginalSubscriberID();
       }
     this.deliveryRequestSource = deliveryRequestSource;
     this.originatingDeliveryRequestID = null;
