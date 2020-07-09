@@ -63,7 +63,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile -H'Content
   "settings" : {
     "index" : {
       "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SUBSCRIBERPROFILE'",
-      "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS_SUBSCRIBERPROFILE'",
+      "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS_SUBSCRIBERPROFILE'"
     }
   },
   "mappings" : {
