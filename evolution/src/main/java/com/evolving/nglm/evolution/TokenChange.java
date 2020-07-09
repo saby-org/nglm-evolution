@@ -49,7 +49,7 @@ public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("token_change");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDateTime", Timestamp.builder().schema());
     schemaBuilder.field("eventID", Schema.STRING_SCHEMA);
@@ -58,7 +58,7 @@ public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput
     schemaBuilder.field("returnStatus", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("origin", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("featureID", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -89,7 +89,7 @@ public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput
   private String returnStatus;
   private String origin;
   private String moduleID;
-  private Integer featureID;
+  private String featureID;
   
   /****************************************
   *
@@ -110,7 +110,7 @@ public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput
   public String getReturnStatus() { return returnStatus; }
   public String getOrigin() { return origin; }
   public String getModuleID() { return moduleID; }
-  public Integer getFeatureID() { return featureID; }
+  public String getFeatureID() { return featureID; }
   public ActionType getActionType() { return ActionType.TokenChange; }
 
   //
@@ -125,7 +125,7 @@ public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput
   public void setReturnStatus(String returnStatus) { this.returnStatus = returnStatus; }
   public void setOrigin(String origin) { this.origin = origin; }
   public void setModuleID(String moduleID) { this.moduleID = moduleID; }
-  public void setFeatureID(Integer featureID) { this.featureID = featureID; }
+  public void setFeatureID(String featureID) { this.featureID = featureID; }
 
   /*****************************************
   *
@@ -133,7 +133,7 @@ public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput
   *
   *****************************************/
 
-  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, Module module, Integer featureID)
+  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, Module module, String featureID)
   {
     this(subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, module.getExternalRepresentation(), featureID);
   }
@@ -144,7 +144,7 @@ public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput
   *
   *****************************************/
 
-  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, Integer featureID)
+  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID)
   {
     this.subscriberID = subscriberID;
     this.eventDateTime = eventDateTime;
@@ -208,7 +208,7 @@ public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput
     String returnStatus = valueStruct.getString("returnStatus");
     String origin = valueStruct.getString("origin");
     String moduleID = (schemaVersion >=2 ) ? valueStruct.getString("moduleID") : "";
-    Integer featureID = (schemaVersion >=2 ) ? valueStruct.getInt32("featureID") : 0;
+    String featureID = (schemaVersion >=3 ) ? valueStruct.getString("featureID") : "";
 
     //
     // validate

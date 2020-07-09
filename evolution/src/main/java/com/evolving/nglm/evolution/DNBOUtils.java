@@ -72,17 +72,8 @@ public class DNBOUtils
     }
     String subscriberID = evolutionEventContext.getSubscriberState().getSubscriberID();
     Date date = evolutionEventContext.now();
-    int featureID = 0;
-    try
-    {
-      String featureIDString = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      featureIDString = ActionManager.extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, featureIDString);
-      featureID = Integer.parseInt(featureIDString);
-    }
-    catch (NumberFormatException e)
-    {
-      log.warn("journey ID is not an integer : "+subscriberEvaluationRequest.getJourneyState().getJourneyID()+" using "+featureID);
-    }
+    String featureID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+    featureID = ActionManager.extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, featureID);
     return new TokenChange(subscriberID, date, eventID, tokenCode, action, str, origin, Module.Journey_Manager, featureID);
   }
   
