@@ -12,7 +12,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import org.json.simple.JSONObject;
-
+import org.apache.commons.lang3.builder.HashCodeExclude;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -25,11 +25,17 @@ import org.slf4j.LoggerFactory;
 
 import org.json.simple.parser.JSONParser;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
 
@@ -182,7 +188,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(PushTemplate.serde());
     guiManagedObjectSerdes.add(DialogTemplate.serde());
     guiManagedObjectSerdes.add(UploadedFile.serde());
-    guiManagedObjectSerdes.add(Target.serde());
+    guiManagedObjectSerdes.add(com.evolving.nglm.evolution.Target.serde());
     guiManagedObjectSerdes.add(CommunicationChannelBlackoutPeriod.serde());
     guiManagedObjectSerdes.add(LoyaltyProgramPoints.serde());
     guiManagedObjectSerdes.add(ExclusionInclusionTarget.serde());
@@ -693,5 +699,21 @@ public abstract class GUIManagedObject
     {
       super(jsonRoot, epoch);
     }
+    @Override public Map<String, List<String>>  getGUIDependencies() { return new HashMap<String, List<String>>(); }
+  }
+  
+  //public abstract Map<String, List<String>>  getGUIDependencies();
+  public Map<String, List<String>> getGUIDependencies()
+  {
+    return new HashMap<String, List<String>>();
+  }
+  
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target(ElementType.TYPE)
+  public @interface GUIDependencyDef
+  {
+    public String objectType();
+    public String[] dependencies ();
+    public Class<? extends GUIService> serviceClass();
   }
 }

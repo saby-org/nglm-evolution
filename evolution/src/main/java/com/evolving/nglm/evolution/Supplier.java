@@ -6,8 +6,11 @@
 
 package com.evolving.nglm.evolution;
 
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
@@ -21,8 +24,10 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+@GUIDependencyDef(objectType = "supplier", serviceClass = SupplierService.class, dependencies = { })
 public class Supplier extends GUIManagedObject
 {
   
@@ -253,5 +258,11 @@ public class Supplier extends GUIManagedObject
       {
         return true;
       }
+  }
+  
+  @Override public Map<String, List<String>> getGUIDependencies()
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    return result;
   }
 }

@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
@@ -14,10 +15,13 @@ import com.evolving.nglm.core.SchemaUtilities;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -31,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 
+@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "product" , "voucher", "saleschannel"})
 public class Offer extends GUIManagedObject implements StockableItem
 {  
   //
@@ -858,7 +863,28 @@ public class Offer extends GUIManagedObject implements StockableItem
   @Override
   public String toString()
     {
-      return "Offer [initialPropensity=" + initialPropensity + ", "
-          + (getGUIManagedObjectID() != null ? "getGUIManagedObjectID()=" + getGUIManagedObjectID() : "") + "]";
+      return "Offer [initialPropensity=" + initialPropensity + ", " + (getGUIManagedObjectID() != null ? "getGUIManagedObjectID()=" + getGUIManagedObjectID() : "") + "]";
     }
+  
+  /*******************************
+   * 
+   * getGUIDependencies
+   * 
+   *******************************/
+  
+  @Override public Map<String, List<String>> getGUIDependencies()
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    List<String> productIDs = getOfferProducts().stream().map(product -> product.getProductID()).collect(Collectors.toList());
+    List<String> voucherIDs = getOfferVouchers().stream().map(voucher -> voucher.getVoucherID()).collect(Collectors.toList());
+    List<String> saleschannelIDs = new ArrayList<String>();
+    for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : getOfferSalesChannelsAndPrices())
+      {
+        saleschannelIDs.addAll(offerSalesChannelsAndPrice.getSalesChannelIDs());
+      }
+    result.put("product", productIDs);
+    result.put("voucher", voucherIDs);
+    result.put("saleschannel", saleschannelIDs);
+    return result;
+  }
 }

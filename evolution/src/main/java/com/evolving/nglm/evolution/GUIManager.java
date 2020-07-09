@@ -508,6 +508,7 @@ public class GUIManager
     getSourceAddress("getSourceAddress"),
     putSourceAddress("putSourceAddress"),
     removeSourceAddress("removeSourceAddress"),
+
     setStatusSourceAddress("setStatusSourceAddress"),
 
     putSupplierOffer("putSupplierOffer"),
@@ -516,6 +517,9 @@ public class GUIManager
 
     loyaltyProgramOptIn("loyaltyProgramOptIn"),
     loyaltyProgramOptOut("loyaltyProgramOptOut"),
+
+
+    getDependencies("getDependencies"),
 
     
     //
@@ -633,6 +637,10 @@ public class GUIManager
   //
 
   protected GUIManagerContext guiManagerContext;
+  
+  //
+  // helper classes
+  //
   
   private GUIManagerBaseManagement guiManagerBaseManagement;
   private GUIManagerLoyaltyReporting guiManagerLoyaltyReporting;
@@ -2045,6 +2053,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSourceAddress", new APISimpleHandler(API.getSourceAddress));
         restServer.createContext("/nglm-guimanager/putSourceAddress", new APISimpleHandler(API.putSourceAddress));
         restServer.createContext("/nglm-guimanager/removeSourceAddress", new APISimpleHandler(API.removeSourceAddress));
+
         restServer.createContext("/nglm-guimanager/setStatusSourceAddress", new APISimpleHandler(API.setStatusSourceAddress));
         
         restServer.createContext("/nglm-guimanager/putSupplierOffer", new APISimpleHandler(API.putSupplierOffer));
@@ -2052,6 +2061,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeSupplierOffer", new APISimpleHandler(API.removeSupplierOffer));
         restServer.createContext("/nglm-guimanager/loyaltyProgramOptIn", new APISimpleHandler(API.loyaltyProgramOptIn));
         restServer.createContext("/nglm-guimanager/loyaltyProgramOptOut", new APISimpleHandler(API.loyaltyProgramOptOut));
+        restServer.createContext("/nglm-guimanager/getDependencies", new APISimpleHandler(API.getDependencies));
+
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -3748,6 +3759,7 @@ public class GUIManager
                   jsonResponse = guiManagerGeneral.processGetTenantList(userID, jsonRoot, true, includeArchived);
                   break;
                   
+
                 case putSupplierOffer:
                   jsonResponse = processPutSupplierOffer(userID, jsonRoot);
                   break;
@@ -3765,6 +3777,10 @@ public class GUIManager
                   
                 case loyaltyProgramOptOut:
                   jsonResponse = guiManagerLoyaltyReporting.processLoyaltyProgramOptInOut(jsonRoot, false);
+
+                case getDependencies:
+                  jsonResponse = guiManagerGeneral.processGetDependencies(userID, jsonRoot);
+
                   break;
 
               }
@@ -25359,7 +25375,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     revalidateVouchers(date);
   }
-
+  
   /****************************************
   *
   *  resolveSubscriberID

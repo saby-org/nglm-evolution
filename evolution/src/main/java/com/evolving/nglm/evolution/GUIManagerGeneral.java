@@ -12,14 +12,18 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
@@ -54,6 +58,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,8 +70,8 @@ import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.sun.net.httpserver.HttpExchange;
@@ -74,8 +79,26 @@ import com.sun.net.httpserver.HttpExchange;
 public class GUIManagerGeneral extends GUIManager
 {
 
+  //
+  // log
+  //
+  
   private static final Logger log = LoggerFactory.getLogger(GUIManagerGeneral.class);
+  
+  //
+  //  data
+  //
+  
+  private Map<String, GUIDependencyModelTree> guiDependencyModelTreeMap = new LinkedHashMap<String, GUIDependencyModelTree>();
+  private final List<GUIService> guiServiceList = new ArrayList<GUIService>();
 
+
+  /***************************
+   * 
+   * GUIManagerGeneral
+   * 
+   ***************************/
+  
   public GUIManagerGeneral(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, RestHighLevelClient elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
   {
     super.callingChannelService = callingChannelService;
@@ -131,8 +154,50 @@ public class GUIManagerGeneral extends GUIManager
     super.subscriberGroupEpochReader = subscriberGroupEpochReader;
     super.journeyTrafficReader = journeyTrafficReader;
     super.renamedProfileCriterionFieldReader = renamedProfileCriterionFieldReader;
+    
+    guiServiceList.add(callingChannelService);
+    guiServiceList.add(catalogCharacteristicService);
+    guiServiceList.add(communicationChannelBlackoutService);
+    guiServiceList.add(contactPolicyService);
+    guiServiceList.add(criterionFieldAvailableValuesService);
+    guiServiceList.add(deliverableService);
+    guiServiceList.add(exclusionInclusionTargetService);
+    guiServiceList.add(journeyObjectiveService);
+    guiServiceList.add(journeyService);
+    guiServiceList.add(loyaltyProgramService);
+    guiServiceList.add(offerObjectiveService);
+    guiServiceList.add(offerService);
+    guiServiceList.add(paymentMeanService);
+    guiServiceList.add(pointService);
+    guiServiceList.add(presentationStrategyService);
+    guiServiceList.add(productService);
+    guiServiceList.add(productTypeService);
+    guiServiceList.add(reportService);
+    guiServiceList.add(resellerService);
+    guiServiceList.add(salesChannelService);
+    guiServiceList.add(scoringStrategyService);
+    guiServiceList.add(segmentationDimensionService);
+    guiServiceList.add(segmentContactPolicyService);
+    guiServiceList.add(sourceAddressService);
+    guiServiceList.add(subscriberMessageTemplateService);
+    guiServiceList.add(supplierService);
+    guiServiceList.add(targetService);
+    guiServiceList.add(tokenTypeService);
+    guiServiceList.add(ucgRuleService);
+    guiServiceList.add(uploadedFileService);
+    guiServiceList.add(voucherService);
+    guiServiceList.add(voucherTypeService);
+    guiServiceList.add(dnboMatrixService);
+    guiServiceList.add(dynamicCriterionFieldService);
+    guiServiceList.add(dynamicEventDeclarationsService);
+    guiServiceList.add(journeyTemplateService);
+    
+    //
+    //  buildGUIDependencyModelTreeMap
+    //
+    
+    buildGUIDependencyModelTreeMap();
   }
-
 
   /*****************************************
   *
@@ -4237,7 +4302,102 @@ public class GUIManagerGeneral extends GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
+  /****************************************
+  *
+  *  processGetDependencies
+  *
+  ****************************************/
   
+  public JSONObject processGetDependencies(String userID, JSONObject jsonRoot)
+  {
+    Map<String, Object> response = new LinkedHashMap<String, Object>();
+    
+    //
+    // request data
+    //
+    
+    String objetType = JSONUtilities.decodeString(jsonRoot, "objectType", true).toLowerCase();
+    String objectID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean fiddleTest = JSONUtilities.decodeBoolean(jsonRoot, "fiddleTest", Boolean.FALSE);
+    
+    //
+    //  guiDependencyModelTree
+    //
+    
+    GUIDependencyModelTree guiDependencyModelTree =  guiDependencyModelTreeMap.get(objetType);
+    if (guiDependencyModelTree != null )
+      {
+        try
+          {
+            List<JSONObject> dependentList = new LinkedList<JSONObject>();
+            
+            //
+            //  createDependencyTreeMAP
+            //
+            
+            GUIManagedObjectDependencyHelper.createDependencyTreeMAP(guiDependencyModelTreeMap, guiDependencyModelTree, guiDependencyModelTree.getDependencyList(), objectID, dependentList, fiddleTest, guiServiceList);
+            
+            //
+            //  response
+            //
+            
+            if (fiddleTest)
+              {
+                response.put("children", JSONUtilities.encodeArray(dependentList));
+              }
+            else
+              {
+                response.put("dependencies", JSONUtilities.encodeArray(dependentList));
+              }
+            response.put("responseCode", "ok");
+          } 
+        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e)
+          {
+            response.put("responseCode", "systemError");
+            response.put("responseMessage", e.getMessage());
+            
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.error(stackTraceWriter.toString());
+          }
+      }
+    else
+      {
+        response.put("responseCode", "objetTypeNotValid");
+        response.put("responseMessage", "objectType " + objetType + " not found in configuration");
+      }
+    
+    //
+    //  return
+    //
+    
+    return JSONUtilities.encodeObject(response);
+  }
   
+  /****************************************
+  *
+  *  buildGUIDependencyModelTreeMap
+  *
+  ****************************************/
+  
+  private void buildGUIDependencyModelTreeMap()
+  {
+    //
+    //  scan com.evolving.nglm.evolution
+    //
+    
+    Reflections reflections = new Reflections("com.evolving.nglm.evolution");
+    
+    //
+    //  get the annoted classes
+    //
+    
+    Set<Class<?>> guiDependencyModelClassList = reflections.getTypesAnnotatedWith(GUIDependencyDef.class);
+    for (Class guiDependencyModelClass : guiDependencyModelClassList)
+      {
+        GUIDependencyModelTree guiDependencyModelTree = new GUIDependencyModelTree(guiDependencyModelClass, guiDependencyModelClassList);
+        guiDependencyModelTreeMap.put(guiDependencyModelTree.getGuiManagedObjectType(), guiDependencyModelTree);
+      }
+  }
 }
 

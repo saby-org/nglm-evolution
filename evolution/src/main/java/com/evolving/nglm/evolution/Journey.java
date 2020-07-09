@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.connect.data.Field;
@@ -50,12 +51,14 @@ import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
+@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "campaign", "journeyobjective" })
 public class Journey extends GUIManagedObject implements StockableItem
 {
   /*****************************************
@@ -3606,5 +3609,79 @@ public class Journey extends GUIManagedObject implements StockableItem
       this.actionType = actionType;
       this.parameters = new ParameterMap();
     }
+  }
+  
+  /*******************************
+   * 
+   * getGUIDependencies
+   * 
+   *******************************/
+  
+  @Override public Map<String, List<String>> getGUIDependencies()
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    switch (getGUIManagedObjectType())
+      {
+        case Journey:
+          
+          //
+          //  campaign
+          //
+          
+          List<String> campaignIDs = new ArrayList<String>();
+          for (JourneyNode journeyNode : getJourneyNodes().values())
+            {
+              if (journeyNode.getNodeType().getActionManager() != null)
+                {
+                  String campaignID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode).get("journey");
+                  if (campaignID != null)campaignIDs.add(campaignID);
+                }
+            }
+          result.put("campaign", campaignIDs);
+          
+          List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+          result.put("journeyobjective", journeyObjectiveIDs);
+            
+          break;
+          
+        case Campaign:
+          
+          //
+          //  offer
+          //
+          List<String> pointIDs = new ArrayList<String>();
+          List<String> offerIDs = new ArrayList<String>();
+          for (JourneyNode offerNode : getJourneyNodes().values())
+            {
+              if (offerNode.getNodeType().getActionManager() != null)
+                {
+                  String offerID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("offer");
+                  if (offerID != null) offerIDs.add(offerID);
+                  String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("point");
+                  if (pointID != null) pointIDs.add(pointID);
+                }
+            }
+          result.put("offer", offerIDs);
+          result.put("point", pointIDs);
+          
+          List<String> journeyObjIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+          result.put("journeyobjective", journeyObjIDs);
+            
+          
+          break;
+
+        case BulkCampaign:
+            List<String> blkpointIDs = new ArrayList<String>();
+         if (this.boundParameters.containsKey("journey.deliverableID") && boundParameters.get("journey.deliverableID").toString().startsWith(CommodityDeliveryManager.POINT_PREFIX))
+        	 blkpointIDs.add(boundParameters.get("journey.deliverableID").toString().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
+             result.put("point", blkpointIDs);            
+            break;
+            
+        default:
+          break;
+      }
+    
+  
+    return result;
   }
 }

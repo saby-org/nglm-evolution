@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>release_1.4.3_8-SNAPSHOT</version>
+  <version>EVPRO-269_1-v143_8-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -149,7 +149,12 @@
       <version>3.3.0</version>
     </dependency>
     
-    
+    <!-- reflections -->
+    <dependency>
+		<groupId>org.reflections</groupId>
+		<artifactId>reflections</artifactId>
+		<version>0.9.12</version>
+	</dependency>
   </dependencies>
 
   <build>

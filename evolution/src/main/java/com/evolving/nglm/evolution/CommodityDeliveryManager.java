@@ -57,7 +57,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
   //
   //  CommodityOperation
   //
-
+  final static String POINT_PREFIX="point-";
   public enum CommodityDeliveryOperation
   {
     Credit("credit"),
@@ -1632,7 +1632,13 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
       return Collections.<Action>singletonList(request);
     }
-
+    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      String pointID = (String) journeyNode.getNodeParameters().get("node.parameter.commodityid");
+      if (pointID != null) result.put("point", pointID.startsWith(POINT_PREFIX)?pointID.replace(POINT_PREFIX, ""):"");
+      return result;
+    }
 
   }
 }
