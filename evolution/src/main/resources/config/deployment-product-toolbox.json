@@ -480,7 +480,8 @@
           [ 
             { "name" : "credited",  "display" : "Credited",  "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
             { "name" : "failed",    "display" : "Failed",    "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
-            { "name" : "timeout",   "display" : "Timeout",   "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'day')" } } ] }
+            { "name" : "timeout",   "display" : "Timeout",   "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'day')" } } ] },
+            { "name" : "unknown_relationship",   "display" : "UnknownRelationship", "transitionCriteria" : [ { "criterionField" : "unknown.relationship", "criterionOperator" : "==", "argument" : { "expression" : "true" } } ] }
           ],
         "parameters" :
           [

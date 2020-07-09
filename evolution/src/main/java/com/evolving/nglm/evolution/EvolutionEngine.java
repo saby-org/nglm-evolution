@@ -3351,6 +3351,7 @@ public class EvolutionEngine
         ExecuteActionOtherSubscriber executeActionOtherSubscriber = (ExecuteActionOtherSubscriber)evolutionEvent;
         
         evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(executeActionOtherSubscriber.getOutstandingDeliveryRequestID());
+        evolutionEventContext.setExecuteActionOtherUserOriginalSubscriberID(executeActionOtherSubscriber.getOriginatingSubscriberID());
         
         JourneyState originalJourneyState = executeActionOtherSubscriber.getOriginatedJourneyState();
         Journey originalJourney = evolutionEventContext.getJourneyService().getActiveJourney(executeActionOtherSubscriber.getOriginalJourneyID(), evolutionEventContext.now());
@@ -5162,6 +5163,11 @@ public class EvolutionEngine
                                 ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(subscriberRelatives.getParentSubscriberID(), entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
                                 actions.add(action);
                               }
+                            else 
+                              {
+                                // in case there is nobody as father in the given relation, then add this information temporarly into the subscriber profile
+                                subscriberState.getSubscriberProfile().getUnknownRelationships().add(new Pair(entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID()));
+                              }
                           }
                         else 
                           {
@@ -6511,7 +6517,7 @@ public class EvolutionEngine
     private ExtendedSubscriberProfile extendedSubscriberProfile;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private String executeActionOtherUserDeliveryRequestID;
-    private String executeActionOtherUserDeliveryOriginalSubscriberID;
+    private String executeActionOtherUserOriginalSubscriberID;
     private JourneyService journeyService;
     private SubscriberMessageTemplateService subscriberMessageTemplateService;
     private DeliverableService deliverableService;
@@ -6578,7 +6584,7 @@ public class EvolutionEngine
     public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
     public ReferenceDataReader<String,SubscriberGroupEpoch> getSubscriberGroupEpochReader() { return subscriberGroupEpochReader; }
     public String getExecuteActionOtherSubscriberDeliveryRequestID() { return executeActionOtherUserDeliveryRequestID; }
-    public String getExecuteActionOtherUserDeliveryOriginalSubscriberID() { return executeActionOtherUserDeliveryOriginalSubscriberID; }
+    public String getExecuteActionOtherUserOriginalSubscriberID() { return executeActionOtherUserOriginalSubscriberID; }
     public JourneyService getJourneyService() { return journeyService; }
     public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
     public DeliverableService getDeliverableService() { return deliverableService; }
@@ -6602,7 +6608,7 @@ public class EvolutionEngine
     public boolean getSubscriberTraceEnabled() { return subscriberState.getSubscriberProfile().getSubscriberTraceEnabled(); }
 
     public void setExecuteActionOtherSubscriberDeliveryRequestID(String requestID) { this.executeActionOtherUserDeliveryRequestID = requestID; }
-    public void setExecuteActionOtherUserDeliveryOriginalSubscriberID(String subscriberID) { this.executeActionOtherUserDeliveryOriginalSubscriberID = subscriberID; }
+    public void setExecuteActionOtherUserOriginalSubscriberID(String subscriberID) { this.executeActionOtherUserOriginalSubscriberID = subscriberID; }
     
     /*****************************************
     *
