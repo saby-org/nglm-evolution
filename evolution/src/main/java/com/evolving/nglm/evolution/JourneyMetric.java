@@ -34,7 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class JourneyMetric implements SubscriberStreamOutput, Comparable
+public class JourneyMetric extends SubscriberStreamOutput implements Comparable
 {
   /*****************************************
   *
@@ -51,7 +51,8 @@ public class JourneyMetric implements SubscriberStreamOutput, Comparable
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_metric");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),8));
+    for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("journeyMetricID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyInstanceID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
@@ -131,8 +132,9 @@ public class JourneyMetric implements SubscriberStreamOutput, Comparable
   *
   *****************************************/
 
-  private JourneyMetric(String journeyMetricID, String journeyInstanceID, String journeyID, String subscriberID, Date journeyExitDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost)
+  private JourneyMetric(SchemaAndValue schemaAndValue, String journeyMetricID, String journeyInstanceID, String journeyID, String subscriberID, Date journeyExitDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost)
   {
+    super(schemaAndValue);
     this.journeyMetricID = journeyMetricID;
     this.journeyInstanceID = journeyInstanceID;
     this.journeyID = journeyID;
@@ -151,6 +153,7 @@ public class JourneyMetric implements SubscriberStreamOutput, Comparable
 
   public JourneyMetric(JourneyMetric journeyMetric)
   {
+    super(journeyMetric);
     this.journeyMetricID = journeyMetric.getJourneyMetricID();
     this.journeyInstanceID = journeyMetric.getJourneyInstanceID();
     this.journeyID = journeyMetric.getJourneyID();
@@ -171,6 +174,7 @@ public class JourneyMetric implements SubscriberStreamOutput, Comparable
   {
     JourneyMetric journeyMetric = (JourneyMetric) value;
     Struct struct = new Struct(schema);
+    packSubscriberStreamOutput(struct,journeyMetric);
     struct.put("journeyMetricID", journeyMetric.getJourneyMetricID());
     struct.put("journeyInstanceID", journeyMetric.getJourneyInstanceID());
     struct.put("journeyID", journeyMetric.getJourneyID());
@@ -202,7 +206,7 @@ public class JourneyMetric implements SubscriberStreamOutput, Comparable
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
     //
     //  unpack
@@ -222,7 +226,7 @@ public class JourneyMetric implements SubscriberStreamOutput, Comparable
     //  return
     //
 
-    return new JourneyMetric(journeyMetricID, journeyInstanceID, journeyID, subscriberID, journeyExitDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost);
+    return new JourneyMetric(schemaAndValue, journeyMetricID, journeyInstanceID, journeyID, subscriberID, journeyExitDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost);
   }
 
   /*****************************************

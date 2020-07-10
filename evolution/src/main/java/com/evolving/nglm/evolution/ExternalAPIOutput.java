@@ -16,11 +16,7 @@ import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.data.*;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
@@ -28,7 +24,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class ExternalAPIOutput implements SubscriberStreamOutput, Comparable
+public class ExternalAPIOutput extends SubscriberStreamOutput implements Comparable
 {
   /*****************************************
   *
@@ -45,7 +41,8 @@ public class ExternalAPIOutput implements SubscriberStreamOutput, Comparable
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("external_api_output");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),8));
+    for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("topicID", Schema.STRING_SCHEMA);
     schemaBuilder.field("jsonString", Schema.STRING_SCHEMA);
     schema = schemaBuilder.build();
@@ -82,45 +79,9 @@ public class ExternalAPIOutput implements SubscriberStreamOutput, Comparable
   public String getTopicID() { return topicID; }
   public String getJsonString() { return jsonString; }
 
-//  /*****************************************
-//  *
-//  *  constructor -- enter
-//  *
-//  *****************************************/
-//
-//  public ExternalAPIOutput(EvolutionEventContext context, String topicID, String jsonString)
-//  {
-//    this.topicID = topicID;
-//    this.jsonString = jsonString;
-//  }
-//
-//  /*****************************************
-//  *
-//  *  constructor -- transition
-//  *
-//  *****************************************/
-//
-//  public ExternalAPIOutput(EvolutionEventContext context, String topicID, String jsonString, boolean markNotified, boolean markConverted)
-//  {
-//    this.topicID = topicID;
-//    this.jsonString = jsonString;
-//  }
-//
-//  /*****************************************
-//  *
-//  *  constructor -- abnormal exit
-//  *
-//  *****************************************/
-//
-//  public ExternalAPIOutput(EvolutionEventContext context, String topicID, String jsonString, Date exitDate)
-//  {
-//    this.topicID = topicID;
-//    this.jsonString = jsonString;
-//  }
-
   /*****************************************
   *
-  *  constructor -- unpack
+  *  constructor simple
   *
   *****************************************/
 
@@ -132,14 +93,15 @@ public class ExternalAPIOutput implements SubscriberStreamOutput, Comparable
 
   /*****************************************
   *
-  *  constructor -- copy
+  *  constructor unpack
   *
   *****************************************/
 
-  public ExternalAPIOutput(ExternalAPIOutput externalAPIOutput)
+  public ExternalAPIOutput(SchemaAndValue schemaAndValue, String topicID, String jsonString)
   {
-    this.topicID = externalAPIOutput.getTopicID();
-    this.jsonString = externalAPIOutput.getJsonString();
+    super(schemaAndValue);
+    this.topicID = topicID;
+    this.jsonString = jsonString;
   }
 
   /*****************************************
@@ -152,6 +114,7 @@ public class ExternalAPIOutput implements SubscriberStreamOutput, Comparable
   {
     ExternalAPIOutput externalAPIOutput = (ExternalAPIOutput) value;
     Struct struct = new Struct(schema);
+    packSubscriberStreamOutput(struct,externalAPIOutput);
     struct.put("topicID", externalAPIOutput.getTopicID());
     struct.put("jsonString", externalAPIOutput.getJsonString());
     return struct;
@@ -171,7 +134,7 @@ public class ExternalAPIOutput implements SubscriberStreamOutput, Comparable
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
     //
     //  unpack
@@ -184,7 +147,7 @@ public class ExternalAPIOutput implements SubscriberStreamOutput, Comparable
     //  return
     //
 
-    return new ExternalAPIOutput(topicID, jsonString);
+    return new ExternalAPIOutput(schemaAndValue, topicID, jsonString);
   }
   
   /*****************************************

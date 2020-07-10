@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import java.util.Date;
 import java.util.HashMap;
 
+import com.evolving.nglm.core.*;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -17,11 +18,6 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONObject;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SubscriberStreamEvent;
-import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
@@ -46,7 +42,7 @@ public class LoyaltyProgramRequest extends DeliveryRequest implements BonusDeliv
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("loyalty_program_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("operation", Schema.STRING_SCHEMA);
     schemaBuilder.field("loyaltyProgramRequestID", Schema.STRING_SCHEMA);
@@ -126,9 +122,9 @@ public class LoyaltyProgramRequest extends DeliveryRequest implements BonusDeliv
   *
   *****************************************/
 
-  public LoyaltyProgramRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+  public LoyaltyProgramRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
   {
-    super(jsonRoot);
+    super(subscriberProfile,subscriberGroupEpochReader,jsonRoot);
     this.operation = LoyaltyProgramOperation.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "operation", true));
     this.loyaltyProgramRequestID = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramRequestID", true);
     this.loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramID", true);
@@ -214,7 +210,7 @@ public class LoyaltyProgramRequest extends DeliveryRequest implements BonusDeliv
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
 
     //
     //  unpack

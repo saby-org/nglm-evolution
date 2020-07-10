@@ -6,10 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.*;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -49,7 +46,7 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("service_rewardmanager_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("msisdn", Schema.STRING_SCHEMA);
     schemaBuilder.field("providerID", Schema.STRING_SCHEMA);
@@ -164,9 +161,30 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
   *
   *****************************************/
 
-  public RewardManagerRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+  public RewardManagerRequest(DeliveryRequest originatingRequest, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
   {
-    super(jsonRoot);
+    super(originatingRequest,jsonRoot);
+    this.msisdn = JSONUtilities.decodeString(jsonRoot, "msisdn", true);
+    this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
+    this.deliverableID = JSONUtilities.decodeString(jsonRoot, "deliverableID", true);
+    this.deliverableName = JSONUtilities.decodeString(jsonRoot, "deliverableName", true);
+    this.amount = JSONUtilities.decodeDouble(jsonRoot, "amount", true);
+    this.periodQuantity = JSONUtilities.decodeInteger(jsonRoot, "periodQuantity", true);
+    this.periodType = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "periodType", true));
+    this.returnCode = null;
+    this.returnCodeDetails = null;
+    this.returnStatus = null;
+  }
+
+  /*****************************************
+   *
+   *  constructor -- external
+   *
+   *****************************************/
+
+  public RewardManagerRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+  {
+    super(subscriberProfile,subscriberGroupEpochReader,jsonRoot);
     this.msisdn = JSONUtilities.decodeString(jsonRoot, "msisdn", true);
     this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
     this.deliverableID = JSONUtilities.decodeString(jsonRoot, "deliverableID", true);
@@ -276,7 +294,7 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
 
     //
     //  unpack
@@ -541,7 +559,7 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
       
       if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.REWARD+" request DONE");
 
-      RewardManagerRequest rewardRequest = new RewardManagerRequest(JSONUtilities.encodeObject(rewardRequestData), Deployment.getDeliveryManagers().get(deliveryType));
+      RewardManagerRequest rewardRequest = new RewardManagerRequest(evolutionEventContext.getSubscriberState().getSubscriberProfile(),evolutionEventContext.getSubscriberGroupEpochReader(),JSONUtilities.encodeObject(rewardRequestData), Deployment.getDeliveryManagers().get(deliveryType));
       rewardRequest.setModuleID(moduleID);
       rewardRequest.setFeatureID(deliveryRequestSource);
 
