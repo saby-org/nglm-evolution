@@ -2,8 +2,6 @@ package com.evolving.nglm.evolution.extracts;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.evolution.Deployment;
-import com.evolving.nglm.evolution.SubscriberMessageTemplateService;
-import com.evolving.nglm.evolution.TargetService;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import org.json.simple.JSONObject;
 
@@ -15,20 +13,14 @@ import java.io.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+/**
+ * this class process downloading report.
+ */
+
 public class ExtractDownloader implements Runnable
 {
 
   private static final Logger log = LoggerFactory.getLogger(ExtractDownloader.class);
-
-  private static TargetService targetService;
-
-  static
-    {
-      targetService = new TargetService(Deployment.getBrokerServers(), "extractdownloader-targetservice-001" , Deployment.getSubscriberMessageTemplateTopic(), false);
-      targetService.start();
-    }
-
-  private String userID;
   private JSONObject jsonRoot;
   private JSONObject jsonResponse;
   private HttpExchange exchange;
@@ -36,14 +28,21 @@ public class ExtractDownloader implements Runnable
   private Thread t;
   private String threadName;
 
-  public ExtractDownloader(String userID, JSONObject jsonRoot, JSONObject jsonResponse, com.sun.net.httpserver.HttpExchange exchange)
+  /**
+   *
+   * @param jsonRoot      JSONObject containing userID and extractName
+   * @param jsonResponse  JSONObject used to pass the response
+   * @param exchange      HttpExchange context needed to pass extract compressed file
+   */
+  public ExtractDownloader(JSONObject jsonRoot, JSONObject jsonResponse, com.sun.net.httpserver.HttpExchange exchange)
   {
-    this.userID = userID;
     this.jsonRoot = jsonRoot;
     this.jsonResponse = jsonResponse;
     this.exchange = exchange;
     threadName = JSONUtilities.decodeString(jsonRoot,"userID",true) + JSONUtilities.decodeString(jsonRoot,"extractName",true);
   }
+
+
   @Override
   public void run()
   {
@@ -53,9 +52,7 @@ public class ExtractDownloader implements Runnable
 
     try
       {
-        //Report report = new Report(target.getJSONRepresentation(), epochServer.getKey(), null);
-        //String reportName = report.getName();
-        while(ExtractService.isTargetExtractRunning(extractName+"-"+jsonUserID))
+        while(ExtractService.isExtractRunning(extractName+"-"+jsonUserID))
           {
             TimeUnit.SECONDS.sleep(1);
           }
@@ -70,7 +67,8 @@ public class ExtractDownloader implements Runnable
           @Override
           public boolean accept(File f) {
             return Pattern.compile(csvFilenameRegex).matcher(f.getName()).matches();
-          }});
+          }
+        });
 
         File reportFile = null;
 
@@ -138,6 +136,9 @@ public class ExtractDownloader implements Runnable
     }
   }
 
+  /**
+   * start a new thread to process and download
+   */
   public void start()
   {
     if (t == null) {

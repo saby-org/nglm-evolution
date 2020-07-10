@@ -24,8 +24,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
- * This class uses Zookeeper to launch the generation of reports. 
- * When a node is created in the controlDir, it triggers the generation of a report.
+ * This class uses Zookeeper to launch the generation of extract.
+ * When a node is created in the controlDir, it triggers the generation of a extract.
  * During this generation, an ephemeral node is created in lockDir, to prevent another report (of the same type) to be created. 
  *
  */
@@ -107,7 +107,8 @@ public class ExtractManager extends ReportManager
   
   /*****************************************
   *
-  *  processChildren
+  *  override processChildren that is used in watcher event
+   * @see ReportManager#process(WatchedEvent)
   *
   *****************************************/
   @Override

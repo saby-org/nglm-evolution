@@ -2777,7 +2777,7 @@ public class GUIManager
                   break;
 
                 case launchExtract:
-                  jsonResponse = guiManagerBaseManagement.processLaunchExtract(userID, jsonRoot);
+                  jsonResponse = guiManagerBaseManagement.processLaunchExtract(jsonRoot);
                   break;
 
                 case getPresentationStrategyList:
@@ -3985,10 +3985,10 @@ public class GUIManager
                   guiManagerLoyaltyReporting.processDownloadReport(userID, jsonRoot, jsonResponse, exchange);
                   break;
                 case downloadExtractFile:
-                  guiManagerBaseManagement.processDownloadExtract(userID, jsonRoot, jsonResponse, exchange);
+                  guiManagerBaseManagement.processDownloadExtract(jsonRoot, jsonResponse, exchange);
                   break;
                 case launchAndDownloadExtract:
-                  guiManagerBaseManagement.processLaunchAndDownloadExtract(userID,jsonRoot,jsonResponse,exchange);
+                  guiManagerBaseManagement.processLaunchAndDownloadExtract(jsonRoot,jsonResponse,exchange);
               }
           }
         else

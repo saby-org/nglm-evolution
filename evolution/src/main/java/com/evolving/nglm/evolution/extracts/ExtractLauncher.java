@@ -19,6 +19,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.NoSuchElementException;
 
+/**
+ * this is responsible for handle extract and start generating file process into a thread
+ */
 public class ExtractLauncher implements Runnable
 {
 
@@ -37,6 +40,20 @@ public class ExtractLauncher implements Runnable
   private Thread t;
   private String threadName;
 
+  /**
+   *
+   * @param zk                        Zookeeper client
+   *                                  @see ZooKeeper
+   * @param controlDir                zookeeper extract control node path
+   * @param lockDir                   zookeeper extract lock node path
+   * @param zkNodeChild               child node name
+   * @param zkHostList                list of zookeeper hosts
+   * @param brokerServers             kafka broker servers
+   * @param esNode                    elastic search node
+   * @param dfrm                      date format used for file generation
+   * @param extractManagerStatistics  statistic for extract manager
+   * @see ExtractManagerStatistics
+   */
   public ExtractLauncher(ZooKeeper zk,String controlDir,String lockDir, String zkNodeChild, String zkHostList, String brokerServers, String esNode,DateFormat dfrm,ExtractManagerStatistics extractManagerStatistics)
   {
     this.zk = zk;
@@ -193,6 +210,9 @@ public class ExtractLauncher implements Runnable
       }
   }
 
+  /**
+   * start a new thread for extract generating
+   */
   public void start()
   {
     if (t == null) {

@@ -17,17 +17,6 @@ import org.json.simple.JSONObject;
 
 public class ExtractItem
 {
-  /*****************************************
-   *
-   *  configuration
-   *
-   *****************************************/
-
-  //
-  //  logger
-  //
-
-  private static final Logger log = LoggerFactory.getLogger(ExtractItem.class);
 
   /****************************************
    *
@@ -126,7 +115,6 @@ public class ExtractItem
     return result;
   }
 
-  //this method should be part of EvaluationCriterion class but this have to be agreed
   private JSONObject packJSONCriteria(EvaluationCriterion criterion)
   {
     Map criterionMap = new HashMap();

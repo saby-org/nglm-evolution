@@ -21,76 +21,88 @@ import java.text.SimpleDateFormat;
 import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * this class is driving reading from elastic search, put data in topic and write data to csv and compress data
+ */
 public class ExtractDriver
 {
-	private static final Logger log = LoggerFactory.getLogger(ExtractDriver.class);
+  private static final Logger log = LoggerFactory.getLogger(ExtractDriver.class);
 
-	public void produceExtract(
-            ExtractItem extractItem,
-            String zookeeper, 
-			String kafka, 
-			String elasticSearch, 
-			String csvFilename) throws Exception
-	{
-		try
-			{
-				//this part is based on report mechanism and reuse code from there
+  /**
+   *
+   * @param extractItem 		represent extractItem that will be processed @see ExtractItem
+   * @param zookeeper				zookeper connection details
+   * @param kafka						kafka connection details
+   * @param elasticSearch		elastic search connection details
+   * @param csvFilename			name for csv file that will be generate
+   * @throws Exception
+   */
+  public void produceExtract(ExtractItem extractItem, String zookeeper, String kafka, String elasticSearch, String csvFilename) throws Exception
+  {
+    try
+      {
+        //this part is based on report mechanism and reuse code from there
 
-				log.debug("Processing extract " + extractItem.getExtractName());
-				String topic = "Targets_" + extractItem.getExtractName() + "_" + getTopicPrefixDate();
-				String esIndexSubscriber = "subscriberprofile";
-				//String defaultReportPeriodUnit = target.getDefaultReportPeriodUnit();
-				//int defaultReportPeriodQuantity = target.getDefaultReportPeriodQuantity();
-				log.debug("PHASE 1 : read ElasticSearch");
-				LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-				esIndexWithQuery.put(esIndexSubscriber, EvaluationCriterion.esCountMatchCriteriaGetQuery(extractItem.getEvaluationCriterionList()));
+        log.debug("Processing extract " + extractItem.getExtractName());
+        String topic = "Targets_" + extractItem.getExtractName() + "_" + getTopicPrefixDate();
+        String esIndexSubscriber = "subscriberprofile";
+        //String defaultReportPeriodUnit = target.getDefaultReportPeriodUnit();
+        //int defaultReportPeriodQuantity = target.getDefaultReportPeriodQuantity();
+        log.debug("PHASE 1 : read ElasticSearch");
+        LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
+        esIndexWithQuery.put(esIndexSubscriber, EvaluationCriterion.esCountMatchCriteriaGetQuery(extractItem.getEvaluationCriterionList()));
 
-				ReportEsReader reportEsReader = new ReportEsReader(
-								SubscriberReportObjects.KEY_STR,
-								topic,
-								kafka,
-								zookeeper,
-								elasticSearch,
-								esIndexWithQuery,
-								true,
-								extractItem.getReturnNoOfRecords()
-				);
-				reportEsReader.start();
-				try
-					{
-						TimeUnit.SECONDS.sleep(1);
-					}
-				catch (InterruptedException e)
-					{
-					}
+        ReportEsReader reportEsReader = new ReportEsReader(
+                SubscriberReportObjects.KEY_STR,
+                topic,
+                kafka,
+                zookeeper,
+                elasticSearch,
+                esIndexWithQuery,
+                true,
+                extractItem.getReturnNoOfRecords()
+        );
+        reportEsReader.start();
+        try
+          {
+            TimeUnit.SECONDS.sleep(1);
+          }
+        catch (InterruptedException e)
+          {
+          }
 
-				log.debug("PHASE 2 : write csv file ");
-				ExtractCsvWriter.main(new String[]{
-								kafka, topic, csvFilename
-				});
-				ReportUtils.cleanupTopics(topic);
-				log.debug("Finished with extract");
-			}catch (Exception ex)
-			{
-				throw new Exception("Failed generate target ",ex);
-			}
-	}
+        log.debug("PHASE 2 : write csv file ");
+        ExtractCsvWriter.main(new String[]{
+                kafka, topic, csvFilename
+        });
+        ReportUtils.cleanupTopics(topic);
+        log.debug("Finished with extract");
+      }
+    catch (Exception ex)
+    {
+      throw new Exception("Failed generate target ", ex);
+    }
+  }
 
-	private String getTopicPrefixDate()
-	{
-		final String DateFormat = "yyyyMMdd_HHmmss";
-		String topicSuffix = "";
-		try
-			{
-				SimpleDateFormat sdf = new SimpleDateFormat(DateFormat);
-				topicSuffix = sdf.format(SystemTime.getCurrentTime());
-			}
-		catch (IllegalArgumentException e)
-			{
-				log.error(DateFormat+" is invalid, using default "+e.getLocalizedMessage());
-				topicSuffix = ""+System.currentTimeMillis();
-			}
-		return topicSuffix;
-	}
+  /**
+   *
+   * @return		topic prefix date
+   */
+  private String getTopicPrefixDate()
+  {
+    final String DateFormat = "yyyyMMdd_HHmmss";
+    String topicSuffix = "";
+    try
+      {
+        SimpleDateFormat sdf = new SimpleDateFormat(DateFormat);
+        topicSuffix = sdf.format(SystemTime.getCurrentTime());
+      }
+    catch (IllegalArgumentException e)
+      {
+        log.error(DateFormat+" is invalid, using default "+e.getLocalizedMessage());
+        topicSuffix = ""+System.currentTimeMillis();
+      }
+    return topicSuffix;
+  }
 
 }

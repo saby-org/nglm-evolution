@@ -27,8 +27,10 @@ public class ExtractService
   private static ZooKeeper zk = null;
   private static final int NB_TIMES_TO_TRY = 10;
 
-  /*
-   * Called by GuiManager to trigger a one-time report
+  /**
+   * Put an extract in zookeeper for processing. Is called by GUImanager
+   * @param extractItem   contains all information needed by an extract. The object in serialized as JSON and put as content for zookeeper node
+   * @see ExtractItem
    */
   public static void launchGenerateExtract(ExtractItem extractItem)
   {
@@ -64,7 +66,12 @@ public class ExtractService
     return (zookeeper != null) && (zookeeper.getState() == ZooKeeper.States.CONNECTED);
   }
 
-  public static boolean isTargetExtractRunning(String targetName) {
+  /**
+   * Identify if an extract is in process
+   * @param extractName   Identify the name how this was passed at launch.
+   * @return              true if extract is in processing
+   */
+  public static boolean isExtractRunning (String extractName) {
     try
       {
         if (getZKConnection())
@@ -72,7 +79,7 @@ public class ExtractService
             List<String> children = zk.getChildren(ExtractManager.getControlDir(), false);
             for(String child : children)
               {
-                if(child.contains(targetName))
+                if(child.contains(extractName))
                   {
                     String znode = ExtractManager.getControlDir() + File.separator+child;
                     return (zk.exists(znode, false) != null);
@@ -92,6 +99,13 @@ public class ExtractService
     return false;
   }
 
+  /**
+   * verify if an zk connection is available. If the connection is not valid the method will try to reinitialize the connection
+   * If connection succeed before number of tries the methd return true and zk variable will store new valid connection\
+   * if connection not succeed in number of retries method will return false
+   * @see     ExtractService#NB_TIMES_TO_TRY
+   * @return  true if connection valid or reinitialized. false if reinitialization fails after number of retries
+   */
   private static boolean getZKConnection()  {
     if (!isConnectionValid(zk)) {
       log.debug("Trying to acquire ZooKeeper connection to "+ Deployment.getZookeeperConnect());

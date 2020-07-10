@@ -21,7 +21,7 @@ import java.util.*;
 import java.util.zip.ZipOutputStream;
 
 /**
- * This implements the phase 3 for the Subscriber report.
+ * This implements the phase 3 for the extract generation.
  *
  */
 public class ExtractCsvWriter implements ReportCsvFactory

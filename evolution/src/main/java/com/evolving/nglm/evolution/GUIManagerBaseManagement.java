@@ -2394,9 +2394,9 @@ public class GUIManagerBaseManagement extends GUIManager
    *
    *****************************************/
 
-  void processDownloadExtract(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
+  void processDownloadExtract(JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
   {
-    ExtractDownloader extractDownloader = new ExtractDownloader(userID,jsonRoot,jsonResponse,exchange);
+    ExtractDownloader extractDownloader = new ExtractDownloader(jsonRoot,jsonResponse,exchange);
     extractDownloader.start();
   }
 
@@ -2406,7 +2406,7 @@ public class GUIManagerBaseManagement extends GUIManager
    *
    *****************************************/
 
-  JSONObject processLaunchExtract(String userID, JSONObject jsonRoot)
+  JSONObject processLaunchExtract(JSONObject jsonRoot)
   {
     log.trace("In processLaunchTargetExtract : "+jsonRoot);
     HashMap<String,Object> response = new HashMap<String,Object>();
@@ -2414,7 +2414,7 @@ public class GUIManagerBaseManagement extends GUIManager
     try
       {
         ExtractItem extractItem = new ExtractItem(jsonRoot);
-        if (ExtractService.isTargetExtractRunning(extractItem.getExtractName()+"-"+extractItem.getUserId()))
+        if (ExtractService.isExtractRunning(extractItem.getExtractName()+"-"+extractItem.getUserId()))
           {
             responseCode = "targetIsAlreadyRunning";
           } else
@@ -2437,9 +2437,9 @@ public class GUIManagerBaseManagement extends GUIManager
    *
    *****************************************/
 
-  void processLaunchAndDownloadExtract(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
+  void processLaunchAndDownloadExtract(JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
   {
-    JSONObject launchResponse = this.processLaunchExtract(userID,jsonRoot);
+    JSONObject launchResponse = this.processLaunchExtract(jsonRoot);
     String responseCode = JSONUtilities.decodeString(launchResponse,"responseCode",true);
     if(responseCode != "ok")
       {
@@ -2459,7 +2459,7 @@ public class GUIManagerBaseManagement extends GUIManager
       }
     else
       {
-        processDownloadExtract(userID,jsonRoot,jsonResponse,exchange);
+        processDownloadExtract(jsonRoot,jsonResponse,exchange);
       }
   }
 
