@@ -2092,7 +2092,7 @@ public class GUIManager
     JobScheduler guiManagerJobScheduler = new JobScheduler("GUIManager");
     long uniqueID = 0;
     String periodicGenerationCronEntry = "1,5,10,15,20,25,30,35,40,45,50,55 * * * *";
-    ScheduledJob recurrnetCampaignCreationJob = new RecurrnetCampaignCreationJob(uniqueID++, "Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getBaseTimeZone(), false);
+    ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob(uniqueID++, "Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getBaseTimeZone(), false);
     if(recurrnetCampaignCreationJob.isProperlyConfigured()) guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
     guiManagerJobScheduler.runScheduler();
     
@@ -26471,7 +26471,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     return response;
   }
 
-  public class RecurrnetCampaignCreationJob extends ScheduledJob
+  public class RecurrentCampaignCreationJob extends ScheduledJob
   {
     /***********************************
      *
@@ -26479,7 +26479,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
      *
      ************************************/
 
-    public RecurrnetCampaignCreationJob(long schedulingUniqueID, String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
+    public RecurrentCampaignCreationJob(long schedulingUniqueID, String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
     {
       super(schedulingUniqueID, jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart);
     }
@@ -26612,6 +26612,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     }
                 }
             }
+          else
+            {
+              if (log.isErrorEnabled()) log.error("invalid scheduling {}", scheduling);
+            }
           
           //
           //  filter
@@ -26658,7 +26662,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           journeyJSON.put("id", journeyID);
           journeyJSON.put("occurrenceNumber", ++occurrenceNumber);
           journeyJSON.put("name", recurrentJourney.getGUIManagedObjectName() + "_" + occurrenceNumber);
-          journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + "_" + occurrenceNumber);
+          journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + " - " + occurrenceNumber);
           journeyJSON.put("effectiveStartDate", recurrentJourney.formatDateField(startDate));
           journeyJSON.put("effectiveEndDate", recurrentJourney.formatDateField(RLMDateUtils.addDays(startDate, daysBetween, Deployment.getBaseTimeZone())));
           
@@ -26668,15 +26672,15 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           
           processPutJourney("0", journeyJSON, recurrentJourney.getGUIManagedObjectType());
           processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), true);
+          
+          //
+          //  lastCreatedOccurrenceNumber
+          //
+          
+          JSONObject recJourneyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
+          recJourneyJSON.put("lastCreatedOccurrenceNumber", occurrenceNumber);
+          processPutJourney("0", recJourneyJSON, recurrentJourney.getGUIManagedObjectType());
         }
-      
-      //
-      //  lastCreatedOccurrenceNumber
-      //
-      
-      JSONObject journeyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
-      journeyJSON.put("lastCreatedOccurrenceNumber", occurrenceNumber);
-      processPutJourney("0", journeyJSON, recurrentJourney.getGUIManagedObjectType());
     }
     
     //
