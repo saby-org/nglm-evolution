@@ -688,6 +688,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     guiPresentationMap.put(ORIGINATINGDELIVERYREQUESTID, getOriginatingDeliveryRequestID());
     guiPresentationMap.put(EVENTDATE, getDateString(getEventDate()));
     guiPresentationMap.put(EVENTID, getEventID());    
+    guiPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation()); 
     guiPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
     guiPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
     guiPresentationMap.put(ACTIVITYTYPE, getActivityType().toString());
@@ -707,6 +708,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     thirdPartyPresentationMap.put(ORIGINATINGDELIVERYREQUESTID, getOriginatingDeliveryRequestID());
     thirdPartyPresentationMap.put(EVENTDATE, getDateString(getEventDate()));
     thirdPartyPresentationMap.put(EVENTID, getEventID()); 
+    thirdPartyPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation()); 
     thirdPartyPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
     thirdPartyPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
     thirdPartyPresentationMap.put(ACTIVITYTYPE, getActivityType().toString());

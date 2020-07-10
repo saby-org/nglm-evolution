@@ -50,6 +50,7 @@ public class ODRReportCsvWriter implements ReportCsvFactory
   private static final String voucherCode = "voucherCode";
   private static final String returnCode = "returnCode";
   private static final String returnCodeDescription  = "returnCodeDescription ";
+  private static final String deliveryStatus = "deliveryStatus";
 
   private static List<String> headerFieldsOrder = new LinkedList<String>();
   static 
@@ -81,6 +82,7 @@ public class ODRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(voucherCode);
     headerFieldsOrder.add(returnCode);
     headerFieldsOrder.add(returnCodeDescription);
+    headerFieldsOrder.add(deliveryStatus);
   }
 
   @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
@@ -239,6 +241,11 @@ public class ODRReportCsvWriter implements ReportCsvFactory
             Object code = odrFields.get(returnCode);
             oderRecs.put(returnCode, code);
             oderRecs.put(returnCodeDescription , (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
+            if (code instanceof Integer && code != null)
+              {
+                int codeInt = (int) code;
+                oderRecs.put(deliveryStatus, (codeInt == 0) ? DeliveryManager.DeliveryStatus.Delivered.toString() : DeliveryManager.DeliveryStatus.Failed.toString());
+              }
           }    
 
         //
