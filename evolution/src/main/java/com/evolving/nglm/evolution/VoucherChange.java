@@ -8,7 +8,7 @@ import org.apache.kafka.connect.data.*;
 import java.util.Date;
 
 // main purpose is to trigger request to modify voucher in evolutionEngine, might be used as an event
-public class VoucherChange implements EvolutionEngineEvent, SubscriberStreamOutput {
+public class VoucherChange extends SubscriberStreamOutput implements EvolutionEngineEvent {
 
   //action
   public enum VoucherChangeAction {
@@ -27,7 +27,8 @@ public class VoucherChange implements EvolutionEngineEvent, SubscriberStreamOutp
   static {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("voucher_change");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),1));
+    for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.builder().schema());
     schemaBuilder.field("newVoucherExpiryDate", Timestamp.builder().optional().schema());
@@ -51,6 +52,7 @@ public class VoucherChange implements EvolutionEngineEvent, SubscriberStreamOutp
   public static Object pack(Object value) {
     VoucherChange voucherChange = (VoucherChange) value;
     Struct struct = new Struct(schema);
+    packSubscriberStreamOutput(struct,voucherChange);
     struct.put("subscriberID",voucherChange.getSubscriberID());
     struct.put("eventDate",voucherChange.getEventDate());
     struct.put("newVoucherExpiryDate",voucherChange.getEventDate());
@@ -67,7 +69,9 @@ public class VoucherChange implements EvolutionEngineEvent, SubscriberStreamOutp
   }
 
   public static VoucherChange unpack(SchemaAndValue schemaAndValue) {
+    Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
     Date eventDateTime = (Date) valueStruct.get("eventDate");
@@ -81,7 +85,7 @@ public class VoucherChange implements EvolutionEngineEvent, SubscriberStreamOutp
     String featureID = valueStruct.getString("featureID");
     String origin = valueStruct.getString("origin");
     RESTAPIGenericReturnCodes returnStatus = RESTAPIGenericReturnCodes.fromGenericResponseMessage(valueStruct.getString("returnStatus"));
-    return new VoucherChange(subscriberID,eventDateTime,newVoucherExpiryDate,eventID,action,voucherCode,voucherID,fileID,moduleID,featureID,origin,returnStatus);
+    return new VoucherChange(schemaAndValue,subscriberID,eventDateTime,newVoucherExpiryDate,eventID,action,voucherCode,voucherID,fileID,moduleID,featureID,origin,returnStatus);
   }
 
   private String subscriberID;
@@ -131,6 +135,22 @@ public class VoucherChange implements EvolutionEngineEvent, SubscriberStreamOutp
   public void setReturnStatus(RESTAPIGenericReturnCodes returnStatus) { this.returnStatus = returnStatus; }
 
   public VoucherChange(String subscriberID, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus) {
+    this.subscriberID = subscriberID;
+    this.eventDate = eventDate;
+    this.newVoucherExpiryDate = newVoucherExpiryDate;
+    this.eventID = eventID;
+    this.action = action;
+    this.voucherCode = voucherCode;
+    this.voucherID = voucherID;
+    this.fileID = fileID;
+    this.moduleID = moduleID;
+    this.featureID = featureID;
+    this.origin = origin;
+    this.returnStatus = returnStatus;
+  }
+
+  public VoucherChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus) {
+    super(schemaAndValue);
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
     this.newVoucherExpiryDate = newVoucherExpiryDate;

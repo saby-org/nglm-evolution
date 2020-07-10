@@ -12,16 +12,13 @@ import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
 import com.evolving.nglm.core.ReferenceDataReader;
 
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class JourneyStatisticWrapper implements SubscriberStreamOutput
+public class JourneyStatisticWrapper extends SubscriberStreamOutput
 {
   /*****************************************
   *
@@ -38,7 +35,8 @@ public class JourneyStatisticWrapper implements SubscriberStreamOutput
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_statistic_wrapper");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(0));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),1));
+    for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberStratum", SchemaBuilder.array(Schema.STRING_SCHEMA));
     schemaBuilder.field("statusUpdated", Schema.BOOLEAN_SCHEMA);
@@ -167,8 +165,9 @@ public class JourneyStatisticWrapper implements SubscriberStreamOutput
   *  and must be maintained to keep the key unique.
   *
   *****************************************/
-  private JourneyStatisticWrapper(String journeyID, List<String> subscriberStratum, boolean statusUpdated, RewardHistory lastRewards, JourneyStatistic journeyStatistic)
+  private JourneyStatisticWrapper(SchemaAndValue schemaAndValue, String journeyID, List<String> subscriberStratum, boolean statusUpdated, RewardHistory lastRewards, JourneyStatistic journeyStatistic)
   {
+    super(schemaAndValue);
     this.journeyID = journeyID;
     this.subscriberStratum = subscriberStratum;
     this.statusUpdated = statusUpdated;
@@ -186,6 +185,7 @@ public class JourneyStatisticWrapper implements SubscriberStreamOutput
   {
     JourneyStatisticWrapper journeyStatisticWrapper = (JourneyStatisticWrapper) value;
     Struct struct = new Struct(schema);
+    packSubscriberStreamOutput(struct,journeyStatisticWrapper);
     struct.put("journeyID", journeyStatisticWrapper.getJourneyID());
     struct.put("subscriberStratum", journeyStatisticWrapper.getSubscriberStratum());
     struct.put("statusUpdated", journeyStatisticWrapper.isStatusUpdated());
@@ -214,7 +214,7 @@ public class JourneyStatisticWrapper implements SubscriberStreamOutput
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
     //
     //  unpack
@@ -231,6 +231,6 @@ public class JourneyStatisticWrapper implements SubscriberStreamOutput
     //  return
     //
 
-    return new JourneyStatisticWrapper(journeyID, subscriberStratum, statusUpdated, lastRewards, journeyStatistic);
+    return new JourneyStatisticWrapper(schemaAndValue, journeyID, subscriberStratum, statusUpdated, lastRewards, journeyStatistic);
   }
 }

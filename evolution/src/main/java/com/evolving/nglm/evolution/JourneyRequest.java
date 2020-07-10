@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import java.util.Date;
 import java.util.HashMap;
 
+import com.evolving.nglm.core.*;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -17,12 +18,6 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONObject;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SubscriberStreamEvent;
-import com.evolving.nglm.core.SubscriberStreamOutput;
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
@@ -30,7 +25,7 @@ import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
-public class JourneyRequest extends DeliveryRequest implements SubscriberStreamEvent, SubscriberStreamOutput, Action, BonusDelivery
+public class JourneyRequest extends DeliveryRequest implements SubscriberStreamEvent, Action, BonusDelivery
 {
   /*****************************************
   *
@@ -191,9 +186,9 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   *****************************************/
 
-  public JourneyRequest(String uniqueKey, String subscriberID, String deliveryRequestSource, boolean universalControlGroup)
+  public JourneyRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, String uniqueKey, String subscriberID, String deliveryRequestSource, boolean universalControlGroup)
   {
-    super(uniqueKey, subscriberID, "journeyFulfillment", deliveryRequestSource, universalControlGroup);
+    super(subscriberProfile,subscriberGroupEpochReader,uniqueKey, subscriberID, "journeyFulfillment", deliveryRequestSource, universalControlGroup);
     this.journeyRequestID = uniqueKey;
     this.eventDate = SystemTime.getCurrentTime();
     this.journeyID = deliveryRequestSource;
@@ -212,9 +207,9 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   *****************************************/
 
-  public JourneyRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+  public JourneyRequest(DeliveryRequest originatingRequest, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
   {
-    super(jsonRoot);
+    super(originatingRequest,jsonRoot);
     this.journeyRequestID = JSONUtilities.decodeString(jsonRoot, "journeyRequestID", true);
     this.eventDate = JSONUtilities.decodeDate(jsonRoot, "eventDate", true);
     this.journeyID = JSONUtilities.decodeString(jsonRoot, "journeyID", true);
@@ -323,7 +318,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
 
     //
     //  unpack

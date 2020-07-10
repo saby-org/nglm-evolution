@@ -275,25 +275,6 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       this.templateID = templateID;
       this.messageTags = messageTags;
     }
-    
-    /*****************************************
-    *
-    *  constructor -- external
-    *
-    *****************************************/
-    
-    public SMSNotificationManagerRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
-    {
-      super(jsonRoot);
-      this.destination = JSONUtilities.decodeString(jsonRoot, "destination", true);
-      this.source = JSONUtilities.decodeString(jsonRoot, "source", true);
-      this.language = JSONUtilities.decodeString(jsonRoot, "language", true);
-      this.templateID = JSONUtilities.decodeString(jsonRoot, "templateID", true);
-      this.messageTags = decodeMessageTags(JSONUtilities.decodeJSONArray(jsonRoot, "messageTags", new JSONArray()));
-      this.status = MessageStatus.PENDING;
-      this.returnCode = MessageStatus.PENDING.getReturnCode();
-      this.returnCodeDetails = null;
-    }
 
     /*****************************************
     *
@@ -410,7 +391,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
 
       Schema schema = schemaAndValue.schema();
       Object value = schemaAndValue.value();
-      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
+      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
 
       //
       //  unpack

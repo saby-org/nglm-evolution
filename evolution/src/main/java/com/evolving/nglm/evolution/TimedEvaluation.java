@@ -21,7 +21,7 @@ import org.apache.kafka.connect.data.Timestamp;
 import java.util.Date;
 import java.util.Objects;
 
-public class TimedEvaluation implements EvolutionEngineEvent, SubscriberStreamOutput, Comparable
+public class TimedEvaluation implements EvolutionEngineEvent, Comparable
 {
   /*****************************************
   *

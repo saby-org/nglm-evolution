@@ -8,11 +8,7 @@ package com.evolving.nglm.evolution;
 
 import java.util.Date;
 
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.data.*;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -22,7 +18,7 @@ import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 
 
-public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput, Action
+public class TokenChange extends SubscriberStreamOutput implements EvolutionEngineEvent, Action
 {
   
   // static
@@ -49,7 +45,8 @@ public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("token_change");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),3));
+    for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDateTime", Timestamp.builder().schema());
     schemaBuilder.field("eventID", Schema.STRING_SCHEMA);
@@ -158,6 +155,25 @@ public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput
   }
 
   /*****************************************
+   *
+   * constructor unpack
+   *
+   *****************************************/
+  public TokenChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, Integer featureID)
+  {
+    super(schemaAndValue);
+    this.subscriberID = subscriberID;
+    this.eventDateTime = eventDateTime;
+    this.eventID = eventID;
+    this.tokenCode = tokenCode;
+    this.action = action;
+    this.returnStatus = returnStatus;
+    this.origin = origin;
+    this.moduleID = moduleID;
+    this.featureID = featureID;
+  }
+
+  /*****************************************
   *
   * pack
   *
@@ -167,6 +183,7 @@ public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput
   {
     TokenChange tokenChange = (TokenChange) value;
     Struct struct = new Struct(schema);
+    packSubscriberStreamOutput(struct,tokenChange);
     struct.put("subscriberID",tokenChange.getSubscriberID());
     struct.put("eventDateTime",tokenChange.geteventDateTime());
     struct.put("eventID", tokenChange.getEventID());
@@ -193,7 +210,7 @@ public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
     //
     // unpack
@@ -218,7 +235,7 @@ public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput
     // return
     //
 
-    return new TokenChange(subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, moduleID, featureID);
+    return new TokenChange(schemaAndValue, subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, moduleID, featureID);
   }
   
   

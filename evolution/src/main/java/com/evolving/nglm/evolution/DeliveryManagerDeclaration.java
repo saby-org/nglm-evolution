@@ -11,22 +11,24 @@ import com.evolving.nglm.evolution.DeliveryManager.DeliveryGuarantee;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 
 import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.DeploymentManagedObject;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class DeliveryManagerDeclaration
 {
+
+  private static final Logger log = LoggerFactory.getLogger(DeliveryManagerDeclaration.class);
+
   /****************************************
   *
   *  data
@@ -45,9 +47,12 @@ public class DeliveryManagerDeclaration
   private int retries;
   private int acknowledgementTimeoutSeconds;
   private int correlatorUpdateTimeoutSeconds;
+  private int correlatorCleanerFrequencySeconds;
   private String providerID;
   private String providerName;
   private String profileExternalSubscriberIDField;
+  // to replace previous one, and check with communication channels destination as well
+  private Map<String,CriterionField> subscriberProfileFields;
 
   /*****************************************
   *
@@ -67,9 +72,11 @@ public class DeliveryManagerDeclaration
   public int getRetries() { return retries; }
   public int getAcknowledgementTimeoutSeconds() { return acknowledgementTimeoutSeconds; }
   public int getCorrelatorUpdateTimeoutSeconds() { return correlatorUpdateTimeoutSeconds; }
+  public int getCorrelatorCleanerFrequencyMilliSeconds() { return correlatorCleanerFrequencySeconds * 1000; }
   public String getProviderID() { return providerID; }
   public String getProviderName() { return providerName; }
   public String getProfileExternalSubscriberIDField() { return profileExternalSubscriberIDField; }
+  public Map<String,CriterionField> getSubscriberProfileFields() { return subscriberProfileFields; }
 
   //
   // derived
@@ -122,9 +129,11 @@ public class DeliveryManagerDeclaration
     this.retries = JSONUtilities.decodeInteger(jsonRoot, "retries", 0);
     this.acknowledgementTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "acknowledgementTimeoutSeconds", 86400);
     this.correlatorUpdateTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "correlatorUpdateTimeoutSeconds", 86400);
+    this.correlatorCleanerFrequencySeconds = JSONUtilities.decodeInteger(jsonRoot, "correlatorCleanerFrequencySeconds", 3600);
     this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", false);
     this.providerName = JSONUtilities.decodeString(jsonRoot, "providerName", false);
     this.profileExternalSubscriberIDField = JSONUtilities.decodeString(jsonRoot, "profileExternalSubscriberIDField", false);
+    this.subscriberProfileFields = decodeSubscriberProfileFields(jsonRoot);
   }
 
   /*****************************************
@@ -149,5 +158,29 @@ public class DeliveryManagerDeclaration
         requestTopics.add(JSONUtilities.decodeString(jsonRoot, "requestTopic", true));
       }
     return requestTopics;
+  }
+
+  /*****************************************
+  *
+  *  decodeRequestTopics
+  *
+  *****************************************/
+
+  private Map<String,CriterionField> decodeSubscriberProfileFields(JSONObject jsonRoot) throws JSONUtilitiesException
+  {
+    Map<String,CriterionField> subscriberProfileFields = new LinkedHashMap<>();
+    JSONArray jsonArray = JSONUtilities.decodeJSONArray(jsonRoot, "subscriberProfileFields", false);
+    if(jsonArray==null) return subscriberProfileFields;
+    for (int i=0; i<jsonArray.size(); i++)
+      {
+        String fieldId = (String)jsonArray.get(i);
+        CriterionField criterionField = Deployment.getProfileCriterionFields().get(fieldId);
+        if(criterionField!=null){
+          subscriberProfileFields.put(fieldId,criterionField);
+        }else{
+          log.error("subscriberProfileFields {} in deliveryManagerDeclaration is not a profileCriterionField",fieldId);
+        }
+    }
+    return subscriberProfileFields;
   }
 }

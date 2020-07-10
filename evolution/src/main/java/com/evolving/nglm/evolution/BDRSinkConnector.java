@@ -40,13 +40,6 @@ public class BDRSinkConnector extends SimpleESSinkConnector
   
   public static class BDRSinkConnectorTask extends StreamESSinkTask
   {
-
-    /****************************************
-    *
-    *  attributes
-    *
-    ****************************************/
-    private SubscriberProfileService subscriberProfileService;
     
     //
     //  logger
@@ -68,12 +61,6 @@ public class BDRSinkConnector extends SimpleESSinkConnector
 
       super.start(taskConfig);
 
-      //
-      //  services
-      //
-      
-      subscriberProfileService = SinkConnectorUtils.init();
-
     }
 
     /*****************************************
@@ -84,11 +71,6 @@ public class BDRSinkConnector extends SimpleESSinkConnector
 
     @Override public void stop()
     {
-      //
-      //  services
-      //
-
-      if (subscriberProfileService != null) subscriberProfileService.stop();
 
       //
       //  super
@@ -121,7 +103,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
         
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", commodityRequest.getSubscriberID());
-        SinkConnectorUtils.putAlternateIDs(commodityRequest.getSubscriberID(), documentMap, subscriberProfileService);
+        SinkConnectorUtils.putAlternateIDs(commodityRequest.getAlternateIDs(), documentMap);
         documentMap.put("eventDatetime", commodityRequest.getEventDate()!=null?dateFormat.format(commodityRequest.getEventDate()):"");
         documentMap.put("deliveryRequestID", commodityRequest.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", commodityRequest.getOriginatingDeliveryRequestID());

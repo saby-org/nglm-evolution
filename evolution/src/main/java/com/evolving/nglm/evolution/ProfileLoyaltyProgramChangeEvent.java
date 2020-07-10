@@ -8,11 +8,7 @@ package com.evolving.nglm.evolution;
 
 import java.util.Date;
 
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.data.*;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -20,7 +16,7 @@ import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.EvolutionEngineEvent;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 
-public class ProfileLoyaltyProgramChangeEvent implements EvolutionEngineEvent, SubscriberStreamOutput
+public class ProfileLoyaltyProgramChangeEvent extends SubscriberStreamOutput implements EvolutionEngineEvent
 {
   /*****************************************
   *
@@ -37,7 +33,8 @@ public class ProfileLoyaltyProgramChangeEvent implements EvolutionEngineEvent, S
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("profileLoyaltyProgramChangeEvent");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),1));
+    for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("loyaltyProgramID", Schema.STRING_SCHEMA);
@@ -114,6 +111,22 @@ public class ProfileLoyaltyProgramChangeEvent implements EvolutionEngineEvent, S
 
   /*****************************************
   *
+  * constructor unpack
+  *
+  *****************************************/
+
+  public ProfileLoyaltyProgramChangeEvent(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, String loyaltyProgramID, LoyaltyProgramType loyaltyProgramType, ParameterMap infos)
+  {
+    super(schemaAndValue);
+    this.subscriberID = subscriberID;
+    this.eventDate = eventDate;
+    this.loyaltyProgramID = loyaltyProgramID;
+    this.loyaltyProgramType = loyaltyProgramType;
+    this.infos = infos;
+  }
+
+  /*****************************************
+  *
   * pack
   *
   *****************************************/
@@ -122,6 +135,7 @@ public class ProfileLoyaltyProgramChangeEvent implements EvolutionEngineEvent, S
   {
     ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = (ProfileLoyaltyProgramChangeEvent) value;
     Struct struct = new Struct(schema);
+    packSubscriberStreamOutput(struct,profileLoyaltyProgramChangeEvent);
     struct.put("subscriberID", profileLoyaltyProgramChangeEvent.getSubscriberID());
     struct.put("eventDate", profileLoyaltyProgramChangeEvent.getEventDate());
     struct.put("loyaltyProgramID", profileLoyaltyProgramChangeEvent.getLoyaltyProgramID());
@@ -150,7 +164,7 @@ public class ProfileLoyaltyProgramChangeEvent implements EvolutionEngineEvent, S
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
     //
     // unpack
@@ -167,6 +181,6 @@ public class ProfileLoyaltyProgramChangeEvent implements EvolutionEngineEvent, S
     // return
     //
 
-    return new ProfileLoyaltyProgramChangeEvent(subscriberID, eventDate, loyaltyProgramID, loyaltyProgramType, infos);
+    return new ProfileLoyaltyProgramChangeEvent(schemaAndValue, subscriberID, eventDate, loyaltyProgramID, loyaltyProgramType, infos);
   }
 }

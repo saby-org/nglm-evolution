@@ -144,9 +144,9 @@ public class PointFulfillmentRequest extends DeliveryRequest implements BonusDel
   *
   *****************************************/
 
-  public PointFulfillmentRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+  public PointFulfillmentRequest(DeliveryRequest originatingRequest, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
   {
-    super(jsonRoot);
+    super(originatingRequest,jsonRoot);
     this.pointID = JSONUtilities.decodeString(jsonRoot, "pointID", true);
     this.operation = CommodityDeliveryOperation.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "operation", true));
     this.amount = JSONUtilities.decodeInteger(jsonRoot, "amount", true);
@@ -241,7 +241,7 @@ public class PointFulfillmentRequest extends DeliveryRequest implements BonusDel
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
 
     //  unpack
     //

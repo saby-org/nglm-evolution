@@ -324,27 +324,6 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
 
     /*****************************************
     *
-    *  constructor -- external
-    *
-    *****************************************/
-    
-    public MailNotificationManagerRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
-    {
-      super(jsonRoot);
-      this.destination = JSONUtilities.decodeString(jsonRoot, "destination", true);
-      this.fromAddress = JSONUtilities.decodeString(jsonRoot, "fromAddress", true);
-      this.language = JSONUtilities.decodeString(jsonRoot, "language", true);
-      this.templateID = JSONUtilities.decodeString(jsonRoot, "templateID", true);
-      this.subjectTags = decodeMessageTags(JSONUtilities.decodeJSONArray(jsonRoot, "subjectTags", new JSONArray()));
-      this.htmlBodyTags = decodeMessageTags(JSONUtilities.decodeJSONArray(jsonRoot, "htmlBodyTags", new JSONArray()));
-      this.textBodyTags = decodeMessageTags(JSONUtilities.decodeJSONArray(jsonRoot, "textBodyTags", new JSONArray()));
-      this.status = MessageStatus.PENDING;
-      this.returnCode = MessageStatus.PENDING.getReturnCode();
-      this.returnCodeDetails = null;
-    }
-
-    /*****************************************
-    *
     *  decodeMessageTags
     *
     *****************************************/
@@ -476,7 +455,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
 
       Schema schema = schemaAndValue.schema();
       Object value = schemaAndValue.value();
-      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
+      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
 
       //
       //  unpack

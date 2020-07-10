@@ -320,9 +320,9 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public INFulfillmentRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+    public INFulfillmentRequest(DeliveryRequest initialDeliveryRequest, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
     {
-      super(jsonRoot);
+      super(initialDeliveryRequest,jsonRoot);
       this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
       this.commodityID = JSONUtilities.decodeString(jsonRoot, "commodityID", true);
       this.commodityName = JSONUtilities.decodeString(jsonRoot, "commodityName", false);
@@ -433,7 +433,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
 
       Schema schema = schemaAndValue.schema();
       Object value = schemaAndValue.value();
-      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
+      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
 
       //  unpack
       //

@@ -14,7 +14,7 @@ import org.apache.kafka.common.serialization.Serializer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-public class SubscriberTrace implements SubscriberStreamOutput
+public class SubscriberTrace extends SubscriberStreamOutput
 {
   private String subscriberTraceMessage;
 

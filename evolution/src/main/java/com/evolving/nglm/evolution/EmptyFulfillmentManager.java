@@ -295,24 +295,6 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
 
     /*****************************************
     *
-    *  constructor -- external
-    *
-    *****************************************/
-
-    public EmptyFulfillmentRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
-    {
-      super(jsonRoot);
-      this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
-      this.commodityID = JSONUtilities.decodeString(jsonRoot, "commodityID", true);
-      this.operation = EmptyFulfillmentOperation.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "operation", true));
-      this.amount = JSONUtilities.decodeInteger(jsonRoot, "amount", false);
-      this.status = EmptyFulfillmentStatus.PENDING;
-      this.returnCode = EmptyFulfillmentStatus.PENDING.getExternalRepresentation();
-      this.returnCodeDetails = "";
-    }
-
-    /*****************************************
-    *
     *  constructor -- unpack
     *
     *****************************************/
@@ -398,7 +380,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
 
       Schema schema = schemaAndValue.schema();
       Object value = schemaAndValue.value();
-      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
+      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
 
       //  unpack
       //

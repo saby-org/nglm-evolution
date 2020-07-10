@@ -47,13 +47,6 @@ public class ODRSinkConnector extends SimpleESSinkConnector
   public static class ODRSinkConnectorTask extends StreamESSinkTask
   {
 
-    /****************************************
-    *
-    *  attributes
-    *
-    ****************************************/
-    private SubscriberProfileService subscriberProfileService;
-
     /*****************************************
     *
     *  start
@@ -83,8 +76,6 @@ public class ODRSinkConnector extends SimpleESSinkConnector
 
       paymentMeanService = new PaymentMeanService(Deployment.getBrokerServers(), "ordsinkconnector-paymentmeanservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getPaymentMeanTopic(), false);
       paymentMeanService.start();
-      
-      subscriberProfileService = SinkConnectorUtils.init();
 
     }
 
@@ -99,8 +90,6 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       //
       //  services
       //
-
-      if (subscriberProfileService != null) subscriberProfileService.stop();
 
       offerService.stop();
       productService.stop();
@@ -140,7 +129,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       if(purchaseManager != null){
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", purchaseManager.getSubscriberID());
-        SinkConnectorUtils.putAlternateIDs(purchaseManager.getSubscriberID(), documentMap, subscriberProfileService);
+        SinkConnectorUtils.putAlternateIDs(purchaseManager.getAlternateIDs(), documentMap);
         documentMap.put("deliveryRequestID", purchaseManager.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", purchaseManager.getOriginatingDeliveryRequestID());
         documentMap.put("eventDatetime", purchaseManager.getEventDate()!=null?dateFormat.format(purchaseManager.getEventDate()):"");
