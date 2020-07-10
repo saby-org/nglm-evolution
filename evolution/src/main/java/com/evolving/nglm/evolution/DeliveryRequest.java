@@ -657,9 +657,9 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     Struct valueStruct = (Struct) value;
     String deliveryRequestID = valueStruct.getString("deliveryRequestID");
     String deliveryRequestSource = valueStruct.getString("deliveryRequestSource");
-    String originatingDeliveryRequestID = (schemaVersion >= 3) ? valueStruct.getString("originatingDeliveryRequestID") : null;
-    boolean originatingRequest = (schemaVersion >= 2) ? valueStruct.getBoolean("originatingRequest") : true;
-    Date creationDate = (schemaVersion >= 3) ? new Date(valueStruct.getInt64("creationDate")) : ((schemaVersion >= 2) ? (Date) valueStruct.get("creationDate") : SystemTime.getCurrentTime());
+    String originatingDeliveryRequestID = valueStruct.getString("originatingDeliveryRequestID");
+    boolean originatingRequest = valueStruct.getBoolean("originatingRequest");
+    Date creationDate = new Date(valueStruct.getInt64("creationDate"));
     String subscriberID = valueStruct.getString("subscriberID");
     DeliveryPriority deliveryPriority = DeliveryPriority.fromExternalRepresentation(valueStruct.getString("deliveryPriority"));
     String eventID = valueStruct.getString("eventID");
@@ -667,13 +667,13 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     String featureID = valueStruct.getString("featureID");
     Integer deliveryPartition = valueStruct.getInt32("deliveryPartition");
     int retries = valueStruct.getInt32("retries");
-    Date timeout = (schemaVersion >= 3) ? (valueStruct.get("timeout") != null ? new Date(valueStruct.getInt64("timeout")) : null) : (Date) valueStruct.get("timeout");
+    Date timeout = valueStruct.get("timeout") != null ? new Date(valueStruct.getInt64("timeout")) : null;
     String correlator = valueStruct.getString("correlator");
     boolean control = valueStruct.getBoolean("control");
     String segmentContactPolicyID = valueStruct.getString("segmentContactPolicyID");
     String deliveryType = valueStruct.getString("deliveryType");
     DeliveryStatus deliveryStatus = DeliveryStatus.fromExternalRepresentation(valueStruct.getString("deliveryStatus"));
-    Date deliveryDate = (schemaVersion >= 3) ? (valueStruct.get("deliveryDate") != null ? new Date(valueStruct.getInt64("deliveryDate")) : null) : (Date) valueStruct.get("deliveryDate");
+    Date deliveryDate = valueStruct.get("deliveryDate") != null ? new Date(valueStruct.getInt64("deliveryDate")) : null;
     Map<String, String> diplomaticBriefcase = (Map<String, String>) valueStruct.get("diplomaticBriefcase");
     Date rescheduledDate = (schemaVersion >= 4) ? (valueStruct.get("rescheduledDate") != null ? new Date(valueStruct.getInt64("rescheduledDate")) : null) : null;
     MetricHistory notificationHistory = schemaVersion >= 4 ?  MetricHistory.serde().unpackOptional(new SchemaAndValue(schema.field("notificationHistory").schema(),valueStruct.get("notificationHistory"))) : null;
