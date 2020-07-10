@@ -39,7 +39,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   //
 
   private static Schema schema = null;
-  private static int currentSchemaVersion = 6;
+  private static int currentSchemaVersion = 8;
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();

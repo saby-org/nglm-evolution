@@ -265,7 +265,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_purchasefulfillment_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),5));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("offerID", Schema.STRING_SCHEMA);
       schemaBuilder.field("offerDisplay", Schema.OPTIONAL_STRING_SCHEMA);

@@ -46,7 +46,7 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("service_rewardmanager_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("msisdn", Schema.STRING_SCHEMA);
     schemaBuilder.field("providerID", Schema.STRING_SCHEMA);

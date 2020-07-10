@@ -141,7 +141,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_smsnotification_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("destination", Schema.STRING_SCHEMA);
       schemaBuilder.field("source", Schema.STRING_SCHEMA);

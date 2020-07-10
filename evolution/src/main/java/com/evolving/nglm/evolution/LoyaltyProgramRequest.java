@@ -42,7 +42,7 @@ public class LoyaltyProgramRequest extends DeliveryRequest implements BonusDeliv
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("loyalty_program_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("operation", Schema.STRING_SCHEMA);
     schemaBuilder.field("loyaltyProgramRequestID", Schema.STRING_SCHEMA);

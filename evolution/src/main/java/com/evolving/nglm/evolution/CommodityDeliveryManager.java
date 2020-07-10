@@ -356,7 +356,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_commodityDelivery_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("externalSubscriberID", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("providerID", Schema.STRING_SCHEMA);

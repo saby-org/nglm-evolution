@@ -42,7 +42,7 @@ public class PointFulfillmentRequest extends DeliveryRequest implements BonusDel
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("service_pointfulfillment_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("pointID", Schema.STRING_SCHEMA);
     schemaBuilder.field("pointName", Schema.OPTIONAL_STRING_SCHEMA);

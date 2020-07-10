@@ -168,7 +168,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_mailnotification_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("destination", Schema.STRING_SCHEMA);
       schemaBuilder.field("fromAddress", Schema.STRING_SCHEMA);

@@ -41,7 +41,7 @@ public class ExternalAPIOutput extends SubscriberStreamOutput implements Compara
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("external_api_output");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),8));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("topicID", Schema.STRING_SCHEMA);
     schemaBuilder.field("jsonString", Schema.STRING_SCHEMA);

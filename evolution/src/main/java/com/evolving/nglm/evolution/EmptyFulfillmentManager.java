@@ -192,7 +192,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_emptyfulfillment_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("providerID", Schema.STRING_SCHEMA);
       schemaBuilder.field("commodityID", Schema.STRING_SCHEMA);

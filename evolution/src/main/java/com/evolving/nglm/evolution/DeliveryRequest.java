@@ -191,7 +191,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("delivery_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),7));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),8));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("deliveryRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequestSource", Schema.STRING_SCHEMA);
@@ -677,7 +677,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     Map<String, String> diplomaticBriefcase = (Map<String, String>) valueStruct.get("diplomaticBriefcase");
     Date rescheduledDate = (schemaVersion >= 4) ? (valueStruct.get("rescheduledDate") != null ? new Date(valueStruct.getInt64("rescheduledDate")) : null) : null;
     MetricHistory notificationHistory = schemaVersion >= 4 ?  MetricHistory.serde().unpackOptional(new SchemaAndValue(schema.field("notificationHistory").schema(),valueStruct.get("notificationHistory"))) : null;
-    Map<String,String> subscriberFields = (schemaVersion >= 7 && schema.field("subscriberFields")!=null && valueStruct.get("subscriberFields") != null) ? (Map<String,String>) valueStruct.get("subscriberFields") : new LinkedHashMap<>();
+    Map<String,String> subscriberFields = (schemaVersion >= 8 && schema.field("subscriberFields")!=null && valueStruct.get("subscriberFields") != null) ? (Map<String,String>) valueStruct.get("subscriberFields") : new LinkedHashMap<>();
 
     //
     //  return

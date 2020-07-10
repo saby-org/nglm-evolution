@@ -42,7 +42,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("journeyRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);

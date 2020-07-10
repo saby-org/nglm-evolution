@@ -51,7 +51,7 @@ public class JourneyMetric extends SubscriberStreamOutput implements Comparable
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_metric");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),8));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("journeyMetricID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyInstanceID", Schema.STRING_SCHEMA);

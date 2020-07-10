@@ -33,7 +33,7 @@ public class ProfileSegmentChangeEvent extends SubscriberStreamOutput implements
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("profileSegmentChange");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),8));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);
@@ -198,6 +198,6 @@ public class ProfileSegmentChangeEvent extends SubscriberStreamOutput implements
     // return
     //
 
-    return new ProfileSegmentChangeEvent(subscriberID, eventDate, oldValues, newValues);
+    return new ProfileSegmentChangeEvent(schemaAndValue, subscriberID, eventDate, oldValues, newValues);
   }
 }

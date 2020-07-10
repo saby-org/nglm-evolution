@@ -18,7 +18,7 @@ public abstract class SubscriberStreamOutput {
 
 	// the common schema
 	private static Schema subscriberStreamOutputSchema;
-	private static int currentSchemaVersion = 2;
+	private static int currentSchemaVersion = 8;
 	static {
 		SchemaBuilder schemaBuilder = SchemaBuilder.struct();
 		schemaBuilder.name("subscriber_stream_output");
@@ -51,7 +51,7 @@ public abstract class SubscriberStreamOutput {
 		Object value = schemaAndValue.value();
 		Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
 		Struct valueStruct = (Struct) value;
-		this.alternateIDs = (schemaVersion >= 1 && schema.field("alternateIDs")!=null && valueStruct.get("alternateIDs") != null) ? (Map<String,String>) valueStruct.get("alternateIDs") : new LinkedHashMap<>();
+		this.alternateIDs = (schemaVersion >= 8 && schema.field("alternateIDs")!=null && valueStruct.get("alternateIDs") != null) ? (Map<String,String>) valueStruct.get("alternateIDs") : new LinkedHashMap<>();
 	}
 	// the copy constructor
 	public SubscriberStreamOutput(SubscriberStreamOutput subscriberStreamOutput){
