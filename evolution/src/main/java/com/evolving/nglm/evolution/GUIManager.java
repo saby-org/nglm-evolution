@@ -26525,7 +26525,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               // nextExpectedDate
               //
 
-              Date nextExpectedDate = RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, Deployment.getBaseTimeZone());
+              Date nextExpectedDate = recurrentJourney.getEffectiveStartDate();
               while (nextExpectedDate.before(firstDateOfThisWk))
                 {
                   nextExpectedDate = RLMDateUtils.addWeeks(nextExpectedDate, scheduligInterval, Deployment.getBaseTimeZone());
@@ -26574,7 +26574,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               // nextExpectedDate
               //
 
-              Date nextExpectedDate = RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, Deployment.getBaseTimeZone());
+              Date nextExpectedDate = recurrentJourney.getEffectiveStartDate();
               while (nextExpectedDate.before(firstDateOfThisMonth))
                 {
                   nextExpectedDate = RLMDateUtils.addMonths(nextExpectedDate, scheduligInterval, Deployment.getBaseTimeZone());
@@ -26612,10 +26612,16 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     }
                 }
             }
+          
+          //
+          //  filter
+          //
+          
+          journeyCreationDates = journeyCreationDates.stream().filter(creationDate -> creationDate.before(recurrentJourney.getEffectiveStartDate())).collect(Collectors.toList());
 
           //
           // createJourneys
-
+          //
 
           if (!journeyCreationDates.isEmpty()) createJourneys(recurrentJourney, journeyCreationDates, recurrentJourney.getLastCreatedOccurrenceNumber());
         }
