@@ -26,7 +26,6 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "loyaltyprogram", serviceClass = LoyaltyProgramService.class, dependencies = {"point"})
 public abstract class LoyaltyProgram extends GUIManagedObject
 {
   /*****************************************
@@ -275,21 +274,6 @@ public abstract class LoyaltyProgram extends GUIManagedObject
   
   public abstract boolean validate() throws GUIManagerException;
   
-  @Override 
-  public Map<String, List<String>> getGUIDependencies()
-  {
-	  Map<String, List<String>> result = new HashMap<String, List<String>>();
-	  List<String> pointIDs = new ArrayList<String>();
-	  if(this instanceof LoyaltyProgramPoints) {
-		 if(((LoyaltyProgramPoints)this).getRewardPointsID()!=null && ((LoyaltyProgramPoints)this).getRewardPointsID().startsWith(CommodityDeliveryManager.POINT_PREFIX))
-		  pointIDs.add(((LoyaltyProgramPoints)this).getRewardPointsID().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
-		 if(((LoyaltyProgramPoints)this).getStatusPointsID()!=null && ((LoyaltyProgramPoints)this).getStatusPointsID().startsWith(CommodityDeliveryManager.POINT_PREFIX))
-			  pointIDs.add(((LoyaltyProgramPoints)this).getStatusPointsID().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
-			   
-	  }
-	  result.put("point", pointIDs);
-	  return result;
-	  
-  }
+
   
 }

@@ -40,7 +40,7 @@ public class GUIManagedObjectDependencyHelper
   
   public static void createDependencyTreeMAP(Map<String, GUIDependencyModelTree> guiDependencyModelTreeMap, GUIDependencyModelTree guiDependencyModelTree, Set<String>  dependencies, String objectID, List<JSONObject> dependencyListOutput, boolean fiddleTest, List<GUIService> guiServiceList) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException
   {
-    log.info("RAJ K createDependencyTreeMAP for {} - ID {} will look into {} types", guiDependencyModelTree.getGuiManagedObjectType(), objectID, dependencies);
+    log.info("createDependencyTreeMAP for {} - ID {} will look into {} types", guiDependencyModelTree.getGuiManagedObjectType(), objectID, dependencies);
     for (String dependency : dependencies)
       {
         //
@@ -53,7 +53,7 @@ public class GUIManagedObjectDependencyHelper
         // get storedObjectList
         //
         
-        Class serviceClass = guiDependencyModelTreeMap.get(dependency).getServiceClass();
+        Class serviceClass = guiDependencyModelTreeMap.get(dependency.toLowerCase()).getServiceClass();
         Object serviceObject  = getService(guiServiceList, serviceClass);
         Method retriver = serviceClass.getSuperclass().getDeclaredMethod("getStoredGUIManagedObjects", null);
         Collection<GUIManagedObject> storedObjectList = (Collection<GUIManagedObject>) retriver.invoke(serviceObject, null);
@@ -67,7 +67,7 @@ public class GUIManagedObjectDependencyHelper
             for (GUIManagedObject guiManagedObject : storedObjectList)
               {
             	
-            	if(guiManagedObject.getGUIManagedObjectType()==GUIManagedObjectType.Other || guiManagedObject.getGUIManagedObjectType()==GUIManagedObjectType.Unknown || guiManagedObject.getGUIManagedObjectType().name().toLowerCase().equals(dependency)){
+            	if(guiManagedObject.getGUIManagedObjectType()==GUIManagedObjectType.Other || guiManagedObject.getGUIManagedObjectType()==GUIManagedObjectType.Unknown || guiManagedObject.getGUIManagedObjectType().name().toLowerCase().equals(dependency.toLowerCase())){
                 Map<String, List<String>> guiDependencies = guiManagedObject.getGUIDependencies();
                 if (guiDependencies != null && !guiDependencies.isEmpty())
                   {
