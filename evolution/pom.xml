@@ -33,7 +33,7 @@
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>1.4.3_8-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>release_1.4.3_8-EVPRO-339-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.4.14</gui-fwk.version>
