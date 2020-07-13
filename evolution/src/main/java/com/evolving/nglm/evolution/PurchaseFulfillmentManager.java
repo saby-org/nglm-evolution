@@ -755,12 +755,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           guiPresentationMap.put(FEATUREID, getFeatureID());
           guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
           guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-          guiPresentationMap.put(ORIGIN, getOrigin());          
+          guiPresentationMap.put(ORIGIN, getOrigin()); 
+          String display = "";
           GUIManagedObject reseller = resellerService.getStoredReseller(resellerID);
-          if (reseller instanceof Reseller) {
-            String display = ((Reseller)reseller).getGUIManagedObjectDisplay();
-            guiPresentationMap.put(RESELLERDISPLAY, display);
-          }
+          if (reseller instanceof Reseller)
+            {
+              display = ((Reseller) reseller).getGUIManagedObjectDisplay();
+            }
+          guiPresentationMap.put(RESELLERDISPLAY, display);
           guiPresentationMap.put(RETURNCODE, getReturnCode());
           guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
           guiPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
