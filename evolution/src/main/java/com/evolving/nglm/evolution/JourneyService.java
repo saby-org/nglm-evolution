@@ -190,6 +190,46 @@ public class JourneyService extends GUIService
       }
     return subJourneys;
   }
+  public Collection<Journey> getActiveAndCompletedRecurrentJourneys(Date now)
+  {
+    Collection<Journey> result = new ArrayList<Journey>();
+    for (GUIManagedObject uncheckedJourney : getStoredJourneys())
+      {
+        if (uncheckedJourney.getAccepted())
+          {
+            boolean activeAndCompleted = true;
+            Journey journey = (Journey) uncheckedJourney;
+            
+            //
+            //  recurrent
+            //
+            
+            activeAndCompleted = activeAndCompleted && journey.getRecurrence();
+            
+            //
+            //  active / completed
+            //
+            
+            activeAndCompleted = activeAndCompleted && journey.getActive() && journey.getEffectiveStartDate().compareTo(now) <= 0;
+            
+            //
+            // Approved
+            //
+            
+            if (!Deployment.getAutoApproveGuiObjects())
+              {
+                activeAndCompleted = activeAndCompleted && JourneyStatus.StartedApproved == journey.getApproval();
+              }
+            
+            //
+            //  add
+            //
+            
+            if (activeAndCompleted) result.add(journey);
+          }
+      }
+    return result;
+  }
   
   /*****************************************
   *

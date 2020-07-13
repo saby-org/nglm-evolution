@@ -26493,20 +26493,27 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     @Override protected void run()
     {
       if (log.isInfoEnabled()) log.info("creating recurrent campaigns");
-      Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, Deployment.getBaseTimeZone());
-      Collection<Journey> recurrentJourneys = journeyService.getActiveRecurrentJourneys(now);
+      String TZ = Deployment.getBaseTimeZone();
+      final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, TZ);
+      Date filterStartDate = RLMDateUtils.addDays(now, -3, TZ);
+      Date filterEndDate = RLMDateUtils.addDays(now, 3, TZ);
+      Collection<Journey> recurrentJourneys = journeyService.getActiveAndCompletedRecurrentJourneys(SystemTime.getCurrentTime());
       for (Journey recurrentJourney : recurrentJourneys)
         {
           List<Date> journeyCreationDates = new ArrayList<Date>();
           JourneyScheduler journeyScheduler = recurrentJourney.getJourneyScheduler();
           int limitCount = journeyScheduler.getNumberOfOccurrences() - recurrentJourney.getLastCreatedOccurrenceNumber();
+          if (log.isDebugEnabled()) log.debug("executing creation for {}, id {}", recurrentJourney.getGUIManagedObjectDisplay(), recurrentJourney.getGUIManagedObjectID());
 
           //
           // limit reached
           //
 
-          if (limitCount <= 0) continue;
-          log.info("RAJ K creating recurrent campaign limit ok");
+          if (limitCount <= 0)
+            {
+              if (log.isDebugEnabled()) log.debug("limit reached");
+              continue;
+            }
 
           //
           // scheduling
@@ -26514,102 +26521,31 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
           String scheduling = journeyScheduler.getRunEveryUnit().toLowerCase();
           Integer scheduligInterval = journeyScheduler.getRunEveryDuration();
-
-          log.info("RAJ K creating recurrent campaign for {} and scheduling {} scheduligInterval {}", recurrentJourney.getJourneyID(), scheduling, scheduligInterval);
+          List<Date> tmpJourneyCreationDates = new ArrayList<Date>();
           if ("week".equalsIgnoreCase(scheduling))
             {
-              Date firstDateOfThisWk = getFirstDate(now, Calendar.DAY_OF_WEEK);
               Date lastDateOfThisWk = getLastDate(now, Calendar.DAY_OF_WEEK);
-
-              //
-              // nextExpectedDate
-              //
-
-              Date nextExpectedDate = recurrentJourney.getEffectiveStartDate();
-              while (nextExpectedDate.before(firstDateOfThisWk))
+              Date tempStartDate = RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, TZ);
+              Date lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK);
+              while(lastDateOfThisWk.compareTo(lastDateOfStartDateWk) >= 0)
                 {
-                  nextExpectedDate = RLMDateUtils.addWeeks(nextExpectedDate, scheduligInterval, Deployment.getBaseTimeZone());
-                }
-
-              //
-              // not in this week
-              //
-              log.info("RAJ K nextExpectedDate {} ", nextExpectedDate);
-              if (RLMDateUtils.truncate(nextExpectedDate, Calendar.DATE, Deployment.getBaseTimeZone()).after(lastDateOfThisWk)) continue;
-              log.info("RAJ K nextExpectedDate is ok");
-
-              //
-              // this is the week
-              //
-
-              List<Date> expectedCreationDates = getExpectedCreationDates(firstDateOfThisWk, lastDateOfThisWk, scheduling, journeyScheduler.getRunEveryWeekDay());
-
-              //
-              // journeyCreationDates
-              //
-
-              Collection<Journey> recurrentSubJourneys = journeyService.getAllRecurrentJourneysByID(recurrentJourney.getJourneyID(), true);
-              for (Date expectedDate : expectedCreationDates)
-                {
-                  boolean exists = false;
-                  for (Journey subJourney : recurrentSubJourneys)
-                    {
-                      exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone()) == 0;
-                      if (exists)
-                        break;
-                    }
-                  if (!exists && limitCount > 0)
-                    {
-                      journeyCreationDates.add(expectedDate);
-                      limitCount--;
-                    }
+                  Date firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK);
+                  tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, journeyScheduler.getRunEveryWeekDay()));
+                  tempStartDate = RLMDateUtils.addWeeks(tempStartDate, scheduligInterval, TZ);
+                  lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK);
                 }
             } 
           else if ("month".equalsIgnoreCase(scheduling))
             {
-              Date firstDateOfThisMonth = getFirstDate(now, Calendar.DAY_OF_MONTH);
               Date lastDateOfThisMonth = getLastDate(now, Calendar.DAY_OF_MONTH);
-
-              //
-              // nextExpectedDate
-              //
-
-              Date nextExpectedDate = recurrentJourney.getEffectiveStartDate();
-              while (nextExpectedDate.before(firstDateOfThisMonth))
+              Date tempStartDate = RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, TZ);
+              Date lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
+              while(lastDateOfThisMonth.compareTo(lastDateOfStartDateMonth) >= 0)
                 {
-                  nextExpectedDate = RLMDateUtils.addMonths(nextExpectedDate, scheduligInterval, Deployment.getBaseTimeZone());
-                }
-
-              //
-              // not in this month
-              //
-              log.info("RAJ K nextExpectedDate {} ", nextExpectedDate);
-              if (RLMDateUtils.truncate(nextExpectedDate, Calendar.DATE, Deployment.getBaseTimeZone()).after(lastDateOfThisMonth)) continue;
-              log.info("RAJ K nextExpectedDate is ok");
-              //
-              // this is the month
-              //
-
-              List<Date> expectedCreationDates = getExpectedCreationDates(firstDateOfThisMonth, lastDateOfThisMonth, scheduling, journeyScheduler.getRunEveryMonthDay());
-
-              //
-              // journeyCreationDates
-              //
-
-              Collection<Journey> recurrentSubJourneys = journeyService.getAllRecurrentJourneysByID(recurrentJourney.getJourneyID(), true);
-              for (Date expectedDate : expectedCreationDates)
-                {
-                  boolean exists = false;
-                  for (Journey subJourney : recurrentSubJourneys)
-                    {
-                      exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone()) == 0;
-                      if (exists) break;
-                    }
-                  if (!exists && limitCount > 0)
-                    {
-                      journeyCreationDates.add(expectedDate);
-                      limitCount--;
-                    }
+                  Date firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH);
+                  tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay()));
+                  tempStartDate = RLMDateUtils.addMonths(tempStartDate, scheduligInterval, TZ);
+                  lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
                 }
             }
           else
@@ -26618,10 +26554,32 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             }
           
           //
-          //  filter
+          //  filter out 3days (before / after)
           //
           
-          journeyCreationDates = journeyCreationDates.stream().filter(creationDate -> creationDate.before(recurrentJourney.getEffectiveStartDate())).collect(Collectors.toList());
+          tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.compareTo(filterStartDate) >= 0).collect(Collectors.toList());
+          tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> filterEndDate.compareTo(date) >= 0).collect(Collectors.toList());
+          
+          //
+          //  exists
+          //
+          
+          Collection<Journey> recurrentSubJourneys = journeyService.getAllRecurrentJourneysByID(recurrentJourney.getJourneyID(), true);
+          for (Date expectedDate : tmpJourneyCreationDates)
+            {
+              boolean exists = false;
+              for (Journey subJourney : recurrentSubJourneys)
+                {
+                  exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone()) == 0;
+                  if (exists) break;
+                }
+              if (!exists && limitCount > 0)
+                {
+                  journeyCreationDates.add(expectedDate);
+                  limitCount--;
+                }
+            }
+          
 
           //
           // createJourneys
