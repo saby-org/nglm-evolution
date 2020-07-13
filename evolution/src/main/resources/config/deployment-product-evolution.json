@@ -976,9 +976,7 @@
     "extractManagerDateFormat"     : "yyyy-MM-dd_HH-mm-ss",
     "extractManagerFileExtension"  : "csv",
     "extractManagerCsvSeparator"   : ";",
-    "extractManagerFieldSurrounder": "'",
-    "extractManagerStreamsTempDir" : "/tmp",
-    "extractManagerTopicsCreationProperties" : "cleanup.policy=delete segment.bytes=52428800 retention.ms=64800000"
+    "extractManagerFieldSurrounder": "'"
   },
 
   "licenseManagement" :

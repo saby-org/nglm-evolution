@@ -266,8 +266,6 @@ public class Deployment
   private static String extractManagerOutputPath;
   private static String extractManagerDateFormat;
   private static String extractManagerFileExtension;
-  private static String extractManagerStreamsTempDir;
-  private static String extractManagerTopicsCreationProperties;
   private static String extractManagerCsvSeparator;
   private static String extractManagerFieldSurrounder;
 
@@ -3472,8 +3470,6 @@ public class Deployment
               extractManagerFileExtension = JSONUtilities.decodeString(extractManager, "extractManagerFileExtension", "csv");
               extractManagerCsvSeparator = JSONUtilities.decodeString(extractManager, "extractManagerCsvSeparator", ";");
               extractManagerFieldSurrounder = JSONUtilities.decodeString(extractManager, "extractManagerFieldSurrounder", "'");
-              extractManagerStreamsTempDir = JSONUtilities.decodeString(extractManager, "extractManagerStreamsTempDir", System.getProperty("java.io.tmpdir"));
-              extractManagerTopicsCreationProperties = JSONUtilities.decodeString(extractManager, "extractManagerTopicsCreationProperties", "cleanup.policy=delete segment.bytes=52428800 retention.ms=86400000");
             }
           else
             {
@@ -3483,8 +3479,6 @@ public class Deployment
               extractManagerFileExtension = "csv";
               extractManagerCsvSeparator = ";";
               extractManagerFieldSurrounder = "'";
-              extractManagerStreamsTempDir = System.getProperty("java.io.tmpdir");
-              extractManagerTopicsCreationProperties = "cleanup.policy=delete segment.bytes=52428800 retention.ms=86400000";
             }
           if (extractManagerFieldSurrounder.length() > 1)
             {

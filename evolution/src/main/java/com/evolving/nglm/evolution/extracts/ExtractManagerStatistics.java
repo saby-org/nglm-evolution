@@ -1,8 +1,8 @@
 /****************************************************************************
-*
-*  ReportManagerStatistics.java
-*
-****************************************************************************/
+ *
+ *  ReportManagerStatistics.java
+ *
+ ****************************************************************************/
 
 package com.evolving.nglm.evolution.extracts;
 
@@ -30,21 +30,12 @@ public class ExtractManagerStatistics implements ExtractManagerStatisticsMBean, 
   // Interface: ReportManagerStatisticsMBean
   //
 
-  public int getExtractCount() { return reportCount; }
-  public int getFailureCount() { return failureCount; }
-
-  //
-  // Interface: NGLMMonitoringObject
-  //
-
-  public String getObjectNameForManagement() { return objectNameForManagement; }
-
   /*****************************************
-  *
-  *  constructor
-  *
-  *****************************************/
-  
+   *
+   *  constructor
+   *
+   *****************************************/
+
   public ExtractManagerStatistics(String name)
   {
     //
@@ -63,20 +54,46 @@ public class ExtractManagerStatistics implements ExtractManagerStatisticsMBean, 
     NGLMRuntime.registerMonitoringObject(this);
   }
 
-  /*****************************************
-  *
-  *  setters
-  *
-  *****************************************/
+  public int getExtractCount()
+  {
+    return reportCount;
+  }
 
-  synchronized void incrementExtractCount() { reportCount += 1; }
-  synchronized void incrementFailureCount() { failureCount += 1; }
+  //
+  // Interface: NGLMMonitoringObject
+  //
+
+  public int getFailureCount()
+  {
+    return failureCount;
+  }
+
+  public String getObjectNameForManagement()
+  {
+    return objectNameForManagement;
+  }
 
   /*****************************************
-  *
-  *  unregister
-  *
-  *****************************************/
+   *
+   *  setters
+   *
+   *****************************************/
+
+  synchronized void incrementExtractCount()
+  {
+    reportCount += 1;
+  }
+
+  synchronized void incrementFailureCount()
+  {
+    failureCount += 1;
+  }
+
+  /*****************************************
+   *
+   *  unregister
+   *
+   *****************************************/
 
   public void unregister()
   {

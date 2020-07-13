@@ -6,18 +6,11 @@
 
 package com.evolving.nglm.evolution;
 
-import java.io.BufferedWriter;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
+import com.evolving.nglm.core.*;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
+import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.extracts.ExtractDownloader;
 import com.evolving.nglm.evolution.extracts.ExtractItem;
 import com.evolving.nglm.evolution.extracts.ExtractService;
@@ -30,15 +23,11 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.ReferenceDataReader;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.SubscriberIDService;
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
-import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
-import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.*;
 
 public class GUIManagerBaseManagement extends GUIManager
 {
@@ -2408,25 +2397,27 @@ public class GUIManagerBaseManagement extends GUIManager
 
   JSONObject processLaunchExtract(JSONObject jsonRoot)
   {
-    log.trace("In processLaunchTargetExtract : "+jsonRoot);
-    HashMap<String,Object> response = new HashMap<String,Object>();
+    log.trace("In processLaunchTargetExtract : " + jsonRoot);
+    HashMap<String, Object> response = new HashMap<String, Object>();
     String responseCode = "";
     try
+    {
+      ExtractItem extractItem = new ExtractItem(jsonRoot);
+      if (ExtractService.isExtractRunning(extractItem.getExtractName() + "-" + extractItem.getUserId()))
       {
-        ExtractItem extractItem = new ExtractItem(jsonRoot);
-        if (ExtractService.isExtractRunning(extractItem.getExtractName()+"-"+extractItem.getUserId()))
-          {
-            responseCode = "targetIsAlreadyRunning";
-          } else
-          {
-            ExtractService.launchGenerateExtract(extractItem);
-            responseCode = "ok";
-          }
-      }catch (Exception ex)
-      {
-        responseCode = "internalError";
-        response.put("responseMessage", ex.getMessage());
+        responseCode = "targetIsAlreadyRunning";
       }
+      else
+      {
+        ExtractService.launchGenerateExtract(extractItem);
+        responseCode = "ok";
+      }
+    }
+    catch (Exception ex)
+    {
+      responseCode = "internalError";
+      response.put("responseMessage", ex.getMessage());
+    }
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
@@ -2440,27 +2431,30 @@ public class GUIManagerBaseManagement extends GUIManager
   void processLaunchAndDownloadExtract(JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
   {
     JSONObject launchResponse = this.processLaunchExtract(jsonRoot);
-    String responseCode = JSONUtilities.decodeString(launchResponse,"responseCode",true);
-    if(responseCode != "ok")
+    String responseCode = JSONUtilities.decodeString(launchResponse, "responseCode", true);
+    if (responseCode != "ok")
+    {
+      jsonResponse.put("responseCode", responseCode);
+      jsonResponse.put("responseMessage", JSONUtilities.decodeString(launchResponse, "responseMessage"));
+      try
       {
-        jsonResponse.put("responseCode",responseCode);
-        jsonResponse.put("responseMessage",JSONUtilities.decodeString(launchResponse,"responseMessage"));
-        try {
-          exchange.sendResponseHeaders(200, 0);
-          BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
-          writer.write(jsonResponse.toString());
-          writer.close();
-          exchange.close();
-        }catch(Exception e) {
-          StringWriter stackTraceWriter = new StringWriter();
-          e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-          log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-        }
+        exchange.sendResponseHeaders(200, 0);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(jsonResponse.toString());
+        writer.close();
+        exchange.close();
       }
+      catch (Exception e)
+      {
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+      }
+    }
     else
-      {
-        processDownloadExtract(jsonRoot,jsonResponse,exchange);
-      }
+    {
+      processDownloadExtract(jsonRoot, jsonResponse, exchange);
+    }
   }
 
 
