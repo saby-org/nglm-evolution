@@ -9,8 +9,8 @@
    "occurrenceNumber":1,
    "recurrence":true,
    "apiVersion":1,
-   "name":"rc-monthly-15-32-total-2",
-   "display":"rc-monthly-15-32-total-2",
+   "name":"rc-monthly-total-5",
+   "display":"rc-monthly-total-5",
    "valid":true,
    "active":false,
    "effectiveStartDate":"2020-04-5T00:00:00+00:00",
@@ -18,10 +18,10 @@
    "effectiveEntryPeriodEndDate":null,
    "status":"Pending",
    "scheduler" : {       
-       "numberOfOccurrences":2,
+       "numberOfOccurrences":5,
        "runEveryDuration":1,
        "runEveryUnit":"month",
-       "runEveryMonthDay":[ "15", "32" ]   
+       "runEveryMonthDay":[ "1", "6", "11", "16", "21", "26", "31", "32" ]   
    },
    "nodes":[
       {
