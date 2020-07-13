@@ -26493,10 +26493,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     @Override protected void run()
     {
       if (log.isInfoEnabled()) log.info("creating recurrent campaigns");
-      String TZ = Deployment.getBaseTimeZone();
-      final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, TZ);
-      Date filterStartDate = RLMDateUtils.addDays(now, -3, TZ);
-      Date filterEndDate = RLMDateUtils.addDays(now, 3, TZ);
+      String tz = Deployment.getBaseTimeZone();
+      final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
+      Date filterStartDate = RLMDateUtils.addDays(now, -3, tz);
+      Date filterEndDate = RLMDateUtils.addDays(now, 3, tz);
       Collection<Journey> recurrentJourneys = journeyService.getActiveAndCompletedRecurrentJourneys(SystemTime.getCurrentTime());
       for (Journey recurrentJourney : recurrentJourneys)
         {
@@ -26525,26 +26525,26 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           if ("week".equalsIgnoreCase(scheduling))
             {
               Date lastDateOfThisWk = getLastDate(now, Calendar.DAY_OF_WEEK);
-              Date tempStartDate = RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, TZ);
+              Date tempStartDate = RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
               Date lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK);
               while(lastDateOfThisWk.compareTo(lastDateOfStartDateWk) >= 0)
                 {
                   Date firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK);
                   tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, journeyScheduler.getRunEveryWeekDay()));
-                  tempStartDate = RLMDateUtils.addWeeks(tempStartDate, scheduligInterval, TZ);
+                  tempStartDate = RLMDateUtils.addWeeks(tempStartDate, scheduligInterval, tz);
                   lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK);
                 }
             } 
           else if ("month".equalsIgnoreCase(scheduling))
             {
               Date lastDateOfThisMonth = getLastDate(now, Calendar.DAY_OF_MONTH);
-              Date tempStartDate = RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, TZ);
+              Date tempStartDate = RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
               Date lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
               while(lastDateOfThisMonth.compareTo(lastDateOfStartDateMonth) >= 0)
                 {
                   Date firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH);
                   tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay()));
-                  tempStartDate = RLMDateUtils.addMonths(tempStartDate, scheduligInterval, TZ);
+                  tempStartDate = RLMDateUtils.addMonths(tempStartDate, scheduligInterval, tz);
                   lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
                 }
             }
@@ -26557,8 +26557,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           //  filter out 3days (before / after)
           //
           
+          log.info("RAJ K before filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
           tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.compareTo(filterStartDate) >= 0).collect(Collectors.toList());
           tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> filterEndDate.compareTo(date) >= 0).collect(Collectors.toList());
+          log.info("RAJ K after filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
           
           //
           //  exists
