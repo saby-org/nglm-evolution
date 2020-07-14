@@ -26697,7 +26697,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               if (Integer.parseInt(day) > lastDayOfMonth) result.add(new Date(lastDate.getTime()));
             }
         }
-      log.info("RAJ K getExpectedCreationDates {}", result);
       return result;
     }
 
