@@ -1162,6 +1162,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         tb.addOutputConnector(new OutputConnectorBuilder("failed", "Failed").addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'failed', 'indeterminate', 'failedTimeout' ]"))));
         tb.addOutputConnector(new OutputConnectorBuilder("timeout", "Timeout").addTransitionCriteria(new TransitionCriteriaBuilder("evaluation.date", CriterionOperator.GreaterThanOrEqualOperator, new ArgumentBuilder("dateAdd(node.entryDate, 1, 'hour')").setTimeUnit(TimeUnit.Instant))));
         tb.addOutputConnector(new OutputConnectorBuilder("unknown", "Unknown " + current.getProfileAddressField()).addTransitionCriteria(new TransitionCriteriaBuilder(current.getProfileAddressField(), CriterionOperator.IsNullOperator, null)));
+        tb.addOutputConnector(new OutputConnectorBuilder("unknown_relationship", "UnknownRelationship").addTransitionCriteria(new TransitionCriteriaBuilder("unknown.relationship", CriterionOperator.EqualOperator, new ArgumentBuilder("true"))));
 
         // add manually all parameters common to any notification : contact type, from
         // address

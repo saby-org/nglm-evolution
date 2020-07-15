@@ -115,6 +115,12 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       Object commodityRequestValue = sinkRecord.value();
       Schema commodityRequestValueSchema = sinkRecord.valueSchema();
       CommodityDeliveryRequest commodityRequest = CommodityDeliveryRequest.unpack(new SchemaAndValue(commodityRequestValueSchema, commodityRequestValue));
+      
+      if(commodityRequest.getOriginatingSubscriberID() != null && commodityRequest.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+        {
+          // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
+          return null;
+        }
       Map<String,Object> documentMap = null;
       
       if(commodityRequest != null){
@@ -140,8 +146,5 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       log.debug("BDRSinkConnector.getDocumentMap: map computed, contents are="+documentMap.toString());
       return documentMap;
     }
-    
-
   }
-
 }

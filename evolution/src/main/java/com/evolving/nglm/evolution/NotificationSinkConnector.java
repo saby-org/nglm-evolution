@@ -128,6 +128,11 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       if(type.equals("notificationmanagermail")){
         documentMap = new HashMap<String,Object>();
         MailNotificationManagerRequest mailNotification = MailNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+        if(mailNotification.getOriginatingSubscriberID() != null && mailNotification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+          {
+            // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
+            return null;
+          }
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", mailNotification.getSubscriberID());
         documentMap.put("deliveryRequestID", mailNotification.getDeliveryRequestID());
@@ -143,6 +148,11 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       }else if(type.equals("notificationmanagerpush")){
         documentMap = new HashMap<String,Object>();
         PushNotificationManagerRequest pushNotification = PushNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+        if(pushNotification.getOriginatingSubscriberID() != null && pushNotification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+          {
+            // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
+            return null;
+          }
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", pushNotification.getSubscriberID());
         documentMap.put("deliveryRequestID", pushNotification.getDeliveryRequestID());
@@ -159,6 +169,11 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         {
           documentMap = new HashMap<String,Object>();
           SMSNotificationManagerRequest notification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+          if(notification.getOriginatingSubscriberID() != null && notification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+            {
+              // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
+              return null;
+            }
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", notification.getSubscriberID());
           SinkConnectorUtils.putAlternateIDs(notification.getSubscriberID(), documentMap, subscriberProfileService);
@@ -177,6 +192,11 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         {
           documentMap = new HashMap<String,Object>();
           NotificationManagerRequest smsNotification = NotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+          if(smsNotification.getOriginatingSubscriberID() != null && smsNotification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+            {
+              // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
+              return null;
+            }
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", smsNotification.getSubscriberID());
           documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());
@@ -194,6 +214,11 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         {
           documentMap = new HashMap<String,Object>();
           PushNotificationManagerRequest notification = PushNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+          if(notification.getOriginatingSubscriberID() != null && notification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+            {
+              // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
+              return null;
+            }
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", notification.getSubscriberID());
           SinkConnectorUtils.putAlternateIDs(notification.getSubscriberID(), documentMap, subscriberProfileService);

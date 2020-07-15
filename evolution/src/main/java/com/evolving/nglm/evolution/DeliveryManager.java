@@ -151,6 +151,9 @@ public abstract class DeliveryManager
   //
 
   private static final Logger log = LoggerFactory.getLogger(DeliveryManager.class);
+  
+  public static final String TARGETED = "targeted-";
+  public static final String ORIGIN = "origin-";
 
   //
   //  configuration
@@ -1602,27 +1605,43 @@ public abstract class DeliveryManager
               {
                 try
                   {
-                    StringKey key = null;
                     if(deliveryRequest.getOriginatingRequest()) 
                       {
-                        // index by subscriberID
+                        // response to be sent indexed by subscriber ID
                         if(deliveryRequest.getOriginatingSubscriberID() != null) {
                           // means this request has been made by originatingSubscriberID on behalf of current subscsriberID
-                          key = new StringKey(deliveryRequest.getOriginatingSubscriberID());
-                          deliveryRequest.setSubscriberID(deliveryRequest.getOriginatingSubscriberID());
+                          // so need to send a response to:
+                          // - originatingSubscriberID to unlock the current state of its Journey: SubscriberID = originatingSubscriberID and originatingSubscriberID becomes targeted-<effectivelyTargeted>
+                          // - targeted subscriberID (i.e. the one which effectively got, by example, a SMS..., for delivery history: subscriberID = currentSubscriberID and originatingSubscriberID origin-<originating>
+                          String originating = deliveryRequest.getOriginatingSubscriberID();
+                          String targeted = deliveryRequest.getSubscriberID();
+                          
+                          // send the response to the originating:
+                          deliveryRequest.setSubscriberID(originating);
+                          deliveryRequest.setOriginatingSubscriberID(TARGETED + targeted);
+                          StringKey key = new StringKey(originating);
+                          kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest))).get();
+                          
+                          // send the response to the targetted
+                          deliveryRequest.setSubscriberID(targeted);
+                          deliveryRequest.setOriginatingSubscriberID(ORIGIN + originating);
+                          key = new StringKey(targeted);
+                          kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest))).get();
+
+                        }
+                      else 
+                        {
+                          // normal case
+                          StringKey key = new StringKey(deliveryRequest.getSubscriberID());
+                          kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest))).get();
+                        }
                       }
-                    else 
-                      {
-                        // normal case
-                        key = new StringKey(deliveryRequest.getSubscriberID());
-                      }
-                    }
                     else 
                       {
                         // index by requestID
-                        key = new StringKey(deliveryRequest.getDeliveryRequestID());                      
+                        StringKey key = new StringKey(deliveryRequest.getDeliveryRequestID());
+                        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest))).get();
                       }
-                    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest))).get();
                     break;
                   }
                 catch (InterruptedException e)

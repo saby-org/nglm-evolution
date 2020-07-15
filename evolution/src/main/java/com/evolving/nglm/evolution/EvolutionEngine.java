@@ -3350,6 +3350,7 @@ public class EvolutionEngine
         // This the request of an action (cf ActionManager)
         ExecuteActionOtherSubscriber executeActionOtherSubscriber = (ExecuteActionOtherSubscriber)evolutionEvent;
         
+        // set some data used to execute the associated actions (those data are cleaned a bit later just before return)
         evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(executeActionOtherSubscriber.getOutstandingDeliveryRequestID());
         evolutionEventContext.setExecuteActionOtherUserOriginalSubscriberID(executeActionOtherSubscriber.getOriginatingSubscriberID());
         
@@ -3376,6 +3377,11 @@ public class EvolutionEngine
               evolutionEventContext.now);
           List<Action> actions = actionManager.executeOnEntry(evolutionEventContext, subscriberEvaluationRequest);
           handleExecuteOnEntryActions(evolutionEventContext.getSubscriberState(), originalJourneyState, originalJourney, actions);
+          
+          // clean temporary data to avoid next nodes considering this event
+          evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(null);
+          evolutionEventContext.setExecuteActionOtherUserOriginalSubscriberID(null);         
+          
           return true;
         }
       }
@@ -4892,14 +4898,19 @@ public class EvolutionEngine
         if (evolutionEvent instanceof DeliveryRequest && !((DeliveryRequest)evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending)) 
           {
             DeliveryRequest deliveryResponse = (DeliveryRequest) evolutionEvent;
-            if (Objects.equals(deliveryResponse.getModuleID(), DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && Objects.equals(deliveryResponse.getFeatureID(), journeyState.getJourneyID()))
+            if(deliveryResponse.getOriginatingSubscriberID() == null || deliveryResponse.getOriginatingSubscriberID().startsWith(DeliveryManager.ORIGIN))
               {
-                RewardHistory lastRewards = journeyState.getJourneyHistory().addRewardInformation(deliveryResponse, deliverableService, now);
-                if (lastRewards != null)
+                // case where the response is to the parent into the relationship, so the history must be taken in account... 
+                // this history is not taken in account for a response to the original subscriber as this response is only here to unlock the Journey
+                if (Objects.equals(deliveryResponse.getModuleID(), DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && Objects.equals(deliveryResponse.getFeatureID(), journeyState.getJourneyID()))
                   {
-                    subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, new RewardHistory(lastRewards), journeyState.getJourneyID()));
+                    RewardHistory lastRewards = journeyState.getJourneyHistory().addRewardInformation(deliveryResponse, deliverableService, now);
+                    if (lastRewards != null)
+                      {
+                        subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, new RewardHistory(lastRewards), journeyState.getJourneyID()));
+                      }
                   }
-              }
+              }            
           }
         
         /*****************************************
@@ -5824,7 +5835,12 @@ public class EvolutionEngine
 
     if (evolutionEvent instanceof DeliveryRequest)
       {
-        subscriberHistoryUpdated = updateSubscriberHistoryDeliveryRequests((DeliveryRequest) evolutionEvent, subscriberHistory) || subscriberHistoryUpdated;
+        // filter DeliveryRequest response that are related to a parent... keep history only if we are for the parent here...
+        DeliveryRequest dr = (DeliveryRequest)evolutionEvent;
+        if(dr.getOriginatingSubscriberID() == null || dr.getOriginatingSubscriberID().startsWith(DeliveryManager.ORIGIN)) 
+          {
+           subscriberHistoryUpdated = updateSubscriberHistoryDeliveryRequests(dr, subscriberHistory) || subscriberHistoryUpdated;
+          }
       }
 
     /*****************************************
