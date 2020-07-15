@@ -133,6 +133,11 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       {
         documentMap = new HashMap<String,Object>();
         MailNotificationManagerRequest notification = MailNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+        if(notification.getOriginatingSubscriberID() != null && notification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+          {
+            // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
+            return null;
+          }
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", notification.getSubscriberID());
         documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
@@ -158,6 +163,11 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         {
           documentMap = new HashMap<String,Object>();
           SMSNotificationManagerRequest notification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+          if(notification.getOriginatingSubscriberID() != null && notification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+            {
+              // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
+              return null;
+            }
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", notification.getSubscriberID());
           documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
@@ -181,6 +191,11 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         {
           documentMap = new HashMap<String,Object>();
           NotificationManagerRequest notification = NotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+          if(notification.getOriginatingSubscriberID() != null && notification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+            {
+              // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
+              return null;
+            }
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", notification.getSubscriberID());
           documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
@@ -201,6 +216,11 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         {
           documentMap = new HashMap<String,Object>();
           PushNotificationManagerRequest notification = PushNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+          if(notification.getOriginatingSubscriberID() != null && notification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+            {
+              // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
+              return null;
+            }
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", notification.getSubscriberID());
           documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
@@ -221,7 +241,5 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       return documentMap;
     }
   }
-
-ADD filters
 }
 
