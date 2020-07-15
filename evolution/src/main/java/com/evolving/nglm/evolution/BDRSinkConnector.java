@@ -18,8 +18,6 @@ import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryReq
 
 public class BDRSinkConnector extends SimpleESSinkConnector
 {
-  private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
-  private static DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
   
   /****************************************
   *
@@ -40,6 +38,9 @@ public class BDRSinkConnector extends SimpleESSinkConnector
   
   public static class BDRSinkConnectorTask extends StreamESSinkTask
   {
+
+    private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+    private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
     
     //
     //  logger

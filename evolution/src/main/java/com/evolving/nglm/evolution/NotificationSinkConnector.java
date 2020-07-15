@@ -23,9 +23,6 @@ import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManager
 public class NotificationSinkConnector extends SimpleESSinkConnector
 {
   
-  private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
-  private static DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
-  
   private final Logger log = LoggerFactory.getLogger(NotificationSinkConnector.class);
 
   /****************************************
@@ -47,6 +44,9 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
   
   public static class NotificationSinkConnectorTask extends StreamESSinkTask
   {
+
+    private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+    private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
     /*****************************************
     *
@@ -143,6 +143,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           SMSNotificationManagerRequest notification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", notification.getSubscriberID());
+          SinkConnectorUtils.putAlternateIDs(notification.getAlternateIDs(), documentMap);
           documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
           documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
           documentMap.put("eventID", "");
@@ -166,6 +167,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           NotificationManagerRequest notification = NotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", notification.getSubscriberID());
+          SinkConnectorUtils.putAlternateIDs(notification.getAlternateIDs(), documentMap);
           documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
           documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
           documentMap.put("eventID", "");
@@ -186,6 +188,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           PushNotificationManagerRequest notification = PushNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", notification.getSubscriberID());
+          SinkConnectorUtils.putAlternateIDs(notification.getAlternateIDs(), documentMap);
           documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
           documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
           documentMap.put("eventID", "");

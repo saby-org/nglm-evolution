@@ -24,8 +24,6 @@ public class ODRSinkConnector extends SimpleESSinkConnector
   private static ProductService productService;
   private static VoucherService voucherService;
   private static PaymentMeanService paymentMeanService;
-  private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
-  private static DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
   
   /****************************************
   *
@@ -46,6 +44,9 @@ public class ODRSinkConnector extends SimpleESSinkConnector
   
   public static class ODRSinkConnectorTask extends StreamESSinkTask
   {
+
+    private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+    private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
     /*****************************************
     *
