@@ -4799,8 +4799,14 @@ public class ThirdPartyManager
     response.put("deliveryDate",getDateString(voucherProfileStored.getVoucherDeliveryDate()));
     response.put("expiryDate",getDateString(voucherProfileStored.getVoucherExpiryDate()));
     response.put("status",voucherProfileStored.getVoucherStatus().getExternalRepresentation());
-    response.put("offerID",voucherProfileStored.getOfferID());
-
+    String offerID = voucherProfileStored.getOfferID();
+    JSONObject offerJSON = new JSONObject();
+    GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
+    if (offerObject instanceof Offer) {
+      Offer offer = (Offer) offerObject;
+      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService);
+    }
+    response.put("offerDetails",offerJSON);
     return constructThirdPartyResponse(RESTAPIGenericReturnCodes.SUCCESS,response);
 
   }
@@ -4812,6 +4818,16 @@ public class ThirdPartyManager
     String subscriberID = voucherProfileStoredCheck.getFirstElement();
     VoucherProfileStored voucherProfileStored = voucherProfileStoredCheck.getSecondElement();
 
+    String offerID = voucherProfileStored.getOfferID();
+    JSONObject offerJSON = new JSONObject();
+    GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
+    if (offerObject instanceof Offer) {
+      Offer offer = (Offer) offerObject;
+      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService);
+    }
+    Map<String,Object> offerResponse = new HashMap<>();
+    offerResponse.put("offerDetails", offerJSON);
+    
     //build the request to send
     VoucherChange request = new VoucherChange(
             subscriberID,
@@ -4841,9 +4857,9 @@ public class ThirdPartyManager
 
     if(sync){
       VoucherChange response = handleWaitingResponse(waitingResponse);
-      return constructThirdPartyResponse(response.getReturnStatus(),null);
+      return constructThirdPartyResponse(response.getReturnStatus(),offerResponse);
     }
-    return constructThirdPartyResponse(RESTAPIGenericReturnCodes.SUCCESS,null);
+    return constructThirdPartyResponse(RESTAPIGenericReturnCodes.SUCCESS,offerResponse);
   }
 
   /*****************************************

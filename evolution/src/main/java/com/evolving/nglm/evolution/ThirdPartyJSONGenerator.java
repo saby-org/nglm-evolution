@@ -260,6 +260,7 @@ public class ThirdPartyJSONGenerator
     resellerDetailsMap.put("resellerUpdatedDate", getDateString(reseller.getUpdatedDate()));
     resellerDetailsMap.put("resellerUserIDs", reseller.getUserIDs());
     resellerDetailsMap.put("resellerEmail", reseller.getEmail());
+    resellerDetailsMap.put("resellerPhone", reseller.getPhone());
     resellerDetailsMap.put("resellerParentID", reseller.getParentResellerID());
     return JSONUtilities.encodeObject(resellerDetailsMap);
   }
