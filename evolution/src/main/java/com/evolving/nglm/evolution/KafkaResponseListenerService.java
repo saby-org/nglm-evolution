@@ -60,6 +60,7 @@ public class KafkaResponseListenerService<K,V> {
     BlockingResponse blockingResponse = new BlockingResponse(keyValuePredicate);
     synchronized (waitingForResponse){
       waitingForResponse.add(blockingResponse);
+      if(waitingForResponse.size()==1) waitingForResponse.notifyAll(); //notifying runResponseCheck waiting for at least 1 job to process
     }
     return blockingResponse;
   }
@@ -106,12 +107,11 @@ public class KafkaResponseListenerService<K,V> {
       // skip kafka topic read if no job waiting
       synchronized (waitingForResponse){
         if(waitingForResponse.isEmpty()){
-          kafkaConsumer.seekToEnd(kafkaConsumer.assignment());
           if(log.isDebugEnabled()) log.debug("KafkaResponseListenerService.runResponseCheck : no waiting jobs, not polling records from "+topic);
           try {
-            Thread.sleep(50);// a release CPU
-          } catch (InterruptedException e) {}
-          continue;
+            waitingForResponse.wait();//wait we got at least one job to process
+          } catch (InterruptedException e) {} //normal notify
+          kafkaConsumer.seekToEnd(kafkaConsumer.assignment());
         }
       }
 

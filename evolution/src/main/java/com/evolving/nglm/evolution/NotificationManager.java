@@ -1,6 +1,7 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -22,7 +23,6 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
-import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
@@ -128,7 +128,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
       for (String channelName : channels)
         {
-          log.info("NotificationManager: Instanciate communication channel " + channelName);
+          log.info("-------> NotificationManager: Instanciate communication channel " + channelName);
           Map<String, CommunicationChannel> configuredChannels = Deployment.getCommunicationChannels();
           for (CommunicationChannel cc : configuredChannels.values())
             {
@@ -319,6 +319,29 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     {
       return notificationParameters;
     }
+    
+    /*****************************************
+    *
+    *  getResolvedParameters
+    *
+    *****************************************/
+
+    public Map<String, String> getResolvedParameters(SubscriberMessageTemplateService subscriberMessageTemplateService)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      if(template.getDialogMessages() != null)
+        {
+          for(Map.Entry<String, DialogMessage> dialogMessageEntry : template.getDialogMessages().entrySet())
+            {
+              DialogMessage dialogMessage = dialogMessageEntry.getValue();
+              String parameterName = dialogMessageEntry.getKey();
+              String resolved = dialogMessage.resolve(language, tags.get(parameterName));
+              result.put(parameterName, resolved);
+            }
+        }
+      return result;
+    }
 
     //
     // abstract
@@ -459,6 +482,19 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 //      return tags;
 //
 //    }
+
+    /*****************************************
+    *
+    *  constructor : minimum for reports
+    *
+    *****************************************/
+
+    public NotificationManagerRequest(String templateID, String language, Map<String, List<String>> tags)
+    {
+      this.language = language;
+      this.templateID = templateID;
+      this.tags = tags;
+    }
 
     /*****************************************
      *
@@ -647,10 +683,16 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       guiPresentationMap.put(FEATUREID, getFeatureID());
       guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      String fromAddress = "";//todo (String)getNotificationParameters().get("node.parameter.fromaddress");
+      guiPresentationMap.put(SOURCE, fromAddress);
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
-      guiPresentationMap.put(NOTIFICATION_CHANNEL, getChannelID());
+      //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
+      guiPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(getChannelID()).getDisplay());
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
+      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
+      guiPresentationMap.putAll(resolvedParameters);
+      
     }
 
     //
@@ -668,11 +710,16 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
       thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      String fromAddress = "";//todo (String)getNotificationParameters().get("node.parameter.fromaddress");
+      thirdPartyPresentationMap.put(SOURCE, fromAddress);
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
-      thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, getChannelID());
+      //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
+      thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(getChannelID()).getDisplay());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
+      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
+      thirdPartyPresentationMap.putAll(resolvedParameters);
     }
 
     public void resetDeliveryRequestAfterReSchedule()
@@ -826,6 +873,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
           
           // add also the mandatory parameters for all channels
           Object value = CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.contacttype");
+          ContactType contactType = ContactType.fromExternalRepresentation((String) value);
           notificationParameters.put("node.parameter.contacttype", value);
           value = CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.fromaddress");
           notificationParameters.put("node.parameter.fromaddress", value);
@@ -842,6 +890,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
              request = new NotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters);
              request.setModuleID(moduleID);
              request.setFeatureID(deliveryRequestSource);
+             request.setDeliveryPriority(contactType.getDeliveryPriority());
              request.setNotificationHistory(evolutionEventContext.getSubscriberState().getNotificationHistory());
            }
          else
@@ -1075,7 +1124,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     log.info("NotificationManager: configuration " + Deployment.getDeliveryManagers());
 
     NotificationManager manager = new NotificationManager(deliveryManagerKey, listOfChannels);
-
+    new LoggerInitialization().initLogger();
+    
     //
     // run
     //
@@ -1168,7 +1218,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         // address
         // node.parameter.contacttype
         ParameterBuilder parameterBuilder = new ParameterBuilder("node.parameter.contacttype", "Contact Type", CriterionDataType.StringCriterion, false, true, null);
-        for (ContactType currentContactType : ContactType.values())
+        // lambda filtering (only done once) to eliminate contact types with negative topic index
+        for (ContactType currentContactType : Arrays.stream(ContactType.values()).filter(ct -> ct.getDeliveryPriority().getTopicIndex() >= 0).toArray(ContactType[]::new))
           {
             parameterBuilder.addAvailableValue(new AvailableValueStaticStringBuilder(currentContactType.getExternalRepresentation(), currentContactType.getDisplay()));
           }

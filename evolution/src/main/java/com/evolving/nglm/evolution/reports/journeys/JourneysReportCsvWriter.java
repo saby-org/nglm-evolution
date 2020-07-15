@@ -115,9 +115,8 @@ public class JourneysReportCsvWriter implements ReportCsvFactory
           addHeaders = false;
         }
         String line = ReportUtils.formatResult(journeyInfo);
-        log.trace("Writing to csv file : "+line);
+        if (log.isTraceEnabled()) log.trace("Writing to csv file : "+line);
         writer.write(line.getBytes());
-        writer.write("\n".getBytes());
       }
     }
     return addHeaders;

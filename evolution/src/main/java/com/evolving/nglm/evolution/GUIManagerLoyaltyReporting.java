@@ -15,6 +15,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +23,8 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.Serializer;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -39,6 +42,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
+import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.sun.net.httpserver.HttpExchange;
 
@@ -164,6 +168,17 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
 
     /*****************************************
     *
@@ -237,27 +252,31 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         *  store
         *
         *****************************************/
+        if (!dryRun)
+          {
 
-        loyaltyProgramService.putLoyaltyProgram(loyaltyProgram, (existingLoyaltyProgram == null), userID);
-        
-        /*****************************************
-        *
-        *  add dynamic criterion fields)
-        *
-        *****************************************/
+            loyaltyProgramService.putLoyaltyProgram(loyaltyProgram, (existingLoyaltyProgram == null), userID);
 
-        dynamicCriterionFieldService.addLoyaltyProgramCriterionFields(loyaltyProgram, (existingLoyaltyProgram == null));
+            /*****************************************
+             *
+             * add dynamic criterion fields)
+             *
+             *****************************************/
 
-        /*****************************************
-        *
-        *  revalidate
-        *
-        *****************************************/
+            dynamicCriterionFieldService.addLoyaltyProgramCriterionFields(loyaltyProgram,
+                (existingLoyaltyProgram == null));
 
-        revalidateSubscriberMessageTemplates(now);
-        revalidateOffers(now);
-        revalidateTargets(now);
-        revalidateJourneys(now);
+            /*****************************************
+             *
+             * revalidate
+             *
+             *****************************************/
+
+            revalidateSubscriberMessageTemplates(now);
+            revalidateOffers(now);
+            revalidateTargets(now);
+            revalidateJourneys(now);
+          }
 
         /*****************************************
         *
@@ -283,9 +302,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         //
         //  store
         //
-
-        loyaltyProgramService.putLoyaltyProgram(incompleteObject, (existingLoyaltyProgram == null), userID);
-
+        if (!dryRun)
+          {
+            loyaltyProgramService.putLoyaltyProgram(incompleteObject, (existingLoyaltyProgram == null), userID);
+          }
         //
         //  log
         //
@@ -330,38 +350,82 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 
     Date now = SystemTime.getCurrentTime();
 
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> loyaltyPrograms = new ArrayList<>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray loyaltyProgramIDs = new JSONArray();
+
     /****************************************
     *
     *  argument
     *
     ****************************************/
 
-    String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single loyaltyProgram
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        loyaltyProgramIDs.add(loyaltyProgramID);
+        GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID);
+
+        if (loyaltyProgram != null && (force || !loyaltyProgram.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (loyaltyProgram != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "loyaltyprogramNotFound";
+
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        loyaltyProgramIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+   
+    for (int i = 0; i < loyaltyProgramIDs.size(); i++)
+      {
+        String loyaltyProgramID = loyaltyProgramIDs.get(i).toString();
+        GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID);
+        
+        if (loyaltyProgram != null && (force || !loyaltyProgram.getReadOnly()))
+          {
+            loyaltyPrograms.add(loyaltyProgram);
+            validIDs.add(loyaltyProgramID);
+          }
+      }
+        
+  
 
     /*****************************************
     *
     *  remove
     *
     *****************************************/
-
-    GUIManagedObject existingLoyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID);
-    if (existingLoyaltyProgram != null && (force || !existingLoyaltyProgram.getReadOnly()))
+    for (int i = 0; i < loyaltyPrograms.size(); i++)
       {
-        //
-        //  remove loyalty program
-        //
 
-        loyaltyProgramService.removeLoyaltyProgram(loyaltyProgramID, userID);
+        GUIManagedObject loyaltyProgram = loyaltyPrograms.get(i);
 
         //
-        //  remove dynamic criterion fields
+        // remove loyalty program
         //
-        
-        dynamicCriterionFieldService.removeLoyaltyProgramCriterionFields(existingLoyaltyProgram);
+
+        loyaltyProgramService.removeLoyaltyProgram(loyaltyProgram.getGUIManagedObjectID(), userID);
 
         //
-        //  revalidate
+        // remove dynamic criterion fields
+        //
+
+        dynamicCriterionFieldService.removeLoyaltyProgramCriterionFields(loyaltyProgram);
+
+        //
+        // revalidate
         //
 
         revalidateSubscriberMessageTemplates(now);
@@ -371,34 +435,140 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       }
 
     /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
+     *
+     * responseCode
+     *
+     *****************************************/
 
-    String responseCode;
-    if (existingLoyaltyProgram != null && (force || !existingLoyaltyProgram.getReadOnly()))
+    if (jsonRoot.containsKey("id"))
       {
-        responseCode = "ok";
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
       }
-    else if (existingLoyaltyProgram != null)
-      {
-        responseCode = "failedReadOnly";
-      }
+
     else
       {
-        responseCode = "loyaltyProgamNotFound";
+        response.put("responseCode", "ok");
       }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedloyaltyProgramIDS", JSONUtilities.encodeArray(validIDs));
 
-    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
+
+  /*****************************************
+   *
+   * processSetStatusLoyaltyProgram
+   *
+   *****************************************/
+
+  JSONObject processSetStatusLoyaltyProgram(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONArray loyaltyProgramIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+    List<String> statusSetIDs = new ArrayList<>();
+    Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+    long epoch = epochServer.getKey();
+
+    for (int i = 0; i < loyaltyProgramIDs.size(); i++)
+      {
+
+        String loyaltyProgramID = loyaltyProgramIDs.get(i).toString();
+        GUIManagedObject existingElement = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+        if (existingElement != null && !(existingElement.getReadOnly()))
+          {
+            statusSetIDs.add(loyaltyProgramID);
+            JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+            elementRoot.put("active", status);
+            try
+              {
+                /****************************************
+                 *
+                 * instantiate LoyaltyProgram
+                 *
+                 ****************************************/
+
+                LoyaltyProgram loyaltyProgram = null;
+                switch (LoyaltyProgramType
+                    .fromExternalRepresentation(JSONUtilities.decodeString(elementRoot, "loyaltyProgramType", true)))
+                  {
+                    case POINTS:
+                      loyaltyProgram = new LoyaltyProgramPoints(elementRoot, epoch, existingElement,
+                          catalogCharacteristicService);
+                      break;
+
+//          case BADGES:
+//            // TODO
+//            break;
+
+                    case Unknown:
+                      throw new GUIManagerException("unsupported loyalty program type",
+                          JSONUtilities.decodeString(elementRoot, "loyaltyProgramType", false));
+                  }
+
+                /*****************************************
+                 *
+                 * store
+                 *
+                 *****************************************/
+                loyaltyProgramService.putLoyaltyProgram(loyaltyProgram, (existingElement == null), userID);
+
+                /*****************************************
+                 *
+                 * revalidate
+                 *
+                 *****************************************/
+
+                revalidateSubscriberMessageTemplates(now);
+                revalidateOffers(now);
+                revalidateTargets(now);
+                revalidateJourneys(now);
+
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                //
+                // incompleteObject
+                //
+
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch);
+
+                //
+                // store
+                //
+
+                loyaltyProgramService.putLoyaltyProgram(incompleteObject, (existingElement == null), userID);
+
+                //
+                // log
+                //
+
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                if (log.isWarnEnabled())
+                  {
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+              }
+          }
+      }
+    response.put("responseCode", "ok");
+    response.put("statusSetIds", statusSetIDs);
+    return JSONUtilities.encodeObject(response);
+  }
+
 
   /*****************************************
   *
@@ -416,7 +586,26 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> loyaltyProgramList = new ArrayList<JSONObject>();
-    for (GUIManagedObject loyaltyProgram : loyaltyProgramService.getStoredGUIManagedObjects(includeArchived))
+    Collection <GUIManagedObject> loyaltyProgramObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray loyaltyProgramIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < loyaltyProgramIDs.size(); i++)
+          {
+            String loyaltyProgramID = loyaltyProgramIDs.get(i).toString();
+            GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID, includeArchived);
+            if (loyaltyProgram != null)
+              {
+                loyaltyProgramObjects.add(loyaltyProgram);
+              }
+          }
+      }
+    else
+      {
+        loyaltyProgramObjects = loyaltyProgramService.getStoredGUIManagedObjects(includeArchived);
+      }
+    for (GUIManagedObject loyaltyProgram : loyaltyProgramObjects)
       {
         JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(loyaltyProgram, fullDetails, now);
         loyaltyProgramList.add(loyaltyPro);
@@ -648,7 +837,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("contactPolicyCount", contactPolicyService.getStoredContactPolicies(includeArchived).size());
     response.put("communicationChannelCount", Deployment.getCommunicationChannels().size());
     response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived).size());
-    response.put("partnerCount", resellerService.getStoredResellers(includeArchived).size());
+    response.put("resellerCount", resellerService.getStoredResellers(includeArchived).size());
     return JSONUtilities.encodeObject(response);
   }
 
@@ -702,12 +891,37 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 
   JSONObject processGetReportList(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
-    log.trace("In processGetReportList : "+jsonRoot);
+    if (log.isTraceEnabled())
+      {
+        log.trace("In processGetReportList : " + jsonRoot);
+      }
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> reports = new ArrayList<JSONObject>();
-    for (GUIManagedObject report : reportService.getStoredReports(includeArchived))
+    Collection <GUIManagedObject> reportObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
       {
-        log.trace("In processGetReportList, adding : "+report);
+  JSONArray reportIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+  for (int i = 0; i < reportIDs.size(); i++)
+    {
+      String reportID = reportIDs.get(i).toString();
+      GUIManagedObject report = reportService.getStoredReport(reportID, includeArchived);
+      if (report != null)
+        {
+          reportObjects.add(report);
+        }
+    }
+      }
+    else
+      {
+        reportObjects = reportService.getStoredReports(includeArchived);
+      }
+    for (GUIManagedObject report : reportObjects)
+      {
+        if (log.isTraceEnabled())
+          {
+            log.trace("In processGetReportList, adding : " + report);
+          }
         JSONObject reportResponse = reportService.generateResponseJSON(report, true, now);
         reportResponse.put("isRunning", reportService.isReportRunning(((Report)report).getName()));
         reports.add(reportResponse);
@@ -715,7 +929,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("reports", JSONUtilities.encodeArray(reports));
-    log.trace("res : "+response.get("reports"));
+    if (log.isTraceEnabled())
+      {
+        log.trace("res : " + response.get("reports"));
+      }
     return JSONUtilities.encodeObject(response);
   }
 
@@ -765,6 +982,17 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     String reportID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
     if (reportID == null)
       {
         reportID = reportService.generateReportID();
@@ -820,7 +1048,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       {
         Report report = new Report(jsonRoot, epoch, existingReport);
         log.trace("new report : "+report);
-        reportService.putReport(report, (existingReport == null), userID);
+        if (!dryRun)
+          {
+            reportService.putReport(report, (existingReport == null), userID);
+          }
         response.put("id", report.getReportID());
         response.put("accepted", report.getAccepted());
         response.put("valid", report.getAccepted());
@@ -906,6 +1137,141 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("billingModes", JSONUtilities.encodeArray(billingModes));
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  *  processLoyaltyProgramOptInOut
+  *
+  *****************************************/
+
+  JSONObject processLoyaltyProgramOptInOut(JSONObject jsonRoot, boolean optIn)throws GUIManagerException {
+    
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    HashMap<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+     *
+     * argument
+     *
+     ****************************************/
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
+
+    /*****************************************
+     *
+     * resolve subscriberID
+     *
+     *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+
+    String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "loyaltyProgram", false); 
+    String loyaltyProgramRequestID = "";
+
+    /*****************************************
+     *
+     * getSubscriberProfile - no history
+     *
+     *****************************************/
+
+    try
+      {
+        SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+        if (subscriberProfile == null)
+          {
+            response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+            response.put("responseMessage", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+            if (log.isDebugEnabled())
+              log.debug("SubscriberProfile is null for subscriberID {}", subscriberID);
+            return JSONUtilities.encodeObject(response);
+          }
+
+        Date now = SystemTime.getCurrentTime();
+
+        String activeLoyaltyProgramID = null;
+        for (LoyaltyProgram loyaltyProgram : loyaltyProgramService.getActiveLoyaltyPrograms(now))
+          {
+            if (loyaltyProgramID.equals(loyaltyProgram.getLoyaltyProgramID()))
+              {
+                activeLoyaltyProgramID = loyaltyProgram.getGUIManagedObjectID();
+                break;
+              }
+          }
+        if (activeLoyaltyProgramID == null)
+          {
+            response.put("responseCode", RESTAPIGenericReturnCodes.LOYALTY_PROJECT_NOT_FOUND.getGenericResponseCode());
+            response.put("responseMessage",
+                RESTAPIGenericReturnCodes.LOYALTY_PROJECT_NOT_FOUND.getGenericResponseMessage());
+            return JSONUtilities.encodeObject(response);
+          }
+        String topic = Deployment.getLoyaltyProgramRequestTopic();
+        Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+        Serializer<LoyaltyProgramRequest> valueSerializer = LoyaltyProgramRequest.serde().serializer();
+
+        String featureID = (optIn ? API.loyaltyProgramOptIn : API.loyaltyProgramOptOut).getMethodIndex() + "";
+        String operation = optIn ? "opt-in" : "opt-out";
+        String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
+        loyaltyProgramRequestID = zuks.getStringKey();
+
+        /*****************************************
+         *
+         * request
+         *
+         *****************************************/
+
+        // Build a json doc to create the LoyaltyProgramRequest
+        HashMap<String, Object> request = new HashMap<String, Object>();
+
+        // Fields for LoyaltyProgramRequest
+        request.put("operation", operation);
+        request.put("loyaltyProgramRequestID", loyaltyProgramRequestID);
+        request.put("loyaltyProgramID", activeLoyaltyProgramID);
+        request.put("eventDate", now);
+
+        // Fields for DeliveryRequest
+        request.put("deliveryRequestID", loyaltyProgramRequestID);
+        request.put("subscriberID", subscriberID);
+        request.put("eventID", "0"); // No event here
+        request.put("moduleID", moduleID);
+        request.put("featureID", featureID);
+        request.put("deliveryType", "loyaltyProgramFulfillment");
+        JSONObject valueRes = JSONUtilities.encodeObject(request);
+
+        LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(valueRes, null);
+
+        // Write it to the right topic
+        kafkaProducer
+            .send(new ProducerRecord<byte[], byte[]>(topic, keySerializer.serialize(topic, new StringKey(subscriberID)),
+                valueSerializer.serialize(topic, loyaltyProgramRequest)));
+
+        //
+        // TODO how do we deal with the offline errors ?
+        //
+
+        // TODO trigger event (for campaign) ?
+
+      }
+    catch (SubscriberProfileServiceException e)
+      {
+        log.error("unable to process request processLoyaltyProgramOptInOut {} ", e.getMessage());
+        throw new GUIManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), "21");
+      }
+
+    /*****************************************
+     *
+     * decorate and response
+     *
+     *****************************************/
+    response.put("deliveryRequestID", loyaltyProgramRequestID);
+    response.put("responseCode", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+    response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+    return JSONUtilities.encodeObject(response);
+ }
+  
   
 }
 

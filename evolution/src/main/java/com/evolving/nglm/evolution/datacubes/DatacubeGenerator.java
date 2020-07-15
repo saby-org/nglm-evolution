@@ -325,7 +325,7 @@ public abstract class DatacubeGenerator
       embellishFilters(filters);
       
       //
-      // Extract metrics 
+      // Extract metrics (@rl may also modify filters, see loyalty hack)
       //
       Map<String, Object> metrics = extractMetrics(bucket, filters);
       

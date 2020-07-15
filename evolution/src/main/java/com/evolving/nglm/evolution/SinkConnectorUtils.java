@@ -28,7 +28,7 @@ public class SinkConnectorUtils
   {
     try
       {
-        log.info("subscriberID : " + subscriberID);
+        if (log.isTraceEnabled()) log.trace("subscriberID : " + subscriberID);
         SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
         putAlternateIDs(subscriberID, map, subscriberProfile);
       }
@@ -40,7 +40,8 @@ public class SinkConnectorUtils
 
   public static void putAlternateIDs(String subscriberID, Map<String,Object> map, SubscriberProfile subscriberProfile)
   {
-    log.info("subscriberID : " + subscriberID);
+    boolean needToLog = log.isTraceEnabled();
+    if (needToLog) log.trace("subscriberID : " + subscriberID);
     for (AlternateID alternateID : Deployment.getAlternateIDs().values())
       {
         String methodName;
@@ -52,13 +53,12 @@ public class SinkConnectorUtils
           {
             methodName = "get" + StringUtils.capitalize(alternateID.getID());
           }
-        log.info("method " + methodName);
+        if (needToLog) log.trace("method " + methodName);
         try
         {
           Method method = subscriberProfile.getClass().getMethod(methodName);
           Object alternateIDValue = method.invoke(subscriberProfile);
-          if (log.isTraceEnabled())
-            log.trace("adding " + alternateID.getID() + " with " + alternateIDValue);
+          if (needToLog) log.trace("adding " + alternateID.getID() + " with " + alternateIDValue);
           map.put(alternateID.getID(), alternateIDValue);
         }
         catch (NoSuchMethodException|SecurityException|IllegalAccessException|IllegalArgumentException|InvocationTargetException e)
@@ -70,7 +70,8 @@ public class SinkConnectorUtils
 
   public static void putAlternateIDsString(String subscriberID, Map<String,String> map, SubscriberProfile subscriberProfile)
   {
-    log.info("subscriberID : " + subscriberID);
+    boolean needToLog = log.isTraceEnabled();
+    if (needToLog) log.trace("subscriberID : " + subscriberID);
     for (AlternateID alternateID : Deployment.getAlternateIDs().values())
       {
         String methodName;
@@ -82,13 +83,13 @@ public class SinkConnectorUtils
           {
             methodName = "get" + StringUtils.capitalize(alternateID.getID());
           }
-        log.info("method " + methodName);
+        if (needToLog) log.trace("method " + methodName);
         try
         {
           Method method = subscriberProfile.getClass().getMethod(methodName);
           Object alternateIDValue = method.invoke(subscriberProfile);
           String alternateIDStr = "" + alternateIDValue;
-          log.info("adding " + alternateID.getID() + " with " + alternateIDStr);
+          if (needToLog) log.trace("adding " + alternateID.getID() + " with " + alternateIDStr);
           map.put(alternateID.getID(), alternateIDStr);
         }
         catch (NoSuchMethodException|SecurityException|IllegalAccessException|IllegalArgumentException|InvocationTargetException e)
@@ -103,7 +104,7 @@ public class SinkConnectorUtils
     for (AlternateID alternateID : Deployment.getAlternateIDs().values())
       {
         String alternateIDValue = alternateIDsMap.get(alternateID.getID());
-        log.trace("adding " + alternateID.getID() + " with " + alternateIDValue);
+        if (log.isTraceEnabled()) log.trace("adding " + alternateID.getID() + " with " + alternateIDValue);
         map.put(alternateID.getID(), alternateIDValue);
       }
   }

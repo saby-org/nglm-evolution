@@ -1,11 +1,12 @@
 package com.lumatagroup.expression.driver.SMTP.util;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.lumatagroup.expression.driver.SMTP.model.SMTPFeedbackMsg;
 
 public class E4OUpdater {
-	private static Logger LOG = Logger.getLogger(E4OUpdater.class);
+	private static Logger LOG = LoggerFactory.getLogger(E4OUpdater.class);
 
 	public void UpdateFeedback(SMTPFeedbackMsg fdbkmsg){
 		LOG.info("Inside E4OUpdater.UpdateFeedback() for messageId : "+fdbkmsg.getMessageId());

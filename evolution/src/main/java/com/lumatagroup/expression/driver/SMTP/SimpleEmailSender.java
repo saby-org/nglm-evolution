@@ -1,14 +1,16 @@
 package com.lumatagroup.expression.driver.SMTP;
 
 import java.util.Date;
+
 import javax.mail.AuthenticationFailedException;
 import javax.mail.MessagingException;
 import javax.mail.SendFailedException;
 
-import org.apache.log4j.Logger;
-import com.evolving.nglm.evolution.MailNotificationManager;
-import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications;
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 import com.evolving.nglm.evolution.INotificationRequest;
 import com.lumatagroup.expression.driver.dyn.NotificationStatus;
@@ -21,21 +23,21 @@ import com.sun.mail.smtp.SMTPTransport;
  *
  */
 public class SimpleEmailSender {
-	private static Logger logger = Logger.getLogger(SimpleEmailSender.class);
+	private static Logger logger = LoggerFactory.getLogger(SimpleEmailSender.class);
 	private SMTPConnection smtpConn;
 	private String fromEmail;
 	private String replyTo;
 
 	private String forceSubject;
-	private MailNotificationManager mailNotificationManager;
+	private DeliveryManagerForNotifications deliveryManagerForNotifications;
 
-	public SimpleEmailSender(MailNotificationManager mailNotificationManager, String name, SMTPConnection conn, String replyTo, String frmEmail, String forceSubject) {
-		if (logger.isTraceEnabled()) logger.trace("START: SimpleEmailSender ctor("+mailNotificationManager+" "+name+" "+conn+" "+replyTo+" "+frmEmail);
+	public SimpleEmailSender(DeliveryManagerForNotifications deliveryManagerForNotifications, String name, SMTPConnection conn, String replyTo, String frmEmail, String forceSubject) {
+		if (logger.isTraceEnabled()) logger.trace("START: SimpleEmailSender ctor("+deliveryManagerForNotifications+" "+name+" "+conn+" "+replyTo+" "+frmEmail);
 		this.smtpConn = conn;
 		this.replyTo = replyTo;
 		this.fromEmail = frmEmail;
 		this.forceSubject = forceSubject;
-		this.mailNotificationManager = mailNotificationManager;
+		this.deliveryManagerForNotifications = deliveryManagerForNotifications;
 		if (conn == null) {
 			throw new NullPointerException("Missing argument for SimpleMailSender constructor");
 		}
@@ -106,7 +108,7 @@ public class SimpleEmailSender {
                           mailNotificationRequest.setReturnCode(MessageStatus.DELIVERED.getReturnCode());
                           updateDeliveryRequest(mailNotificationRequest);
                       }else {
-                          completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.SENT, DeliveryStatus.Acknowledged, NotificationStatusCode.fromReturnCode(NotificationStatusCode.EMAIL_SENT.getReturnCode()).toString());
+                          completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.DELIVERED, DeliveryStatus.Acknowledged, NotificationStatusCode.fromReturnCode(NotificationStatusCode.EMAIL_SENT.getReturnCode()).toString());
                         }
 						smtpConn.setLastActiveTime(System.currentTimeMillis());
 						logger.info("Email sent successfully of X-messageId: "+mailNotificationRequest.getDeliveryRequestID()+" to the recepient address "+toEmail );
@@ -126,7 +128,7 @@ public class SimpleEmailSender {
                                mailNotificationRequest.setReturnCodeDetails(MessageStatus.DELIVERED.toString());
                                updateDeliveryRequest(mailNotificationRequest);
                            }else {
-                             completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.SENT, DeliveryStatus.Acknowledged, NotificationStatusCode.fromReturnCode(NotificationStatusCode.EMAIL_SENT.getReturnCode()).toString());
+                             completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MessageStatus.DELIVERED, DeliveryStatus.Acknowledged, NotificationStatusCode.fromReturnCode(NotificationStatusCode.EMAIL_SENT.getReturnCode()).toString());
                            }
 							smtpConn.setLastActiveTime(System.currentTimeMillis());
 							logger.info("Email sent successfully of X-messageId: "+mailNotificationRequest.getDeliveryRequestID()+" to the recepient address "+toEmail);
@@ -227,7 +229,7 @@ public class SimpleEmailSender {
 
 	private void updateDeliveryRequest(INotificationRequest deliveryRequest){
 	  logger.info("SimpleSMSSender.updateDeliveryRequest(message sent");
-	  mailNotificationManager.updateDeliveryRequest(deliveryRequest);
+	  deliveryManagerForNotifications.updateDeliveryRequest(deliveryRequest);
 	}
 
 	public void completeDeliveryRequest(INotificationRequest mailNotif, String messageId, MessageStatus status, DeliveryStatus deliveryStatus, String returnCodeDetails){
@@ -236,7 +238,7 @@ public class SimpleEmailSender {
 	  mailNotif.setMessageStatus(status);
 	  mailNotif.setReturnCode(status.getReturnCode());
 	  mailNotif.setReturnCodeDetails(returnCodeDetails);
-	  mailNotificationManager.completeDeliveryRequest(mailNotif);
+	  deliveryManagerForNotifications.completeDeliveryRequest(mailNotif);
 	}
 
 }

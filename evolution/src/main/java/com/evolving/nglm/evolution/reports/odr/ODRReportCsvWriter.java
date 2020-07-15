@@ -41,7 +41,6 @@ public class ODRReportCsvWriter implements ReportCsvFactory
   private static final String eventDatetime = "eventDatetime";
   private static final String originatingDeliveryRequestID = "originatingDeliveryRequestID";
   private static final String deliveryRequestID = "deliveryRequestID";
-  private static final String deliveryStatus = "deliveryStatus";
   private static final String eventID = "eventID";
   private static final String meanOfPayment = "meanOfPayment";
   private static final String offerPrice = "offerPrice";
@@ -50,7 +49,7 @@ public class ODRReportCsvWriter implements ReportCsvFactory
   private static final String origin = "origin";
   private static final String voucherCode = "voucherCode";
   private static final String returnCode = "returnCode";
-  private static final String returnCodeDetails = "returnCodeDetails";
+  private static final String returnCodeDescription  = "returnCodeDescription ";
 
   private static List<String> headerFieldsOrder = new LinkedList<String>();
   static 
@@ -73,7 +72,6 @@ public class ODRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(eventDatetime);
     headerFieldsOrder.add(originatingDeliveryRequestID);
     headerFieldsOrder.add(deliveryRequestID);
-    headerFieldsOrder.add(deliveryStatus);
     headerFieldsOrder.add(eventID);
     headerFieldsOrder.add(meanOfPayment);
     headerFieldsOrder.add(offerPrice);
@@ -82,7 +80,7 @@ public class ODRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(origin);
     headerFieldsOrder.add(voucherCode);
     headerFieldsOrder.add(returnCode);
-    headerFieldsOrder.add(returnCodeDetails);
+    headerFieldsOrder.add(returnCodeDescription);
   }
 
   @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
@@ -94,9 +92,8 @@ public class ODRReportCsvWriter implements ReportCsvFactory
             addHeaders(writer, headerFieldsOrder, 1);
           }
         String line = ReportUtils.formatResult(headerFieldsOrder, lineMap);
-        log.trace("Writing to csv file : " + line);
+        if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
         writer.write(line.getBytes());
-        writer.write("\n".getBytes());
       } 
     catch (IOException e)
       {
@@ -132,10 +129,6 @@ public class ODRReportCsvWriter implements ReportCsvFactory
           {
             oderRecs.put(deliveryRequestID, odrFields.get(deliveryRequestID));
           }
-        if (odrFields.containsKey(deliveryStatus))
-          {
-            oderRecs.put(deliveryStatus, odrFields.get(deliveryStatus));
-          }
         if (odrFields.containsKey(eventID))
           {
             oderRecs.put(eventID, odrFields.get(eventID));
@@ -149,8 +142,7 @@ public class ODRReportCsvWriter implements ReportCsvFactory
 
                 // TEMP fix for BLK : reformat date with correct template.
 
-                List<SimpleDateFormat> standardDateFormats = ReportsCommonCode.initializeDateFormats();
-                oderRecs.put(eventDatetime, ReportsCommonCode.parseDate(standardDateFormats, (String) eventDatetimeObj));
+                oderRecs.put(eventDatetime, ReportsCommonCode.parseDate((String) eventDatetimeObj));
 
                 // END TEMP fix for BLK
 
@@ -244,13 +236,9 @@ public class ODRReportCsvWriter implements ReportCsvFactory
           }
         if (odrFields.containsKey(returnCode))
           {
-            oderRecs.put(returnCode, odrFields.get(returnCode));
-          }
-        if (odrFields.containsKey(returnCodeDetails))
-          {
             Object code = odrFields.get(returnCode);
             oderRecs.put(returnCode, code);
-            oderRecs.put(returnCodeDetails, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
+            oderRecs.put(returnCodeDescription , (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
           }    
 
         //

@@ -2,8 +2,12 @@ package com.evolving.nglm.evolution.reports.notification;
 
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.*;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
+import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
+import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
+import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportCsvWriter;
 import com.evolving.nglm.evolution.reports.ReportUtils;
@@ -15,6 +19,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.zip.ZipOutputStream;
 
 public class NotificationReportCsvWriter implements ReportCsvFactory
@@ -25,6 +30,7 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
   private static JourneyService journeyService;
   private static OfferService offerService;
   private static LoyaltyProgramService loyaltyProgramService;
+  private static SubscriberMessageTemplateService subscriberMessageTemplateService;
 
   private static final String moduleId = "moduleID";
   private static final String featureId = "featureID";
@@ -36,12 +42,18 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
   private static final String deliveryDate = "deliveryDate";
   private static final String originatingDeliveryRequestID = "originatingDeliveryRequestID";
   private static final String deliveryRequestID = "deliveryRequestID";
-  private static final String deliveryStatus = "deliveryStatus";
   private static final String eventID = "eventID";
   private static final String returnCode = "returnCode";
   private static final String returnCodeDetails = "returnCodeDetails";
   private static final String returnCodeDescription = "returnCodeDescription";
   private static final String source = "source";
+  
+  private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+  private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
+
+  private static final String messageContent = "messageContent";
+  private static final String templateID = "templateID";
+  private static final String language = "language";
   
   private static List<String> headerFieldsOrder = new LinkedList<String>();
   static
@@ -59,12 +71,12 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(deliveryDate);
     headerFieldsOrder.add(originatingDeliveryRequestID);
     headerFieldsOrder.add(deliveryRequestID);
-    headerFieldsOrder.add(deliveryStatus);
     headerFieldsOrder.add(eventID);
     headerFieldsOrder.add(returnCode);
     headerFieldsOrder.add(returnCodeDescription);
     headerFieldsOrder.add(returnCodeDetails);
     headerFieldsOrder.add(source);
+    headerFieldsOrder.add(messageContent);
   }
 
   @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
@@ -76,9 +88,8 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
             addHeaders(writer, headerFieldsOrder, 1);
           }
         String line = ReportUtils.formatResult(headerFieldsOrder, lineMap);
-        log.trace("Writing to csv file : " + line);
+        if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
         writer.write(line.getBytes());
-        writer.write("\n".getBytes());
       } 
     catch (IOException e)
       {
@@ -123,15 +134,13 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
                     // template.
                     // current format comes from ES and is :
                     // 2020-04-20T09:51:38.953Z
-                    SimpleDateFormat parseSDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
                     try
                     {
-                      Date date = parseSDF.parse(creationDateStr);
+                      Date date = parseSDF1.parse(creationDateStr);
                       notifRecs.put(creationDate, ReportsCommonCode.getDateString(date)); // replace with new value
                     } catch (ParseException e1)
                     {
                       // Could also be 2019-11-27 15:39:30.276+0100
-                      SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
                       try
                       {
                         Date date = parseSDF2.parse(creationDateStr);
@@ -164,15 +173,13 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
                     // template.
                     // current format comes from ES and is :
                     // 2020-04-20T09:51:38.953Z
-                    SimpleDateFormat parseSDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
                     try
                     {
-                      Date date = parseSDF.parse(deliveryDateStr);
+                      Date date = parseSDF1.parse(deliveryDateStr);
                       notifRecs.put(deliveryDate, ReportsCommonCode.getDateString(date)); // replace with new value
                     } catch (ParseException e1)
                     {
                       // Could also be 2019-11-27 15:39:30.276+0100
-                      SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
                       try
                       {
                         Date date = parseSDF2.parse(deliveryDateStr);
@@ -200,10 +207,6 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
         if (notifFields.containsKey(deliveryRequestID))
           {
             notifRecs.put(deliveryRequestID, notifFields.get(deliveryRequestID));
-          }
-        if (notifFields.containsKey(deliveryStatus))
-          {
-            notifRecs.put(deliveryStatus, notifFields.get(deliveryStatus));
           }
         if (notifFields.containsKey(eventID))
           {
@@ -240,6 +243,49 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
           {
             notifRecs.put(source, notifFields.get(source));
           }
+        if (notifFields.containsKey(templateID))
+          {
+            Map<String, Object> msgContentJSON = new LinkedHashMap<>(); // to preserve order when displaying
+            String tempID = notifFields.get(templateID).toString();
+            String lang = notifFields.containsKey(language) ? notifFields.get(language).toString() : "";
+            SubscriberMessageTemplate templateObject = subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime());
+            // get actual text based on the template kind
+            if (templateObject instanceof SMSTemplate)
+              {
+                Map<String,Object> tags = getAllTags(notifFields);
+                List<String> tagsList = getTags(tags, "tags");
+                SMSNotificationManagerRequest req = new SMSNotificationManagerRequest(tempID, lang, tagsList);
+                String actualMessage = req.getText(subscriberMessageTemplateService);
+                msgContentJSON.put("sms", truncateIfNecessary(actualMessage));
+              }
+            else if (templateObject instanceof MailTemplate)
+              {
+                Map<String,Object> tags = getAllTags(notifFields);
+                List<String> subjectTagsList = getTags(tags, "subjectTags");
+                List<String> textBodyTagsList = getTags(tags, "textBodyTags");
+                List<String> htmlBodyTagsList = getTags(tags, "htmlBodyTags");
+                MailNotificationManagerRequest req = new MailNotificationManagerRequest(tempID, lang, subjectTagsList, textBodyTagsList, htmlBodyTagsList);
+                String actualSubject = req.getSubject(subscriberMessageTemplateService);
+                String actualTextBody = req.getTextBody(subscriberMessageTemplateService);
+                String actualHtmlBody = req.getHtmlBody(subscriberMessageTemplateService);
+                msgContentJSON.put("subject", truncateIfNecessary(actualSubject));
+                msgContentJSON.put("textBody", truncateIfNecessary(actualTextBody));
+                msgContentJSON.put("htmlBody", truncateIfNecessary(actualHtmlBody));
+              }
+            else if (templateObject instanceof PushTemplate)
+              {
+                // TODO
+                log.info("Not Yet Implemented, template class : " + templateObject.getClass().getCanonicalName());
+              }
+            else // GenericTemplate
+              {
+                Map<String, List<String>> tags = getAllTagsList(notifFields);
+                NotificationManagerRequest req = new NotificationManagerRequest(tempID, lang, tags);
+                Map<String, String> resolvedParameters = req.getResolvedParameters(subscriberMessageTemplateService);
+                msgContentJSON.putAll(resolvedParameters);
+              }
+            notifRecs.put(messageContent, ReportUtils.formatJSON(msgContentJSON));
+          }
 
         //
         // result
@@ -262,6 +308,65 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
     return result;
   }
   
+  private String truncateIfNecessary(String actualMessage)
+  {
+    String res = actualMessage;
+    int messageMaxLength = Deployment.getReportManagerMaxMessageLength();
+    if (actualMessage.length() > messageMaxLength)
+      {
+        res = actualMessage.substring(0, messageMaxLength) + "...";
+      }
+    return res;
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<String> getTags(Map<String, Object> notifFields, String whichTag)
+  {
+    Object tagsObj = notifFields.get(whichTag);
+    List<String> tagsList = null;
+    if (tagsObj instanceof List<?>)
+      {
+        tagsList = (List<String>) tagsObj;
+      }
+    else
+      {
+        tagsList = new ArrayList<>();
+      }
+    return tagsList;
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String,Object> getAllTags(Map<String, Object> notifFields)
+  {
+    Object tagsObj = notifFields.get("tags");
+    Map<String,Object> tagsList = null;
+    if (tagsObj instanceof Map<?,?>)
+      {
+        tagsList = (Map<String,Object>) tagsObj;
+      }
+    else
+      {
+        tagsList = new HashMap<>();
+      }
+    return tagsList;
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String,List<String>> getAllTagsList(Map<String, Object> notifFields)
+  {
+    Object tagsObj = notifFields.get("tags");
+    Map<String,List<String>> tagsList = null;
+    if (tagsObj instanceof Map<?,?>)
+      {
+        tagsList = (Map<String,List<String>>) tagsObj;
+      }
+    else
+      {
+        tagsList = new HashMap<>();
+      }
+    return tagsList;
+  }
+
   private String getEventDate(String rawEventDateTime)
   {
     String result = "null";
@@ -294,13 +399,17 @@ public class NotificationReportCsvWriter implements ReportCsvFactory
     String journeyTopic = Deployment.getJourneyTopic();
     String offerTopic = Deployment.getOfferTopic();
     String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
-
+    String subscriberMessageTemplateTopic = Deployment.getSubscriberMessageTemplateTopic();
+    
     journeyService = new JourneyService(kafkaNode, "notifreportcsvwriter-journeyservice-" + topic, journeyTopic, false);
     offerService = new OfferService(kafkaNode, "notifreportcsvwriter-offerservice-" + topic, offerTopic, false);
     loyaltyProgramService = new LoyaltyProgramService(kafkaNode, "notifreportcsvwriter-loyaltyprogramservice-" + topic, loyaltyProgramTopic, false);
+    subscriberMessageTemplateService = new SubscriberMessageTemplateService(kafkaNode, "notifreportcsvwriter-subscribermessagetemplateservice-" + topic, subscriberMessageTemplateTopic, false);
+    
     offerService.start();
     journeyService.start();
     loyaltyProgramService.start();
+    subscriberMessageTemplateService.start();
 
     if (!reportWriter.produceReport(csvfile, true))
       {

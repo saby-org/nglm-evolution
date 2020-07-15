@@ -200,6 +200,7 @@ public class Deployment
   private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private static Map<String,NotificationDailyWindows> notificationTimeWindowsMap = new LinkedHashMap<String,NotificationDailyWindows>();
   private static Integer authResponseCacheLifetimeInMinutes = null;
+  private static Integer reportManagerMaxMessageLength = null;
   private static int stockRefreshPeriod;
   private static String periodicEvaluationCronEntry;
   private static String ucgEvaluationCronEntry;
@@ -223,6 +224,8 @@ public class Deployment
   private static int ucgEngineESConnectTimeout;
   private static int ucgEngineESSocketTimeout;
   private static int ucgEngineESMasRetryTimeout;
+  private static int guiManagerESConnectTimeout;
+  private static int guiManagerESSocketTimeout;
   private static String exclusionInclusionTargetTopic;
   private static String dnboMatrixTopic;
   private static String segmentContactPolicyTopic;
@@ -257,6 +260,7 @@ public class Deployment
   private static int propensityWriterRefreshPeriodMs;
 
  private static boolean bypassJourneyTrafficEngine; // @rl Hack. TODO: remove later
+  private static boolean enableContactPolicyProcessing;
 
   /*****************************************
    *
@@ -439,6 +443,7 @@ public class Deployment
   public static Map<String,ToolboxSection> getWorkflowToolbox() { return workflowToolbox; }
   public static Map<String,ThirdPartyMethodAccessLevel> getThirdPartyMethodPermissionsMap() { return thirdPartyMethodPermissionsMap; }
   public static Integer getAuthResponseCacheLifetimeInMinutes() { return authResponseCacheLifetimeInMinutes; }
+  public static Integer getReportManagerMaxMessageLength() { return reportManagerMaxMessageLength; }
   public static int getStockRefreshPeriod() { return stockRefreshPeriod; }
   public static String getPeriodicEvaluationCronEntry() { return periodicEvaluationCronEntry; }
   public static String getUCGEvaluationCronEntry() { return ucgEvaluationCronEntry; }
@@ -463,6 +468,8 @@ public class Deployment
   public static int getUcgEngineESConnectTimeout() { return ucgEngineESConnectTimeout; }
   public static int getUcgEngineESSocketTimeout(){ return ucgEngineESSocketTimeout; }
   public static int getUcgEngineESMasRetryTimeout() { return ucgEngineESMasRetryTimeout; }
+  public static int getGUIManagerESConnectTimeout() { return guiManagerESConnectTimeout; }
+  public static int getGUIManagerESSocketTimeout(){ return guiManagerESSocketTimeout; }
   public static String getExclusionInclusionTargetTopic() { return exclusionInclusionTargetTopic; }
   public static String getDNBOMatrixTopic() { return dnboMatrixTopic; }
   public static String getSegmentContactPolicyTopic() { return segmentContactPolicyTopic; }
@@ -499,6 +506,7 @@ public class Deployment
   public static int getPropensityReaderRefreshPeriodMs() { return propensityReaderRefreshPeriodMs; }
   public static int getPropensityWriterRefreshPeriodMs() { return propensityWriterRefreshPeriodMs; }
   public static boolean getBypassJourneyTrafficEngine() { return bypassJourneyTrafficEngine; }
+  public static boolean getEnableContactPolicyProcessing(){ return  enableContactPolicyProcessing;}
   
   // addProfileCriterionField
   //
@@ -2933,7 +2941,7 @@ public class Deployment
               {
                 ToolboxSection section = journeyToolbox.get(cc.getJourneyGUINodeSectionID());
                 if(section == null) {
-                  log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getJourneyGUINodeSectionID() + " for communicationChannel " + cc.getID());
+                  log.warn("Deployment: Can't retrieve Journey ToolBoxSection for " + cc.getJourneyGUINodeSectionID() + " for communicationChannel " + cc.getID());
                 }
                 else {
                   JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
@@ -2946,7 +2954,7 @@ public class Deployment
                       items.add(item);
                     } 
                     else {
-                      log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                      log.warn("Deployment: Can't retrieve Journey NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
                     }
                   }
                   section.getJSONRepresentation().put("items", items);
@@ -2980,7 +2988,7 @@ public class Deployment
               {
                 ToolboxSection section = campaignToolbox.get(cc.getCampaignGUINodeSectionID());
                 if(section == null) {
-                  log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getCampaignGUINodeSectionID() + " for communicationChannel " + cc.getID());
+                  log.warn("Deployment: Can't retrieve Campaign ToolBoxSection for " + cc.getCampaignGUINodeSectionID() + " for communicationChannel " + cc.getID());
                 }
                 else {
                   JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
@@ -2993,7 +3001,7 @@ public class Deployment
                       items.add(item);
                     } 
                     else {
-                      log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                      log.warn("Deployment: Can't retrieve Campaign NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
                     }                    
                   }
                   section.getJSONRepresentation().put("items", items);
@@ -3086,6 +3094,15 @@ public class Deployment
           throw new ServerRuntimeException("deployment", e);
         }
 
+      try
+      {
+        reportManagerMaxMessageLength = JSONUtilities.decodeInteger(jsonRoot, "reportManagerMaxMessageLength", 200);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+      
       //
       //  stockRefreshPeriod
       //
@@ -3223,6 +3240,34 @@ public class Deployment
         {
           Integer ucgEngineESMasRetryTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESMasRetryTimeout",false);
           ucgEngineESMasRetryTimeout = ucgEngineESMasRetryTimeoutJSON == null ? 60000:ucgEngineESMasRetryTimeoutJSON;
+        }
+      catch(JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment",e);
+        }
+
+      //
+      //  guiManagerESConnectTimeout
+      //
+
+      try
+        {
+          Integer guiManagerESConnectTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"guiManagerESConnectTimeout",false);
+          guiManagerESConnectTimeout = guiManagerESConnectTimeoutJSON == null ? 30000:guiManagerESConnectTimeoutJSON;
+        }
+      catch(JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment",e);
+        }
+
+      //
+      //  guiManagerESSocketTimeout
+      //
+
+      try
+        {
+          Integer guiManagerESSocketTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"guiManagerESSocketTimeout",false);
+          guiManagerESSocketTimeout = guiManagerESSocketTimeoutJSON == null ? 60000:guiManagerESSocketTimeoutJSON;
         }
       catch(JSONUtilitiesException e)
         {
@@ -3391,6 +3436,15 @@ public class Deployment
           bypassJourneyTrafficEngine = JSONUtilities.decodeBoolean(jsonRoot, "bypassJourneyTrafficEngine", Boolean.TRUE);
         }
         catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      try
+        {
+          enableContactPolicyProcessing = JSONUtilities.decodeBoolean(jsonRoot, "enableContactPolicyProcessing", Boolean.TRUE);
+        }
+      catch (JSONUtilitiesException e)
         {
           throw new ServerRuntimeException("deployment", e);
         }

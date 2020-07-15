@@ -164,10 +164,16 @@ public class ThirdPartyJSONGenerator
   private static JSONArray  getOfferSalesChannelsJson(Offer offer, SalesChannelService salesChannelService)
   {
     List<JSONObject> offerSalesChannels = new ArrayList<JSONObject>();
+    OfferPrice offerPrice = new OfferPrice();
+    
     if(offer.getOfferSalesChannelsAndPrices() != null)
       {
         for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
           {
+            if (channel.getPrice() != null)
+              {
+                offerPrice = channel.getPrice();
+              }
             if(channel.getSalesChannelIDs() != null) 
               {
                 for(String salesChannelID : channel.getSalesChannelIDs()) 
@@ -178,7 +184,11 @@ public class ThirdPartyJSONGenerator
                         JSONObject channelObject = new JSONObject();
                         channelObject.put("salesChannelID", salesChannel.getSalesChannelID());
                         channelObject.put("salesChannelName", salesChannel.getSalesChannelName());
-
+                        if (offerPrice != null)
+                          {
+                            channelObject.put("paymentMeanID", offerPrice.getPaymentMeanID());
+                            channelObject.put("amount", offerPrice.getAmount());
+                          }
                         offerSalesChannels.add(channelObject);
 
                       }

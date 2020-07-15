@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -69,6 +70,7 @@ public class ReportCsvWriter
     this.reportFactory = factory;
     this.kafkaNodeList = kafkaNodeList;
     this.topicIn = topicIn;
+    ReportsCommonCode.initializeDateFormats();
   }
 
   private Consumer<String, ReportElement> createConsumer(String topic)
@@ -149,6 +151,7 @@ public class ReportCsvWriter
         ZipOutputStream writer = new ZipOutputStream(fos);
         ZipEntry entry = new ZipEntry(new File(csvfile).getName());
         writer.putNextEntry(entry);
+        writer.setLevel(Deflater.BEST_SPEED);
 
         final Consumer<String, ReportElement> consumer = createConsumer(topicIn);
 

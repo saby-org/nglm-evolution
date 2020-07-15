@@ -6,22 +6,15 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.DeliveryRequest;
-
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.PaymentMeanService;
-import com.evolving.nglm.evolution.SalesChannelService;
-import com.evolving.nglm.evolution.SubscriberMessageTemplateService;
-import com.evolving.nglm.evolution.JourneyService;
-import com.evolving.nglm.evolution.OfferService;
-import com.evolving.nglm.evolution.ProductService;
-import com.evolving.nglm.evolution.DeliverableService;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityType;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -33,13 +26,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.text.SimpleDateFormat;
-import java.util.TimeZone;
 
 public class RewardManagerRequest extends DeliveryRequest implements BonusDelivery
 {
@@ -48,6 +37,8 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
   *  schema
   *
   *****************************************/
+  
+  private static final Logger log = LoggerFactory.getLogger(RewardManagerRequest.class);
 
   //
   //  schema
@@ -375,4 +366,197 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
     // RewardManagerRequest never rescheduled, let return unchanged
     //      
   }
+  
+  
+  /*****************************************
+  *
+  *  class ActionManager
+  *
+  *****************************************/
+
+  public static class RewardActionManager extends com.evolving.nglm.evolution.ActionManager
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    private String moduleID;
+    private String deliveryType;
+    private String providerID;
+    private CommodityDeliveryOperation operation;
+
+    
+    /*****************************************
+    * 
+    *  constructor
+    *
+    *****************************************/
+
+    public RewardActionManager(JSONObject configuration) throws GUIManagerException
+    {
+      super(configuration);
+      this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
+      this.deliveryType = JSONUtilities.decodeString(configuration, "deliveryType", true);
+      this.operation = CommodityDeliveryOperation.fromExternalRepresentation(JSONUtilities.decodeString(configuration, "operation", true));
+      this.providerID = Deployment.getDeliveryManagers().get(this.deliveryType).getProviderID();
+    }
+
+    /*****************************************
+    *
+    *  execute
+    *
+    *****************************************/
+
+    @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    {
+      /*****************************************
+      *
+      *  parameters
+      *
+      *****************************************/
+
+      String commodityID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.commodityid");
+
+      // Set amount default to 1 for Activate / Deactivate
+      int amount = 1;
+      if ( operation != CommodityDeliveryOperation.Activate && operation != CommodityDeliveryOperation.Deactivate ){
+          amount = ((Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.amount")).intValue();
+      }
+      TimeUnit validityPeriodType = (CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.period.type") != null) ? TimeUnit.fromExternalRepresentation((String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.period.type")) : null;
+      Integer validityPeriodQuantity = (Integer) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.period.quantity");
+      
+      /*****************************************
+      *
+      *  request arguments
+      *
+      *****************************************/
+
+      // retrieve the featureID that is the origin of this delivery request:
+      // - If the Journey related to JourneyState is not a Workflow, then featureID = JourneyState.getID
+      // - if the Journey related to JourneyState is a Workflown then we must extract the original featureID from the origial delivery Request that created the workflow instance
+      String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+
+      // if external accountID needed (really for veon rewardManager here so far, but might worth having something generic for IN)
+      String externalSubscriberID = null;
+      String profileExternalSubscriberIDField = Deployment.getDeliveryManagers().get(this.deliveryType).getProfileExternalSubscriberIDField();
+      if ( profileExternalSubscriberIDField!=null ){
+        CriterionField criterionField = Deployment.getProfileCriterionFields().get(profileExternalSubscriberIDField);
+        externalSubscriberID = (String) criterionField.retrieveNormalized(subscriberEvaluationRequest);
+      }
+
+      /*****************************************
+      *
+      *  Commodity to Provider and Deliverable
+      *
+      *****************************************/
+      String deliveryType = null;
+      PaymentMean paymentMean = null;
+      Deliverable deliverable = null;
+      switch (operation)
+        {
+        case Debit:
+          //
+          // Debit => check in paymentMean list
+          //
+          
+          paymentMean = evolutionEventContext.getPaymentMeanService().getActivePaymentMean(commodityID, SystemTime.getCurrentTime());
+          if(paymentMean == null){
+            log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
+            return new ArrayList<ActionManager.Action>();
+          }else{
+            DeliveryManagerDeclaration provider = Deployment.getFulfillmentProviders().get(paymentMean.getFulfillmentProviderID());
+            if(provider == null){
+              log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
+              return new ArrayList<ActionManager.Action>();
+            }else{
+              deliveryType = provider.getDeliveryType();
+            }
+          }     
+
+          break;
+        case Credit:
+        case Set:
+        case Expire:
+        case Activate:
+        case Deactivate:
+                  
+          //
+          // Other than Debit => check in paymentMean list
+          //
+          
+          deliverable = evolutionEventContext.getDeliverableService().getActiveDeliverable(commodityID, SystemTime.getCurrentTime());
+          if(deliverable == null){
+            log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : deliverable not found ");
+            return new ArrayList<ActionManager.Action>();
+          }else{
+            DeliveryManagerDeclaration provider = Deployment.getFulfillmentProviders().get(deliverable.getFulfillmentProviderID());
+            if(provider == null){
+              log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : deliverable not found ");
+              return new ArrayList<ActionManager.Action>();
+            }else{
+              deliveryType = provider.getDeliveryType();
+            }
+          }     
+
+          break;
+
+        default:
+          log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : deliverable not found ");
+          break;
+        }
+
+      /*****************************************
+      *
+      *  request
+      *
+      *****************************************/
+      //
+      //  request (JSON)
+      //
+
+      HashMap<String,Object> rewardRequestData = new HashMap<String,Object>();
+      rewardRequestData.put("deliveryRequestID", evolutionEventContext.getUniqueKey());
+      rewardRequestData.put("originatingRequest", true);
+      rewardRequestData.put("subscriberID", evolutionEventContext.getSubscriberState().getSubscriberID());
+      rewardRequestData.put("eventID", rewardRequestData.get("deliveryRequestID")); // sure of that ??
+      rewardRequestData.put("moduleID", this.moduleID);
+      rewardRequestData.put("featureID", deliveryRequestSource);
+      rewardRequestData.put("deliveryType", deliveryType);
+      rewardRequestData.put("diplomaticBriefcase", new HashMap<String, String>());
+      rewardRequestData.put("msisdn", externalSubscriberID);
+      rewardRequestData.put("providerID", providerID);
+      rewardRequestData.put("deliverableID", deliverable.getDeliverableID());
+      rewardRequestData.put("deliverableName", deliverable.getDeliverableName());
+      rewardRequestData.put("operation", operation.getExternalRepresentation());
+      rewardRequestData.put("amount", amount);
+      rewardRequestData.put("periodQuantity", (validityPeriodQuantity == null ? 1 : validityPeriodQuantity)); //mandatory in RewardManagerRequest => set default value if nul
+      rewardRequestData.put("periodType", (validityPeriodType == null ? TimeUnit.Day.getExternalRepresentation() : validityPeriodType.getExternalRepresentation())); //mandatory in RewardManagerRequest => set default value if nul
+
+      //
+      //  send
+      //
+      
+      if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.REWARD+" request DONE");
+
+      RewardManagerRequest rewardRequest = new RewardManagerRequest(JSONUtilities.encodeObject(rewardRequestData), Deployment.getDeliveryManagers().get(deliveryType));
+      rewardRequest.setModuleID(moduleID);
+      rewardRequest.setFeatureID(deliveryRequestSource);
+
+      // XL: manual hack, the only purpose of this is campaign request not going into same topic as purchase request
+      // purchase going into "standard" aka, first topic in : requestTopics of delivery manager declaration, this one going in the second one of the list
+      rewardRequest.setDeliveryPriority(DeliveryPriority.High);
+
+      /*****************************************
+      *
+      *  return
+      *
+      *****************************************/
+
+      return Collections.<Action>singletonList(rewardRequest);
+    }
+  }
+
 }

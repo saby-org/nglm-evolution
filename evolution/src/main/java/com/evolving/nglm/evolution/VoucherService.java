@@ -429,7 +429,11 @@ public class VoucherService extends GUIService {
           try{
             List<VoucherPersonalES> vouchersToAdd = new ArrayList<VoucherPersonalES>();
             reader = new BufferedReader(new FileReader(UploadedFile.OUTPUT_FOLDER+uploadedFile.getDestinationFilename()));
-            for (String line; (line = reader.readLine()) != null && !line.isEmpty();) {
+            for (String line; (line = reader.readLine()) != null;) {
+              if(line.trim().isEmpty()) {
+                if(log.isDebugEnabled()) log.debug("VoucherService.run(skipping empty line)");
+                continue;
+              }
               nbOfLines++;
               if(log.isDebugEnabled()) log.debug("VoucherService.runProcessVoucherfile : need to process line ("+line+")");
 

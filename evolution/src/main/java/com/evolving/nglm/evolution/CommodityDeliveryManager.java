@@ -22,7 +22,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -112,14 +111,14 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     SUCCESS(0),
     MISSING_PARAMETERS(4),
     BAD_FIELD_VALUE(5),
-    PENDING(10),
+    PENDING(708),
     CUSTOMER_NOT_FOUND(20),
     SYSTEM_ERROR(21),
     TIMEOUT(22),
     THIRD_PARTY_ERROR(24),
     BONUS_NOT_FOUND(100),
     INSUFFICIENT_BALANCE(405),
-    UNKNOWN(999);
+    UNKNOWN(-1);
     private Integer externalRepresentation;
     private CommodityDeliveryStatus(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public Integer getReturnCode() { return externalRepresentation; }
@@ -302,7 +301,6 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
                     if(response.getDiplomaticBriefcase() != null && response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_ID) != null && response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_ID).equals(COMMODITY_DELIVERY_ID_VALUE)){
                       if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" CommodityDeliveryManager : reading response from "+commodityType+" "+responseTopic+" topic ...");
                       handleThirdPartyResponse(response);
-                      consumer.commitSync(Collections.singletonMap(new TopicPartition(fileRecord.topic(),fileRecord.partition()),new OffsetAndMetadata(fileRecord.offset()+1)));
                       if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" CommodityDeliveryManager : reading response from "+commodityType+" "+responseTopic+" topic DONE");
                     }
                   }

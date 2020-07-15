@@ -30,7 +30,6 @@ public class BDRReportCsvWriter implements ReportCsvFactory
   private static final String featureId = "featureID";
   private static final String deliverableID = "deliverableID";
   private static final String deliverableQty = "deliverableQty";
-  private static final String deliveryStatus = "deliveryStatus";
   private static final String moduleName = "moduleName";
   private static final String featureDisplay = "featureName";
   private static final String deliverableDisplay = "deliverableName";
@@ -47,6 +46,8 @@ public class BDRReportCsvWriter implements ReportCsvFactory
   private static final String deliveryRequestID = "deliveryRequestID";
   private static final String originatingDeliveryRequestID = "originatingDeliveryRequestID";
   private static final String eventID = "eventID";
+  private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+  private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
 
   private static List<String> headerFieldsOrder = new ArrayList<String>();
   static
@@ -55,7 +56,6 @@ public class BDRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(featureId);
     headerFieldsOrder.add(deliverableID);
     headerFieldsOrder.add(deliverableQty);
-    headerFieldsOrder.add(deliveryStatus);
     headerFieldsOrder.add(moduleName);
     headerFieldsOrder.add(featureDisplay);
     headerFieldsOrder.add(deliverableDisplay);
@@ -86,9 +86,8 @@ public class BDRReportCsvWriter implements ReportCsvFactory
             addHeaders(writer, headerFieldsOrder, 1);
           }
         String line = ReportUtils.formatResult(headerFieldsOrder, lineMap);
-        log.trace("Writing to csv file : " + line);
+        if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
         writer.write(line.getBytes());
-        writer.write("\n".getBytes());
       } 
     catch (IOException e)
       {
@@ -148,30 +147,21 @@ public class BDRReportCsvWriter implements ReportCsvFactory
                 if (deliverableExpirationDateObj instanceof String)
                   {
                     String deliverableExpirationDateStr = (String) deliverableExpirationDateObj;
-                    // TEMP fix for BLK : reformat date with correct
-                    // template.
+                    // TEMP fix for BLK : reformat date with correct template.
                     // current format comes from ES and is :
                     // 2020-04-20T09:51:38.953Z
-                    SimpleDateFormat parseSDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
                     try
                     {
-                      Date date = parseSDF.parse(deliverableExpirationDateStr);
-                      bdrRecs.put(deliverableExpirationDate, ReportsCommonCode.getDateString(date)); // replace
-                      // with
-                      // new
-                      // value
+                      Date date = parseSDF1.parse(deliverableExpirationDateStr);
+                      bdrRecs.put(deliverableExpirationDate, ReportsCommonCode.getDateString(date)); // replace with new value
                     }
                     catch (ParseException e1)
                     {
                       // Could also be 2019-11-27 15:39:30.276+0100
-                      SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
                       try
                       {
                         Date date = parseSDF2.parse(deliverableExpirationDateStr);
-                        bdrRecs.put(deliverableExpirationDate, ReportsCommonCode.getDateString(date)); // replace
-                        // with
-                        // new
-                        // value
+                        bdrRecs.put(deliverableExpirationDate, ReportsCommonCode.getDateString(date)); // replace with new value
                       }
                       catch (ParseException e2)
                       {
@@ -199,10 +189,6 @@ public class BDRReportCsvWriter implements ReportCsvFactory
           {
             bdrRecs.put(originatingDeliveryRequestID, bdrFields.get(originatingDeliveryRequestID));
           }
-        if (bdrFields.containsKey(deliveryStatus))
-          {
-            bdrRecs.put(deliveryStatus, bdrFields.get(deliveryStatus));
-          }
         if (bdrFields.containsKey(eventDatetime))
           {
             if (bdrFields.get(eventDatetime) != null)
@@ -213,9 +199,7 @@ public class BDRReportCsvWriter implements ReportCsvFactory
                     // TEMP fix for BLK : reformat date with correct
                     // template.
 
-                    List<SimpleDateFormat> standardDateFormats = ReportsCommonCode.initializeDateFormats();
-                    bdrRecs.put(eventDatetime,
-                        ReportsCommonCode.parseDate(standardDateFormats, (String) eventDatetimeObj));
+                    bdrRecs.put(eventDatetime, ReportsCommonCode.parseDate((String) eventDatetimeObj));
 
                     // END TEMP fix for BLK
                   }

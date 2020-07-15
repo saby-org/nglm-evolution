@@ -955,12 +955,12 @@ public class SimpleSMSSender extends SMSSenderListener {
                 if(receiptRequired == null || receiptRequired.booleanValue() == false) 
                   {
                     // now DR required, let complete the request now
-                    completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, MessageStatus.SENT, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus()));
+                    completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, MessageStatus.DELIVERED, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus()));
                   }
                 else 
                   {
                     // deliveryRequest expected
-                    updateDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, MessageStatus.SENT, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus())); 
+                    updateDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, MessageStatus.DELIVERED, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus())); 
                   }                
                 logger.info("Feedback Call for Accept Handler for messageId "+ messageId + " SimpleSMSSender " + this.hashCode());
 

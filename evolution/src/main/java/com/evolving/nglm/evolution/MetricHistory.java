@@ -1256,11 +1256,11 @@ public class MetricHistory
   *
   ****************************************/
 
-  private static Map<Pair<Date,Date>,Set<Date>> monthlyStartDaysCache = Collections.synchronizedMap(new LinkedHashMap<Pair<Date,Date>,Set<Date>>() { @Override protected boolean removeEldestEntry(Map.Entry eldest) { return size() > 100; } });
+  private static ThreadLocal<Map<Pair<Date,Date>,Set<Date>>> monthlyStartDaysCache = ThreadLocal.withInitial(()->new LinkedHashMap<Pair<Date,Date>,Set<Date>>() { @Override protected boolean removeEldestEntry(Map.Entry eldest) { return size() > 100; } });
   private static Set<Date> getMonthlyStartDays(Date firstMonth, Date baseMonth)
   {
     Pair<Date,Date> key = new Pair<Date,Date>(firstMonth, baseMonth);
-    Set<Date> result = monthlyStartDaysCache.get(key);
+    Set<Date> result = monthlyStartDaysCache.get().get(key);
     if (result == null)
       {
         result = new HashSet<Date>();
@@ -1268,7 +1268,7 @@ public class MetricHistory
           {
             result.add(month);
           }
-        monthlyStartDaysCache.put(key,result);
+        monthlyStartDaysCache.get().put(key,result);
       }
     return result;
   }
@@ -1279,11 +1279,11 @@ public class MetricHistory
   *
   ****************************************/
 
-  private static Map<Pair<Date,Date>,Set<Date>> monthlyEndDaysCache = Collections.synchronizedMap(new LinkedHashMap<Pair<Date,Date>,Set<Date>>() { @Override protected boolean removeEldestEntry(Map.Entry eldest) { return size() > 100; } });
+  private static ThreadLocal<Map<Pair<Date,Date>,Set<Date>>> monthlyEndDaysCache = ThreadLocal.withInitial(()->new LinkedHashMap<Pair<Date,Date>,Set<Date>>() { @Override protected boolean removeEldestEntry(Map.Entry eldest) { return size() > 100; } });
   private static Set<Date> getMonthlyEndDays(Date firstMonth, Date baseMonth)
   {
     Pair<Date,Date> key = new Pair<Date,Date>(firstMonth, baseMonth);
-    Set<Date> result = monthlyEndDaysCache.get(key);
+    Set<Date> result = monthlyEndDaysCache.get().get(key);
     if (result == null)
       {
         result = new HashSet<Date>();
@@ -1291,7 +1291,7 @@ public class MetricHistory
           {
             result.add(RLMDateUtils.addDays(RLMDateUtils.addMonths(month, 1, Deployment.getBaseTimeZone()), -1, Deployment.getBaseTimeZone()));
           }
-        monthlyEndDaysCache.put(key,result);
+        monthlyEndDaysCache.get().put(key,result);
       }
     return result;
   }

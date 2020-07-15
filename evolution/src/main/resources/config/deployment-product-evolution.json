@@ -39,12 +39,16 @@
   "ucgEngineESConnectTimeout" : 30000,
   "ucgEngineESSocketTimeout" : 60000,
   "ucgEngineESMasRetryTimeout" : 60000,
+  
+  "guiManagerESConnectTimeout" : 30000,
+  "guiManagerESSocketTimeout" : 60000,
+  
   "elasticSearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
   
   "elasticSearchScrollSize" : 1000,
   
   "elasticSearchConnectTimeout" : 5000,
-  "elasticSearchQueryTimeout" : 60000,
+  "elasticSearchQueryTimeout" : 7200000,
 
   "maxPollIntervalMsComment": "Changed to 300s (5 minutes), kafka default is 30 seconds, which causes containers to stop during startup (heavy system load",
   "maxPollIntervalMs"       : 300000,
@@ -342,7 +346,7 @@
             [
               { "id" : "event.moduleID",             "display" : "Module Id",             "dataType" : "string", "retriever" : "getModuleId_BonusDelivery",             "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#moduleIds#"] },
               { "id" : "event.featureID",            "display" : "Feature Id",            "dataType" : "string", "retriever" : "getFeatureId_BonusDelivery",            "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.returnCode",           "display" : "Return Code",           "dataType" : "integer","retriever" : "getReturnCode_BonusDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.returnCode",           "display" : "Return Code",           "dataType" : "integer","retriever" : "getReturnCode_BonusDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#returnCodesBDR#"] },
               { "id" : "event.returnCodeDetails",    "display" : "Return Code Details",   "dataType" : "string", "retriever" : "getReturnCodeDetails_BonusDelivery",    "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
               { "id" : "event.origin",               "display" : "Origin",                "dataType" : "string", "retriever" : "getOrigin_BonusDelivery",               "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
               { "id" : "event.providerId",           "display" : "Provider Id",           "dataType" : "string", "retriever" : "getProviderId_BonusDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#providerIds#"] },
@@ -361,7 +365,7 @@
             [
               { "id" : "event.moduleID",         "display" : "Module Id",          "dataType" : "string", "retriever" : "getModuleId_OfferDelivery",         "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#moduleIds#"] },
               { "id" : "event.featureID",        "display" : "Feature Id",         "dataType" : "string", "retriever" : "getFeatureId_OfferDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.returnCode",       "display" : "Return Code",        "dataType" : "integer","retriever" : "getReturnCode_OfferDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.returnCode",       "display" : "Return Code",        "dataType" : "integer","retriever" : "getReturnCode_OfferDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#returnCodesODR#"] },
               { "id" : "event.returnCodeDetails","display" : "Return Code Details","dataType" : "string", "retriever" : "getReturnCodeDetails_OfferDelivery","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
               { "id" : "event.origin",           "display" : "Origin",             "dataType" : "string", "retriever" : "getOrigin_OfferDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
               { "id" : "event.offerID",          "display" : "Offer Id",           "dataType" : "string", "retriever" : "getOfferID_OfferDelivery",          "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#offerIDs#"] },
@@ -384,7 +388,7 @@
             [
               { "id" : "event.moduleID",         "display" : "Module Id",          "dataType" : "string", "retriever" : "getModuleId_MessageDelivery",         "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#moduleIds#"] },
               { "id" : "event.featureID",        "display" : "Feature Id",         "dataType" : "string", "retriever" : "getFeatureId_MessageDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.returnCode",       "display" : "Return Code",        "dataType" : "integer","retriever" : "getReturnCode_MessageDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.returnCode",       "display" : "Return Code",        "dataType" : "integer","retriever" : "getReturnCode_MessageDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#returnCodesMDR#"] },
               { "id" : "event.returnCodeDetails","display" : "Return Code Details","dataType" : "string", "retriever" : "getReturnCodeDetails_MessageDelivery","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
               { "id" : "event.origin",           "display" : "Origin",             "dataType" : "string", "retriever" : "getOrigin_MessageDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
               { "id" : "event.messageId",        "display" : "Message Id",         "dataType" : "string", "retriever" : "getMessageId_MessageDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
@@ -684,158 +688,158 @@
     {
       "id"           : "ping",
       "methodName"   : "ping",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"],
+      "permissions"  : ["API-PING"],
       "byPassAuth"   : true
     },
     {
       "id"           : "getCustomer",
       "methodName"   : "getCustomer",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER"]
     },
     {
       "id"           : "getCustomerBDRs",
       "methodName"   : "getCustomerBDRs",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-BDRS"]
     },
     {
       "id"           : "getCustomerODRs",
       "methodName"   : "getCustomerODRs",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-ODRS"]
     },
     {
       "id"           : "getCustomerPoints",
       "methodName"   : "getCustomerPoints",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-POINTS"]
     },
     {
       "id"           : "creditBonus",
       "methodName"   : "creditBonus",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-CREDIT-BONUS"]
     },
     {
       "id"           : "debitBonus",
       "methodName"   : "debitBonus",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-DEBIT-BONUS"]
     },
     {
       "id"           : "getCustomerMessages",
       "methodName"   : "getCustomerMessages",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-MESSAGES"]
     },
     {
       "id"           : "getOffersList",
       "methodName"   : "getOffersList",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-OFFERS-LIST"]
     },
     {
       "id"           : "getActiveOffer",
       "methodName"   : "getActiveOffer",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["?????"]
     },
     {
       "id"           : "getActiveOffers",
       "methodName"   : "getActiveOffers",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["??????"]
     },
     {
       "id"           : "getCustomerJourneys",
       "methodName"   : "getCustomerJourneys",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-JOURNEYS"]
     },
     {
       "id"           : "getCustomerCampaigns",
       "methodName"   : "getCustomerCampaigns",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-CAMPAIGNS"]
     },
     {
       "id"           : "getCustomerAvailableCampaigns",
       "methodName"   : "getCustomerAvailableCampaigns",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-AVAILABLE-CAMPAIGNS"]
     },
     {
       "id"           : "getLoyaltyProgram",
       "methodName"   : "getLoyaltyProgram",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-LOYALTY-PROGRAM"]
     },
     {
       "id"           : "getLoyaltyProgramList",
       "methodName"   : "getLoyaltyProgramList",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-LOYALTY-PROGRAM-LIST"]
     },
     {
       "id"           : "getCustomerLoyaltyPrograms",
       "methodName"   : "getCustomerLoyaltyPrograms",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-LOYALTY-PROGRAMS"]
     },
     {
       "id"           : "updateCustomer",
       "methodName"   : "updateCustomer",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-UPDATE-CUSTOMER"]
     },
     {
       "id"           : "getCustomerNBOs",
       "methodName"   : "getCustomerNBOs",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-NBOS"]
     },
     {
       "id"           : "getTokensCodesList",
       "methodName"   : "getTokensCodesList",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-TOKENS-CODES-LIST"]
     },
     {
       "id"           : "acceptOffer",
       "methodName"   : "acceptOffer",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-ACCEPT-OFFER"]
     },
     {
       "id"           : "purchaseOffer",
       "methodName"   : "purchaseOffer",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-PURCHASE-OFFER"]
     },
     {
       "id"           : "triggerEvent",
       "methodName"   : "triggerEvent",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-TRIGGER-EVENT"]
     },
     {
       "id"           : "updateCustomerParent",
       "methodName"   : "updateCustomerParent",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-UPDATE-CUSTOMER-PARENT"]
     },
     {
       "id"           : "removeCustomerParent",
       "methodName"   : "removeCustomerParent",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-REMOVE-CUSTOMER-PARENT"]
     },
     {
       "id"           : "enterCampaign",
       "methodName"   : "enterCampaign",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-ENTER-CAMPAIGN"]
     },
     {
       "id"           : "loyaltyProgramOptIn",
       "methodName"   : "loyaltyProgramOptIn",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-LOYALTY-PROGRAM-OPTIN"]
     },
     {
       "id"           : "loyaltyProgramOptOut",
       "methodName"   : "loyaltyProgramOptOut",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-LOYALTY-PROGRAM-OPTOUT"]
     },
     {
       "id"           : "getCustomerTokenAndNBO",
       "methodName"   : "getCustomerTokenAndNBO",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-GET-CUSTOMER-TOKEN-AND-NBO"]
     },
     {
       "id"           : "validateVoucher",
       "methodName"   : "validateVoucher",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-VALIDATE-VOUCHER"]
     },
     {
       "id"           : "redeemVoucher",
       "methodName"   : "redeemVoucher",
-      "permissions"  : ["UM-ACCESS", "UM-USERS-VIEW", "UM-USERS-VIEW", "UM-USERS-EDIT", "UM-USERS-DELETE", "UM-WORKGROUPS-VIEW", "UM-WORKGROUPS-EDIT", "UM-WORKGROUPS-DELETE", "UM-TOOLS", "AM-ACCESS"]
+      "permissions"  : ["API-REDEEM-VOUCHER"]
     }
 
   ],
@@ -849,6 +853,7 @@
     "reportManagerFileExtension"  : "csv",
     "reportManagerCsvSeparator"   : ";",
     "reportManagerFieldSurrounder": "'",
+    "reportManagerMaxMessageLength": 200,
     "reportManagerStreamsTempDir" : "/tmp",
     "reportManagerTopicsCreationProperties" : "cleanup.policy=delete segment.bytes=52428800 retention.ms=64800000"
   },
@@ -1066,15 +1071,16 @@
     
     "presentationCriterionFields" :
     [
-      { "id" : "offer.rank",              "display" : "Offer Rank",               "dataType" : "integer", "minValue" : null, "maxValue" : null, "excludedOperators" : null,                                                                            "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : null },
-      { "id" : "offer.price",             "display" : "Offer Price",              "dataType" : "integer", "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : [ "subscriber.balance" ],  "excludedComparableFields" : null,               "availableValues" : null },
-      { "id" : "offer.serviceTypeID",     "display" : "Service Type",             "dataType" : "string",  "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : [ { "id" : "1", "display" : "Prepaid" }, { "id" : "2", "display" : "Postpaid" } ] },
-      { "id" : "offer.startDate",         "display" : "Offer Start Date",         "dataType" : "date",    "minValue" : null, "maxValue" : null, "excludedOperators" : null,                                                                            "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : null },
-      { "id" : "offer.endDate",           "display" : "Offer End Date",           "dataType" : "date",    "minValue" : null, "maxValue" : null, "excludedOperators" : null,                                                                            "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : null },
-      { "id" : "offer.name",              "display" : "Offer Name",               "dataType" : "string",  "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : [ "#offers#" ] },
-      { "id" : "product.type",            "display" : "Product Type",             "dataType" : "string",  "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : [ "#productTypes#" ] },
-      { "id" : "product.name",            "display" : "Product Name",             "dataType" : "string",  "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : [ "#products#" ] },
-      { "id" : "product.validity",        "display" : "Product Validity(days)",   "dataType" : "integer", "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                                                                  "includedComparableFields" : null,                      "excludedComparableFields" : null,               "availableValues" : null }
+       { "id" : "offer.rank",              "display" : "Offer Rank",               "dataType" : "integer", "minValue" : null, "maxValue" : null, "excludedOperators" : null,                                    "includedComparableFields" : null,  "excludedComparableFields" : null,  "availableValues" : null,                  "type": "positions" },
+      { "id" : "offer.score",             "display" : "Offer Score",              "dataType" : "double",  "minValue" : null, "maxValue" : null, "excludedOperators" : null,                                     "includedComparableFields" : null,  "excludedComparableFields" : null,  "availableValues" : null,                  "type": "positions" },
+      { "id" : "offer.price",             "display" : "Offer Price",              "dataType" : "integer", "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                           "includedComparableFields" : null,  "excludedComparableFields" : null,  "availableValues" : null,                  "type": "positions" },
+      { "id" : "offer.serviceTypeID",     "display" : "Service Type",             "dataType" : "string",  "minValue" : null, "maxValue" : null, "excludedOperators" : [ "is null", "is not null", "==", "<>" ], "includedComparableFields" : null,  "excludedComparableFields" : null,  "availableValues" : [ { "id" : "1", "display" : "Prepaid" }, { "id" : "2", "display" : "Postpaid" } ], "type": "positions" },
+      { "id" : "offer.startDate",         "display" : "Offer Start Date",         "dataType" : "date",    "minValue" : null, "maxValue" : null, "excludedOperators" : null,                                     "includedComparableFields" : null,  "excludedComparableFields" : null,  "availableValues" : null,                  "type": "positions" },
+      { "id" : "offer.endDate",           "display" : "Offer End Date",           "dataType" : "date",    "minValue" : null, "maxValue" : null, "excludedOperators" : null,                                     "includedComparableFields" : null,  "excludedComparableFields" : null,  "availableValues" : null,                  "type": "positions" },
+      { "id" : "offer.name",              "display" : "Offer Name",               "dataType" : "string",  "minValue" : null, "maxValue" : null, "excludedOperators" : [ "is null", "is not null", "==", "<>" ], "includedComparableFields" : null,  "excludedComparableFields" : null,  "availableValues" : [ "#offers#" ],        "type": "positions" },
+      { "id" : "product.type",            "display" : "Product Type",             "dataType" : "string",  "minValue" : null, "maxValue" : null, "excludedOperators" : [ "is null", "is not null", "==", "<>" ], "includedComparableFields" : null,  "excludedComparableFields" : null,  "availableValues" : [ "#productTypes#" ],  "type": "positions" },
+      { "id" : "product.name",            "display" : "Product Name",             "dataType" : "string",  "minValue" : null, "maxValue" : null, "excludedOperators" : [ "is null", "is not null", "==", "<>" ], "includedComparableFields" : null,  "excludedComparableFields" : null,  "availableValues" : [ "#products#" ],      "type": "positions" },
+      { "id" : "product.validity",        "display" : "Product Validity(days)",   "dataType" : "integer", "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                         "includedComparableFields" : null,  "excludedComparableFields" : null,  "availableValues" : null,                  "type": "positions" }
     ],
     
     "journeyMetrics" : [],
@@ -1082,7 +1088,9 @@
     "subscriberProfileDatacubeMetrics" : [],
     
     "enableProfileSegmentChange" : true,
-    "enableEvaluateTargetRandomness" : false
+    "enableEvaluateTargetRandomness" : false,
+
+    "enableContactPolicyProcessing" : true
      
     
     

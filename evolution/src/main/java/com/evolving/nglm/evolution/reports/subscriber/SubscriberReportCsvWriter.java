@@ -42,6 +42,8 @@ public class SubscriberReportCsvWriter implements ReportCsvFactory
   //private static List<String> allDimensions = new ArrayList<>();
   private static Map<String, String> allDimensionsMap = new HashMap<>();
   private static List<String> allProfileFields = new ArrayList<>();
+  private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+  private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
 
   /****************************************
   *
@@ -84,17 +86,15 @@ public class SubscriberReportCsvWriter implements ReportCsvFactory
                     String activationDateStr = (String) activationDateObj;
                     // TEMP fix for BLK : reformat date with correct template.
                     // current format comes from ES and is : 2020-04-20T09:51:38.953Z
-                    SimpleDateFormat parseSDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
                     try
                       {
-                        Date date = parseSDF.parse(activationDateStr);
+                        Date date = parseSDF1.parse(activationDateStr);
                         // replace with new value
                         result.put("activationDate", ReportsCommonCode.getDateString(date)); 
                       }
                     catch (ParseException e1)
                       {
                         // Could also be 2019-11-27 15:39:30.276+0100
-                        SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
                         try
                           {
                             Date date = parseSDF2.parse(activationDateStr);
@@ -160,8 +160,7 @@ public class SubscriberReportCsvWriter implements ReportCsvFactory
 
                 // TEMP fix for BLK : reformat date with correct template.
 
-                List<SimpleDateFormat> standardDateFormats = ReportsCommonCode.initializeDateFormats();
-                result.put(evolutionSubscriberStatusChangeDate, ReportsCommonCode.parseDate(standardDateFormats, (String) elasticFields.get(evolutionSubscriberStatusChangeDate)));
+                result.put(evolutionSubscriberStatusChangeDate, ReportsCommonCode.parseDate((String) elasticFields.get(evolutionSubscriberStatusChangeDate)));
 
                 // END TEMP fix for BLK
               }
@@ -177,9 +176,8 @@ public class SubscriberReportCsvWriter implements ReportCsvFactory
             addHeaders = false;
           }
         String line = ReportUtils.formatResult(result);
-        log.trace("Writing to csv file : " + line);
+        if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
         writer.write(line.getBytes());
-        writer.write("\n".getBytes());
       }
     return addHeaders;
   }
