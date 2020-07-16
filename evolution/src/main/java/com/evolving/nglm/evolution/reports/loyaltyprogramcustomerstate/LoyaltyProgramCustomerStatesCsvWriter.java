@@ -110,14 +110,19 @@ public class LoyaltyProgramCustomerStatesCsvWriter implements ReportCsvFactory
                               {
                                 if (tierUpdateDate instanceof Long)
                                   {
-                                    fullFields.put("tierUpdateDate", ReportsCommonCode.getDateString(new Date((Long) tierUpdateDate)));
+                                    fullFields.put("tierUpdateDate",
+                                        ReportsCommonCode.getDateString(new Date((Long) tierUpdateDate)));
+                                  }
+                                else if (tierUpdateDate instanceof String)
+                                  {
+                                    fullFields.put("tierUpdateDate",
+                                        ReportsCommonCode.parseDate((String) tierUpdateDate));
                                   }
                                 else
                                   {
-                                    log.info("tierUpdateDate is not a Long : " + tierUpdateDate.getClass().getName());
-                                  }
+                                    log.info("tierUpdateDate is of wrong type : : " + tierUpdateDate.getClass().getName());
+                                  }                         
                                 
-                                fullFields.put("tierUpdateDate", obj.get("tierUpdateDate"));
                               }
                             else
                               {
