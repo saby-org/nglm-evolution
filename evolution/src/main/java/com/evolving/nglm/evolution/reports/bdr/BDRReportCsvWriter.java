@@ -40,6 +40,7 @@ public class BDRReportCsvWriter implements ReportCsvFactory
   private static final String operation = "operation";
   private static final String orgin = "origin";
   private static final String providerId = "providerID";
+  private static final String providerName = "providerName";
   private static final String returnCode = "returnCode";
   private static final String returnCodeDetails = "returnCodeDetails";
   private static final String returnCodeDescription = "returnCodeDescription";
@@ -69,7 +70,7 @@ public class BDRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(eventDatetime);
     headerFieldsOrder.add(operation);
     headerFieldsOrder.add(orgin);
-    headerFieldsOrder.add(providerId);
+    headerFieldsOrder.add(providerName);
     headerFieldsOrder.add(returnCode);
     headerFieldsOrder.add(returnCodeDescription);
     headerFieldsOrder.add(returnCodeDetails);
@@ -240,7 +241,8 @@ public class BDRReportCsvWriter implements ReportCsvFactory
               }
             if (bdrFields.containsKey(providerId))
               {
-                bdrRecs.put(providerId, bdrFields.get(providerId));
+                String providerNam = Deployment.getFulfillmentProviders().get(bdrFields.get(providerId)).getProviderName();
+                bdrRecs.put(providerName, providerNam);
               }
             if (bdrFields.containsKey(returnCode))
               {
