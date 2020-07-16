@@ -1731,7 +1731,13 @@ public class ThirdPartyManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
+    try {
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
+    } catch (SubscriberProfileServiceException e) {
+      log.error("SubscriberProfileServiceException ", e.getMessage());
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+    }
     
     /*****************************************
     *
@@ -1802,7 +1808,13 @@ public class ThirdPartyManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
+    try {
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
+    } catch (SubscriberProfileServiceException e) {
+      log.error("SubscriberProfileServiceException ", e.getMessage());
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+    }
     
     /*****************************************
     *
@@ -4089,7 +4101,7 @@ public class ThirdPartyManager
       String featureID = API.acceptOffer.getMethodIndex()+"";
       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation(); 
       Offer offer = offerService.getActiveOffer(offerID, now);
-      deliveryRequestID = purchaseOffer(false, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
+      deliveryRequestID = purchaseOffer(subscriberProfile,false, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
       
       // Redeem the token : Send an AcceptanceLog to EvolutionEngine
 
@@ -4294,12 +4306,12 @@ public class ThirdPartyManager
             {
               if(!sync)
                 {
-                  purchaseResponse = purchaseOffer(false,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID,
+                  purchaseResponse = purchaseOffer(subscriberProfile,false,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID,
                   origin, resellerID, kafkaProducer);
                 }
               else
                 {
-                  purchaseResponse = purchaseOffer(true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID,
+                  purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID,
                           origin, resellerID, kafkaProducer);
                   response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService));
                 }
@@ -4315,12 +4327,12 @@ public class ThirdPartyManager
 
             if(!sync)
             {
-              purchaseResponse = purchaseOffer(false,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID,
+              purchaseResponse = purchaseOffer(subscriberProfile,false,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID,
                       origin, resellerID, kafkaProducer);
             }
             else
             {
-              purchaseResponse = purchaseOffer(true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID,
+              purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID,
                       origin, resellerID, kafkaProducer);
               response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService));
             }
@@ -4455,7 +4467,7 @@ public class ThirdPartyManager
       
       JSONObject valueRes = JSONUtilities.encodeObject(request);
 
-      LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(valueRes, null);
+      LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, null);
 
       // Write it to the right topic
       kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
@@ -4768,7 +4780,7 @@ public class ThirdPartyManager
     if(journey != null)
       {
         String uniqueKey = UUID.randomUUID().toString();
-        JourneyRequest journeyRequest = new JourneyRequest(uniqueKey, subscriberID, journey.getJourneyID(), baseSubscriberProfile.getUniversalControlGroup());
+        JourneyRequest journeyRequest = new JourneyRequest(baseSubscriberProfile, subscriberGroupEpochReader, uniqueKey, subscriberID, journey.getJourneyID(), baseSubscriberProfile.getUniversalControlGroup());
         DeliveryManagerDeclaration journeyManagerDeclaration = Deployment.getDeliveryManagers().get(journeyRequest.getDeliveryType());
         String journeyRequestTopic = journeyManagerDeclaration.getDefaultRequestTopic();
         kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getJourneyRequestTopic(), StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest)));
@@ -5776,7 +5788,7 @@ public class ThirdPartyManager
    *
    *****************************************/
   
-  public PurchaseFulfillmentRequest purchaseOffer(boolean sync, String subscriberID, String offerID, String salesChannelID, int quantity,
+  public PurchaseFulfillmentRequest purchaseOffer(SubscriberProfile subscriberProfile, boolean sync, String subscriberID, String offerID, String salesChannelID, int quantity,
       String moduleID, String featureID, String origin, String resellerID, KafkaProducer<byte[],byte[]> kafkaProducer) throws ThirdPartyManagerException
   {
     DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get(PURCHASE_FULFILLMENT_MANAGER_TYPE);
@@ -5805,7 +5817,7 @@ public class ThirdPartyManager
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
-    PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, SystemTime.getCurrentTime());
+    PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, SystemTime.getCurrentTime());
 
     Future<PurchaseFulfillmentRequest> waitingResponse=null;
     if(sync){

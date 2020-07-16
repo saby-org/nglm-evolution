@@ -19628,7 +19628,7 @@ public class GUIManager
     if(journey != null)
       {
         String uniqueKey = UUID.randomUUID().toString();
-        JourneyRequest journeyRequest = new JourneyRequest(uniqueKey, subscriberID, journey.getJourneyID(), baseSubscriberProfile.getUniversalControlGroup());
+        JourneyRequest journeyRequest = new JourneyRequest(baseSubscriberProfile, subscriberGroupEpochReader, uniqueKey, subscriberID, journey.getJourneyID(), baseSubscriberProfile.getUniversalControlGroup());
         DeliveryManagerDeclaration journeyManagerDeclaration = Deployment.getDeliveryManagers().get(journeyRequest.getDeliveryType());
         String journeyRequestTopic = journeyManagerDeclaration.getDefaultRequestTopic();
         
@@ -19724,7 +19724,12 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
+    try {
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
+    } catch (SubscriberProfileServiceException e) {
+      throw new GUIManagerException(e);
+    }
 
     /*****************************************
     *
@@ -19743,8 +19748,7 @@ public class GUIManager
   *
   *****************************************/
   
-  private JSONObject processDebitBonus(String userID, JSONObject jsonRoot)
-  {
+  private JSONObject processDebitBonus(String userID, JSONObject jsonRoot) throws GUIManagerException {
     /****************************************
     *
     *  response
@@ -19807,7 +19811,12 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
+    try {
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
+    } catch (SubscriberProfileServiceException e) {
+      throw new GUIManagerException(e);
+    }
     
     /*****************************************
     *
@@ -21478,7 +21487,7 @@ public class GUIManager
           String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation();
           String resellerID = "";
           Offer offer = offerService.getActiveOffer(offerID, now);
-          deliveryRequestID = purchaseOffer(true, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
+          deliveryRequestID = purchaseOffer(subscriberProfile,true, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
 
           // Redeem the token : Send an AcceptanceLog to EvolutionEngine
 
@@ -21635,11 +21644,11 @@ public class GUIManager
         String resellerID = "";
         if(!sync)
           {
-            purchaseResponse = purchaseOffer(false,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer);
+            purchaseResponse = purchaseOffer(subscriberProfile,false,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer);
           }
         else
           {
-            purchaseResponse = purchaseOffer(true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer);
+            purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer);
             response.put("offer",purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService));
           }
       }
@@ -22972,7 +22981,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
    *
    *****************************************/
   
-  private PurchaseFulfillmentRequest purchaseOffer(boolean sync, String subscriberID, String offerID, String salesChannelID, int quantity, String moduleID, String featureID, String origin, String resellerID, KafkaProducer<byte[],byte[]> kafkaProducer) throws GUIManagerException
+  private PurchaseFulfillmentRequest purchaseOffer(SubscriberProfile subscriberProfile, boolean sync, String subscriberID, String offerID, String salesChannelID, int quantity, String moduleID, String featureID, String origin, String resellerID, KafkaProducer<byte[],byte[]> kafkaProducer) throws GUIManagerException
   {
     DeliveryManagerDeclaration deliveryManagerDeclaration = null;
     for (DeliveryManagerDeclaration dmd : Deployment.getDeliveryManagers().values())
@@ -23017,7 +23026,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
-    PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, SystemTime.getCurrentTime());
+    PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, SystemTime.getCurrentTime());
 
     Future<PurchaseFulfillmentRequest> waitingResponse=null;
     if(sync){

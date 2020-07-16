@@ -17,8 +17,6 @@ import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOpe
 
 public class BDRRewardManagerSinkConnector extends SimpleESSinkConnector
 {
-  private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
-  private static DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
   
   /****************************************
   *
@@ -39,6 +37,9 @@ public class BDRRewardManagerSinkConnector extends SimpleESSinkConnector
   
   public static class BDRSinkConnectorTask extends StreamESSinkTask
   {
+
+    private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+    private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
     /****************************************
     *
@@ -117,6 +118,7 @@ public class BDRRewardManagerSinkConnector extends SimpleESSinkConnector
         
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", commodityRequest.getSubscriberID());
+        SinkConnectorUtils.putAlternateIDs(commodityRequest.getAlternateIDs(), documentMap);
         documentMap.put("eventDatetime", commodityRequest.getEventDate()!=null?dateFormat.format(commodityRequest.getEventDate()):"");
         documentMap.put("deliveryRequestID", commodityRequest.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", commodityRequest.getOriginatingDeliveryRequestID());

@@ -1241,7 +1241,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         request.put("deliveryType", "loyaltyProgramFulfillment");
         JSONObject valueRes = JSONUtilities.encodeObject(request);
 
-        LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(valueRes, null);
+        LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, null);
 
         // Write it to the right topic
         kafkaProducer

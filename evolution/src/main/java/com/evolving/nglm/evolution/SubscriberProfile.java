@@ -43,7 +43,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
-public abstract class SubscriberProfile implements SubscriberStreamOutput
+public abstract class SubscriberProfile
 {
   public static final String CURRENT_BALANCE = "currentBalance";
   public static final String EARLIEST_EXPIRATION_DATE = "earliestExpirationDate";

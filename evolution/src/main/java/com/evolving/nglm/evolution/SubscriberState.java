@@ -31,7 +31,7 @@ import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SubscriberTrace;
 import com.evolving.nglm.core.Pair;
 
-public class SubscriberState implements SubscriberStreamOutput, StateStore
+public class SubscriberState implements StateStore
 {
   /*****************************************
    *

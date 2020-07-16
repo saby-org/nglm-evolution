@@ -544,7 +544,7 @@ public class PointBalance
     if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PointBalance.update(...) : generating fake response DONE");
     if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PointBalance.update(...) : sending fake response ...");
 
-    CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(JSONUtilities.encodeObject(commodityDeliveryRequestData), commodityDeliveryManagerDeclaration);
+    CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader(),JSONUtilities.encodeObject(commodityDeliveryRequestData), commodityDeliveryManagerDeclaration);
     commodityDeliveryRequest.setCommodityDeliveryStatus(CommodityDeliveryStatus.SUCCESS);
     commodityDeliveryRequest.setDeliveryStatus(DeliveryStatus.Delivered);
     commodityDeliveryRequest.setStatusMessage("Success");

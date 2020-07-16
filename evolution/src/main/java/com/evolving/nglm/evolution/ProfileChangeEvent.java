@@ -8,11 +8,7 @@ package com.evolving.nglm.evolution;
 
 import java.util.Date;
 
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.data.*;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -20,7 +16,7 @@ import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.EvolutionEngineEvent;
 import com.evolving.nglm.evolution.ParameterMap;
 
-public class ProfileChangeEvent implements EvolutionEngineEvent, SubscriberStreamOutput
+public class ProfileChangeEvent extends SubscriberStreamOutput implements EvolutionEngineEvent
 {
   /*****************************************
   *
@@ -37,7 +33,8 @@ public class ProfileChangeEvent implements EvolutionEngineEvent, SubscriberStrea
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("profileChangeEvent");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),8));
+    for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("oldValues", ParameterMap.schema());
@@ -122,7 +119,22 @@ public class ProfileChangeEvent implements EvolutionEngineEvent, SubscriberStrea
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
     this.oldValues = oldValues;
-    this.newValues = newValues;    
+    this.newValues = newValues;
+  }
+
+  /*****************************************
+  *
+  * constructor unpack
+  *
+  *****************************************/
+
+  public ProfileChangeEvent(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, ParameterMap oldValues, ParameterMap newValues)
+  {
+    super(schemaAndValue);
+    this.subscriberID = subscriberID;
+    this.eventDate = eventDate;
+    this.oldValues = oldValues;
+    this.newValues = newValues;
   }
 
   /*****************************************
@@ -135,6 +147,7 @@ public class ProfileChangeEvent implements EvolutionEngineEvent, SubscriberStrea
   {
     ProfileChangeEvent profileChangeEvent = (ProfileChangeEvent) value;
     Struct struct = new Struct(schema);
+    packSubscriberStreamOutput(struct,profileChangeEvent);
     struct.put("subscriberID", profileChangeEvent.getSubscriberID());
     struct.put("eventDate", profileChangeEvent.getEventDate());
     struct.put("oldValues", ParameterMap.pack(profileChangeEvent.getOldValues()));
@@ -162,7 +175,7 @@ public class ProfileChangeEvent implements EvolutionEngineEvent, SubscriberStrea
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
     //
     // unpack
@@ -178,6 +191,6 @@ public class ProfileChangeEvent implements EvolutionEngineEvent, SubscriberStrea
     // return
     //
 
-    return new ProfileChangeEvent(subscriberID, eventDate, oldValues, newValues);
+    return new ProfileChangeEvent(schemaAndValue, subscriberID, eventDate, oldValues, newValues);
   }
 }

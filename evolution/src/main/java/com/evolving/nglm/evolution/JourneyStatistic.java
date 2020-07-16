@@ -6,7 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
@@ -17,23 +16,17 @@ import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.data.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStreamOutput, Comparable
+public class JourneyStatistic extends SubscriberStreamOutput implements SubscriberStreamEvent, Comparable
 {
   /*****************************************
   *
@@ -46,12 +39,13 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   //
 
   private static Schema schema = null;
-  private static int currntSchemaVersion = 4;
+  private static int currentSchemaVersion = 8;
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_statistic");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(currntSchemaVersion));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),currentSchemaVersion));
+    for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("journeyStatisticID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyInstanceID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
@@ -74,7 +68,6 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     schemaBuilder.field("journeyStatusHistory", SchemaBuilder.array(StatusHistory.schema()).schema());
     schemaBuilder.field("journeyRewardHistory", SchemaBuilder.array(RewardHistory.schema()).schema());
     schemaBuilder.field("subscriberStratum", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).schema());
-    schemaBuilder.field("alternateIDs", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema());
     schema = schemaBuilder.build();
   };
 
@@ -120,7 +113,6 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   private List<StatusHistory> journeyStatusHistory;
   private List<RewardHistory> journeyRewardHistory;
   private Map<String, String> subscriberStratum;
-  private Map<String, String> alternateIDs;
 
   /*****************************************
   *
@@ -152,7 +144,6 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   public List<RewardHistory> getJourneyRewardHistory() { return journeyRewardHistory; }
   public SubscriberJourneyStatus getSubscriberJourneyStatus() { return Journey.getSubscriberJourneyStatus(this); }
   public Map<String, String> getSubscriberStratum() { return subscriberStratum; }
-  public Map<String, String> getAlternateIDs() { return alternateIDs; }
 
   /*****************************************
   *
@@ -184,8 +175,6 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
     this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
     this.subscriberStratum = subscriberStratum;
-    this.alternateIDs = new HashMap<>();
-    SinkConnectorUtils.putAlternateIDsString(subscriberProfile.getSubscriberID(), alternateIDs, subscriberProfile);
   }
 
   /*****************************************
@@ -227,8 +216,6 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
     this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
     this.subscriberStratum = subscriberStratum;
-    this.alternateIDs = new HashMap<>();
-    SinkConnectorUtils.putAlternateIDsString(subscriberProfile.getSubscriberID(), alternateIDs, subscriberProfile);
   }
 
   /*****************************************
@@ -269,19 +256,17 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
     this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
     this.subscriberStratum = subscriberStratum;
-    this.alternateIDs = new HashMap<>();
-    SinkConnectorUtils.putAlternateIDsString(subscriberProfile.getSubscriberID(), alternateIDs, subscriberProfile);
   }
 
   /*****************************************
   *
   *  constructor -- unpack
-   * @param alternateIDs 
   *
   *****************************************/
 
-  private JourneyStatistic(String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, String sample, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup, boolean journeyComplete, List<NodeHistory> journeyNodeHistory, List<StatusHistory> journeyStatusHistory, List<RewardHistory> journeyRewardHistory, Map<String, String> subscriberStratum, Map<String, String> alternateIDs)
+  private JourneyStatistic(SchemaAndValue schemaAndValue, String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, String sample, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup, boolean journeyComplete, List<NodeHistory> journeyNodeHistory, List<StatusHistory> journeyStatusHistory, List<RewardHistory> journeyRewardHistory, Map<String, String> subscriberStratum)
   {
+    super(schemaAndValue);
     this.journeyStatisticID = journeyStatisticID;
     this.journeyInstanceID = journeyInstanceID;
     this.journeyID = journeyID;
@@ -304,7 +289,6 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.journeyStatusHistory = journeyStatusHistory;
     this.journeyRewardHistory = journeyRewardHistory;
     this.subscriberStratum = subscriberStratum;
-    this.alternateIDs = alternateIDs;
   }
 
   /*****************************************
@@ -315,6 +299,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
 
   public JourneyStatistic(JourneyStatistic journeyStatistic)
   {
+    super(journeyStatistic);
     this.journeyStatisticID = journeyStatistic.getJourneyStatisticID();
     this.journeyInstanceID = journeyStatistic.getJourneyInstanceID();
     this.journeyID = journeyStatistic.getJourneyID();
@@ -357,12 +342,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
       {
         this.subscriberStratum.put(key, journeyStatistic.getSubscriberStratum().get(key));
       }
-    
-    this.alternateIDs = new HashMap<String, String>();
-    for(String key: journeyStatistic.getAlternateIDs().keySet())
-      {
-        this.alternateIDs.put(key, journeyStatistic.getAlternateIDs().get(key));
-      }
+
   }
   
   public StatusHistory getPreviousJourneyStatus()
@@ -417,6 +397,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   {
     JourneyStatistic journeyStatistic = (JourneyStatistic) value;
     Struct struct = new Struct(schema);
+    packSubscriberStreamOutput(struct,journeyStatistic);
     struct.put("journeyStatisticID", journeyStatistic.getJourneyStatisticID());
     struct.put("journeyInstanceID", journeyStatistic.getJourneyInstanceID());
     struct.put("journeyID", journeyStatistic.getJourneyID());
@@ -439,7 +420,6 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     struct.put("journeyStatusHistory", packStatusHistory(journeyStatistic.getJourneyStatusHistory()));
     struct.put("journeyRewardHistory", packRewardHistory(journeyStatistic.getJourneyRewardHistory()));
     struct.put("subscriberStratum", journeyStatistic.getSubscriberStratum());
-    struct.put("alternateIDs", journeyStatistic.getAlternateIDs());
     return struct;
   }
   
@@ -511,7 +491,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
     //
     //  unpack
@@ -541,13 +521,12 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     List<NodeHistory> journeyNodeHistory =  unpackNodeHistory(schema.field("journeyNodeHistory").schema(), valueStruct.get("journeyNodeHistory"));
     List<StatusHistory> journeyStatusHistory =  unpackStatusHistory(schema.field("journeyStatusHistory").schema(), valueStruct.get("journeyStatusHistory"));
     Map<String, String> subscriberStratum = (Map<String,String>) valueStruct.get("subscriberStratum");
-    Map<String, String> alternateIDs = (schemaVersion >= 4) ? (Map<String,String>) valueStruct.get("alternateIDs") : new HashMap<String, String>();
     
     //
     //  return
     //
 
-    return new JourneyStatistic(journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, sample, markNotified, markConverted, statusNotified, statusConverted, statusTargetGroup, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyNodeHistory, journeyStatusHistory, journeyRewardHistory, subscriberStratum, alternateIDs);
+    return new JourneyStatistic(schemaAndValue, journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, sample, markNotified, markConverted, statusNotified, statusConverted, statusTargetGroup, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyNodeHistory, journeyStatusHistory, journeyRewardHistory, subscriberStratum);
   }
   
   /*****************************************
@@ -756,7 +735,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
         + (journeyStatusHistory != null ? "journeyStatusHistory=" + toString(journeyStatusHistory, maxLen) + ", " : "") 
         + (journeyRewardHistory != null ? "journeyRewardHistory=" + toString(journeyRewardHistory, maxLen) + ", " : "") 
         + (subscriberStratum != null ? "subscriberStratum=" + toString(subscriberStratum.entrySet(), maxLen) : "")
-        + (alternateIDs != null ? "alternateIDs=" + toString(alternateIDs.entrySet(), maxLen) : "") + "]";
+        + "]";
   }
 
   private String toString(Collection<?> collection, int maxLen)
