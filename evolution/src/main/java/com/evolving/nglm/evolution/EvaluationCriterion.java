@@ -841,6 +841,7 @@ public class EvaluationCriterion
         default:
           if (criterionFieldValue == null)
             {
+              log.info("RAJ K criterionFieldValue {} return {}", criterionFieldValue, criterionDefault);
               evaluationRequest.subscriberTrace((criterionDefault ? "TrueCondition : " : "FalseCondition: ") + "DefaultCriterion {0} {1} value {2} argument {3}", criterionField.getID(), criterionOperator, criterionFieldValue, evaluatedArgument);
               return criterionDefault;
             }
@@ -862,6 +863,7 @@ public class EvaluationCriterion
         default:
           if (evaluatedArgument == null)
             {
+              log.info("RAJ K evaluatedArgument {} return false", evaluatedArgument);
               evaluationRequest.subscriberTrace("FalseCondition : invalid null argument {0}", argumentExpression);
               return false;
             }
