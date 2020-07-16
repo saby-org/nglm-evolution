@@ -69,7 +69,7 @@ public class BDRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(eventDatetime);
     headerFieldsOrder.add(operation);
     headerFieldsOrder.add(orgin);
-    headerFieldsOrder.add(providerId);
+    headerFieldsOrder.add(providerName);
     headerFieldsOrder.add(returnCode);
     headerFieldsOrder.add(returnCodeDescription);
     headerFieldsOrder.add(returnCodeDetails);
