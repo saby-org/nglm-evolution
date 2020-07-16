@@ -1625,10 +1625,13 @@ public class Journey extends GUIManagedObject implements StockableItem
       }
   }
   
-  public void createOrConsolidateHardcodedMessageTemplates(SubscriberMessageTemplateService subscriberMessageTemplateService, GUIManagedObject existingJourneyUnchecked) throws GUIManagerException
+  public void createOrConsolidateHardcodedMessageTemplates(SubscriberMessageTemplateService subscriberMessageTemplateService, String journeyID, JourneyService journeyService) throws GUIManagerException
   {
     
-    Journey existingJourney = (existingJourneyUnchecked != null && existingJourneyUnchecked instanceof Journey) ? (Journey) existingJourneyUnchecked : null;
+    GUIManagedObject gmo = journeyService.getStoredJourney(journeyID);
+    if ((gmo != null) && !(gmo instanceof Journey)) return;
+    
+    Journey existingJourney = (Journey) gmo;
     
     /*****************************************
     *

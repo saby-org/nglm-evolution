@@ -180,7 +180,7 @@ public class JourneyService extends GUIService
   *
   *****************************************/
 
-  public void putJourney(GUIManagedObject journey, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, TargetService targetService, boolean newObject, String userID) throws GUIManagerException
+  public void putJourney(GUIManagedObject journey, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, TargetService targetService, SubscriberMessageTemplateService subscriberMessageTemplateService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -195,7 +195,9 @@ public class JourneyService extends GUIService
     if (journey instanceof Journey)
       {
         ((Journey) journey).validate(journeyObjectiveService, catalogCharacteristicService, targetService, now);
+        ((Journey) journey).createOrConsolidateHardcodedMessageTemplates(subscriberMessageTemplateService, journey.getGUIManagedObjectID(), this);
       }
+
 
     //
     //  put
@@ -210,11 +212,11 @@ public class JourneyService extends GUIService
   *
   *****************************************/
 
-  public void putJourney(IncompleteObject journey, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, TargetService targetService, boolean newObject, String userID)
+  public void putJourney(IncompleteObject journey, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, TargetService targetService, SubscriberMessageTemplateService subscriberMessageTemplateService, boolean newObject, String userID)
   {
     try
       {
-        putJourney((GUIManagedObject) journey, journeyObjectiveService, catalogCharacteristicService, targetService, newObject, userID);
+        putJourney((GUIManagedObject) journey, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, newObject, userID);
       }
     catch (GUIManagerException e)
       {
