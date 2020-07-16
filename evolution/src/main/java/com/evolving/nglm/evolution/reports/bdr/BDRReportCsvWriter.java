@@ -31,7 +31,7 @@ public class BDRReportCsvWriter implements ReportCsvFactory
   private static final String deliverableID = "deliverableID";
   private static final String deliverableQty = "deliverableQty";
   private static final String moduleName = "moduleName";
-  private static final String featureDisplay = "featureName";
+  private static final String featureName = "featureName";
   private static final String deliverableDisplay = "deliverableName";
   private static final String subscriberID = "subscriberID";
   private static final String customerID = "customerID";
@@ -57,7 +57,7 @@ public class BDRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(deliverableID);
     headerFieldsOrder.add(deliverableQty);
     headerFieldsOrder.add(moduleName);
-    headerFieldsOrder.add(featureDisplay);
+    headerFieldsOrder.add(featureName);
     headerFieldsOrder.add(deliverableDisplay);
     headerFieldsOrder.add(customerID);
     for (AlternateID alternateID : Deployment.getAlternateIDs().values())
@@ -218,8 +218,8 @@ public class BDRReportCsvWriter implements ReportCsvFactory
         if (bdrFields.containsKey(moduleId) && bdrFields.containsKey(featureId))
           {
             Module module = Module.fromExternalRepresentation(String.valueOf(bdrFields.get(moduleId)));
-            String featureDis = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);                
-            bdrRecs.put(featureDisplay, featureDis);
+            String featureNam = DeliveryRequest.getFeatureName(module, String.valueOf(bdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);                
+            bdrRecs.put(featureName, featureNam);
             bdrRecs.put(moduleName, module.toString());
             bdrRecs.put(featureId, bdrFields.get(featureId));
             bdrRecs.put(moduleId, bdrFields.get(moduleId));

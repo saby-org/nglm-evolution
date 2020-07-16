@@ -116,6 +116,7 @@ public class LoyaltyProgramCustomerStatesCsvWriter implements ReportCsvFactory
                                   {
                                     log.info("tierUpdateDate is not a Long : " + tierUpdateDate.getClass().getName());
                                   }
+                                
                                 fullFields.put("tierUpdateDate", obj.get("tierUpdateDate"));
                               }
                             else
