@@ -1706,30 +1706,9 @@ public class EvaluationCriterion
           break;
           
         case DoesNotContainsKeywordOperator:
-
+          
           //
-          //  argument must be constant to evaluate esQuery
-          //
-
-          if (! argument.isConstant())
-            {
-              throw new CriterionException("DoesNotContainsKeyword invalid (non-constant) argument");
-            }
-
-          //
-          //  evaluate constant right hand-side
-          //
-
-          String argumentVal = (String) argument.evaluateExpression(null, TimeUnit.Unknown);
-
-          //
-          //  script
-          //
-
-          script.append("return left !=~ /" + generateContainsKeywordRegex(argumentVal) + "/; ");
-
-          //
-          //  break
+          //  skip as there will be a task to remove any painless script EVPRO-381
           //
 
           break;
@@ -1819,7 +1798,6 @@ public class EvaluationCriterion
     *****************************************/
     
     if (log.isDebugEnabled()) log.debug("painless script: {}", script.toString());
-    log.info("RAJ K script for DoesNotContainsKeywordOperator {} ", script.toString());
     
     /*****************************************
     *
