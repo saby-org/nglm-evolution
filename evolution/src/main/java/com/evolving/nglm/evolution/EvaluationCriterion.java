@@ -1101,6 +1101,13 @@ public class EvaluationCriterion
           
         case DoesNotContainsKeywordOperator:
           result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
+        try
+          {
+            esQuery();
+          } catch (CriterionException e)
+          {
+            e.printStackTrace();
+          }
           break;
 
         /*****************************************
@@ -1691,7 +1698,6 @@ public class EvaluationCriterion
           //
 
           script.append("return left =~ /" + generateContainsKeywordRegex(argumentValue) + "/; ");
-          log.info("RAJ K script for ContainsKeywordOperator {} ", script.toString());
 
           //
           //  break
@@ -1721,7 +1727,6 @@ public class EvaluationCriterion
           //
 
           script.append("return left !=~ /" + generateContainsKeywordRegex(argumentVal) + "/; ");
-          log.info("RAJ K script for DoesNotContainsKeywordOperator {} ", script.toString());
 
           //
           //  break
@@ -1814,6 +1819,7 @@ public class EvaluationCriterion
     *****************************************/
     
     if (log.isDebugEnabled()) log.debug("painless script: {}", script.toString());
+    log.info("RAJ K script for DoesNotContainsKeywordOperator {} ", script.toString());
     
     /*****************************************
     *
