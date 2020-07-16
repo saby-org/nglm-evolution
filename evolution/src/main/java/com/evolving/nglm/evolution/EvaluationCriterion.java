@@ -210,6 +210,7 @@ public class EvaluationCriterion
     IsNullOperator("is null"),
     IsNotNullOperator("is not null"),
     ContainsKeywordOperator("contains keyword"),
+    DoesNotContainsKeywordOperator("doesn't contains keyword"),
     IsInSetOperator("is in set"),
     NotInSetOperator("not in set"),
     ContainsOperator("contains"),
@@ -515,6 +516,24 @@ public class EvaluationCriterion
           break;
           
         case ContainsKeywordOperator:
+          switch (criterionField.getFieldDataType())
+            {
+              case StringCriterion:
+                switch (argumentType)
+                  {
+                    case StringExpression:
+                      validCombination = true;
+                      break;
+                  }
+                break;
+
+              default:
+                validCombination = false;
+                break;
+            }
+          break;
+          
+        case DoesNotContainsKeywordOperator:
           switch (criterionField.getFieldDataType())
             {
               case StringCriterion:
@@ -1071,6 +1090,16 @@ public class EvaluationCriterion
         case ContainsKeywordOperator:
           result = traceCondition(evaluationRequest, evaluateContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
           break;
+          
+        /*****************************************
+        *
+        *  containsKeyword operator
+        *
+        *****************************************/
+          
+        case DoesNotContainsKeywordOperator:
+          result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
+          break;
 
         /*****************************************
         *
@@ -1292,6 +1321,7 @@ public class EvaluationCriterion
         if (result.length() > 0) result.append("|");
         result.append("((^|\\s)" + wordPattern + "(\\s|$))");
       }
+    log.info("RAJ K generateContainsKeywordRegex for input {} is {}", words, result.toString());
     return result.toString();
   }
 
@@ -1320,6 +1350,12 @@ public class EvaluationCriterion
 
     return m.find();
   }
+  
+  //
+  //  evaluateDoesNotContainsKeyword
+  //
+
+  private boolean evaluateDoesNotContainsKeyword(String data, String words) { return !evaluateContainsKeyword(data, words); }
 
   /*****************************************
   *
@@ -1653,6 +1689,37 @@ public class EvaluationCriterion
           //
 
           script.append("return left =~ /" + generateContainsKeywordRegex(argumentValue) + "/; ");
+          log.info("RAJ K script for ContainsKeywordOperator {} ", script.toString());
+
+          //
+          //  break
+          //
+
+          break;
+          
+        case DoesNotContainsKeywordOperator:
+
+          //
+          //  argument must be constant to evaluate esQuery
+          //
+
+          if (! argument.isConstant())
+            {
+              throw new CriterionException("DoesNotContainsKeyword invalid (non-constant) argument");
+            }
+
+          //
+          //  evaluate constant right hand-side
+          //
+
+          String argumentVal = (String) argument.evaluateExpression(null, TimeUnit.Unknown);
+
+          //
+          //  script
+          //
+
+          script.append("return left !=~ /" + generateContainsKeywordRegex(argumentVal) + "/; ");
+          log.info("RAJ K script for DoesNotContainsKeywordOperator {} ", script.toString());
 
           //
           //  break
