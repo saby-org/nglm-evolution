@@ -24686,7 +24686,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           {
             Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
             journey.validate(journeyObjectiveService, catalogCharacteristicService, targetService, date);
-            journey.createOrConsolidateHardcodedMessageTemplates(subscriberMessageTemplateService, journey.getGUIManagedObjectID(), journeyService);
             modifiedJourney = journey;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -24712,7 +24711,21 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     for (GUIManagedObject modifiedJourney : modifiedJourneys)
       {
-        journeyService.putGUIManagedObject(modifiedJourney, date, false, null);
+        if (modifiedJourney instanceof Journey)
+          {
+            try
+              {
+                journeyService.putJourney(modifiedJourney, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, false, null);
+              }
+            catch (JSONUtilitiesException|GUIManagerException e)
+              {
+                  log.warn(e.getLocalizedMessage());
+              }
+          }
+        else
+          {
+            journeyService.putGUIManagedObject(modifiedJourney, date, false, null);
+          }
       }
   }
 
