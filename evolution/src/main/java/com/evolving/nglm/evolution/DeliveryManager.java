@@ -538,7 +538,7 @@ public abstract class DeliveryManager
       @Override public void onPartitionsAssigned(Collection<TopicPartition> partitions) { log.info("requestConsumer partitions assigned: {}", partitions); }
     };
 
-    requestConsumer.subscribe(requestTopics);
+    requestConsumer.subscribe(requestTopics,listener);
     while (managerStatus.isRunning())
     {
       /****************************************
@@ -1141,6 +1141,17 @@ public abstract class DeliveryManager
       @Override public void onPartitionsAssigned(Collection<TopicPartition> partitions) { assignRoutingConsumerPartitions(partitions); }
     };
     routingConsumer.subscribe(Arrays.asList(routingTopic), listener);
+
+    // wait start
+    synchronized (this){
+      while(!managerStatus.isDeliveringRequests()){
+        try {
+          this.wait();
+        } catch (InterruptedException e){}
+      }
+    }
+    log.info("runReceiveCorrelatorWorker: starting delivery");
+
     while (managerStatus.isProcessingResponses())
     {
 
