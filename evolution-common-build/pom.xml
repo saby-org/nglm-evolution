@@ -25,13 +25,13 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>release_1.4.3_8-EVPRO-339-SNAPSHOT</version>
+    <version>release_1.4.4_0-SNAPSHOT</version>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>release_1.4.3_8-EVPRO-339-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>release_1.4.4_0-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
