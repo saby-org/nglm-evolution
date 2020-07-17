@@ -315,8 +315,8 @@ public class ThirdPartyJSONGenerator
     tokenMap.put("tokenTypeDisplay", tokenType != null ? tokenType.getGUIManagedObjectDisplay() : "unknownTokenType");
     Module module = Module.fromExternalRepresentation(token.getModuleID());
     tokenMap.put("moduleName", module.toString());
-    Integer featureID = token.getFeatureID();
-    tokenMap.put("featureName", (featureID==null) ? "unknown feature" : DeliveryRequest.getFeatureDisplay(module, featureID.toString(), journeyService, offerService, loyaltyProgramService));
+    String featureID = token.getFeatureID();
+    tokenMap.put("featureName", (featureID==null) ? "unknown feature" : DeliveryRequest.getFeatureDisplay(module, featureID, journeyService, offerService, loyaltyProgramService));
     tokenMap.put("tokenCode", token.getTokenCode());
     if (token instanceof DNBOToken)
       {

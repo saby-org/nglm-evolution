@@ -829,22 +829,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
           break;
 
         case REST_API:
-          try {
-            int featureIdInt = Integer.parseInt(featureId); 
-            for (ThirdPartyManager.API api : ThirdPartyManager.API.values())
-              {
-                if (api.getMethodIndex() == featureIdInt)
-                  {
-                    featureDisplay = api.toString();
-                    break;
-                  }
-              }
-          }
-          catch (NumberFormatException e)
-          {
-            log.warn("cannot convert featureID to int : " + featureId + " " + e.getMessage());
-            featureDisplay = "Unknown";
-          }
+          featureDisplay = featureId; // loginName
           break;
           
         case Customer_Care:

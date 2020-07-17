@@ -57,7 +57,7 @@ public class Token implements Action
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("token");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("tokenCode", Schema.STRING_SCHEMA);
     schemaBuilder.field("tokenStatus", Schema.STRING_SCHEMA);
     schemaBuilder.field("creationDate", Timestamp.builder().optional().schema());
@@ -69,7 +69,7 @@ public class Token implements Action
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("tokenTypeID", Schema.STRING_SCHEMA);
     schemaBuilder.field("moduleID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("featureID", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
     commonSchema = schemaBuilder.build();
   };
 
@@ -109,7 +109,7 @@ public class Token implements Action
   private String subscriberID;
   private String tokenTypeID;
   private String moduleID;                  // reference to the Token requester
-  private Integer featureID;                // reference to the Token requester
+  private String featureID;                // reference to the Token requester
 
   /*****************************************
   *
@@ -128,7 +128,7 @@ public class Token implements Action
   public String getSubscriberID() { return subscriberID; }
   public String getTokenTypeID() { return tokenTypeID; }
   public String getModuleID() { return moduleID; }
-  public Integer getFeatureID() { return featureID; }
+  public String getFeatureID() { return featureID; }
   public ActionType getActionType() { return ActionType.TokenUpdate; }
 
   //
@@ -146,7 +146,7 @@ public class Token implements Action
   public void setSubscriberID(String subscriberID) { this.subscriberID = subscriberID; }
   public void setTokenTypeID(String tokenTypeID) { this.tokenTypeID = tokenTypeID; }
   public void setModuleID(String moduleID) { this.moduleID = moduleID; }
-  public void setFeatureID(Integer featureID) { this.featureID = featureID; }
+  public void setFeatureID(String featureID) { this.featureID = featureID; }
 
   /*****************************************
   *
@@ -154,7 +154,7 @@ public class Token implements Action
   *
   *****************************************/
 
-  public Token(String tokenCode, TokenStatus tokenStatus, Date creationDate, Date boundDate, Date redeemedDate, Date tokenExpirationDate, int boundCount, String eventID, String subscriberID, String tokenTypeID, String moduleID, Integer featureID)
+  public Token(String tokenCode, TokenStatus tokenStatus, Date creationDate, Date boundDate, Date redeemedDate, Date tokenExpirationDate, int boundCount, String eventID, String subscriberID, String tokenTypeID, String moduleID, String featureID)
   {
     this.tokenCode = tokenCode;
     this.tokenStatus = tokenStatus;
@@ -224,7 +224,7 @@ public class Token implements Action
     String subscriberID = valueStruct.getString("subscriberID");
     String tokenTypeID = valueStruct.getString("tokenTypeID");
     String moduleID = valueStruct.getString("moduleID");
-    Integer featureID = valueStruct.getInt32("featureID");
+    String featureID = (schemaVersion >=2 ) ? valueStruct.getString("featureID") : "";
 
     //
     //  return

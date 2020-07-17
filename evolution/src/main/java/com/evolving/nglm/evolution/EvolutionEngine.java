@@ -3932,8 +3932,7 @@ public class EvolutionEngine
         String eventTokenCode = null;
         String moduleID = null;
         String userID = null;
-        String featureIDStr = null;
-        int featureID = 0;
+        String featureID = null;
         List<Token> subscriberTokens = subscriberProfile.getTokens();
         String tokenTypeID = null;
         DNBOToken presentationLogToken = null;
@@ -3946,7 +3945,7 @@ public class EvolutionEngine
           {
             eventTokenCode = ((PresentationLog) evolutionEvent).getPresentationToken();
             moduleID = ((PresentationLog)evolutionEvent).getModuleID();
-            featureIDStr = ((PresentationLog)evolutionEvent).getFeatureID();
+            featureID = ((PresentationLog)evolutionEvent).getFeatureID();
             tokenTypeID = ((PresentationLog)evolutionEvent).getTokenTypeID();
             presentationLogToken = ((PresentationLog) evolutionEvent).getToken();
           }
@@ -3954,7 +3953,7 @@ public class EvolutionEngine
           {
             eventTokenCode = ((AcceptanceLog) evolutionEvent).getPresentationToken();
             moduleID = ((AcceptanceLog)evolutionEvent).getModuleID();
-            featureIDStr = ((AcceptanceLog)evolutionEvent).getFeatureID();
+            featureID = ((AcceptanceLog)evolutionEvent).getFeatureID();
             tokenTypeID = ((AcceptanceLog)evolutionEvent).getTokenTypeID();
           }
 
@@ -3970,14 +3969,6 @@ public class EvolutionEngine
             return false;
           }
 
-        try
-        {
-          featureID = Integer.parseInt(featureIDStr);
-        }
-        catch (NumberFormatException e)
-        {
-          log.warn("featureID is not an integer : " + featureIDStr + " using " + featureID);
-        }
         if (moduleID == null)
           {
             moduleID = DeliveryRequest.Module.Unknown.getExternalRepresentation();
@@ -5114,15 +5105,7 @@ public class EvolutionEngine
                                 case TokenUpdate:
                                   Token token = (Token) action;
                                   subscriberState.getSubscriberProfile().getTokens().add(token);
-                                  int featureID = 0;
-                                  try
-                                  {
-                                    featureID = Integer.parseInt(journey.getJourneyID());
-                                  }
-                                  catch (NumberFormatException e)
-                                  {
-                                    log.warn("journeyID is not an integer : "+journey.getJourneyID()+" using "+featureID);
-                                  }
+                                  String featureID = journey.getJourneyID();
                                   token.setFeatureID(featureID);
                                   switch (token.getTokenStatus())
                                   {
@@ -5447,7 +5430,7 @@ public class EvolutionEngine
     return subscriberStateUpdated;
   }
 
-  private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String action, Token token, int journeyID, String origin)
+  private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String action, Token token, String journeyID, String origin)
   {
     return new TokenChange(subscriberId, eventDateTime, "", token.getTokenCode(), action, "OK", origin, Module.Journey_Manager, journeyID);
   }

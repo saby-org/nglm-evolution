@@ -26291,16 +26291,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     String topic = Deployment.getTokenChangeTopic();
     Serializer<StringKey> keySerializer = StringKey.serde().serializer();
     Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
-    int userIDint = 1;
-    try
-    {
-      userIDint = (userID != null) ? Integer.parseInt(userID) : 1;
-    }
-    catch (NumberFormatException e)
-    {
-      log.warn("userID is not an integer : " + userID + " using " + userIDint);
-    }
-    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "guiManager", Module.Customer_Care, userIDint); 
+    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "guiManager", Module.Customer_Care, userID); 
     kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
         topic,
         keySerializer.serialize(topic, new StringKey(subscriberID)),
