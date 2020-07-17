@@ -256,7 +256,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
         esNode,
         esIndexWithQuery,
         reportFactory,
-        csvfile
+        csvfile, true, true
     );
 
     if (!reportMonoPhase.startOneToOne())
