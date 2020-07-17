@@ -841,7 +841,6 @@ public class EvaluationCriterion
         default:
           if (criterionFieldValue == null)
             {
-              log.info("RAJ K criterionFieldValue {} return {}", criterionFieldValue, criterionDefault);
               evaluationRequest.subscriberTrace((criterionDefault ? "TrueCondition : " : "FalseCondition: ") + "DefaultCriterion {0} {1} value {2} argument {3}", criterionField.getID(), criterionOperator, criterionFieldValue, evaluatedArgument);
               return criterionDefault;
             }
@@ -863,7 +862,6 @@ public class EvaluationCriterion
         default:
           if (evaluatedArgument == null)
             {
-              log.info("RAJ K evaluatedArgument {} return false", evaluatedArgument);
               evaluationRequest.subscriberTrace("FalseCondition : invalid null argument {0}", argumentExpression);
               return false;
             }
@@ -1101,13 +1099,6 @@ public class EvaluationCriterion
           
         case DoesNotContainsKeywordOperator:
           result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
-        try
-          {
-            esQuery();
-          } catch (CriterionException e)
-          {
-            e.printStackTrace();
-          }
           break;
 
         /*****************************************
@@ -1330,7 +1321,6 @@ public class EvaluationCriterion
         if (result.length() > 0) result.append("|");
         result.append("((^|\\s)" + wordPattern + "(\\s|$))");
       }
-    log.info("RAJ K generateContainsKeywordRegex for input {} is {}", words, result.toString());
     return result.toString();
   }
 
@@ -1677,6 +1667,7 @@ public class EvaluationCriterion
         *****************************************/
 
         case ContainsKeywordOperator:
+        case DoesNotContainsKeywordOperator:
 
           //
           //  argument must be constant to evaluate esQuery
@@ -1705,14 +1696,6 @@ public class EvaluationCriterion
 
           break;
           
-        case DoesNotContainsKeywordOperator:
-          
-          //
-          //  skip as there will be a task to remove any painless script EVPRO-381
-          //
-
-          break;
-
         /*****************************************
         *
         *  set operators
@@ -1821,6 +1804,11 @@ public class EvaluationCriterion
         case IsNotNullOperator:
           query = baseQuery;
           break;
+          
+        case DoesNotContainsKeywordOperator:
+            query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).mustNot(baseQuery);
+          break;
+          
 
         default:
           if (criterionDefault)
