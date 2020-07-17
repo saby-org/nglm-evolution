@@ -865,77 +865,40 @@
   "initialReports" :
   [
     {
-      "name"                : "journeyCustomerStatesReportNEW",
-      "display"             : "Journey Customer States Report NEW",
-      "description"         : "Description of the Journey Customer States Report NEW",
+      "name"                : "journeyCustomerStatesReport",
+      "display"             : "Journey Customer States Report",
+      "description"         : "Description of the Journey Customer States Report (1 pass)",
       "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
-      "name"                : "journeyCustomerStatesReportOLD",
-      "display"             : "Journey Customer States Report OLD",
-      "description"         : "Description of the Journey Customer States Report OLD",
-      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
-    },
-    {
-      "name"                : "customerReportNEW",
-      "display"             : "Customer Report NEW",
-      "description"         : "Description of the Customer Report NEW",
+      "name"                : "customerReport",
+      "display"             : "Customer Report",
+      "description"         : "Description of the Customer Report (1 pass)",
       "class"               : "com.evolving.nglm.evolution.reports.subscriber.SubscriberReportMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
-      "name"                : "customerReportOLD",
-      "display"             : "Customer Report OLD",
-      "description"         : "Description of the Customer Report OLD",
-      "class"               : "com.evolving.nglm.evolution.reports.subscriber.SubscriberReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
-    },
-    {
-      "name"                : "BDRReportNEW",
-      "display"             : "BDR Report NEW",
-      "description"         : "Description of the BDR Report NEW",
+      "name"                : "BDRReport",
+      "display"             : "BDR Report",
+      "description"         : "Description of the BDR Report (1 pass)",
       "class"               : "com.evolving.nglm.evolution.reports.bdr.BDRReportMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
-      "name"                : "ODRReportNEW",
-      "display"             : "ODR Report NEW",
-      "description"         : "Description of the ODR Report NEW",
+      "name"                : "ODRReport",
+      "display"             : "ODR Report",
+      "description"         : "Description of the ODR Report (1 pass)",
       "class"               : "com.evolving.nglm.evolution.reports.odr.ODRReportMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ],
       "defaultReportPeriodQuantity" : 1,
       "defaultReportPeriodUnit"     : "DAYS"
     },
     {
-      "name"                : "notificationReportNEW",
-      "display"             : "Notification Report NEW",
-      "description"         : "Description of the Notification Report NEW",
+      "name"                : "notificationReport",
+      "display"             : "Notification Report",
+      "description"         : "Description of the Notification Report (1 pass)",
       "class"               : "com.evolving.nglm.evolution.reports.notification.NotificationReportMonoDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
-    },
-    {
-      "name"                : "BDRReportOLD",
-      "display"             : "BDR Report OLD",
-      "description"         : "Description of the BDR Report OLD",
-      "class"               : "com.evolving.nglm.evolution.reports.bdr.BDRReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
-    },
-    {
-      "name"                : "ODRReportOLD",
-      "display"             : "ODR Report OLD",
-      "description"         : "Description of the ODR Report OLD",
-      "class"               : "com.evolving.nglm.evolution.reports.odr.ODRReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ],
-      "defaultReportPeriodQuantity" : 1,
-      "defaultReportPeriodUnit"     : "DAYS"
-    },
-    {
-      "name"                : "notificationReportOLD",
-      "display"             : "Notification Report OLD",
-      "description"         : "Description of the Notification Report OLD",
-      "class"               : "com.evolving.nglm.evolution.reports.notification.NotificationReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
@@ -960,30 +923,16 @@
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
-      "name"                : "journeyImpactReportOLD",
-      "display"             : "Journey Impact Report OLD",
-      "description"         : "Description of the Journey Impact Report OLD",
-      "class"               : "com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
-    },
-    {
-      "name"                : "journeyImpactReportNEW",
-      "display"             : "Journey Impact Report NEW",
-      "description"         : "Description of the Journey Impact Report NEW",
+      "name"                : "journeyImpactReport",
+      "display"             : "Journey Impact Report",
+      "description"         : "Description of the Journey Impact Report (1 pass)",
       "class"               : "com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
-      "name"                : "journeyCustomerStatisticsReportOLD",
-      "display"             : "Journey Customer Statistics Report OLD",
-      "description"         : "Description of the Journey Customer Statistics Report OLD",
-      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
-    },
-    {
-      "name"                : "journeyCustomerStatisticsReportNEW",
-      "display"             : "Journey Customer Statistics Report NEW",
-      "description"         : "Description of the Journey Customer Statistics Report NEW",
+      "name"                : "journeyCustomerStatisticsReport",
+      "display"             : "Journey Customer Statistics Report",
+      "description"         : "Description of the Journey Customer Statistics Report (1 pass)",
       "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
@@ -995,17 +944,10 @@
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
-      "name"                : "loyaltyProgramCustomerStatesNEW",
-      "display"             : "Loyalty Program Customer States NEW",
-      "description"         : "Description of the Loyalty Program Customer States Report NEW",
+      "name"                : "loyaltyProgramCustomerStates",
+      "display"             : "Loyalty Program Customer States",
+      "description"         : "Description of the Loyalty Program Customer States Report (1 pass)",
       "class"               : "com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate.LoyaltyProgramCustomerStatesMonoDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
-    },
-    {
-      "name"                : "loyaltyProgramCustomerStatesOLD",
-      "display"             : "Loyalty Program Customer States OLD",
-      "description"         : "Description of the Loyalty Program Customer States Report OLD",
-      "class"               : "com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate.LoyaltyProgramCustomerStatesDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
