@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -690,8 +691,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
       guiPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(getChannelID()).getDisplay());
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
-      Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
-      guiPresentationMap.putAll(resolvedParameters);
+      guiPresentationMap.put("messageContent", gatherChannelParameters(subscriberMessageTemplateService));
       
     }
 
@@ -718,8 +718,30 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(getChannelID()).getDisplay());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
+      thirdPartyPresentationMap.put("messageContent", gatherChannelParameters(subscriberMessageTemplateService));
+    }
+
+    public Map<String, Object> gatherChannelParameters(SubscriberMessageTemplateService subscriberMessageTemplateService)
+    {
+      Map<String, Object> messageContent = new HashMap<>();
       Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
-      thirdPartyPresentationMap.putAll(resolvedParameters);
+      Map<String, CriterionField> comChannelParams = Deployment.getCommunicationChannels().get(getChannelID()).getParameters();
+      for (Entry<String, String> entry : resolvedParameters.entrySet())
+        {
+          String paramName = entry.getKey();
+          CriterionField param = comChannelParams.get(paramName);
+          if (param == null)
+            {
+              log.debug("unexpected : null param in configuration of " + Deployment.getCommunicationChannels().get(getChannelID()).getDisplay() + " : " + paramName);
+            }
+          else
+            {
+              String paramDisplay = param.getDisplay();
+              String paramValue = entry.getValue();
+              messageContent.put(paramDisplay, paramValue);
+            }
+        }
+      return messageContent;
     }
 
     public void resetDeliveryRequestAfterReSchedule()
