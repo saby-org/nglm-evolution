@@ -4752,7 +4752,13 @@ public class ThirdPartyManager
     }
     
     Journey journey = null;
-    String campaignDisplay = JSONUtilities.decodeString(jsonRoot, "campaign", true);
+    String campaignDisplay = JSONUtilities.decodeString(jsonRoot, "campaign", false);
+    if (campaignDisplay == null)
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " (campaign)");
+        return JSONUtilities.encodeObject(response);
+      }
     Collection<Journey> allActiveJourneys = journeyService.getActiveJourneys(SystemTime.getCurrentTime());
     if(allActiveJourneys != null)
       {
