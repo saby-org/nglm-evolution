@@ -1047,12 +1047,11 @@ public abstract class DeliveryManager
         //
 
         String correlator = stringKeySerde.deserializer().deserialize(topicPartition.topic(), progressRecord.key()).getKey();
-        DeliveryRequest deliveryRequest;
+        DeliveryRequest deliveryRequest = null;
         try{
           deliveryRequest = requestSerde.optionalDeserializer().deserialize(topicPartition.topic(), progressRecord.value());
         }catch (ClassCastException ex){
           log.info("DeliveryManager assignRoutingConsumerPartitions: old routing format message, skipping");
-          continue;
         }
         if (deliveryRequest != null && deliveryRequest.getDiplomaticBriefcase().get(CORRELATOR_UPDATE_KEY)==null && deliveryRequest.getTimeout()!=null && deliveryRequest.getTimeout().after(SystemTime.getCurrentTime()) )
         {
