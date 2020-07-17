@@ -1314,7 +1314,7 @@ public class GUIManagerBaseManagement extends GUIManager
         //  response
         //
 
-        response.put("targetID", incompleteObject.getGUIManagedObjectID());
+        response.put("id", incompleteObject.getGUIManagedObjectID());
         response.put("responseCode", "targetNotValid");
         response.put("responseMessage", e.getMessage());
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
