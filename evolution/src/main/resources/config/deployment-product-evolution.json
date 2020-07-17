@@ -1093,9 +1093,5 @@
     
     "enableProfileSegmentChange" : true,
     "enableEvaluateTargetRandomness" : false,
-
     "enableContactPolicyProcessing" : true
-     
-    
-    
 }

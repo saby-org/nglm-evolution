@@ -360,8 +360,14 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http:
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/source-address.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSourceAddress; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSourceAddress; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSourceAddress; echo
-
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTenantList; echo
+#getDependencies fiddle link - https://jsfiddle.net/bizamajig/emog04zo/ https://jsfiddle.net/awolf2904/bf43jws1/
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "objectType" : "campaign", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "objectType" : "journey", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "objectType" : "offer", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "objectType" : "product", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "objectType" : "saleschannel", "id" : "-1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "objectType" : "supplier", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
 
 --
 --  configAdaptor

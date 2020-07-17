@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -22,11 +23,15 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+@GUIDependencyDef(objectType = "saleschannel", serviceClass = SalesChannelService.class, dependencies = { "reseller" })
 public class SalesChannel extends GUIManagedObject
 {
   /*****************************************
@@ -286,10 +291,17 @@ public class SalesChannel extends GUIManagedObject
    
     if(resellerIDs != null && !resellerIDs.isEmpty())
       {
-        for(String resellerID : resellerIDs) {
-          if (resellerService.getActiveReseller(resellerID, date) == null) throw new GUIManagerException("unknown reseller", resellerID);
-          
-      }
+        for (String resellerID : resellerIDs)
+          {
+            if (resellerService.getActiveReseller(resellerID, date) == null) throw new GUIManagerException("unknown reseller", resellerID);
+          }
     }
+  }
+  
+  @Override public Map<String, List<String>> getGUIDependencies()
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    result.put("reseller", getResellerIDs());
+    return result;
   }
 }

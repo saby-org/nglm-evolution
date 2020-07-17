@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 
@@ -24,11 +25,14 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+@GUIDependencyDef(objectType = "loyaltyProgramPoints", serviceClass = LoyaltyProgramService.class, dependencies = {"point"})
 public class LoyaltyProgramPoints extends LoyaltyProgram
 {
   
@@ -569,4 +573,18 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
         }
     }
   }
+
+	@Override
+	public Map<String, List<String>> getGUIDependencies() {
+		Map<String, List<String>> result = new HashMap<String, List<String>>();
+		List<String> pointIDs = new ArrayList<String>();
+		if (this.getRewardPointsID() != null)
+			pointIDs.add(this.getRewardPointsID().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
+		if (this.getStatusPointsID() != null)
+			pointIDs.add(this.getStatusPointsID().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
+
+		result.put("point", pointIDs);
+		return result;
+
+	}
 }
