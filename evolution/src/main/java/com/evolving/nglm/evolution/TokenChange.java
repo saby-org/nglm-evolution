@@ -159,7 +159,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
    * constructor unpack
    *
    *****************************************/
-  public TokenChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, Integer featureID)
+  public TokenChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
