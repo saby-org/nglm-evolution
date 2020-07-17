@@ -24686,6 +24686,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           {
             Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
             journey.validate(journeyObjectiveService, catalogCharacteristicService, targetService, date);
+            journey.createOrConsolidateHardcodedMessageTemplates(subscriberMessageTemplateService, journey.getGUIManagedObjectID(), journeyService);
             modifiedJourney = journey;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
