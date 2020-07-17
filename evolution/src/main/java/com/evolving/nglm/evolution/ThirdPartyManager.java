@@ -3634,6 +3634,7 @@ public class ThirdPartyManager
          log.error(RESTAPIGenericReturnCodes.CANNOT_GENERATE_TOKEN_CODE.getGenericDescription());
          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CANNOT_GENERATE_TOKEN_CODE.getGenericResponseCode());
          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CANNOT_GENERATE_TOKEN_CODE.getGenericResponseMessage());
+         return JSONUtilities.encodeObject(response);
        } 
 
      newToken.setModuleID(DeliveryRequest.Module.REST_API.getExternalRepresentation());
