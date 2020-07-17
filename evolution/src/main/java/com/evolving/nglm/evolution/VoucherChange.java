@@ -55,7 +55,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     packSubscriberStreamOutput(struct,voucherChange);
     struct.put("subscriberID",voucherChange.getSubscriberID());
     struct.put("eventDate",voucherChange.getEventDate());
-    struct.put("newVoucherExpiryDate",voucherChange.getEventDate());
+    struct.put("newVoucherExpiryDate",voucherChange.getNewVoucherExpiryDate());
     struct.put("eventID", voucherChange.getEventID());
     struct.put("action", voucherChange.getAction().getExternalRepresentation());
     struct.put("voucherCode", voucherChange.getVoucherCode());
