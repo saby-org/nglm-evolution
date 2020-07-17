@@ -219,7 +219,8 @@ public class ThirdPartyManager
     getCustomerTokenAndNBO(31),
     putSupplierOffer(32),
     getSupplierOfferList(33),
-    removeSupplierOffer(34);
+    removeSupplierOffer(34),
+    getResellerDetails(35);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -537,6 +538,7 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/putSupplierOffer", new APIHandler(API.putSupplierOffer));
       restServer.createContext("/nglm-thirdpartymanager/getSupplierOfferList", new APIHandler(API.getSupplierOfferList));
       restServer.createContext("/nglm-thirdpartymanager/removeSupplierOffer", new APIHandler(API.removeSupplierOffer));
+      restServer.createContext("/nglm-thirdpartymanager/getResellerDetails", new APIHandler(API.getResellerDetails));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -880,6 +882,9 @@ public class ThirdPartyManager
               break;
             case redeemVoucher:
               jsonResponse = processRedeemVoucher(jsonRoot,sync);
+              break;              
+            case getResellerDetails:
+              jsonResponse = processGetResellerDetails(jsonRoot);
               break;
             case putSupplierOffer:
               jsonResponse = processPutSupplierOffer(jsonRoot);
@@ -4813,7 +4818,14 @@ public class ThirdPartyManager
     response.put("deliveryDate",getDateString(voucherProfileStored.getVoucherDeliveryDate()));
     response.put("expiryDate",getDateString(voucherProfileStored.getVoucherExpiryDate()));
     response.put("status",voucherProfileStored.getVoucherStatus().getExternalRepresentation());
-
+    String offerID = voucherProfileStored.getOfferID();
+    JSONObject offerJSON = new JSONObject();
+    GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
+    if (offerObject instanceof Offer) {
+      Offer offer = (Offer) offerObject;
+      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService);
+    }
+    response.put("offerDetails",offerJSON);
     return constructThirdPartyResponse(RESTAPIGenericReturnCodes.SUCCESS,response);
 
   }
@@ -4825,6 +4837,16 @@ public class ThirdPartyManager
     String subscriberID = voucherProfileStoredCheck.getFirstElement();
     VoucherProfileStored voucherProfileStored = voucherProfileStoredCheck.getSecondElement();
 
+    String offerID = voucherProfileStored.getOfferID();
+    JSONObject offerJSON = new JSONObject();
+    GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
+    if (offerObject instanceof Offer) {
+      Offer offer = (Offer) offerObject;
+      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService);
+    }
+    Map<String,Object> offerResponse = new HashMap<>();
+    offerResponse.put("offerDetails", offerJSON);
+    
     //build the request to send
     VoucherChange request = new VoucherChange(
             subscriberID,
@@ -4854,11 +4876,50 @@ public class ThirdPartyManager
 
     if(sync){
       VoucherChange response = handleWaitingResponse(waitingResponse);
-      return constructThirdPartyResponse(response.getReturnStatus(),null);
+      return constructThirdPartyResponse(response.getReturnStatus(),offerResponse);
     }
-    return constructThirdPartyResponse(RESTAPIGenericReturnCodes.SUCCESS,null);
+    return constructThirdPartyResponse(RESTAPIGenericReturnCodes.SUCCESS,offerResponse);
   }
 
+  /*****************************************
+   *
+   * processGetResellerDetails
+   *
+   *****************************************/
+
+  private JSONObject processGetResellerDetails(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Map<String, Object> response = new HashMap<String, Object>();
+    String user = readString(jsonRoot, "loginName", true);
+    for (GUIManagedObject reseller : resellerService.getStoredResellers())
+      {
+        if (reseller instanceof Reseller)
+          {
+            List<String> userIDs = ((Reseller) reseller).getUserIDs();
+            for (String userId : userIDs)
+              {
+                if (user.equals(userId))
+                  {
+                    JSONObject resellerJson = ThirdPartyJSONGenerator
+                        .generateResellerJSONForThirdParty((Reseller) reseller, resellerService);
+                    response.put("resellerDetails", JSONUtilities.encodeObject(resellerJson));
+                    updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+
+                  }
+              }
+          }
+      }
+
+    return JSONUtilities.encodeObject(response);
+  }
+ 
   private Pair<String,VoucherProfileStored> getStoredVoucher(JSONObject jsonRoot) throws ThirdPartyManagerException {
 
     Date now = SystemTime.getCurrentTime();
