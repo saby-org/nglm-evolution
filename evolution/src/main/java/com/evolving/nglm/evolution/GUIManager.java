@@ -829,6 +829,15 @@ public class GUIManager
     {
       @Override public void journeyActivated(Journey journey) {
           log.debug("journeyActivated: " + journey.getJourneyID()+" "+journey.getJourneyName());
+
+          // send the evaluate target order to evolution engine
+          if (journey.getTargetID() != null)
+          {
+            EvaluateTargets evaluateTargets = new EvaluateTargets(Collections.<String>singleton(journey.getJourneyID()), journey.getTargetID());
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getEvaluateTargetsTopic(), EvaluateTargets
+                  .serde().serializer().serialize(Deployment.getEvaluateTargetsTopic(), evaluateTargets)));
+          }
+
           if (externalAPIMethodJourneyActivated != null)
             {
               try
@@ -5857,21 +5866,6 @@ public class GUIManager
 
             journeyService.putJourney(element, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService,
                 (existingJourneyElement == null), userID);
-
-            /*****************************************
-             *
-             * evaluate targets
-             *
-             *****************************************/
-
-            if (active && element.getTargetID() != null)
-              {
-                EvaluateTargets evaluateTargets = new EvaluateTargets(
-                    Collections.<String>singleton(element.getJourneyID()), element.getTargetID());
-                kafkaProducer
-                    .send(new ProducerRecord<byte[], byte[]>(Deployment.getEvaluateTargetsTopic(), EvaluateTargets
-                        .serde().serializer().serialize(Deployment.getEvaluateTargetsTopic(), evaluateTargets)));
-              }
 
             /*****************************************
              *
