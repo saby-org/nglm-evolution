@@ -960,17 +960,31 @@
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
-      "name"                : "journeyImpactReport",
-      "display"             : "Journey Impact Report",
-      "description"         : "Description of the Journey Impact Report",
+      "name"                : "journeyImpactReportOLD",
+      "display"             : "Journey Impact Report OLD",
+      "description"         : "Description of the Journey Impact Report OLD",
       "class"               : "com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
-      "name"                : "journeyCustomerStatisticsReport",
-      "display"             : "Journey Customer Statistics Report",
-      "description"         : "Description of the Journey Customer Statistics Report",
+      "name"                : "journeyImpactReportNEW",
+      "display"             : "Journey Impact Report NEW",
+      "description"         : "Description of the Journey Impact Report NEW",
+      "class"               : "com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportMonoDriver",
+      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+    },
+    {
+      "name"                : "journeyCustomerStatisticsReportOLD",
+      "display"             : "Journey Customer Statistics Report OLD",
+      "description"         : "Description of the Journey Customer Statistics Report OLD",
       "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriver",
+      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+    },
+    {
+      "name"                : "journeyCustomerStatisticsReportNEW",
+      "display"             : "Journey Customer Statistics Report NEW",
+      "description"         : "Description of the Journey Customer Statistics Report NEW",
+      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
