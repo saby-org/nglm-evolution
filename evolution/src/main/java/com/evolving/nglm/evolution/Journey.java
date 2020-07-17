@@ -1598,6 +1598,41 @@ public class Journey extends GUIManagedObject implements StockableItem
         journeyNode.setEvaluateContextVariables(evaluateContextVariablesOnEntry);
       }
 
+    
+
+    /*****************************************
+    *
+    *  add journeyParameters to the jsonRepresentation
+    *
+    ****************************************/
+
+    List<JSONObject> journeyParametersJSON = new ArrayList<JSONObject>();
+    for (CriterionField journeyParameter : journeyParameters.values())
+      {
+        journeyParametersJSON.add(journeyParameter.getJSONRepresentation());
+      }
+    this.getJSONRepresentation().put("journeyParameters", JSONUtilities.encodeArray(journeyParametersJSON));
+
+    /*****************************************
+    *
+    *  epoch
+    *
+    *****************************************/
+
+    if (epochChanged(existingJourney))
+      {
+        this.setEpoch(epoch);
+      }
+  }
+  
+  public void createOrConsolidateHardcodedMessageTemplates(SubscriberMessageTemplateService subscriberMessageTemplateService, String journeyID, JourneyService journeyService) throws GUIManagerException
+  {
+    
+    GUIManagedObject gmo = journeyService.getStoredJourney(journeyID);
+    if ((gmo != null) && !(gmo instanceof Journey)) return;
+    
+    Journey existingJourney = (Journey) gmo;
+    
     /*****************************************
     *
     *  resolve hard-coded subscriber messages
@@ -1648,30 +1683,6 @@ public class Journey extends GUIManagedObject implements StockableItem
           {
             subscriberMessage.setSubscriberMessageTemplateID(matchingSubscriberMessage.getSubscriberMessageTemplateID());
           }
-      }
-
-    /*****************************************
-    *
-    *  add journeyParameters to the jsonRepresentation
-    *
-    ****************************************/
-
-    List<JSONObject> journeyParametersJSON = new ArrayList<JSONObject>();
-    for (CriterionField journeyParameter : journeyParameters.values())
-      {
-        journeyParametersJSON.add(journeyParameter.getJSONRepresentation());
-      }
-    this.getJSONRepresentation().put("journeyParameters", JSONUtilities.encodeArray(journeyParametersJSON));
-
-    /*****************************************
-    *
-    *  epoch
-    *
-    *****************************************/
-
-    if (epochChanged(existingJourney))
-      {
-        this.setEpoch(epoch);
       }
   }
 
