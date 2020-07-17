@@ -18,6 +18,7 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.NoSuchElementException;
+import java.util.TimeZone;
 
 /**
  * this is responsible for handle extract and start generating file process into a thread
@@ -181,6 +182,7 @@ public class ExtractLauncher implements Runnable
             "Config error : date format " + dateFormat + " is invalid, using default" + e.getLocalizedMessage(), e);
         sdf = new SimpleDateFormat(); // Default format, might not be valid in a filename, sigh...
       }
+      sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
       String fileSuffix = sdf.format(SystemTime.getCurrentTime());
       String csvFilename =
           "" + outputPath + File.separator + extractItem.getUserId() + "_" + extractItem.getExtractName() + "_"

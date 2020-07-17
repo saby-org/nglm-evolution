@@ -23,8 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * this class is driving reading from elastic search, put data in topic and write data to csv and compress data
- * extends ReportDriver in order to use the settings related to reports (timezone format)
- * this will be changed if the
+ * extends ReportDriver in order to use the settings related to reports
  */
 public class ExtractDriver extends ReportDriver
 {
