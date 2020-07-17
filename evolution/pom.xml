@@ -36,17 +36,17 @@
     <nglm.core.version>release_1.4.3_8-EVPRO-339-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
-    <gui-fwk.version>1.4.16</gui-fwk.version>
-    <gui-csr.version>1.4.13</gui-csr.version>
+    <gui-fwk.version>1.4.17</gui-fwk.version>
+    <gui-csr.version>1.4.18</gui-csr.version>
     <gui-itm.version>1.4.3</gui-itm.version>
-    <gui-jmr.version>1.4.39</gui-jmr.version>
-    <gui-opc.version>1.4.8</gui-opc.version>
-    <gui-iar.version>1.4.4</gui-iar.version>
+    <gui-jmr.version>1.4.42</gui-jmr.version>
+    <gui-opc.version>1.4.9</gui-opc.version>
+    <gui-iar.version>1.4.5</gui-iar.version>
     <gui-opr.version>1.4.3</gui-opr.version>
-    <gui-stg.version>1.4.5</gui-stg.version>
-    <gui-sbm.version>1.4.14</gui-sbm.version>
+    <gui-stg.version>1.4.7</gui-stg.version>
+    <gui-sbm.version>1.4.17</gui-sbm.version>
     <gui-lpm.version>1.4.4</gui-lpm.version>
-    <gui-tls.version>1.4.16</gui-tls.version>
+    <gui-tls.version>1.4.17</gui-tls.version>
     <gui-audit.version>1.0.4</gui-audit.version>
 
     <!-- dependencies - mysql -->
