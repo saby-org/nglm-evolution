@@ -1348,7 +1348,7 @@ public class ThirdPartyManager
                 {
                   if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                     {
-                      Map<String, Object> bdrMap = bdr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService);
+                      Map<String, Object> bdrMap = bdr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
                       BDRsJson.add(JSONUtilities.encodeObject(bdrMap));
                     }
                 }
@@ -1545,7 +1545,7 @@ public class ThirdPartyManager
                 {
                   if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
                     {
-                      Map<String, Object> presentationMap =  odr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService);
+                      Map<String, Object> presentationMap =  odr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
                       ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
                     }
                 }
@@ -1937,7 +1937,7 @@ public class ThirdPartyManager
                 {
                   if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
                     {
-                      messagesJson.add(JSONUtilities.encodeObject(message.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService)));
+                      messagesJson.add(JSONUtilities.encodeObject(message.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService)));
                     }
                 }
             }
@@ -4319,7 +4319,7 @@ public class ThirdPartyManager
                 {
                   purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID,
                           origin, resellerID, kafkaProducer);
-                  response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService));
+                  response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService));
                 }
             }
           else
@@ -4340,7 +4340,7 @@ public class ThirdPartyManager
             {
               purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID,
                       origin, resellerID, kafkaProducer);
-              response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService));
+              response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService));
             }
           }
       
