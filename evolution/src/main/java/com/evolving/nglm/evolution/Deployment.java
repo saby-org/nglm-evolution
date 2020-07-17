@@ -27,7 +27,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.datacubes.subscriber.SubscriberProfileDatacubeMetric;
+import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,14 +131,8 @@ public class Deployment
   private static String subscriberProfileRegistrySubject;
   private static int journeyTrafficArchivePeriodInSeconds;
   private static int journeyTrafficArchiveMaxNumberOfPeriods;
-  private static String yesterdayODRDatacubePeriodCronEntryString;
-  private static String todayODRDatacubePeriodCronEntryString;
-  private static String yesterdayLoyaltyDatacubePeriodCronEntryString;
-  private static String todayLoyaltyDatacubePeriodCronEntryString;
-  private static String yesterdaySubscriberDatacubePeriodCronEntryString;
-  private static String todaySubscriberDatacubePeriodCronEntryString;
-  private static String journeyTrafficDatacubePeriodCronEntryString;
-  private static String subscriberProfileSnapshotPeriodCronEntryString;
+  private static Map<String,ScheduledJobConfiguration> datacubeJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
+  private static Map<String,ScheduledJobConfiguration> elasticsearchJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
   private static PropensityRule propensityRule;
   private static Map<String,Long> journeyTemplateCapacities = new LinkedHashMap<String,Long>();
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
@@ -250,7 +244,6 @@ public class Deployment
   private static int minExpiryDelayForVoucherDeliveryInHours;
   private static int cleanUpExpiredVoucherDelayInDays;
   private static int importVoucherFileBulkSize;
-  private static String cleanExpiredVoucherCronEntry;
   private static int voucherESCacheCleanerFrequencyInSec;
   private static int numberConcurrentVoucherAllocationToES;
   private static int liveVoucherIndexNumberOfReplicas;
@@ -376,14 +369,8 @@ public class Deployment
   public static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
   public static int getJourneyTrafficArchivePeriodInSeconds() { return journeyTrafficArchivePeriodInSeconds; }
   public static int getJourneyTrafficArchiveMaxNumberOfPeriods() { return journeyTrafficArchiveMaxNumberOfPeriods; }
-  public static String getYesterdayODRDatacubePeriodCronEntryString() { return yesterdayODRDatacubePeriodCronEntryString; }
-  public static String getTodayODRDatacubePeriodCronEntryString() { return todayODRDatacubePeriodCronEntryString; }
-  public static String getYesterdayLoyaltyDatacubePeriodCronEntryString() { return yesterdayLoyaltyDatacubePeriodCronEntryString; }
-  public static String getTodayLoyaltyDatacubePeriodCronEntryString() { return todayLoyaltyDatacubePeriodCronEntryString; }
-  public static String getYesterdaySubscriberDatacubePeriodCronEntryString() { return yesterdaySubscriberDatacubePeriodCronEntryString; }
-  public static String getTodaySubscriberDatacubePeriodCronEntryString() { return todaySubscriberDatacubePeriodCronEntryString; }
-  public static String getJourneyTrafficDatacubePeriodCronEntryString() { return journeyTrafficDatacubePeriodCronEntryString; }
-  public static String getSubscriberProfileSnapshotPeriodCronEntryString() { return subscriberProfileSnapshotPeriodCronEntryString; }
+  public static Map<String,ScheduledJobConfiguration> getDatacubeJobsScheduling() { return datacubeJobsScheduling; }
+  public static Map<String,ScheduledJobConfiguration> getElasticsearchJobsScheduling() { return elasticsearchJobsScheduling; }
   public static PropensityRule getPropensityRule() { return propensityRule; }
   public static Map<String,Long> getJourneyTemplateCapacities() { return journeyTemplateCapacities; }
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
@@ -493,7 +480,6 @@ public class Deployment
   public static int getImportVoucherFileBulkSize() { return importVoucherFileBulkSize; }
   public static int getNumberConcurrentVoucherAllocationToES() { return numberConcurrentVoucherAllocationToES; }
   public static int getVoucherESCacheCleanerFrequencyInSec() { return voucherESCacheCleanerFrequencyInSec; }
-  public static String getCleanExpiredVoucherCronEntry() {return cleanExpiredVoucherCronEntry; }
   public static int getLiveVoucherIndexNumberOfReplicas() { return liveVoucherIndexNumberOfReplicas; }
   public static int getLiveVoucherIndexNumberOfShards() { return liveVoucherIndexNumberOfShards; }
   public static String getHourlyReportCronEntryString() { return hourlyReportCronEntryString; }
@@ -2012,103 +1998,22 @@ public class Deployment
         }
 
       //
-      //  yesterdayODRDatacubePeriodCronEntryString
+      //  datacubeJobsScheduling & elasticsearchJobsScheduling
       //
 
       try
         {
-          yesterdayODRDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdayODRDatacubePeriodCronEntryString", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
+          //  datacubeJobsScheduling
+          JSONObject datacubeJobsSchedulingJSON = JSONUtilities.decodeJSONObject(jsonRoot, "datacubeJobsScheduling", true);
+          for (Object key : datacubeJobsSchedulingJSON.keySet()) {
+            datacubeJobsScheduling.put((String) key, new ScheduledJobConfiguration((JSONObject) datacubeJobsSchedulingJSON.get(key)));
+          }
 
-      //
-      //  todayODRDatacubePeriodCronEntryString
-      //
-
-      try
-        {
-          todayODRDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todayODRDatacubePeriodCronEntryString", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  yesterdayLoyaltyDatacubePeriodCronEntryString
-      //
-
-      try
-        {
-          yesterdayLoyaltyDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdayLoyaltyDatacubePeriodCronEntryString", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  todaySubscriberDatacubePeriodCronEntryString
-      //
-
-      try
-        {
-          todaySubscriberDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todaySubscriberDatacubePeriodCronEntryString", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  yesterdaySubscriberDatacubePeriodCronEntryString
-      //
-
-      try
-        {
-          yesterdaySubscriberDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdaySubscriberDatacubePeriodCronEntryString", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  todayLoyaltyDatacubePeriodCronEntryString
-      //
-
-      try
-        {
-          todayLoyaltyDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todayLoyaltyDatacubePeriodCronEntryString", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  journeyTrafficDatacubePeriodCronEntryString
-      //
-
-      try
-        {
-          journeyTrafficDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "journeyTrafficDatacubePeriodCronEntryString", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  subscriberProfileSnapshotPeriodCronEntryString
-      //
-
-      try
-        {
-          subscriberProfileSnapshotPeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "subscriberProfileSnapshotPeriodCronEntryString", true);
+          //  elasticsearchJobsScheduling
+          JSONObject elasticsearchJobsSchedulingJSON = JSONUtilities.decodeJSONObject(jsonRoot, "elasticsearchJobsScheduling", true);
+          for (Object key : elasticsearchJobsSchedulingJSON.keySet()) {
+            elasticsearchJobsScheduling.put((String) key, new ScheduledJobConfiguration((JSONObject) elasticsearchJobsSchedulingJSON.get(key)));
+          }
         }
       catch (JSONUtilitiesException e)
         {
@@ -3378,8 +3283,6 @@ public class Deployment
         cleanUpExpiredVoucherDelayInDays = JSONUtilities.decodeInteger(jsonRoot, "cleanUpExpiredVoucherDelayInDays",31);
         // the bulk size when importing voucher file into ES
         importVoucherFileBulkSize = JSONUtilities.decodeInteger(jsonRoot, "importVoucherFileBulkSize",5000);
-        // the cron entry when the voucher cleaner run
-        cleanExpiredVoucherCronEntry = JSONUtilities.decodeString(jsonRoot, "monthlyReportCronEntryString","0 3 * * *");
         // the cache cleaner frequency in seconds for caching voucher with 0 stock from ES, and shrinking back "auto adjust concurrency number"
         voucherESCacheCleanerFrequencyInSec = JSONUtilities.decodeInteger(jsonRoot, "voucherESCacheCleanerFrequencyInSec",300);
         // an approximation of number of total concurrent process tyring to allocate Voucher in // to ES, but should not need to configure, algo should auto-adjust this

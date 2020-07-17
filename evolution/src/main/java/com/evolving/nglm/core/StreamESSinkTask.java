@@ -15,15 +15,34 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public abstract class StreamESSinkTask extends SimpleESSinkTask
+public abstract class StreamESSinkTask<T> extends SimpleESSinkTask
 {
   /*****************************************
   *
   *  abstract
   *
   *****************************************/
-
-  public abstract Map<String,Object> getDocumentMap(SinkRecord sinkRecord);
+  
+  public abstract T unpackRecord(SinkRecord sinkRecord);
+  public abstract Map<String,Object> getDocumentMap(T t);
+  
+  /*****************************************
+  *
+  *    getDocumentIndexName
+  *  This function can be override if one wants to insert documents in specific indexes 
+  *  when the name of the index is determined given information found in the document itself. 
+  *    
+  *    The reason behind this mechanism is because pipelines (as used in StreamESSinkTask) are not
+  *  available with UpdateRequest and therefore can not be used in ChangeLogESSinkTask.
+  *  
+  *    It can also be useful in StreamESSinkTask when pipelines do not provide a good solution.
+  *
+  *****************************************/
+  
+  protected String getDocumentIndexName(T t) 
+  { 
+    return this.getDefaultIndexName(); 
+  }
 
   /*****************************************
   *
@@ -33,16 +52,18 @@ public abstract class StreamESSinkTask extends SimpleESSinkTask
 
   @Override public List<DocWriteRequest> getRequests(SinkRecord sinkRecord)
   {
-    if (sinkRecord.value() != null && getDocumentMap(sinkRecord) != null)
-      {
-        IndexRequest request = new IndexRequest(getIndexName(), "_doc");
-        request.source(getDocumentMap(sinkRecord));
-        if (! getPipelineName().equals("")) request.setPipeline(getPipelineName());
+    if (sinkRecord.value() != null) {
+      T item = unpackRecord(sinkRecord);
+      if (item != null) {
+        IndexRequest request = new IndexRequest(getDocumentIndexName(item));
+        request.source(getDocumentMap(item));
+        if (! getPipelineName().equals("")) {
+          request.setPipeline(getPipelineName());
+        }
         return Collections.<DocWriteRequest>singletonList(request);
       }
-    else
-      {
-        return Collections.<DocWriteRequest>emptyList();
-      }
+    }
+      
+    return Collections.<DocWriteRequest>emptyList();
   }
 }

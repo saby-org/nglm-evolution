@@ -17,7 +17,6 @@ import org.apache.kafka.connect.sink.SinkRecord;
 
 import com.evolving.nglm.core.ChangeLogESSinkTask;
 import com.evolving.nglm.core.SimpleESSinkConnector;
-import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
@@ -32,7 +31,7 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
 
   @Override public Class<? extends Task> taskClass()
   {
-    return OfferESSinkTask.class;
+    return JourneyESSinkTask.class;
   }
 
   /****************************************
@@ -41,7 +40,7 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
 
-  public static class OfferESSinkTask extends ChangeLogESSinkTask
+  public static class JourneyESSinkTask extends ChangeLogESSinkTask<Journey>
   {
     private JourneyService journeyService;
     private CatalogCharacteristicService catalogCharacteristicService;
@@ -51,7 +50,7 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
     private TargetService targetService;
     private JourneyObjectiveService journeyObjectiveService;
 
-    public OfferESSinkTask()
+    public JourneyESSinkTask()
     {
       dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "journeyessinkconnector-dynamiccriterionfieldservice-" + getTaskNumber(), Deployment.getDynamicCriterionFieldTopic(), false);
       CriterionContext.initialize(dynamicCriterionFieldService);
@@ -70,119 +69,103 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
       targetService.start();
       journeyObjectiveService.start();
     }
-
-    @Override public String getDocumentID(SinkRecord sinkRecord)
+    
+    @Override public Journey unpackRecord(SinkRecord sinkRecord) 
     {
-      /****************************************
-      *  extract OfferID
-      ****************************************/
-
-      Object journeyIDValue = sinkRecord.key();
-      Schema journeyIDValueSchema = sinkRecord.keySchema();
-      StringKey journeyID = StringKey.unpack(new SchemaAndValue(journeyIDValueSchema, journeyIDValue));
-
-      /****************************************
-      *  use offerID
-      ****************************************/
-
-      return "_" + journeyID.hashCode();    
-    }
-
-    @Override public Map<String,Object> getDocumentMap(SinkRecord sinkRecord)
-    {
-      /****************************************
-      *
-      *  extract Offer
-      *
-      ****************************************/
-
       Object guiManagedObjectValue = sinkRecord.value();
       Schema guiManagedObjectValueSchema = sinkRecord.valueSchema();
-      Map<String,Object> documentMap = new HashMap<String,Object>();
-
 
       try
-        {
-
-          GUIManagedObject guiManagedObject = GUIManagedObject.commonSerde().unpack(new SchemaAndValue(guiManagedObjectValueSchema, guiManagedObjectValue));
-
-          Journey journey = new Journey(guiManagedObject.getJSONRepresentation(), guiManagedObject.getGUIManagedObjectType(), guiManagedObject.getEpoch(), guiManagedObject, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
- 
-
-          
-          //
-          // description: retrieved from JSON, not in the object
-          //
-          Object description = journey.getJSONRepresentation().get("description");
-          
-          //
-          // targets
-          //
-          String targets = "";
-          for(String targetID : journey.getTargetID()) {
-            GUIManagedObject target = targetService.getStoredGUIManagedObject(targetID);
-            if(target != null) {
-              String targetDisplay = target.getGUIManagedObjectDisplay();
-              if(targetDisplay == null) {
-                targetDisplay = "Unknown(ID:" + targetID + ")";
-              }
-              
-              if(targets.equals("")) {
-                targets = targetDisplay;
-              } else {
-                targets += "/" + targetDisplay;
-              }
-            }
-          }
-          
-          //
-          // objectives
-          //
-          String objectives = "";
-          for(JourneyObjectiveInstance objectiveInstance : journey.getJourneyObjectiveInstances()) {
-            GUIManagedObject journeyObjective = journeyObjectiveService.getStoredGUIManagedObject(objectiveInstance.getJourneyObjectiveID());
-            if(journeyObjective != null) {
-              String journeyObjectiveDisplay = journeyObjective.getGUIManagedObjectDisplay();
-              if(journeyObjectiveDisplay == null) {
-                journeyObjectiveDisplay = "Unknown(ID:" + objectiveInstance.getJourneyObjectiveID() + ")";
-              }
-              
-              if(objectives.equals("")) {
-                objectives = journeyObjectiveDisplay;
-              } else {
-                objectives += "/" + journeyObjectiveDisplay;
-              }
-            }
-          }
-          
-          //
-          // targetCount: retrieved from JSON, not in the object
-          //
-          Object targetCountObj = journey.getJSONRepresentation().get("targetCount");
-          long targetCount = (targetCountObj != null && targetCountObj instanceof Long) ? (long) targetCountObj : 0;
-          
-          documentMap.put("journeyID", journey.getJourneyID());
-          documentMap.put("display", journey.getGUIManagedObjectDisplay());
-          documentMap.put("description", (description != null)? description: "");
-          documentMap.put("type", journey.getGUIManagedObjectType().getExternalRepresentation());
-          documentMap.put("user", journey.getUserName());
-          documentMap.put("targets", targets);
-          documentMap.put("targetCount", targetCount);
-          documentMap.put("objectives", objectives);
-          documentMap.put("startDate", DatacubeGenerator.TIMESTAMP_FORMAT.format(journey.getEffectiveStartDate()));
-          documentMap.put("endDate", DatacubeGenerator.TIMESTAMP_FORMAT.format(journey.getEffectiveEndDate()));
-          documentMap.put("active", journey.getActive());
-          documentMap.put("timestamp", DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime())); // @rl: TODO TIMESTAMP_FORMAT in more generic class ? Elasticsearch client ?
-
-        }
+      {
+        GUIManagedObject guiManagedObject = GUIManagedObject.commonSerde().unpack(new SchemaAndValue(guiManagedObjectValueSchema, guiManagedObjectValue));
+        return new Journey(guiManagedObject.getJSONRepresentation(), guiManagedObject.getGUIManagedObjectType(), guiManagedObject.getEpoch(), guiManagedObject, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+      }
       catch (GUIManagerException|SerializationException|Expression.ExpressionParseException|Expression.ExpressionTypeCheckException e)
-        {
+      {
+        return null;
+      }
+    }
+
+    @Override public String getDocumentID(Journey journey)
+    {
+      return "_" + journey.getJourneyID().hashCode();
+    }
+
+    @Override public Map<String,Object> getDocumentMap(Journey journey)
+    {
+      Map<String,Object> documentMap = new HashMap<String,Object>();
+      
+      //
+      // description: retrieved from JSON, not in the object
+      //
+      Object description = journey.getJSONRepresentation().get("description");
+      
+      //
+      // targets
+      //
+      String targets = "";
+      for(String targetID : journey.getTargetID()) {
+        GUIManagedObject target = targetService.getStoredGUIManagedObject(targetID);
+        if(target != null) {
+          String targetDisplay = target.getGUIManagedObjectDisplay();
+          if(targetDisplay == null) {
+            targetDisplay = "Unknown(ID:" + targetID + ")";
+          }
+          
+          if(targets.equals("")) {
+            targets = targetDisplay;
+          } else {
+            targets += "/" + targetDisplay;
+          }
         }
+      }
+      
+      //
+      // objectives
+      //
+      String objectives = "";
+      for(JourneyObjectiveInstance objectiveInstance : journey.getJourneyObjectiveInstances()) {
+        GUIManagedObject journeyObjective = journeyObjectiveService.getStoredGUIManagedObject(objectiveInstance.getJourneyObjectiveID());
+        if(journeyObjective != null) {
+          String journeyObjectiveDisplay = journeyObjective.getGUIManagedObjectDisplay();
+          if(journeyObjectiveDisplay == null) {
+            journeyObjectiveDisplay = "Unknown(ID:" + objectiveInstance.getJourneyObjectiveID() + ")";
+          }
+          
+          if(objectives.equals("")) {
+            objectives = journeyObjectiveDisplay;
+          } else {
+            objectives += "/" + journeyObjectiveDisplay;
+          }
+        }
+      }
+      
+      //
+      // targetCount: retrieved from JSON, not in the object
+      //
+      Object targetCountObj = journey.getJSONRepresentation().get("targetCount");
+      long targetCount = (targetCountObj != null && targetCountObj instanceof Long) ? (long) targetCountObj : 0;
+      
+      
+      //
+      // documentMap
+      //
+      documentMap.put("journeyID", journey.getJourneyID());
+      documentMap.put("display", journey.getGUIManagedObjectDisplay());
+      documentMap.put("description", (description != null)? description: "");
+      documentMap.put("type", journey.getGUIManagedObjectType().getExternalRepresentation());
+      documentMap.put("user", journey.getUserName());
+      documentMap.put("targets", targets);
+      documentMap.put("targetCount", targetCount);
+      documentMap.put("objectives", objectives);
+      documentMap.put("startDate", DatacubeGenerator.TIMESTAMP_FORMAT.format(journey.getEffectiveStartDate()));
+      documentMap.put("endDate", DatacubeGenerator.TIMESTAMP_FORMAT.format(journey.getEffectiveEndDate()));
+      documentMap.put("active", journey.getActive());
+      documentMap.put("timestamp", DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime())); // @rl: TODO TIMESTAMP_FORMAT in more generic class ? Elasticsearch client ?
 
       //
-      //  return
+      // return
       //
-
       return documentMap;
     }
   }

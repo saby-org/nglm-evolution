@@ -73,32 +73,7 @@ prepare-curl -XPOST $CONNECT_URL_JOURNEYSTATISTIC_ES/connectors -H "Content-Type
       "batchSize" : "'$CONNECT_ES_JOURNEYSTATISTIC_BATCHSIZEMB'"
       }
   }' 
-
-#
-#  sink connector -- journeyTraffic (elasticsearch)
-#
-
-export CONNECT_URL_JOURNEYTRAFFIC_ES=${CONNECT_URL_JOURNEYTRAFFIC_ES:-$DEFAULT_CONNECT_URL}
-export CONNECT_ES_JOURNEYTRAFFIC_SINK_TASKS=${CONNECT_ES_JOURNEYTRAFFIC_SINK_TASKS:-'1'}
-export CONNECT_ES_JOURNEYTRAFFIC_BATCHRECORDCOUNT=${CONNECT_ES_JOURNEYTRAFFIC_BATCHRECORDCOUNT:-'1'}
-export CONNECT_ES_JOURNEYTRAFFIC_BATCHSIZEMB=${CONNECT_ES_JOURNEYTRAFFIC_BATCHSIZEMB:-'5'}
-prepare-curl -XPOST $CONNECT_URL_JOURNEYTRAFFIC_ES/connectors -H "Content-Type: application/json" -d '
-  {
-    "name" : "journeytraffic_es_sink_connector",
-    "config" :
-      {
-      "connector.class" : "com.evolving.nglm.evolution.JourneyTrafficESSinkConnector",
-      "tasks.max" : '$CONNECT_ES_JOURNEYTRAFFIC_SINK_TASKS',
-      "topics" : "${changelog.journeytrafficengine.journeytraffic.topic}",
-      "connectionHost" : "'$MASTER_ESROUTER_HOST'",
-      "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-      "indexName" : "datacube_journeytraffic",
-      "batchRecordCount" : "'$CONNECT_ES_JOURNEYTRAFFIC_BATCHRECORDCOUNT'",
-      "batchSize" : "'$CONNECT_ES_JOURNEYTRAFFIC_BATCHSIZEMB'"
-      }
-  }' 
   
-
 #
 #  sink connector -- journeyMetric (elasticsearch)
 #
@@ -117,8 +92,7 @@ prepare-curl -XPOST $CONNECT_URL_JOURNEYMETRIC_ES/connectors -H "Content-Type: a
       "topics" : "${topic.journeymetric}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-      "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
-      "indexName" : "journeymetric",
+      "indexName" : "journeystatistic",
       "batchRecordCount" : "'$CONNECT_ES_JOURNEYMETRIC_BATCHRECORDCOUNT'",
       "batchSize" : "'$CONNECT_ES_JOURNEYMETRIC_BATCHSIZEMB'"
       }
@@ -396,106 +370,6 @@ prepare-curl -XPOST $CONNECT_URL_DELIVERABLE_ES/connectors -H "Content-Type: app
   }' 
 
 #
-#  sink connector -- PaymentMean (elasticsearch)
-#
-
-export CONNECT_URL_PAYMENTMEAN_ES=${CONNECT_URL_PAYMENTMEAN_ES:-$DEFAULT_CONNECT_URL}
-export CONNECT_ES_PAYMENTMEAN_SINK_TASKS=${CONNECT_ES_PAYMENTMEAN_SINK_TASKS:-'1'}
-export CONNECT_ES_PAYMENTMEAN_BATCHRECORDCOUNT=${CONNECT_ES_PAYMENTMEAN_BATCHRECORDCOUNT:-'1000'}
-export CONNECT_ES_PAYMENTMEAN_BATCHSIZEMB=${CONNECT_ES_PAYMENTMEAN_BATCHSIZEMB:-'5'}
-prepare-curl -XPOST $CONNECT_URL_PAYMENTMEAN_ES/connectors -H "Content-Type: application/json" -d '
-  {
-    "name" : "paymentmean_es_sink_connector",
-    "config" :
-      {
-      "connector.class" : "com.evolving.nglm.evolution.PaymentMeanESSinkConnector",
-      "tasks.max" : '$CONNECT_ES_PAYMENTMEAN_SINK_TASKS',
-      "topics" : "${topic.paymentMean}",
-      "connectionHost" : "'$MASTER_ESROUTER_HOST'",
-      "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-      "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
-      "indexName" : "mapping_paymentmeans",
-      "batchRecordCount" : "'$CONNECT_ES_PAYMENTMEAN_BATCHRECORDCOUNT'",
-      "batchSize" : "'$CONNECT_ES_PAYMENTMEAN_BATCHSIZEMB'"
-      }
-  }' 
-
-#
-#  sink connector -- Offer (elasticsearch)
-#
-
-export CONNECT_URL_OFFER_ES=${CONNECT_URL_OFFER_ES:-$DEFAULT_CONNECT_URL}
-export CONNECT_ES_OFFER_SINK_TASKS=${CONNECT_ES_OFFER_SINK_TASKS:-'1'}
-export CONNECT_ES_OFFER_BATCHRECORDCOUNT=${CONNECT_ES_OFFER_BATCHRECORDCOUNT:-'1000'}
-export CONNECT_ES_OFFER_BATCHSIZEMB=${CONNECT_ES_OFFER_BATCHSIZEMB:-'5'}
-prepare-curl -XPOST $CONNECT_URL_OFFER_ES/connectors -H "Content-Type: application/json" -d '
-  {
-    "name" : "offer_es_sink_connector",
-    "config" :
-      {
-      "connector.class" : "com.evolving.nglm.evolution.OfferESSinkConnector",
-      "tasks.max" : '$CONNECT_ES_OFFER_SINK_TASKS',
-      "topics" : "${topic.offer}",
-      "connectionHost" : "'$MASTER_ESROUTER_HOST'",
-      "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-      "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
-      "indexName" : "mapping_offers",
-      "batchRecordCount" : "'$CONNECT_ES_OFFER_BATCHRECORDCOUNT'",
-      "batchSize" : "'$CONNECT_ES_OFFER_BATCHSIZEMB'"
-      }
-  }' 
-
-#
-#  sink connector -- Product (elasticsearch)
-#
-
-export CONNECT_URL_PRODUCT_ES=${CONNECT_URL_PRODUCT_ES:-$DEFAULT_CONNECT_URL}
-export CONNECT_ES_PRODUCT_SINK_TASKS=${CONNECT_ES_PRODUCT_SINK_TASKS:-'1'}
-export CONNECT_ES_PRODUCT_BATCHRECORDCOUNT=${CONNECT_ES_PRODUCT_BATCHRECORDCOUNT:-'1000'}
-export CONNECT_ES_PRODUCT_BATCHSIZEMB=${CONNECT_ES_PRODUCT_BATCHSIZEMB:-'5'}
-prepare-curl -XPOST $CONNECT_URL_PRODUCT_ES/connectors -H "Content-Type: application/json" -d '
-  {
-    "name" : "product_es_sink_connector",
-    "config" :
-      {
-      "connector.class" : "com.evolving.nglm.evolution.ProductESSinkConnector",
-      "tasks.max" : '$CONNECT_ES_PRODUCT_SINK_TASKS',
-      "topics" : "${topic.product}",
-      "connectionHost" : "'$MASTER_ESROUTER_HOST'",
-      "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-      "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
-      "indexName" : "mapping_products",
-      "batchRecordCount" : "'$CONNECT_ES_PRODUCT_BATCHRECORDCOUNT'",
-      "batchSize" : "'$CONNECT_ES_PRODUCT_BATCHSIZEMB'"
-      }
-  }' 
-
-#
-#  sink connector -- Loyalty Program (elasticsearch)
-#
-
-export CONNECT_URL_LOYALTYPROGRAM_ES=${CONNECT_URL_LOYALTYPROGRAM_ES:-$DEFAULT_CONNECT_URL}
-export CONNECT_ES_LOYALTYPROGRAM_SINK_TASKS=${CONNECT_ES_LOYALTYPROGRAM_SINK_TASKS:-'1'}
-export CONNECT_ES_LOYALTYPROGRAM_BATCHRECORDCOUNT=${CONNECT_ES_LOYALTYPROGRAM_BATCHRECORDCOUNT:-'1000'}
-export CONNECT_ES_LOYALTYPROGRAM_BATCHSIZEMB=${CONNECT_ES_LOYALTYPROGRAM_BATCHSIZEMB:-'5'}
-prepare-curl -XPOST $CONNECT_URL_LOYALTYPROGRAM_ES/connectors -H "Content-Type: application/json" -d '
-  {
-    "name" : "loyaltyprogram_es_sink_connector",
-    "config" :
-      {
-      "connector.class" : "com.evolving.nglm.evolution.LoyaltyProgramPointsESSinkConnector",
-      "tasks.max" : '$CONNECT_ES_LOYALTYPROGRAM_SINK_TASKS',
-      "topics" : "${topic.loyaltyprogram}",
-      "connectionHost" : "'$MASTER_ESROUTER_HOST'",
-      "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-      "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
-      "indexName" : "mapping_loyaltyprograms",
-      "batchRecordCount" : "'$CONNECT_ES_LOYALTYPROGRAM_BATCHRECORDCOUNT'",
-      "batchSize" : "'$CONNECT_ES_LOYALTYPROGRAM_BATCHSIZEMB'"
-      }
-  }' 
-
-#
 #  sink connector -- Journey (elasticsearch)
 #
 
@@ -515,53 +389,9 @@ prepare-curl -XPOST $CONNECT_URL_JOURNEY_ES/connectors -H "Content-Type: applica
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
       "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
       "indexName" : "mapping_journeys",
-   "batchRecordCount" : "'$CONNECT_ES_JOURNEY_BATCHRECORDCOUNT'",
-   "batchSize" : "'$CONNECT_ES_JOURNEY_BATCHSIZEMB'"
+      "batchRecordCount" : "'$CONNECT_ES_JOURNEY_BATCHRECORDCOUNT'",
+      "batchSize" : "'$CONNECT_ES_JOURNEY_BATCHSIZEMB'"
       }
   }' 
-
-#
-#  sink connector -- Sales Channel (elasticsearch)
-#
-
-export CONNECT_URL_SALESCHANNEL_ES=${CONNECT_URL_SALESCHANNEL_ES:-$DEFAULT_CONNECT_URL}
-export CONNECT_ES_SALESCHANNEL_SINK_TASKS=${CONNECT_ES_SALESCHANNEL_SINK_TASKS:-'1'}
-export CONNECT_ES_SALESCHANNEL_BATCHRECORDCOUNT=${CONNECT_ES_SALESCHANNEL_BATCHRECORDCOUNT:-'1000'}
-export CONNECT_ES_SALESCHANNEL_BATCHSIZEMB=${CONNECT_ES_SALESCHANNEL_BATCHSIZEMB:-'5'}
-prepare-curl -XPOST $CONNECT_URL_SALESCHANNEL_ES/connectors -H "Content-Type: application/json" -d '
-  {
-    "name" : "saleschannel_es_sink_connector",
-    "config" :
-      {
-      "connector.class" : "com.evolving.nglm.evolution.SalesChannelESSinkConnector",
-      "tasks.max" : '$CONNECT_ES_SALESCHANNEL_SINK_TASKS',
-      "topics" : "${topic.saleschannel}",
-      "connectionHost" : "'$MASTER_ESROUTER_HOST'",
-      "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-      "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
-      "indexName" : "mapping_saleschannels",
-   "batchRecordCount" : "'$CONNECT_ES_SALESCHANNEL_BATCHRECORDCOUNT'",
-   "batchSize" : "'$CONNECT_ES_SALESCHANNEL_BATCHSIZEMB'"
-      }
-  }' 
-
-  #
-  #  es sink connector -- campaign
-  #
-
-  export CONNECT_URL_CAMPAIGNINFO_ES=${CONNECT_URL_CAMPAIGNINFO_ES:-$DEFAULT_CONNECT_URL}
-prepare-curl -XPOST $CONNECT_URL_CAMPAIGNINFO_ES/connectors -H "Content-Type: application/json" -d '    {
-       "name" : "campaigninfo_es_sink_connector",
-       "config" :
-         {
-         "connector.class" : "com.evolving.nglm.evolution.CampaignESSinkConnector",
-         "tasks.max" : 2,
-         "topics" : "${topic.journey}",
-         "connectionHost" : "'$MASTER_ESROUTER_HOST'",
-         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-         "indexName" : "campaigninfo",
-         "batchRecordCount" : "1000"
-         }
-    }'
 
 wait

@@ -1,4 +1,4 @@
-package com.evolving.nglm.evolution.datacubes.odr;
+package com.evolving.nglm.evolution.datacubes.generator;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -57,6 +57,7 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
   private DeliverablesMap deliverablesMap;
   private JourneysMap journeysMap;
 
+  private boolean previewMode;
   private String targetDay;
 
   /*****************************************
@@ -219,6 +220,16 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
   
   /*****************************************
   *
+  * Datacube name for logs
+  *
+  *****************************************/
+  @Override
+  protected String getDatacubeName() {
+    return super.getDatacubeName() + (this.previewMode ? "(preview)" : "(definitive)");
+  }
+  
+  /*****************************************
+  *
   * Run
   *
   *****************************************/
@@ -236,6 +247,7 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
 
+    this.previewMode = false;
     this.targetDay = DAY_FORMAT.format(yesterday);
 
     //
@@ -257,6 +269,7 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
     Date now = SystemTime.getCurrentTime();
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
 
+    this.previewMode = true;
     this.targetDay = DAY_FORMAT.format(now);
 
     //

@@ -10,14 +10,20 @@
 
   "CronFormat_comment": "minute (0-59), hour (0-23), day of month (1-31), month of year (1-12:JAN-DEC case-insensitive), day of week (0-7:MON-SUN case-insensitive) 1 is always Monday",
 
-  "yesterdayODRDatacubePeriodCronEntryString"        : "0 1 * * *",
-  "todayODRDatacubePeriodCronEntryString"            : "0 * * * *",
-  "yesterdayLoyaltyDatacubePeriodCronEntryString"    : "0 1 * * *",
-  "todayLoyaltyDatacubePeriodCronEntryString"        : "0 * * * *",
-  "yesterdaySubscriberDatacubePeriodCronEntryString" : "0 1 * * *",
-  "todaySubscriberDatacubePeriodCronEntryString"     : "0 * * * *",
-  "journeyTrafficDatacubePeriodCronEntryString"      : "0 * * * *",
-  "subscriberProfileSnapshotPeriodCronEntryString"   : "5 0 * * *",
+  "datacubeJobsScheduling" : {
+    "ODR-preview"                    : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
+    "ODR-definitive"                 : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
+    "LoyaltyPrograms-preview"        : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
+    "LoyaltyPrograms-definitive"     : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
+    "SubscriberProfile-preview"      : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
+    "SubscriberProfile-definitive"   : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
+    "Journeys"                       : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" }
+  },
+  "elasticsearchJobsScheduling" : {
+    "SubscriberProfileSnapshot"      : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "5 0 * * *" },
+    "JourneystatisticCleanUp"        : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" },
+    "ExpiredVoucherCleanUp"          : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" }
+  },
 
   "hourlyReportCronEntryString"   : "0 * * * *",
   "dailyReportCronEntryString"    : "5 2 * * *",
@@ -30,11 +36,10 @@
   "minExpiryDelayForVoucherDeliveryInHours" : 4,
   "cleanUpExpiredVoucherDelayInDays" : 31,
   "importVoucherFileBulkSize" : 5000,
-  "cleanExpiredVoucherCronEntry" : "0 3 * * *",
   "voucherESCacheCleanerFrequencyInSec" : 300,
   "numberConcurrentVoucherAllocationToES" : 10,
-  "liveVoucherIndexNumberOfReplicas" : "<_ELASTICSEARCH_REPLICAS_>",
-  "liveVoucherIndexNumberOfShards" : "<_ELASTICSEARCH_SHARDS_LARGE_>",
+  "liveVoucherIndexNumberOfReplicas" : "1",
+  "liveVoucherIndexNumberOfShards" : "1",
 
   "ucgEngineESConnectTimeout" : 30000,
   "ucgEngineESSocketTimeout" : 60000,

@@ -12,10 +12,8 @@ import com.evolving.nglm.core.ReferenceDataReader;
 
 import com.evolving.nglm.core.SystemTime;
 
-import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import java.util.Date;
@@ -30,7 +28,7 @@ public abstract class ExtendedSubscriberProfileESSinkConnector extends SimpleESS
   *
   ****************************************/
   
-  public static abstract class ExtendedSubscriberProfileESSinkTask extends ChangeLogESSinkTask
+  public static abstract class ExtendedSubscriberProfileESSinkTask extends ChangeLogESSinkTask<ExtendedSubscriberProfile>
   {
     /*****************************************
     *
@@ -73,6 +71,19 @@ public abstract class ExtendedSubscriberProfileESSinkConnector extends SimpleESS
 
       super.stop();
     }
+
+    /*****************************************
+    *
+    *  unpackRecord
+    *
+    *****************************************/
+    
+    @Override public ExtendedSubscriberProfile unpackRecord(SinkRecord sinkRecord) 
+    {
+      Object extendedSubscriberProfileValue = sinkRecord.value();
+      Schema extendedSubscriberProfileValueSchema = sinkRecord.valueSchema();
+      return ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpack(new SchemaAndValue(extendedSubscriberProfileValueSchema, extendedSubscriberProfileValue));
+    }
     
     /*****************************************
     *
@@ -80,24 +91,8 @@ public abstract class ExtendedSubscriberProfileESSinkConnector extends SimpleESS
     *
     *****************************************/
 
-    @Override public String getDocumentID(SinkRecord sinkRecord)
+    @Override public String getDocumentID(ExtendedSubscriberProfile extendedSubscriberProfile)
     {
-      /****************************************
-      *
-      *  extract ExtendedSubscriberProfile
-      *
-      ****************************************/
-
-      Object extendedSubscriberProfileValue = sinkRecord.value();
-      Schema extendedSubscriberProfileValueSchema = sinkRecord.valueSchema();
-      ExtendedSubscriberProfile extendedSubscriberProfile = ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpack(new SchemaAndValue(extendedSubscriberProfileValueSchema, extendedSubscriberProfileValue));
-
-      /****************************************
-      *
-      *  use subscriberID
-      *
-      ****************************************/
-
       return extendedSubscriberProfile.getSubscriberID();
     }
 
@@ -115,39 +110,13 @@ public abstract class ExtendedSubscriberProfileESSinkConnector extends SimpleESS
     *
     *****************************************/
 
-    @Override public Map<String,Object> getDocumentMap(SinkRecord sinkRecord)
+    @Override public Map<String,Object> getDocumentMap(ExtendedSubscriberProfile extendedSubscriberProfile)
     {
-      /****************************************
-      *
-      *  extract ExtendedSubscriberProfile
-      *
-      ****************************************/
-
-      Object extendedSubscriberProfileValue = sinkRecord.value();
-      Schema extendedSubscriberProfileValueSchema = sinkRecord.valueSchema();
-      ExtendedSubscriberProfile extendedSubscriberProfile = ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpack(new SchemaAndValue(extendedSubscriberProfileValueSchema, extendedSubscriberProfileValue));
-
-      /*****************************************
-      *
-      *  context
-      *
-      *****************************************/
-
       Date now = SystemTime.getCurrentTime();
-
-      /****************************************
-      *
-      *  documentMap
-      *
-      ****************************************/
-
+      
       Map<String,Object> documentMap = new HashMap<String,Object>();
       documentMap.put("subscriberID", extendedSubscriberProfile.getSubscriberID());
       addToDocumentMap(documentMap, extendedSubscriberProfile, now);
-      
-      //
-      //  return
-      //
       
       return documentMap;
     }    

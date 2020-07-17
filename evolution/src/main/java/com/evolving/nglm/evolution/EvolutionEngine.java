@@ -103,6 +103,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
@@ -4625,32 +4626,13 @@ public class EvolutionEngine
                 *  populate journeyMetrics (prior and "during")
                 *
                 *****************************************/
-
-                for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
+                //
+                // check if JourneyMetrics enabled: Metrics should be generated for campaigns only (not journeys nor bulk campaigns)
+                //
+                if (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) 
                   {
-                    //
-                    //  metricHistory
-                    //
-
-                    MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
-
-                    //
-                    //  prior
-                    //
-
-                    Date journeyEntryDay = RLMDateUtils.truncate(journeyState.getJourneyEntryDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-                    Date metricStartDay = RLMDateUtils.addDays(journeyEntryDay, -1 * journeyMetricDeclaration.getPriorPeriodDays(), Deployment.getBaseTimeZone());
-                    Date metricEndDay = RLMDateUtils.addDays(journeyEntryDay, -1, Deployment.getBaseTimeZone());
-                    long priorMetricValue = metricHistory.getValue(metricStartDay, metricEndDay);
-                    journeyState.getJourneyMetricsPrior().put(journeyMetricDeclaration.getID(), priorMetricValue);
-
-                    //
-                    //  during (note:  at entry these are set to the "all-time-total" and will be fixed up when the journey ends
-                    //
-
-                    Long startMetricValue = metricHistory.getAllTimeBucket();
-                    journeyState.getJourneyMetricsDuring().put(journeyMetricDeclaration.getID(), startMetricValue);
-                    subscriberStateUpdated = true;
+                    boolean metricsUpdated = journeyState.populateMetricsPrior(subscriberState);
+                    subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                   }
 
                 /*****************************************
@@ -5269,15 +5251,13 @@ public class EvolutionEngine
                     *  populate journeyMetrics (during)
                     *
                     *****************************************/
-
-                    for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
+                    //
+                    // check if JourneyMetrics enabled: Metrics should be generated for campaigns only (not journeys nor bulk campaigns)
+                    //
+                    if (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) 
                       {
-                        MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
-                        long startMetricValue = journeyState.getJourneyMetricsDuring().get(journeyMetricDeclaration.getID());
-                        long endMetricValue = metricHistory.getAllTimeBucket();
-                        long duringMetricValue = endMetricValue - startMetricValue;
-                        journeyState.getJourneyMetricsDuring().put(journeyMetricDeclaration.getID(), duringMetricValue);
-                        subscriberStateUpdated = true;
+                        boolean metricsUpdated = journeyState.populateMetricsDuring(subscriberState);
+                        subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                       }
                   }
 
@@ -5418,50 +5398,40 @@ public class EvolutionEngine
 
     for (JourneyState journeyState : subscriberState.getRecentJourneyStates())
       {
-        //
-        //  close metrics
-        //
-
         if (journeyState.getJourneyCloseDate() == null)
           {
-            //
-            //  post metrics
-            //
-
-            for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
-              {
-                if (! journeyState.getJourneyMetricsPost().containsKey(journeyMetricDeclaration.getID()))
-                  {
-                    Date journeyExitDay = RLMDateUtils.truncate(journeyState.getJourneyExitDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-                    Date metricStartDay = RLMDateUtils.addDays(journeyExitDay, 1, Deployment.getBaseTimeZone());
-                    Date metricEndDay = RLMDateUtils.addDays(journeyExitDay, journeyMetricDeclaration.getPostPeriodDays(), Deployment.getBaseTimeZone());
-                    if (now.after(RLMDateUtils.addDays(metricEndDay, 1, Deployment.getBaseTimeZone())))
-                      {
-                        MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
-                        long postMetricValue = metricHistory.getValue(metricStartDay, metricEndDay);
-                        journeyState.getJourneyMetricsPost().put(journeyMetricDeclaration.getID(), postMetricValue);
-                        subscriberStateUpdated = true;
-                      }
-                  }
-              }
-
-            //
-            //  close?
-            //
-
-            boolean closeJourney = true;
-            for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
-              {
-                closeJourney = closeJourney && journeyState.getJourneyMetricsPost().containsKey(journeyMetricDeclaration.getID());
-              }
+            Journey journey = journeyService.getActiveJourney(journeyState.getJourneyID(), now);
             
             //
-            //  close
+            // check if JourneyMetrics enabled: Metrics should be generated for campaigns only (not journeys nor bulk campaigns)
             //
-
-            if (closeJourney)
+            if (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) 
               {
-                subscriberState.getJourneyMetrics().add(new JourneyMetric(context, subscriberState.getSubscriberID(), journeyState));
+                boolean metricsUpdated = journeyState.populateMetricsPost(subscriberState, now);
+                subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
+                
+                //
+                //  close ?
+                //
+                boolean closeJourney = true;
+                for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
+                  {
+                    closeJourney = closeJourney && journeyState.getJourneyMetricsPost().containsKey(journeyMetricDeclaration.getID());
+                  }
+                
+                if (closeJourney)
+                  {
+                    // Create a JourneyMetric to be added to JourneyStatistic from journeyState
+                    subscriberState.getJourneyMetrics().add(new JourneyMetric(context, subscriberState.getSubscriberID(), journeyState));
+                    journeyState.setJourneyCloseDate(now);
+                    subscriberStateUpdated = true;
+                  }
+              }
+            else 
+              {
+                //
+                //  close journey if metrics disabled
+                //
                 journeyState.setJourneyCloseDate(now);
                 subscriberStateUpdated = true;
               }

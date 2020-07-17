@@ -22,7 +22,6 @@ import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManager
 
 public class NotificationSinkConnector extends SimpleESSinkConnector
 {
-  
   private final Logger log = LoggerFactory.getLogger(NotificationSinkConnector.class);
 
   /****************************************
@@ -42,9 +41,8 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
   
-  public static class NotificationSinkConnectorTask extends StreamESSinkTask
+  public static class NotificationSinkConnectorTask extends StreamESSinkTask<MessageDelivery>
   {
-
     private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
     private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
@@ -61,7 +59,6 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       //
 
       super.start(taskConfig);
-
     }
 
     /*****************************************
@@ -72,12 +69,44 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
 
     @Override public void stop()
     {
-
       //
       //  super
       //
 
       super.stop();
+    }
+
+    /*****************************************
+    *
+    *  unpackRecord
+    *
+    *****************************************/
+    
+    @Override public MessageDelivery unpackRecord(SinkRecord sinkRecord) 
+    {
+      Object smsNotificationValue = sinkRecord.value();
+      Schema notificationValueSchema = sinkRecord.valueSchema();
+      
+      Struct valueStruct = (Struct) smsNotificationValue;
+      String type = valueStruct.getString("deliveryType");
+      
+      //  safety guard - return null
+      if(type == null || type.equals("")) {
+        return null;
+      }
+
+      if (type.equals("notificationmanagermail")) {
+       return MailNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+      }
+      else if (type.equals("notificationmanagersms")) {
+        return SMSNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+      }
+      else if (type.equals("notificationmanager")) {
+        return NotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+      }
+      else {
+        return PushNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+      }
     }
     
     /*****************************************
@@ -87,125 +116,91 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
     *****************************************/
     
     @Override
-    public Map<String, Object> getDocumentMap(SinkRecord sinkRecord)
+    public Map<String, Object> getDocumentMap(MessageDelivery notification)
     {
-      /******************************************
-      *
-      *  extract SMSNotificationManagerRequest
-      *
-      *******************************************/
-
-      Object smsNotificationValue = sinkRecord.value();
-      Schema notificationValueSchema = sinkRecord.valueSchema();
+      Map<String,Object> documentMap = new HashMap<String,Object>();
       
-      Struct valueStruct = (Struct) smsNotificationValue;
-      String type = valueStruct.getString("deliveryType");
-      HashMap<String,Object> documentMap = null;
-      
-      //
-      //  safety guard - return null
-      // 
-
-      if(type == null || type.equals(""))
-      {
-        return documentMap;
-      }
-
-      if(type.equals("notificationmanagermail"))
-      {
-        documentMap = new HashMap<String,Object>();
-        MailNotificationManagerRequest notification = MailNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
-        documentMap = new HashMap<String,Object>();
-        documentMap.put("subscriberID", notification.getSubscriberID());
-        SinkConnectorUtils.putAlternateIDs(notification.getAlternateIDs(), documentMap);
-        documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
-        documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
+      if (notification instanceof MailNotificationManagerRequest) {
+        MailNotificationManagerRequest mailNotification = (MailNotificationManagerRequest) notification;
+        documentMap.put("subscriberID", mailNotification.getSubscriberID());
+        SinkConnectorUtils.putAlternateIDs(mailNotification.getAlternateIDs(), documentMap);
+        documentMap.put("deliveryRequestID", mailNotification.getDeliveryRequestID());
+        documentMap.put("originatingDeliveryRequestID", mailNotification.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", "");
-        documentMap.put("creationDate", notification.getCreationDate()!=null?dateFormat.format(notification.getCreationDate()):"");
-        documentMap.put("deliveryDate", notification.getDeliveryDate()!=null?dateFormat.format(notification.getDeliveryDate()):"");
-        documentMap.put("moduleID", notification.getModuleID());
-        documentMap.put("featureID", notification.getFeatureID());
-        documentMap.put("source", notification.getFromAddress());
-        documentMap.put("returnCode", notification.getReturnCode());
-        documentMap.put("returnCodeDetails", notification.getMessageDeliveryReturnCodeDetails());
-	      documentMap.put("templateID", notification.getTemplateID());
-        documentMap.put("language", notification.getLanguage());
+        documentMap.put("creationDate", mailNotification.getCreationDate()!=null?dateFormat.format(mailNotification.getCreationDate()):"");
+        documentMap.put("deliveryDate", mailNotification.getDeliveryDate()!=null?dateFormat.format(mailNotification.getDeliveryDate()):"");
+        documentMap.put("moduleID", mailNotification.getModuleID());
+        documentMap.put("featureID", mailNotification.getFeatureID());
+        documentMap.put("source", mailNotification.getFromAddress());
+        documentMap.put("returnCode", mailNotification.getReturnCode());
+        documentMap.put("returnCodeDetails", mailNotification.getMessageDeliveryReturnCodeDetails());
+        documentMap.put("templateID", mailNotification.getTemplateID());
+        documentMap.put("language", mailNotification.getLanguage());
         Map<String,List<String>> tags = new HashMap<>();
-        tags.put("subjectTags", notification.getSubjectTags());
-        tags.put("textBodyTags", notification.getTextBodyTags());
-        tags.put("htmlBodyTags", notification.getHtmlBodyTags());
+        tags.put("subjectTags", mailNotification.getSubjectTags());
+        tags.put("textBodyTags", mailNotification.getTextBodyTags());
+        tags.put("htmlBodyTags", mailNotification.getHtmlBodyTags());
         documentMap.put("tags", tags);
-
       }
-        else if(type.equals("notificationmanagersms"))
-        {
-          documentMap = new HashMap<String,Object>();
-          SMSNotificationManagerRequest notification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
-          documentMap = new HashMap<String,Object>();
-          documentMap.put("subscriberID", notification.getSubscriberID());
-          SinkConnectorUtils.putAlternateIDs(notification.getAlternateIDs(), documentMap);
-          documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
-          documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
-          documentMap.put("eventID", "");
-          documentMap.put("creationDate", notification.getCreationDate()!=null?dateFormat.format(notification.getCreationDate()):"");
-          documentMap.put("deliveryDate", notification.getDeliveryDate()!=null?dateFormat.format(notification.getDeliveryDate()):"");
-          documentMap.put("moduleID", notification.getModuleID());
-          documentMap.put("featureID", notification.getFeatureID());
-          documentMap.put("source", notification.getSource());
-          documentMap.put("returnCode", notification.getReturnCode());
-          documentMap.put("returnCodeDetails", notification.getMessageDeliveryReturnCodeDetails());
-	        documentMap.put("templateID", notification.getTemplateID());
-          documentMap.put("language", notification.getLanguage());
-          documentMap.put("tags", notification.getMessageTags());
-          Map<String,List<String>> tags = new HashMap<>();
-          tags.put("tags", notification.getMessageTags());
-          documentMap.put("tags", tags);
-        }
-        else if(type.equals("notificationmanager"))
-        {
-          documentMap = new HashMap<String,Object>();
-          NotificationManagerRequest notification = NotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
-          documentMap = new HashMap<String,Object>();
-          documentMap.put("subscriberID", notification.getSubscriberID());
-          SinkConnectorUtils.putAlternateIDs(notification.getAlternateIDs(), documentMap);
-          documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
-          documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
-          documentMap.put("eventID", "");
-          documentMap.put("creationDate", notification.getCreationDate()!=null?dateFormat.format(notification.getCreationDate()):"");
-          documentMap.put("deliveryDate", notification.getDeliveryDate()!=null?dateFormat.format(notification.getDeliveryDate()):"");
-          documentMap.put("moduleID", notification.getModuleID());
-          documentMap.put("featureID", notification.getFeatureID());
-          documentMap.put("source", notification.getNotificationParameters().get("node.parameter.fromaddress"));
-          documentMap.put("returnCode", notification.getReturnCode());
-          documentMap.put("returnCodeDetails", notification.getMessageDeliveryReturnCodeDetails());
-	        documentMap.put("templateID", notification.getTemplateID());
-          documentMap.put("language", notification.getLanguage());
-          documentMap.put("tags", notification.getTags());
-        }
-        else
-        {
-          documentMap = new HashMap<String,Object>();
-          PushNotificationManagerRequest notification = PushNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
-          documentMap = new HashMap<String,Object>();
-          documentMap.put("subscriberID", notification.getSubscriberID());
-          SinkConnectorUtils.putAlternateIDs(notification.getAlternateIDs(), documentMap);
-          documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
-          documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
-          documentMap.put("eventID", "");
-          documentMap.put("creationDate", notification.getCreationDate()!=null?dateFormat.format(notification.getCreationDate()):"");
-          documentMap.put("deliveryDate", notification.getDeliveryDate()!=null?dateFormat.format(notification.getDeliveryDate()):"");
-          documentMap.put("moduleID", notification.getModuleID());
-          documentMap.put("featureID", notification.getFeatureID());
-          documentMap.put("source", ""); // TODO SCH : what is the source of push notifications ?
-          documentMap.put("returnCode", notification.getReturnCode());
-          documentMap.put("returnCodeDetails", notification.getMessageDeliveryReturnCodeDetails());
-	        documentMap.put("templateID", notification.getTemplateID());
-          documentMap.put("language", notification.getLanguage());
-          documentMap.put("tags", notification.getTags()); // TODO
-        }
+      else if (notification instanceof SMSNotificationManagerRequest) {
+        SMSNotificationManagerRequest smsNotification = (SMSNotificationManagerRequest) notification;
+        documentMap.put("subscriberID", smsNotification.getSubscriberID());
+        SinkConnectorUtils.putAlternateIDs(smsNotification.getAlternateIDs(), documentMap);
+        documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());
+        documentMap.put("originatingDeliveryRequestID", smsNotification.getOriginatingDeliveryRequestID());
+        documentMap.put("eventID", "");
+        documentMap.put("creationDate", smsNotification.getCreationDate()!=null?dateFormat.format(smsNotification.getCreationDate()):"");
+        documentMap.put("deliveryDate", smsNotification.getDeliveryDate()!=null?dateFormat.format(smsNotification.getDeliveryDate()):"");
+        documentMap.put("moduleID", smsNotification.getModuleID());
+        documentMap.put("featureID", smsNotification.getFeatureID());
+        documentMap.put("source", smsNotification.getSource());
+        documentMap.put("returnCode", smsNotification.getReturnCode());
+        documentMap.put("returnCodeDetails", smsNotification.getMessageDeliveryReturnCodeDetails());
+        documentMap.put("templateID", smsNotification.getTemplateID());
+        documentMap.put("language", smsNotification.getLanguage());
+        documentMap.put("tags", smsNotification.getMessageTags());
+        Map<String,List<String>> tags = new HashMap<>();
+        tags.put("tags", smsNotification.getMessageTags());
+        documentMap.put("tags", tags);
+      }
+      else if (notification instanceof NotificationManagerRequest) {
+        NotificationManagerRequest notifNotification = (NotificationManagerRequest) notification;
+        documentMap.put("subscriberID", notifNotification.getSubscriberID());
+        SinkConnectorUtils.putAlternateIDs(notifNotification.getAlternateIDs(), documentMap);
+        documentMap.put("deliveryRequestID", notifNotification.getDeliveryRequestID());
+        documentMap.put("originatingDeliveryRequestID", notifNotification.getOriginatingDeliveryRequestID());
+        documentMap.put("eventID", "");
+        documentMap.put("creationDate", notifNotification.getCreationDate()!=null?dateFormat.format(notifNotification.getCreationDate()):"");
+        documentMap.put("deliveryDate", notifNotification.getDeliveryDate()!=null?dateFormat.format(notifNotification.getDeliveryDate()):"");
+        documentMap.put("moduleID", notifNotification.getModuleID());
+        documentMap.put("featureID", notifNotification.getFeatureID());
+        documentMap.put("source", notifNotification.getNotificationParameters().get("node.parameter.fromaddress"));
+        documentMap.put("returnCode", notifNotification.getReturnCode());
+        documentMap.put("returnCodeDetails", notifNotification.getMessageDeliveryReturnCodeDetails());
+        documentMap.put("templateID", notifNotification.getTemplateID());
+        documentMap.put("language", notifNotification.getLanguage());
+        documentMap.put("tags", notifNotification.getTags());
+      }
+      else {
+        PushNotificationManagerRequest pushNotification = (PushNotificationManagerRequest) notification;
+        documentMap.put("subscriberID", pushNotification.getSubscriberID());
+        SinkConnectorUtils.putAlternateIDs(pushNotification.getAlternateIDs(), documentMap);
+        documentMap.put("deliveryRequestID", pushNotification.getDeliveryRequestID());
+        documentMap.put("originatingDeliveryRequestID", pushNotification.getOriginatingDeliveryRequestID());
+        documentMap.put("eventID", "");
+        documentMap.put("creationDate", pushNotification.getCreationDate()!=null?dateFormat.format(pushNotification.getCreationDate()):"");
+        documentMap.put("deliveryDate", pushNotification.getDeliveryDate()!=null?dateFormat.format(pushNotification.getDeliveryDate()):"");
+        documentMap.put("moduleID", pushNotification.getModuleID());
+        documentMap.put("featureID", pushNotification.getFeatureID());
+        documentMap.put("source", ""); // TODO SCH : what is the source of push notifications ?
+        documentMap.put("returnCode", pushNotification.getReturnCode());
+        documentMap.put("returnCodeDetails", pushNotification.getMessageDeliveryReturnCodeDetails());
+        documentMap.put("templateID", pushNotification.getTemplateID());
+        documentMap.put("language", pushNotification.getLanguage());
+        documentMap.put("tags", pushNotification.getTags()); // TODO
+      }
       
       return documentMap;
     }
   }
 }
-

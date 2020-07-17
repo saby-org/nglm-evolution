@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 
 import org.apache.kafka.connect.data.Schema;
@@ -17,6 +18,7 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -287,5 +289,89 @@ public class JourneyState
     return "JourneyState [callingJourneyRequest=" + callingJourneyRequest + ", journeyInstanceID=" + journeyInstanceID + ", journeyID=" + journeyID + ", journeyNodeID=" + journeyNodeID + ", journeyParameters=" + journeyParameters + ", journeyActionManagerContext=" + journeyActionManagerContext + ", journeyEntryDate=" + journeyEntryDate + ", journeyExitDate=" + journeyExitDate + ", journeyCloseDate=" + journeyCloseDate + ", journeyMetricsPrior=" + journeyMetricsPrior + ", journeyMetricsDuring=" + journeyMetricsDuring + ", journeyMetricsPost=" + journeyMetricsPost + ", journeyNodeEntryDate=" + journeyNodeEntryDate + ", journeyOutstandingDeliveryRequestID=" + journeyOutstandingDeliveryRequestID + ", journeyHistory=" + journeyHistory + "]";
   }
   
+  /*****************************************
+  *
+  *  populate journeyMetrics
+  *
+  *****************************************/  
+  /**
+   * populate journeyMetrics (prior and "during")
+   * @return true if subscriber state has been updated
+   */
+  public boolean populateMetricsPrior(SubscriberState subscriberState) 
+  {
+    boolean subscriberStateUpdated = false;
+    for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
+      //
+      //  metricHistory
+      //
+      MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
+
+      //
+      //  prior
+      //
+      Date journeyEntryDay = RLMDateUtils.truncate(this.getJourneyEntryDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+      Date metricStartDay = RLMDateUtils.addDays(journeyEntryDay, -1 * journeyMetricDeclaration.getPriorPeriodDays(), Deployment.getBaseTimeZone());
+      Date metricEndDay = RLMDateUtils.addDays(journeyEntryDay, -1, Deployment.getBaseTimeZone());
+      long priorMetricValue = metricHistory.getValue(metricStartDay, metricEndDay);
+      this.getJourneyMetricsPrior().put(journeyMetricDeclaration.getID(), priorMetricValue);
+
+      //
+      //  during (note:  at entry these are set to the "all-time-total" and will be fixed up when the journey ends
+      //
+      Long startMetricValue = metricHistory.getAllTimeBucket();
+      this.getJourneyMetricsDuring().put(journeyMetricDeclaration.getID(), startMetricValue);
+      subscriberStateUpdated = true;
+    }
+    
+    return subscriberStateUpdated;
+  }
+
+  /**
+   * populate journeyMetrics (during)
+   * @return true if subscriber state has been updated
+   */
+  public boolean populateMetricsDuring(SubscriberState subscriberState) 
+  {
+    boolean subscriberStateUpdated = false;
+    for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
+      MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
+      long startMetricValue = this.getJourneyMetricsDuring().get(journeyMetricDeclaration.getID());
+      long endMetricValue = metricHistory.getAllTimeBucket();
+      long duringMetricValue = endMetricValue - startMetricValue;
+      this.getJourneyMetricsDuring().put(journeyMetricDeclaration.getID(), duringMetricValue);
+      subscriberStateUpdated = true;
+    }
+    
+    return subscriberStateUpdated;
+  }
+
+  /**
+   * populate journeyMetrics (post)
+   * @return true if subscriber state has been updated
+   */
+  public boolean populateMetricsPost(SubscriberState subscriberState, Date now) 
+  {
+    boolean subscriberStateUpdated = false;
+    
+    //
+    //  post metrics
+    //
+    for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
+      if (! this.getJourneyMetricsPost().containsKey(journeyMetricDeclaration.getID())) {
+        Date journeyExitDay = RLMDateUtils.truncate(this.getJourneyExitDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+        Date metricStartDay = RLMDateUtils.addDays(journeyExitDay, 1, Deployment.getBaseTimeZone());
+        Date metricEndDay = RLMDateUtils.addDays(journeyExitDay, journeyMetricDeclaration.getPostPeriodDays(), Deployment.getBaseTimeZone());
+        if (now.after(RLMDateUtils.addDays(metricEndDay, 1, Deployment.getBaseTimeZone()))) {
+          MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
+          long postMetricValue = metricHistory.getValue(metricStartDay, metricEndDay);
+          this.getJourneyMetricsPost().put(journeyMetricDeclaration.getID(), postMetricValue);
+          subscriberStateUpdated = true;
+        }
+      }
+    }
+    
+    return subscriberStateUpdated;
+  }
   
 }

@@ -77,7 +77,7 @@ public abstract class DatacubeGenerator
   *
   *****************************************/
   protected RestHighLevelClient elasticsearch;
-  protected String datacubeName;
+  private String datacubeName;
   protected String compositeAggregationName = "DATACUBE";
   protected ByteBuffer tmpBuffer = null;
 
@@ -122,6 +122,9 @@ public abstract class DatacubeGenerator
   *  overridable functions
   *
   *****************************************/
+  protected String getDatacubeName() {
+    return this.datacubeName;
+  }
   //
   // DocumentID settings
   //
@@ -260,7 +263,7 @@ public abstract class DatacubeGenerator
     catch(ElasticsearchException e)
       {
         if (e.status() == RestStatus.NOT_FOUND) {
-          log.warn("[{}]: elasticsearch index {} does not exist", this.datacubeName, request.indices());
+          log.warn("[{}]: elasticsearch index {} does not exist", getDatacubeName(), request.indices());
           return null;
         } else {
           throw e;
@@ -281,18 +284,18 @@ public abstract class DatacubeGenerator
         || response.getFailedShards() > 0
         || response.getSkippedShards() > 0
         || response.status() != RestStatus.OK) {
-      log.error("Elasticsearch search response return with bad status in {} generation.", this.datacubeName);
+      log.error("Elasticsearch search response return with bad status in {} generation.", getDatacubeName());
       return result;
     }
     
     if(response.getAggregations() == null) {
-      log.error("Main aggregation is missing in {} search response.", this.datacubeName);
+      log.error("Main aggregation is missing in {} search response.", getDatacubeName());
       return result;
     }
     
     ParsedComposite compositeBuckets = response.getAggregations().get(compositeAggregationName);
     if(compositeBuckets == null) {
-      log.error("Composite buckets are missing in {} search response.", this.datacubeName);
+      log.error("Composite buckets are missing in {} search response.", getDatacubeName());
       return result;
     }
     
@@ -390,10 +393,10 @@ public abstract class DatacubeGenerator
         //
         // Pre-generation phase (for retrieving some mapping infos)
         //
-        log.debug("[{}]: running pre-generation phase.", this.datacubeName);
+        log.debug("[{}]: running pre-generation phase.", getDatacubeName());
         boolean success = runPreGenerationPhase();
         if(!success) {
-          log.info("[{}]: stopped in pre-generation phase.", this.datacubeName);
+          log.info("[{}]: stopped in pre-generation phase.", getDatacubeName());
           return;
         }
         
@@ -401,35 +404,35 @@ public abstract class DatacubeGenerator
         // Generate Elasticsearch request
         //
         SearchRequest request = getElasticsearchRequest();
-        log.info("[{}]: executing ES request: {}", this.datacubeName, request);
+        log.info("[{}]: executing ES request: {}", getDatacubeName(), request);
         
         //
         // Execute Elasticsearch request
         //
         SearchResponse response = executeESSearchRequest(request);
         if(response == null) {
-          log.warn("[{}]: cannot retrieve any ES response, datacube generation stop here.", this.datacubeName);
+          log.warn("[{}]: cannot retrieve any ES response, datacube generation stop here.", getDatacubeName());
           return;
         }
-        log.debug("[{}]: retrieving ES response: {}", this.datacubeName, response);
+        log.debug("[{}]: retrieving ES response: {}", getDatacubeName(), response);
         
         //
         // Extract datacube rows from JSON response
         //
-        log.debug("[{}]: extracting data from ES response.", this.datacubeName);
+        log.debug("[{}]: extracting data from ES response.", getDatacubeName());
         List<Map<String,Object>> datacubeRows = extractDatacubeRows(response, timestamp, period);
         
         //
         // Push datacube rows in Elasticsearch
         //
-        log.info("[{}]: pushing {} datacube row(s) in ES index [{}].", this.datacubeName, datacubeRows.size(), this.getDatacubeESIndex());
+        log.info("[{}]: pushing {} datacube row(s) in ES index [{}].", getDatacubeName(), datacubeRows.size(), this.getDatacubeESIndex());
         pushDatacubeRows(datacubeRows);
       } 
     catch(IOException|RuntimeException e)
       {
         StringWriter stackTraceWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.error("[{}]: generation failed: {}", this.datacubeName, stackTraceWriter.toString());
+        log.error("[{}]: generation failed: {}", getDatacubeName(), stackTraceWriter.toString());
       }
   }
 }
