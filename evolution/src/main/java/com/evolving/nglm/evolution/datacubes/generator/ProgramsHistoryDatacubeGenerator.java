@@ -348,6 +348,26 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     
     return metrics;
   }
+
+  /*****************************************
+  *
+  * DocumentID settings
+  *
+  *****************************************/
+  /**
+   * For the moment, we only publish with a period of the day (except for preview)
+   * In order to keep only one document per day (for each combination of filters), we use the following trick:
+   * We only use the day as a timestamp (without the hour) in the document ID definition.
+   * This way, preview documents will override each other till be overriden by the definitive one at 23:59:59.999 
+   * 
+   * Be careful, it only works if we ensure to publish the definitive one. 
+   * Already existing combination of filters must be published even if there is 0 count inside, in order to 
+   * override potential previews.
+   */
+  @Override
+  protected String getDocumentID(Map<String,Object> filters, String timestamp) {
+    return this.extractDocumentIDFromFilter(filters, this.metricTargetDay);
+  }
   
   /*****************************************
   *
