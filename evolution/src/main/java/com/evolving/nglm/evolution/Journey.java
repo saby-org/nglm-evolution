@@ -1629,9 +1629,11 @@ public class Journey extends GUIManagedObject implements StockableItem
   {
     
     GUIManagedObject gmo = journeyService.getStoredJourney(journeyID);
-    if ((gmo != null) && !(gmo instanceof Journey)) return;
-    
-    Journey existingJourney = (Journey) gmo;
+    Journey existingJourney = null;
+    if (gmo instanceof Journey)
+      {
+        existingJourney = (Journey) gmo;    
+      }
     
     /*****************************************
     *
