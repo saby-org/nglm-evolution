@@ -650,7 +650,7 @@ public class JourneyHistory
     {
       this.rewardName = new String(rewardHistory.getRewardName());
       this.amount = rewardHistory.getAmount();
-      this.rewardDate = new Date(rewardHistory.getRewardDate().getTime());
+      this.rewardDate = rewardHistory.getRewardDate()!=null?new Date(rewardHistory.getRewardDate().getTime()):null;
     }
     
     /*****************************************
