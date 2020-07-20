@@ -705,7 +705,7 @@ public class JourneyHistory
     @Override
     public String toString()
     {
-      return rewardName + ";" + amount + ";" + rewardDate.getTime();
+      return rewardName + ";" + amount + ";" + (rewardDate!=null?rewardDate.getTime():null);
     }
   }
   
