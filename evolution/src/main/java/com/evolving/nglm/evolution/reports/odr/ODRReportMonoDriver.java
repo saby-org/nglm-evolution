@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution.reports.odr;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -14,7 +15,7 @@ public class ODRReportMonoDriver extends ReportDriver
   private static final Logger log = LoggerFactory.getLogger(ODRReportMonoDriver.class);
 
   @Override
-  public void produceReport(Report report, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
+  public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
   {
     log.debug("Processing " + report.getName());
     String esIndexOdr = "detailedrecords_offers-";

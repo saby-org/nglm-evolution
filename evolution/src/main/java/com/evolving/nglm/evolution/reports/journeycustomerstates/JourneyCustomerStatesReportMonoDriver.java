@@ -10,6 +10,7 @@ import com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCust
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 public class JourneyCustomerStatesReportMonoDriver extends ReportDriver {
@@ -20,6 +21,7 @@ public class JourneyCustomerStatesReportMonoDriver extends ReportDriver {
 	@Override
 	public void produceReport(
 	      Report report,
+	      final Date reportGenerationDate,
 	      String zookeeper,
 	      String kafka,
 	      String elasticSearch,

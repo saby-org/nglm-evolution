@@ -7,6 +7,7 @@ import com.evolving.nglm.evolution.reports.ReportUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 public class LoyaltyProgramCustomerStatesMonoDriver extends ReportDriver
@@ -15,7 +16,7 @@ public class LoyaltyProgramCustomerStatesMonoDriver extends ReportDriver
   public static final String SUBSCRIBER_ES_INDEX = "subscriberprofile";
 
   @Override
-  public void produceReport(Report report, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
+  public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
   {
     log.debug("Processing LoyaltyProgramCustomerStates Report with "+report.getName());
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();

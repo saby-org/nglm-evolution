@@ -1,5 +1,7 @@
 package com.evolving.nglm.evolution.reports.bdr;
 
+import java.util.Date;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +14,7 @@ public class BDRReportMonoDriver extends ReportDriver{
   @Override
   public void produceReport(
       Report report,
+      final Date reportGenerationDate,
       String zookeeper,
       String kafka,
       String elasticSearch,

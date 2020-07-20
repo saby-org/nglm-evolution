@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution.reports.notification;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -15,6 +16,7 @@ public class NotificationReportMonoDriver extends ReportDriver{
   @Override
   public void produceReport(
       Report report,
+      final Date reportGenerationDate,
       String zookeeper,
       String kafka,
       String elasticSearch,
