@@ -27,6 +27,22 @@ public class ExtractLauncher implements Runnable
 {
 
   private static final Logger log = LoggerFactory.getLogger(ExtractLauncher.class);
+  private static SimpleDateFormat sdf;
+
+  static
+  {
+    try
+    {
+      sdf = new SimpleDateFormat(Deployment.getExtractManagerDateFormat());
+      sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+    }
+    catch (IllegalArgumentException e)
+    {
+      log.error("Config error : date format " + Deployment.getExtractManagerDateFormat() + " is invalid, using default"
+          + e.getLocalizedMessage(), e);
+      sdf = new SimpleDateFormat(); // Default format, might not be valid in a filename, sigh...
+    }
+  }
 
   private String zkHostList;
   private String brokerServers;
@@ -37,7 +53,6 @@ public class ExtractLauncher implements Runnable
   private String controlDir;
   private String lockDir;
   private DateFormat dfrm;
-
   private Thread t;
   private String threadName;
 
@@ -166,27 +181,13 @@ public class ExtractLauncher implements Runnable
     {
       String outputPath = Deployment.getExtractManagerOutputPath();
       log.trace("outputPath = " + outputPath);
-      String dateFormat = Deployment.getExtractManagerDateFormat();
-      log.trace("dateFormat = " + dateFormat);
       String fileExtension = Deployment.getExtractManagerFileExtension();
       log.trace("dateFormat = " + fileExtension);
 
-      SimpleDateFormat sdf;
-      try
-      {
-        sdf = new SimpleDateFormat(dateFormat);
-      }
-      catch (IllegalArgumentException e)
-      {
-        log.error(
-            "Config error : date format " + dateFormat + " is invalid, using default" + e.getLocalizedMessage(), e);
-        sdf = new SimpleDateFormat(); // Default format, might not be valid in a filename, sigh...
-      }
-      sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
       String fileSuffix = sdf.format(SystemTime.getCurrentTime());
       String csvFilename =
-          "" + outputPath + File.separator + extractItem.getUserId() + "_" + extractItem.getExtractName() + "_"
-              + fileSuffix + "." + fileExtension;
+          outputPath + File.separator + extractItem.getUserId() + "_" + extractItem.getExtractName() + "_" + fileSuffix
+              + "." + fileExtension;
       log.trace("csvFilename = " + csvFilename);
 
       ExtractDriver ed = new ExtractDriver();
