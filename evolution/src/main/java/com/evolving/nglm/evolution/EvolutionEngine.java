@@ -5393,7 +5393,8 @@ public class EvolutionEngine
             //
             // check if JourneyMetrics enabled: Metrics should be generated for campaigns only (not journeys nor bulk campaigns)
             //
-            if (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) 
+            // journey can be null if it has been removed in the meantime (happens with PTT tests, should not happen in prod)
+            if ((journey != null) && (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign)) 
               {
                 boolean metricsUpdated = journeyState.populateMetricsPost(subscriberState, now);
                 subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
@@ -5420,6 +5421,7 @@ public class EvolutionEngine
                 //
                 //  close journey if metrics disabled
                 //
+                if (journey == null) log.warn("journey " + journeyState.getJourneyID() + " cannot be found");
                 journeyState.setJourneyCloseDate(now);
                 subscriberStateUpdated = true;
               }
