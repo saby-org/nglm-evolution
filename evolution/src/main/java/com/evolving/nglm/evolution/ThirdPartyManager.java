@@ -1889,7 +1889,7 @@ public class ThirdPartyManager
               // filter messages
               //
 
-              List<DeliveryRequest> messages = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.Messages).collect(Collectors.toList()); 
+              List<DeliveryRequest> messages = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.Messages  && !DeliveryStatus.Reschedule.equals(activity.getDeliveryStatus())).collect(Collectors.toList()); 
 
               //
               // prepare dates
