@@ -33,12 +33,12 @@ public class ODRReportESReader
   private static DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
   private static final DateFormat DATE_FORMAT;
   static
-  {
-    DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-  }
+    {
+      DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+      DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+    }
 
-  public static void main(String[] args)
+  public static void main(String[] args, final Date reportGenerationDate)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -56,7 +56,7 @@ public class ODRReportESReader
     String kzHostList = args[2];
     String esNode = args[3];
     String esIndexOdr = args[4];
-    
+
     Integer reportPeriodQuantity = 0;
     String reportPeriodUnit = null;
     if (args.length > 5 && args[5] != null && args[6] != null)
@@ -64,9 +64,9 @@ public class ODRReportESReader
         reportPeriodQuantity = Integer.parseInt(args[5]);
         reportPeriodUnit = args[6];
       }
-    Date fromDate = getFromDate(reportPeriodUnit, reportPeriodQuantity);
-    Date toDate = SystemTime.getCurrentTime();
-    
+    Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
+    Date toDate = reportGenerationDate;
+
     List<String> esIndexDates = getEsIndexDates(fromDate, toDate);
     StringBuilder esIndexOdrList = new StringBuilder();
     boolean firstEntry = true;
@@ -87,13 +87,12 @@ public class ODRReportESReader
     reportEsReader.start();
     log.info("Finished ODRReportESReader");
   }
-  
 
   private static List<String> getEsIndexDates(final Date fromDate, Date toDate)
   {
     Date tempfromDate = fromDate;
     List<String> esIndexOdrList = new ArrayList<String>();
-    while(tempfromDate.getTime() <= toDate.getTime())
+    while (tempfromDate.getTime() <= toDate.getTime())
       {
         esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
         tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
@@ -101,35 +100,34 @@ public class ODRReportESReader
     return esIndexOdrList;
   }
 
-
-  private static Date getFromDate(String reportPeriodUnit, Integer reportPeriodQuantity)
+  private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit, Integer reportPeriodQuantity)
   {
     reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(1) : reportPeriodQuantity;
     if (reportPeriodUnit == null) reportPeriodUnit  = PERIOD.DAYS.getExternalRepresentation();
-    
+
     //
     //
     //
-    
-    Date now = SystemTime.getCurrentTime();
+
+    Date now = reportGenerationDate;
     Date fromDate = null;
     switch (reportPeriodUnit.toUpperCase())
-      {
-        case "DAYS":
-          fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
-          break;
-          
-        case "WEEKS":
-          fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
-          break;
-          
-        case "MONTHS":
-          fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
-          break;
-          
-        default:
-          break;
-      }
+    {
+      case "DAYS":
+        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        break;
+
+      case "WEEKS":
+        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        break;
+
+      case "MONTHS":
+        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        break;
+
+      default:
+        break;
+    }
     return fromDate;
   }
 }

@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedHashMap;
 
 /**
@@ -37,7 +38,13 @@ public class JourneyImpactReportESReader
   private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
   private static DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
-  public static void main(String[] args, JourneyService journeyService)
+  /****************************************
+   * 
+   * main
+   * 
+   ****************************************/
+  
+  public static void main(String[] args, JourneyService journeyService, final Date reportGenerationDate)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -57,8 +64,8 @@ public class JourneyImpactReportESReader
     String esNode = args[3];
     String esIndexJourneyStats = args[4];
     String esIndexJourneyMetric = args[5];
-      
-    Collection<Journey> activeJourneys = journeyService.getActiveJourneys(SystemTime.getCurrentTime());
+
+    Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate);
     StringBuilder activeJourneyEsIndex = new StringBuilder();
     boolean firstEntry = true;
     for (Journey journey : activeJourneys)
