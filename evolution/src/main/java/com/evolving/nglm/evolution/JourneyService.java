@@ -32,12 +32,14 @@ import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -175,7 +177,62 @@ public class JourneyService extends GUIService
     if (!Deployment.getAutoApproveGuiObjects()) activeJourney = activeJourney.stream().filter(journey -> JourneyStatus.StartedApproved == journey.getApproval()).collect(Collectors.toList());
     return activeJourney;
   }
-
+  public Collection<Journey> getActiveRecurrentJourneys(Date date) { return getActiveJourneys(date).stream().filter( journey -> journey.getRecurrence()).collect(Collectors.toList()); }
+  public Collection<Journey> getAllRecurrentJourneysByID(String parentJourneyID, boolean includeArchived) 
+  { 
+    Collection<Journey> subJourneys = new ArrayList<Journey>();
+    for (GUIManagedObject uncheckedJourney : getStoredJourneys(includeArchived))
+      {
+        if (uncheckedJourney.getAccepted())
+          {
+            Journey checkedJourney = (Journey) uncheckedJourney;
+            if (parentJourneyID.equals(checkedJourney.getRecurrenceId())) subJourneys.add(checkedJourney);
+          }
+        
+      }
+    return subJourneys;
+  }
+  public Collection<Journey> getActiveAndCompletedRecurrentJourneys(Date now)
+  {
+    Collection<Journey> result = new ArrayList<Journey>();
+    for (GUIManagedObject uncheckedJourney : getStoredJourneys())
+      {
+        if (uncheckedJourney.getAccepted())
+          {
+            boolean activeAndCompleted = true;
+            Journey journey = (Journey) uncheckedJourney;
+            
+            //
+            //  recurrent
+            //
+            
+            activeAndCompleted = activeAndCompleted && journey.getRecurrence();
+            
+            //
+            //  active / completed
+            //
+            
+            activeAndCompleted = activeAndCompleted && journey.getActive() && journey.getEffectiveStartDate().compareTo(now) <= 0;
+            
+            //
+            // Approved
+            //
+            
+            if (!Deployment.getAutoApproveGuiObjects())
+              {
+                activeAndCompleted = activeAndCompleted && JourneyStatus.StartedApproved == journey.getApproval();
+              }
+            
+            //
+            //  add
+            //
+            
+            if (activeAndCompleted) result.add(journey);
+          }
+      }
+    return result;
+  }
+  
   /*****************************************
   *
   *  putJourney
