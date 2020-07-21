@@ -20,6 +20,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -235,13 +236,21 @@ public abstract class DatacubeGenerator
     for(AggregationBuilder subaggregation : datacubeMetricAggregations) {
       compositeAggregation = compositeAggregation.subAggregation(subaggregation);
     }
+
+    //TODO: xav change, might be an hack (or not), Rémi to decide final fix
+    // when a newly created subs in ES comes first by ExtendedSubscriberProfile sink connector, it has not yet any of the "product" fields
+    // those comes when the SubscriberProfile sink connector pushed as well those
+    // so for a while, it is possible a doc in subscriberprofile index miss many product fields needed for all datacube basically
+    // so here I choose one of product field that should always be there once SubscriberProfile sink updated subs, to filter out subs with missing data yet :
+    QueryBuilder searchFilter = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery("lastUpdateDate"));
     
     //
     // Datacube request
     //
     SearchSourceBuilder datacubeRequest = new SearchSourceBuilder()
         .sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
-        .query(QueryBuilders.matchAllQuery())
+        //.query(QueryBuilders.matchAllQuery())
+        .query(searchFilter)
         .aggregation(compositeAggregation)
         .size(0);
     
