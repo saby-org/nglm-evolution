@@ -2,14 +2,7 @@
 #
 lowercaseOutputName: true
 rules:
-  - pattern : com.evolving.nglm.evolution<type=EvolutionEngine, name=streams-evolutionengine, evolutionEvent=(.+)><>EvolutionEventCount
-    name: evolving_nglm_evolutionengine_profileevent_total
-    labels:
-      evolutionEvent: "$1"
-    type: COUNTER
-  - pattern : com.evolving.nglm.evolution<type=EvolutionEngine, name=streams-evolutionengine><>(\w+)(Count)
-    name: evolving_nglm_evolutionengine_$1_total
-    type: COUNTER
+  - pattern: "com.evolving.*"
   - pattern : kafka.streams<type=stream-metrics, client-id=streams-evolutionengine.+-(StreamThread-.+)><>((\w|-)+)
     name: kafka_streams_evolutionengine_stream_$2
     labels:
