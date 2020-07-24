@@ -1832,10 +1832,14 @@ public class EvaluationCriterion
     QueryBuilder queryStatus = null;
     QueryBuilder query = null;
     QueryBuilder insideQuery = null;
+    boolean isNot = false;
+    
     switch (criterionOperator)
     {
-      case IsInSetOperator:
       case NotInSetOperator:
+        isNot = true;
+        // fallthrough
+      case IsInSetOperator:
         /*
         {
           "query": {
@@ -1890,6 +1894,10 @@ public class EvaluationCriterion
         break;
       }
     query = QueryBuilders.nestedQuery("subscriberJourneys", insideQuery, ScoreMode.Total);
+    if (isNot)
+      {
+        query = QueryBuilders.boolQuery().mustNot(query);
+      }
     return query;
   }
 
@@ -2101,6 +2109,7 @@ public class EvaluationCriterion
         break;
 
       case IsInSetOperator:
+      case NotInSetOperator:
         /*
 {
   "query": {
