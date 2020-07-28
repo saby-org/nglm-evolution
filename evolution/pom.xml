@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>1.4.4_0-SNAPSHOT</version>
+  <version>1.4.4_0-451-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -249,6 +249,7 @@
                     <include>bin/storeconfiguration-run.sh</include>
                     <include>bin/guimanager-run.sh</include>
                     <include>bin/update-subscribergroup.sh</include>
+                    <include>bin/configlog.sh</include>
                     <include>bin/storeconfiguration.sh</include>
                     <include>bin/upgrade-run-preamble.sh</include>
                     <include>bin/upgrade-run-flyway.sh</include>

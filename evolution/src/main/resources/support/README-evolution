@@ -501,6 +501,9 @@ $DEPLOY_ROOT/bin/update-subscribergroup.sh add segmentationDimension churnRisk s
 $DEPLOY_ROOT/bin/update-subscribergroup.sh remove segmentationDimension churnRisk subscribergroup-churnrisk.002
 $DEPLOY_ROOT/bin/update-subscribergroup.sh delete segmentationDimension churnRisk
 
+-- Dynamically change log levels for a container
+$DEPLOY_ROOT/bin/configlog.sh
+
 --
 --  storeconfiguration
 --
