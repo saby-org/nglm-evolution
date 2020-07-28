@@ -267,7 +267,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
     log.info("received " + args.length + " args");
     for (String arg : args)
       {
-        log.info("JourneyCustomerStatesReportonoPhase: arg " + arg);
+        log.info("JourneyCustomerStatesReportMonoPhase: arg " + arg);
       }
 
     if (args.length < 4)
