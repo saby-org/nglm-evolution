@@ -946,13 +946,6 @@
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
-      "name"                : "customerPointsDetailsOld",
-      "display"             : "Customer Points Details Old",
-      "description"         : "Description of the Customer Points Details Report Old",
-      "class"               : "com.evolving.nglm.evolution.reports.customerpointdetails.CustomerPointDetailsDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
-    },
-    {
       "name"                : "customerPointsDetails",
       "display"             : "Customer Points Details",
       "description"         : "Description of the Customer Points Details Report",
