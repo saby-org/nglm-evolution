@@ -239,14 +239,14 @@ public abstract class DatacubeGenerator
     // those comes when the SubscriberProfile sink connector pushed as well those
     // so for a while, it is possible a doc in subscriberprofile index miss many product fields needed for all datacube basically
     // so here I choose one of product field that should always be there once SubscriberProfile sink updated subs, to filter out subs with missing data yet :
-    QueryBuilder searchFilter = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery("lastUpdateDate"));
+    QueryBuilder searchFilter = QueryBuilders.matchAllQuery();
+    if(ESIndex.toLowerCase().contains("subscriberprofile")) searchFilter = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery("lastUpdateDate"));
     
     //
     // Datacube request
     //
     SearchSourceBuilder datacubeRequest = new SearchSourceBuilder()
         .sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
-        //.query(QueryBuilders.matchAllQuery())
         .query(searchFilter)
         .aggregation(compositeAggregation)
         .size(0);
