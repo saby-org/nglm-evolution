@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -27,6 +28,7 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.List;
 
+@GUIDependencyDef(objectType = "offerObjective", serviceClass = OfferObjectiveService.class, dependencies = {})
 public class OfferObjective extends GUIManagedObject
 {
 

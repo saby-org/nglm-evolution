@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -45,6 +46,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
+@GUIDependencyDef(objectType = "presentationStrategy", serviceClass = PresentationStrategyService.class, dependencies = { "saleschannel" })
 public class PresentationStrategy extends GUIManagedObject
 {
   /*****************************************
@@ -320,6 +322,13 @@ public class PresentationStrategy extends GUIManagedObject
         String scoringStrategyID = pe.getScoringStrategyID();
         if (scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, date) == null) throw new GUIManagerException("unknown scoring strategy", scoringStrategyID);
       }
+  }
+  
+  @Override public Map<String, List<String>> getGUIDependencies()
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    result.put("saleschannel", new ArrayList<>(getSalesChannelIDs()));
+    return result;
   }
 }
 

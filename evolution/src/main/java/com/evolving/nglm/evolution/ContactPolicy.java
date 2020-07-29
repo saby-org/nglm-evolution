@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -24,9 +25,12 @@ import org.json.simple.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.List;
+import java.util.Map;
 
+@GUIDependencyDef(objectType = "contactPolicy", serviceClass = ContactPolicyService.class, dependencies = { })
 public class ContactPolicy extends GUIManagedObject
 {
   /*****************************************
@@ -305,4 +309,6 @@ public class ContactPolicy extends GUIManagedObject
         return true;
       }
   }
+  
+ 
 }

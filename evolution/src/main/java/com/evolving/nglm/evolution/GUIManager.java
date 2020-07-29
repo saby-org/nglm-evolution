@@ -5373,7 +5373,7 @@ public class GUIManager
                         //
 
                         Map<String, Object> deliverableMap = new HashMap<String, Object>();
-                        deliverableMap.put("id", "journey-" + journey.getJourneyID());
+                        deliverableMap.put("id", CommodityDeliveryManager.JOURNEY_PREFIX + journey.getJourneyID());
                         deliverableMap.put("fulfillmentProviderID", providerID);
                         deliverableMap.put("externalAccountID", journey.getJourneyID());
                         deliverableMap.put("name", journey.getJourneyName());
