@@ -123,17 +123,27 @@ public abstract class DatacubeGenerator
   *  overridable functions
   *
   *****************************************/
-  protected String getDatacubeName() {
+  protected String getDatacubeName() 
+  {
     return this.datacubeName;
   }
+  
+  // Target every documents of the index by default, can be overriden.
+  protected QueryBuilder getSubsetQuery() 
+  {
+    return QueryBuilders.matchAllQuery();
+  }
+  
   //
   // DocumentID settings
   //
-  protected void addStaticFilters(Map<String, Object> filters) { 
+  protected void addStaticFilters(Map<String, Object> filters) 
+  { 
     return; 
   }
   
-  protected String getDocumentID(Map<String,Object> filters, String timestamp) {
+  protected String getDocumentID(Map<String,Object> filters, String timestamp) 
+  {
     return this.extractDocumentIDFromFilter(filters, timestamp);
   }
   
@@ -236,21 +246,13 @@ public abstract class DatacubeGenerator
     for(AggregationBuilder subaggregation : datacubeMetricAggregations) {
       compositeAggregation = compositeAggregation.subAggregation(subaggregation);
     }
-
-    //TODO: xav change, might be an hack (or not), Rémi to decide final fix
-    // when a newly created subs in ES comes first by ExtendedSubscriberProfile sink connector, it has not yet any of the "product" fields
-    // those comes when the SubscriberProfile sink connector pushed as well those
-    // so for a while, it is possible a doc in subscriberprofile index miss many product fields needed for all datacube basically
-    // so here I choose one of product field that should always be there once SubscriberProfile sink updated subs, to filter out subs with missing data yet :
-    QueryBuilder searchFilter = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery("lastUpdateDate"));
     
     //
     // Datacube request
     //
     SearchSourceBuilder datacubeRequest = new SearchSourceBuilder()
         .sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
-        //.query(QueryBuilders.matchAllQuery())
-        .query(searchFilter)
+        .query(getSubsetQuery())
         .aggregation(compositeAggregation)
         .size(0);
     

@@ -12,6 +12,7 @@ import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.DynamicCriterionFieldService;
 import com.evolving.nglm.evolution.JobScheduler;
 import com.evolving.nglm.evolution.JourneyService;
+import com.evolving.nglm.evolution.LoggerInitialization;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.PaymentMeanService;
@@ -104,6 +105,11 @@ public class DatacubeManager
     //
     NGLMRuntime.addShutdownHook(new ShutdownHook(this));
     
+    //
+    // Logger
+    //
+    new LoggerInitialization().initLogger();
+
     //
     // Services
     //
