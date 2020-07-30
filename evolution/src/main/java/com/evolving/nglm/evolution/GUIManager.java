@@ -4564,11 +4564,13 @@ public class GUIManager
             CriterionField evaluationTime = unprocessedCriterionFields.get(CriterionContext.EVALUATION_TIME_ID);
             CriterionField evaluationMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_MONTH_ID);
             CriterionField evaluationDayOfMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_DAY_OF_MONTH_ID);
+            CriterionField evaluationAniversary = unprocessedCriterionFields.get(CriterionContext.EVALUATION_ANIVERSARY_DAY_ID);
             unprocessedCriterionFields.clear();
             if (evaluationWkDay != null) unprocessedCriterionFields.put(evaluationWkDay.getID(), evaluationWkDay);
             if (evaluationTime != null) unprocessedCriterionFields.put(evaluationTime.getID(), evaluationTime);
             if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
             if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
+            if (evaluationAniversary != null) unprocessedCriterionFields.put(evaluationAniversary.getID(), evaluationAniversary);
           }
         
         
@@ -4650,11 +4652,13 @@ public class GUIManager
             CriterionField evaluationTime = unprocessedCriterionFields.get(CriterionContext.EVALUATION_TIME_ID);
             CriterionField evaluationMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_MONTH_ID);
             CriterionField evaluationDayOfMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_DAY_OF_MONTH_ID);
+            CriterionField evaluationAniversary = unprocessedCriterionFields.get(CriterionContext.EVALUATION_ANIVERSARY_DAY_ID);
             unprocessedCriterionFields.clear();
             if (evaluationWkDay != null) unprocessedCriterionFields.put(evaluationWkDay.getID(), evaluationWkDay);
             if (evaluationTime != null) unprocessedCriterionFields.put(evaluationTime.getID(), evaluationTime);
             if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
             if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
+            if (evaluationAniversary != null) unprocessedCriterionFields.put(evaluationAniversary.getID(), evaluationAniversary);
           }
         
         journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly);
@@ -4750,11 +4754,13 @@ public class GUIManager
                 CriterionField evaluationTime = unprocessedCriterionFields.get(CriterionContext.EVALUATION_TIME_ID);
                 CriterionField evaluationMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_MONTH_ID);
                 CriterionField evaluationDayOfMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_DAY_OF_MONTH_ID);
+                CriterionField evaluationAniversary = unprocessedCriterionFields.get(CriterionContext.EVALUATION_ANIVERSARY_DAY_ID);
                 unprocessedCriterionFields.clear();
                 if (evaluationWkDay != null) unprocessedCriterionFields.put(evaluationWkDay.getID(), evaluationWkDay);
                 if (evaluationTime != null) unprocessedCriterionFields.put(evaluationTime.getID(), evaluationTime);
                 if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
                 if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
+                if (evaluationAniversary != null) unprocessedCriterionFields.put(evaluationAniversary.getID(), evaluationAniversary);
               }
             
             journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, false);
@@ -23101,6 +23107,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               case StringCriterion:
               case BooleanCriterion:
               case TimeCriterion:
+              case AniversaryCriterion:
               case DateCriterion:
                 criterionFields.put(criterionField.getID(), criterionField);
                 break;

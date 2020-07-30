@@ -67,6 +67,7 @@ public class CriterionContext
   public static final String EVALUATION_TIME_ID = "evaluation.time";
   public static final String EVALUATION_MONTH_ID = "evaluation.month";
   public static final String EVALUATION_DAY_OF_MONTH_ID = "evaluation.dayofmonth";
+  public static final String EVALUATION_ANIVERSARY_DAY_ID = "evaluation.aniversary.day";
 
   /*****************************************
   *
@@ -85,6 +86,7 @@ public class CriterionContext
   //
 
   private static CriterionField evaluationDate;
+  private static CriterionField evaluationAniversary;
   private static CriterionField evaluationWeekday;
   private static CriterionField evaluationTime;
   private static CriterionField evaluationMonth;
@@ -109,6 +111,25 @@ public class CriterionContext
         evaluationDateJSON.put("esField", "evaluationDate");
         evaluationDateJSON.put("internalOnly", false);
         evaluationDate  = new CriterionField(JSONUtilities.encodeObject(evaluationDateJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
+    //
+    //  evaluationAniversaryDay
+    //
+
+    try
+      {
+        Map<String,Object> evaluationWeekdayJSON = new LinkedHashMap<String,Object>();
+        evaluationWeekdayJSON.put("id", EVALUATION_ANIVERSARY_DAY_ID);
+        evaluationWeekdayJSON.put("display", "Evaluation Aniversary");
+        evaluationWeekdayJSON.put("dataType", "aniversary");
+        evaluationWeekdayJSON.put("retriever", "getEvaluationAniversary");
+        evaluationWeekdayJSON.put("internalOnly", false);
+        evaluationAniversary  = new CriterionField(JSONUtilities.encodeObject(evaluationWeekdayJSON));
       }
     catch (GUIManagerException e)
       {
@@ -595,6 +616,7 @@ public class CriterionContext
           {
             this.additionalCriterionFields.put(evaluationWeekday.getID(), evaluationWeekday);
             this.additionalCriterionFields.put(evaluationTime.getID(), evaluationTime);
+            this.additionalCriterionFields.put(evaluationAniversary.getID(), evaluationAniversary);
           }
 
         if (expectedDataType != null)

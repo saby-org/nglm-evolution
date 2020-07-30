@@ -97,6 +97,7 @@ public class EvaluationCriterion
     BooleanCriterion("boolean"),
     DateCriterion("date"),
     TimeCriterion("time"),
+    AniversaryCriterion("aniversary"),
     StringSetCriterion("stringSet"),
     
     //
@@ -421,6 +422,7 @@ public class EvaluationCriterion
                   }
                 break;
                 
+              case AniversaryCriterion:  
               case DateCriterion:
                 switch (argumentType)
                   {
@@ -471,6 +473,7 @@ public class EvaluationCriterion
                   }
                 break;
                 
+              case AniversaryCriterion:
               case DateCriterion:
                 switch (argumentType)
                   {
@@ -941,6 +944,13 @@ public class EvaluationCriterion
               }
             break;
               
+          case AniversaryCriterion:
+            {
+              int yearOfEvaluatedArgument = RLMDateUtils.getField((Date) evaluatedArgument, Calendar.YEAR, Deployment.getBaseTimeZone());
+              criterionFieldValue = RLMDateUtils.setField((Date) criterionFieldValue, Calendar.YEAR, yearOfEvaluatedArgument, Deployment.getBaseTimeZone());
+              break;
+            }
+              
           case TimeCriterion:
             {
               Date now = SystemTime.getCurrentTime();
@@ -989,6 +999,7 @@ public class EvaluationCriterion
                 break;
                 
               case TimeCriterion:
+              case AniversaryCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) > 0, criterionFieldValue, evaluatedArgument);
                 if (referencesEvaluationDate) evaluationRequest.getNextEvaluationDates().add((Date) evaluatedArgument);
@@ -1007,6 +1018,7 @@ public class EvaluationCriterion
                 break;
                 
               case TimeCriterion:
+              case AniversaryCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) >= 0, criterionFieldValue, evaluatedArgument);
                 if (referencesEvaluationDate) evaluationRequest.getNextEvaluationDates().add((Date) evaluatedArgument);
@@ -1025,6 +1037,7 @@ public class EvaluationCriterion
                 break;
               
               case TimeCriterion:
+              case AniversaryCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) < 0, criterionFieldValue, evaluatedArgument);
                 break;
@@ -1042,6 +1055,7 @@ public class EvaluationCriterion
                 break;
                 
               case TimeCriterion:
+              case AniversaryCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) <= 0, criterionFieldValue, evaluatedArgument);
                 break;
@@ -1487,6 +1501,9 @@ public class EvaluationCriterion
           script.append("def left = new ArrayList(); left.addAll(doc." + esField + "); ");
           break;
           
+        case AniversaryCriterion:
+          throw new UnsupportedOperationException("AniversaryCriterion is not supported");
+          
         case TimeCriterion:
           throw new UnsupportedOperationException("timeCriterion is not supported");
           
@@ -1554,6 +1571,8 @@ public class EvaluationCriterion
               case DateCriterion:
                 script.append("return (left != null) ? left.isAfter(right) : false; ");
                 break;
+              case AniversaryCriterion:
+                throw new UnsupportedOperationException("AniversaryCriterion is not supported");
               case TimeCriterion:
                 throw new UnsupportedOperationException("timeCriterion is not supported");
                 
@@ -1569,6 +1588,9 @@ public class EvaluationCriterion
               case DateCriterion:
                 script.append("return (left != null) ? !left.isBefore(right) : true; ");
                 break;
+                
+              case AniversaryCriterion:
+                throw new UnsupportedOperationException("AniversaryCriterion is not supported");
 
               case TimeCriterion:
                 throw new UnsupportedOperationException("timeCriterion is not supported");
@@ -1585,6 +1607,9 @@ public class EvaluationCriterion
               case DateCriterion:
                 script.append("return (left != null) ? left.isBefore(right) : false; ");
                 break;
+                
+              case AniversaryCriterion:
+                throw new UnsupportedOperationException("AniversaryCriterion is not supported");
 
               case TimeCriterion:
                 throw new UnsupportedOperationException("timeCriterion is not supported");
@@ -1601,6 +1626,9 @@ public class EvaluationCriterion
               case DateCriterion:
                 script.append("return (left != null) ? !left.isAfter(right) : true; ");
                 break;
+                
+              case AniversaryCriterion:
+                throw new UnsupportedOperationException("AniversaryCriterion is not supported");
                 
               case TimeCriterion:
                 throw new UnsupportedOperationException("timeCriterion is not supported");
