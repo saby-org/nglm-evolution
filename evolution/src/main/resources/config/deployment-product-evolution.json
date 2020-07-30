@@ -900,7 +900,7 @@
       "name"                : "journeysReport",
       "display"             : "Journeys Report",
       "description"         : "Description of the Journeys Report",
-      "class"               : "com.evolving.nglm.evolution.reports.journeys.JourneysReportDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.journeys.JourneysReportMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {

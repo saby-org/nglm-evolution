@@ -141,7 +141,6 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
         if(!line.isEmpty()){
           log.trace("Writing to csv file : "+line);
           writer.write(line.getBytes());
-          writer.write("\n".getBytes());
         }
         else
           {

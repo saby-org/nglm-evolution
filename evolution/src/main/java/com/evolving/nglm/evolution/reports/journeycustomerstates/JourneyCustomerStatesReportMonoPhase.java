@@ -56,7 +56,6 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
         String line = ReportUtils.formatResult(lineMap);
         log.trace("Writing to csv file : " + line);
         writer.write(line.getBytes());
-        writer.write("\n".getBytes());
       } 
     catch (IOException e)
       {
