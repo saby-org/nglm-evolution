@@ -863,28 +863,28 @@
       "name"                : "journeyCustomerStatesReport",
       "display"             : "Journey Customer States Report",
       "description"         : "Description of the Journey Customer States Report",
-      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportMonoDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "customerReport",
       "display"             : "Customer Report",
       "description"         : "Description of the Customer Report",
-      "class"               : "com.evolving.nglm.evolution.reports.subscriber.SubscriberReportMonoDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.subscriber.SubscriberReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "BDRReport",
       "display"             : "BDR Report",
       "description"         : "Description of the BDR Report",
-      "class"               : "com.evolving.nglm.evolution.reports.bdr.BDRReportMonoDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.bdr.BDRReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "ODRReport",
       "display"             : "ODR Report",
       "description"         : "Description of the ODR Report",
-      "class"               : "com.evolving.nglm.evolution.reports.odr.ODRReportMonoDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.odr.ODRReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ],
       "defaultReportPeriodQuantity" : 1,
       "defaultReportPeriodUnit"     : "DAYS"
@@ -893,14 +893,14 @@
       "name"                : "notificationReport",
       "display"             : "Notification Report",
       "description"         : "Description of the Notification Report",
-      "class"               : "com.evolving.nglm.evolution.reports.notification.NotificationReportMonoDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.notification.NotificationReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "journeysReport",
       "display"             : "Journeys Report",
       "description"         : "Description of the Journeys Report",
-      "class"               : "com.evolving.nglm.evolution.reports.journeys.JourneysReportMonoDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.journeys.JourneysReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
@@ -942,14 +942,14 @@
       "name"                : "loyaltyProgramCustomerStates",
       "display"             : "Loyalty Program Customer States",
       "description"         : "Description of the Loyalty Program Customer States Report",
-      "class"               : "com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate.LoyaltyProgramCustomerStatesMonoDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate.LoyaltyProgramCustomerStatesDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "customerPointsDetails",
       "display"             : "Customer Points Details",
       "description"         : "Description of the Customer Points Details Report",
-      "class"               : "com.evolving.nglm.evolution.reports.customerpointdetails.CustomerPointDetailsMonoDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.customerpointdetails.CustomerPointDetailsDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
