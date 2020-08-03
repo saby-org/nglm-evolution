@@ -10,7 +10,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.NotificationDailyWindows.DailyWindow;
+import com.evolving.nglm.evolution.CommunicationChannelTimeWindows.DailyWindow;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -36,7 +36,7 @@ public class CommunicationChannel extends GUIManagedObject
     String display;
     String profileAddressField;
     String deliveryType;
-    NotificationDailyWindows notificationDailyWindows;
+    CommunicationChannelTimeWindows notificationDailyWindows;
 
     // parameters that must be into the template
     Map<String,CriterionField> parameters = new HashMap<String, CriterionField>();
@@ -69,7 +69,7 @@ public class CommunicationChannel extends GUIManagedObject
     public String getDisplay() { return display; }
     public String getProfileAddressField() { return profileAddressField; }
     public String getDeliveryType () { return deliveryType; } 
-    public NotificationDailyWindows getNotificationDailyWindows() { return notificationDailyWindows; }
+    public CommunicationChannelTimeWindows getNotificationDailyWindows() { return notificationDailyWindows; }
     public Map<String,CriterionField> getParameters() { return parameters; }
     public Map<String,CriterionField> getToolboxParameters() { return toolboxParameters; }
     public String getNotificationPluginClass() { return notificationPluginClass; }
@@ -150,7 +150,7 @@ public class CommunicationChannel extends GUIManagedObject
       this.profileAddressField = JSONUtilities.decodeString(jsonRoot, "profileAddressField", false);
       this.deliveryType = JSONUtilities.decodeString(jsonRoot, "deliveryType", false);
       if(jsonRoot.get("notificationDailyWindows") != null) {
-        this.notificationDailyWindows = new NotificationDailyWindows(JSONUtilities.decodeJSONObject(jsonRoot, "notificationDailyWindows", false));
+        this.notificationDailyWindows = new CommunicationChannelTimeWindows(JSONUtilities.decodeJSONObject(jsonRoot, "notificationDailyWindows", false));
       }else {
         this.notificationDailyWindows = Deployment.getNotificationDailyWindows().get("0");
       }

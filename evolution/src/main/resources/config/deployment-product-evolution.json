@@ -144,6 +144,7 @@
   "pointFulfillmentRekeyedTopic"                         : "${topic.pointfulfillment.rekeyed}",
   "communicationChannelTopic"                            : "${topic.communicationchannel}",
   "communicationChannelBlackoutTopic"                    : "${topic.blackoutperiod}",
+  "communicationChannelTimeWindowTopic"                  : "${topic.timewindowperiod}",
   "loyaltyProgramTopic"                                  : "${topic.loyaltyprogram}",
   "exclusionInclusionTargetTopic"                        : "${topic.exclusioninclusiontarget}",
   "profileChangeEventTopic"                              : "${topic.profilechangeevent}",

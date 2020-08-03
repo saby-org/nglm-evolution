@@ -426,12 +426,20 @@ public class GUIManager
     getCommunicationChannelList("getCommunicationChannelList"),
     getCommunicationChannelSummaryList("getCommunicationChannelSummaryList"),
     getCommunicationChannel("getCommunicationChannel"),
+    putCommunicationChannel("putCommunicationChannel"),
     getBlackoutPeriodsList("getBlackoutPeriodsList"),
     getBlackoutPeriodsSummaryList("getBlackoutPeriodsSummaryList"),
     getBlackoutPeriods("getBlackoutPeriods"),
     putBlackoutPeriods("putBlackoutPeriods"),
     removeBlackoutPeriods("removeBlackoutPeriods"),
     setStatusBlackoutPeriods("setStatusBlackoutPeriods"),
+    
+    getTimeWindowsList("getTimeWindowsList"),
+    getTimeWindowsSummaryList("getTimeWindowsSummaryList"),
+    getTimeWindows("getTimeWindows"),
+    putTimeWindows("putTimeWindows"),
+    removeTimeWindows("removeTimeWindows"),
+
     getLoyaltyProgramTypeList("getLoyaltyProgramTypeList"),
     getLoyaltyProgramList("getLoyaltyProgramList"),
     getLoyaltyProgramSummaryList("getLoyaltyProgramSummaryList"),
@@ -607,6 +615,7 @@ public class GUIManager
   protected UploadedFileService uploadedFileService;
   protected TargetService targetService;
   protected CommunicationChannelBlackoutService communicationChannelBlackoutService;
+  protected CommunicationChannelTimeWindowService communicationChannelTimeWindowService;
   protected LoyaltyProgramService loyaltyProgramService;
   protected ExclusionInclusionTargetService exclusionInclusionTargetService;
   protected ResellerService resellerService;
@@ -738,6 +747,7 @@ public class GUIManager
     String targetTopic = Deployment.getTargetTopic();
     String communicationChannelTopic = Deployment.getCommunicationChannelTopic();
     String communicationChannelBlackoutTopic = Deployment.getCommunicationChannelBlackoutTopic();
+    String communicationChannelTimeWindowTopic = Deployment.getCommunicationChannelTimeWindowTopic();
     String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
     String exclusionInclusionTargetTopic = Deployment.getExclusionInclusionTargetTopic();
     String resellerTopic = Deployment.getResellerTopic();
@@ -933,6 +943,7 @@ public class GUIManager
     targetService = new TargetService(bootstrapServers, "guimanager-targetservice-" + apiProcessKey, targetTopic, true);
     voucherService = new VoucherService(bootstrapServers, "guimanager-voucherservice-" + apiProcessKey, voucherTopic, true,elasticsearch,uploadedFileService);
     communicationChannelBlackoutService = new CommunicationChannelBlackoutService(bootstrapServers, "guimanager-blackoutservice-" + apiProcessKey, communicationChannelBlackoutTopic, true);
+    communicationChannelTimeWindowService = new CommunicationChannelTimeWindowService(bootstrapServers, "guimanager-timewindowservice-" + apiProcessKey, communicationChannelTimeWindowTopic, true);
     loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, "guimanager-loyaltyprogramservice-"+apiProcessKey, loyaltyProgramTopic, true);
     exclusionInclusionTargetService = new ExclusionInclusionTargetService(bootstrapServers, "guimanager-exclusioninclusiontargetservice-" + apiProcessKey, exclusionInclusionTargetTopic, true);
     resellerService = new ResellerService(bootstrapServers, "guimanager-resellerservice-"+apiProcessKey, resellerTopic, true);
@@ -1972,6 +1983,12 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getBlackoutPeriods", new APISimpleHandler(API.getBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/putBlackoutPeriods", new APISimpleHandler(API.putBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/setStatusBlackoutPeriods", new APISimpleHandler(API.setStatusBlackoutPeriods));
+        
+        restServer.createContext("/nglm-guimanager/getTimeWindowsList", new APISimpleHandler(API.getTimeWindowsList));
+        restServer.createContext("/nglm-guimanager/getTimeWindowsSummaryList", new APISimpleHandler(API.getTimeWindowsSummaryList));
+        restServer.createContext("/nglm-guimanager/getTimeWindows", new APISimpleHandler(API.getTimeWindows));
+        restServer.createContext("/nglm-guimanager/putTimeWindows", new APISimpleHandler(API.putTimeWindows));
+
         restServer.createContext("/nglm-guimanager/removeBlackoutPeriods", new APISimpleHandler(API.removeBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramTypeList", new APISimpleHandler(API.getLoyaltyProgramTypeList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramList", new APISimpleHandler(API.getLoyaltyProgramList));
@@ -3443,6 +3460,11 @@ public class GUIManager
                 case getCommunicationChannel:
                   jsonResponse = processGetCommunicationChannel(userID, jsonRoot, includeArchived);
                   break;
+                  
+                case putCommunicationChannel:
+//                  jsonResponse = processPutCommunicationChannel(userID, jsonRoot);
+                  break;
+
 
                 case getBlackoutPeriodsList:
                   jsonResponse = processGetBlackoutPeriodsList(userID, jsonRoot, true, includeArchived);
@@ -3463,6 +3485,29 @@ public class GUIManager
                 case removeBlackoutPeriods:
                   jsonResponse = processRemoveBlackoutPeriods(userID, jsonRoot);
                   break;
+                  
+                  
+                  
+                case getTimeWindowsList:
+                  jsonResponse = CommunicationChannelTimeWindows.processGetChannelTimeWindowList(userID, jsonRoot, true, includeArchived, communicationChannelTimeWindowService);
+                  break;
+
+                case getTimeWindowsSummaryList:
+                  jsonResponse = CommunicationChannelTimeWindows.processGetChannelTimeWindowList(userID, jsonRoot, false, includeArchived, communicationChannelTimeWindowService);
+                  break;
+
+                case getTimeWindows:
+                  jsonResponse = CommunicationChannelTimeWindows.processGetTimeWindows(userID, jsonRoot, includeArchived, communicationChannelTimeWindowService);
+                  break;
+
+                case putTimeWindows:
+                  jsonResponse = CommunicationChannelTimeWindows.processPutTimeWindows(userID, jsonRoot, communicationChannelTimeWindowService, epochServer);
+                  break;
+
+                case removeTimeWindows:
+                  jsonResponse = CommunicationChannelTimeWindows.processRemoveTimeWindows(userID, jsonRoot, communicationChannelTimeWindowService);
+                  break;
+
 
                 case getLoyaltyProgramTypeList:
                   jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramTypeList(userID, jsonRoot);
@@ -18142,7 +18187,7 @@ public class GUIManager
     response.put("responseCode", "ok");
     response.put("communicationChannels", JSONUtilities.encodeArray(communicationChannelList));
     if(fullDetails) {
-      NotificationDailyWindows notifWindows = Deployment.getNotificationDailyWindows().get("0");
+      CommunicationChannelTimeWindows notifWindows = Deployment.getNotificationDailyWindows().get("0");
       response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
     }
     return JSONUtilities.encodeObject(response);
@@ -20807,7 +20852,7 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
-    NotificationDailyWindows notifWindows = Deployment.getNotificationDailyWindows().get("0");
+    CommunicationChannelTimeWindows notifWindows = Deployment.getNotificationDailyWindows().get("0");
     response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
     return JSONUtilities.encodeObject(response);
   }
