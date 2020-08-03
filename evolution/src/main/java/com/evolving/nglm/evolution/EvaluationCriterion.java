@@ -947,6 +947,8 @@ public class EvaluationCriterion
           case AniversaryCriterion:
             {
               log.info("RAJ K AniversaryCriterion before evaluatedArgument {}, criterionFieldValue {}", evaluatedArgument, criterionFieldValue);
+              evaluatedArgument = RLMDateUtils.truncate((Date) evaluatedArgument, Calendar.DATE, Deployment.getBaseTimeZone());
+              criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DATE, Deployment.getBaseTimeZone());
               int yearOfEvaluatedArgument = RLMDateUtils.getField((Date) evaluatedArgument, Calendar.YEAR, Deployment.getBaseTimeZone());
               criterionFieldValue = RLMDateUtils.setField((Date) criterionFieldValue, Calendar.YEAR, yearOfEvaluatedArgument, Deployment.getBaseTimeZone());
               log.info("RAJ K AniversaryCriterion after evaluatedArgument {}, criterionFieldValue {}", evaluatedArgument, criterionFieldValue);
