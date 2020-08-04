@@ -23059,6 +23059,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               case StringCriterion:
               case BooleanCriterion:
               case TimeCriterion:
+              case DateCriterion:
+                criterionFields.put(criterionField.getID(), criterionField);
+                break;
+                
               case AniversaryCriterion:
                 JSONObject tempCriterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation().clone();
                 tempCriterionFieldJSON.put("dataType", CriterionDataType.DateCriterion.getExternalRepresentation());
@@ -23072,10 +23076,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     e.printStackTrace();
                   }
                 log.info("RAJ K converted to date");
-                break;
-                
-              case DateCriterion:
-                criterionFields.put(criterionField.getID(), criterionField);
                 break;
 
               case StringSetCriterion:
