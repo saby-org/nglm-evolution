@@ -23060,6 +23060,20 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               case BooleanCriterion:
               case TimeCriterion:
               case AniversaryCriterion:
+                JSONObject tempCriterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation().clone();
+                tempCriterionFieldJSON.put("dataType", CriterionDataType.DateCriterion.getExternalRepresentation());
+                try
+                  {
+                    CriterionField dateCriterionField = new CriterionField(tempCriterionFieldJSON);
+                    criterionFields.put(dateCriterionField.getID(), dateCriterionField);
+                  } 
+                catch (GUIManagerException e)
+                  {
+                    e.printStackTrace();
+                  }
+                log.info("RAJ K converted to date");
+                break;
+                
               case DateCriterion:
                 criterionFields.put(criterionField.getID(), criterionField);
                 break;
@@ -23206,6 +23220,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             switch (criterionField.getFieldDataType())
               {
                 case AniversaryCriterion:
+                  log.info("RAJ K no need to convert to date");
                   criterionFieldJSON.put("dataType", CriterionDataType.DateCriterion.getExternalRepresentation());
                   break;
                   
