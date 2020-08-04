@@ -23172,6 +23172,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             //
             //  remove server-side fields
             //
+            
+            log.info("RAJ K currentGroups {}, criterionField {}", currentGroups, criterionField.getDisplay());
 
             JSONObject criterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation().clone();
             criterionFieldJSON.remove("esField");
@@ -23475,10 +23477,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     for (String comparableFieldID : includedComparableFieldIDs)
       {
         CriterionField criterionField = comparableFields.get(comparableFieldID);
-        if (     (! excludedComparableFieldIDs.contains(comparableFieldID))
-              && (singleton == criterionField.getFieldDataType().getSingletonType())
-//            && (! comparableFieldID.equals(criterionFieldID))
-           )
+        if ((!excludedComparableFieldIDs.contains(comparableFieldID)) && (singleton == criterionField.getFieldDataType().getSingletonType()))
           {
             HashMap<String,Object> comparableFieldJSON = new HashMap<String,Object>();
             comparableFieldJSON.put("id", criterionField.getID());
@@ -23486,23 +23485,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             result.add(JSONUtilities.encodeObject(comparableFieldJSON));
           }
       }
-
-//    // order list by ID
-//    Collections.sort(result, new Comparator<JSONObject>()
-//    {
-//      @Override
-//      public int compare(JSONObject o1, JSONObject o2)
-//      {
-//        String id1 = (String) o1.get("id");
-//        String id2 = (String) o2.get("id");
-//        return id1.compareTo(id2);
-//      }
-//    });
-
-    //
-    //  return
-    //
-
     return result;
   }
 
