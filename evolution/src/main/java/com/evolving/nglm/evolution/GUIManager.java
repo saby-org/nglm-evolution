@@ -23246,9 +23246,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
             //
             //  normalize set-valued dataTypes to singleton-valued dataTypes (required by GUI)
+            //  normalize AniversaryCriterion dataTypes to DateCriterion dataTypes (required by GUI)
             //
 
-            log.info("RAJ K criterionField.getFieldDataType() {}", criterionField.getFieldDataType());
             switch (criterionField.getFieldDataType())
               {
                 case AniversaryCriterion:
@@ -23274,7 +23274,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             //  add
             //
 
-            log.info("RAJ K criterionFieldJSON {}", criterionFieldJSON);
             result.add(criterionFieldJSON);
           }
       }

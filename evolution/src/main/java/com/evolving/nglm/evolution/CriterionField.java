@@ -170,7 +170,6 @@ public class CriterionField extends DeploymentManagedObject
   public Integer getTagMaxLength() { return tagMaxLength; }
   public VariableType getVariableType() { return variableType; }
   public boolean getProfileChangeEvent() { return profileChangeEvent; }
-  public void setFieldDataType(CriterionDataType fieldDataType) { this.fieldDataType = fieldDataType; }
 
   /*****************************************
   *
