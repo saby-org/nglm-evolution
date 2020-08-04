@@ -8,9 +8,7 @@ package com.evolving.nglm.evolution.reports;
 
 import static com.evolving.nglm.evolution.reports.ReportUtils.d;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -22,6 +20,7 @@ import java.util.Scanner;
 import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.http.HttpHost;
@@ -305,8 +304,9 @@ public class ReportMonoPhase
             log.info(csvfile + " already exists, do nothing");
             return false;
           }
-        
-        Map<String, List<Map<String, Object>>> records = new HashMap<String, List<Map<String, Object>>>();
+
+        // holding the zip writers of tmp files
+        Map<String,ZipOutputStream> tmpZipFiles = new HashMap<>();
         
         int i = 0;
 
@@ -384,6 +384,9 @@ public class ReportMonoPhase
               boolean alreadyTraced = false;
               while (searchHits != null && searchHits.length > 0)
                 {
+
+                  Map<String, List<Map<String, Object>>> records = new HashMap<String, List<Map<String, Object>>>();
+
                   if (log.isDebugEnabled()) log.debug("got " + searchHits.length + " hits");
                   for (SearchHit searchHit : searchHits)
                     {
@@ -441,6 +444,45 @@ public class ReportMonoPhase
                   searchResponse = elasticsearchReaderClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
                   scrollId = searchResponse.getScrollId();
                   searchHits = searchResponse.getHits().getHits();
+
+                  // write each final archive zip entry into tmp files first (will be put in 1 archive at the end
+                  try
+                  {
+                    //
+                    //  ZIP
+                    //
+
+                    for (String key : records.keySet())
+                    {
+
+                      String tmpFileName=file+"."+key+".tmp";
+                      boolean addHeader = false;
+                      ZipOutputStream writer = tmpZipFiles.get(tmpFileName);
+                      if(writer==null){
+                        addHeader = true;
+                        FileOutputStream fos = new FileOutputStream(tmpFileName);
+                        writer = new ZipOutputStream(fos);
+                        String dataFile[] = csvfile.split("[.]");
+                        String dataFileName = dataFile[0] + "_" + key;
+                        String zipEntryName = new File(dataFileName + "." + dataFile[1]).getName();
+                        ZipEntry entry = new ZipEntry(zipEntryName);
+                        writer.putNextEntry(entry);
+                        writer.setLevel(Deflater.BEST_SPEED);
+                        tmpZipFiles.put(tmpFileName,writer);
+                      }
+                      for (Map<String, Object> lineMap : records.get(key))
+                      {
+                        reportFactory.dumpLineToCsv(lineMap, writer, addHeader);
+                        addHeader = false;
+                      }
+                    }
+
+                  }
+                  catch (Exception e)
+                  {
+                    log.error("Error in file {} ", e);
+                  }
+
                 }
               log.debug("Finished with index " + i);
               if (scrollId != null)
@@ -450,45 +492,54 @@ public class ReportMonoPhase
                   elasticsearchReaderClient.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
                 }
           } catch (IOException e) { e.printStackTrace(); }
-            i++;
-          }
-        try
-          {
-            //
-            //  ZIP
-            //
-            
-            FileOutputStream fos = new FileOutputStream(file);
-            ZipOutputStream writer = new ZipOutputStream(fos);
-            
-            for (String key : records.keySet())
-              {
-                //
-                // data
-                //
+          i++;
 
-                boolean addHeader = true;
-                String dataFile[] = csvfile.split("[.]");
-                String dataFileName = dataFile[0] + "_" + key;
-                String zipEntryName = new File(dataFileName + "." + dataFile[1]).getName();
-                ZipEntry entry = new ZipEntry(zipEntryName);
-                writer.putNextEntry(entry);
-                writer.setLevel(Deflater.BEST_SPEED);
-                for (Map<String, Object> lineMap : records.get(key))
-                  {
-                    reportFactory.dumpLineToCsv(lineMap, writer, addHeader);
-                    addHeader = false;
-                  }
-              }
-            writer.flush();
-            writer.closeEntry();
-            writer.close();
-            fos.close();
+        }
+
+        // close all open tmp writer
+        for(Entry<String,ZipOutputStream> tmpWriter : tmpZipFiles.entrySet()){
+          try {
+            tmpWriter.getValue().flush();
+            tmpWriter.getValue().close();
+          } catch (IOException e) {
+            log.warn("Error while closing tmp file {} ", tmpWriter.getKey());
           }
-        catch (Exception e) 
-          {
-            log.error("Error in file {} ", e);
+        }
+
+        // write final file from tmp
+
+        try {
+
+          FileOutputStream fos = new FileOutputStream(file);
+          ZipOutputStream writer = new ZipOutputStream(fos);
+
+          for(String tmpFile:tmpZipFiles.keySet()){
+
+            // open tmp file
+            FileInputStream fis = new FileInputStream(tmpFile);
+            ZipInputStream reader = new ZipInputStream(fis);
+
+            writer.putNextEntry(reader.getNextEntry());
+            writer.setLevel(Deflater.BEST_SPEED);
+
+            // copy to final file
+            int length;
+            byte[] bytes = new byte[5*1024*1024];//5M buffer
+            while ((length=reader.read(bytes))!=-1) writer.write(bytes,0,length);
+
+            // close and delete tmp
+            reader.closeEntry();
+            reader.close();
+            new File(tmpFile).delete();
           }
+          writer.flush();
+          writer.closeEntry();
+          writer.close();
+
+        } catch (IOException e) {
+          log.error("Error while concatenating tmp files", e);
+        }
+
       }
     log.info("Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION);
     return true;
