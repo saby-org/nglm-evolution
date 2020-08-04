@@ -4597,7 +4597,7 @@ public class GUIManager
   {
     boolean result = false;
     String id = JSONUtilities.decodeString(criteriaFieldJSON, "id", true);
-    result = id.equals(CriterionContext.EVALUATION_WK_DAY_ID) || id.equals(CriterionContext.EVALUATION_TIME_ID) || id.equals(CriterionContext.EVALUATION_MONTH_ID) || id.equals(CriterionContext.EVALUATION_DAY_OF_MONTH_ID) || id.equals(CriterionContext.EVALUATION_ANIVERSARY_DAY_ID) || id.equals(CriterionContext.EVALUATION_ANIVERSARY_DAY_DATE_ID);
+    result = id.equals(CriterionContext.EVALUATION_WK_DAY_ID) || id.equals(CriterionContext.EVALUATION_TIME_ID) || id.equals(CriterionContext.EVALUATION_MONTH_ID) || id.equals(CriterionContext.EVALUATION_DAY_OF_MONTH_ID) || id.equals(CriterionContext.EVALUATION_ANIVERSARY_DAY_ID);
     return result;
   }
 
@@ -23075,7 +23075,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   {
                     e.printStackTrace();
                   }
-                log.info("RAJ K converted to date");
                 break;
 
               case StringSetCriterion:
@@ -23139,8 +23138,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             //  remove server-side fields
             //
             
-            log.info("RAJ K currentGroups {}, criterionField {}", currentGroups, criterionField.getDisplay());
-
             JSONObject criterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation().clone();
             criterionFieldJSON.remove("esField");
             criterionFieldJSON.remove("retriever");
@@ -23219,11 +23216,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
             switch (criterionField.getFieldDataType())
               {
-                case AniversaryCriterion:
-                  log.info("RAJ K no need to convert to date");
-                  criterionFieldJSON.put("dataType", CriterionDataType.DateCriterion.getExternalRepresentation());
-                  break;
-                  
                 case StringSetCriterion:
                   criterionFieldJSON.put("dataType", CriterionDataType.StringCriterion.getExternalRepresentation());
                   break;
@@ -23243,7 +23235,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             //  add
             //
 
-            log.info("RAJ K criterionFieldJSON {}", criterionFieldJSON);
             result.add(criterionFieldJSON);
           }
       }

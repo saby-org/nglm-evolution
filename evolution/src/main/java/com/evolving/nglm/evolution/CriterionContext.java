@@ -68,7 +68,6 @@ public class CriterionContext
   public static final String EVALUATION_MONTH_ID = "evaluation.month";
   public static final String EVALUATION_DAY_OF_MONTH_ID = "evaluation.dayofmonth";
   public static final String EVALUATION_ANIVERSARY_DAY_ID = "evaluation.aniversary.day";
-  public static final String EVALUATION_ANIVERSARY_DAY_DATE_ID = "evaluation.aniversary.day.date";
 
   /*****************************************
   *
@@ -88,7 +87,6 @@ public class CriterionContext
 
   private static CriterionField evaluationDate;
   private static CriterionField evaluationAniversary;
-  private static CriterionField evaluationAniversaryDate;
   private static CriterionField evaluationWeekday;
   private static CriterionField evaluationTime;
   private static CriterionField evaluationMonth;
@@ -132,25 +130,6 @@ public class CriterionContext
         evaluationAniversaryJSON.put("retriever", "getEvaluationAniversary");
         evaluationAniversaryJSON.put("internalOnly", false);
         evaluationAniversary  = new CriterionField(JSONUtilities.encodeObject(evaluationAniversaryJSON));
-      }
-    catch (GUIManagerException e)
-      {
-        throw new ServerRuntimeException(e);
-      }
-    
-    //
-    //  evaluationAniversaryDayDate
-    //
-
-    try
-      {
-        Map<String,Object> evaluationAniversaryDateJSON = new LinkedHashMap<String,Object>();
-        evaluationAniversaryDateJSON.put("id", EVALUATION_ANIVERSARY_DAY_DATE_ID);
-        evaluationAniversaryDateJSON.put("display", "Evaluation Aniversary Date");
-        evaluationAniversaryDateJSON.put("dataType", "date");
-        evaluationAniversaryDateJSON.put("retriever", "getEvaluationAniversary");
-        evaluationAniversaryDateJSON.put("internalOnly", false);
-        evaluationAniversaryDate  = new CriterionField(JSONUtilities.encodeObject(evaluationAniversaryDateJSON));
       }
     catch (GUIManagerException e)
       {
@@ -638,7 +617,6 @@ public class CriterionContext
             this.additionalCriterionFields.put(evaluationWeekday.getID(), evaluationWeekday);
             this.additionalCriterionFields.put(evaluationTime.getID(), evaluationTime);
             this.additionalCriterionFields.put(evaluationAniversary.getID(), evaluationAniversary);
-            this.additionalCriterionFields.put(evaluationAniversaryDate.getID(), evaluationAniversaryDate);
           }
 
         if (expectedDataType != null)
@@ -801,7 +779,6 @@ public class CriterionContext
           result.put(internalTargets.getID(), internalTargets);
           result.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
           result.put(evaluationMonth.getID(), evaluationMonth);
-          result.put(evaluationAniversaryDate.getID(), evaluationAniversaryDate);
           result.putAll(Deployment.getProfileCriterionFields());
           break;
 
