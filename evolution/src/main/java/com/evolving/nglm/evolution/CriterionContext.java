@@ -801,6 +801,7 @@ public class CriterionContext
           result.put(internalTargets.getID(), internalTargets);
           result.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
           result.put(evaluationMonth.getID(), evaluationMonth);
+          result.put(evaluationAniversaryDate.getID(), evaluationAniversaryDate);
           result.putAll(Deployment.getProfileCriterionFields());
           break;
 
