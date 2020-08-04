@@ -4553,30 +4553,13 @@ public class GUIManager
         CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters, expectedDataType), journeyNodeType, journeyNodeEvent, selectedJourney, expectedDataType);
         Map<String,List<JSONObject>> currentGroups = includeComparableFields ? new HashMap<>() : null;
         Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
+        journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly, currentGroups);
         
         //
         //  intersect and put only Evaluation week Day and Time (if schedule node)
         //
         
-        if (journeyNodeType.getScheduleNode())
-          {
-            CriterionField evaluationWkDay = unprocessedCriterionFields.get(CriterionContext.EVALUATION_WK_DAY_ID);
-            CriterionField evaluationTime = unprocessedCriterionFields.get(CriterionContext.EVALUATION_TIME_ID);
-            CriterionField evaluationMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_MONTH_ID);
-            CriterionField evaluationDayOfMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_DAY_OF_MONTH_ID);
-            CriterionField evaluationAniversary = unprocessedCriterionFields.get(CriterionContext.EVALUATION_ANIVERSARY_DAY_ID);
-            CriterionField evaluationAniversaryDate = unprocessedCriterionFields.get(CriterionContext.EVALUATION_ANIVERSARY_DAY_DATE_ID);
-            unprocessedCriterionFields.clear();
-            if (evaluationWkDay != null) unprocessedCriterionFields.put(evaluationWkDay.getID(), evaluationWkDay);
-            if (evaluationTime != null) unprocessedCriterionFields.put(evaluationTime.getID(), evaluationTime);
-            if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
-            if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
-            if (evaluationAniversary != null) unprocessedCriterionFields.put(evaluationAniversary.getID(), evaluationAniversary);
-            if (evaluationAniversaryDate != null) unprocessedCriterionFields.put(evaluationAniversaryDate.getID(), evaluationAniversaryDate);
-          }
-        
-        
-        journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly, currentGroups);
+        if (journeyNodeType.getScheduleNode()) journeyCriterionFields = journeyCriterionFields.stream().filter(criteriaFieldJSON -> IsJourneyScheduleNodeCriteria(criteriaFieldJSON)).collect(Collectors.toList());
         if (includeComparableFields)
           {
             for (String id : currentGroups.keySet())
@@ -4610,6 +4593,14 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  private boolean IsJourneyScheduleNodeCriteria(JSONObject criteriaFieldJSON)
+  {
+    boolean result = false;
+    String id = JSONUtilities.decodeString(criteriaFieldJSON, "id", true);
+    result = id.equals(CriterionContext.EVALUATION_WK_DAY_ID) || id.equals(CriterionContext.EVALUATION_TIME_ID) || id.equals(CriterionContext.EVALUATION_MONTH_ID) || id.equals(CriterionContext.EVALUATION_DAY_OF_MONTH_ID) || id.equals(CriterionContext.EVALUATION_ANIVERSARY_DAY_ID) || id.equals(CriterionContext.EVALUATION_ANIVERSARY_DAY_DATE_ID);
+    return result;
+  }
+
   /*****************************************
   *
   *  getJourneyCriterionFieldIDs
@@ -4641,31 +4632,9 @@ public class GUIManager
     if (journeyNodeType != null)
       {
         CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, selectedJourney);
-        
         Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
-        
-        //
-        //  intersect and put only Evaluation week Day and Time (if schedule node)
-        //
-        
-        if (journeyNodeType.getScheduleNode())
-          {
-            CriterionField evaluationWkDay = unprocessedCriterionFields.get(CriterionContext.EVALUATION_WK_DAY_ID);
-            CriterionField evaluationTime = unprocessedCriterionFields.get(CriterionContext.EVALUATION_TIME_ID);
-            CriterionField evaluationMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_MONTH_ID);
-            CriterionField evaluationDayOfMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_DAY_OF_MONTH_ID);
-            CriterionField evaluationAniversary = unprocessedCriterionFields.get(CriterionContext.EVALUATION_ANIVERSARY_DAY_ID);
-            CriterionField evaluationAniversaryDate = unprocessedCriterionFields.get(CriterionContext.EVALUATION_ANIVERSARY_DAY_DATE_ID);
-            unprocessedCriterionFields.clear();
-            if (evaluationWkDay != null) unprocessedCriterionFields.put(evaluationWkDay.getID(), evaluationWkDay);
-            if (evaluationTime != null) unprocessedCriterionFields.put(evaluationTime.getID(), evaluationTime);
-            if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
-            if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
-            if (evaluationAniversary != null) unprocessedCriterionFields.put(evaluationAniversary.getID(), evaluationAniversary);
-            if (evaluationAniversaryDate != null) unprocessedCriterionFields.put(evaluationAniversaryDate.getID(), evaluationAniversaryDate);
-          }
-        
         journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly);
+        if (journeyNodeType.getScheduleNode()) journeyCriterionFields = journeyCriterionFields.stream().filter(criteriaFieldJSON -> IsJourneyScheduleNodeCriteria(criteriaFieldJSON)).collect(Collectors.toList());
       }
 
     /*****************************************
@@ -4744,32 +4713,9 @@ public class GUIManager
         if (journeyNodeType != null)
           {
             CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, selectedJourney);
-            
             Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
-            
-            //
-            //  intersect and put only Evaluation week Day and Time (if schedule node)
-            //
-            
-            if (journeyNodeType.getScheduleNode())
-              {
-
-                CriterionField evaluationWkDay = unprocessedCriterionFields.get(CriterionContext.EVALUATION_WK_DAY_ID);
-                CriterionField evaluationTime = unprocessedCriterionFields.get(CriterionContext.EVALUATION_TIME_ID);
-                CriterionField evaluationMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_MONTH_ID);
-                CriterionField evaluationDayOfMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_DAY_OF_MONTH_ID);
-                CriterionField evaluationAniversary = unprocessedCriterionFields.get(CriterionContext.EVALUATION_ANIVERSARY_DAY_ID);
-                CriterionField evaluationAniversaryDate = unprocessedCriterionFields.get(CriterionContext.EVALUATION_ANIVERSARY_DAY_DATE_ID);   
-                unprocessedCriterionFields.clear();
-                if (evaluationWkDay != null) unprocessedCriterionFields.put(evaluationWkDay.getID(), evaluationWkDay);
-                if (evaluationTime != null) unprocessedCriterionFields.put(evaluationTime.getID(), evaluationTime);
-                if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
-                if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
-                if (evaluationAniversary != null) unprocessedCriterionFields.put(evaluationAniversary.getID(), evaluationAniversary);
-                if (evaluationAniversaryDate != null) unprocessedCriterionFields.put(evaluationAniversaryDate.getID(), evaluationAniversaryDate);
-              }
-            
             journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, false);
+            if (journeyNodeType.getScheduleNode()) journeyCriterionFields = journeyCriterionFields.stream().filter(criteriaFieldJSON -> IsJourneyScheduleNodeCriteria(criteriaFieldJSON)).collect(Collectors.toList());
           }
 
         /*****************************************
