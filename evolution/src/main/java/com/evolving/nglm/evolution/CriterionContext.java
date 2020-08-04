@@ -125,13 +125,13 @@ public class CriterionContext
 
     try
       {
-        Map<String,Object> evaluationWeekdayJSON = new LinkedHashMap<String,Object>();
-        evaluationWeekdayJSON.put("id", EVALUATION_ANIVERSARY_DAY_ID);
-        evaluationWeekdayJSON.put("display", "Evaluation Aniversary");
-        evaluationWeekdayJSON.put("dataType", "aniversary");
-        evaluationWeekdayJSON.put("retriever", "getEvaluationAniversary");
-        evaluationWeekdayJSON.put("internalOnly", false);
-        evaluationAniversary  = new CriterionField(JSONUtilities.encodeObject(evaluationWeekdayJSON));
+        Map<String,Object> evaluationAniversaryJSON = new LinkedHashMap<String,Object>();
+        evaluationAniversaryJSON.put("id", EVALUATION_ANIVERSARY_DAY_ID);
+        evaluationAniversaryJSON.put("display", "Evaluation Aniversary");
+        evaluationAniversaryJSON.put("dataType", "aniversary");
+        evaluationAniversaryJSON.put("retriever", "getEvaluationAniversary");
+        evaluationAniversaryJSON.put("internalOnly", false);
+        evaluationAniversary  = new CriterionField(JSONUtilities.encodeObject(evaluationAniversaryJSON));
       }
     catch (GUIManagerException e)
       {
@@ -144,13 +144,13 @@ public class CriterionContext
 
     try
       {
-        Map<String,Object> evaluationWeekdayJSON = new LinkedHashMap<String,Object>();
-        evaluationWeekdayJSON.put("id", EVALUATION_ANIVERSARY_DAY_DATE_ID);
-        evaluationWeekdayJSON.put("display", "Evaluation Aniversary Date");
-        evaluationWeekdayJSON.put("dataType", "date");
-        evaluationWeekdayJSON.put("retriever", "getEvaluationAniversary");
-        evaluationWeekdayJSON.put("internalOnly", false);
-        evaluationAniversaryDate  = new CriterionField(JSONUtilities.encodeObject(evaluationWeekdayJSON));
+        Map<String,Object> evaluationAniversaryDateJSON = new LinkedHashMap<String,Object>();
+        evaluationAniversaryDateJSON.put("id", EVALUATION_ANIVERSARY_DAY_DATE_ID);
+        evaluationAniversaryDateJSON.put("display", "Evaluation Aniversary Date");
+        evaluationAniversaryDateJSON.put("dataType", "date");
+        evaluationAniversaryDateJSON.put("retriever", "getEvaluationAniversary");
+        evaluationAniversaryDateJSON.put("internalOnly", false);
+        evaluationAniversaryDate  = new CriterionField(JSONUtilities.encodeObject(evaluationAniversaryDateJSON));
       }
     catch (GUIManagerException e)
       {

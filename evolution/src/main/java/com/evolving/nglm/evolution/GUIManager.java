@@ -4572,7 +4572,7 @@ public class GUIManager
             if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
             if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
             if (evaluationAniversary != null) unprocessedCriterionFields.put(evaluationAniversary.getID(), evaluationAniversary);
-            if (evaluationAniversaryDate != null) unprocessedCriterionFields.put(evaluationAniversaryDate.getID(), evaluationAniversary);
+            if (evaluationAniversaryDate != null) unprocessedCriterionFields.put(evaluationAniversaryDate.getID(), evaluationAniversaryDate);
           }
         
         
@@ -4662,7 +4662,7 @@ public class GUIManager
             if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
             if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
             if (evaluationAniversary != null) unprocessedCriterionFields.put(evaluationAniversary.getID(), evaluationAniversary);
-            if (evaluationAniversaryDate != null) unprocessedCriterionFields.put(evaluationAniversaryDate.getID(), evaluationAniversary);
+            if (evaluationAniversaryDate != null) unprocessedCriterionFields.put(evaluationAniversaryDate.getID(), evaluationAniversaryDate);
           }
         
         journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly);
@@ -4766,7 +4766,7 @@ public class GUIManager
                 if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
                 if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
                 if (evaluationAniversary != null) unprocessedCriterionFields.put(evaluationAniversary.getID(), evaluationAniversary);
-                if (evaluationAniversaryDate != null) unprocessedCriterionFields.put(evaluationAniversaryDate.getID(), evaluationAniversary);
+                if (evaluationAniversaryDate != null) unprocessedCriterionFields.put(evaluationAniversaryDate.getID(), evaluationAniversaryDate);
               }
             
             journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, false);
