@@ -68,6 +68,7 @@ public class CriterionContext
   public static final String EVALUATION_MONTH_ID = "evaluation.month";
   public static final String EVALUATION_DAY_OF_MONTH_ID = "evaluation.dayofmonth";
   public static final String EVALUATION_ANIVERSARY_DAY_ID = "evaluation.aniversary.day";
+  public static final String EVALUATION_ANIVERSARY_DAY_DATE_ID = "evaluation.aniversary.day.date";
 
   /*****************************************
   *
@@ -87,6 +88,7 @@ public class CriterionContext
 
   private static CriterionField evaluationDate;
   private static CriterionField evaluationAniversary;
+  private static CriterionField evaluationAniversaryDate;
   private static CriterionField evaluationWeekday;
   private static CriterionField evaluationTime;
   private static CriterionField evaluationMonth;
@@ -130,6 +132,25 @@ public class CriterionContext
         evaluationWeekdayJSON.put("retriever", "getEvaluationAniversary");
         evaluationWeekdayJSON.put("internalOnly", false);
         evaluationAniversary  = new CriterionField(JSONUtilities.encodeObject(evaluationWeekdayJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
+    //
+    //  evaluationAniversaryDayDate
+    //
+
+    try
+      {
+        Map<String,Object> evaluationWeekdayJSON = new LinkedHashMap<String,Object>();
+        evaluationWeekdayJSON.put("id", EVALUATION_ANIVERSARY_DAY_DATE_ID);
+        evaluationWeekdayJSON.put("display", "Evaluation Aniversary Date");
+        evaluationWeekdayJSON.put("dataType", "date");
+        evaluationWeekdayJSON.put("retriever", "getEvaluationAniversary");
+        evaluationWeekdayJSON.put("internalOnly", false);
+        evaluationAniversaryDate  = new CriterionField(JSONUtilities.encodeObject(evaluationWeekdayJSON));
       }
     catch (GUIManagerException e)
       {
@@ -617,6 +638,7 @@ public class CriterionContext
             this.additionalCriterionFields.put(evaluationWeekday.getID(), evaluationWeekday);
             this.additionalCriterionFields.put(evaluationTime.getID(), evaluationTime);
             this.additionalCriterionFields.put(evaluationAniversary.getID(), evaluationAniversary);
+            this.additionalCriterionFields.put(evaluationAniversaryDate.getID(), evaluationAniversaryDate);
           }
 
         if (expectedDataType != null)
