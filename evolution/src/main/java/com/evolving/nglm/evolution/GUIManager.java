@@ -23108,15 +23108,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               case BooleanCriterion:
               case TimeCriterion:
               case AniversaryCriterion:
-                
-                //
-                // gui hack as AniversaryCriterion is same as DateCriterion in GUI but not in BE
-                //
-                
-                criterionField.setFieldDataType(CriterionDataType.DateCriterion);
-                criterionFields.put(criterionField.getID(), criterionField);
-                break;
-                
               case DateCriterion:
                 criterionFields.put(criterionField.getID(), criterionField);
                 break;
@@ -23259,6 +23250,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
             switch (criterionField.getFieldDataType())
               {
+                case AniversaryCriterion:
+                  criterionFieldJSON.put("dataType", CriterionDataType.DateCriterion.getExternalRepresentation());
+                  break;
+                  
                 case StringSetCriterion:
                   criterionFieldJSON.put("dataType", CriterionDataType.StringCriterion.getExternalRepresentation());
                   break;
