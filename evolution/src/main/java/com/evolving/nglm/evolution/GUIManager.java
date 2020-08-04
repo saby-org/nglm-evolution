@@ -4593,14 +4593,6 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
-  private boolean IsJourneyScheduleNodeCriteria(JSONObject criteriaFieldJSON)
-  {
-    boolean result = false;
-    String id = JSONUtilities.decodeString(criteriaFieldJSON, "id", true);
-    result = id.equals(CriterionContext.EVALUATION_WK_DAY_ID) || id.equals(CriterionContext.EVALUATION_TIME_ID) || id.equals(CriterionContext.EVALUATION_MONTH_ID) || id.equals(CriterionContext.EVALUATION_DAY_OF_MONTH_ID) || id.equals(CriterionContext.EVALUATION_ANIVERSARY_DAY_ID);
-    return result;
-  }
-
   /*****************************************
   *
   *  getJourneyCriterionFieldIDs
@@ -26485,6 +26477,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       }
    
     return response;
+  }
+  
+  private boolean IsJourneyScheduleNodeCriteria(JSONObject criteriaFieldJSON)
+  {
+    boolean result = false;
+    String id = JSONUtilities.decodeString(criteriaFieldJSON, "id", true);
+    result = id.equals(CriterionContext.EVALUATION_WK_DAY_ID) || id.equals(CriterionContext.EVALUATION_TIME_ID) || id.equals(CriterionContext.EVALUATION_MONTH_ID) || id.equals(CriterionContext.EVALUATION_DAY_OF_MONTH_ID) || id.equals(CriterionContext.EVALUATION_ANIVERSARY_DAY_ID);
+    return result;
   }
 
 }
