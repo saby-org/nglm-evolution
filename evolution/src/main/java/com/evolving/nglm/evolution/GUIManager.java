@@ -23278,6 +23278,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             //  add
             //
 
+            log.info("RAJ K criterionFieldJSON {}", criterionFieldJSON);
             result.add(criterionFieldJSON);
           }
       }
