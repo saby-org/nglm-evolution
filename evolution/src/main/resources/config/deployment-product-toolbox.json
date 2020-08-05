@@ -90,7 +90,7 @@
             { 
               "id" : "node.parameter.waitfortime", 
               "display" : "Wait Until Time", 
-              "dataType" : "time", 
+              "dataType" : "date", 
               "width" : "100%", 
               "multiple" : false, 
               "mandatory" : false,
