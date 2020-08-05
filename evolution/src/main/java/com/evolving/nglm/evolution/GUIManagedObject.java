@@ -184,6 +184,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(UploadedFile.serde());
     guiManagedObjectSerdes.add(Target.serde());
     guiManagedObjectSerdes.add(CommunicationChannelBlackoutPeriod.serde());
+    guiManagedObjectSerdes.add(CommunicationChannelTimeWindow.serde());
     guiManagedObjectSerdes.add(LoyaltyProgramPoints.serde());
     guiManagedObjectSerdes.add(ExclusionInclusionTarget.serde());
     guiManagedObjectSerdes.add(DNBOMatrix.serde());

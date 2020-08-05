@@ -44,8 +44,6 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
   private NotificationStatistics stats = null;
   private static String applicationID = "deliverymanager-notificationmanagerpush";
   public String pluginName;
-  private SubscriberMessageTemplateService subscriberMessageTemplateService;
-  private CommunicationChannelBlackoutService blackoutService;
 
   //
   //  logger
@@ -58,9 +56,6 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
   *  accessors
   *
   *****************************************/
-
-  public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
-  public CommunicationChannelBlackoutService getBlackoutService() { return blackoutService; }
 
   /*****************************************
   *
@@ -75,20 +70,6 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     //
 
     super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), PushNotificationManagerRequest.serde, Deployment.getDeliveryManagers().get(pluginName));
-
-    //
-    //  service
-    //
-
-    subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "pushnotificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
-    subscriberMessageTemplateService.start();
-
-    //
-    //  blackoutService
-    //
-        
-    blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "pushnotificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
-    blackoutService.start();
 
     //
     //  manager
@@ -711,7 +692,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
         log.info("PushNotificationManagerRequest run deliveryRequest" + deliveryRequest);
 
         PushNotificationManagerRequest pushRequest = (PushNotificationManagerRequest)deliveryRequest;
-        PushTemplate pushTemplate = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(pushRequest.getTemplateID(), now);
+        PushTemplate pushTemplate = (PushTemplate) getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(pushRequest.getTemplateID(), now);
         
         if (pushTemplate != null) 
           {
@@ -724,7 +705,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
                 CommunicationChannel channel = (CommunicationChannel) Deployment.getCommunicationChannels().get("push");
                 if(channel != null) 
                   {
-                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(blackoutService, now);
+                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now);
                   }
 
                 if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))
@@ -751,7 +732,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
           {
             log.info("PushNotificationManagerRequest run deliveryRequest : ERROR : template with id '"+pushRequest.getTemplateID()+"' not found");
             log.info("subscriberMessageTemplateService contains :");
-            for(GUIManagedObject obj : subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now)){
+            for(GUIManagedObject obj : getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplates(now)){
               log.info("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
             }
             pushRequest.setDeliveryStatus(DeliveryStatus.Failed);

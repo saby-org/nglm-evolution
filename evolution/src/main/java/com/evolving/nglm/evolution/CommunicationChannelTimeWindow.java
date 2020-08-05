@@ -28,7 +28,7 @@ import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-public class CommunicationChannelTimeWindows extends GUIManagedObject
+public class CommunicationChannelTimeWindow extends GUIManagedObject
   {
     
     /*****************************************
@@ -46,8 +46,9 @@ public class CommunicationChannelTimeWindows extends GUIManagedObject
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("channel_time_windows");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+     
       schemaBuilder.field("monday", SchemaBuilder.array(DailyWindow.schema()).optional().schema());
       schemaBuilder.field("tuesday", SchemaBuilder.array(DailyWindow.schema()).optional().schema());
       schemaBuilder.field("wednesday", SchemaBuilder.array(DailyWindow.schema()).optional().schema());
@@ -64,14 +65,14 @@ public class CommunicationChannelTimeWindows extends GUIManagedObject
     //  serde
     //
 
-    private static ConnectSerde<CommunicationChannelTimeWindows> serde = new ConnectSerde<CommunicationChannelTimeWindows>(schema, false, CommunicationChannelTimeWindows.class, CommunicationChannelTimeWindows::pack, CommunicationChannelTimeWindows::unpack);
+    private static ConnectSerde<CommunicationChannelTimeWindow> serde = new ConnectSerde<CommunicationChannelTimeWindow>(schema, false, CommunicationChannelTimeWindow.class, CommunicationChannelTimeWindow::pack, CommunicationChannelTimeWindow::unpack);
 
     //
     //  accessor
     //
 
     public static Schema schema() { return schema; }
-    public static ConnectSerde<CommunicationChannelTimeWindows> serde() { return serde; }
+    public static ConnectSerde<CommunicationChannelTimeWindow> serde() { return serde; }
 
     /*****************************************
     *
@@ -109,7 +110,7 @@ public class CommunicationChannelTimeWindows extends GUIManagedObject
     *
     *****************************************/
 
-    public CommunicationChannelTimeWindows(SchemaAndValue schemaAndValue, List<DailyWindow> monday, List<DailyWindow> tuesday, List<DailyWindow> wednesday, List<DailyWindow> thursday, List<DailyWindow> friday, List<DailyWindow> saturday, List<DailyWindow> sunday, String communicationChannelID)
+    public CommunicationChannelTimeWindow(SchemaAndValue schemaAndValue, List<DailyWindow> monday, List<DailyWindow> tuesday, List<DailyWindow> wednesday, List<DailyWindow> thursday, List<DailyWindow> friday, List<DailyWindow> saturday, List<DailyWindow> sunday, String communicationChannelID)
     {
       super(schemaAndValue);
       this.monday = monday;
@@ -130,7 +131,7 @@ public class CommunicationChannelTimeWindows extends GUIManagedObject
 
     public static Object pack(Object value)
     {
-      CommunicationChannelTimeWindows timeWindow = (CommunicationChannelTimeWindows) value;
+      CommunicationChannelTimeWindow timeWindow = (CommunicationChannelTimeWindow) value;
       Struct struct = new Struct(schema);
       
       packCommon(struct, timeWindow);
@@ -168,7 +169,7 @@ public class CommunicationChannelTimeWindows extends GUIManagedObject
     *
     *****************************************/
 
-    public static CommunicationChannelTimeWindows unpack(SchemaAndValue schemaAndValue)
+    public static CommunicationChannelTimeWindow unpack(SchemaAndValue schemaAndValue)
     {
       //
       //  data
@@ -210,7 +211,7 @@ public class CommunicationChannelTimeWindows extends GUIManagedObject
       //  return
       //
 
-      return new CommunicationChannelTimeWindows(schemaAndValue, dailyWindowsMonday, dailyWindowsTuesday, dailyWindowsWednesday, dailyWindowsThursday, dailyWindowsFriday, dailyWindowsSaturday, dailyWindowsSunday, communicationChannelID);
+      return new CommunicationChannelTimeWindow(schemaAndValue, dailyWindowsMonday, dailyWindowsTuesday, dailyWindowsWednesday, dailyWindowsThursday, dailyWindowsFriday, dailyWindowsSaturday, dailyWindowsSunday, communicationChannelID);
     }
     
     /*****************************************
@@ -251,7 +252,7 @@ public class CommunicationChannelTimeWindows extends GUIManagedObject
     *
     *****************************************/
 
-    public CommunicationChannelTimeWindows(JSONObject jsonRoot, long epoch, GUIManagedObject existingBlackoutPeriodUnchecked) throws GUIManagerException
+    public CommunicationChannelTimeWindow(JSONObject jsonRoot, long epoch, GUIManagedObject existingTimeWindowUnchecked) throws GUIManagerException
     {
       
       /*****************************************
@@ -260,7 +261,7 @@ public class CommunicationChannelTimeWindows extends GUIManagedObject
       *
       *****************************************/
 
-      super(jsonRoot, (existingBlackoutPeriodUnchecked != null) ? existingBlackoutPeriodUnchecked.getEpoch() : epoch);
+      super(jsonRoot, (existingTimeWindowUnchecked != null) ? existingTimeWindowUnchecked.getEpoch() : epoch);
       
       
       /*****************************************
@@ -645,11 +646,11 @@ public class CommunicationChannelTimeWindows extends GUIManagedObject
       *
       *****************************************/
 
-      String communicationChannelTimeWindowPeriodID = JSONUtilities.decodeString(jsonRoot, "id", false);
-      if (communicationChannelTimeWindowPeriodID == null)
+      String communicationChannelTimeWindowID = JSONUtilities.decodeString(jsonRoot, "id", false);
+      if (communicationChannelTimeWindowID == null)
         {
-          communicationChannelTimeWindowPeriodID = communicationChannelTimeWindowService.generateCommunicationChannelTimeWindowID();
-          jsonRoot.put("id", communicationChannelTimeWindowPeriodID);
+          communicationChannelTimeWindowID = communicationChannelTimeWindowService.generateCommunicationChannelTimeWindowID((String)jsonRoot.get("communicationChannelID"));
+          jsonRoot.put("id", communicationChannelTimeWindowID);
         }
 
       /*****************************************
@@ -658,7 +659,7 @@ public class CommunicationChannelTimeWindows extends GUIManagedObject
       *
       *****************************************/
 
-      GUIManagedObject existingCommunicationChannelTimeWindows = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(communicationChannelTimeWindowPeriodID);
+      GUIManagedObject existingCommunicationChannelTimeWindows = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(communicationChannelTimeWindowID);
 
       /*****************************************
       *
@@ -691,7 +692,7 @@ public class CommunicationChannelTimeWindows extends GUIManagedObject
           *
           ****************************************/
 
-          CommunicationChannelTimeWindows communicationChannelTimeWindowPeriod = new CommunicationChannelTimeWindows(jsonRoot, epoch, existingCommunicationChannelTimeWindows);
+          CommunicationChannelTimeWindow communicationChannelTimeWindowPeriod = new CommunicationChannelTimeWindow(jsonRoot, epoch, existingCommunicationChannelTimeWindows);
 
           /*****************************************
           *

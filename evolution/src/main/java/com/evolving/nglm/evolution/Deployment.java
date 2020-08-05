@@ -197,7 +197,7 @@ public class Deployment
   private static Map<String,ToolboxSection> campaignToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ToolboxSection> workflowToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
-  //private static Map<String,CommunicationChannelTimeWindows> notificationTimeWindowsMap = new LinkedHashMap<String,CommunicationChannelTimeWindows>();
+  private static CommunicationChannelTimeWindow defaultNotificationTimeWindowsMap;
   private static Integer authResponseCacheLifetimeInMinutes = null;
   private static Integer reportManagerMaxMessageLength = null;
   private static int stockRefreshPeriod;
@@ -460,7 +460,7 @@ public class Deployment
   public static String getAPIresponseDateFormat() { return APIresponseDateFormat; }
   public static String getUploadedFileTopic() { return uploadedFileTopic; }
   public static String getTargetTopic() { return targetTopic; }
-  // public static Map<String,CommunicationChannelTimeWindows> getNotificationDailyWindows() { return notificationTimeWindowsMap; }
+  public static CommunicationChannelTimeWindow getDefaultNotificationDailyWindows() { return defaultNotificationTimeWindowsMap; }
   public static String getCommunicationChannelTopic() { return communicationChannelTopic; }
   public static String getCommunicationChannelBlackoutTopic() { return communicationChannelBlackoutTopic; }
   public static String getCommunicationChannelTimeWindowTopic() { return communicationChannelTimeWindowTopic; }
@@ -944,19 +944,27 @@ public class Deployment
           throw new ServerRuntimeException("deployment", e);
         }
       
-//      //
-//      //  notificationDailyWindows
-//      //
-//
-//      try
-//        {
-//          CommunicationChannelTimeWindows notificationDailyWindows = new CommunicationChannelTimeWindows(JSONUtilities.decodeJSONObject(jsonRoot, "notificationDailyWindows", true));
-//          notificationTimeWindowsMap.put("0", notificationDailyWindows);
-//        }
-//      catch (GUIManagerException | JSONUtilitiesException e)
-//        {
-//          throw new ServerRuntimeException("deployment", e);
-//        }
+      //
+      //  notificationDailyWindows
+      //
+
+      try
+        {
+          JSONObject defaultTimeWindowJSON = (JSONObject) jsonRoot.get("notificationDailyWindows");
+          if(defaultTimeWindowJSON != null)
+            {
+              defaultTimeWindowJSON.put("id", "default");
+              defaultTimeWindowJSON.put("name", "default");
+              defaultTimeWindowJSON.put("display", "default");
+              defaultTimeWindowJSON.put("active", true);
+              defaultTimeWindowJSON.put("communicationChannelID", "default");
+            }
+          defaultNotificationTimeWindowsMap = new CommunicationChannelTimeWindow(defaultTimeWindowJSON, System.currentTimeMillis() * 1000, null);          
+        }
+      catch (GUIManagerException | JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
 
       //
       //  emptyTopic

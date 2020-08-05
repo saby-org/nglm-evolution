@@ -3,7 +3,11 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>1.4.3_10-EVPRO-431-SNAPSHOT</version>
+<<<<<<< HEAD
+  <version>1.4.3_10-410-SNAPSHOT</version>
+=======
+  <version>1.4.4_0-SNAPSHOT</version>
+>>>>>>> origin/release_1.4.4_0
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -25,18 +29,18 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.3_8-SNAPSHOT</version>
+    <version>1.4.4_0-SNAPSHOT</version>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>1.4.3_8-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.4.4_0-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
     <flyway.version>qaveon-dnbo-2.5.0.10.4.6</flyway.version>
-    <flyway.gui.version>1.0.52</flyway.gui.version>
+    <flyway.gui.version>1.0.53</flyway.gui.version>
     
     <!-- evolution-common-build -->
     <common.build.phase.generate-evolution-scripts>none</common.build.phase.generate-evolution-scripts>
@@ -178,7 +182,6 @@
 
     <topic.communicationchannel>communicationchannel</topic.communicationchannel>
     <topic.blackoutperiod>blackoutperiod</topic.blackoutperiod>
-    <topic.timewindowperiod>timewindowperiod</topic.timewindowperiod>
     <topic.loyaltyprogram>loyaltyprogram</topic.loyaltyprogram>
     <topic.exclusioninclusiontarget>exclusioninclusiontarget</topic.exclusioninclusiontarget>
     <topic.segmentcontactpolicy>segmentcontactpolicy</topic.segmentcontactpolicy>

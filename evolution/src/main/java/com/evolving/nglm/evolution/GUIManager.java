@@ -1978,6 +1978,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCommunicationChannelList", new APISimpleHandler(API.getCommunicationChannelList));
         restServer.createContext("/nglm-guimanager/getCommunicationChannelSummaryList", new APISimpleHandler(API.getCommunicationChannelSummaryList));
         restServer.createContext("/nglm-guimanager/getCommunicationChannel", new APISimpleHandler(API.getCommunicationChannel));
+        restServer.createContext("/nglm-guimanager/putCommunicationChannel", new APISimpleHandler(API.putCommunicationChannel));
         restServer.createContext("/nglm-guimanager/getBlackoutPeriodsList", new APISimpleHandler(API.getBlackoutPeriodsList));
         restServer.createContext("/nglm-guimanager/getBlackoutPeriodsSummaryList", new APISimpleHandler(API.getBlackoutPeriodsSummaryList));
         restServer.createContext("/nglm-guimanager/getBlackoutPeriods", new APISimpleHandler(API.getBlackoutPeriods));
@@ -3462,7 +3463,7 @@ public class GUIManager
                   break;
                   
                 case putCommunicationChannel:
-//                  jsonResponse = processPutCommunicationChannel(userID, jsonRoot);
+                  jsonResponse = processPutCommunicationChannel(userID, jsonRoot);
                   break;
 
 
@@ -3489,23 +3490,23 @@ public class GUIManager
                   
                   
                 case getTimeWindowsList:
-                  jsonResponse = CommunicationChannelTimeWindows.processGetChannelTimeWindowList(userID, jsonRoot, true, includeArchived, communicationChannelTimeWindowService);
+                  jsonResponse = CommunicationChannelTimeWindow.processGetChannelTimeWindowList(userID, jsonRoot, true, includeArchived, communicationChannelTimeWindowService);
                   break;
 
                 case getTimeWindowsSummaryList:
-                  jsonResponse = CommunicationChannelTimeWindows.processGetChannelTimeWindowList(userID, jsonRoot, false, includeArchived, communicationChannelTimeWindowService);
+                  jsonResponse = CommunicationChannelTimeWindow.processGetChannelTimeWindowList(userID, jsonRoot, false, includeArchived, communicationChannelTimeWindowService);
                   break;
 
                 case getTimeWindows:
-                  jsonResponse = CommunicationChannelTimeWindows.processGetTimeWindows(userID, jsonRoot, includeArchived, communicationChannelTimeWindowService);
+                  jsonResponse = CommunicationChannelTimeWindow.processGetTimeWindows(userID, jsonRoot, includeArchived, communicationChannelTimeWindowService);
                   break;
 
                 case putTimeWindows:
-                  jsonResponse = CommunicationChannelTimeWindows.processPutTimeWindows(userID, jsonRoot, communicationChannelTimeWindowService, epochServer);
+                  jsonResponse = CommunicationChannelTimeWindow.processPutTimeWindows(userID, jsonRoot, communicationChannelTimeWindowService, epochServer);
                   break;
 
                 case removeTimeWindows:
-                  jsonResponse = CommunicationChannelTimeWindows.processRemoveTimeWindows(userID, jsonRoot, communicationChannelTimeWindowService);
+                  jsonResponse = CommunicationChannelTimeWindow.processRemoveTimeWindows(userID, jsonRoot, communicationChannelTimeWindowService);
                   break;
 
 
@@ -18187,8 +18188,11 @@ public class GUIManager
     response.put("responseCode", "ok");
     response.put("communicationChannels", JSONUtilities.encodeArray(communicationChannelList));
     if(fullDetails) {
-      CommunicationChannelTimeWindows notifWindows = Deployment.getNotificationDailyWindows().get("0");
-      response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
+      CommunicationChannelTimeWindow notifWindows = Deployment.getDefaultNotificationDailyWindows();
+      if(notifWindows != null)
+        {
+          response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
+        }
     }
     return JSONUtilities.encodeObject(response);
   }
@@ -18225,6 +18229,16 @@ public class GUIManager
 
     CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(communicationChannelID);
     JSONObject communicationChannelJSON = communicationChannel.generateResponseJSON(true, SystemTime.getCurrentTime());
+    
+    CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannelID, SystemTime.getCurrentTime());
+    
+    if(timeWindow != null) 
+      {
+        JSONObject timeWindowJsonRepresentation = timeWindow.getJSONRepresentation(); 
+        timeWindowJsonRepresentation.remove("communicationChannelID");
+        communicationChannelJSON.put("notificationDailyWindows", timeWindowJsonRepresentation); 
+      }
+    
 
     /*****************************************
     *
@@ -18235,6 +18249,120 @@ public class GUIManager
     response.put("responseCode", (communicationChannel != null) ? "ok" : "communicationChannelNotFound");
     if (communicationChannel != null) response.put("communicationChannel", communicationChannelJSON);
     return JSONUtilities.encodeObject(response);
+  }
+  
+    /*****************************************
+  *
+  *  processPutCommunicationChannel ==> Deprecated, only for TimeWindow hack
+     * @throws GUIManagerException 
+  *
+  *****************************************/
+
+  private JSONObject processPutCommunicationChannel(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  communicationChannelID
+    *
+    *****************************************/
+
+    String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (communicationChannelID == null)
+      {
+        throw new GUIManagerException("No communication channel ID", "");
+      }
+
+    /*****************************************
+    *
+    *  process CommunicationChannel
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /*****************************************
+        *
+        *  extract TimeWindow
+        *
+        *****************************************/
+        
+        CommunicationChannelTimeWindow existingCommunicationChannelTimeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannelID, now);
+        
+        if(jsonRoot.get("notificationDailyWindows") != null) {
+          // let GUIMangedObject This (this is a F$$$ hack)
+          JSONObject json = (JSONObject) jsonRoot.get("notificationDailyWindows");
+          json.put("communicationChannelID", communicationChannelID);
+          json.put("id", "timewindow-" + communicationChannelID);
+          json.put("name", "timewindow-" + communicationChannelID);
+          json.put("display", "timewindow-" + communicationChannelID);
+          json.put("readOnly", false);
+          json.put("internalOnly", false);
+          json.put("active", true);
+          json.put("deleted", false);
+          json.put("userID", jsonRoot.get("userID"));
+          json.put("userName", jsonRoot.get("userName"));
+          json.put("groupID", jsonRoot.get("groupID"));          
+          
+          CommunicationChannelTimeWindow communicationChannelTimeWindow = new CommunicationChannelTimeWindow(json, epoch, existingCommunicationChannelTimeWindow);
+          
+          /*****************************************
+          *
+          *  store
+          *
+          *****************************************/
+
+          communicationChannelTimeWindowService.putCommunicationChannelTimeWindow(communicationChannelTimeWindow, (existingCommunicationChannelTimeWindow == null), userID);
+          
+        }else {
+          // delete this time window for the associated channel
+          communicationChannelTimeWindowService.removeCommunicationChannelTimeWindow(communicationChannelID, userID);
+        }
+        
+ 
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", communicationChannelID);
+        response.put("accepted", true);
+        response.put("valid", true);
+        response.put("processing", true);
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("communicationChannelID", communicationChannelID);
+        response.put("responseCode", "communicationChannelNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
   }
 
   /*****************************************
@@ -20852,7 +20980,7 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
-    CommunicationChannelTimeWindows notifWindows = Deployment.getNotificationDailyWindows().get("0");
+    CommunicationChannelTimeWindow notifWindows = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow("default", SystemTime.getCurrentTime());
     response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
     return JSONUtilities.encodeObject(response);
   }

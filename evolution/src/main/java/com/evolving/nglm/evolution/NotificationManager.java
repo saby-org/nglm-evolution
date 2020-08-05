@@ -54,8 +54,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
   private Map<String, NotificationInterface> pluginInstances = new HashMap();
   private NotificationStatistics stats = null;
   private static String applicationID = "deliverymanager-notificationmanager";
-  private SubscriberMessageTemplateService subscriberMessageTemplateService;
-  private CommunicationChannelBlackoutService blackoutService;
   private ContactPolicyProcessor contactPolicyProcessor;
 
   //
@@ -70,16 +68,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
    *
    *****************************************/
 
-  public SubscriberMessageTemplateService getSubscriberMessageTemplateService()
-  {
-    return subscriberMessageTemplateService;
-  }
-
-  public CommunicationChannelBlackoutService getBlackoutService()
-  {
-    return blackoutService;
-  }
-
   /*****************************************
    *
    * constructor
@@ -93,20 +81,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       //
 
       super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), NotificationManagerRequest.serde, Deployment.getDeliveryManagers().get("notificationmanager"));
-
-      //
-      // service
-      //
-
-      subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "notificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
-      subscriberMessageTemplateService.start();
-
-      //
-      // blackoutService
-      //
-
-      blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "notificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
-      blackoutService.start();
 
       //
       // contact policy processor
@@ -963,7 +937,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         log.info("NotificationManagerRequest run deliveryRequest" + deliveryRequest);
 
         NotificationManagerRequest dialogRequest = (NotificationManagerRequest) deliveryRequest;
-        DialogTemplate dialogTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
+        DialogTemplate dialogTemplate = (DialogTemplate) getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
         
         if (dialogTemplate != null) 
           {
@@ -975,7 +949,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
                 CommunicationChannel channel = (CommunicationChannel) Deployment.getCommunicationChannels().get(dialogRequest.getChannelID());
                 if(channel != null) 
                   {
-                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(blackoutService, now);
+                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now);
                   }
 
                 if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))
@@ -1026,7 +1000,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
           {
             log.info("NotificationManagerRequest run deliveryRequest : ERROR : template with id '"+dialogRequest.getTemplateID()+"' not found");
             log.info("subscriberMessageTemplateService contains :");
-            for(GUIManagedObject obj : subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now)){
+            for(GUIManagedObject obj : getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplates(now)){
               log.info("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
             }
             dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
