@@ -1669,7 +1669,9 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       }
       TimeUnit validityPeriodType = (CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.period.type") != null) ? TimeUnit.fromExternalRepresentation((String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.period.type")) : null;
       Integer validityPeriodQuantity = (Integer) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.period.quantity");
-      
+
+      log.info("RAJ K BEFORE node.parameter.validity.period.type {}, ", CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.period.type"));
+      log.info("RAJ K BEFORE node.parameter.validity.period.quantity {}, ", CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.period.quantity"));
       /*****************************************
       *
       *  request arguments
@@ -1699,6 +1701,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       CommodityDeliveryRequest request = new CommodityDeliveryRequest(evolutionEventContext, externalSubscriberID, deliveryRequestSource, null, providerID, commodityID, operation, amount, validityPeriodType, validityPeriodQuantity, null);
       request.setModuleID(moduleID);
       request.setFeatureID(deliveryRequestSource);
+      log.info("RAJ K action {}, amount {}, validityPeriodType {}, validityPeriodQuantity {}", request.getActionType(), request.getAmount(), validityPeriodType, validityPeriodQuantity);
 
       /*****************************************
       *
