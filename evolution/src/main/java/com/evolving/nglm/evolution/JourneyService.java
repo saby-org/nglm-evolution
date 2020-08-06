@@ -235,7 +235,7 @@ public class JourneyService extends GUIService
   
   public boolean isAChildJourney(GUIManagedObject journey)
   {
-    JSONObject journeyJSON = generateResponseJSON(journey, true, SystemTime.getCurrentTime());
+    JSONObject journeyJSON = getJSONRepresentation(journey);
     boolean result = false;
     String recurrenceId = JSONUtilities.decodeString(journeyJSON, "recurrenceId", false);
     result = !JSONUtilities.decodeBoolean(journeyJSON, "recurrence", Boolean.FALSE) && !(recurrenceId == null || recurrenceId.isEmpty());

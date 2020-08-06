@@ -5121,7 +5121,7 @@ public class GUIManager
         if (parentId != null && !parentId.isEmpty())
           {
             journeyObjects = journeyObjects.stream().filter(journey -> journeyService.isAChildJourney(journey)).collect(Collectors.toList());
-            journeyObjects = journeyObjects.stream().filter(journey -> parentId.equals(journey)).collect(Collectors.toList());
+            journeyObjects = journeyObjects.stream().filter(journey -> parentId.equals(JSONUtilities.decodeString(journeyService.getJSONRepresentation(journey), "recurrenceId", true))).collect(Collectors.toList());
           }
         else
           {
