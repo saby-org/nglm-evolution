@@ -233,6 +233,14 @@ public class JourneyService extends GUIService
     return result;
   }
   
+  public boolean isAChildJourney(JSONObject journeyJSON)
+  {
+    boolean result = false;
+    String recurrenceId = JSONUtilities.decodeString(journeyJSON, "recurrenceId", false);
+    result = !JSONUtilities.decodeBoolean(journeyJSON, "recurrence", Boolean.FALSE) && !(recurrenceId == null || recurrenceId.isEmpty());
+    return result;
+  }
+  
   /*****************************************
   *
   *  putJourney

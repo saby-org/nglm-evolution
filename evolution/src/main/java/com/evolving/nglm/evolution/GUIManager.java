@@ -5082,14 +5082,15 @@ public class GUIManager
   private JSONObject processGetJourneyList(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType, boolean fullDetails, boolean externalOnly, boolean includeArchived)
   {
     /*****************************************
-    *
-    *  retrieve and convert journeys
-    *
-    *****************************************/
+     *
+     * retrieve and convert journeys
+     *
+     *****************************************/
 
+    String parentId  = JSONUtilities.decodeString(jsonRoot, "parentId", false);
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> journeys = new ArrayList<JSONObject>();
-    Collection <GUIManagedObject> journeyObjects = new ArrayList<GUIManagedObject>();
+    Collection<GUIManagedObject> journeyObjects = new ArrayList<GUIManagedObject>();
     if (jsonRoot.containsKey("ids"))
       {
         JSONArray journeyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
@@ -5103,79 +5104,103 @@ public class GUIManager
               }
 
           }
-      }
+      } 
     else
       {
         journeyObjects = journeyService.getStoredJourneys(includeArchived);
       }
     for (GUIManagedObject journey : journeyObjects)
       {
-        if (journey.getGUIManagedObjectType().equals(objectType) && (! externalOnly || ! journey.getInternalOnly()))
+        if (journey.getGUIManagedObjectType().equals(objectType) && (!externalOnly || !journey.getInternalOnly()))
           {
             JSONObject journeyInfo = journeyService.generateResponseJSON(journey, fullDetails, now);
             long subscriberCount = 0;
             String journeyID = journey.getGUIManagedObjectID();
 
             //
-            //  retrieve from Elasticsearch if by pass is activated, JourneyTraffic Engine otherwise
-            // 
-            if(bypassJourneyTrafficEngine) {
-              try {
-                ElasticsearchClientAPI client = new ElasticsearchClientAPI("",0); // @rl deprecated use, change later
-                client.setConnection(this.elasticsearch);
-                Long count = client.getJourneySubscriberCount(journeyID);
-                subscriberCount = (count != null)? count : 0;
+            // retrieve from Elasticsearch if by pass is activated, JourneyTraffic Engine
+            // otherwise
+            //
+            if (bypassJourneyTrafficEngine)
+              {
+                try
+                  {
+                    ElasticsearchClientAPI client = new ElasticsearchClientAPI("", 0); // @rl deprecated use, change
+                                                                                       // later
+                    client.setConnection(this.elasticsearch);
+                    Long count = client.getJourneySubscriberCount(journeyID);
+                    subscriberCount = (count != null) ? count : 0;
+                  } 
+                catch (ElasticsearchClientException e)
+                  {
+                    // Log
+                    StringWriter stackTraceWriter = new StringWriter();
+                    e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+              } 
+            else
+              {
+                JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
+                if (journeyTrafficHistory != null && journeyTrafficHistory.getCurrentData() != null && journeyTrafficHistory.getCurrentData().getGlobal() != null)
+                  {
+                    subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberInflow();
+                  }
               }
-              catch (ElasticsearchClientException e) {
-                // Log
-                StringWriter stackTraceWriter = new StringWriter();
-                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-              }
-            }
-            else {
-              JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
-              if (journeyTrafficHistory != null && journeyTrafficHistory.getCurrentData() != null && journeyTrafficHistory.getCurrentData().getGlobal() != null)
-                {
-                  subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberInflow();
-                }
-            }
-            
+
             journeyInfo.put("subscriberCount", subscriberCount);
             journeys.add(journeyInfo);
           }
       }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
 
-    HashMap<String,Object> response = new HashMap<String,Object>();
+    HashMap<String, Object> response = new HashMap<String, Object>();
     response.put("responseCode", "ok");
     switch (objectType)
-      {
-        case Journey:
-          response.put("journeys", JSONUtilities.encodeArray(journeys));
-          break;
+    {
+      case Journey:
+        response.put("journeys", JSONUtilities.encodeArray(journeys));
+        break;
 
-        case Campaign:
-          response.put("campaigns", JSONUtilities.encodeArray(journeys));
-          break;
+      case Campaign:
+        if (parentId != null && !parentId.isEmpty())
+          {
+            journeys = journeys.stream().filter(journey -> journeyService.isAChildJourney(journey)).collect(Collectors.toList());
+            journeys = journeys.stream().filter(journey -> parentId.equals(JSONUtilities.decodeString(journey, "recurrenceId", true))).collect(Collectors.toList());
+          }
+        else
+          {
+            journeys = journeys.stream().filter(journey -> !journeyService.isAChildJourney(journey)).collect(Collectors.toList());
+          }
+        response.put("campaigns", JSONUtilities.encodeArray(journeys));
+        break;
 
-        case Workflow:
-          response.put("workflows", JSONUtilities.encodeArray(journeys));
-          break;
+      case Workflow:
+        response.put("workflows", JSONUtilities.encodeArray(journeys));
+        break;
 
-        case BulkCampaign:
-          response.put("bulkCampaigns", JSONUtilities.encodeArray(journeys));
-          break;
+      case BulkCampaign:
+        if (parentId != null && !parentId.isEmpty())
+          {
+            journeys = journeys.stream().filter(journey -> journeyService.isAChildJourney(journey)).collect(Collectors.toList());
+            journeys = journeys.stream().filter(journey -> parentId.equals(JSONUtilities.decodeString(journey, "recurrenceId", true))).collect(Collectors.toList());
+          }
+        else
+          {
+            journeys = journeys.stream().filter(journey -> !journeyService.isAChildJourney(journey)).collect(Collectors.toList());
+          }
+        response.put("bulkCampaigns", JSONUtilities.encodeArray(journeys));
+        break;
 
-        default:
-          response.put("journeys", JSONUtilities.encodeArray(journeys));
-          break;
-      }
+      default:
+        response.put("journeys", JSONUtilities.encodeArray(journeys));
+        break;
+    }
     return JSONUtilities.encodeObject(response);
   }
 
