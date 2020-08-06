@@ -2121,7 +2121,7 @@ public class GUIManager
     
     JobScheduler guiManagerJobScheduler = new JobScheduler("GUIManager");
     long uniqueID = 0;
-    String periodicGenerationCronEntry = "1,15,30,45 * * * *"; //5 1,6,11,16,21 * * *
+    String periodicGenerationCronEntry = "1,10,20,25,35,40,45,50 * * * *"; //1,15,30,45 * * * * //5 1,6,11,16,21 * * *
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob(uniqueID++, "Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getBaseTimeZone(), false);
     if(recurrnetCampaignCreationJob.isProperlyConfigured()) guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
     guiManagerJobScheduler.runScheduler();
@@ -5109,6 +5109,27 @@ public class GUIManager
       {
         journeyObjects = journeyService.getStoredJourneys(includeArchived);
       }
+    
+    //
+    //  filter to present recurrent campaigns and normal campaigns
+    //
+    
+    switch (objectType)
+    {
+      case Campaign:
+      case BulkCampaign:
+        if (parentId != null && !parentId.isEmpty())
+          {
+            journeyObjects = journeyObjects.stream().filter(journey -> journeyService.isAChildJourney(journey)).collect(Collectors.toList());
+            journeyObjects = journeyObjects.stream().filter(journey -> parentId.equals(journey)).collect(Collectors.toList());
+          }
+        else
+          {
+            journeyObjects = journeyObjects.stream().filter(journey -> !journeyService.isAChildJourney(journey)).collect(Collectors.toList());
+          }
+        break;
+    }
+    
     for (GUIManagedObject journey : journeyObjects)
       {
         if (journey.getGUIManagedObjectType().equals(objectType) && (!externalOnly || !journey.getInternalOnly()))
@@ -5121,19 +5142,18 @@ public class GUIManager
             // retrieve from Elasticsearch if by pass is activated, JourneyTraffic Engine
             // otherwise
             //
+            
             if (bypassJourneyTrafficEngine)
               {
                 try
                   {
                     ElasticsearchClientAPI client = new ElasticsearchClientAPI("", 0); // @rl deprecated use, change
-                                                                                       // later
                     client.setConnection(this.elasticsearch);
                     Long count = client.getJourneySubscriberCount(journeyID);
                     subscriberCount = (count != null) ? count : 0;
                   } 
                 catch (ElasticsearchClientException e)
                   {
-                    // Log
                     StringWriter stackTraceWriter = new StringWriter();
                     e.printStackTrace(new PrintWriter(stackTraceWriter, true));
                     log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
@@ -5147,7 +5167,6 @@ public class GUIManager
                     subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberInflow();
                   }
               }
-
             journeyInfo.put("subscriberCount", subscriberCount);
             journeys.add(journeyInfo);
           }
@@ -5168,15 +5187,6 @@ public class GUIManager
         break;
 
       case Campaign:
-        if (parentId != null && !parentId.isEmpty())
-          {
-            journeys = journeys.stream().filter(journey -> journeyService.isAChildJourney(journey)).collect(Collectors.toList());
-            journeys = journeys.stream().filter(journey -> parentId.equals(JSONUtilities.decodeString(journey, "recurrenceId", true))).collect(Collectors.toList());
-          }
-        else
-          {
-            journeys = journeys.stream().filter(journey -> !journeyService.isAChildJourney(journey)).collect(Collectors.toList());
-          }
         response.put("campaigns", JSONUtilities.encodeArray(journeys));
         break;
 
@@ -5185,15 +5195,6 @@ public class GUIManager
         break;
 
       case BulkCampaign:
-        if (parentId != null && !parentId.isEmpty())
-          {
-            journeys = journeys.stream().filter(journey -> journeyService.isAChildJourney(journey)).collect(Collectors.toList());
-            journeys = journeys.stream().filter(journey -> parentId.equals(JSONUtilities.decodeString(journey, "recurrenceId", true))).collect(Collectors.toList());
-          }
-        else
-          {
-            journeys = journeys.stream().filter(journey -> !journeyService.isAChildJourney(journey)).collect(Collectors.toList());
-          }
         response.put("bulkCampaigns", JSONUtilities.encodeArray(journeys));
         break;
 

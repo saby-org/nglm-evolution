@@ -233,8 +233,9 @@ public class JourneyService extends GUIService
     return result;
   }
   
-  public boolean isAChildJourney(JSONObject journeyJSON)
+  public boolean isAChildJourney(GUIManagedObject journey)
   {
+    JSONObject journeyJSON = generateResponseJSON(journey, true, SystemTime.getCurrentTime());
     boolean result = false;
     String recurrenceId = JSONUtilities.decodeString(journeyJSON, "recurrenceId", false);
     result = !JSONUtilities.decodeBoolean(journeyJSON, "recurrence", Boolean.FALSE) && !(recurrenceId == null || recurrenceId.isEmpty());
