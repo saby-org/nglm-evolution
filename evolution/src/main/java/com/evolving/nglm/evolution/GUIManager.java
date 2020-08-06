@@ -18174,7 +18174,17 @@ public class GUIManager
       }
     for (CommunicationChannel communicationChannel : communicationChannelObjects)
       {
-        JSONObject channel = communicationChannel.generateResponseJSON(fullDetails, now);
+        JSONObject channel = communicationChannel.generateResponseJSON(fullDetails, now);        
+        
+        CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannel.getID(), SystemTime.getCurrentTime());
+        
+        if(timeWindow != null) 
+          {
+            JSONObject timeWindowJsonRepresentation = timeWindow.getJSONRepresentation(); 
+            timeWindowJsonRepresentation.remove("communicationChannelID");
+            channel.put("notificationDailyWindows", timeWindowJsonRepresentation); 
+          }
+        
         communicationChannelList.add(channel);
       }
 
@@ -18231,6 +18241,11 @@ public class GUIManager
     JSONObject communicationChannelJSON = communicationChannel.generateResponseJSON(true, SystemTime.getCurrentTime());
     
     CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannelID, SystemTime.getCurrentTime());
+    if(timeWindow == null)
+      {
+        // use the default timeWindow
+        timeWindow = Deployment.getDefaultNotificationDailyWindows();        
+      }
     
     if(timeWindow != null) 
       {
@@ -18238,7 +18253,6 @@ public class GUIManager
         timeWindowJsonRepresentation.remove("communicationChannelID");
         communicationChannelJSON.put("notificationDailyWindows", timeWindowJsonRepresentation); 
       }
-    
 
     /*****************************************
     *
@@ -20546,7 +20560,17 @@ public class GUIManager
     *****************************************/
 
     CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(communicationChannelID);
+       
     JSONObject communicationChannelJSON = communicationChannel.generateResponseJSON(true, SystemTime.getCurrentTime());
+    
+    CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannel.getID(), SystemTime.getCurrentTime());
+    
+    if(timeWindow != null) 
+      {
+        JSONObject timeWindowJsonRepresentation = timeWindow.getJSONRepresentation(); 
+        timeWindowJsonRepresentation.remove("communicationChannelID");
+        communicationChannelJSON.put("notificationDailyWindows", timeWindowJsonRepresentation); 
+      }
 
     //
     //  remove gui specific fields

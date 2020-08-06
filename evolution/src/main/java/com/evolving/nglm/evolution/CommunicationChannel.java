@@ -207,11 +207,10 @@ public class CommunicationChannel extends GUIManagedObject
     }
 
    
-    public List<DailyWindow> getTodaysDailyWindows(Date now, CommunicationChannelTimeWindowService communicationChannelTimeWindowService)
+    public List<DailyWindow> getTodaysDailyWindows(Date now, CommunicationChannelTimeWindowService communicationChannelTimeWindowService, CommunicationChannelTimeWindow timeWindow)
     {
       List<DailyWindow> result = null;
       int today = RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
-      CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(this.getID(), now);
       if (timeWindow != null)
         {
           switch(today)
@@ -253,6 +252,8 @@ public class CommunicationChannel extends GUIManagedObject
     {
       Date effectiveDeliveryDate = now;
       CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannel.getID(), now);
+      if(timeWindow == null) { timeWindow = Deployment.getDefaultNotificationDailyWindows(); }
+        
       if (communicationChannel != null && timeWindow != null)
         {
           effectiveDeliveryDate = NGLMRuntime.END_OF_TIME;
@@ -265,7 +266,7 @@ public class CommunicationChannel extends GUIManagedObject
 
               Date windowDay = RLMDateUtils.addDays(today, i, Deployment.getBaseTimeZone());
               Date nextDay = RLMDateUtils.addDays(today, i+1, Deployment.getBaseTimeZone());
-              for (DailyWindow dailyWindow : communicationChannel.getTodaysDailyWindows(windowDay, communicationChannelTimeWindowService))
+              for (DailyWindow dailyWindow : communicationChannel.getTodaysDailyWindows(windowDay, communicationChannelTimeWindowService, timeWindow))
                 {
                   Date windowStartDate = dailyWindow.getFromDate(windowDay);
                   Date windowEndDate = dailyWindow.getUntilDate(windowDay);
