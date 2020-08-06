@@ -178,11 +178,11 @@ public class CommunicationChannel extends GUIManagedObject
       }
       
       this.toolboxTimeout = JSONUtilities.decodeInteger(jsonRoot, "toolboxTimeout", 1);
-      TimeUnit toolboxTimeoutUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "toolboxTimeoutUnit", "hour"));
+      TimeUnit toolboxTimeoutUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "toolboxTimeoutUnit", "day"));
       if(toolboxTimeoutUnit.equals(TimeUnit.Unknown))
         {
-          log.warn("CommunicationChannel: Can't interpret toolboxTimeoutUnit " + JSONUtilities.decodeString(jsonRoot, "toolboxTimeoutUnit") + " for channel " + this.getID() + " use default \"hour\"");
-          toolboxTimeoutUnit = TimeUnit.Hour;
+          log.warn("CommunicationChannel: Can't interpret toolboxTimeoutUnit " + JSONUtilities.decodeString(jsonRoot, "toolboxTimeoutUnit") + " for channel " + this.getID() + " use default \"day\"");
+          toolboxTimeoutUnit = TimeUnit.Day;
         }
       this.toolboxTimeoutUnit = toolboxTimeoutUnit.getExternalRepresentation();
       this.isGeneric =  JSONUtilities.decodeBoolean(jsonRoot, "isGeneric", Boolean.FALSE);
