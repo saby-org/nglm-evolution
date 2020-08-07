@@ -17,6 +17,9 @@ import java.util.Map;
 import java.util.Properties;
 
 import com.evolving.nglm.core.*;
+import com.evolving.nglm.evolution.statistics.CounterStat;
+import com.evolving.nglm.evolution.statistics.StatBuilder;
+import com.evolving.nglm.evolution.statistics.StatsBuilders;
 import org.apache.commons.io.FileUtils;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -181,7 +184,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
   private static PaymentMeanService paymentMeanService;
   private static DeliverableService deliverableService;
-  private static BDRStatistics bdrStats;
+  private static StatBuilder<CounterStat> statsCounter;
   private static ZookeeperUniqueKeyServer zookeeperUniqueKeyServer;
 
   private Map<String, KafkaProducer> providerRequestProducers = new HashMap<String/*providerID*/, KafkaProducer>();
@@ -1058,19 +1061,19 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
         String correlator = deliveryRequest.getDeliveryRequestID();
         deliveryRequest.setCorrelator(correlator);
         updateRequest(deliveryRequest);
-        
+
         /*****************************************
         *
         *  get delivery details (providerID, commodityID, customerID, ...)
         *
         *****************************************/
-        
+
         String subscriberID = commodityDeliveryRequest.getSubscriberID();
         String providerID = commodityDeliveryRequest.getProviderID();
         String commodityID = commodityDeliveryRequest.getCommodityID();
         CommodityDeliveryOperation operation = commodityDeliveryRequest.getOperation();
         int amount = commodityDeliveryRequest.getAmount();
-        
+
         //
         // Get amount
         //
@@ -1080,11 +1083,11 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
           submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BAD_FIELD_VALUE, "bad field value for amount (must be greater than 0, but recieved "+amount+")", null);
           continue;
         }
-        
+
         //
         // Get customer
         //
-        
+
         if(subscriberID == null){
           log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : bad field value for subscriberID");
           submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.MISSING_PARAMETERS, "missing mandatoryfield (subscriberID)", null);
@@ -1272,11 +1275,34 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
         commodityDeliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
         commodityDeliveryRequest.setDeliverableExpirationDate(deliverableExpirationDate);
         completeRequest(commodityDeliveryRequest);
+
+        statsCounter.withLabel(StatsBuilders.LABEL.status.name(),commodityDeliveryRequest.getDeliveryStatus().getExternalRepresentation())
+                    .withLabel(StatsBuilders.LABEL.commoditytype.name(),getCommodityType(commodityDeliveryRequest))
+                    .withLabel(StatsBuilders.LABEL.operation.name(),commodityDeliveryRequest.getOperation().name())
+				    .withLabel(StatsBuilders.LABEL.module.name(), DeliveryRequest.Module.fromExternalRepresentation(commodityDeliveryRequest.getModuleID()).name())
+				    .getStats().increment();
+
+        if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : DONE");
+
       }
+  }
 
-    bdrStats.updateBDREventCount(1, deliveryRequest.getDeliveryStatus());
+  private static String getCommodityType(CommodityDeliveryRequest commodityDeliveryRequest){
+    String providerId = null;
+    if(commodityDeliveryRequest.getOperation().equals(CommodityDeliveryOperation.Debit)){
+      PaymentMean paymentMean = paymentMeanService.getActivePaymentMean(commodityDeliveryRequest.getCommodityID(),SystemTime.getCurrentTime());
+      if(paymentMean==null) return null;
+      providerId = paymentMean.getFulfillmentProviderID();
+    }else{
+      Deliverable deliverable = deliverableService.getActiveDeliverable(commodityDeliveryRequest.getCommodityID(),SystemTime.getCurrentTime());
+      if(deliverable==null) return null;
+      providerId = deliverable.getFulfillmentProviderID();
+    }
+    DeliveryManagerDeclaration provider = Deployment.getFulfillmentProviders().get(providerId);
+    if(provider==null) return null;
 
-    if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : DONE");
+    return provider.getProviderType().name();
+
 
   }
 
@@ -1300,11 +1326,6 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
         log.info(Thread.currentThread().getId()+" CommodityDeliveryManager: stopping deliverableService");
         deliverableService.stop();
         deliverableService=null;
-      }
-      if(bdrStats!=null){
-        log.info(Thread.currentThread().getId()+" CommodityDeliveryManager: stopping bdrStats");
-        bdrStats.unregister();
-        bdrStats=null;
       }
       if(zookeeperUniqueKeyServer!=null){
         log.info(Thread.currentThread().getId()+" CommodityDeliveryManager: stopping zookeeperUniqueKeyServer");
@@ -1362,12 +1383,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       deliverableService = new DeliverableService(Deployment.getBrokerServers(), "CommodityMgr-deliverableservice-"+deliveryManagerKey, Deployment.getDeliverableTopic(), false);
       deliverableService.start();
 
-      try{
-        bdrStats = new BDRStatistics(COMMODITY_DELIVERY_ID_VALUE+"-"+deliveryManagerKey);
-      }catch(Exception e){
-        log.error("CommodityDeliveryManager : could not load statistics ", e);
-        throw new RuntimeException("CommodityDeliveryManager : could not load statistics  ", e);
-      }
+      statsCounter = StatsBuilders.getEvolutionCounterStatisticsBuilder("commoditydelivery","commoditydeliverymanager-"+deliveryManagerKey);
 
       //
       //  unique key server

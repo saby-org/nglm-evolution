@@ -7,9 +7,12 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 
+import com.evolving.nglm.evolution.statistics.CounterStat;
+import com.evolving.nglm.evolution.statistics.DurationStat;
+import com.evolving.nglm.evolution.statistics.StatBuilder;
+import com.evolving.nglm.evolution.statistics.StatsBuilders;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -24,7 +27,6 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
-import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
   
@@ -116,7 +118,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
 
   private INPluginInterface inPlugin;
   private ArrayList<Thread> threads = new ArrayList<Thread>();
-  private BDRStatistics bdrStats = null;
+  private StatBuilder<DurationStat> statsDuration = null;
   
   /*****************************************
   *
@@ -162,13 +164,9 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     //
     // statistics
     //
-    try{
-      bdrStats = new BDRStatistics(pluginName);
-    }catch(Exception e){
-      log.error("INFufillmentManager: could not load statistics ", e);
-      throw new RuntimeException("INFufillmentManager: could not load statistics  ", e);
-    }
-    
+
+    statsDuration = StatsBuilders.getEvolutionDurationStatisticsBuilder("infulfillmentdelivery",pluginName+"-"+deliveryManagerKey);
+
     //
     //  threads
     //
@@ -584,7 +582,8 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
         *  call INPlugin
         *
         *****************************************/
-        
+
+        long startTime = DurationStat.startTime();
         INFulfillmentStatus status = null;
         CommodityDeliveryOperation operation = ((INFulfillmentRequest)deliveryRequest).getOperation();
         switch (operation) {
@@ -621,7 +620,11 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
         deliveryRequest.setDeliveryStatus(getINFulfillmentStatus(status));
         deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
         completeRequest(deliveryRequest);
-        bdrStats.updateBDREventCount(1, getINFulfillmentStatus(status));
+
+        statsDuration.withLabel(StatsBuilders.LABEL.status.name(),((INFulfillmentRequest) deliveryRequest).getStatus().name())
+                     .withLabel(StatsBuilders.LABEL.operation.name(),((INFulfillmentRequest) deliveryRequest).getOperation().name())
+                     .withLabel(StatsBuilders.LABEL.module.name(), DeliveryRequest.Module.fromExternalRepresentation(deliveryRequest.getModuleID()).name())
+                     .getStats().add(startTime);
 
       }
   }

@@ -6,23 +6,27 @@ import org.slf4j.LoggerFactory;
 
 import javax.management.*;
 import java.lang.management.ManagementFactory;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 // the mother class of all our different statistics ones
-public abstract class EvolutionStatistics<T extends EvolutionStatistics> {
+public abstract class Stat<T extends Stat> {
 
-  private static final Logger log = LoggerFactory.getLogger(EvolutionStatistics.class);
+  private static final Logger log = LoggerFactory.getLogger(Stat.class);
 
   private String metricName;
   private String processName;
   String getMetricName(){return metricName;}
   String getProcessName(){return processName;}
 
-  // all stats per name
-  private final Map<String,T> evolutionStats = new HashMap<>();
+  // return the entire jmx name to register
+  String getFullJmxName(Map<String,String> labels){
+    StringBuilder sb = new StringBuilder("com.evolving.nglm.evolution:type="+metricName+"_"+getMetricTypeInfo()+",process="+processName);
+    labels.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry->sb.append(","+entry.getKey()+"="+entry.getValue()));
+    return sb.toString();
+  }
 
-  EvolutionStatistics(String metricName,String processName) {
+  // we forced at least those 2 labels always
+  Stat(String metricName, String processName) {
     this.metricName=metricName;
     this.processName=processName;
   }
@@ -31,21 +35,25 @@ public abstract class EvolutionStatistics<T extends EvolutionStatistics> {
   protected abstract String getMetricTypeInfo();
   // we need subclass to provide a new instance
   protected abstract T getNew(String metricName, String processName);
+
+  // all stats per object
+  private final Map<String,T> evolutionStats = new HashMap<>();
   // lazy instantiation if not yet known of the one instance per name
-  T getPerNameInstance(String metricName, String name){
-    T toRet = evolutionStats.get(name);
+  T getInstance(Stat<T> stat, Map<String,String> labels){
+    // instance stored by jmx name
+    String fullName = stat.getFullJmxName(labels);
+    // stored is full jmx name
+    T toRet = evolutionStats.get(fullName);
     if(toRet == null){
       synchronized (evolutionStats){
-        toRet = evolutionStats.get(name);
+        toRet = evolutionStats.get(fullName);
         if(toRet == null){
-          toRet = getNew(metricName,processName);
-          evolutionStats.put(name,toRet);
+          toRet = getNew(stat.getMetricName(),stat.getProcessName());
+          evolutionStats.put(fullName,toRet);
           try {
-            String toRegister = "com.evolving.nglm.evolution:type="+metricName+"_"+toRet.getMetricTypeInfo()+",name="+name+",process="+this.processName;
-            log.info("registering mbean for stats : "+toRegister);
-
+            log.info("registering mbean for stats : "+fullName);
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            ObjectName jmxName = new ObjectName(toRegister);
+            ObjectName jmxName = new ObjectName(fullName);
             mbs.registerMBean(toRet, jmxName);
           } catch (MalformedObjectNameException | InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException  e) {
             throw new ServerRuntimeException("Exception on mbean registration " + e.getMessage(), e);

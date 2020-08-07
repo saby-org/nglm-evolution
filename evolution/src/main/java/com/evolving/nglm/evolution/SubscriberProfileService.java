@@ -417,6 +417,8 @@ public abstract class SubscriberProfileService
       //  return
       //
 
+      if(log.isTraceEnabled()) log.trace("retrieveSubscriberProfile returning : {}",result);
+
       return result;
     }
   }
