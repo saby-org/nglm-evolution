@@ -6,27 +6,10 @@
 
 package com.evolving.nglm.evolution.reports;
 
-import static com.evolving.nglm.evolution.reports.ReportUtils.d;
-
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.SystemTime;
-
-import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
-
+import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 import org.apache.http.HttpHost;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
@@ -39,10 +22,10 @@ import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.Scroll;
@@ -51,8 +34,15 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.Deployment;
-import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+
+import static com.evolving.nglm.evolution.reports.ReportUtils.d;
 
 /**
  * A class that implements phase 1 of the Report Generation. It reads a list of
@@ -103,6 +93,7 @@ public class ReportEsReader
   private boolean onlyOneIndex;
   private boolean onlyKeepAlternateIDs; // when we read subscriberprofile, only keep info about alternateIDs
   private boolean onlyKeepAlternateIDsExtended; // when we read subscriberprofile, only keep info about alternateIDs and a little more (for 2 specific reports)
+  private int returnSize; //used when a desired size of subscriber base is returned
 
   /**
    * Create a {@code ReportEsReader} instance.
@@ -157,6 +148,12 @@ public class ReportEsReader
     this(elasticKey, topicName, kafkaNodeList, kzHostList, esNode, esIndex, onlyKeepAlternateIDs, false);
   }
 
+  public ReportEsReader(String elasticKey, String topicName, String kafkaNodeList, String kzHostList, String esNode, LinkedHashMap<String, QueryBuilder> esIndex,boolean onlyKeepAlternateIDs,int returnSize)
+  {
+    this(elasticKey, topicName, kafkaNodeList, kzHostList, esNode, esIndex, onlyKeepAlternateIDs);
+    this.returnSize = returnSize;
+  }
+
   public enum PERIOD
   {
     DAYS("DAYS"), WEEKS("WEEKS"), MONTHS("MONTHS"), UNKNOWN("UNKNOWN");
@@ -194,9 +191,16 @@ public class ReportEsReader
   {
 
     String indexes = "";
+    int scrollSize = getScrollSize();
     for (String s : esIndex.keySet())
       indexes += s + " ";
     log.info("Reading data from ES in \"" + indexes + "\" indexes and writing to \"" + topicName + "\" topic.");
+
+    //if returnSize is zero all record will be returned
+    if (returnSize == 0)
+    {
+      returnSize = Integer.MAX_VALUE;
+    }
 
     ReportUtils.createTopic(topicName, kzHostList); // In case it does not exist
 
@@ -288,7 +292,9 @@ public class ReportEsReader
               }
             boolean alreadyTraced1 = false;
             boolean alreadyTraced2 = false;
-            while (searchHits != null && searchHits.length > 0)
+            //label for break. When return size is beccoming zero out from for and while
+            returnSizeCompleted:
+            while (searchHits != null && searchHits.length > 0 )
               {
                 log.debug("got " + searchHits.length + " hits");
                 for (SearchHit searchHit : searchHits)
@@ -364,6 +370,11 @@ public class ReportEsReader
                             + " speed = " + d((int) speed) + " messages/sec" + " ( " + key + " , " + record.value() + " )");
                           }
                       }
+                    returnSize --;
+                    if (returnSize == 0)
+                    {
+                      break returnSizeCompleted;
+                    }
                   }
                 SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
                 scrollRequest.scroll(scroll);

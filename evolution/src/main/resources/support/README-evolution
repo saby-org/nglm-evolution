@@ -493,6 +493,15 @@ curl -X POST -H "Content-Type: application/json" -d '{"id":"001","apiVersion":1}
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getReportGlobalConfiguration
 
 --
+--  extracts
+--
+docker service logs -f --tail 100 ev-extractmanager_extractmanager-001
+
+curl -X POST -H "Content-Type: application/json" -d `{"apiVersion":1,"extractName":"demo_extract","returnFields":null,"returnNoOfRecords":2,"evaluationCriterionList":[{"argument":{"expression":"'1'"},"criterionField":"internal.targets","criterionOperator":"contains"}],"userID":"demo-user"}` http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/launchExtract
+curl -X POST -H "Content-Type: application/json" -d `{"apiVersion":1,"extractName":"demo_extract","returnFields":null,"returnNoOfRecords":2,"evaluationCriterionList":[{"argument":{"expression":"'1'"},"criterionField":"internal.targets","criterionOperator":"contains"}],"userID":"demo-user"}` http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/launchAndDownloadExtract
+curl -X POST -H "Content-Type: application/json" -d `{"apiVersion":1,"extractName":"demo_extract","userID":"demo-user"}` http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/downloadExtractFile
+
+--
 --  examples of managing dimensions and segments  - new, add, remove, delete
 --  * creating dimensions
 --  * associating subscribers with dimensions and segments
