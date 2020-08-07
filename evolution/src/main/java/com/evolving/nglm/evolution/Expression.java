@@ -1799,7 +1799,7 @@ public abstract class Expression
       //  validate number of arguments
       //
       
-      if (arguments.size() != 4) throw new ExpressionTypeCheckException("type exception");
+      if (arguments.size() != 6) throw new ExpressionTypeCheckException("type exception");
 
       //
       //  arguments
@@ -1809,6 +1809,8 @@ public abstract class Expression
       Expression arg2 = (arguments.size() > 1) ? arguments.get(1) : null;
       Expression arg3 = (arguments.size() > 2) ? arguments.get(2) : null;
       Expression arg4 = (arguments.size() > 3) ? arguments.get(3) : null;
+      Expression arg5 = (arguments.size() > 4) ? arguments.get(4) : null;
+      Expression arg6 = (arguments.size() > 5) ? arguments.get(5) : null;
 
       //
       //  validate arg1
@@ -1856,6 +1858,32 @@ public abstract class Expression
       switch (arg4.getType())
         {
           case StringExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+      
+      //
+      //  validate arg5
+      //
+      
+      switch (arg5.getType())
+        {
+          case StringExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+      
+      //
+      //  validate arg6
+      //
+      
+      switch (arg6.getType())
+        {
+          case TimeExpression:
             break;
 
           default:
@@ -1945,6 +1973,9 @@ public abstract class Expression
       Object arg2Value = null;
       Object arg3Value = null;
       Object arg4Value = null;
+      Object arg5Value = null;
+      Object arg6Value = null;
+      
       try
         {
           arg1Value = (arguments.size() > 0) ? arguments.get(0).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
@@ -1981,6 +2012,24 @@ public abstract class Expression
           expressionNullExceptionOccoured = true;
           expressionNullException = e;
         }
+      try
+      {
+        arg5Value = (arguments.size() > 4) ? arguments.get(4).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+      } 
+    catch (ExpressionNullException e)
+      {
+        expressionNullExceptionOccoured = true;
+        expressionNullException = e;
+      }
+      try
+      {
+        arg6Value = (arguments.size() > 5) ? arguments.get(5).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+      } 
+    catch (ExpressionNullException e)
+      {
+        expressionNullExceptionOccoured = true;
+        expressionNullException = e;
+      }
 
       /*****************************************
       *
@@ -2011,7 +2060,7 @@ public abstract class Expression
             break;
             
           case DateAddOrConstantFunction:
-            result = evaluateDateAddOrConstantFunction((Date) arg1Value, (Date) arg2Value, (Number) arg3Value, TimeUnit.fromExternalRepresentation((String) arg4Value), baseTimeUnit, false);
+            result = evaluateDateAddOrConstantFunction((Date) arg1Value, (Date) arg2Value, (Number) arg3Value, TimeUnit.fromExternalRepresentation((String) arg4Value), (String) arg5Value, (String) arg6Value, baseTimeUnit, false);
             break;
             
           case RoundFunction:
@@ -2317,8 +2366,9 @@ public abstract class Expression
     //  evaluateDateAddOrConstantFunction
     //
     
-    private Date evaluateDateAddOrConstantFunction(Date dateAddDate, Date strictScheduleDate, Number waitDuration, TimeUnit timeUnit, TimeUnit baseTimeUnit, boolean roundDown)
+    private Date evaluateDateAddOrConstantFunction(Date dateAddDate, Date strictScheduleDate, Number waitDuration, TimeUnit timeUnit, String dayOfWeek, String waitTimeString, TimeUnit baseTimeUnit, boolean roundDown)
     {
+      log.info("RAJ K evaluateDateAddOrConstantFunction dayOfWeek {} waitTimeString {}", dayOfWeek, waitTimeString);
       boolean dateBasedWait = strictScheduleDate != null;
       boolean timeBasedWait = waitDuration != null && timeUnit != TimeUnit.Unknown;
       boolean dateAndTimeBasedWait = dateBasedWait && timeBasedWait;
@@ -2344,7 +2394,6 @@ public abstract class Expression
           result = evaluateDateAddFunction(dateAddDate, waitDuration, timeUnit, baseTimeUnit, roundDown);
         }
       return result;
-      
     }
 
     /*****************************************
