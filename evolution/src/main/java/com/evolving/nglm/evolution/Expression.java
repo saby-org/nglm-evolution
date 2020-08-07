@@ -2374,19 +2374,19 @@ public abstract class Expression
       List<Date> watingDates = new ArrayList<Date>();
       
       //
-      // wait on strictScheduleDate
+      // wait for strictScheduleDate
       //
       
       if (strictScheduleDate != null) watingDates.add(strictScheduleDate);
       
       //
-      // wait on timeBasedWait
+      // wait for Duration
       //
       
       if (waitDuration != null && timeUnit != TimeUnit.Unknown) watingDates.add(evaluateDateAddFunction(dateAddDate, waitDuration, timeUnit, baseTimeUnit, roundDown));
       
       //
-      // wait on day
+      // wait for day
       //
       
       if (dayOfWeek != null)
@@ -2425,14 +2425,23 @@ public abstract class Expression
             default:
               break;
           }
-          if (nextDayDate != null) watingDates.add(nextDayDate);
+          if (nextDayDate != null && waitTimeString != null)
+            {
+              String[] args = waitTimeString.trim().split(":");
+              if (args.length != 3) throw new ExpressionEvaluationException();
+              int hh = Integer.parseInt(args[0]);
+              int mm = Integer.parseInt(args[1]);
+              int ss = Integer.parseInt(args[2]);
+              nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
+              nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
+              nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
+              watingDates.add(nextDayDate);
+            }
         }
       
       //
-      // wait on time to do
+      //  sort to get the earliest date
       //
-      
-      
       
       if (watingDates.size() > 0)
         {
