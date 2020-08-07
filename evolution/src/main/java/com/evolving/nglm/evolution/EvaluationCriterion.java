@@ -203,6 +203,7 @@ public class EvaluationCriterion
     IsNullOperator("is null"),
     IsNotNullOperator("is not null"),
     ContainsKeywordOperator("contains keyword"),
+    DoesNotContainsKeywordOperator("doesn't contains keyword"),
     IsInSetOperator("is in set"),
     NotInSetOperator("not in set"),
     ContainsOperator("contains"),
@@ -508,6 +509,24 @@ public class EvaluationCriterion
           break;
           
         case ContainsKeywordOperator:
+          switch (criterionField.getFieldDataType())
+            {
+              case StringCriterion:
+                switch (argumentType)
+                  {
+                    case StringExpression:
+                      validCombination = true;
+                      break;
+                  }
+                break;
+
+              default:
+                validCombination = false;
+                break;
+            }
+          break;
+          
+        case DoesNotContainsKeywordOperator:
           switch (criterionField.getFieldDataType())
             {
               case StringCriterion:
@@ -1064,6 +1083,16 @@ public class EvaluationCriterion
         case ContainsKeywordOperator:
           result = traceCondition(evaluationRequest, evaluateContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
           break;
+          
+        /*****************************************
+        *
+        *  containsKeyword operator
+        *
+        *****************************************/
+          
+        case DoesNotContainsKeywordOperator:
+          result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
+          break;
 
         /*****************************************
         *
@@ -1313,6 +1342,12 @@ public class EvaluationCriterion
 
     return m.find();
   }
+  
+  //
+  //  evaluateDoesNotContainsKeyword
+  //
+
+  private boolean evaluateDoesNotContainsKeyword(String data, String words) { return !evaluateContainsKeyword(data, words); }
 
   /*****************************************
   *
@@ -1625,6 +1660,7 @@ public class EvaluationCriterion
         *****************************************/
 
         case ContainsKeywordOperator:
+        case DoesNotContainsKeywordOperator:
 
           //
           //  argument must be constant to evaluate esQuery
@@ -1652,7 +1688,7 @@ public class EvaluationCriterion
           //
 
           break;
-
+          
         /*****************************************
         *
         *  set operators
@@ -1761,6 +1797,11 @@ public class EvaluationCriterion
         case IsNotNullOperator:
           query = baseQuery;
           break;
+          
+        case DoesNotContainsKeywordOperator:
+            query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).mustNot(baseQuery);
+          break;
+          
 
         default:
           if (criterionDefault)

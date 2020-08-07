@@ -170,13 +170,14 @@
         "id" : "string",
         "operators" : 
           [ 
-            { "id" : "is null",           "display" : "is not known",        "argumentRequired" : false,   "argumentSet" : false },
-            { "id" : "is not null",       "display" : "is known",            "argumentRequired" : false,   "argumentSet" : false }, 
-            { "id" : "==",                "display" : "equals",              "argumentRequired" : true,    "argumentSet" : false }, 
-            { "id" : "<>",                "display" : "is not equal to",     "argumentRequired" : true,    "argumentSet" : false },
-            { "id" : "contains keyword",  "display" : "contains keyword",    "argumentRequired" : true,    "argumentSet" : false },
-            { "id" : "is in set",         "display" : "is contained in",     "argumentRequired" : true,    "argumentSet" : true }, 
-            { "id" : "not in set",        "display" : "is not contained in", "argumentRequired" : true,    "argumentSet" : true }
+            { "id" : "is null",           			"display" : "is not known",        			"argumentRequired" : false,   "argumentSet" : false },
+            { "id" : "is not null",       			"display" : "is known",            			"argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "==",                			"display" : "equals",              			"argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : "<>",                			"display" : "is not equal to",     			"argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "contains keyword",  			"display" : "contains keyword",    			"argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "doesn't contains keyword",  	"display" : "doesn't contains keyword",    	"argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "is in set",         			"display" : "is contained in",     			"argumentRequired" : true,    "argumentSet" : true }, 
+            { "id" : "not in set",        			"display" : "is not contained in", 			"argumentRequired" : true,    "argumentSet" : true }
           ],
         "formats" :
           [
