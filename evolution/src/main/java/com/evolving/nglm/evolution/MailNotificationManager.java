@@ -44,8 +44,6 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
   private NotificationStatistics stats = null;
   private static String applicationID = "deliverymanager-notificationmanagermail";
   public String pluginName;
-  private SubscriberMessageTemplateService subscriberMessageTemplateService;
-  private CommunicationChannelBlackoutService blackoutService;
 
   //
   //  logger
@@ -58,9 +56,6 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
   *  accessors
   *
   *****************************************/
-
-  public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
-  public CommunicationChannelBlackoutService getBlackoutService() { return blackoutService; }
 
   /*****************************************
   *
@@ -75,20 +70,6 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     //
 
     super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), MailNotificationManagerRequest.serde, Deployment.getDeliveryManagers().get(pluginName));
-
-    //
-    //  service
-    //
-
-    subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "mailnotificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
-    subscriberMessageTemplateService.start();
-
-    //
-    //  blackoutService
-    //
-        
-    blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "mailnotificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
-    blackoutService.start();
 
     //
     //  manager
@@ -691,7 +672,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
             CommunicationChannel channel = Deployment.getCommunicationChannels().get("mail");
             if(channel != null) 
               {
-                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(blackoutService, now);
+                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now);
               }
             
             if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))

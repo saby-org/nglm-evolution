@@ -10,8 +10,8 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.CommunicationChannelTimeWindow.DailyWindow;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.NotificationDailyWindows.DailyWindow;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public class CommunicationChannel extends GUIManagedObject
 {
@@ -37,7 +36,7 @@ public class CommunicationChannel extends GUIManagedObject
     String display;
     String profileAddressField;
     String deliveryType;
-    NotificationDailyWindows notificationDailyWindows;
+//    CommunicationChannelTimeWindows notificationDailyWindows;
 
     // parameters that must be into the template
     Map<String,CriterionField> parameters = new HashMap<String, CriterionField>();
@@ -69,7 +68,7 @@ public class CommunicationChannel extends GUIManagedObject
     public String getDisplay() { return display; }
     public String getProfileAddressField() { return profileAddressField; }
     public String getDeliveryType () { return deliveryType; } 
-    public NotificationDailyWindows getNotificationDailyWindows() { return notificationDailyWindows; }
+//    public CommunicationChannelTimeWindows getNotificationDailyWindows() { return notificationDailyWindows; }
     public Map<String,CriterionField> getParameters() { return parameters; }
     public Map<String,CriterionField> getToolboxParameters() { return toolboxParameters; }
     public String getNotificationPluginClass() { return notificationPluginClass; }
@@ -92,7 +91,7 @@ public class CommunicationChannel extends GUIManagedObject
     *
     *****************************************/
 
-    public Date getEffectiveDeliveryTime(CommunicationChannelBlackoutService communicationChannelBlackoutServiceBlackout, Date now)
+    public Date getEffectiveDeliveryTime(CommunicationChannelBlackoutService communicationChannelBlackoutServiceBlackout, CommunicationChannelTimeWindowService communicationChannelTimeWindowService, Date now)
     {
       //
       //  retrieve delivery time configuration
@@ -108,7 +107,7 @@ public class CommunicationChannel extends GUIManagedObject
       Date deliveryDate = now;
       while (deliveryDate.before(maximumDeliveryDate))
         {
-          Date nextDailyWindowDeliveryDate = this.getEffectiveDeliveryTime(this, deliveryDate);
+          Date nextDailyWindowDeliveryDate = this.getEffectiveDeliveryTime(this, deliveryDate, communicationChannelTimeWindowService);
           Date nextBlackoutWindowDeliveryDate = (blackoutPeriod != null) ? communicationChannelBlackoutServiceBlackout.getEffectiveDeliveryTime(blackoutPeriod.getGUIManagedObjectID(), deliveryDate) : deliveryDate;
           Date nextDeliveryDate = nextBlackoutWindowDeliveryDate.after(nextDailyWindowDeliveryDate) ? nextBlackoutWindowDeliveryDate : nextDailyWindowDeliveryDate;
           if (nextDeliveryDate.after(deliveryDate))
@@ -151,11 +150,11 @@ public class CommunicationChannel extends GUIManagedObject
       this.display = JSONUtilities.decodeString(jsonRoot, "display", false);
       this.profileAddressField = JSONUtilities.decodeString(jsonRoot, "profileAddressField", false);
       this.deliveryType = JSONUtilities.decodeString(jsonRoot, "deliveryType", false);
-      if(jsonRoot.get("notificationDailyWindows") != null) {
-        this.notificationDailyWindows = new NotificationDailyWindows(JSONUtilities.decodeJSONObject(jsonRoot, "notificationDailyWindows", false));
-      }else {
-        this.notificationDailyWindows = Deployment.getNotificationDailyWindows().get("0");
-      }
+//      if(jsonRoot.get("notificationDailyWindows") != null) {
+//        this.notificationDailyWindows = new CommunicationChannelTimeWindows(JSONUtilities.decodeJSONObject(jsonRoot, "notificationDailyWindows", false));
+//      }else {
+//        this.notificationDailyWindows = Deployment.getNotificationDailyWindows().get("0");
+//      }
       
       JSONArray templateParametersJSON = JSONUtilities.decodeJSONArray(jsonRoot, "parameters", false);
       if(templateParametersJSON != null) {
@@ -218,34 +217,34 @@ public class CommunicationChannel extends GUIManagedObject
     }
 
    
-    public List<DailyWindow> getTodaysDailyWindows(Date now)
+    public List<DailyWindow> getTodaysDailyWindows(Date now, CommunicationChannelTimeWindowService communicationChannelTimeWindowService, CommunicationChannelTimeWindow timeWindow)
     {
       List<DailyWindow> result = null;
       int today = RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
-      if (getNotificationDailyWindows() != null)
+      if (timeWindow != null)
         {
           switch(today)
             {
               case Calendar.SUNDAY:
-                result = getNotificationDailyWindows().getDailyWindowSunday();
+                result = timeWindow.getDailyWindowSunday();
                 break;
               case Calendar.MONDAY:
-                result = getNotificationDailyWindows().getDailyWindowMonday();
+                result = timeWindow.getDailyWindowMonday();
                 break;
               case Calendar.TUESDAY:
-                result = getNotificationDailyWindows().getDailyWindowTuesday();
+                result = timeWindow.getDailyWindowTuesday();
                 break;
               case Calendar.WEDNESDAY:
-                result = getNotificationDailyWindows().getDailyWindowWednesday();
+                result = timeWindow.getDailyWindowWednesday();
                 break;
               case Calendar.THURSDAY:
-                result = getNotificationDailyWindows().getDailyWindowThursday();
+                result = timeWindow.getDailyWindowThursday();
                 break;
               case Calendar.FRIDAY:
-                result = getNotificationDailyWindows().getDailyWindowFriday();
+                result = timeWindow.getDailyWindowFriday();
                 break;
               case Calendar.SATURDAY:
-                result = getNotificationDailyWindows().getDailyWindowSaturday();
+                result = timeWindow.getDailyWindowSaturday();
                 break;
             }
         }
@@ -259,10 +258,13 @@ public class CommunicationChannel extends GUIManagedObject
     *
     *****************************************/
     
-    private Date getEffectiveDeliveryTime(CommunicationChannel communicationChannel, Date now)
+    private Date getEffectiveDeliveryTime(CommunicationChannel communicationChannel, Date now, CommunicationChannelTimeWindowService communicationChannelTimeWindowService)
     {
       Date effectiveDeliveryDate = now;
-      if (communicationChannel != null && communicationChannel.getNotificationDailyWindows() != null)
+      CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannel.getID(), now);
+      if(timeWindow == null) { timeWindow = Deployment.getDefaultNotificationDailyWindows(); }
+        
+      if (communicationChannel != null && timeWindow != null)
         {
           effectiveDeliveryDate = NGLMRuntime.END_OF_TIME;
           Date today = RLMDateUtils.truncate(now, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
@@ -274,7 +276,7 @@ public class CommunicationChannel extends GUIManagedObject
 
               Date windowDay = RLMDateUtils.addDays(today, i, Deployment.getBaseTimeZone());
               Date nextDay = RLMDateUtils.addDays(today, i+1, Deployment.getBaseTimeZone());
-              for (DailyWindow dailyWindow : communicationChannel.getTodaysDailyWindows(windowDay))
+              for (DailyWindow dailyWindow : communicationChannel.getTodaysDailyWindows(windowDay, communicationChannelTimeWindowService, timeWindow))
                 {
                   Date windowStartDate = dailyWindow.getFromDate(windowDay);
                   Date windowEndDate = dailyWindow.getUntilDate(windowDay);

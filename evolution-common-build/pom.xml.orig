@@ -3,7 +3,11 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>1.4.4_1-SNAPSHOT</version>
+<<<<<<< HEAD
+  <version>1.4.3_10-410-SNAPSHOT</version>
+=======
+  <version>1.4.4_0-SNAPSHOT</version>
+>>>>>>> origin/release_1.4.4_0
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -178,7 +182,6 @@
 
     <topic.communicationchannel>communicationchannel</topic.communicationchannel>
     <topic.blackoutperiod>blackoutperiod</topic.blackoutperiod>
-    <topic.timewindowperiod>timewindowperiod</topic.timewindowperiod>
     <topic.loyaltyprogram>loyaltyprogram</topic.loyaltyprogram>
     <topic.exclusioninclusiontarget>exclusioninclusiontarget</topic.exclusioninclusiontarget>
     <topic.segmentcontactpolicy>segmentcontactpolicy</topic.segmentcontactpolicy>

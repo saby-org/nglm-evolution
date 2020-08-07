@@ -1,0 +1,572 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.evolving.nglm</groupId>
+  <artifactId>nglm-evolution</artifactId>
+  <packaging>jar</packaging>
+<<<<<<< HEAD
+  <version>1.4.3_10-410-SNAPSHOT</version>
+=======
+  <version>1.4.4_0-SNAPSHOT</version>
+>>>>>>> origin/release_1.4.4_0
+  <name>evolution</name>
+  <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
+  <description>NGLM EVOLUTION</description>
+
+  <repositories>
+
+    <repository>
+      <id>confluent</id>
+      <name>Confluent Repository</name>
+      <url>http://packages.confluent.io/maven/</url>
+    </repository>
+
+    <repository>
+      <id>artifactory</id>
+      <name>artifactory</name>
+      <url>http://10.100.0.6:8090/artifactory/repo</url>
+    </repository>
+
+  </repositories>
+
+  <parent>
+    <artifactId>nglm-core-common-build</artifactId>
+    <groupId>com.evolving.nglm</groupId>
+    <version>1.4.4_0-SNAPSHOT</version>
+  </parent>
+
+  <properties>
+
+    <!-- core version -->
+    <nglm.core.version>1.4.4_0-SNAPSHOT</nglm.core.version>
+
+    <!-- dependencies - gui -->
+    <gui-fwk.version>1.4.17</gui-fwk.version>
+    <gui-csr.version>1.4.18</gui-csr.version>
+    <gui-itm.version>1.4.3</gui-itm.version>
+    <gui-jmr.version>1.4.42</gui-jmr.version>
+    <gui-opc.version>1.4.9</gui-opc.version>
+    <gui-iar.version>1.4.5</gui-iar.version>
+    <gui-opr.version>1.4.3</gui-opr.version>
+    <gui-stg.version>1.4.7</gui-stg.version>
+    <gui-sbm.version>1.4.17</gui-sbm.version>
+    <gui-lpm.version>1.4.4</gui-lpm.version>
+    <gui-tls.version>1.4.17</gui-tls.version>
+    <gui-audit.version>1.0.4</gui-audit.version>
+
+    <!-- dependencies - mysql -->
+    <mysql.gui.version>8.0.13</mysql.gui.version>
+    
+    <!-- dependencies - fake components -->
+    <fake.smsc.version>0.0.7</fake.smsc.version>
+
+    <!-- lag exporter -->
+    <lagexporter.version>0.4.0</lagexporter.version>
+
+    <!-- Prometheus -->
+    <evolving.prometheus.version>2.14.0_04</evolving.prometheus.version>
+    
+    <!-- core-common-build -->
+    <common.build.phase.proguard>package</common.build.phase.proguard>
+    <common.build.phase.generate-setup-stack>none</common.build.phase.generate-setup-stack>
+    <common.build.phase.generate-analyse-upgrade-stack>none</common.build.phase.generate-analyse-upgrade-stack>
+    <common.build.phase.generate-connect-stack>none</common.build.phase.generate-connect-stack>
+    <common.build.phase.generate-grafana-stack>none</common.build.phase.generate-grafana-stack>
+    <common.build.phase.generate-licensemanager-stack>none</common.build.phase.generate-licensemanager-stack>
+    <common.build.phase.generate-subscribermanager-stack>none</common.build.phase.generate-subscribermanager-stack>
+    <common.build.phase.generate-deployment-json>none</common.build.phase.generate-deployment-json>
+    <common.build.phase.generate-nglm-scripts>none</common.build.phase.generate-nglm-scripts>
+    <common.build.skip.docker-setup>true</common.build.skip.docker-setup>
+    <common.build.skip.docker-analyse-upgrade>true</common.build.skip.docker-analyse-upgrade>
+    <common.build.skip.docker-connect>true</common.build.skip.docker-connect>
+    <common.build.skip.docker-grafana>true</common.build.skip.docker-grafana>
+    <common.build.skip.docker-licensemanager>true</common.build.skip.docker-licensemanager>
+    <common.build.skip.docker-subscribermanager>true</common.build.skip.docker-subscribermanager>
+
+  </properties>
+
+  <dependencies>
+
+    <!-- SMPP -->
+    <dependency>
+      <groupId>ie.omk</groupId>
+      <artifactId>smppapi</artifactId>
+      <version>0.3.9</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <!-- SMTP -->
+    <dependency>
+      <groupId>javax.mail</groupId>
+      <artifactId>mail</artifactId>
+      <version>1.4.7</version>
+    </dependency>
+
+    <dependency>
+      <groupId>javax.activation</groupId>
+      <artifactId>activation</artifactId>
+      <version>1.1.1</version>
+    </dependency>
+
+    <!-- Reports -->
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-streams-examples</artifactId>
+      <version>1.0.1-cp1</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <!-- Gson -->
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.2.4</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.googlecode.json-simple</groupId>
+      <artifactId>json-simple</artifactId>
+	<version>1.1</version>
+    </dependency>
+    
+    <!-- File Upload -->
+    <dependency>
+    <groupId>commons-fileupload</groupId>
+    <artifactId>commons-fileupload</artifactId>
+    <version>1.4</version>
+	</dependency>
+    
+    <!-- LOG4J -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+	  <version>2.7</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
+      <version>3.3.0</version>
+    </dependency>
+    
+    <!-- reflections -->
+    <dependency>
+		<groupId>org.reflections</groupId>
+		<artifactId>reflections</artifactId>
+		<version>0.9.12</version>
+	</dependency>
+  </dependencies>
+
+  <build>
+
+    <plugins>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.6.1</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <version>3.0.2</version>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <addClasspath>true</addClasspath>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.8</version>
+        <executions>
+          <execution>
+            <id>generate-evolution-json</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <exportAntProperties>true</exportAntProperties>
+              <target>
+                <copy todir="${project.build.directory}/assembled-resources/support">
+                  <fileset dir="${project.basedir}/src/main/resources/support" includes="*.json"/>
+                </copy>
+                <replaceregexp match="(--.*$)|${line.separator}" replace="" flags="gm">
+                  <fileset dir="${project.build.directory}/assembled-resources/support" includes="*.json"/>
+                </replaceregexp>
+              </target>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy-evolution-log4j</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <exportAntProperties>true</exportAntProperties>
+              <target>
+                <copy todir="${project.build.directory}/assembled-resources/config/logger" force="yes">
+                  <fileset dir="${project.basedir}/src/main/resources/config/logger" includes="log4j-*.*"/>
+                </copy>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>3.0.2</version>
+        <executions>
+
+          <execution>
+            <id>generate-assembled-resources</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-resources</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/main/resources</directory>
+                  <includes>
+                    <include>bin/evolution-*.sh</include>
+                    <include>bin/evolutionengine-run.sh</include>
+                    <include>bin/journeytrafficengine-run.sh</include>
+                    <include>bin/subscribergroup-run.sh</include>
+                    <include>bin/storeconfiguration-run.sh</include>
+                    <include>bin/guimanager-run.sh</include>
+                    <include>bin/update-subscribergroup.sh</include>
+                    <include>bin/storeconfiguration.sh</include>
+                    <include>bin/upgrade-run-preamble.sh</include>
+                    <include>bin/upgrade-run-flyway.sh</include>
+                    <include>bin/upgrade-run-postamble.sh</include>
+                    <include>bin/fakein-run.sh</include>
+                    <include>bin/kafka-lag-exporter-run.sh</include>
+                    <include>config/deployment-*.json</include>
+                    <include>config/grafana-*.json</include>
+                    <include>config/grafana-*.yml</include>
+                    <include>config/kafka-lag-exporter.conf</include>
+                    <include>config/kafka-lag-exporter-logback.xml</include>
+                    <include>config/log4j-evolution.properties</include>
+                    <include>config/evolutionengine_jmx.yml</include>
+                    <include>config/journeytrafficengine_jmx.yml</include>
+                    <include>config/ucgengine_jmx.yml</include>
+                    <include>config/infulfillmentmanager_jmx.yml</include>
+                    <include>config/emptyfulfillmentmanager_jmx.yml</include>
+                    <include>config/commoditydeliverymanager_jmx.yml</include>
+                    <include>config/purchasefulfillmentmanager_jmx.yml</include>
+                    <include>config/notificationmanagersms_jmx.yml</include>
+                    <include>config/notificationmanagermail_jmx.yml</include>
+                    <include>config/notificationmanagerpush_jmx.yml</include>
+                    <include>config/notificationmanager_jmx.yml</include>
+                    <include>config/reportmanager_jmx.yml</include>
+                    <include>config/reportscheduler_jmx.yml</include>
+                    <include>config/datacubemanager_jmx.yml</include>
+                    <include>config/guimanager_jmx.yml</include>
+                    <include>config/thirdpartymanager_jmx.yml</include>
+                    <include>config/dnboproxy_jmx.yml</include>
+                    <include>config/evolution-prometheus-application.yml</include>
+                    <include>databases/_meta_gui/*</include>
+                    <include>docker/prometheus-application/*</include>
+                    <include>docker/prometheus-application-preamble.yml</include>
+                    <include>docker/prometheus-application-postamble.yml</include>
+                    <include>docker/guimanager/*</include>
+                    <include>docker/guimanager.yml</include>
+                    <include>docker/thirdpartymanager/*</include>
+                    <include>docker/thirdpartymanager.yml</include>
+                    <include>docker/dnboproxy/*</include>
+                    <include>docker/dnboproxy.yml</include>
+                    <include>docker/evolutionengine/*</include>
+                    <include>docker/evolutionengine.yml</include>
+                    <include>docker/journeytrafficengine/*</include>
+                    <include>docker/journeytrafficengine.yml</include>
+                    <include>docker/ucgengine/*</include>
+                    <include>docker/ucgengine.yml</include>
+                    <include>docker/infulfillmentmanager/*</include>
+                    <include>docker/infulfillmentmanager.yml</include>
+                    <include>docker/emptyfulfillmentmanager/*</include>
+                    <include>docker/emptyfulfillmentmanager.yml</include>
+                    <include>docker/commoditydeliverymanager/*</include>
+                    <include>docker/commoditydeliverymanager.yml</include>
+                    <include>docker/purchasefulfillmentmanager/*</include>
+                    <include>docker/purchasefulfillmentmanager.yml</include>
+                    <include>docker/notificationmanagersms/*</include>
+                    <include>docker/notificationmanagersms.yml</include>
+                    <include>docker/notificationmanagermail/*</include>
+                    <include>docker/notificationmanagermail.yml</include>
+                    <include>docker/notificationmanagerpush/*</include>
+                    <include>docker/notificationmanagerpush.yml</include>
+                    <include>docker/notificationmanager/*</include>
+                    <include>docker/notificationmanager.yml</include>
+                    <include>docker/reportmanager/*</include>
+                    <include>docker/reportmanager.yml</include>
+                    <include>docker/reportscheduler/*</include>
+                    <include>docker/reportscheduler.yml</include>
+                    <include>docker/datacubemanager/*</include>
+                    <include>docker/datacubemanager.yml</include>
+                    <include>docker/subscribergroup/*</include>
+                    <include>docker/storeconfiguration/*</include>
+                    <include>docker/upgrade/*</include>
+                    <include>docker/upgrade-preamble.yml</include>
+                    <include>docker/upgrade-postamble.yml</include>
+                    <include>docker/connect/*</include>
+                    <include>docker/setup/*</include>
+                    <include>docker/analyse-upgrade/*</include>
+                    <include>support/*</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+                <resource>
+                  <directory>src/main/resources</directory>
+                  <includes>
+                    <include>bin/evolution-prepare-docker.sh</include>
+                    <include>docker/*.yml</include>
+                  </includes>
+                  <excludes>
+                    <exclude>docker/prometheus-application-preamble.yml</exclude>
+                    <exclude>docker/prometheus-application-postamble.yml</exclude>
+                    <exclude>docker/guimanager.yml</exclude>
+                    <exclude>docker/thirdpartymanager.yml</exclude>
+                    <exclude>docker/dnboproxy.yml</exclude>
+                    <exclude>docker/evolutionengine.yml</exclude>
+                    <exclude>docker/journeytrafficengine.yml</exclude>
+                    <exclude>docker/ucgengine.yml</exclude>
+                    <exclude>docker/infulfillmentmanager.yml</exclude>
+                    <exclude>docker/emptyfulfillmentmanager.yml</exclude>
+                    <exclude>docker/commoditydeliverymanager.yml</exclude>
+                    <exclude>docker/purchasefulfillmentmanager.yml</exclude>
+                    <exclude>docker/notificationmanagersms.yml</exclude>
+                    <exclude>docker/notificationmanagermail.yml</exclude>
+                    <exclude>docker/notificationmanagerpush.yml</exclude>
+                    <exclude>docker/notificationmanager.yml</exclude>
+                    <exclude>docker/reportmanager.yml</exclude>
+                    <exclude>docker/reportscheduler.yml</exclude>
+                    <exclude>docker/datacubemanager.yml</exclude>
+                    <exclude>docker/upgrade-preamble.yml</exclude>
+                    <exclude>docker/upgrade-postamble.yml</exclude>
+                  </excludes>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>generate-mysql-gui-docker-stack</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/mysql-gui</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/main/resources/docker/mysql-gui</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                    <include>create_meta_db_if_not_exists.sql</include>
+                    <include>*.cnf</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>generate-fakein-docker-stack</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/fakein</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/main/resources/docker/fakein</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>bin/fakein-run.sh</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>generate-fakesmtp-docker-stack</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/fakesmtp</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/main/resources/docker/fakesmtp</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>generate-kafka-lag-exporter-docker-stack</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/kafka-lag-exporter</outputDirectory>
+              <resources>          
+                <resource>
+                  <directory>src/main/resources/docker/kafka-lag-exporter</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/kafka-lag-exporter.conf</include>
+                    <include>config/kafka-lag-exporter-logback.xml</include>
+                    <include>bin/kafka-lag-exporter-run.sh</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>                
+              </resources>              
+            </configuration>            
+          </execution>
+
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>dockerfile-maven-plugin</artifactId>
+        <version>${dockerfile.maven.plugin.version}</version>
+        <executions>
+          
+          <execution>
+            <id>docker-mysql-gui</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <contextDirectory>${project.build.directory}/assembled-docker/mysql-gui</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-mysql-gui</repository>
+              <classifier>docker-info-mysql-gui</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+          
+          <execution>
+            <id>docker-fakein</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <contextDirectory>${project.build.directory}/assembled-docker/fakein</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-fakein</repository>
+              <classifier>docker-info-fakein</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+          
+          <execution>
+            <id>docker-fakesmtp</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <contextDirectory>${project.build.directory}/assembled-docker/fakesmtp</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-fakesmtp</repository>
+              <classifier>docker-info-fakesmtp</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>docker-kafka-lag-exporter</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>              
+              <contextDirectory>${project.build.directory}/assembled-docker/kafka-lag-exporter</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-kafkalagexporter</repository>
+              <classifier>docker-info-kafkalagexporter</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+
+        </executions>
+      </plugin>
+      
+    </plugins>
+
+    <resources>
+      <resource>
+        <directory>${project.build.directory}/assembled-resources</directory>
+        <filtering>false</filtering>
+      </resource>
+    </resources>
+
+  </build>
+
+  <distributionManagement>
+
+    <repository>
+      <id>evolving-internal</id>
+      <name>Evolving Internal Repository</name>
+      <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
+    </repository>
+    
+    <snapshotRepository>
+      <id>evolving-snapshots</id>
+      <name>Evolving Snapshots Repository</name>
+      <url>http://10.100.0.6:8090/artifactory/evolving-snapshots</url>
+    </snapshotRepository>
+
+  </distributionManagement>
+
+</project>
