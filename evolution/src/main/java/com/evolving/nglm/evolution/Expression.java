@@ -442,6 +442,7 @@ public abstract class Expression
           case BooleanCriterion:
             setType(ExpressionDataType.BooleanExpression);
             break;
+          case AniversaryCriterion:
           case DateCriterion:
             setType(ExpressionDataType.DateExpression);
             break;

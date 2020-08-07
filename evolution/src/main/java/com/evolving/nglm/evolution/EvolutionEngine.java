@@ -5348,6 +5348,8 @@ public class EvolutionEngine
                         case DateCriterion:
                           journeyResults.put(Journey.generateJourneyResultID(journey, contextVariable), journeyState.getJourneyParameters().get(contextVariable.getID()));
                           break;
+                          
+                        case AniversaryCriterion:
                         case TimeCriterion:
                           throw new RuntimeException("unsupported contextVariable field datatype " + contextVariable.getFieldDataType());
                       }
