@@ -408,6 +408,7 @@ public abstract class DeliveryManager
     requestConsumerProperties.put("group.id", applicationID + "-request");
     requestConsumerProperties.put("auto.offset.reset", "earliest");
     requestConsumerProperties.put("enable.auto.commit", "false");
+    requestConsumerProperties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxOutstandingRequests);// for low tps, needed otherwise will just keep rebalancing
     requestConsumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     requestConsumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     requestConsumer = new KafkaConsumer<>(requestConsumerProperties);
@@ -532,7 +533,7 @@ public abstract class DeliveryManager
           log.info("requestConsumer partitions revoked: {}", partitions);
           int nbWaiting = waitingForAcknowledgement.size();
           waitingForAcknowledgement.clear();
-          log.info("requestConsumer partitions {} pending in memory request removed, {} request waiting for acknowledgement removed",submitRequestQueue.drainTo(new ArrayList<>(),nbWaiting));
+          log.info("requestConsumer {} requests pending in memory removed, {} requests waiting for acknowledgement removed",submitRequestQueue.drainTo(new ArrayList<>()),nbWaiting);
         }
       }
       @Override public void onPartitionsAssigned(Collection<TopicPartition> partitions) { log.info("requestConsumer partitions assigned: {}", partitions); }
@@ -731,17 +732,6 @@ public abstract class DeliveryManager
     ****************************************/
 
     submitRequestQueue.add(deliveryRequest);
-  }
-
-  /*****************************************
-  *
-  *  submitDeliveryRequestTopic
-  *
-  *****************************************/
-
-  private void submitDeliveryRequest(DeliveryRequest deliveryRequest, boolean restart, boolean retry)
-  {
-    submitDeliveryRequest(deliveryRequest, restart, retry, null, null);
   }
 
   /*****************************************
