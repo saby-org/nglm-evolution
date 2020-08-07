@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.NotificationDailyWindows.DailyWindow;
 
@@ -54,9 +55,8 @@ public class CommunicationChannel extends GUIManagedObject
     String campaignGUINodeSectionID;
     String journeyGUINodeSectionID;
     String workflowGUINodeSectionID;
-    
-    
-    
+    int toolboxTimeout;
+    String toolboxTimeoutUnit;    
 
     /*****************************************
     *
@@ -83,6 +83,8 @@ public class CommunicationChannel extends GUIManagedObject
     public String getCampaignGUINodeSectionID() { return campaignGUINodeSectionID; }
     public String getJourneyGUINodeSectionID() { return journeyGUINodeSectionID; }
     public String getWorkflowGUINodeSectionID() { return workflowGUINodeSectionID; }
+    public int getToolboxTimeout() { return toolboxTimeout; }
+    public String getToolboxTimeoutUnit() { return toolboxTimeoutUnit; }
     
     /*****************************************
     *
@@ -175,6 +177,14 @@ public class CommunicationChannel extends GUIManagedObject
           }
       }
       
+      this.toolboxTimeout = JSONUtilities.decodeInteger(jsonRoot, "toolboxTimeout", 1);
+      TimeUnit toolboxTimeoutUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "toolboxTimeoutUnit", "day"));
+      if(toolboxTimeoutUnit.equals(TimeUnit.Unknown))
+        {
+          log.warn("CommunicationChannel: Can't interpret toolboxTimeoutUnit " + JSONUtilities.decodeString(jsonRoot, "toolboxTimeoutUnit") + " for channel " + this.getID() + " use default \"day\"");
+          toolboxTimeoutUnit = TimeUnit.Day;
+        }
+      this.toolboxTimeoutUnit = toolboxTimeoutUnit.getExternalRepresentation();
       this.isGeneric =  JSONUtilities.decodeBoolean(jsonRoot, "isGeneric", Boolean.FALSE);
       
       this.notificationPluginConfiguration = (JSONObject)jsonRoot.get("notificationPluginConfiguration");
