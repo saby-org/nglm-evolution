@@ -88,25 +88,26 @@
               "defaultValue" : null
             },
             { 
-              "id" : "node.parameter.waitfortime", 
-              "display" : "Wait Until Time", 
-              "dataType" : "time", 
-              "width" : "100%", 
-              "multiple" : false, 
-              "mandatory" : false,
-              "availableValues" : null,
-              "defaultValue" : null
-            },
-            { 
               "id" : "node.parameter.waitforday", 
               "display" : "Wait Until Day", 
               "dataType" : "string", 
-              "width" : "100%", 
+              "width" : "50%", 
               "multiple" : false, 
               "mandatory" : false,
               "availableValues" : [ "#weekDays#" ],
               "defaultValue" : null
+            },
+            { 
+              "id" : "node.parameter.waitfortime", 
+              "display" : "Wait Until Time", 
+              "dataType" : "time", 
+              "width" : "50%", 
+              "multiple" : false, 
+              "mandatory" : false,
+              "availableValues" : null,
+              "defaultValue" : "00:00:00"
             }
+            
           ]
       },
       
