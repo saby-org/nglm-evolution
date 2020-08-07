@@ -33,7 +33,7 @@
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>1.4.4_0-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.4.4_1-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.4.17</gui-fwk.version>
@@ -249,6 +249,7 @@
                     <include>bin/storeconfiguration-run.sh</include>
                     <include>bin/guimanager-run.sh</include>
                     <include>bin/update-subscribergroup.sh</include>
+                    <include>bin/configlog.sh</include>
                     <include>bin/storeconfiguration.sh</include>
                     <include>bin/upgrade-run-preamble.sh</include>
                     <include>bin/upgrade-run-flyway.sh</include>
