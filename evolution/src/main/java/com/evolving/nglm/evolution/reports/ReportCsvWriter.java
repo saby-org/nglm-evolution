@@ -332,7 +332,7 @@ public class ReportCsvWriter
             FileOutputStream fos = new FileOutputStream(file);
             ZipOutputStream writer = new ZipOutputStream(fos);
             
-            log.info("RAJ K wirting records {}", records);
+            if(log.isDebugEnabled()) log.debug("wirting records {}", records);
             for (String key : records.keySet())
               {
                 //

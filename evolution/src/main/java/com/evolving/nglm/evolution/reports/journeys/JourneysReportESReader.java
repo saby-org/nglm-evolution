@@ -29,7 +29,7 @@ public class JourneysReportESReader
     log.info("starting JourneysReportESReader - Reading data from ES in " + esIndexJourney + " index and writing to " + topicName + " topic.");
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexJourney, QueryBuilders.matchAllQuery());
-    log.info("RAJ K ES indexes to read {}", esIndexWithQuery.keySet());
+    if(log.isDebugEnabled()) log.debug("ES indexes to read {}", esIndexWithQuery.keySet());
     
     //
     //  reportEsReader

@@ -963,7 +963,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           }
         else
           {
-          //reportService.launchReport(report.getName()); //RAJ K
             reportService.launchReport(report.getName(), backendSimulator);
             responseCode = "ok";
           }

@@ -76,7 +76,7 @@ public class BDRReportESReader
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexBdrList.toString(), QueryBuilders.matchAllQuery());
 
-    log.info("RAJ K ES indexes to read {}", esIndexWithQuery.keySet());
+    if(log.isDebugEnabled()) log.debug("ES indexes to read {}", esIndexWithQuery.keySet());
     ReportEsReader reportEsReader = new ReportEsReader("subscriberID", topicName, kafkaNodeList, kzHostList, esNode, esIndexWithQuery, false);
     reportEsReader.start();
     

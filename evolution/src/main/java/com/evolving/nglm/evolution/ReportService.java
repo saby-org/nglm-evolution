@@ -195,7 +195,7 @@ public class ReportService extends GUIService
           }
         if (report == null )
           {
-            log.info("RAJ K no active report found with scheduling for name {}", reportName);
+            if(log.isDebugEnabled()) log.debug("no active report found with scheduling for name {}", reportName);
           }
         else
           {
@@ -227,7 +227,7 @@ public class ReportService extends GUIService
     
     StringBuilder dateRAJKString = new StringBuilder();
     pendingReportsForDates.forEach(dt -> dateRAJKString.append(" " + printDate(dt)));
-    log.info("RAJ K generating reoports for dates {}", dateRAJKString);
+    if(log.isDebugEnabled()) log.debug("generating reoports for dates {}", dateRAJKString);
     
     for (Date date : pendingReportsForDates)
       {
@@ -443,13 +443,13 @@ public class ReportService extends GUIService
     
     StringBuilder generatedDatesRAJKString = new StringBuilder();
     generatedDates.forEach(dt -> generatedDatesRAJKString.append(" " + printDate(dt)));
-    log.info("RAJ K getPendingReportsForDates generatedDates {}", generatedDatesRAJKString);
+    if(log.isDebugEnabled()) log.debug("getPendingReportsForDates generatedDates {}", generatedDatesRAJKString);
     
     pendingDates = compareAndGetDates(report, generatedDates);
     
     StringBuilder pendingDatesDatesRAJKString = new StringBuilder();
     pendingDates.forEach(dt -> pendingDatesDatesRAJKString.append(" " + printDate(dt)));
-    log.info("RAJ K getPendingReportsForDates pendingDates {}", pendingDatesDatesRAJKString);
+    if(log.isDebugEnabled()) log.debug("getPendingReportsForDates pendingDates {}", pendingDatesDatesRAJKString);
     
     //
     //  filterIfUpdated
@@ -476,7 +476,7 @@ public class ReportService extends GUIService
     final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, Deployment.getBaseTimeZone());
     for (SchedulingInterval schedulingInterval : report.getEffectiveScheduling())
       {
-        log.info("RAJ K compareAndGetDates schedulingInterval {}", schedulingInterval);
+        if(log.isDebugEnabled()) log.debug("compareAndGetDates schedulingInterval {}", schedulingInterval);
         
         //
         //  ignore HOURLY reports
@@ -530,7 +530,8 @@ public class ReportService extends GUIService
         
         StringBuilder datesToCheckRAJKString = new StringBuilder();
         datesToCheck.forEach(dt -> datesToCheckRAJKString.append(" " + printDate(dt)));
-        log.info("RAJ K compareAndGetDates datesToCheck {}", datesToCheckRAJKString);
+        if(log.isDebugEnabled()) log.debug("compareAndGetDates datesToCheck {}", datesToCheckRAJKString);
+        
         //
         // compare
         //

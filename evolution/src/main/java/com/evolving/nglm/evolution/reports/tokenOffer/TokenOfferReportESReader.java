@@ -31,7 +31,7 @@ public class TokenOfferReportESReader
     log.info("starting TokenReportESReader - Reading data from ES in " + esIndexCustomer + "  index and writing to " + topicName + " topic.");
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
-    log.info("RAJ K ES indexes to read {}", esIndexWithQuery.keySet());
+    if(log.isDebugEnabled()) log.debug("ES indexes to read {}", esIndexWithQuery.keySet());
     
     //
     //  reportEsReader
