@@ -13,6 +13,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -2369,31 +2370,93 @@ public abstract class Expression
     private Date evaluateDateAddOrConstantFunction(Date dateAddDate, Date strictScheduleDate, Number waitDuration, TimeUnit timeUnit, String dayOfWeek, String waitTimeString, TimeUnit baseTimeUnit, boolean roundDown)
     {
       log.info("RAJ K evaluateDateAddOrConstantFunction dayOfWeek {} waitTimeString {}", dayOfWeek, waitTimeString);
-      boolean dateBasedWait = strictScheduleDate != null;
-      boolean timeBasedWait = waitDuration != null && timeUnit != TimeUnit.Unknown;
-      boolean dateAndTimeBasedWait = dateBasedWait && timeBasedWait;
-      
-      //
-      //  1970
-      //
-      
       Date result = new Date(0L);
+      List<Date> watingDates = new ArrayList<Date>();
       
-      if (dateAndTimeBasedWait)
+      //
+      // wait on strictScheduleDate
+      //
+      
+      if (strictScheduleDate != null) watingDates.add(strictScheduleDate);
+      
+      //
+      // wait on timeBasedWait
+      //
+      
+      if (waitDuration != null && timeUnit != TimeUnit.Unknown) watingDates.add(evaluateDateAddFunction(dateAddDate, waitDuration, timeUnit, baseTimeUnit, roundDown));
+      
+      //
+      // wait on day
+      //
+      
+      if (dayOfWeek != null)
         {
-          Date timeBasedDate = evaluateDateAddFunction(dateAddDate, waitDuration, timeUnit, baseTimeUnit, roundDown);
-          if (timeBasedDate.after(strictScheduleDate)) result = strictScheduleDate;
-          else result = timeBasedDate;
+          Date nextDayDate = null;
+          switch (dayOfWeek.toUpperCase())
+          {
+            case "SUNDAY":
+              nextDayDate = getNextDayDate(dateAddDate, Calendar.SUNDAY);
+              break;
+              
+            case "MONDAY":
+              nextDayDate = getNextDayDate(dateAddDate, Calendar.MONDAY);
+              break;
+              
+            case "TUESDAY":
+              nextDayDate = getNextDayDate(dateAddDate, Calendar.TUESDAY);
+              break;
+              
+            case "WEDNESDAY":
+              nextDayDate = getNextDayDate(dateAddDate, Calendar.WEDNESDAY);
+              break;
+              
+            case "THURSDAY":
+              nextDayDate = getNextDayDate(dateAddDate, Calendar.THURSDAY);
+              break;
+              
+            case "FRIDAY":
+              nextDayDate = getNextDayDate(dateAddDate, Calendar.FRIDAY);
+              break;
+              
+            case "SATURDAY":
+              nextDayDate = getNextDayDate(dateAddDate, Calendar.SATURDAY);
+              break;
+
+            default:
+              break;
+          }
+          if (nextDayDate != null) watingDates.add(nextDayDate);
         }
-      else if (dateBasedWait)
+      
+      //
+      // wait on time to do
+      //
+      
+      
+      
+      if (watingDates.size() > 0)
         {
-          result = strictScheduleDate;
+          log.info("RAJ K evaluateDateAddOrConstantFunction watingDates before sort {}", watingDates);
+          Collections.sort(watingDates);
+          log.info("RAJ K evaluateDateAddOrConstantFunction watingDates after sort {}", watingDates);
+          result = watingDates.get(0);
         }
-      else if (timeBasedWait)
-        {
-          result = evaluateDateAddFunction(dateAddDate, waitDuration, timeUnit, baseTimeUnit, roundDown);
-        }
+      
+      //
+      //  return
+      //
+      
+      log.info("RAJ K evaluateDateAddOrConstantFunction result {}", result);
       return result;
+    }
+
+    private Date getNextDayDate(final Date dateAddDate, int dayOfWeek)
+    {
+      Date tempDate = dateAddDate;
+      if (dayOfWeek == RLMDateUtils.getField(dateAddDate, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone())) return dateAddDate;
+      tempDate = RLMDateUtils.setField(dateAddDate, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getBaseTimeZone());
+      tempDate = RLMDateUtils.addDays(tempDate, 7, Deployment.getBaseTimeZone());
+      return tempDate;
     }
 
     /*****************************************
@@ -3547,4 +3610,5 @@ public abstract class Expression
       super();
     }
   }
+  
 }
