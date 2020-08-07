@@ -2425,8 +2425,9 @@ public abstract class Expression
             default:
               break;
           }
-          if (nextDayDate != null && waitTimeString != null)
+          if (nextDayDate != null)
             {
+              if (waitTimeString == null) waitTimeString = "00:00:00";
               String[] args = waitTimeString.trim().split(":");
               if (args.length != 3) throw new ExpressionEvaluationException();
               int hh = Integer.parseInt(args[0]);
@@ -2437,6 +2438,18 @@ public abstract class Expression
               nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
               watingDates.add(nextDayDate);
             }
+        }
+      else if (waitTimeString != null)
+        {
+          String[] args = waitTimeString.trim().split(":");
+          int hh = Integer.parseInt(args[0]);
+          int mm = Integer.parseInt(args[1]);
+          int ss = Integer.parseInt(args[2]);
+          Date expectedDate = dateAddDate;
+          expectedDate = RLMDateUtils.setField(expectedDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
+          expectedDate = RLMDateUtils.setField(expectedDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
+          expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
+          watingDates.add(expectedDate);
         }
       
       //
