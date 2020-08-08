@@ -2374,16 +2374,16 @@ public abstract class Expression
       List<Date> watingDates = new ArrayList<Date>();
       
       //
-      // wait for strictScheduleDate
-      //
-      
-      if (strictScheduleDate != null) watingDates.add(strictScheduleDate);
-      
-      //
       // wait for Duration
       //
       
       if (waitDuration != null && timeUnit != TimeUnit.Unknown) watingDates.add(evaluateDateAddFunction(dateAddDate, waitDuration, timeUnit, baseTimeUnit, roundDown));
+      
+      //
+      // wait for strictScheduleDate
+      //
+      
+      if (strictScheduleDate != null) watingDates.add(strictScheduleDate);
       
       //
       // wait for day
