@@ -2377,7 +2377,12 @@ public abstract class Expression
       // wait for Duration
       //
       
-      if (waitDuration != null && timeUnit != TimeUnit.Unknown) watingDates.add(evaluateDateAddFunction(dateAddDate, waitDuration, timeUnit, baseTimeUnit, roundDown));
+      if (waitDuration != null && timeUnit != TimeUnit.Unknown)
+        {
+          Date dateAfterWait = dateAddDate;
+          dateAfterWait = evaluateDateAddFunction(dateAfterWait, waitDuration, timeUnit, baseTimeUnit, roundDown);
+          watingDates.add(dateAfterWait);
+        }
       
       //
       // wait for strictScheduleDate
