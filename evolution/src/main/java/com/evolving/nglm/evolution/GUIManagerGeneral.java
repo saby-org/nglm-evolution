@@ -1152,6 +1152,7 @@ public class GUIManagerGeneral extends GUIManager
                 deliverableMap.put("display", point.getDisplay());
                 deliverableMap.put("active", true);
                 deliverableMap.put("unitaryCost", 0);
+                deliverableMap.put("label", "points");
                 Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
                 deliverableService.putDeliverable(deliverable, true, userID);
               }
@@ -1169,6 +1170,7 @@ public class GUIManagerGeneral extends GUIManager
                 paymentMeanMap.put("name", point.getPointName());
                 paymentMeanMap.put("display", point.getDisplay());
                 paymentMeanMap.put("active", true);
+                paymentMeanMap.put("label", point.getLabel());
                 PaymentMean paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), epoch, null);
                 paymentMeanService.putPaymentMean(paymentMean, true, userID);
               }

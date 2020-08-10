@@ -1,12 +1,15 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class DeliveryManagerAccount
 {
@@ -89,6 +92,7 @@ public class DeliveryManagerAccount
     private String name;
     private boolean creditable;
     private boolean debitable;
+    private String label;
     
     //
     //  accessors
@@ -98,6 +102,7 @@ public class DeliveryManagerAccount
     public String getName() { return name; }
     public boolean getCreditable() { return creditable; }
     public boolean getDebitable() { return debitable; }
+    public String getLabel() { return label; }
     
     /*****************************************
     *
@@ -105,12 +110,13 @@ public class DeliveryManagerAccount
     *
     *****************************************/
 
-    public Account(String externalAccountID, String name, boolean creditable, boolean debitable)
+    public Account(String externalAccountID, String name, boolean creditable, boolean debitable, String label, JSONObject characteristics)
     {
       this.externalAccountID = externalAccountID;
       this.name = name;
       this.creditable = creditable;
       this.debitable = debitable;
+      this.label = label;
     }
 
     /*****************************************
@@ -125,7 +131,8 @@ public class DeliveryManagerAccount
       this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
       this.creditable = JSONUtilities.decodeBoolean(jsonRoot, "creditable", true);
       this.debitable = JSONUtilities.decodeBoolean(jsonRoot, "debitable", true);
-    }
-    
+      this.label = JSONUtilities.decodeString(jsonRoot, "label", false);
+      }
+       
   }
 }

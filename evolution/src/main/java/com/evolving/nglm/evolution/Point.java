@@ -40,12 +40,13 @@ public class Point extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("point");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("debitable", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("creditable", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("setable", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("validity", PointValidity.schema());
+    schemaBuilder.field("label", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -72,6 +73,7 @@ public class Point extends GUIManagedObject
   private boolean creditable;
   private boolean setable;
   private PointValidity validity;
+  private String label;
 
   /****************************************
   *
@@ -90,6 +92,7 @@ public class Point extends GUIManagedObject
   public boolean getCreditable() { return creditable; }
   public boolean getSetable() { return setable; }
   public PointValidity getValidity(){ return validity; }
+  public String getLabel() { return label; }
   
   /*****************************************
   *
@@ -97,13 +100,14 @@ public class Point extends GUIManagedObject
   *
   *****************************************/
 
-  public Point(SchemaAndValue schemaAndValue, boolean debitable, boolean creditable, boolean setable, PointValidity validity)
+  public Point(SchemaAndValue schemaAndValue, boolean debitable, boolean creditable, boolean setable, PointValidity validity, String label)
   {
     super(schemaAndValue);
     this.debitable = debitable;
     this.creditable = creditable;
     this.setable = setable;
     this.validity = validity;
+    this.label = label;
   }
 
   /*****************************************
@@ -119,6 +123,7 @@ public class Point extends GUIManagedObject
     this.creditable = point.getCreditable();
     this.setable = point.getSetable();
     this.validity = point.getValidity().copy();
+    this.label = point.getLabel();
   }
 
   /*****************************************
@@ -147,6 +152,7 @@ public class Point extends GUIManagedObject
     struct.put("creditable", point.getCreditable());
     struct.put("setable", point.getSetable());
     struct.put("validity", PointValidity.pack(point.getValidity()));
+    struct.put("label", point.getLabel());
     return struct;
   }
   
@@ -175,12 +181,13 @@ public class Point extends GUIManagedObject
     boolean creditable = valueStruct.getBoolean("creditable");
     boolean setable = valueStruct.getBoolean("setable");
     PointValidity validity = PointValidity.unpack(new SchemaAndValue(schema.field("validity").schema(), valueStruct.get("validity")));
+    String label = (schemaVersion >= 2) ? valueStruct.getString("label") : "";
 
     //
     //  return
     //
 
-    return new Point(schemaAndValue, debitable, creditable, setable, validity);
+    return new Point(schemaAndValue, debitable, creditable, setable, validity, label);
   }
   
   /*****************************************
@@ -217,7 +224,8 @@ public class Point extends GUIManagedObject
     this.creditable = JSONUtilities.decodeBoolean(jsonRoot, "creditable", Boolean.TRUE);
     this.setable = JSONUtilities.decodeBoolean(jsonRoot, "setable", Boolean.FALSE);
     this.validity = new PointValidity(JSONUtilities.decodeJSONObject(jsonRoot, "validity", true));
-
+    this.label = JSONUtilities.decodeString(jsonRoot, "label", false);
+    
     /*****************************************
     *
     *  epoch
@@ -245,6 +253,7 @@ public class Point extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(getCreditable(), point.getCreditable());
         epochChanged = epochChanged || ! Objects.equals(getSetable(), point.getSetable());
         epochChanged = epochChanged || ! Objects.equals(getValidity(), point.getValidity());
+        epochChanged = epochChanged || ! Objects.equals(getLabel(), point.getLabel());
         return epochChanged;
       }
     else
