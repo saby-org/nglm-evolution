@@ -4984,7 +4984,7 @@ public class ThirdPartyManager
 
     if(voucherStored==null){
       if(errorException!=null) throw errorException;
-      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
     }
 
     return new Pair<>(subscriberID,voucherStored);
@@ -6158,7 +6158,7 @@ public class ThirdPartyManager
     if (validateNotEmpty && (result == null || result.trim().isEmpty()))
       {
         log.error("readString validation error");
-        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
       }
     return result;
   }
