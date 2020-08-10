@@ -4452,7 +4452,7 @@ public class EvolutionEngine
                     switch (journey.getTargetingType())
                       {
                         case Target:
-                          if (subscriberState.getSubscriberProfile().getUniversalControlGroup())
+                          if (!journey.getAppendUCG() && subscriberState.getSubscriberProfile().getUniversalControlGroup())
                             {
                               enterJourney = false;
                               context.subscriberTrace("NotEligible: user is UCG {0}", journey.getJourneyID());
