@@ -9,6 +9,8 @@ package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Date;
+import java.util.Map;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -24,10 +26,11 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "supplier", serviceClass = SupplierService.class, dependencies = { })
+@GUIDependencyDef(objectType = "supplier", serviceClass = SupplierService.class, dependencies = {"supplier" })
 public class Supplier extends GUIManagedObject
 {
   
@@ -64,10 +67,11 @@ public class Supplier extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("supplier");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("supplierType", SchemaBuilder.string().optional().defaultValue("Internal").schema());
     schemaBuilder.field("userIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).optional().schema());
+    schemaBuilder.field("parentSupplierID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -93,6 +97,7 @@ public class Supplier extends GUIManagedObject
   
   private SupplierType supplierType;
   private List<String> userIDs;
+  private String parentSupplierID;
 
   /****************************************
   *
@@ -103,6 +108,7 @@ public class Supplier extends GUIManagedObject
   public String getSupplierID() { return getGUIManagedObjectID(); }
   public SupplierType getSupplierType() { return supplierType; }
   public List<String> getUserIDs() { return userIDs; }
+  public String getParentSupplierID() { return parentSupplierID; }
 
   /*****************************************
   *
@@ -110,11 +116,12 @@ public class Supplier extends GUIManagedObject
   *
   *****************************************/
 
-  public Supplier(SchemaAndValue schemaAndValue, SupplierType supplierType, List<String> userIDs)
+  public Supplier(SchemaAndValue schemaAndValue, SupplierType supplierType, List<String> userIDs, String parentSupplierID)
   {
     super(schemaAndValue);
     this.supplierType = supplierType;
     this.userIDs = userIDs;
+    this.parentSupplierID = parentSupplierID;
   }
 
   /*****************************************
@@ -130,6 +137,7 @@ public class Supplier extends GUIManagedObject
     packCommon(struct, supplier);
     struct.put("supplierType", supplier.getSupplierType().getExternalRepresentation());
     struct.put("userIDs", supplier.getUserIDs());
+    struct.put("parentSupplierID", supplier.getParentSupplierID());
     return struct;
   }
   
@@ -156,11 +164,12 @@ public class Supplier extends GUIManagedObject
     Struct valueStruct = (Struct) value;
     SupplierType supplierType = (schemaVersion >= 2) ? SupplierType.fromExternalRepresentation(valueStruct.getString("supplierType")) : SupplierType.Internal;
     List<String> userIDs = (schemaVersion >= 2) ? (List<String>) valueStruct.get("userIDs"):new ArrayList<String>();
+    String parentSupplierID = (schemaVersion >= 3) ? valueStruct.getString("parentSupplierID") : null;
     //
     //  return
     //
 
-    return new Supplier(schemaAndValue, supplierType, userIDs);
+    return new Supplier(schemaAndValue, supplierType, userIDs, parentSupplierID);
   }
 
   /*****************************************
@@ -195,6 +204,7 @@ public class Supplier extends GUIManagedObject
     
     this.supplierType = SupplierType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "supplierType", false));
     this.userIDs = decodeUsers(JSONUtilities.decodeJSONArray(jsonRoot, "userIDs", false));
+    this.parentSupplierID = JSONUtilities.decodeString(jsonRoot, "parentSupplierID", false);
 
     /*****************************************
     *
@@ -252,6 +262,7 @@ public class Supplier extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingSupplier.getGUIManagedObjectID());
         epochChanged = epochChanged || ! Objects.equals(getSupplierType(), existingSupplier.getSupplierType());
         epochChanged = epochChanged || ! Objects.equals(getUserIDs(), existingSupplier.getUserIDs());
+        epochChanged = epochChanged || ! Objects.equals(getParentSupplierID(), existingSupplier.getParentSupplierID());
         return epochChanged;
       }
     else
@@ -260,9 +271,64 @@ public class Supplier extends GUIManagedObject
       }
   }
   
+  /*****************************************
+  *
+  *  validate
+  *
+  *****************************************/
+
+  public void validate(SupplierService supplierService, Date date) throws GUIManagerException
+  {
+
+    /*****************************************
+     *
+     * validate supplier ancestors - ensure all parents exist and are active -
+     * ensure no cycles
+     *
+     *****************************************/
+
+    Supplier walk = this;
+    while (walk != null)
+      {
+        //
+        // done if no parent
+        //
+
+        if (walk.getParentSupplierID() == null)
+          break;
+
+        //
+        // verify parent
+        // 1) exists
+        // 2) is a Supplier
+        // 3) is active
+        // 4) does not create a cycle
+        //
+
+        GUIManagedObject uncheckedParent = supplierService.getStoredSupplier(walk.getParentSupplierID());
+        if (uncheckedParent == null)
+          throw new GUIManagerException("unknown Supplier ancestor", walk.getParentSupplierID());
+        if (uncheckedParent instanceof IncompleteObject)
+          throw new GUIManagerException("invalid supplier ancestor", walk.getParentSupplierID());
+        Supplier parent = (Supplier) uncheckedParent;
+        if (!supplierService.isActiveSupplier(parent, date))
+          throw new GUIManagerException("inactive supplier ancestor", walk.getParentSupplierID());
+        if (parent.equals(this))
+          throw new GUIManagerException("cycle in reseller hierarchy", getParentSupplierID());
+
+        //
+        // "recurse"
+        //
+
+        walk = parent;
+      }
+  }
   @Override public Map<String, List<String>> getGUIDependencies()
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
+    List<String> supplierIDs = new ArrayList<>();
+    supplierIDs.add(parentSupplierID);   
+    result.put("supplier", supplierIDs);    
     return result;
   }
 }

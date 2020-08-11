@@ -12,6 +12,8 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -128,7 +130,47 @@ public class SupplierService extends GUIService
   *
   *****************************************/
 
-  public void putSupplier(GUIManagedObject supplier, boolean newObject, String userID) { putGUIManagedObject(supplier, SystemTime.getCurrentTime(), newObject, userID); }
+  public void putSupplier(GUIManagedObject supplier, boolean newObject, String userID, SupplierService supplierService) throws GUIManagerException{ 
+    
+    //
+    //  now
+    //
+
+    Date now = SystemTime.getCurrentTime();
+
+    //
+    //  validate
+    //
+
+    if (supplier instanceof Supplier)
+      {
+        ((Supplier) supplier).validate(supplierService, now);
+      }
+
+    //
+    //  put
+    //
+    putGUIManagedObject(supplier, SystemTime.getCurrentTime(), newObject, userID); 
+    
+  }
+  
+  /*****************************************
+  *
+  *  putSupplier
+  *
+  *****************************************/
+
+  public void putSupplier(IncompleteObject supplier,  boolean newObject, String userID, SupplierService supplierService)
+  {
+    try
+      {
+        putSupplier((GUIManagedObject) supplier, newObject, userID, supplierService);
+      }
+    catch (GUIManagerException e)
+      {
+        throw new RuntimeException(e);
+      }
+  }
 
   /*****************************************
   *

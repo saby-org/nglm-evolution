@@ -3702,7 +3702,6 @@ public class Journey extends GUIManagedObject implements StockableItem
           break;
       }
     
-  
     return result;
   }
 }

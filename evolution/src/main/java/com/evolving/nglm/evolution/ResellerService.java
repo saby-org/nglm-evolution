@@ -12,6 +12,8 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -128,7 +130,48 @@ public class ResellerService extends GUIService
   *
   *****************************************/
 
-  public void putReseller(GUIManagedObject reseller, boolean newObject, String userID) { putGUIManagedObject(reseller, SystemTime.getCurrentTime(), newObject, userID); }
+  public void putReseller(GUIManagedObject reseller, boolean newObject, String userID, ResellerService resellerService) throws GUIManagerException { 
+    
+    //
+    //  now
+    //
+
+    Date now = SystemTime.getCurrentTime();
+
+    //
+    //  validate
+    //
+
+    if (reseller instanceof Reseller)
+      {
+        ((Reseller) reseller).validate(resellerService, now);
+      }
+
+    //
+    //  put
+    //
+
+    putGUIManagedObject(reseller, SystemTime.getCurrentTime(), newObject, userID); 
+    
+  }
+  
+  /*****************************************
+  *
+  *  putReseller
+  *
+  *****************************************/
+
+  public void putReseller(IncompleteObject reseller,  boolean newObject, String userID, ResellerService resellerService)
+  {
+    try
+      {
+        putReseller((GUIManagedObject) reseller, newObject, userID, resellerService);
+      }
+    catch (GUIManagerException e)
+      {
+        throw new RuntimeException(e);
+      }
+  }
 
   /*****************************************
   *
