@@ -14,6 +14,7 @@ import com.evolving.nglm.evolution.JobScheduler;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.LoggerInitialization;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
+import com.evolving.nglm.evolution.OfferObjectiveService;
 import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.PaymentMeanService;
 import com.evolving.nglm.evolution.SalesChannelService;
@@ -70,6 +71,7 @@ public class DatacubeManager
   private static OfferService offerService;
   private static SalesChannelService salesChannelService;
   private static PaymentMeanService paymentMeanService;
+  private static OfferObjectiveService offerObjectiveService;
   private static RestHighLevelClient elasticsearchRestClient;
   
   //
@@ -128,6 +130,8 @@ public class DatacubeManager
     salesChannelService.start();
     paymentMeanService = new PaymentMeanService(bootstrapServers, applicationID + "-paymentmeanservice-" + instanceID, Deployment.getPaymentMeanTopic(), false);
     paymentMeanService.start();
+    offerObjectiveService = new OfferObjectiveService(bootstrapServers, applicationID + "-offerobjectiveservice-" + instanceID, Deployment.getOfferObjectiveTopic(), false);
+    offerObjectiveService.start();
     
     //
     // initialize ES client & GUI client
@@ -163,7 +167,7 @@ public class DatacubeManager
     tierChangesDatacube = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes", elasticsearchRestClient, loyaltyProgramService);
     trafficDatacube = new JourneyTrafficDatacubeGenerator("Journey:Traffic", elasticsearchRestClient, segmentationDimensionService, journeyService);
     rewardsDatacube = new JourneyRewardsDatacubeGenerator("Journey:Rewards", elasticsearchRestClient, segmentationDimensionService, journeyService);
-    odrDatacube = new ODRDatacubeGenerator("ODR", elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, loyaltyProgramService, journeyService);
+    odrDatacube = new ODRDatacubeGenerator("ODR", elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
     subscriberProfileDatacube = new SubscriberProfileDatacubeGenerator("SubscriberProfile", elasticsearchRestClient, segmentationDimensionService);
   }
 
@@ -489,7 +493,8 @@ public class DatacubeManager
     offerService.stop();
     salesChannelService.stop();
     paymentMeanService.stop();
-
+    offerObjectiveService.stop();
+    
     /*****************************************
     *
     *  log
