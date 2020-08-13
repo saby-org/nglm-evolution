@@ -109,7 +109,10 @@ public class SimpleSMSSender extends SMSSenderListener {
 	protected final String sms_MO_event_name;
 	protected final String sms_MO_channel_name;
 	protected Constructor<? extends MONotificationEvent> sms_MO_class_constructor = null;
-	
+
+	public String get_source_addr() {
+		return source_addr;
+	}
 
 	private final String DELIVERY_RECEIPT_DEC = "dec";
 	private final String MULTI_PART_SUBMIT_SM_HANDLE_ALL = "all";

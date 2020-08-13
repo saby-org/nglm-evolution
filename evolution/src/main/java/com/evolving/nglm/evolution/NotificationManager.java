@@ -294,7 +294,35 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     {
       return notificationParameters;
     }
-    
+
+
+    // this resolved the source address
+    // populating a param "node.parameter.sourceaddress" with a SourceaAddress "display" field from received param "node.parameter.fromaddress" which contains the "id"
+    public void resolveFromAddressToSourceAddress(SourceAddressService sourceAddressService){
+      String sourceAddressId = getFromAddressParam();
+      if(sourceAddressId==null) return;
+      GUIManagedObject sourceAddressObject = sourceAddressService.getStoredSourceAddress(sourceAddressId);
+      if(sourceAddressObject==null) return;
+      String sourceAddress = sourceAddressObject.getGUIManagedObjectDisplay();
+      if(sourceAddress==null) return;
+      if(log.isDebugEnabled()) log.debug("NotificationManagerRequest.resolveFromAddressToSourceAddress : resolved "+sourceAddressId+" to "+sourceAddress);
+      setSourceAddressParam(sourceAddress);
+    }
+    public String getFromAddressParam(){
+      if(getNotificationParameters()==null) return null;
+      return (String)getNotificationParameters().get("node.parameter.fromaddress");
+    }
+    public String getSourceAddressParam(){
+      if(getNotificationParameters()==null) return null;
+      return (String)getNotificationParameters().get("node.parameter.sourceaddress");
+    }
+    public void setSourceAddressParam(String sourceAddress){
+      if(log.isDebugEnabled()) log.debug("NotificationManagerRequest.setSourceAddressParam("+sourceAddress+") called");
+      ParameterMap parameterMap = getNotificationParameters();
+      if(parameterMap==null) parameterMap=new ParameterMap();
+      parameterMap.put("node.parameter.sourceaddress",sourceAddress);
+    }
+
     /*****************************************
     *
     *  getResolvedParameters
@@ -658,8 +686,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       guiPresentationMap.put(FEATUREID, getFeatureID());
       guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-      String fromAddress = "";//todo (String)getNotificationParameters().get("node.parameter.fromaddress");
-      guiPresentationMap.put(SOURCE, fromAddress);
+      guiPresentationMap.put(SOURCE, getSourceAddressParam());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
       //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
@@ -684,8 +711,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
       thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-      String fromAddress = "";//todo (String)getNotificationParameters().get("node.parameter.fromaddress");
-      thirdPartyPresentationMap.put(SOURCE, fromAddress);
+      thirdPartyPresentationMap.put(SOURCE, getSourceAddressParam());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
@@ -934,9 +960,10 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         DeliveryRequest deliveryRequest = nextRequest();
         Date now = SystemTime.getCurrentTime();
 
-        log.info("NotificationManagerRequest run deliveryRequest" + deliveryRequest);
+        if(log.isDebugEnabled()) log.debug("NotificationManagerRequest run deliveryRequest" + deliveryRequest);
 
         NotificationManagerRequest dialogRequest = (NotificationManagerRequest) deliveryRequest;
+        dialogRequest.resolveFromAddressToSourceAddress(getSourceAddressService());
         DialogTemplate dialogTemplate = (DialogTemplate) getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
         
         if (dialogTemplate != null) 
@@ -956,7 +983,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
                   {
                     NotificationInterface plugin = pluginInstances.get(dialogRequest.getChannelID());
                     if(plugin != null) {
-                      log.debug("NotificationManagerRequest SEND Immediately restricted " + dialogRequest);
+                      if(log.isDebugEnabled()) log.debug("NotificationManagerRequest SEND Immediately restricted " + dialogRequest);
                       plugin.send(dialogRequest);
                     }
                     else {
@@ -971,7 +998,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
                   }
                 else
                   {
-                    log.debug("NotificationManagerRequest RESCHEDULE to " + effectiveDeliveryTime + " restricted " + dialogRequest);
+                    if(log.isDebugEnabled()) log.debug("NotificationManagerRequest RESCHEDULE to " + effectiveDeliveryTime + " restricted " + dialogRequest);
                     dialogRequest.setRescheduledDate(effectiveDeliveryTime);
                     dialogRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
                     dialogRequest.setReturnCode(MessageStatus.RESCHEDULE.getReturnCode());
@@ -982,7 +1009,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
             else {
               NotificationInterface plugin = pluginInstances.get(dialogRequest.getChannelID());
               if(plugin != null) {
-                log.debug("NotificationManagerRequest SEND Immediately NON restricted " + dialogRequest);
+                if(log.isDebugEnabled()) log.debug("NotificationManagerRequest SEND Immediately NON restricted " + dialogRequest);
                 plugin.send(dialogRequest);
               }
               else {
@@ -999,9 +1026,11 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         else
           {
             log.info("NotificationManagerRequest run deliveryRequest : ERROR : template with id '"+dialogRequest.getTemplateID()+"' not found");
-            log.info("subscriberMessageTemplateService contains :");
-            for(GUIManagedObject obj : getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplates(now)){
-              log.info("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
+            if(log.isDebugEnabled()){
+              log.debug("subscriberMessageTemplateService contains :");
+              for(GUIManagedObject obj : getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplates(now)){
+                log.debug("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
+              }
             }
             dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
             dialogRequest.setReturnCode(MessageStatus.UNKNOWN.getReturnCode());
@@ -1021,13 +1050,13 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
   public void updateDeliveryRequest(INotificationRequest deliveryRequest)
   {
-    log.info("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
+    if(log.isDebugEnabled()) log.debug("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
     updateRequest((DeliveryRequest)deliveryRequest);
   }
   
   public void updateDeliveryRequest(DeliveryRequest deliveryRequest)
   {
-    log.info("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
+    if(log.isDebugEnabled()) log.debug("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
     updateRequest(deliveryRequest);
   }
 
@@ -1045,7 +1074,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
   public void completeDeliveryRequest(DeliveryRequest deliveryRequest)
   {
     DeliveryRequest dr = (DeliveryRequest)deliveryRequest;
-    log.info("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
+    if(log.isDebugEnabled()) log.debug("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
     completeRequest(dr);
     stats.updateMessageCount(channelsString, 1, dr.getDeliveryStatus());
   }
@@ -1058,7 +1087,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
   public void submitCorrelatorUpdateDeliveryRequest(String correlator, JSONObject correlatorUpdate)
   {
-    log.info("NotificationManager.submitCorrelatorUpdateDeliveryRequest(correlator=" + correlator + ", correlatorUpdate=" + correlatorUpdate.toJSONString() + ")");
+    if(log.isDebugEnabled()) log.debug("NotificationManager.submitCorrelatorUpdateDeliveryRequest(correlator=" + correlator + ", correlatorUpdate=" + correlatorUpdate.toJSONString() + ")");
     submitCorrelatorUpdate(correlator, correlatorUpdate);
   }
 
