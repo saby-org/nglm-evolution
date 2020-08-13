@@ -1097,7 +1097,7 @@ public class EvaluationCriterion
         *****************************************/
 
         case ContainsKeywordOperator:
-          result = traceCondition(evaluationRequest, evaluateContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
+          result = traceCondition(evaluationRequest, evaluateContainsKeyword((String) criterionFieldValue, ((String) evaluatedArgument).toLowerCase()), criterionFieldValue, evaluatedArgument);
           break;
           
         /*****************************************
@@ -1107,7 +1107,7 @@ public class EvaluationCriterion
         *****************************************/
           
         case DoesNotContainsKeywordOperator:
-          result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
+          result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) criterionFieldValue, ((String) evaluatedArgument).toLowerCase()), criterionFieldValue, evaluatedArgument);
           break;
 
         /*****************************************
