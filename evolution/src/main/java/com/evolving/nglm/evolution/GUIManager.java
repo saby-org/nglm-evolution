@@ -329,6 +329,8 @@ public class GUIManager
     removeUCGRule("removeUCGRule"),
     setStatusUCGRule("setStatusUCGRule"),
     getDeliverableList("getDeliverableList"),
+    putDeliverable("putDeliverable"),
+    removeDeliverable("removeDeliverable"),
     getDeliverableSummaryList("getDeliverableSummaryList"),
     getDeliverable("getDeliverable"),
     setStatusDeliverable("setStatusDeliverable"),
@@ -1913,6 +1915,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getDeliverableList", new APISimpleHandler(API.getDeliverableList));
         restServer.createContext("/nglm-guimanager/getDeliverableSummaryList", new APISimpleHandler(API.getDeliverableSummaryList));
         restServer.createContext("/nglm-guimanager/getDeliverable", new APISimpleHandler(API.getDeliverable));
+        restServer.createContext("/nglm-guimanager/putDeliverable", new APISimpleHandler(API.putDeliverable));
+        restServer.createContext("/nglm-guimanager/removeDeliverable", new APISimpleHandler(API.removeDeliverable));
         restServer.createContext("/nglm-guimanager/setStatusDeliverable", new APISimpleHandler(API.setStatusDeliverable));
         restServer.createContext("/nglm-guimanager/getDeliverableByName", new APISimpleHandler(API.getDeliverableByName));
         restServer.createContext("/nglm-guimanager/getTokenTypeList", new APISimpleHandler(API.getTokenTypeList));
@@ -3158,6 +3162,14 @@ public class GUIManager
 
                 case getDeliverable:
                   jsonResponse = guiManagerGeneral.processGetDeliverable(userID, jsonRoot, includeArchived);
+                  break;
+                  
+                case putDeliverable:
+                  jsonResponse = guiManagerGeneral.processPutDeliverable(userID, jsonRoot);
+                  break;
+                  
+                case removeDeliverable:
+                  jsonResponse = guiManagerGeneral.processRemoveDeliverable(userID, jsonRoot);
                   break;
                   
                 case setStatusDeliverable:
