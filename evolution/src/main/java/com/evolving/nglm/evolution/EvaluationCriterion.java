@@ -1830,7 +1830,8 @@ public class EvaluationCriterion
           break;
           
         case DoesNotContainsKeywordOperator:
-            query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).mustNot(baseQuery);
+          log.info("RAJ K executing {}", script.toString());
+          query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).mustNot(baseQuery);
           break;
           
 
