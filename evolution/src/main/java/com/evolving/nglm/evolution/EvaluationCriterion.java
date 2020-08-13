@@ -1102,7 +1102,7 @@ public class EvaluationCriterion
           
         /*****************************************
         *
-        *  containsKeyword operator
+        *  doesNotContainsKeywordOperator operator
         *
         *****************************************/
           
