@@ -1711,7 +1711,7 @@ public class EvaluationCriterion
           //  script
           //
 
-          script.append("return left =~ /" + generateContainsKeywordRegex(argumentValue) + "/; ");
+          script.append("return left =~ /" + generateContainsKeywordRegex(argumentValue.toLowerCase()) + "/; ");
 
           //
           //  break
