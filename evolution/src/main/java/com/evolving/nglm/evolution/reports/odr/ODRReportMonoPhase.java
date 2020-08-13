@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution.reports.odr;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.DeliveryManager;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.GUIManagedObject;
@@ -68,6 +69,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   private final static String moduleId = "moduleID";
   private final static String featureId = "featureID";
   private final static String moduleName = "moduleName";
+  private final static String featureName = "featureName";
   private final static String featureDisplay = "featureDisplay";
   private final static String subscriberID = "subscriberID";
   private final static String offerID = "offerID";
@@ -89,7 +91,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   private static final String origin = "origin";
   private static final String voucherCode = "voucherCode";
   private static final String returnCode = "returnCode";
-  private static final String returnCodeDetails = "returnCodeDetails";
+  private static final String returnCodeDescription  = "returnCodeDescription ";
 
   private static List<String> headerFieldsOrder = new LinkedList<String>();
   static
@@ -100,7 +102,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(moduleId);
     headerFieldsOrder.add(featureId);
     headerFieldsOrder.add(moduleName);
-    headerFieldsOrder.add(featureDisplay);
+    headerFieldsOrder.add(featureName);
     headerFieldsOrder.add(offerID);
     headerFieldsOrder.add(offerDisplay);
     headerFieldsOrder.add(salesChannelID);
@@ -115,7 +117,6 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(eventDatetime);
     headerFieldsOrder.add(originatingDeliveryRequestID);
     headerFieldsOrder.add(deliveryRequestID);
-    headerFieldsOrder.add(deliveryStatus);
     headerFieldsOrder.add(eventID);
     headerFieldsOrder.add(meanOfPayment);
     headerFieldsOrder.add(offerPrice);
@@ -124,7 +125,8 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(origin);
     headerFieldsOrder.add(voucherCode);
     headerFieldsOrder.add(returnCode);
-    headerFieldsOrder.add(returnCodeDetails);
+    headerFieldsOrder.add(returnCodeDescription);
+    headerFieldsOrder.add(deliveryStatus);
   }
 
   @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
@@ -173,10 +175,6 @@ public class ODRReportMonoPhase implements ReportCsvFactory
           {
             oderRecs.put(deliveryRequestID, odrFields.get(deliveryRequestID));
           }
-        if (odrFields.containsKey(deliveryStatus))
-          {
-            oderRecs.put(deliveryStatus, odrFields.get(deliveryStatus));
-          }
         if (odrFields.containsKey(eventID))
           {
             oderRecs.put(eventID, odrFields.get(eventID));
@@ -206,7 +204,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
         if(odrFields.containsKey(moduleId) && odrFields.containsKey(featureId)){
           Module module = Module.fromExternalRepresentation(String.valueOf(odrFields.get(moduleId)));
           String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(odrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
-          oderRecs.put(featureDisplay, feature);
+          oderRecs.put(featureName, feature);
           oderRecs.put(moduleName, module.toString());
           oderRecs.put(featureId, odrFields.get(featureId));
           oderRecs.put(moduleId, odrFields.get(moduleId));
@@ -284,13 +282,15 @@ public class ODRReportMonoPhase implements ReportCsvFactory
           }
         if (odrFields.containsKey(returnCode))
           {
-            oderRecs.put(returnCode, odrFields.get(returnCode));
-          }
-        if (odrFields.containsKey(returnCodeDetails))
-          {
             Object code = odrFields.get(returnCode);
             oderRecs.put(returnCode, code);
-            oderRecs.put(returnCodeDetails, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
+            oderRecs.put(returnCodeDescription, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
+            
+            if (code instanceof Integer && code != null)
+              {
+                int codeInt = (int) code;
+                oderRecs.put(deliveryStatus, (codeInt == 0) ? DeliveryManager.DeliveryStatus.Delivered.toString() : DeliveryManager.DeliveryStatus.Failed.toString());
+              }
           }    
 
         //
