@@ -1706,12 +1706,13 @@ public class EvaluationCriterion
           //
 
           String argumentValue = (String) argument.evaluateExpression(null, TimeUnit.Unknown);
+          if (argumentValue != null) argumentValue = argumentValue.toLowerCase();
 
           //
           //  script
           //
 
-          script.append("return left =~ /" + generateContainsKeywordRegex(argumentValue.toLowerCase()) + "/; ");
+          script.append("return left =~ /" + generateContainsKeywordRegex(argumentValue) + "/; ");
 
           //
           //  break
