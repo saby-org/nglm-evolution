@@ -21,24 +21,13 @@ public class NotificationReportDriver extends ReportDriver{
       String csvFilename,
       String[] params) {
         log.debug("Processing "+report.getName());
-        String topicPrefix = super.getTopicPrefix(report.getName());
-        String topic1 = topicPrefix;
         String esIndexNotif = "detailedrecords_messages-";
         String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
         int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-        String appIdPrefix = report.getName() + "_" + getTopicPrefixDate();
         
-        log.debug("PHASE 1 : read ElasticSearch");
-        NotificationReportESReader.main(new String[]{
-            topic1, kafka, zookeeper, elasticSearch, esIndexNotif, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit 
+        NotificationReportMonoPhase.main(new String[]{
+            elasticSearch, esIndexNotif, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit 
         });          
-        try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) {}
-        
-        log.debug("PHASE 2 : write csv file ");
-        NotificationReportCsvWriter.main(new String[]{
-            kafka, topic1, csvFilename
-        });
-        ReportUtils.cleanupTopics(topic1);
         log.debug("Finished with BDR Report");
   }
 }

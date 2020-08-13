@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
-public class CustomerPointDetailsDriver extends ReportDriver
+public class CustomerPointDetailsMonoDriver extends ReportDriver
 {
-  private static final Logger log = LoggerFactory.getLogger(CustomerPointDetailsDriver.class);
+  private static final Logger log = LoggerFactory.getLogger(CustomerPointDetailsMonoDriver.class);
   public static final String SUBSCRIBER_ES_INDEX = "subscriberprofile";
 
   @Override

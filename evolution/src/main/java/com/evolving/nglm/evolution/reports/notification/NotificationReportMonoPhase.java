@@ -123,7 +123,6 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
         String line = ReportUtils.formatResult(headerFieldsOrder, lineMap);
         log.trace("Writing to csv file : " + line);
         writer.write(line.getBytes());
-        writer.write("\n".getBytes());
       } 
     catch (IOException e)
       {
