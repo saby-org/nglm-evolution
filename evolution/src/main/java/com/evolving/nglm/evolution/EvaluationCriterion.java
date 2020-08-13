@@ -1814,7 +1814,6 @@ public class EvaluationCriterion
     
     Map<String, Object> parameters = Collections.<String, Object>emptyMap();
     QueryBuilder baseQuery = QueryBuilders.scriptQuery(new Script(ScriptType.INLINE, "painless", script.toString(), parameters));
-    log.info("RAJ K executing {}", script.toString());
 
     /*****************************************
     *
