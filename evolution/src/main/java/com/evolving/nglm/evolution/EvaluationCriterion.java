@@ -1814,6 +1814,7 @@ public class EvaluationCriterion
     
     Map<String, Object> parameters = Collections.<String, Object>emptyMap();
     QueryBuilder baseQuery = QueryBuilders.scriptQuery(new Script(ScriptType.INLINE, "painless", script.toString(), parameters));
+    log.info("RAJ K executing {}", script.toString());
 
     /*****************************************
     *
@@ -1830,7 +1831,6 @@ public class EvaluationCriterion
           break;
           
         case DoesNotContainsKeywordOperator:
-          log.info("RAJ K executing {}", script.toString());
           query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).mustNot(baseQuery);
           break;
           
