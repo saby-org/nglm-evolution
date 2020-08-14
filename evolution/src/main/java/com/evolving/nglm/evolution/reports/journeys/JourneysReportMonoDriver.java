@@ -40,9 +40,9 @@ import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 
-public class JourneysReportDriver extends ReportDriver
+public class JourneysReportMonoDriver extends ReportDriver
 {
-  private static final Logger log = LoggerFactory.getLogger(JourneysReportDriver.class);
+  private static final Logger log = LoggerFactory.getLogger(JourneysReportMonoDriver.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
   private static JourneyService journeyService;
   private static PointService pointService;
