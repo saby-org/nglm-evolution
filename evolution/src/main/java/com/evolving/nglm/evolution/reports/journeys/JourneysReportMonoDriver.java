@@ -11,6 +11,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,17 +49,16 @@ public class JourneysReportMonoDriver extends ReportDriver
   private static PointService pointService;
   private static JourneyObjectiveService journeyObjectiveService;
   List<String> headerFieldsOrder = new ArrayList<String>();
-  private static ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader;
+  private static ReferenceDataReader<String, JourneyTrafficHistory> journeyTrafficReader;
 
   /****************************************
-  *
-  *  produceReport
-  *
-  ****************************************/
+   *
+   * produceReport
+   *
+   ****************************************/
 
   @Override
-  public void produceReport(Report report, String zookeeper, String kafkaNode, String elasticSearch, String csvFilename,
-      String[] params)
+  public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafkaNode, String elasticSearch, String csvFilename, String[] params)
   {
     log.info("Entered OfferReportDriver.produceReport");
 
@@ -70,20 +70,20 @@ public class JourneysReportMonoDriver extends ReportDriver
     String journeyTopic = Deployment.getJourneyTopic();
     String pointTopic = Deployment.getPointTopic();
     String journeyObjectiveTopic = Deployment.getJourneyObjectiveTopic();
-    
+
     journeyService = new JourneyService(kafkaNode, "journeysreportcsvwriter-journeyservice-" + apiProcessKey, journeyTopic, false);
     journeyService.start();
-    
+
     pointService = new PointService(kafkaNode, "journeysreportcsvwriter-pointservice-" + apiProcessKey, pointTopic, false);
     pointService.start();
-    
+
     journeyObjectiveService = new JourneyObjectiveService(kafkaNode, "journeysreportcsvwriter-journeyObjectiveService-" + apiProcessKey, journeyObjectiveTopic, false);
     journeyObjectiveService.start();
-    
-    journeyTrafficReader = ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", "journeysreportcsvwriter-journeytrafficservice-" + apiProcessKey, kafkaNode, Deployment.getJourneyTrafficChangeLogTopic(), JourneyTrafficHistory::unpack);
-    
+
+    journeyTrafficReader = ReferenceDataReader.<String, JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", "journeysreportcsvwriter-journeytrafficservice-" + apiProcessKey, kafkaNode, Deployment.getJourneyTrafficChangeLogTopic(), JourneyTrafficHistory::unpack);
+
     ReportsCommonCode.initializeDateFormats();
-    
+
     File file = new File(csvFilename + ".zip");
     FileOutputStream fos;
     try
@@ -101,79 +101,89 @@ public class JourneysReportMonoDriver extends ReportDriver
         for (GUIManagedObject guiManagedObject : journeys)
           {
             try
-            {
-              if(guiManagedObject instanceof Journey) {
-                Journey journey = (Journey) guiManagedObject;
+              {
+                if (guiManagedObject instanceof Journey)
+                  {
+                    Journey journey = (Journey) guiManagedObject;
 
-                Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>(); // to preserve order
-                if (journey != null) {
-                  JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journey.getJourneyID());
-                  StringBuilder sbJourneyObjectives = new StringBuilder();
+                    Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>(); // to preserve order
+                    if (journey != null)
+                      {
+                        JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journey.getJourneyID());
+                        StringBuilder sbJourneyObjectives = new StringBuilder();
 
-                  journeyInfo.put("journeyID", journey.getJourneyID());
-                  journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
-                  journeyInfo.put("journeyDescription", journey.getJSONRepresentation().get("description"));
-                  journeyInfo.put("journeyType", journey.getGUIManagedObjectType().getExternalRepresentation()); 
-                  Set<JourneyObjective> activejourneyObjectives = journey.getAllObjectives(journeyObjectiveService, SystemTime.getCurrentTime());                 
-                  for (JourneyObjective journeyObjective : activejourneyObjectives) {
-                    sbJourneyObjectives.append(journeyObjective.getGUIManagedObjectDisplay()).append(",");            
-                  }   
+                        journeyInfo.put("journeyID", journey.getJourneyID());
+                        journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
+                        journeyInfo.put("journeyDescription", journey.getJSONRepresentation().get("description"));
+                        journeyInfo.put("journeyType", journey.getGUIManagedObjectType().getExternalRepresentation());
+                        Set<JourneyObjective> activejourneyObjectives = journey.getAllObjectives(journeyObjectiveService, SystemTime.getCurrentTime());
+                        for (JourneyObjective journeyObjective : activejourneyObjectives)
+                          {
+                            sbJourneyObjectives.append(journeyObjective.getGUIManagedObjectDisplay()).append(",");
+                          }
 
-                  journeyInfo.put("journeyObjectives", sbJourneyObjectives);
-                  journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
-                  journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));                
+                        journeyInfo.put("journeyObjectives", sbJourneyObjectives);
+                        journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
+                        journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
 
-                  StringBuilder sbStatus = new StringBuilder();
-                  StringBuilder sbStates = new StringBuilder();
-                  StringBuilder sbRewards = new StringBuilder();          
+                        StringBuilder sbStatus = new StringBuilder();
+                        StringBuilder sbStates = new StringBuilder();
+                        StringBuilder sbRewards = new StringBuilder();
 
-                  String journeyStatus = null;
-                  String journeyRewards = null;
-                  String journeyStates = null;
+                        String journeyStatus = null;
+                        String journeyRewards = null;
+                        String journeyStates = null;
 
-                  if (journeyTrafficHistory != null) {
-                    for (SubscriberJourneyStatus states : SubscriberJourneyStatus.values()){
-                      sbStatus.append(states.getDisplay()).append("=").append(journeyTrafficHistory.getCurrentData().getStatusSubscribersCount(states)).append(",");
-                    }
-                    journeyStatus = sbStatus.toString().substring(0, sbStatus.toString().length()-1);
+                        if (journeyTrafficHistory != null)
+                          {
+                            for (SubscriberJourneyStatus states : SubscriberJourneyStatus.values())
+                              {
+                                sbStatus.append(states.getDisplay()).append("=").append(journeyTrafficHistory.getCurrentData().getStatusSubscribersCount(states)).append(",");
+                              }
+                            journeyStatus = sbStatus.toString().substring(0, sbStatus.toString().length() - 1);
 
-                    for (JourneyNode node : journey.getJourneyNodes().values()) {
-                      sbStates.append(node.getNodeName()).append("=").append(journeyTrafficHistory.getCurrentData().getNodeSubscribersCount(node.getNodeID())).append(",");
-                    }
-                    journeyStates = sbStates.toString().substring(0, sbStates.toString().length()-1);
+                            for (JourneyNode node : journey.getJourneyNodes().values())
+                              {
+                                sbStates.append(node.getNodeName()).append("=").append(journeyTrafficHistory.getCurrentData().getNodeSubscribersCount(node.getNodeID())).append(",");
+                              }
+                            journeyStates = sbStates.toString().substring(0, sbStates.toString().length() - 1);
 
-                    if (journeyTrafficHistory.getCurrentData().getGlobal().getDistributedRewards() != null) {
-                      for (String rewards : journeyTrafficHistory.getCurrentData().getGlobal().getDistributedRewards().keySet()) {
-                        if (pointService.getStoredPoint(rewards) != null) {
-                          String rewardName = pointService.getStoredPoint(rewards).getGUIManagedObjectDisplay();
-                          sbRewards.append(rewardName).append(",");
-                        }
-                        else {
-                          sbRewards.append("").append(",");
-                        }
+                            if (journeyTrafficHistory.getCurrentData().getGlobal().getDistributedRewards() != null)
+                              {
+                                for (String rewards : journeyTrafficHistory.getCurrentData().getGlobal().getDistributedRewards().keySet())
+                                  {
+                                    if (pointService.getStoredPoint(rewards) != null)
+                                      {
+                                        String rewardName = pointService.getStoredPoint(rewards).getGUIManagedObjectDisplay();
+                                        sbRewards.append(rewardName).append(",");
+                                      } else
+                                      {
+                                        sbRewards.append("").append(",");
+                                      }
+                                  }
+                                journeyRewards = (sbRewards.length() > 0) ? sbRewards.toString().substring(0, sbRewards.toString().length() - 1) : "";
+                              }
+                          }
+                        journeyInfo.put("customerStates", journeyStates);
+                        journeyInfo.put("customerStatuses", journeyStatus);
+                        journeyInfo.put("listOfCommodities", journeyRewards);
                       }
-                      journeyRewards = (sbRewards.length() > 0)? sbRewards.toString().substring(0, sbRewards.toString().length()-1) : "";
-                    }
-                  }
-                  journeyInfo.put("customerStates", journeyStates);
-                  journeyInfo.put("customerStatuses", journeyStatus);         
-                  journeyInfo.put("listOfCommodities", journeyRewards);          
-                }
 
-                if(addHeaders){
-                  headerFieldsOrder.clear();
-                  addHeaders(writer, journeyInfo, 1);
-                  addHeaders = false;
-                }
-                String line = ReportUtils.formatResult(journeyInfo);
-                if (log.isTraceEnabled()) log.trace("Writing to csv file : "+line);
-                writer.write(line.getBytes());
+                    if (addHeaders)
+                      {
+                        headerFieldsOrder.clear();
+                        addHeaders(writer, journeyInfo, 1);
+                        addHeaders = false;
+                      }
+                    String line = ReportUtils.formatResult(journeyInfo);
+                    if (log.isTraceEnabled())
+                      log.trace("Writing to csv file : " + line);
+                    writer.write(line.getBytes());
+                  }
+              } catch (IOException e)
+              {
+                log.info("Exception processing " + guiManagedObject.getGUIManagedObjectDisplay(), e);
               }
-            }
-            catch (IOException e)
-            {
-              log.info("Exception processing "+guiManagedObject.getGUIManagedObjectDisplay(), e);
-            }
           }
         log.info(" writeCompleted ");
         log.info("journeyService {}", journeyService.toString());
@@ -182,36 +192,38 @@ public class JourneysReportMonoDriver extends ReportDriver
         writer.closeEntry();
         writer.close();
         log.info("csv Writer closed");
-        NGLMRuntime.addShutdownHook(
-            new ShutdownHook(journeyService, pointService, journeyObjectiveService));
-      }
-    catch (IOException e)
+        NGLMRuntime.addShutdownHook(new ShutdownHook(journeyService, pointService, journeyObjectiveService));
+      } catch (IOException e)
       {
-        log.info("Exception generating "+csvFilename, e);
+        log.info("Exception generating " + csvFilename, e);
       }
   }
-   
-  private void addHeaders(ZipOutputStream writer, Map<String,Object> values, int offset) throws IOException {
-    if(values != null && !values.isEmpty()) {
-      String[] allFields = values.keySet().toArray(new String[0]);     
-      String headers="";
-      for(String fields : allFields){
-        headerFieldsOrder.add(fields);
-        headers += fields + CSV_SEPARATOR;
+
+  private void addHeaders(ZipOutputStream writer, Map<String, Object> values, int offset) throws IOException
+  {
+    if (values != null && !values.isEmpty())
+      {
+        String[] allFields = values.keySet().toArray(new String[0]);
+        String headers = "";
+        for (String fields : allFields)
+          {
+            headerFieldsOrder.add(fields);
+            headers += fields + CSV_SEPARATOR;
+          }
+        headers = headers.substring(0, headers.length() - offset);
+        writer.write(headers.getBytes());
+        if (offset == 1)
+          {
+            writer.write("\n".getBytes());
+          }
       }
-      headers = headers.substring(0, headers.length() - offset);
-      writer.write(headers.getBytes());
-      if(offset == 1) {
-        writer.write("\n".getBytes());
-      }
-    }
   }
-  
+
   /****************************************
-  *
-  *  ShutdownHook
-  *
-  ****************************************/
+   *
+   * ShutdownHook
+   *
+   ****************************************/
 
   private static class ShutdownHook implements NGLMRuntime.NGLMShutdownHook
   {

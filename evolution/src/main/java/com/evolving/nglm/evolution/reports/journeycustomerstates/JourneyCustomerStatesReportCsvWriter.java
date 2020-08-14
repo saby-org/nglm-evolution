@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
 /**
@@ -35,7 +36,6 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
 
   public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
-
     try
       {
         if (addHeaders)
@@ -55,13 +55,14 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
   public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
+    List<LinkedHashMap<String, Object>> journeyInfoList = new ArrayList<LinkedHashMap<String,Object>>();
     Map<String, Object> journeyStats = reportElement.fields.get(0);
     if (journeyStats != null && !journeyStats.isEmpty())
       {
         Journey journey = journeyServiceStatic.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
         if (journey != null)
           {
-            Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
+            LinkedHashMap<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
             if (journeyStats.get(subscriberID) != null)
               {
                 Object subscriberIDField = journeyStats.get(subscriberID);
@@ -87,7 +88,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
             boolean statusNotified = (boolean) journeyStats.get("statusNotified");
             boolean journeyComplete = (boolean) journeyStats.get("journeyComplete");
             boolean statusConverted = (boolean) journeyStats.get("statusConverted");
-            Boolean statusTargetGroup  = journeyStats.get("statusTargetGroup")  == null ? null : (boolean) journeyStats.get("statusTargetGroup");
+            Boolean statusTargetGroup = journeyStats.get("statusTargetGroup") == null ? null : (boolean) journeyStats.get("statusTargetGroup");
             Boolean statusControlGroup = journeyStats.get("statusControlGroup") == null ? null : (boolean) journeyStats.get("statusControlGroup");
             Boolean statusUniversalControlGroup = journeyStats.get("statusUniversalControlGroup") == null ? null : (boolean) journeyStats.get("statusUniversalControlGroup");
 
@@ -103,8 +104,8 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
                       {
                         String[] split = status.split(";");
                         String fromNodeName = decodeNodeName(journey, split, 0);
-                        String toNodeName   = decodeNodeName(journey, split, 1);
-                        Date   date         = decodeDate(split, 2);
+                        String toNodeName = decodeNodeName(journey, split, 1);
+                        Date date = decodeDate(split, 2);
                         sbStatus.append("(").append(fromNodeName).append("->").append(toNodeName).append(",").append(ReportsCommonCode.getDateString(date)).append("),");
                       }
                   }
@@ -140,11 +141,11 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
                 statuses = sbStatuses.toString().substring(0, sbStatuses.toString().length() - 1);
               }
 
-            journeyInfo.put("customerStates",   states);
+            journeyInfo.put("customerStates", states);
             journeyInfo.put("customerStatuses", statuses);
-            journeyInfo.put("dateTime",         ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
-            journeyInfo.put("startDate",        ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
-            journeyInfo.put("endDate",          ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
+            journeyInfo.put("dateTime", ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
+            journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
+            journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
 
             List<String> rewardHistory = (List<String>) journeyStats.get("rewardHistory");
             List<Map<String, Object>> outputJSON = new ArrayList<>();
@@ -156,13 +157,13 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
                     Map<String, Object> historyJSON = new LinkedHashMap<>(); // to preserve order when displaying
                     String[] split = status.split(";");
                     String rewardID = null;
-                    String amount   = null;
-                    Date   date     = null;
+                    String amount = null;
+                    Date date = null;
                     if (split != null && split.length >= 3)
                       {
                         rewardID = split[0];
-                        amount   = split[1];
-                        date     = decodeDate(split, 2);
+                        amount = split[1];
+                        date = decodeDate(split, 2);
                       }
                     historyJSON.put("reward", rewardID);
                     historyJSON.put("quantity", amount);
@@ -173,22 +174,18 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
             journeyInfo.put("rewards", ReportUtils.formatJSON(outputJSON));
 
             //
-            // result
+            // add
             //
 
-            String journeyID = journeyInfo.get("journeyID").toString();
-            if (result.containsKey(journeyID))
-              {
-                result.get(journeyID).add(journeyInfo);
-              } 
-            else
-              {
-                List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
-                elements.add(journeyInfo);
-                result.put(journeyID, elements);
-              }
+            journeyInfoList.add(journeyInfo);
           }
       }
+    
+    //
+    //  result
+    //
+    
+    if (!journeyInfoList.isEmpty()) result = journeyInfoList.stream().collect(Collectors.groupingBy(a-> a.get("journeyID").toString()));
     return result;
   }
 
@@ -201,7 +198,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
         if (journeyNode == null)
           {
             log.info("unknown journey node with name " + split[index]);
-          }
+          } 
         else
           {
             nodeName = journeyNode.getNodeName();
@@ -209,7 +206,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
       }
     return nodeName;
   }
-  
+
   private Date decodeDate(String[] split, int index)
   {
     Date date = null;
@@ -218,8 +215,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
         try
           {
             date = new Date(Long.valueOf(split[index]));
-          }
-        catch (Exception e)
+          } catch (Exception e)
           {
             log.info("unable to convert to date : " + split[index]);
           }
@@ -227,7 +223,6 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
     return date;
   }
 
-  
   public static void main(String[] args, JourneyService journeyService)
   {
     log.info("received " + args.length + " args");
@@ -246,7 +241,7 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
     String csvfile = args[2];
     log.info("Reading data from " + topic + " topic on broker " + kafkaNode + " producing " + csvfile + " with '" + CSV_SEPARATOR + "' separator");
     journeyServiceStatic = journeyService;
-    
+
     ReportCsvFactory reportFactory = new JourneyCustomerStatesReportCsvWriter();
     ReportCsvWriter reportWriter = new ReportCsvWriter(reportFactory, kafkaNode, topic);
 
@@ -280,5 +275,3 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
     return Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
   }
 }
-
-

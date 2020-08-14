@@ -7,24 +7,21 @@ import com.evolving.nglm.evolution.reports.ReportUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 public class LoyaltyProgramCustomerStatesMonoDriver extends ReportDriver
 {
   private static final Logger log = LoggerFactory.getLogger(LoyaltyProgramCustomerStatesMonoDriver.class);
-  public static final String SUBSCRIBER_ES_INDEX = "subscriberprofile";
 
-  @Override
-  public void produceReport(Report report, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
   {
-    log.debug("Processing LoyaltyProgramCustomerStates Report with "+report.getName());
+    log.debug("Processing LoyaltyProgramCustomerStates Report with " + report.getName());
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-
+    final String SUBSCRIBER_ES_INDEX = getSubscriberProfileIndex(reportGenerationDate);
     log.debug("PHASE 1 : read ElasticSearch");
-    LoyaltyProgramCustomerStatesMonoPhase.main(new String[]{
-        elasticSearch, SUBSCRIBER_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit
-    });         
+    LoyaltyProgramCustomerStatesMonoPhase.main(new String[] { elasticSearch, SUBSCRIBER_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
     log.debug("Finished with LoyaltyProgramCustomerStates Report");
   }
 

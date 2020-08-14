@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
 import org.slf4j.Logger;
@@ -32,7 +33,7 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
   List<String> headerFieldsOrder = new ArrayList<String>();
   private final String subscriberID = "subscriberID";
   private final String customerID = "customerID";
-  
+
   public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
     try
@@ -50,87 +51,83 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
         e.printStackTrace();
       }
   }
-  
+
   public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
+    List<LinkedHashMap<String, Object>> journeyInfoList = new ArrayList<LinkedHashMap<String,Object>>();
     Map<String, Object> journeyStats = reportElement.fields.get(0);
     Map<String, Object> journeyMetric = reportElement.fields.get(1);
-        if (journeyStats != null && !journeyStats.isEmpty() && journeyMetric != null && !journeyMetric.isEmpty())
+    if (journeyStats != null && !journeyStats.isEmpty() && journeyMetric != null && !journeyMetric.isEmpty())
+      {
+        Journey journey = journeyServiceStatic.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
+        if (journey != null)
           {
-            Journey journey = journeyServiceStatic.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
-            if (journey != null)
+            LinkedHashMap<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
+            journeyInfo.put("journeyID", journey.getJourneyID());
+            journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
+            journeyInfo.put("journeyType", journey.getTargetingType());
+            journeyInfo.put("customerState", journey.getJourneyNodes().get(journeyStats.get("toNodeID")).getNodeName());
+            boolean statusNotified = (boolean) journeyStats.get("statusNotified");
+            boolean journeyComplete = (boolean) journeyStats.get("journeyComplete");
+            boolean statusConverted = (boolean) journeyStats.get("statusConverted");
+            Boolean statusTargetGroup = journeyStats.get("statusTargetGroup") == null ? null : (boolean) journeyStats.get("statusTargetGroup");
+            Boolean statusControlGroup = journeyStats.get("statusControlGroup") == null ? null : (boolean) journeyStats.get("statusControlGroup");
+            Boolean statusUniversalControlGroup = journeyStats.get("statusUniversalControlGroup") == null ? null : (boolean) journeyStats.get("statusUniversalControlGroup");
+
+            if (journeyStats.get("sample") != null)
               {
-                Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
-                journeyInfo.put("journeyID", journey.getJourneyID());
-                journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
-                journeyInfo.put("journeyType", journey.getTargetingType());
-                journeyInfo.put("customerState", journey.getJourneyNodes().get(journeyStats.get("toNodeID")).getNodeName());
-                boolean statusNotified = (boolean) journeyStats.get("statusNotified");
-                boolean journeyComplete = (boolean) journeyStats.get("journeyComplete");
-                boolean statusConverted = (boolean) journeyStats.get("statusConverted");
-                Boolean statusTargetGroup = journeyStats.get("statusTargetGroup") == null ? null : (boolean) journeyStats.get("statusTargetGroup");
-                Boolean statusControlGroup = journeyStats.get("statusControlGroup") == null ? null : (boolean) journeyStats.get("statusControlGroup");
-                Boolean statusUniversalControlGroup = journeyStats.get("statusUniversalControlGroup") == null ? null : (boolean) journeyStats.get("statusUniversalControlGroup");
-
-                if (journeyStats.get("sample") != null)
-                  {
-                    journeyInfo.put("sample", journeyStats.get("sample"));
-                  }
-
-                journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
-                Date currentDate = SystemTime.getCurrentTime();
-                journeyInfo.put("dateTime", ReportsCommonCode.getDateString(currentDate));
-                journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
-                journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
-
-                for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
-                  {
-                    journeyInfo.put(journeyMetricDeclaration.getESFieldPrior(), journeyMetric.get(journeyMetricDeclaration.getESFieldPrior()));
-                    journeyInfo.put(journeyMetricDeclaration.getESFieldDuring(), journeyMetric.get(journeyMetricDeclaration.getESFieldDuring()));
-                    journeyInfo.put(journeyMetricDeclaration.getESFieldPost(), journeyMetric.get(journeyMetricDeclaration.getESFieldPost()));
-                  }
-
-                if (journeyStats.get(subscriberID) != null)
-                  {
-                    Object subscriberIDField = journeyStats.get(subscriberID);
-                    journeyInfo.put(customerID, subscriberIDField);
-                  }
-                for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-                  {
-                    if (journeyStats.get(alternateID.getID()) != null)
-                      {
-                        Object alternateId = journeyStats.get(alternateID.getID());
-                        journeyInfo.put(alternateID.getID(), alternateId);
-                      }
-                  }
-
-                /*
-                 * if (addHeaders) { headerFieldsOrder.clear(); addHeaders(writer,
-                 * subscriberFields, 0); addHeaders(writer, journeyInfo, 1); } String line =
-                 * ReportUtils.formatResult(headerFieldsOrder, journeyInfo, subscriberFields);
-                 * log.trace("Writing to csv file : " + line); writer.write(line.getBytes());
-                 * writer.write("\n".getBytes());
-                 */
-                
-                //
-                // result
-                //
-
-                String journeyID = journeyInfo.get("journeyID").toString();
-                if (result.containsKey(journeyID))
-                  {
-                    result.get(journeyID).add(journeyInfo);
-                  } 
-                else
-                  {
-                    List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
-                    elements.add(journeyInfo);
-                    result.put(journeyID, elements);
-                  }
-                
+                journeyInfo.put("sample", journeyStats.get("sample"));
               }
+
+            journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
+            Date currentDate = SystemTime.getCurrentTime();
+            journeyInfo.put("dateTime", ReportsCommonCode.getDateString(currentDate));
+            journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
+            journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
+
+            for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
+              {
+                journeyInfo.put(journeyMetricDeclaration.getESFieldPrior(), journeyMetric.get(journeyMetricDeclaration.getESFieldPrior()));
+                journeyInfo.put(journeyMetricDeclaration.getESFieldDuring(), journeyMetric.get(journeyMetricDeclaration.getESFieldDuring()));
+                journeyInfo.put(journeyMetricDeclaration.getESFieldPost(), journeyMetric.get(journeyMetricDeclaration.getESFieldPost()));
+              }
+
+            if (journeyStats.get(subscriberID) != null)
+              {
+                Object subscriberIDField = journeyStats.get(subscriberID);
+                journeyInfo.put(customerID, subscriberIDField);
+              }
+            for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+              {
+                if (journeyStats.get(alternateID.getID()) != null)
+                  {
+                    Object alternateId = journeyStats.get(alternateID.getID());
+                    journeyInfo.put(alternateID.getID(), alternateId);
+                  }
+              }
+
+            /*
+             * if (addHeaders) { headerFieldsOrder.clear(); addHeaders(writer,
+             * subscriberFields, 0); addHeaders(writer, journeyInfo, 1); } String line =
+             * ReportUtils.formatResult(headerFieldsOrder, journeyInfo, subscriberFields);
+             * log.trace("Writing to csv file : " + line); writer.write(line.getBytes());
+             * writer.write("\n".getBytes());
+             */
+
+            //
+            // add
+            //
+
+            journeyInfoList.add(journeyInfo);
           }
+      }
+    
+    //
+    //  result
+    //
+    
+    if (!journeyInfoList.isEmpty()) result = journeyInfoList.stream().collect(Collectors.groupingBy(a-> a.get("journeyID").toString()));
     return result;
   }
 
@@ -151,7 +148,7 @@ public class JourneyCustomerStatisticsReportCsvWriter implements ReportCsvFactor
     String topic = args[1];
     String csvfile = args[2];
     log.info("Reading data from " + topic + " topic on broker " + kafkaNode + " producing " + csvfile + " with '" + CSV_SEPARATOR + "' separator");
-    
+
     journeyServiceStatic = journeyService;
     ReportCsvFactory reportFactory = new JourneyCustomerStatisticsReportCsvWriter();
     ReportCsvWriter reportWriter = new ReportCsvWriter(reportFactory, kafkaNode, topic);

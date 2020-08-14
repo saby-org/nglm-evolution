@@ -151,7 +151,7 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
     return addHeaders;
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args, final Date reportGenerationDate) {
     log.info("received " + args.length + " args");
     for(String arg : args){
       log.info("CustomerPointDetailsMonoPhase: arg " + arg);

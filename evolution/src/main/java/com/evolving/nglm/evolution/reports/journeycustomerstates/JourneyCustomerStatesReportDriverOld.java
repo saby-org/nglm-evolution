@@ -10,6 +10,7 @@ import com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCust
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 public class JourneyCustomerStatesReportDriverOld extends ReportDriver {
@@ -20,6 +21,7 @@ public class JourneyCustomerStatesReportDriverOld extends ReportDriver {
 	@Override
 	public void produceReport(
 	      Report report,
+	      final Date reportGenerationDate,
 	      String zookeeper,
 	      String kafka,
 	      String elasticSearch,
@@ -27,7 +29,7 @@ public class JourneyCustomerStatesReportDriverOld extends ReportDriver {
 	      String[] params) {
 		
     log.debug("Processing Journey Customer States Report with "+report+" and "+params);
-    String topicPrefix = super.getTopicPrefix(report.getName());
+    String topicPrefix = super.getTopicPrefix(report.getName(), reportGenerationDate);
     String topic1 = topicPrefix;
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
@@ -40,7 +42,7 @@ public class JourneyCustomerStatesReportDriverOld extends ReportDriver {
     log.debug("PHASE 1 : read ElasticSearch");
 		JourneyCustomerStatesReportESReader.main(new String[]{
 			topic1, kafka, zookeeper, elasticSearch, JOURNEY_ES_INDEX, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit
-		}, journeyService);			
+		}, journeyService, reportGenerationDate);			
 		try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) {}
 		
 		log.debug("PHASE 2 : write csv file ");

@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution.reports.notification;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -15,23 +16,24 @@ public class NotificationReportDriverOld extends ReportDriver{
   @Override
   public void produceReport(
       Report report,
+      final Date reportGenerationDate,
       String zookeeper,
       String kafka,
       String elasticSearch,
       String csvFilename,
       String[] params) {
         log.debug("Processing "+report.getName());
-        String topicPrefix = super.getTopicPrefix(report.getName());
+        String topicPrefix = super.getTopicPrefix(report.getName(), reportGenerationDate);
         String topic1 = topicPrefix;
         String esIndexNotif = "detailedrecords_messages-";
         String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
         int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-        String appIdPrefix = report.getName() + "_" + getTopicPrefixDate();
+        String appIdPrefix = report.getName() + "_" + getTopicPrefixDate(reportGenerationDate);
         
         log.debug("PHASE 1 : read ElasticSearch");
         NotificationReportESReader.main(new String[]{
             topic1, kafka, zookeeper, elasticSearch, esIndexNotif, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit 
-        });          
+        }, reportGenerationDate);          
         try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) {}
         
         log.debug("PHASE 2 : write csv file ");

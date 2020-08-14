@@ -39,6 +39,7 @@ import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
+import java.util.Date;
 
 public class JourneysReportDriver extends ReportDriver
 {
@@ -56,11 +57,9 @@ public class JourneysReportDriver extends ReportDriver
   *
   ****************************************/
 
-  @Override
-  public void produceReport(Report report, String zookeeper, String kafkaNode, String elasticSearch, String csvFilename,
-      String[] params)
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafkaNode, String elasticSearch, String csvFilename, String[] params)
   {
-    log.info("Entered OfferReportDriver.produceReport");
+    log.info("Entered JourneysReportDriver.produceReport");
 
     Random r = new Random();
     int apiProcessKey = r.nextInt(999);

@@ -1,5 +1,7 @@
 package com.evolving.nglm.evolution.reports.bdr;
 
+import java.util.Date;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +14,7 @@ public class BDRReportMonoDriver extends ReportDriver{
   @Override
   public void produceReport(
       Report report,
+      final Date reportGenerationDate,
       String zookeeper,
       String kafka,
       String elasticSearch,
@@ -22,9 +25,7 @@ public class BDRReportMonoDriver extends ReportDriver{
     String esIndexBdr = "detailedrecords_bonuses-";
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-    BDRReportMonoPhase.main(new String[]{
-        elasticSearch, esIndexBdr, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit 
-    });         
+    BDRReportMonoPhase.main(new String[]{ elasticSearch, esIndexBdr, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);         
     log.debug("Finished with BDR Report");
   }
 
