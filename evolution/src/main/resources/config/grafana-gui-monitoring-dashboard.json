@@ -15,8 +15,8 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 3,
-  "iteration": 1589443957207,
+  "id": 5,
+  "iteration": 1597426516766,
   "links": [],
   "panels": [
     {
@@ -521,6 +521,7 @@
       },
       "hiddenSeries": false,
       "id": 54,
+      "interval": "2m",
       "legend": {
         "alignAsTable": true,
         "avg": true,
@@ -549,7 +550,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(com_evolving_nglm_core_filesourcetask_filesprocessedcount{connectorName=~\"($connector)_file_connector\"}[5m])) by (connectorName)",
+          "expr": "sum(rate(com_evolving_nglm_core_filesourcetask_filesprocessedcount{connectorName=~\"($connector)_file_connector\"}[$__interval])) by (connectorName)",
           "legendFormat": "{{connectorName}}",
           "refId": "A"
         }
@@ -1130,7 +1131,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(increase(com_evolving_nglm_evolution_bdrstatistics_nbeventsdelivered{}[${__range_s}s]))",
+          "expr": "sum(increase(com_evolving_nglm_evolution_commoditydelivery_count_total{status=\"delivered\"}[${__range_s}s]))",
           "refId": "A"
         }
       ],
@@ -1214,7 +1215,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(increase(com_evolving_nglm_evolution_bdrstatistics_nbeventsfailed{}[${__range_s}s]))",
+          "expr": "sum(increase(com_evolving_nglm_evolution_commoditydelivery_count_total{status!=\"delivered\"}[${__range_s}s]))",
           "refId": "A"
         }
       ],
@@ -1249,6 +1250,7 @@
       },
       "hiddenSeries": false,
       "id": 36,
+      "interval": "1m",
       "legend": {
         "avg": false,
         "current": false,
@@ -1274,7 +1276,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(com_evolving_nglm_evolution_bdrstatistics_nbeventsdelivered{serviceName!~\".*deliverymanager.*\"}[5m]))",
+          "expr": "sum(rate(com_evolving_nglm_evolution_commoditydelivery_count_total{status=\"delivered\"}[$__interval]))",
           "refId": "A"
         }
       ],
@@ -1302,7 +1304,7 @@
           "label": null,
           "logBase": 1,
           "max": null,
-          "min": null,
+          "min": "0",
           "show": true
         },
         {
@@ -1337,6 +1339,7 @@
       },
       "hiddenSeries": false,
       "id": 60,
+      "interval": "1m",
       "legend": {
         "avg": false,
         "current": false,
@@ -1356,13 +1359,18 @@
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
-      "seriesOverrides": [],
+      "seriesOverrides": [
+        {
+          "alias": "//",
+          "color": "#E02F44"
+        }
+      ],
       "spaceLength": 10,
       "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(com_evolving_nglm_evolution_bdrstatistics_nbeventsfailed{serviceName!~\".*deliverymanager.*\"}[5m]))",
+          "expr": "sum(rate(com_evolving_nglm_evolution_commoditydelivery_count_total{status!=\"delivered\"}[$__interval]))",
           "refId": "A"
         }
       ],
@@ -1390,7 +1398,7 @@
           "label": null,
           "logBase": 1,
           "max": null,
-          "min": null,
+          "min": "0",
           "show": true
         },
         {
@@ -1431,7 +1439,7 @@
         "#299c46"
       ],
       "datasource": "prometheus-application",
-      "format": "none",
+      "format": "short",
       "gauge": {
         "maxValue": 100,
         "minValue": 0,
@@ -1485,7 +1493,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(increase(com_evolving_nglm_evolution_odrstatistics_nbpurchasesdelivered[${__range_s}s]))",
+          "expr": "sum(increase(com_evolving_nglm_evolution_purchasefulfillment_count_total{status=\"delivered\"}[${__range_s}s]))",
           "refId": "A"
         }
       ],
@@ -1514,7 +1522,7 @@
         "#d44a3a"
       ],
       "datasource": "prometheus-application",
-      "format": "none",
+      "format": "short",
       "gauge": {
         "maxValue": 100,
         "minValue": 0,
@@ -1568,7 +1576,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(increase(com_evolving_nglm_evolution_odrstatistics_nbpurchasesfailed[${__range_s}s]))",
+          "expr": "sum(increase(com_evolving_nglm_evolution_purchasefulfillment_count_total{status!=\"delivered\"}[${__range_s}s]))",
           "refId": "A"
         }
       ],
@@ -1603,6 +1611,7 @@
       },
       "hiddenSeries": false,
       "id": 30,
+      "interval": "1m",
       "legend": {
         "avg": false,
         "current": false,
@@ -1628,7 +1637,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(com_evolving_nglm_evolution_odrstatistics_nbpurchasesdelivered[5m]))",
+          "expr": "sum(rate(com_evolving_nglm_evolution_purchasefulfillment_count_total{status=\"delivered\"}[$__interval]))",
           "refId": "A"
         }
       ],
@@ -1656,7 +1665,7 @@
           "label": null,
           "logBase": 1,
           "max": null,
-          "min": null,
+          "min": "0",
           "show": true
         },
         {
@@ -1691,6 +1700,7 @@
       },
       "hiddenSeries": false,
       "id": 31,
+      "interval": "1m",
       "legend": {
         "avg": false,
         "current": false,
@@ -1710,13 +1720,18 @@
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
-      "seriesOverrides": [],
+      "seriesOverrides": [
+        {
+          "alias": "//",
+          "color": "#E02F44"
+        }
+      ],
       "spaceLength": 10,
       "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(com_evolving_nglm_evolution_odrstatistics_nbpurchasesfailed[5m]))",
+          "expr": "sum(rate(com_evolving_nglm_evolution_purchasefulfillment_count_total{status!=\"delivered\"}[$__interval]))",
           "refId": "A"
         }
       ],
@@ -1744,7 +1759,7 @@
           "label": null,
           "logBase": 1,
           "max": null,
-          "min": null,
+          "min": "0",
           "show": true
         },
         {
@@ -1770,9 +1785,9 @@
         "x": 0,
         "y": 34
       },
-      "id": 62,
+      "id": 45,
       "panels": [],
-      "title": "TDR - Token Detail Record",
+      "title": "3'rd Party API",
       "type": "row"
     },
     {
@@ -1785,7 +1800,7 @@
         "#299c46"
       ],
       "datasource": "prometheus-application",
-      "format": "none",
+      "format": "short",
       "gauge": {
         "maxValue": 100,
         "minValue": 0,
@@ -1799,7 +1814,7 @@
         "x": 0,
         "y": 35
       },
-      "id": 63,
+      "id": 67,
       "interval": null,
       "links": [],
       "mappingType": 1,
@@ -1839,7 +1854,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(increase(com_evolving_nglm_evolution_tdrstatistics_nbpurchasesdelivered[${__range_s}s]))",
+          "expr": "sum(increase(com_evolving_nglm_evolution_thirdpartyaccess_count_total{status=\"ok\"}[${__range_s}s]))",
           "refId": "A"
         }
       ],
@@ -1868,7 +1883,7 @@
         "#d44a3a"
       ],
       "datasource": "prometheus-application",
-      "format": "none",
+      "format": "short",
       "gauge": {
         "maxValue": 100,
         "minValue": 0,
@@ -1882,7 +1897,7 @@
         "x": 4,
         "y": 35
       },
-      "id": 64,
+      "id": 68,
       "interval": null,
       "links": [],
       "mappingType": 1,
@@ -1922,7 +1937,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(increase(com_evolving_nglm_evolution_tdrstatistics_nbpurchasesfailed[${__range_s}s]))",
+          "expr": "sum(increase(com_evolving_nglm_evolution_thirdpartyaccess_count_total{status!=\"ok\"}[${__range_s}s]))",
           "refId": "A"
         }
       ],
@@ -1956,7 +1971,8 @@
         "y": 35
       },
       "hiddenSeries": false,
-      "id": 65,
+      "id": 69,
+      "interval": "1m",
       "legend": {
         "avg": false,
         "current": false,
@@ -1982,7 +1998,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(com_evolving_nglm_evolution_tdrstatistics_nbpurchasesdelivered[5m]))",
+          "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_count_total{status=\"ok\"}[$__interval]))",
           "refId": "A"
         }
       ],
@@ -2010,7 +2026,7 @@
           "label": null,
           "logBase": 1,
           "max": null,
-          "min": null,
+          "min": "0",
           "show": true
         },
         {
@@ -2044,7 +2060,8 @@
         "y": 35
       },
       "hiddenSeries": false,
-      "id": 66,
+      "id": 70,
+      "interval": "1m",
       "legend": {
         "avg": false,
         "current": false,
@@ -2064,13 +2081,18 @@
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
-      "seriesOverrides": [],
+      "seriesOverrides": [
+        {
+          "alias": "//",
+          "color": "#E02F44"
+        }
+      ],
       "spaceLength": 10,
       "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(com_evolving_nglm_evolution_tdrstatistics_nbpurchasesfailed[5m]))",
+          "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_count_total{status!=\"ok\"}[$__interval]))",
           "refId": "A"
         }
       ],
@@ -2098,7 +2120,7 @@
           "label": null,
           "logBase": 1,
           "max": null,
-          "min": null,
+          "min": "0",
           "show": true
         },
         {
@@ -2124,192 +2146,6 @@
         "x": 0,
         "y": 40
       },
-      "id": 45,
-      "panels": [],
-      "title": "3'rd Party API",
-      "type": "row"
-    },
-    {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorPostfix": false,
-      "colorPrefix": false,
-      "colorValue": true,
-      "colors": [
-        "#d44a3a",
-        "rgba(237, 129, 40, 0.89)",
-        "#299c46"
-      ],
-      "datasource": "prometheus-application",
-      "format": "short",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 8,
-        "x": 0,
-        "y": 41
-      },
-      "id": 46,
-      "interval": null,
-      "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
-      "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "options": {},
-      "pluginVersion": "6.5.2",
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": false,
-        "ymax": null,
-        "ymin": null
-      },
-      "tableColumn": "",
-      "targets": [
-        {
-          "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_successfulapirequestcount[${__range_s}s]))",
-          "refId": "A"
-        }
-      ],
-      "thresholds": "1,1",
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Count",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "prometheus-application",
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 5,
-        "w": 16,
-        "x": 8,
-        "y": 41
-      },
-      "hiddenSeries": false,
-      "id": 47,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": false,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_successfulapirequestcount[5m]))",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Rate / sec",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "collapsed": false,
-      "datasource": null,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 46
-      },
       "id": 51,
       "panels": [],
       "title": "GUI",
@@ -2322,7 +2158,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 47
+        "y": 41
       },
       "id": 39,
       "panels": [],
@@ -2336,7 +2172,7 @@
         "h": 6,
         "w": 10,
         "x": 0,
-        "y": 48
+        "y": 42
       },
       "id": 56,
       "options": {
@@ -2530,5 +2366,5 @@
   "timezone": "",
   "title": "Monitoring Dashboard",
   "uid": "gMbUkWlWz",
-  "version": 7
+  "version": 8
 }
