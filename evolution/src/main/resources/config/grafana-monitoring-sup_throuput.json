@@ -380,7 +380,7 @@
       "datasource": "prometheus-application",
       "gridPos": {
         "h": 8,
-        "w": 6,
+        "w": 3,
         "x": 0,
         "y": 22
       },
@@ -437,8 +437,8 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
-        "w": 18,
-        "x": 6,
+        "w": 21,
+        "x": 3,
         "y": 22
       },
       "hiddenSeries": false,
@@ -549,7 +549,7 @@
       "datasource": "prometheus-application",
       "gridPos": {
         "h": 8,
-        "w": 6,
+        "w": 3,
         "x": 0,
         "y": 31
       },
@@ -606,8 +606,8 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
-        "w": 18,
-        "x": 6,
+        "w": 21,
+        "x": 3,
         "y": 31
       },
       "hiddenSeries": false,
