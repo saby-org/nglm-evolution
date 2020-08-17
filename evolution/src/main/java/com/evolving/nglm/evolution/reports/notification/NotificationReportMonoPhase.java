@@ -5,6 +5,7 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.DialogTemplate;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.MailTemplate;
@@ -76,6 +77,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
   private static final String returnCodeDetails = "returnCodeDetails";
   private static final String returnCodeDescription = "returnCodeDescription";
   private static final String source = "source";
+  private static final String communicationChannel = "communicationChannel";
   
   private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
   private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
@@ -110,6 +112,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(returnCodeDetails);
     headerFieldsOrder.add(source);
     headerFieldsOrder.add(messageContent);
+    headerFieldsOrder.add(communicationChannel);
   }
 
   @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
@@ -322,6 +325,43 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
                 msgContentJSON.putAll(resolvedParameters);
               }
             notifRecs.put(messageContent, ReportUtils.formatJSON(msgContentJSON));
+          }
+        
+        if (notifFields.containsKey(templateID))
+          {
+            String tempID = notifFields.get(templateID).toString();
+            SubscriberMessageTemplate templateObject = subscriberMessageTemplateService
+                .getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime());
+            
+            if (templateObject instanceof SMSTemplate)
+              {
+                notifRecs.put("communicationChannel", "SMS");
+              }
+            else if (templateObject instanceof MailTemplate)
+              {
+                notifRecs.put("communicationChannel", "EMAIL");
+              }
+            else if (templateObject instanceof PushTemplate)
+              {
+                PushTemplate template = (PushTemplate) subscriberMessageTemplateService
+                    .getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime());
+                notifRecs.put("communicationChannel",
+                    Deployment.getCommunicationChannels().get(template.getCommunicationChannelID()).getDisplay());
+
+              }
+            else if (templateObject instanceof DialogTemplate)// GenericTemplate
+              {
+                DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService
+                    .getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime());
+                String channelID = template.getCommunicationChannelID();
+                notifRecs.put("communicationChannel",
+                    Deployment.getCommunicationChannels().get(channelID).getDisplay());
+              }
+
+          }
+        else
+          {
+            notifRecs.put("communicationChannel", "");
           }
 
         //
