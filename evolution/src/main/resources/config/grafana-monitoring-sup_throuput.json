@@ -16,7 +16,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 12,
-  "iteration": 1597675734337,
+  "iteration": 1597685499264,
   "links": [],
   "panels": [
     {
@@ -288,34 +288,36 @@
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
+      "repeat": "channel",
+      "repeatDirection": "v",
       "seriesOverrides": [],
       "spaceLength": 10,
       "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(com_evolving_nglm_evolution_notificationdelivery_count_total[$__interval])) by (channel)",
+          "expr": "sum(rate(com_evolving_nglm_evolution_notificationdelivery_count_total{channel=\"$channel\"}[$__interval]))",
           "hide": false,
           "intervalFactor": 1,
-          "legendFormat": "Total-{{channel}}",
+          "legendFormat": "Total",
           "metric": "",
           "refId": "A",
           "step": 2
         },
         {
-          "expr": "sum(rate(com_evolving_nglm_evolution_notificationdelivery_count_total[$__interval])) by (channel,status)",
+          "expr": "sum(rate(com_evolving_nglm_evolution_notificationdelivery_count_total{channel=\"$channel\"}[$__interval])) by (status)",
           "hide": false,
           "intervalFactor": 1,
-          "legendFormat": "{{channel}}-{{status}}",
+          "legendFormat": "Total-{{status}}",
           "metric": "",
           "refId": "B",
           "step": 2
         },
         {
-          "expr": "sum(rate(com_evolving_nglm_evolution_notificationdelivery_count_total[$__interval])) by (process,channel,status)",
+          "expr": "sum(rate(com_evolving_nglm_evolution_notificationdelivery_count_total{channel=\"$channel\"}[$__interval])) by (process,status)",
           "hide": false,
           "intervalFactor": 1,
-          "legendFormat": "{{process}}-{{channel}}-{{status}}",
+          "legendFormat": "{{process}}-{{status}}",
           "metric": "",
           "refId": "C",
           "step": 2
@@ -325,7 +327,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "notification / sec",
+      "title": "$channel / sec",
       "tooltip": {
         "shared": true,
         "sort": 2,
@@ -369,7 +371,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 21
+        "y": 30
       },
       "id": 40,
       "panels": [],
@@ -382,7 +384,7 @@
         "h": 8,
         "w": 3,
         "x": 0,
-        "y": 22
+        "y": 31
       },
       "id": 61,
       "interval": "1m",
@@ -439,7 +441,7 @@
         "h": 8,
         "w": 21,
         "x": 3,
-        "y": 22
+        "y": 31
       },
       "hiddenSeries": false,
       "id": 48,
@@ -538,7 +540,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 39
       },
       "id": 38,
       "panels": [],
@@ -551,7 +553,7 @@
         "h": 8,
         "w": 3,
         "x": 0,
-        "y": 31
+        "y": 40
       },
       "id": 62,
       "interval": "1m",
@@ -608,7 +610,7 @@
         "h": 8,
         "w": 21,
         "x": 3,
-        "y": 31
+        "y": 40
       },
       "hiddenSeries": false,
       "id": 63,
@@ -707,7 +709,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 39
+        "y": 48
       },
       "id": 66,
       "panels": [],
@@ -726,7 +728,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 40
+        "y": 49
       },
       "hiddenSeries": false,
       "id": 67,
@@ -830,7 +832,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 40
+        "y": 49
       },
       "hiddenSeries": false,
       "id": 64,
@@ -929,7 +931,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 48
+        "y": 57
       },
       "id": 44,
       "panels": [],
@@ -948,7 +950,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 49
+        "y": 58
       },
       "hiddenSeries": false,
       "id": 60,
@@ -1061,7 +1063,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 49
+        "y": 58
       },
       "hiddenSeries": false,
       "id": 68,
@@ -1272,6 +1274,33 @@
         "refresh": 2,
         "skipUrlSync": false,
         "type": "interval"
+      },
+      {
+        "allValue": null,
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "prometheus-application",
+        "definition": "label_values(com_evolving_nglm_evolution_notificationdelivery_count_total,channel)",
+        "hide": 2,
+        "includeAll": true,
+        "label": null,
+        "multi": true,
+        "name": "channel",
+        "options": [],
+        "query": "label_values(com_evolving_nglm_evolution_notificationdelivery_count_total,channel)",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
       }
     ]
   },
@@ -1307,5 +1336,5 @@
   "timezone": "browser",
   "title": "Support - Throughput",
   "uid": "jJ93EsyZk",
-  "version": 6
+  "version": 7
 }
