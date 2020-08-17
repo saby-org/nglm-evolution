@@ -297,7 +297,7 @@
           "expr": "sum(rate(com_evolving_nglm_evolution_notificationdelivery_count_total[$__interval])) by (channel)",
           "hide": false,
           "intervalFactor": 1,
-          "legendFormat": "",
+          "legendFormat": "Total-{{channel}}",
           "metric": "",
           "refId": "A",
           "step": 2
@@ -475,7 +475,7 @@
           "expr": "sum(rate(com_evolving_nglm_evolution_commoditydelivery_count_total[$__interval]))",
           "hide": false,
           "intervalFactor": 1,
-          "legendFormat": "total",
+          "legendFormat": "Total",
           "metric": "",
           "refId": "A",
           "step": 2
@@ -644,7 +644,7 @@
           "expr": "sum(rate(com_evolving_nglm_evolution_purchasefulfillment_count_total[$__interval]))",
           "hide": false,
           "intervalFactor": 1,
-          "legendFormat": "total",
+          "legendFormat": "Total",
           "metric": "",
           "refId": "A",
           "step": 2
@@ -885,7 +885,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "average call time",
+      "title": "average call duration",
       "tooltip": {
         "shared": true,
         "sort": 2,
@@ -1125,7 +1125,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "average call time",
+      "title": "average call duration",
       "tooltip": {
         "shared": true,
         "sort": 2,
@@ -1307,5 +1307,5 @@
   "timezone": "browser",
   "title": "Support - Throughput",
   "uid": "jJ93EsyZk",
-  "version": 5
+  "version": 6
 }
