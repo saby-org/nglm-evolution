@@ -26852,7 +26852,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               while(lastDate.compareTo(tempStartDate) >= 0)
                 {
                   tmpJourneyCreationDates.add(new Date(tempStartDate.getTime()));
-                  tempStartDate = RLMDateUtils.addDays(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
+                  tempStartDate = RLMDateUtils.addDays(tempStartDate, scheduligInterval, tz);
                 }
             }
           else
