@@ -214,11 +214,12 @@ public class JourneyService extends GUIService
             
             activeAndCompleted = activeAndCompleted && journey.getActive() && journey.getEffectiveStartDate().compareTo(now) <= 0;
             
+            
             //
             // Approved
             //
             
-            if (!Deployment.getAutoApproveGuiObjects())
+            if (!Deployment.getAutoApproveGuiObjects() && (GUIManagedObjectType.BulkCampaign != journey.getGUIManagedObjectType()))
               {
                 activeAndCompleted = activeAndCompleted && JourneyStatus.StartedApproved == journey.getApproval();
               }

@@ -26780,6 +26780,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       Date filterStartDate = RLMDateUtils.addDays(now, -3, tz);
       Date filterEndDate = RLMDateUtils.addDays(now, 3, tz);
       Collection<Journey> recurrentJourneys = journeyService.getActiveAndCompletedRecurrentJourneys(SystemTime.getCurrentTime());
+      log.info("RAJ K recurrentJourneys {}", recurrentJourneys);
       for (Journey recurrentJourney : recurrentJourneys)
         {
           List<Date> journeyCreationDates = new ArrayList<Date>();
@@ -26843,6 +26844,16 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               //
               
               tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay()));
+            }
+          else if ("day".equalsIgnoreCase(scheduling))
+            {
+              Date tmpStartDate = filterStartDate;
+              Date tmpEndDate = filterEndDate;
+              while(tmpEndDate.compareTo(tmpStartDate) >= 0)
+                {
+                  tmpJourneyCreationDates.add(new Date(tmpStartDate.getTime()));
+                  tmpStartDate = RLMDateUtils.addDays(tmpStartDate, 1, tz);
+                }
             }
           else
             {
