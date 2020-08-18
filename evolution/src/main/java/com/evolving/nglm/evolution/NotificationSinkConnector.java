@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
@@ -198,7 +197,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("returnCodeDetails", pushNotification.getMessageDeliveryReturnCodeDetails());
         documentMap.put("templateID", pushNotification.getTemplateID());
         documentMap.put("language", pushNotification.getLanguage());
-        documentMap.put("tags", pushNotification.getTags()); // TODO        
+        documentMap.put("tags", pushNotification.getTags()); // TODO
       }
       
       return documentMap;
