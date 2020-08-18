@@ -1,0 +1,54 @@
+{
+   "apiVersion":1,
+   "effectiveEndDate":"2020-08-16T23:59:59+03:00",
+   "targetID":["1"],
+   "name":"blk-rc-001",
+   "display":"blk-rc-001",
+   "description":"blk-rc-001",
+   "groupID":"WKG-ADMIN",
+   "appendExclusionLists":false,
+   "userName":"administrator",
+   "userID":"1",
+   "journeyTemplateID":"Bulk_Bonus",
+   "journeyObjectives":[ ],
+   "recurrence":true,
+   "occurrenceNumber":1,
+   "scheduler" : {       
+       "numberOfOccurrences":5,
+       "runEveryDuration":2,
+       "runEveryUnit":"day"
+   },
+   "boundParameters":[
+      {
+         "parameterName":"journey.deliverableID",
+         "value":"1"
+      },
+      {
+         "parameterName":"journey.amount",
+         "value":{
+            "valueAdd":null,
+            "expression":"1",
+            "valueMultiply":null,
+            "valueType":"simple",
+            "value":1,
+            "timeUnit":null
+         }
+      },
+      {
+         "parameterName":"journey.validity.period.quantity",
+         "value":null
+      },
+      {
+         "parameterName":"journey.validity.period.type",
+         "value":null
+      }
+   ],
+   "appendInclusionLists":true,
+   "effectiveStartDate":"2020-08-18T13:00:00+03:00",
+   "appendUCG":false,
+   "story":{
+      "targeting":"Type: Target, Targets: target-1",
+      "objectives":"No objectives",
+      "targetCount":""
+   }
+}
