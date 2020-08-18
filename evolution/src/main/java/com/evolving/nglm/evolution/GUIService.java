@@ -74,6 +74,8 @@ public class GUIService
   private Map<String,GUIManagedObject> storedGUIManagedObjects = new HashMap<String,GUIManagedObject>();
   private Map<String,GUIManagedObject> availableGUIManagedObjects = new HashMap<String,GUIManagedObject>();
   private Map<String,GUIManagedObject> activeGUIManagedObjects = new HashMap<String,GUIManagedObject>();
+  // store objects that should have been "active", but are not because an update "suspend" them, either from direct normal GUI call "suspend" or an invalid update, but they were active at some point to end up there
+  private Map<String,GUIManagedObject> interruptedGUIManagedObjects = new HashMap<String,GUIManagedObject>();
   private Date lastUpdate = SystemTime.getCurrentTime();
   private TreeSet<ScheduleEntry> schedule = new TreeSet<ScheduleEntry>();
   private String guiManagedObjectTopic;
@@ -425,6 +427,22 @@ public class GUIService
       }
   }
 
+  protected boolean isInterruptedGUIManagedObject(GUIManagedObject guiManagedObjectUnchecked, Date date)
+  {
+    if (guiManagedObjectUnchecked instanceof GUIManagedObject)
+    {
+      GUIManagedObject guiManagedObject = (GUIManagedObject) guiManagedObjectUnchecked;
+      synchronized (this)
+      {
+        return interruptedGUIManagedObjects.containsKey(guiManagedObject.getGUIManagedObjectID()) && (guiManagedObject.getEffectiveStartDate()==null || guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0) && (guiManagedObject.getEffectiveEndDate()==null || date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0);
+      }
+    }
+    else
+    {
+      return false;
+    }
+  }
+
   /*****************************************
   *
   *  getActiveGUIManagedObject
@@ -441,6 +459,18 @@ public class GUIService
         else
           return null;
       }
+  }
+
+  protected GUIManagedObject getInterruptedGUIManagedObject(String guiManagedObjectID, Date date)
+  {
+    synchronized (this)
+    {
+      GUIManagedObject guiManagedObject = interruptedGUIManagedObjects.get(guiManagedObjectID);
+      if (isInterruptedGUIManagedObject(guiManagedObject, date))
+        return guiManagedObject;
+      else
+        return null;
+    }
   }
 
   /*****************************************
@@ -581,6 +611,7 @@ public class GUIService
         //  classify
         //
 
+        boolean inActivePeriod = !guiManagedObject.getDeleted() && (guiManagedObject.getEffectiveStartDate()==null || guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0) && (guiManagedObject.getEffectiveEndDate()==null || date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0);
         boolean active = accepted && !guiManagedObject.getDeleted() && guiManagedObject.getActive() && (guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0) && (date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0);
         boolean future = accepted && !guiManagedObject.getDeleted() && guiManagedObject.getActive() && (guiManagedObject.getEffectiveStartDate().compareTo(date) > 0);
         boolean deleted = (guiManagedObject == null) || guiManagedObject.getDeleted();
@@ -589,9 +620,10 @@ public class GUIService
         //  copy
         //
 
-        storedGUIManagedObjects = new HashMap<String,GUIManagedObject>(storedGUIManagedObjects);
-        availableGUIManagedObjects = new HashMap<String,GUIManagedObject>(availableGUIManagedObjects);
-        activeGUIManagedObjects = new HashMap<String,GUIManagedObject>(activeGUIManagedObjects);
+        storedGUIManagedObjects = new HashMap<>(storedGUIManagedObjects);
+        availableGUIManagedObjects = new HashMap<>(availableGUIManagedObjects);
+        activeGUIManagedObjects = new HashMap<>(activeGUIManagedObjects);
+        interruptedGUIManagedObjects = new HashMap<>(interruptedGUIManagedObjects);
 
         //
         //  store
@@ -627,11 +659,19 @@ public class GUIService
         //  clear
         //
 
+        if (!inActivePeriod || active || future)
+          {
+            interruptedGUIManagedObjects.remove(guiManagedObjectID);
+          }
+
         if (!active)
           {
             availableGUIManagedObjects.remove(guiManagedObjectID);
             activeGUIManagedObjects.remove(guiManagedObjectID);
-            if (existingActiveGUIManagedObject != null) notifyListener(new IncompleteObject(guiManagedObjectID));
+            if (existingActiveGUIManagedObject != null){
+              if(inActivePeriod) interruptedGUIManagedObjects.put(guiManagedObjectID,existingActiveGUIManagedObject);
+              notifyListener(new IncompleteObject(guiManagedObjectID));
+            }
           }
 
         //
@@ -935,8 +975,9 @@ public class GUIService
                 //  copy
                 //
 
-                availableGUIManagedObjects = new HashMap<String,GUIManagedObject>(availableGUIManagedObjects);
-                activeGUIManagedObjects = new HashMap<String,GUIManagedObject>(activeGUIManagedObjects);
+                availableGUIManagedObjects = new HashMap<>(availableGUIManagedObjects);
+                activeGUIManagedObjects = new HashMap<>(activeGUIManagedObjects);
+                interruptedGUIManagedObjects = new HashMap<>(interruptedGUIManagedObjects);
 
                 //
                 //  existingActiveGUIManagedObject
@@ -951,6 +992,7 @@ public class GUIService
                 if (guiManagedObject.getEffectiveStartDate().compareTo(now) <= 0 && now.compareTo(guiManagedObject.getEffectiveEndDate()) < 0)
                   {
                     activeGUIManagedObjects.put(guiManagedObject.getGUIManagedObjectID(), guiManagedObject);
+                    interruptedGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
                     notifyListener(guiManagedObject);
                   }
 
@@ -962,6 +1004,7 @@ public class GUIService
                   {
                     availableGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
                     activeGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
+                    interruptedGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
                     if (existingActiveGUIManagedObject != null) notifyListener(new IncompleteObject(guiManagedObject.getGUIManagedObjectID()));
                   }
 
