@@ -26847,12 +26847,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             }
           else if ("day".equalsIgnoreCase(scheduling))
             {
-              Date tmpStartDate = filterStartDate;
-              Date tmpEndDate = filterEndDate;
-              while(tmpEndDate.compareTo(tmpStartDate) >= 0)
+              Date lastDate = filterEndDate;
+              Date tempStartDate = RLMDateUtils.addDays(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
+              while(lastDate.compareTo(tempStartDate) >= 0)
                 {
-                  tmpJourneyCreationDates.add(new Date(tmpStartDate.getTime()));
-                  tmpStartDate = RLMDateUtils.addDays(tmpStartDate, 1, tz);
+                  tmpJourneyCreationDates.add(new Date(tempStartDate.getTime()));
+                  tempStartDate = RLMDateUtils.addDays(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
                 }
             }
           else
