@@ -6264,6 +6264,16 @@ public class GUIManager
     JSONArray bulkCampaignJourneyObjectives = JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", true);
     JSONObject bulkCampaignStory = JSONUtilities.decodeJSONObject(jsonRoot, "story", true);
     
+    //
+    //  recurrent
+    //
+    
+    boolean recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
+    String recurrenceId = JSONUtilities.decodeString(jsonRoot, "recurrenceId", recurrence);
+    if (recurrence && recurrenceId == null) jsonRoot.put("recurrenceId", bulkCampaignID);
+    Integer occurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "occurrenceNumber", recurrence);
+    JSONObject journeyScheduler = JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence);
+    
     /*****************************************
     *
     *  existing journey
@@ -6336,6 +6346,11 @@ public class GUIManager
         campaignJSONRepresentation.put("active", active);
         campaignJSONRepresentation.put("journeyObjectives", bulkCampaignJourneyObjectives); 
         campaignJSONRepresentation.put("story", bulkCampaignStory);
+        
+        campaignJSONRepresentation.put("recurrence", recurrence);
+        campaignJSONRepresentation.put("recurrenceId", recurrenceId);
+        campaignJSONRepresentation.put("occurrenceNumber", occurrenceNumber);
+        campaignJSONRepresentation.put("journeyScheduler", JSONUtilities.encodeObject(journeyScheduler));
 
         //
         //  campaignJSON
