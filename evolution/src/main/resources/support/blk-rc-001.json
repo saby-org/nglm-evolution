@@ -1,6 +1,6 @@
 {
    "apiVersion":1,
-   "effectiveEndDate":"2020-08-16T23:59:59+03:00",
+   "effectiveEndDate":"2099-08-16T23:59:59+03:00",
    "targetID":["1"],
    "name":"blk-rc-001",
    "display":"blk-rc-001",

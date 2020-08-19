@@ -6310,6 +6310,17 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
+        //
+        // initial approval
+        //
+        
+        JourneyStatus approval = JourneyStatus.Pending;
+        
+        if (existingBulkCampaign != null && existingBulkCampaign.getAccepted())
+          {
+            approval = ((Journey) existingBulkCampaign).getApproval();
+          }
+        
         /*****************************************
         *
         *  templateJSONRepresentation
@@ -6352,7 +6363,7 @@ public class GUIManager
         campaignJSONRepresentation.put("recurrence", recurrence);
         campaignJSONRepresentation.put("recurrenceId", recurrenceId);
         campaignJSONRepresentation.put("occurrenceNumber", occurrenceNumber);
-        campaignJSONRepresentation.put("scheduler", JSONUtilities.encodeObject(journeyScheduler));
+        if (journeyScheduler != null)campaignJSONRepresentation.put("scheduler", JSONUtilities.encodeObject(journeyScheduler));
         campaignJSONRepresentation.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
 
         //
@@ -6367,7 +6378,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+        Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, approval);
 
         //
         // Update targetCount
@@ -26959,7 +26970,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           if (GUIManagedObjectType.BulkCampaign == recurrentJourney.getGUIManagedObjectType())
             {
               processPutBulkCampaign("0", journeyJSON);
-              //processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), true);
+              processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), true);
               
               //
               //  lastCreatedOccurrenceNumber
