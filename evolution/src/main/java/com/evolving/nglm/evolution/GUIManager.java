@@ -26956,16 +26956,33 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           //  create and activate
           //
           
-          processPutJourney("0", journeyJSON, recurrentJourney.getGUIManagedObjectType());
-          processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), true);
+          if (GUIManagedObjectType.BulkCampaign == recurrentJourney.getGUIManagedObjectType())
+            {
+              processPutBulkCampaign("0", journeyJSON);
+              //processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), true);
+              
+              //
+              //  lastCreatedOccurrenceNumber
+              //
+              
+              JSONObject recJourneyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
+              recJourneyJSON.put("lastCreatedOccurrenceNumber", occurrenceNumber);
+              processPutBulkCampaign("0", recJourneyJSON);
+            }
+          else
+            {
+              processPutJourney("0", journeyJSON, recurrentJourney.getGUIManagedObjectType());
+              processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), true);
+              
+              //
+              //  lastCreatedOccurrenceNumber
+              //
+              
+              JSONObject recJourneyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
+              recJourneyJSON.put("lastCreatedOccurrenceNumber", occurrenceNumber);
+              processPutJourney("0", recJourneyJSON, recurrentJourney.getGUIManagedObjectType());
+            }
           
-          //
-          //  lastCreatedOccurrenceNumber
-          //
-          
-          JSONObject recJourneyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
-          recJourneyJSON.put("lastCreatedOccurrenceNumber", occurrenceNumber);
-          processPutJourney("0", recJourneyJSON, recurrentJourney.getGUIManagedObjectType());
         }
     }
     
