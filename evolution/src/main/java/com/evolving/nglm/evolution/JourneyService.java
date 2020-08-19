@@ -220,7 +220,7 @@ public class JourneyService extends GUIService
             // Approved
             //
             
-            if (!Deployment.getAutoApproveGuiObjects() && (GUIManagedObjectType.BulkCampaign != journey.getGUIManagedObjectType()))
+            if (!Deployment.getAutoApproveGuiObjects())
               {
                 activeAndCompleted = activeAndCompleted && JourneyStatus.StartedApproved == journey.getApproval();
               }

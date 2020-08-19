@@ -6201,7 +6201,6 @@ public class GUIManager
     *  response
     *
     ****************************************/
-    log.info("RAJ K processPutBulkCampaign jsonRoot {} ", jsonRoot);
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
