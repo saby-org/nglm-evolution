@@ -747,7 +747,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           guiPresentationMap.put(OFFERCONTENT, offerContent);
 
           guiPresentationMap.put(SALESCHANNELID, getSalesChannelID());
-          guiPresentationMap.put(SALESCHANNEL, (salesChannel != null) ? salesChannel.getSalesChannelName() : null);
+          guiPresentationMap.put(SALESCHANNEL, (salesChannel != null) ? salesChannel.getGUIManagedObjectDisplay() : null);
           guiPresentationMap.put(MODULEID, getModuleID());
           guiPresentationMap.put(MODULENAME, module.toString());
           guiPresentationMap.put(FEATUREID, getFeatureID());
@@ -831,7 +831,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(OFFERCONTENT, offerContent);
 
           thirdPartyPresentationMap.put(SALESCHANNELID, getSalesChannelID());
-          thirdPartyPresentationMap.put(SALESCHANNEL, (salesChannel != null) ? salesChannel.getSalesChannelName() : null);
+          thirdPartyPresentationMap.put(SALESCHANNEL, (salesChannel != null) ? salesChannel.getGUIManagedObjectDisplay() : null);
           thirdPartyPresentationMap.put(MODULEID, getModuleID());
           thirdPartyPresentationMap.put(MODULENAME, module.toString());
           thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
