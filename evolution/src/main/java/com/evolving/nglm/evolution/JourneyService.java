@@ -138,9 +138,11 @@ public class JourneyService extends GUIService
 
   @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
   {
+    JSONObject fullJSON = getJSONRepresentation(guiManagedObject);
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("status", getJourneyStatus(guiManagedObject).getExternalRepresentation());
-    result.put("occurrenceNumber", JSONUtilities.decodeInteger(getJSONRepresentation(guiManagedObject), "occurrenceNumber", false));
+    result.put("recurrence", JSONUtilities.decodeBoolean(fullJSON, "recurrence", false));
+    result.put("occurrenceNumber", JSONUtilities.decodeInteger(fullJSON, "occurrenceNumber", false));
     if (guiManagedObject.getGUIManagedObjectType().equals(GUIManagedObjectType.BulkCampaign))
       {
         result.put("journeyTemplateID", guiManagedObject.getJSONRepresentation().get("journeyTemplateID"));
