@@ -698,6 +698,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
   {
     String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    Integer percentage = JSONUtilities.decodeInteger(jsonRoot, "percentage", false);
     GUIManagedObject report1 = reportService.getStoredReport(reportID);
     log.trace("Looking for "+reportID+" and got "+report1);
     String responseCode = null;
