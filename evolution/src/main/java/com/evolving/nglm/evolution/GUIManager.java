@@ -3866,10 +3866,10 @@ public class GUIManager
                   
                 case loyaltyProgramOptOut:
                   jsonResponse = guiManagerLoyaltyReporting.processLoyaltyProgramOptInOut(jsonRoot, false);
+                  break;
 
                 case getDependencies:
                   jsonResponse = guiManagerGeneral.processGetDependencies(userID, jsonRoot);
-
                   break;
 
               }
