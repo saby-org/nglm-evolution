@@ -751,19 +751,21 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 					responseCode = "Cant find report with that name";
 				}
 
-				File tempFile = File.createTempFile("tempReportPercentage", ""); 
-				String tempFileName = tempFile.getAbsolutePath(); 
-
+				File tempFile = null;
 
 				if(reportFile != null) {
 					if(reportFile.length() > 0) {
 						try {
 							if(percentage != null) {
+								tempFile = File.createTempFile("tempReportPercentage", ""); 
+								String tempFileName = tempFile.getAbsolutePath(); 
 								PercentageOfRandomLines.displayPercentageOfRandomLines(reportFile.getAbsolutePath(),
 										tempFileName, percentage);
 								reportFile = tempFile;
 							}
 							if(topRows != null) {
+								tempFile = File.createTempFile("tempReportTopRows", ""); 
+								String tempFileName = tempFile.getAbsolutePath(); 
 								TopRows.readFirstNLines(reportFile.getAbsolutePath(),
 										tempFileName, topRows);
 								reportFile = tempFile;
@@ -789,7 +791,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 						}
 
 						
-						if(percentage != null || topRows != null && tempFile != null) {
+						if((percentage != null || topRows != null) && tempFile != null) {
 							tempFile.delete();
 						}
 						
