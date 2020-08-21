@@ -26946,6 +26946,23 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       int occurrenceNumber = lastCreatedOccurrenceNumber;
       for (Date startDate : journeyCreationDates)
         {
+          //
+          //  prepare start and end date
+          //
+          
+          Date endDate = RLMDateUtils.addDays(startDate, daysBetween, Deployment.getBaseTimeZone());
+          endDate = RLMDateUtils.setField(endDate, Calendar.HOUR_OF_DAY, RLMDateUtils.getField(recurrentJourney.getEffectiveEndDate(), Calendar.HOUR_OF_DAY, Deployment.getBaseTimeZone()), Deployment.getBaseTimeZone());
+          endDate = RLMDateUtils.setField(endDate, Calendar.MINUTE, RLMDateUtils.getField(recurrentJourney.getEffectiveEndDate(), Calendar.MINUTE, Deployment.getBaseTimeZone()), Deployment.getBaseTimeZone());
+          endDate = RLMDateUtils.setField(endDate, Calendar.SECOND, RLMDateUtils.getField(recurrentJourney.getEffectiveEndDate(), Calendar.SECOND, Deployment.getBaseTimeZone()), Deployment.getBaseTimeZone());
+          
+          startDate = RLMDateUtils.setField(startDate, Calendar.HOUR_OF_DAY, RLMDateUtils.getField(recurrentJourney.getEffectiveStartDate(), Calendar.HOUR_OF_DAY, Deployment.getBaseTimeZone()), Deployment.getBaseTimeZone());
+          startDate = RLMDateUtils.setField(startDate, Calendar.MINUTE, RLMDateUtils.getField(recurrentJourney.getEffectiveStartDate(), Calendar.MINUTE, Deployment.getBaseTimeZone()), Deployment.getBaseTimeZone());
+          startDate = RLMDateUtils.setField(startDate, Calendar.SECOND, RLMDateUtils.getField(recurrentJourney.getEffectiveStartDate(), Calendar.SECOND, Deployment.getBaseTimeZone()), Deployment.getBaseTimeZone());
+          
+          //
+          //  journeyJSON
+          //
+          
           JSONObject journeyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
           journeyJSON.put("apiVersion", 1);
           
@@ -26967,7 +26984,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           journeyJSON.put("name", recurrentJourney.getGUIManagedObjectName() + "_" + occurrenceNumber);
           journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + " - " + occurrenceNumber);
           journeyJSON.put("effectiveStartDate", recurrentJourney.formatDateField(startDate));
-          journeyJSON.put("effectiveEndDate", recurrentJourney.formatDateField(RLMDateUtils.addDays(startDate, daysBetween, Deployment.getBaseTimeZone())));
+          journeyJSON.put("effectiveEndDate", recurrentJourney.formatDateField(endDate));
           
           //
           //  create and activate
