@@ -3200,10 +3200,10 @@ public class EvolutionEngine
      *  increment metric history for delivered message in notificatioStatus
      *
      *****************************************/
-    if(evolutionEvent instanceof MessageDelivery)
+    if(evolutionEvent instanceof MessageDelivery && evolutionEvent instanceof INotificationRequest)
     {
       MessageDelivery messageDelivery = (MessageDelivery)evolutionEvent;
-      if(messageDelivery.getMessageDeliveryDeliveryStatus() == DeliveryStatus.Delivered)
+      if(((INotificationRequest)evolutionEvent).getMessageStatus() == DeliveryManagerForNotifications.MessageStatus.DELIVERED)
         {
           try {
             MetricHistory channelMetricHistory = context.getSubscriberState().getNotificationHistory().stream().filter(p -> p.getFirstElement().equals(Deployment.getDeliveryTypeCommunicationChannelIDMap().get(((DeliveryRequest)messageDelivery).getDeliveryType()))).collect(Collectors.toList()).get(0).getSecondElement();
