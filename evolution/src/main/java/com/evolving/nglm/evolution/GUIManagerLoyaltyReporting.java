@@ -46,6 +46,7 @@ import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.reports.PercentageOfRandomLines;
 import com.evolving.nglm.evolution.reports.ReportUtils;
+import com.evolving.nglm.evolution.reports.TopRows;
 import com.sun.net.httpserver.HttpExchange;
 
 public class GUIManagerLoyaltyReporting extends GUIManager
@@ -760,12 +761,18 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                 	  
                   //================
                 	  if(percentage != null) {
-							PercentageOfRandomLines percentageOfRandomLines = new PercentageOfRandomLines();
-							percentageOfRandomLines.displayPercentageOfRandomLines(reportFile.getAbsolutePath(),
-									tempFileName, percentage);
-							}
-							reportFile = tempFile;
-                  //================	  
+                		  reportFile = tempFile;
+                		  PercentageOfRandomLines.displayPercentageOfRandomLines(reportFile.getAbsolutePath(),
+                				  tempFileName, percentage);
+                	  }
+                  //================	
+				  //================
+                	  if(topRows != null) {
+                		  reportFile = tempFile;
+                		  TopRows.readFirstNLines(reportFile.getAbsolutePath(),
+                				  tempFileName, topRows);
+                	  }
+				  //================			
                     FileInputStream fis = new FileInputStream(reportFile);
                     exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
                     exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
@@ -786,7 +793,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   }
                   
                   //====
-                  if(percentage != null) {
+                  if(percentage != null || topRows != null) {
                 	  tempFile.delete();
                   }
                   //====
