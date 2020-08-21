@@ -10,6 +10,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -43,6 +44,7 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.reports.PercentageOfRandomLines;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.sun.net.httpserver.HttpExchange;
 
@@ -692,12 +694,15 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   /*****************************************
   *
   *  processDownloadReport
+ * @throws IOException 
   *
   *****************************************/
 
-  void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
+  void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange) throws IOException
   {
     String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    Integer percentage = JSONUtilities.decodeInteger(jsonRoot, "percentage", false);
+    Integer topRows = JSONUtilities.decodeInteger(jsonRoot, "topRows", false);
     GUIManagedObject report1 = reportService.getStoredReport(reportID);
     log.trace("Looking for "+reportID+" and got "+report1);
     String responseCode = null;
@@ -710,6 +715,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       {
         try
           {
+        	if (percentage != null && topRows != null) { 
+				responseCode = "percentage and topRows couldn't be defined simultaneously!"; // ===
+			} 
+			else { 
             Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
             String reportName = report.getName();
 
@@ -741,9 +750,22 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                 responseCode = "Cant find report with that name";
               }
 
+              File tempFile = File.createTempFile("tempReportPercentage", ""); //===
+			  String tempFileName = tempFile.getAbsolutePath(); //===
+				
+              
               if(reportFile != null) {
                 if(reportFile.length() > 0) {
                   try {
+                	  
+                  //================
+                	  if(percentage != null) {
+							PercentageOfRandomLines percentageOfRandomLines = new PercentageOfRandomLines();
+							percentageOfRandomLines.displayPercentageOfRandomLines(reportFile.getAbsolutePath(),
+									tempFileName, percentage);
+							}
+							reportFile = tempFile;
+                  //================	  
                     FileInputStream fis = new FileInputStream(reportFile);
                     exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
                     exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
@@ -762,6 +784,13 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                     excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
                     log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
                   }
+                  
+                  //====
+                  if(percentage != null) {
+                	  tempFile.delete();
+                  }
+                  //====
+                  
                 }else {
                   responseCode = "Report size is 0, report file is empty";
                 }
@@ -769,7 +798,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                 responseCode = "Report is null, cant find this report";
               }
           }
-        catch (GUIManagerException e)
+          } catch (GUIManagerException e)
           {
             log.info("Exception when building report from "+report1+" : "+e.getLocalizedMessage());
             responseCode = "internalError";
