@@ -232,6 +232,7 @@ public class ReportMonoPhase
                           alreadyTraced = true;
                         }
                       miniSourceMap = new HashMap<>();
+                      miniSourceMap.put("subscriberID", sourceMap.get("subscriberID")); // always get "subscriberID"
                       for (AlternateID alternateID : Deployment.getAlternateIDs().values())
                         {
                           String name = alternateID.getName();
@@ -402,6 +403,7 @@ public class ReportMonoPhase
                               alreadyTraced = true;
                             }
                           miniSourceMap = new HashMap<>();
+                          miniSourceMap.put("subscriberID", sourceMap.get("subscriberID")); // always get "subscriberID"
                           for (AlternateID alternateID : Deployment.getAlternateIDs().values())
                             {
                               String name = alternateID.getName();
