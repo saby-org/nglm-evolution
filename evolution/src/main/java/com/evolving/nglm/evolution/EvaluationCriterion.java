@@ -989,13 +989,31 @@ public class EvaluationCriterion
         *****************************************/
 
         case EqualOperator:
-          result = traceCondition(evaluationRequest, criterionFieldValue.equals(evaluatedArgument), criterionFieldValue, evaluatedArgument);
-          break;
+        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+             {
+             	for(String singleCriterionFieldValue: (List<String>) criterionFieldValue) {
+             		 result = traceCondition(evaluationRequest, singleCriterionFieldValue.equals(evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
+             	    if (result)
+             		break;
+             	}
+             }else { result = traceCondition(evaluationRequest, criterionFieldValue.equals(evaluatedArgument), criterionFieldValue, evaluatedArgument);
+        }
+        	 break;
           
         case NotEqualOperator:
-          result = traceCondition(evaluationRequest, !criterionFieldValue.equals(evaluatedArgument), criterionFieldValue, evaluatedArgument);
-          break;
-          
+        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+             {
+             	for(String singleCriterionFieldValue: (List<String>) criterionFieldValue) {
+             		result = traceCondition(evaluationRequest, !singleCriterionFieldValue.equals(evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
+             	   if (!result)
+             		break;
+             	}
+             }
+             	else {
+        	result = traceCondition(evaluationRequest, !criterionFieldValue.equals(evaluatedArgument), criterionFieldValue, evaluatedArgument);
+             	}
+        	 break;
+             	         
         /*****************************************
         *
         *  relational operators
@@ -1097,8 +1115,18 @@ public class EvaluationCriterion
         *****************************************/
 
         case ContainsKeywordOperator:
+        if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+        {
+        	for(String singleCriterionFieldValue: (List<String>) criterionFieldValue) {
+        		 result = traceCondition(evaluationRequest, evaluateContainsKeyword(singleCriterionFieldValue, (String) evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
+        	if (result)
+        		break;
+        	}
+        }
+        else {
           result = traceCondition(evaluationRequest, evaluateContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
           break;
+        }
           
         /*****************************************
         *
@@ -1107,8 +1135,16 @@ public class EvaluationCriterion
         *****************************************/
           
         case DoesNotContainsKeywordOperator:
-          result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
-          break;
+        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+             {
+             	for(String singleCriterionFieldValue: (List<String>) criterionFieldValue) {
+             		result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) singleCriterionFieldValue, (String) evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
+             	   if (!result)
+             		break;
+             	}
+             }
+        	 else { result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
+        } break;
 
         /*****************************************
         *
@@ -1117,6 +1153,15 @@ public class EvaluationCriterion
         *****************************************/
 
         case IsInSetOperator:
+        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+             {
+             	for(String singleCriterionFieldValue: (List<String>) criterionFieldValue) {
+             	   result = traceCondition(evaluationRequest, ((Set<String>) evaluatedArgument).contains((String) singleCriterionFieldValue), singleCriterionFieldValue, evaluatedArgument);
+                  	if (result)
+             		break;
+             	}
+             }
+        	else {
           switch (evaluationDataType)
             {
               case StringCriterion:
@@ -1126,10 +1171,20 @@ public class EvaluationCriterion
                 result = traceCondition(evaluationRequest, ((Set<Integer>) evaluatedArgument).contains((Integer) criterionFieldValue), criterionFieldValue, evaluatedArgument);
                 break;
             }
+        }
           break;
           
         case NotInSetOperator:
-          switch (evaluationDataType)
+        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+             {
+             	for(String singleCriterionFieldValue: (List<String>) criterionFieldValue) {
+             		 result = traceCondition(evaluationRequest, !((Set<String>) evaluatedArgument).contains((String) singleCriterionFieldValue), singleCriterionFieldValue, evaluatedArgument);
+                     if (!result)
+             		break;
+             	}
+             }
+        	else { 
+            switch (evaluationDataType)
             {
               case StringCriterion:
                 result = traceCondition(evaluationRequest, !((Set<String>) evaluatedArgument).contains((String) criterionFieldValue), criterionFieldValue, evaluatedArgument);
@@ -1138,6 +1193,7 @@ public class EvaluationCriterion
                 result = traceCondition(evaluationRequest, !((Set<Integer>) evaluatedArgument).contains((Integer) criterionFieldValue), criterionFieldValue, evaluatedArgument);
                 break;
             }
+        	}
           break;
           
         case ContainsOperator:
