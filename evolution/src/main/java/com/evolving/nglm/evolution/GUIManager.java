@@ -26806,8 +26806,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       if (log.isInfoEnabled()) log.info("creating recurrent campaigns");
       String tz = Deployment.getBaseTimeZone();
       final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
-      Date filterStartDate = RLMDateUtils.addDays(now, -3, tz);
-      Date filterEndDate = RLMDateUtils.addDays(now, 3, tz);
+      int recurrentCampaignCreationDaysRange = Deployment.getRecurrentCampaignCreationDaysRange();
+      Date filterStartDate = RLMDateUtils.addDays(now, -1*recurrentCampaignCreationDaysRange, tz);
+      Date filterEndDate = RLMDateUtils.addDays(now, recurrentCampaignCreationDaysRange, tz);
       Collection<Journey> recurrentJourneys = journeyService.getActiveAndCompletedRecurrentJourneys(SystemTime.getCurrentTime());
       log.info("RAJ K recurrentJourneys {}", recurrentJourneys);
       for (Journey recurrentJourney : recurrentJourneys)
@@ -26837,7 +26838,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           if ("week".equalsIgnoreCase(scheduling))
             {
               Date lastDateOfThisWk = getLastDate(now, Calendar.DAY_OF_WEEK);
-              Date tempStartDate = RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
+              Date tempStartDate = recurrentJourney.getEffectiveStartDate(); //RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
               Date firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK);
               Date lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK);
               while(lastDateOfThisWk.compareTo(lastDateOfStartDateWk) >= 0)
@@ -26857,7 +26858,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           else if ("month".equalsIgnoreCase(scheduling))
             {
               Date lastDateOfThisMonth = getLastDate(now, Calendar.DAY_OF_MONTH);
-              Date tempStartDate = RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
+              Date tempStartDate = recurrentJourney.getEffectiveStartDate(); //RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
               Date firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH);
               Date lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
               while(lastDateOfThisMonth.compareTo(lastDateOfStartDateMonth) >= 0)
@@ -26877,7 +26878,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           else if ("day".equalsIgnoreCase(scheduling))
             {
               Date lastDate = filterEndDate;
-              Date tempStartDate = RLMDateUtils.addDays(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
+              Date tempStartDate = recurrentJourney.getEffectiveStartDate(); //RLMDateUtils.addDays(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
               while(lastDate.compareTo(tempStartDate) >= 0)
                 {
                   tmpJourneyCreationDates.add(new Date(tempStartDate.getTime()));
@@ -26890,7 +26891,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             }
           
           //
-          //  filter out 3days (before / after)
+          // filter out
+          //
+          
+          tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.after(recurrentJourney.getEffectiveStartDate())).collect(Collectors.toList());
+          
+          //
+          //  filter out recurrentCampaignCreationDaysRange (before / after)
           //
           
           log.info("RAJ K before filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);

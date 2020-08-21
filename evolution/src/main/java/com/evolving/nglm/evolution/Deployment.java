@@ -262,6 +262,12 @@ public class Deployment
   private static String extractManagerFileExtension;
   private static String extractManagerCsvSeparator;
   private static String extractManagerFieldSurrounder;
+  
+  //
+  //  recurrentCampaignCreationDaysRange
+  //
+  
+  private static int recurrentCampaignCreationDaysRange;
 
   /*****************************************
    *
@@ -507,6 +513,7 @@ public class Deployment
   public static String getExtractManagerFileExtension() { return extractManagerFileExtension; }
   public static String getExtractManagerCsvSeparator() { return extractManagerCsvSeparator; }
   public static String getExtractManagerFieldSurrounder() { return extractManagerFieldSurrounder; }
+  public static int getRecurrentCampaignCreationDaysRange() { return recurrentCampaignCreationDaysRange; }
 
   // addProfileCriterionField
   //
@@ -3416,6 +3423,16 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment : extractManager", e);
         }
+      
+      try
+      {
+        recurrentCampaignCreationDaysRange = JSONUtilities.decodeInteger(jsonRoot, "recurrentCampaignCreationDaysRange", 3);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+      
     }
 
   /*****************************************

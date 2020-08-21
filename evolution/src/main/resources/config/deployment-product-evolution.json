@@ -1124,5 +1124,11 @@
     
     "enableProfileSegmentChange" : true,
     "enableEvaluateTargetRandomness" : false,
-    "enableContactPolicyProcessing" : true
+    "enableContactPolicyProcessing" : true,
+    
+    --
+    -- recurrentCampaignCreationDaysRange default value is 3 - creates child campaigns before x days and creates missing child campaigns whose start date with in now-x days
+    --
+    
+    "recurrentCampaignCreationDaysRange" : 3
 }
