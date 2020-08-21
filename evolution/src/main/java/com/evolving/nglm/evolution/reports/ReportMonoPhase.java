@@ -149,7 +149,7 @@ public class ReportMonoPhase
       for (Entry<String, QueryBuilder> index : esIndex.entrySet())
         {
 
-          SearchRequest searchRequest = new SearchRequest().source(new SearchSourceBuilder().query(index.getValue()));
+          SearchRequest searchRequest = new SearchRequest().source(new SearchSourceBuilder().query(index.getValue())).allowPartialSearchResults(false);
 
           // Read all docs from ES, on esIndex[i]
           // Write to topic, one message per document
