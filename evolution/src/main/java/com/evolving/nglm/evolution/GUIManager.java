@@ -26891,18 +26891,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             }
           
           //
-          // filter out
-          //
-          
-          tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.after(recurrentJourney.getEffectiveStartDate())).collect(Collectors.toList());
-          
-          //
-          //  filter out recurrentCampaignCreationDaysRange (before / after)
+          // filter out if before start date and recurrentCampaignCreationDaysRange (before / after)
           //
           
           log.info("RAJ K before filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
-          tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.compareTo(filterStartDate) >= 0).collect(Collectors.toList());
-          tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> filterEndDate.compareTo(date) >= 0).collect(Collectors.toList());
+          tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.after(recurrentJourney.getEffectiveStartDate())  && date.compareTo(filterStartDate) >= 0 && filterEndDate.compareTo(date) >= 0 ).collect(Collectors.toList());
           log.info("RAJ K after filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
           
           //
