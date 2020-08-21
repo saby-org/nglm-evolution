@@ -6,7 +6,7 @@ import java.io.FileWriter;
 
 public class TopRows {
 
-	static void readFirstNLines(String inputFileName, String outputFileName, int topRows) throws Exception {
+	public static void readFirstNLines(String inputFileName, String outputFileName, int topRows) throws Exception {
 
 		BufferedWriter bw = new BufferedWriter(new FileWriter(outputFileName));
 
