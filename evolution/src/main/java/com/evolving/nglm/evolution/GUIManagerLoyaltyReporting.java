@@ -717,94 +717,90 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         try
           {
         	if (percentage != null && topRows != null) { 
-				responseCode = "percentage and topRows couldn't be defined simultaneously!"; // ===
+				responseCode = "percentage and topRows couldn't be defined simultaneously!"; 
 			} 
 			else { 
-            Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
-            String reportName = report.getName();
+				Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
+				String reportName = report.getName();
 
-            String outputPath = Deployment.getReportManagerOutputPath()+File.separator;
-            String fileExtension = Deployment.getReportManagerFileExtension();
+				String outputPath = Deployment.getReportManagerOutputPath()+File.separator;
+				String fileExtension = Deployment.getReportManagerFileExtension();
 
-            File folder = new File(outputPath);
-            String csvFilenameRegex = reportName+ "_"+ ".*"+ "\\."+ fileExtension+ReportUtils.ZIP_EXTENSION;
+				File folder = new File(outputPath);
+				String csvFilenameRegex = reportName+ "_"+ ".*"+ "\\."+ fileExtension+ReportUtils.ZIP_EXTENSION;
 
-            File[] listOfFiles = folder.listFiles(new FileFilter(){
-              @Override
-                  public boolean accept(File f) {
-                return Pattern.compile(csvFilenameRegex).matcher(f.getName()).matches();
-              }});
+				File[] listOfFiles = folder.listFiles(new FileFilter(){
+					@Override
+					public boolean accept(File f) {
+						return Pattern.compile(csvFilenameRegex).matcher(f.getName()).matches();
+					}});
 
-              File reportFile = null;
+				File reportFile = null;
 
-              long lastMod = Long.MIN_VALUE;
-              if(listOfFiles != null && listOfFiles.length != 0) {
-                for (int i = 0; i < listOfFiles.length; i++) {
-                  if (listOfFiles[i].isFile()) {
-                    if(listOfFiles[i].lastModified() > lastMod) {
-                      reportFile = listOfFiles[i];
-                      lastMod = reportFile.lastModified();
-                    }
-                  }
-                }
-              }else {
-                responseCode = "Cant find report with that name";
-              }
+				long lastMod = Long.MIN_VALUE;
+				if(listOfFiles != null && listOfFiles.length != 0) {
+					for (int i = 0; i < listOfFiles.length; i++) {
+						if (listOfFiles[i].isFile()) {
+							if(listOfFiles[i].lastModified() > lastMod) {
+								reportFile = listOfFiles[i];
+								lastMod = reportFile.lastModified();
+							}
+						}
+					}
+				}else {
+					responseCode = "Cant find report with that name";
+				}
 
-              File tempFile = File.createTempFile("tempReportPercentage", ""); //===
-			  String tempFileName = tempFile.getAbsolutePath(); //===
-				
-              
-              if(reportFile != null) {
-                if(reportFile.length() > 0) {
-                  try {
-                	  
-                  //================
-                	  if(percentage != null) {
-                		  reportFile = tempFile;
-                		  PercentageOfRandomLines.displayPercentageOfRandomLines(reportFile.getAbsolutePath(),
-                				  tempFileName, percentage);
-                	  }
-                  //================	
-				  //================
-                	  if(topRows != null) {
-                		  reportFile = tempFile;
-                		  TopRows.readFirstNLines(reportFile.getAbsolutePath(),
-                				  tempFileName, topRows);
-                	  }
-				  //================			
-                    FileInputStream fis = new FileInputStream(reportFile);
-                    exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
-                    exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
-                    exchange.sendResponseHeaders(200, reportFile.length());
-                    OutputStream os = exchange.getResponseBody();
-                    byte data[] = new byte[10_000]; // allow some bufferization
-                    int length;
-                    while ((length = fis.read(data)) != -1) {
-                      os.write(data, 0, length);
-                    }
-                    fis.close();
-                    os.flush();
-                    os.close();
-                  } catch (Exception excp) {
-                    StringWriter stackTraceWriter = new StringWriter();
-                    excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-                  }
-                  
-                  //====
-                  if(percentage != null || topRows != null) {
-                	  tempFile.delete();
-                  }
-                  //====
-                  
-                }else {
-                  responseCode = "Report size is 0, report file is empty";
-                }
-              }else {
-                responseCode = "Report is null, cant find this report";
-              }
-          }
+				File tempFile = File.createTempFile("tempReportPercentage", ""); 
+				String tempFileName = tempFile.getAbsolutePath(); 
+
+
+				if(reportFile != null) {
+					if(reportFile.length() > 0) {
+						try {
+							if(percentage != null) {
+								PercentageOfRandomLines.displayPercentageOfRandomLines(reportFile.getAbsolutePath(),
+										tempFileName, percentage);
+								reportFile = tempFile;
+							}
+							if(topRows != null) {
+								TopRows.readFirstNLines(reportFile.getAbsolutePath(),
+										tempFileName, topRows);
+								reportFile = tempFile;
+							}
+									
+							FileInputStream fis = new FileInputStream(reportFile);
+							exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
+							exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
+							exchange.sendResponseHeaders(200, reportFile.length());
+							OutputStream os = exchange.getResponseBody();
+							byte data[] = new byte[10_000]; // allow some bufferization
+							int length;
+							while ((length = fis.read(data)) != -1) {
+								os.write(data, 0, length);
+							}
+							fis.close();
+							os.flush();
+							os.close();
+						} catch (Exception excp) {
+							StringWriter stackTraceWriter = new StringWriter();
+							excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
+							log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+						}
+
+						
+						if(percentage != null || topRows != null && tempFile != null) {
+							tempFile.delete();
+						}
+						
+
+					}else {
+						responseCode = "Report size is 0, report file is empty";
+					}
+				}else {
+					responseCode = "Report is null, cant find this report";
+				}
+			}
           } catch (GUIManagerException e)
           {
             log.info("Exception when building report from "+report1+" : "+e.getLocalizedMessage());
