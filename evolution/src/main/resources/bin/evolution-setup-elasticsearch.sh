@@ -69,17 +69,17 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile -H'Content
   "mappings" : {
     "properties" : {
       "subscriberID"                        : { "type" : "keyword" },
-      "evaluationDate"                      : { "type" : "date" },
+      "evaluationDate"                      : { "type" : "date"    },
       "evolutionSubscriberStatus"           : { "type" : "keyword" },
       "previousEvolutionSubscriberStatus"   : { "type" : "keyword" },
-      "evolutionSubscriberStatusChangeDate" : { "type" : "date" },
+      "evolutionSubscriberStatusChangeDate" : { "type" : "date"    },
       "universalControlGroup"               : { "type" : "boolean" },
       "language"                            : { "type" : "keyword" },
       "segments"                            : { "type" : "keyword" },
       "targets"                             : { "type" : "keyword" },
-      "lastUpdateDate"                      : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
-      "pointFluctuations"                   : { "type" : "object"},
-      "subscriberJourneys"                  : { "type" : "nested"},
+      "lastUpdateDate"                      : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+      "pointFluctuations"                   : { "type" : "object"  },
+      "subscriberJourneys"                  : { "type" : "nested"  },
       "loyaltyPrograms"                     : { "type" : "nested",
       	   "properties" : {
               "loyaltyProgramEnrollmentDate" : { "type" : "date" },
