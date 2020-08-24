@@ -343,6 +343,18 @@ public abstract class CriterionFieldRetriever
           result = loyaltyProgramPointsState.getRewardPoints();
           break;
           
+        case "tierUpdateDate":
+          result = loyaltyProgramPointsState.getTierEnrollmentDate();
+          break;
+          
+        case "optInDate":
+          result = loyaltyProgramPointsState.getLoyaltyProgramEnrollmentDate();
+          break;
+          
+        case "optOutDate":
+          result = loyaltyProgramPointsState.getLoyaltyProgramExitDate();
+          break;
+          
         default:
           fieldNamePattern = Pattern.compile("^([^.]+)\\.([^.]+)\\.([^.]+)$");
           fieldNameMatcher = fieldNamePattern.matcher(criterionFieldBaseName);

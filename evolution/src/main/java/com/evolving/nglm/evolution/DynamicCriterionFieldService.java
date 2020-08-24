@@ -130,9 +130,12 @@ public class DynamicCriterionFieldService extends GUIService
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "rewardpoint.earliestexpirydate",     "rewardpoint." + rewardPointID + ".earliestexpirydate",     CriterionDataType.DateCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "statuspoint.earliestexpiryquantity", "statuspoint." + statusPointID + ".earliestexpiryquantity", CriterionDataType.IntegerCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "rewardpoint.earliestexpiryquantity", "rewardpoint." + rewardPointID + ".earliestexpiryquantity", CriterionDataType.IntegerCriterion, null);
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "tierUpdateDate", CriterionDataType.DateCriterion, null);
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optInDate", CriterionDataType.DateCriterion, null);
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optOutDate", CriterionDataType.DateCriterion, null);
       }
+    addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "tierupdatetype", CriterionDataType.StringCriterion, generateAvailableValuesForTierUpdateType());
   }
-
   /*****************************************
   *
   *  addLoyaltyProgramCriterionField with criterionFieldInternalBaseName = criterionFieldBaseName
@@ -200,6 +203,23 @@ public class DynamicCriterionFieldService extends GUIService
             }
           break;
       }
+    return availableValuesField;
+  }
+  
+  /*****************************************
+  *
+  *  generateAvailableValuesForTierDataType
+  *
+  *****************************************/
+
+  private JSONArray generateAvailableValuesForTierUpdateType()
+  {
+    JSONArray availableValuesField = new JSONArray();
+    availableValuesField.add("opt-in");
+    availableValuesField.add("opt-out");
+    availableValuesField.add("upgrade");
+    availableValuesField.add("downgrade");
+    
     return availableValuesField;
   }
 
