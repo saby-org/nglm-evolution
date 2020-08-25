@@ -12,6 +12,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
+import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 
 import java.util.ArrayList;
@@ -328,6 +329,7 @@ public abstract class CriterionFieldRetriever
     //
     LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyProgramState;
     Object result = null;
+    
     switch (criterionFieldBaseName)
       {
         case "tier":
@@ -352,7 +354,8 @@ public abstract class CriterionFieldRetriever
           
         case "optOutDate":
           result = loyaltyProgramPointsState.getLoyaltyProgramExitDate();
-          break;
+          break;        
+         
           
         default:
           fieldNamePattern = Pattern.compile("^([^.]+)\\.([^.]+)\\.([^.]+)$");
