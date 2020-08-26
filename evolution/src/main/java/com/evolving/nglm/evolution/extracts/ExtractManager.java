@@ -70,7 +70,7 @@ public class ExtractManager extends ReportManager
     {
       processChildren(initialTargetList);
     }
-    catch (KeeperException | InterruptedException e)
+    catch (InterruptedException e)
     {
       log.error("Error processing extract", e);
     }
@@ -155,7 +155,7 @@ public class ExtractManager extends ReportManager
    * @see ReportManager#process(WatchedEvent)
    *
    *****************************************/
-  @Override protected void processChildren(List<String> children) throws KeeperException, InterruptedException
+  @Override protected void processChildren(List<String> children) throws InterruptedException
   {
     if (!children.isEmpty())
     {
