@@ -324,40 +324,62 @@ public class ReportManager implements Watcher
               log.error("Unexpected issue " + e.getLocalizedMessage(), e);
               reportManagerStatistics.incrementFailureCount();
             }
-            finally 
-            {
-              log.info("Deleting control "+controlFile);
-              try
+
+            // Delete control file
+            while (true)
               {
-                zk.delete(controlFile, -1);
+                log.info("Deleting control "+controlFile);
+                try
+                {
+                  zk.delete(controlFile, -1);
+                }
+                catch (KeeperException e) { 
+                  handleSessionExpired(e, "Issue deleting control "+controlFile);
+                  if (e.code() == Code.SESSIONEXPIRED)
+                    {
+                      // We need to remove the control file, so that the same report is not restarted when everything restarts
+                      controlFileToRemove = controlFile;
+                    }
+                  else if (e.code() != Code.NONODE)
+                    {
+                      // if we get a KeeperException like ConnectionLossException, keep trying to delete file, until ZK is back, or the session expires
+                      Thread.sleep(5000);
+                      continue;
+                    }
+                }
+                catch (InterruptedException e) 
+                {
+                  log.info("Interrupted deleting control : "+e.getLocalizedMessage(), e);
+                  continue;
+                }
+                break;
               }
-              catch (KeeperException e) { 
-                handleSessionExpired(e, "Issue deleting control "+controlFile);
-                if (e.code() == Code.SESSIONEXPIRED)
-                  {
-                    // We need to remove the control file, so that the same report is not restarted when everything restarts
-                    controlFileToRemove = controlFile;
-                  }
-              }
-              catch (InterruptedException e) 
+
+            // Delete lock file
+            while (true)
               {
-                log.info("Issue deleting control : "+e.getLocalizedMessage(), e);
-              }
-              finally 
-              {
-                log.info("Deleting lock "+lockFile);
                 try 
                 {
+                  log.info("Deleting lock "+lockFile);
                   zk.delete(lockFile, -1);
-                  log.info("Both files deleted");
                 }
-                catch (KeeperException e) { handleSessionExpired(e, "Issue deleting lock " + lockFile); }
+                catch (KeeperException e) {
+                  handleSessionExpired(e, "Issue deleting lock " + lockFile);
+                  if (e.code() != Code.SESSIONEXPIRED && e.code() != Code.NONODE)
+                    {
+                      // if we get a KeeperException like ConnectionLossException, keep trying to delete file, until ZK is back, or the session expires
+                      Thread.sleep(5000);
+                      continue;
+                    }
+                }
                 catch (InterruptedException e)
                 {
-                  log.info("Issue deleting lock : "+e.getLocalizedMessage(), e);
+                  log.info("Interrupted deleting lock : "+e.getLocalizedMessage(), e);
+                  continue;
                 }
+                break;
               }
-            }
+            log.info("Both files deleted");
           }
           catch (KeeperException e) { handleSessionExpired(e, "Failed to create lock file, this is OK " + lockFile); }
           catch (InterruptedException ignore)
