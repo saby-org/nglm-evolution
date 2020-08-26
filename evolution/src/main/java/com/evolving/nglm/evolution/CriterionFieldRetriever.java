@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
@@ -18,6 +19,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -302,7 +304,7 @@ public abstract class CriterionFieldRetriever
     if (! fieldNameMatcher.find()) throw new CriterionException("invalid loyaltyprogram field " + fieldName);
     String loyaltyProgramID = fieldNameMatcher.group(1);
     String criterionFieldBaseName = fieldNameMatcher.group(2);
-
+    String tierUpdateType = null;
     //
     //  loyaltyProgramState
     //
@@ -329,7 +331,8 @@ public abstract class CriterionFieldRetriever
     //
     LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyProgramState;
     Object result = null;
-    
+    LoyaltyProgramHistory history = loyaltyProgramPointsState.getLoyaltyProgramHistory();
+          
     switch (criterionFieldBaseName)
       {
         case "tier":
@@ -354,8 +357,11 @@ public abstract class CriterionFieldRetriever
           
         case "optOutDate":
           result = loyaltyProgramPointsState.getLoyaltyProgramExitDate();
-          break;        
-         
+          break; 
+          
+        case "tierupdatetype":
+          result = tierUpdateType;
+          break;
           
         default:
           fieldNamePattern = Pattern.compile("^([^.]+)\\.([^.]+)\\.([^.]+)$");
