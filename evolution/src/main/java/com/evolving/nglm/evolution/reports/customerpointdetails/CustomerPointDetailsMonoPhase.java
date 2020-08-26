@@ -175,15 +175,24 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
     pointService.start();
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
+    
     esIndexWithQuery.put(esIndexSubscriber, QueryBuilders.matchAllQuery());
-
+    
+    List<String> subscriberFields = new ArrayList<>();
+    subscriberFields.add("subscriberID");
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values()){
+      subscriberFields.add(alternateID.getESField());
+    }
+    subscriberFields.add("pointBalances");
+    
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
         esIndexWithQuery,
         reportFactory,
         csvfile,
         true,
-        true
+        true,
+        subscriberFields
     );
 
     if (!reportMonoPhase.startOneToOne())
