@@ -17,6 +17,8 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -24,7 +26,9 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Token;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 
 
 public class DNBOToken extends Token
@@ -263,6 +267,77 @@ public class DNBOToken extends Token
         + (presentedOffersSalesChannel != null ? "presentedOffersSalesChannel=" + presentedOffersSalesChannel + ", " : "")
         + (acceptedOfferID != null ? "acceptedOfferID=" + acceptedOfferID + ", " : "")
         + (presentationDates != null ? "presentationDates=" + presentationDates : "") + "]";
+  }
+  
+  
+  public JSONObject getJSON()
+  {
+    JSONObject result = new JSONObject();
+
+    
+    result.put("tokenCode", this.getTokenCode());
+    result.put("tokenType", getTokenTypeID());
+    result.put("presentationStrategyID", getPresentationStrategyID());
+    JSONArray scoringStrategies = new JSONArray();
+    for (String ssID : getScoringStrategyIDs())
+      {
+        scoringStrategyIDs.add(ssID);
+      }
+    result.put("scoringStrategyIDs", scoringStrategies);
+    result.put("creationDate", getCreationDate().getTime());
+    result.put("expirationDate", getTokenExpirationDate().getTime());
+    result.put("tokenStatus", getTokenStatus());
+    result.put("lastAllocationDate", getBoundDate().getTime());
+    result.put("qtyAllocations", getBoundCount());
+    result.put("qtyAllocatedOffers", getPresentedOfferIDs().size());
+    result.put("redeemedDate", getRedeemedDate().getTime());
+    result.put("", get);
+
+//// CONTINUE
+    
+    
+
+    if (acceptedOfferId == null)
+      {
+        result.put("acceptedOffer", "");
+      }
+    else
+      {
+        if (offerService.getStoredOffer(acceptedOfferId) != null)
+          {
+            result.put("acceptedOffer",
+                offerService.getStoredOffer(acceptedOfferId).getGUIManagedObjectDisplay());
+          }
+        else
+          {
+            result.put("acceptedOffer", "");
+          }
+      }
+                 
+    if (subscriberStoredToken.getModuleID() == null)
+      {
+        result.put("Module", "");
+      }
+    else
+      {
+        Module module = Module
+            .fromExternalRepresentation(String.valueOf(subscriberStoredToken.getModuleID()));
+        result.put("module", module);
+      }
+    if (subscriberStoredToken.getFeatureID() == null || subscriberStoredToken.getModuleID() == null)
+      {
+        result.put("featureName", "");
+      }
+    else
+      {
+        Module module = Module
+            .fromExternalRepresentation(String.valueOf(subscriberStoredToken.getModuleID()));
+        String feature_display = DeliveryRequest.getFeatureDisplay(module,
+            String.valueOf(subscriberStoredToken.getFeatureID()), journeyService, offerService,
+            loyaltyProgramService);   
+        result.put("featureName", feature_display);
+      }
+
   }
 
 }
