@@ -231,129 +231,149 @@ public class ReportManager implements Watcher
         Collections.sort(children); // we are getting an unsorted list
         for (String child : children)
           {
-            String controlFile = controlDir + File.separator + child;
-            String lockFile = lockDir + File.separator + child;
-            log.trace("Checking if lock exists : "+lockFile);
-            try
-            {
-              if (zk.exists(lockFile, false) == null) 
-                {
-                  log.trace("Processing entry "+child+" with znodes "+controlFile+" and "+lockFile);
-                  try
-                  {
-                    log.trace("Trying to create lock "+lockFile);
-                    zk.create(lockFile, dfrm.format(SystemTime.getCurrentTime()).getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
-                    try 
-                    {
-                      log.trace("Lock "+lockFile+" successfully created");
-                      Stat stat = null;
-                      Charset utf8Charset = Charset.forName("UTF-8");
-                      byte[] d = zk.getData(controlFile, false, stat);
-                      String data = new String(d, utf8Charset);
-                      log.info("Got data "+data);
-                      Scanner s = new Scanner(data+"\n"); // Make sure s.nextLine() will work
-                      String reportName = s.next().trim();
-                      log.trace("We got reportName = "+reportName);
-                      String restOfLine = s.nextLine().trim();
-                      s.close();
-                      Collection<GUIManagedObject> reports = reportService.getStoredReports();
-                      Report report = null;
-                      if (reportName != null)
-                        {
-                          for (GUIManagedObject gmo : reports)
-                            {
-                              if (gmo instanceof Report)
-                                {
-                                  Report reportLocal = (Report) gmo;
-                                  log.trace("Checking "+reportLocal+" for "+reportName);
-                                  if (reportName.equals(reportLocal.getName())) 
-                                    {
-                                      report = reportLocal;
-                                      break;
-                                    }
-                                }
-                            }
-                        }
-                      if (report == null)
-                        {
-                          log.error("Report does not exist : "+reportName);
-                          reportManagerStatistics.incrementFailureCount();
-                        } 
-                      else
-                        {
-                          log.debug("report = "+report);
-                          handleReport(reportName, report, restOfLine);
-                          reportManagerStatistics.incrementReportCount();
-                        }
-                    }
-                    catch (KeeperException e) { handleSessionExpired(e, "Issue while reading from control node "+controlFile); }
-                    catch (InterruptedException | NoSuchElementException e)
-                    {
-                      log.error("Issue while reading from control node "+e.getLocalizedMessage(), e);
-                      reportManagerStatistics.incrementFailureCount();
-                    }
-                    catch (IllegalCharsetNameException e)
-                    {
-                      log.error("Unexpected issue, UTF-8 does not seem to exist "+e.getLocalizedMessage(), e);
-                      reportManagerStatistics.incrementFailureCount();
-                    }
-                    catch (Exception e) // this is OK because we trace the root cause, and we'll fix it
-                    {
-                      log.error("Unexpected issue " + e.getLocalizedMessage(), e);
-                      reportManagerStatistics.incrementFailureCount();
-                    }
-                    finally 
-                    {
-                      log.info("Deleting control "+controlFile);
-                      try
-                      {
-                        zk.delete(controlFile, -1);
-                      }
-                      catch (KeeperException e) { 
-                        handleSessionExpired(e, "Issue deleting control "+controlFile);
-                        if (e.code() == Code.SESSIONEXPIRED)
-                          {
-                            // We need to remove the control file, so that the same report is not restarted when everything restarts
-                            controlFileToRemove = controlFile;
-                          }
-                      }
-                      catch (InterruptedException e) 
-                      {
-                        log.info("Issue deleting control : "+e.getLocalizedMessage(), e);
-                      }
-                      finally 
-                      {
-                        log.info("Deleting lock "+lockFile);
-                        try 
-                        {
-                          zk.delete(lockFile, -1);
-                          log.info("Both files deleted");
-                        }
-                        catch (KeeperException e) { handleSessionExpired(e, "Issue deleting lock " + lockFile); }
-                        catch (InterruptedException e)
-                        {
-                          log.info("Issue deleting lock : "+e.getLocalizedMessage(), e);
-                        }
-                      }
-                    }
-                  }
-                  catch (KeeperException e) { handleSessionExpired(e, "Failed to create lock file, this is OK " + lockFile); }
-                  catch (InterruptedException ignore)
-                  {
-                    // even so we check the existence of a lock, it could have been created in the mean time making create fail. We catch and ignore it.
-                    log.trace("Failed to create lock file, this is OK " +lockFile+ ":"+ignore.getLocalizedMessage(), ignore);
-                  } 
-                } 
-              else 
-                {
-                  log.trace("--> This report is already processed by another ReportManager instance");
-                }
-            }
-            catch (KeeperException e) { handleSessionExpired(e, "Issue while reading from lock " + lockFile); }
+            processChild(child);
           }
       }
   }
-  
+  protected void processChild(String child) throws InterruptedException
+  {
+    // Generate report in separate thread
+    Thread thread = new Thread( () -> { 
+      try
+      {
+        processChild2(child);
+      }
+      catch (InterruptedException e)
+      {
+        log.trace("Failed to process control file " +child+ ":"+e.getLocalizedMessage(), e);
+      }
+    } );
+    thread.start();
+  }
+
+  public void processChild2(String child) throws InterruptedException
+  {
+    String controlFile = controlDir + File.separator + child;
+    String lockFile = lockDir + File.separator + child;
+    log.trace("Checking if lock exists : "+lockFile);
+    try
+    {
+      if (zk.exists(lockFile, false) == null) 
+        {
+          log.trace("Processing entry "+child+" with znodes "+controlFile+" and "+lockFile);
+          try
+          {
+            log.trace("Trying to create lock "+lockFile);
+            zk.create(lockFile, dfrm.format(SystemTime.getCurrentTime()).getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+            try 
+            {
+              log.trace("Lock "+lockFile+" successfully created");
+              Stat stat = null;
+              Charset utf8Charset = Charset.forName("UTF-8");
+              byte[] d = zk.getData(controlFile, false, stat);
+              String data = new String(d, utf8Charset);
+              log.info("Got data "+data);
+              Scanner s = new Scanner(data+"\n"); // Make sure s.nextLine() will work
+              String reportName = s.next().trim();
+              log.trace("We got reportName = "+reportName);
+              String restOfLine = s.nextLine().trim();
+              s.close();
+              Collection<GUIManagedObject> reports = reportService.getStoredReports();
+              Report report = null;
+              if (reportName != null)
+                {
+                  for (GUIManagedObject gmo : reports)
+                    {
+                      if (gmo instanceof Report)
+                        {
+                          Report reportLocal = (Report) gmo;
+                          log.trace("Checking "+reportLocal+" for "+reportName);
+                          if (reportName.equals(reportLocal.getName())) 
+                            {
+                              report = reportLocal;
+                              break;
+                            }
+                        }
+                    }
+                }
+              if (report == null)
+                {
+                  log.error("Report does not exist : "+reportName);
+                  reportManagerStatistics.incrementFailureCount();
+                } 
+              else
+                {
+                  log.debug("report = "+report);
+                  handleReport(reportName, report, restOfLine);
+                  reportManagerStatistics.incrementReportCount();
+                }
+            }
+            catch (KeeperException e) { handleSessionExpired(e, "Issue while reading from control node "+controlFile); }
+            catch (InterruptedException | NoSuchElementException e)
+            {
+              log.error("Issue while reading from control node "+e.getLocalizedMessage(), e);
+              reportManagerStatistics.incrementFailureCount();
+            }
+            catch (IllegalCharsetNameException e)
+            {
+              log.error("Unexpected issue, UTF-8 does not seem to exist "+e.getLocalizedMessage(), e);
+              reportManagerStatistics.incrementFailureCount();
+            }
+            catch (Exception e) // this is OK because we trace the root cause, and we'll fix it
+            {
+              log.error("Unexpected issue " + e.getLocalizedMessage(), e);
+              reportManagerStatistics.incrementFailureCount();
+            }
+            finally 
+            {
+              log.info("Deleting control "+controlFile);
+              try
+              {
+                zk.delete(controlFile, -1);
+              }
+              catch (KeeperException e) { 
+                handleSessionExpired(e, "Issue deleting control "+controlFile);
+                if (e.code() == Code.SESSIONEXPIRED)
+                  {
+                    // We need to remove the control file, so that the same report is not restarted when everything restarts
+                    controlFileToRemove = controlFile;
+                  }
+              }
+              catch (InterruptedException e) 
+              {
+                log.info("Issue deleting control : "+e.getLocalizedMessage(), e);
+              }
+              finally 
+              {
+                log.info("Deleting lock "+lockFile);
+                try 
+                {
+                  zk.delete(lockFile, -1);
+                  log.info("Both files deleted");
+                }
+                catch (KeeperException e) { handleSessionExpired(e, "Issue deleting lock " + lockFile); }
+                catch (InterruptedException e)
+                {
+                  log.info("Issue deleting lock : "+e.getLocalizedMessage(), e);
+                }
+              }
+            }
+          }
+          catch (KeeperException e) { handleSessionExpired(e, "Failed to create lock file, this is OK " + lockFile); }
+          catch (InterruptedException ignore)
+          {
+            // even so we check the existence of a lock, it could have been created in the mean time making create fail. We catch and ignore it.
+            log.trace("Failed to create lock file, this is OK " +lockFile+ ":"+ignore.getLocalizedMessage(), ignore);
+          } 
+        } 
+      else 
+        {
+          log.trace("--> This report is already processed by another ReportManager instance");
+        }
+    }
+    catch (KeeperException e) { handleSessionExpired(e, "Issue while reading from lock " + lockFile); }
+  }
+
   private void handleSessionExpired(KeeperException e, String msg)
   {
     if (e.code() == Code.SESSIONEXPIRED)

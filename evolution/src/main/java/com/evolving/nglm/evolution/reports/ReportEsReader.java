@@ -221,6 +221,33 @@ public class ReportEsReader
     final AtomicLong before = new AtomicLong(SystemTime.getCurrentTime().getTime());
     final AtomicLong lastTS = new AtomicLong(0);
     final int traceInterval = 100_000;
+
+    // ESROUTER can have two access points
+    // need to cut the string to get at least one
+    String node = null;
+    int port = 0;
+    if (esNode.contains(","))
+      {
+        String[] split = esNode.split(",");
+        if (split[0] != null)
+          {
+            Scanner s = new Scanner(split[0]);
+            s.useDelimiter(":");
+            node = s.next();
+            port = s.nextInt();
+            s.close();
+          }
+      } else
+      {
+        Scanner s = new Scanner(esNode);
+        s.useDelimiter(":");
+        node = s.next();
+        port = s.nextInt();
+        s.close();
+      }
+
+    elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
+
     int i = 0;
     for (Entry<String, QueryBuilder> index : esIndex.entrySet())
       {
@@ -231,34 +258,6 @@ public class ReportEsReader
         // Write to topic, one message per document
         try
           {
-
-            // ESROUTER can have two access points
-            // need to cut the string to get at least one
-            String node = null;
-            int port = 0;
-            if (esNode.contains(","))
-              {
-                String[] split = esNode.split(",");
-                if (split[0] != null)
-                  {
-                    Scanner s = new Scanner(split[0]);
-                    s.useDelimiter(":");
-                    node = s.next();
-                    port = s.nextInt();
-                    s.close();
-                  }
-              } else
-              {
-                Scanner s = new Scanner(esNode);
-                s.useDelimiter(":");
-                node = s.next();
-                port = s.nextInt();
-                s.close();
-              }
-
-            elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
-            // Search for everyone
-
             Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
             String[] indicesToRead = getIndices(index.getKey());
             
@@ -391,10 +390,20 @@ public class ReportEsReader
               }
           } catch (IOException e)
           {
-            e.printStackTrace();
+            log.info("Exception while reading ElasticSearch " + e.getLocalizedMessage());
           }
         i++;
       }
+    
+    try
+    {
+      elasticsearchReaderClient.close();
+    }
+    catch (IOException e)
+    {
+      log.info("Exception while closing ElasticSearch client " + e.getLocalizedMessage());
+    }
+
 
     // send 1 marker per partition
     for (int partition = 0; partition < ReportUtils.getNbPartitions(); partition++)

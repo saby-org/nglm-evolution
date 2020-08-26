@@ -6,9 +6,10 @@
 
 package com.evolving.nglm.evolution.reports;
 
-import static com.evolving.nglm.evolution.reports.ReportUtils.d;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -17,16 +18,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
-import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.http.HttpHost;
-import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -44,9 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
-import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 
 public class ReportMonoPhase
 {
@@ -58,7 +53,7 @@ public class ReportMonoPhase
   private boolean onlyKeepAlternateIDsExtended; // when we read subscriberprofile, only keep info about alternateIDs and a little more (for 2 specific reports)
   private ReportCsvFactory reportFactory;
   private String csvfile;
-  private static RestHighLevelClient elasticsearchReaderClient;
+  private RestHighLevelClient elasticsearchReaderClient;
 
   public ReportMonoPhase(String esNode, LinkedHashMap<String, QueryBuilder> esIndex, ReportCsvFactory factory, String csvfile, boolean onlyKeepAlternateIDs, boolean onlyKeepAlternateIDsExtended)
   {
@@ -143,6 +138,33 @@ public class ReportMonoPhase
       ZipEntry entry = new ZipEntry(new File(csvfile).getName());
       writer.putNextEntry(entry);
       writer.setLevel(Deflater.BEST_SPEED);
+
+      // ESROUTER can have two access points
+      // need to cut the string to get at least one
+      String node = null;
+      int port = 0;
+      if (esNode.contains(","))
+        {
+          String[] split = esNode.split(",");
+          if (split[0] != null)
+            {
+              Scanner s = new Scanner(split[0]);
+              s.useDelimiter(":");
+              node = s.next();
+              port = s.nextInt();
+              s.close();
+            }
+        } else
+          {
+            Scanner s = new Scanner(esNode);
+            s.useDelimiter(":");
+            node = s.next();
+            port = s.nextInt();
+            s.close();
+          }
+
+      elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
+
       int i = 0;
       boolean addHeader = true;
 
@@ -153,33 +175,6 @@ public class ReportMonoPhase
 
           // Read all docs from ES, on esIndex[i]
           // Write to topic, one message per document
-
-          // ESROUTER can have two access points
-          // need to cut the string to get at least one
-          String node = null;
-          int port = 0;
-          if (esNode.contains(","))
-            {
-              String[] split = esNode.split(",");
-              if (split[0] != null)
-                {
-                  Scanner s = new Scanner(split[0]);
-                  s.useDelimiter(":");
-                  node = s.next();
-                  port = s.nextInt();
-                  s.close();
-                }
-            } else
-              {
-                Scanner s = new Scanner(esNode);
-                s.useDelimiter(":");
-                node = s.next();
-                port = s.nextInt();
-                s.close();
-              }
-
-          elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
-          // Search for everyone
 
           Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
           String[] indicesToRead = getIndices(index.getKey());
@@ -272,6 +267,8 @@ public class ReportMonoPhase
             }
           i++;
         }
+      
+      elasticsearchReaderClient.close();
       writer.flush();
       writer.closeEntry();
       writer.close();
@@ -309,45 +306,44 @@ public class ReportMonoPhase
         // holding the zip writers of tmp files
         Map<String,ZipOutputStream> tmpZipFiles = new HashMap<>();
         
+        // ESROUTER can have two access points
+        // need to cut the string to get at least one
+        String node = null;
+        int port = 0;
+        if (esNode.contains(","))
+          {
+            String[] split = esNode.split(",");
+            if (split[0] != null)
+              {
+                Scanner s = new Scanner(split[0]);
+                s.useDelimiter(":");
+                node = s.next();
+                port = s.nextInt();
+                s.close();
+              }
+          }
+        else
+          {
+            Scanner s = new Scanner(esNode);
+            s.useDelimiter(":");
+            node = s.next();
+            port = s.nextInt();
+            s.close();
+          }
+
+        elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
+
         int i = 0;
 
         for (Entry<String, QueryBuilder> index : esIndex.entrySet())
           {
 
-            SearchRequest searchRequest = new SearchRequest().source(new SearchSourceBuilder().query(index.getValue()));
+            SearchRequest searchRequest = new SearchRequest().source(new SearchSourceBuilder().query(index.getValue())).allowPartialSearchResults(false);
 
             try
             {
               // Read all docs from ES, on esIndex[i]
               // Write to topic, one message per document
-
-              // ESROUTER can have two access points
-              // need to cut the string to get at least one
-              String node = null;
-              int port = 0;
-              if (esNode.contains(","))
-                {
-                  String[] split = esNode.split(",");
-                  if (split[0] != null)
-                    {
-                      Scanner s = new Scanner(split[0]);
-                      s.useDelimiter(":");
-                      node = s.next();
-                      port = s.nextInt();
-                      s.close();
-                    }
-                }
-              else
-                {
-                  Scanner s = new Scanner(esNode);
-                  s.useDelimiter(":");
-                  node = s.next();
-                  port = s.nextInt();
-                  s.close();
-                }
-
-              elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
-              // Search for everyone
 
               Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
               String[] indicesToRead = getIndices(index.getKey());
@@ -497,7 +493,16 @@ public class ReportMonoPhase
           i++;
 
         }
-
+        
+        try
+          {
+            elasticsearchReaderClient.close();
+          }
+        catch (IOException e)
+          {
+            log.info("Exception while closing ElasticSearch client " + e.getLocalizedMessage());
+          }
+        
         // close all open tmp writer
         for(Entry<String,ZipOutputStream> tmpWriter : tmpZipFiles.entrySet()){
           try {
