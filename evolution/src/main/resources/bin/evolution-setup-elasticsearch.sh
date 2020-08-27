@@ -82,9 +82,9 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile -H'Content
       "subscriberJourneys"                  : { "type" : "nested"  },
       "tokens"                              : { "type" : "nested",
       	   "properties" : {
-              "creationDate"       : { "type" : "date" },
-              "expirationDate"     : { "type" : "date" },
-              "redeemedDate"       : { "type" : "date" },
+              "creationDate"       : { "type" : "long" },
+              "expirationDate"     : { "type" : "long" },
+              "redeemedDate"       : { "type" : "long" },
               "lastAllocationDate" : { "type" : "long" }
            }
       },
