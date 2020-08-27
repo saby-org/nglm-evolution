@@ -80,6 +80,14 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile -H'Content
       "lastUpdateDate"                      : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "pointFluctuations"                   : { "type" : "object"  },
       "subscriberJourneys"                  : { "type" : "nested"  },
+      "tokens"                              : { "type" : "nested",
+      	   "properties" : {
+              "creationDate"       : { "type" : "date" },
+              "expirationDate"     : { "type" : "date" },
+              "redeemedDate"       : { "type" : "date" },
+              "lastAllocationDate" : { "type" : "long" }
+           }
+      },
       "vouchers"                            : { "type" : "nested",
       	   "properties" : {
               "vouchers"        : { "type": "nested", "properties": { "voucherExpiryDate" : { "type" : "date" } } }

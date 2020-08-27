@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.SortedMap;
@@ -45,7 +46,7 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
     List<Map<String, Object>> elementsToBeDump = new ArrayList<Map<String, Object>>();
     if (subscriberFields != null && !subscriberFields.isEmpty()) {
 
-      String subscriberID = subscriberFields.get("subscriberID").toString();
+      String subscriberID = Objects.toString(subscriberFields.get("subscriberID"));
       Date now = SystemTime.getCurrentTime();
       if (subscriberID != null){
         try{

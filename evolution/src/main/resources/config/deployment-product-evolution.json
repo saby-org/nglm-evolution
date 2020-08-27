@@ -947,14 +947,14 @@
       "name"                : "journeyImpactReport",
       "display"             : "Journey Impact Report",
       "description"         : "Description of the Journey Impact Report",
-      "class"               : "com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportMonoDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "journeyCustomerStatisticsReport",
       "display"             : "Journey Customer Statistics Report",
       "description"         : "Description of the Journey Customer Statistics Report",
-      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportMonoDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {

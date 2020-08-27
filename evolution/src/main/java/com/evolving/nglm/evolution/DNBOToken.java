@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -273,71 +274,36 @@ public class DNBOToken extends Token
   public JSONObject getJSON()
   {
     JSONObject result = new JSONObject();
-
-    
-    result.put("tokenCode", this.getTokenCode());
+    result.put("tokenCode", getTokenCode());
     result.put("tokenType", getTokenTypeID());
-    result.put("presentationStrategyID", getPresentationStrategyID());
-    JSONArray scoringStrategies = new JSONArray();
-    for (String ssID : getScoringStrategyIDs())
+    result.put("creationDate", getTimeOrNull(getCreationDate()));
+    result.put("expirationDate", getTimeOrNull(getTokenExpirationDate()));
+    result.put("redeemedDate", getTimeOrNull(getRedeemedDate()));
+    result.put("lastAllocationDate", getTimeOrNull(getBoundDate()));
+    result.put("presentationStrategyID", Objects.toString(getPresentationStrategyID(), ""));
+    if (getScoringStrategyIDs() != null)
       {
-        scoringStrategyIDs.add(ssID);
+        final JSONArray scoringStrategies = new JSONArray();
+        getScoringStrategyIDs().stream().forEach(ssID -> scoringStrategyIDs.add(ssID));
+        result.put("scoringStrategyIDs", scoringStrategies);
       }
-    result.put("scoringStrategyIDs", scoringStrategies);
-    result.put("creationDate", getCreationDate().getTime());
-    result.put("expirationDate", getTokenExpirationDate().getTime());
-    result.put("tokenStatus", getTokenStatus());
-    result.put("lastAllocationDate", getBoundDate().getTime());
+    else
+      {
+        result.put("scoringStrategyIDs", "");
+      }
+    result.put("acceptedOfferID", getAcceptedOfferID());
     result.put("qtyAllocations", getBoundCount());
-    result.put("qtyAllocatedOffers", getPresentedOfferIDs().size());
-    result.put("redeemedDate", getRedeemedDate().getTime());
-    result.put("", get);
-
-//// CONTINUE
-    
-    
-
-    if (acceptedOfferId == null)
-      {
-        result.put("acceptedOffer", "");
-      }
-    else
-      {
-        if (offerService.getStoredOffer(acceptedOfferId) != null)
-          {
-            result.put("acceptedOffer",
-                offerService.getStoredOffer(acceptedOfferId).getGUIManagedObjectDisplay());
-          }
-        else
-          {
-            result.put("acceptedOffer", "");
-          }
-      }
-                 
-    if (subscriberStoredToken.getModuleID() == null)
-      {
-        result.put("Module", "");
-      }
-    else
-      {
-        Module module = Module
-            .fromExternalRepresentation(String.valueOf(subscriberStoredToken.getModuleID()));
-        result.put("module", module);
-      }
-    if (subscriberStoredToken.getFeatureID() == null || subscriberStoredToken.getModuleID() == null)
-      {
-        result.put("featureName", "");
-      }
-    else
-      {
-        Module module = Module
-            .fromExternalRepresentation(String.valueOf(subscriberStoredToken.getModuleID()));
-        String feature_display = DeliveryRequest.getFeatureDisplay(module,
-            String.valueOf(subscriberStoredToken.getFeatureID()), journeyService, offerService,
-            loyaltyProgramService);   
-        result.put("featureName", feature_display);
-      }
-
+    if (getPresentedOfferIDs() != null) result.put("qtyAllocatedOffers", getPresentedOfferIDs().size());
+    // TODO : we don't need PresentedOfferIDs ?
+    result.put("tokenStatus", Objects.toString(getTokenStatus(), ""));
+    result.put("moduleID", getModuleID());
+    result.put("featureID", getFeatureID());
+    return result;
+  }
+  
+  private Object getTimeOrNull(Date date)
+  {
+    return (date == null) ? null : date.getTime();
   }
 
 }
