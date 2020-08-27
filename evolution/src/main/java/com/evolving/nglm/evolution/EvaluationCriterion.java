@@ -989,15 +989,19 @@ public class EvaluationCriterion
         *****************************************/
 
         case EqualOperator:
-        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+        	log.info("inside equals operator");
+        	  
+        	if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
              {
              	for(String singleCriterionFieldValue: (List<String>) criterionFieldValue) {
              		 result = traceCondition(evaluationRequest, singleCriterionFieldValue.equals(evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
              	    if (result)
              		break;
              	}
-             }else { result = traceCondition(evaluationRequest, criterionFieldValue.equals(evaluatedArgument), criterionFieldValue, evaluatedArgument);
-        }
+             }else { 
+            	 log.info("inside equals operator");
+            	 result = traceCondition(evaluationRequest, criterionFieldValue.equals(evaluatedArgument), criterionFieldValue, evaluatedArgument);
+            }
         	 break;
           
         case NotEqualOperator:
@@ -1316,6 +1320,7 @@ public class EvaluationCriterion
         query = query.filter(evaluationCriterion.esQuery());
       }
     
+    log.info("final es query:"+query.toString());
     return query;
   }
   
@@ -1907,7 +1912,7 @@ public class EvaluationCriterion
   }
 
   static String journeyName = "";
-  static String campaignName = "";
+  static HashSet campaignNames = new HashSet<Object>();
   static String bulkcampaignName = "";
   
   /*****************************************
@@ -1925,6 +1930,7 @@ public class EvaluationCriterion
     // TODO : necessary ? To be checked
     if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
     String value = "";
+    HashSet<Object> values=new HashSet<Object>();
     switch (criterion)
     {
       case "Journey":
@@ -1932,7 +1938,7 @@ public class EvaluationCriterion
         return QueryBuilders.matchAllQuery();
         
       case "Campaign":
-        campaignName = (String) (argument.evaluate(null, null));
+    	  campaignNames = (HashSet<Object>) (argument.evaluate(null, null));
         return QueryBuilders.matchAllQuery();
         
       case "Bulkcampaign":
@@ -1944,7 +1950,7 @@ public class EvaluationCriterion
         break;
         
       case "CampaignStatus":
-        value = campaignName;
+    	  values = campaignNames;
         break;
         
       case "BulkcampaignStatus":
@@ -1955,7 +1961,10 @@ public class EvaluationCriterion
         throw new CriterionException("unknown criteria : " + esField);
     }
     
-    QueryBuilder queryID = QueryBuilders.termQuery("subscriberJourneys.journeyID", value);
+    if(value!=null && !value.isEmpty())
+    values.add(value);
+    
+    QueryBuilder queryID = QueryBuilders.termsQuery("subscriberJourneys.journeyID", values);
     QueryBuilder queryStatus = null;
     QueryBuilder query = null;
     QueryBuilder insideQuery = null;
