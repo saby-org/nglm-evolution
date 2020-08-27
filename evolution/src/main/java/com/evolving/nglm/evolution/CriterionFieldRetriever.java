@@ -305,11 +305,25 @@ public abstract class CriterionFieldRetriever
     String loyaltyProgramID = fieldNameMatcher.group(1);
     String criterionFieldBaseName = fieldNameMatcher.group(2);
     String tierUpdateType = null;
+    Object result = null; 
     //
     //  loyaltyProgramState
     //
 
     LoyaltyProgramState loyaltyProgramState = evaluationRequest.getSubscriberProfile().getLoyaltyPrograms().get(loyaltyProgramID);
+    if (loyaltyProgramState instanceof LoyaltyProgramPointsState) {
+      LoyaltyProgramPointsState loyaltyProgramPointsStateOptInOptOut = (LoyaltyProgramPointsState) loyaltyProgramState;
+      switch (criterionFieldBaseName)
+      {
+        case "optInDate":
+          result = loyaltyProgramPointsStateOptInOptOut.getLoyaltyProgramEnrollmentDate();
+          break;
+          
+        case "optOutDate":
+          result = loyaltyProgramPointsStateOptInOptOut.getLoyaltyProgramExitDate();
+          break; 
+      }
+    }
     //
     //  opted out previously?
     //
@@ -324,15 +338,11 @@ public abstract class CriterionFieldRetriever
     //
 
     if (loyaltyProgramState == null) return null;
-    if (! (loyaltyProgramState instanceof LoyaltyProgramPointsState)) return null;
-
-    //
+    if (! (loyaltyProgramState instanceof LoyaltyProgramPointsState)) return null; 
     //  retrieve
     //
     LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyProgramState;
-    Object result = null;
-    LoyaltyProgramHistory history = loyaltyProgramPointsState.getLoyaltyProgramHistory();
-          
+       
     switch (criterionFieldBaseName)
       {
         case "tier":
