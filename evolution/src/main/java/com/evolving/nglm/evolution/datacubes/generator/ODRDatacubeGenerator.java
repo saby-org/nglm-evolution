@@ -15,7 +15,6 @@ import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
@@ -27,7 +26,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.PaymentMeanService;
 import com.evolving.nglm.evolution.SalesChannelService;
-import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.DeliverablesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
@@ -36,7 +35,7 @@ import com.evolving.nglm.evolution.datacubes.mapping.OffersMap;
 import com.evolving.nglm.evolution.datacubes.mapping.PaymentMeansMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SalesChannelsMap;
 
-public class ODRDatacubeGenerator extends DatacubeGenerator
+public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
 {
   private static final String DATACUBE_ES_INDEX = "datacube_odr";
   private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_offers-";
@@ -112,7 +111,6 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
   *
   *****************************************/
   @Override protected List<String> getFilterFields() { return filterFields; }
-  @Override protected List<CompositeValuesSourceBuilder<?>> getFilterComplexSources() { return Collections.emptyList(); }
   
   @Override
   protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
@@ -180,7 +178,7 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
   @Override protected List<AggregationBuilder> getMetricAggregations() { return this.metricAggregations; }
     
   @Override
-  protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket, Map<String, Object> contextFilters) throws ClassCastException
+  protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
   {
     HashMap<String, Object> metrics = new HashMap<String,Object>();
     if (compositeBucket.getAggregations() == null) {
