@@ -317,7 +317,7 @@ public abstract class CriterionFieldRetriever
     LoyaltyProgramState loyaltyProgramState = evaluationRequest.getSubscriberProfile().getLoyaltyPrograms().get(loyaltyProgramID);
     
     ///
-    // opyin and optout should be valid even if the customer left the program already
+    // optin and optout should be valid even if the customer left the program already
     ///
     if (loyaltyProgramState != null)
       {
@@ -325,8 +325,7 @@ public abstract class CriterionFieldRetriever
           {
             LoyaltyProgramPointsState loyaltyProgramPointsStateOptInOptOut = (LoyaltyProgramPointsState) loyaltyProgramState;
             optInDate = loyaltyProgramPointsStateOptInOptOut.getLoyaltyProgramEnrollmentDate();
-            optOutDate = loyaltyProgramPointsStateOptInOptOut.getLoyaltyProgramExitDate();
-            loyaltyProgramStateAvailable = true;
+            optOutDate = loyaltyProgramPointsStateOptInOptOut.getLoyaltyProgramExitDate();            
           }
       }
     //
@@ -336,17 +335,37 @@ public abstract class CriterionFieldRetriever
     if (loyaltyProgramState != null && loyaltyProgramState.getLoyaltyProgramExitDate() != null)
       {
         loyaltyProgramState = null;
+        loyaltyProgramStateAvailable = true;
       }
 
     //
     // in program?
     //
 
-    if (loyaltyProgramState == null && !loyaltyProgramStateAvailable)
+    if (loyaltyProgramState == null && loyaltyProgramStateAvailable == false)
       return null;
 
-    if (loyaltyProgramState != null)
+    else if (loyaltyProgramState == null && loyaltyProgramStateAvailable == true)
       {
+        switch (criterionFieldBaseName)
+        {
+          case "optInDate":
+            result = optInDate;
+            break;
+
+          case "optOutDate":
+            result = optOutDate;
+            break;
+            
+          default:
+            result = null;
+            break;
+        }
+      }
+
+    else
+      {
+
         if (!(loyaltyProgramState instanceof LoyaltyProgramPointsState))
           return null;
         // retrieve
@@ -372,11 +391,11 @@ public abstract class CriterionFieldRetriever
               break;
 
             case "optInDate":
-              result = loyaltyProgramPointsState.getLoyaltyProgramEnrollmentDate();
+              result = optInDate;
               break;
 
             case "optOutDate":
-              result = loyaltyProgramPointsState.getLoyaltyProgramExitDate();
+              result = optOutDate;
               break;
 
             case "tierupdatetype":
@@ -428,28 +447,11 @@ public abstract class CriterionFieldRetriever
                   default:
                     throw new CriterionException("invalid request " + criterionFieldBaseName + " " + request);
                 }
-
           }
       }
-    else {
-      switch (criterionFieldBaseName)
-      {
-      
-      case "optInDate":
-        result = optInDate;
-        break;
-
-      case "optOutDate":
-        result = optOutDate;
-        break;
         
-        default:
-          return null;
-      }
-    }
-
     //
-    //  return
+    // return
     //
 
     return result;
