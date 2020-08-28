@@ -9,6 +9,8 @@ package com.evolving.nglm.evolution;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -785,12 +787,19 @@ public class EvaluationCriterion
     *
     ****************************************/
     Object criterionFieldValue = null;
+    List<String> criterionFieldValues=new ArrayList<>();
+    
     Object evaluatedArgument = null;
     ExpressionDataType argumentType = null;
     try
       {        
         criterionFieldValue = criterionField.retrieveNormalized(evaluationRequest);
-    
+              if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+        {
+        	criterionFieldValues=Arrays.asList(criterionFieldValue.toString().split(","));
+        	
+        }
+              log.info("Retrieved Value"+criterionFieldValue.toString());
         /****************************************
         *
         *  evaluate argument
@@ -993,7 +1002,7 @@ public class EvaluationCriterion
         	  
         	if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
              {
-             	for(String singleCriterionFieldValue: (List<String>) criterionFieldValue) {
+             	for(String singleCriterionFieldValue: criterionFieldValues) {
              		 result = traceCondition(evaluationRequest, singleCriterionFieldValue.equals(evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
              	    if (result)
              		break;
@@ -1007,7 +1016,7 @@ public class EvaluationCriterion
         case NotEqualOperator:
         	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
              {
-             	for(String singleCriterionFieldValue: (List<String>) criterionFieldValue) {
+             	for(String singleCriterionFieldValue: criterionFieldValues) {
              		result = traceCondition(evaluationRequest, !singleCriterionFieldValue.equals(evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
              	   if (!result)
              		break;
@@ -1121,7 +1130,7 @@ public class EvaluationCriterion
         case ContainsKeywordOperator:
         if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
         {
-        	for(String singleCriterionFieldValue: (List<String>) criterionFieldValue) {
+        	for(String singleCriterionFieldValue: criterionFieldValues) {
         		 result = traceCondition(evaluationRequest, evaluateContainsKeyword(singleCriterionFieldValue, (String) evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
         	if (result)
         		break;
@@ -1141,7 +1150,7 @@ public class EvaluationCriterion
         case DoesNotContainsKeywordOperator:
         	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
              {
-             	for(String singleCriterionFieldValue: (List<String>) criterionFieldValue) {
+             	for(String singleCriterionFieldValue:criterionFieldValues) {
              		result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) singleCriterionFieldValue, (String) evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
              	   if (!result)
              		break;
@@ -1159,7 +1168,7 @@ public class EvaluationCriterion
         case IsInSetOperator:
         	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
              {
-             	for(String singleCriterionFieldValue: (List<String>) criterionFieldValue) {
+             	for(String singleCriterionFieldValue: criterionFieldValues) {
              	   result = traceCondition(evaluationRequest, ((Set<String>) evaluatedArgument).contains((String) singleCriterionFieldValue), singleCriterionFieldValue, evaluatedArgument);
                   	if (result)
              		break;
@@ -1181,7 +1190,7 @@ public class EvaluationCriterion
         case NotInSetOperator:
         	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
              {
-             	for(String singleCriterionFieldValue: (List<String>) criterionFieldValue) {
+             	for(String singleCriterionFieldValue: criterionFieldValues) {
              		 result = traceCondition(evaluationRequest, !((Set<String>) evaluatedArgument).contains((String) singleCriterionFieldValue), singleCriterionFieldValue, evaluatedArgument);
                      if (!result)
              		break;
