@@ -111,7 +111,7 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                           {
                             result.put("voucherCode", "");
                             result.put("offerName", "");
-                            result.put("offerStatus", "Allocated");
+                            result.put("offerStatus", "allocated");
                             result.put("offerRank", "");
                             longDateToReport("lastAllocationDate", "allocationDate", result, token);
                             result.put("redeemedDate", "");
@@ -145,7 +145,7 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                     else if (TokenStatus.Redeemed.getExternalRepresentation().equals(tokenStatus))
                       {
                         result.put("voucherCode", "");
-                        String acceptedOfferId = (String) elasticFields.get("acceptedOfferID");
+                        String acceptedOfferId = (String) token.get("acceptedOfferID");
                         if (acceptedOfferId == null)
                           {
                             result.put("offerName", "");
@@ -166,9 +166,9 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                               {
                                 result.put("offerName", "");
                               }
-                            result.put("offerStatus", "Accepted");
+                            result.put("offerStatus", "accepted");
                             int offerRank = 0;
-                            List<String> presentedOfferIDsArray = (List<String>) elasticFields.get("presentedOfferIDs");
+                            List<String> presentedOfferIDsArray = (List<String>) token.get("presentedOfferIDs");
                             if (presentedOfferIDsArray != null && !presentedOfferIDsArray.isEmpty())
                               {
                                 for (int j = 0; j < presentedOfferIDsArray.size(); j++)
@@ -190,7 +190,7 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                       {
                         result.put("vocherCode", "");
                         result.put("offerName", "");
-                        result.put("offerStatus", "Expired");                           
+                        result.put("offerStatus", "expired");                           
                         result.put("offerRank", "");
                         result.put("allocationDate", "");
                         result.put("redeemedDate", "");
@@ -204,7 +204,6 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                     String line = ReportUtils.formatResult(result);
                     log.trace("Writing to csv file : " + line);
                     writer.write(line.getBytes());
-                    writer.write("\n".getBytes());
                   }
               }
           }
@@ -215,14 +214,14 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
 
   public void longDateToReport(String inField, String outField, LinkedHashMap<String, Object> result, Map<String, Object> token)
   {
-    Long redeemedDate = (Long) token.get(inField);
-    if (redeemedDate == null)
+    Long dateTime = (Long) token.get(inField);
+    if (dateTime == null)
       {
         result.put(outField, "");
       }
     else
       {
-        result.put(outField, ReportsCommonCode.getDateString(new Date(redeemedDate)));
+        result.put(outField, ReportsCommonCode.getDateString(new Date(dateTime)));
       }
   }
 

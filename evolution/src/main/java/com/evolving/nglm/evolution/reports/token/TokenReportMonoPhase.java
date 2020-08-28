@@ -6,28 +6,37 @@
 
 package com.evolving.nglm.evolution.reports.token;
 
-import com.evolving.nglm.evolution.reports.ReportsCommonCode;
-import com.evolving.nglm.core.AlternateID;
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.*;
-import com.evolving.nglm.evolution.DeliveryRequest.Module;
-import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
-import com.evolving.nglm.evolution.reports.ReportCsvFactory;
-import com.evolving.nglm.evolution.reports.ReportCsvWriter;
-import com.evolving.nglm.evolution.reports.ReportMonoPhase;
-import com.evolving.nglm.evolution.reports.ReportUtils;
-import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
-import com.evolving.nglm.evolution.reports.subscriber.SubscriberReportMonoPhase;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.zip.ZipOutputStream;
 
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.json.simple.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.zip.ZipOutputStream;
+import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.DeliveryRequest;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
+import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.GUIManagedObject;
+import com.evolving.nglm.evolution.JourneyService;
+import com.evolving.nglm.evolution.LoyaltyProgramService;
+import com.evolving.nglm.evolution.OfferService;
+import com.evolving.nglm.evolution.PresentationStrategyService;
+import com.evolving.nglm.evolution.ScoringStrategyService;
+import com.evolving.nglm.evolution.TokenTypeService;
+import com.evolving.nglm.evolution.reports.ReportCsvFactory;
+import com.evolving.nglm.evolution.reports.ReportMonoPhase;
+import com.evolving.nglm.evolution.reports.ReportUtils;
+import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 
 public class TokenReportMonoPhase implements ReportCsvFactory
 {
@@ -173,7 +182,6 @@ public class TokenReportMonoPhase implements ReportCsvFactory
                         String line = ReportUtils.formatResult(result);
                         log.trace("Writing to csv file : " + line);
                         writer.write(line.getBytes());
-                        writer.write("\n".getBytes());
                       }
                   }
               }
