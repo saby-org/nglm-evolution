@@ -797,7 +797,7 @@ public class EvaluationCriterion
               if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
         {
         	criterionFieldValues=Arrays.asList(criterionFieldValue.toString().split(","));
-        	
+        	 log.info("total count"+criterionFieldValues.size()+criterionFieldValues.get(0));
         }
               log.info("Retrieved Value"+criterionFieldValue.toString());
         /****************************************
@@ -1003,6 +1003,7 @@ public class EvaluationCriterion
         	if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
              {
              	for(String singleCriterionFieldValue: criterionFieldValues) {
+             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
              		 result = traceCondition(evaluationRequest, singleCriterionFieldValue.equals(evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
              	    if (result)
              		break;
@@ -1017,6 +1018,7 @@ public class EvaluationCriterion
         	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
              {
              	for(String singleCriterionFieldValue: criterionFieldValues) {
+             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
              		result = traceCondition(evaluationRequest, !singleCriterionFieldValue.equals(evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
              	   if (!result)
              		break;
@@ -1114,12 +1116,31 @@ public class EvaluationCriterion
         *****************************************/
 
         case IsNullOperator:
-          result = traceCondition(evaluationRequest, criterionFieldValue == null, criterionFieldValue, evaluatedArgument);
-          break;
+        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+             {
+             	for(String singleCriterionFieldValue: criterionFieldValues) {
+             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
+             		result = traceCondition(evaluationRequest, (singleCriterionFieldValue == null || singleCriterionFieldValue.equalsIgnoreCase("null")), singleCriterionFieldValue, evaluatedArgument);
+             		if (result)
+             		break;
+             	}
+             }
+        	else { result = traceCondition(evaluationRequest, criterionFieldValue == null, criterionFieldValue, evaluatedArgument);
+        }
+        break;
           
         case IsNotNullOperator:
-          result = traceCondition(evaluationRequest, criterionFieldValue != null, criterionFieldValue, evaluatedArgument);
-          break;
+        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+             {
+             	for(String singleCriterionFieldValue: criterionFieldValues) {
+             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
+             		result = traceCondition(evaluationRequest, !(singleCriterionFieldValue == null || singleCriterionFieldValue.equalsIgnoreCase("null")), singleCriterionFieldValue, evaluatedArgument);
+             		if (!result)
+             		break;
+             	}
+             }else {
+        	result = traceCondition(evaluationRequest, criterionFieldValue != null, criterionFieldValue, evaluatedArgument);
+             } break;
 
         /*****************************************
         *
@@ -1131,6 +1152,7 @@ public class EvaluationCriterion
         if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
         {
         	for(String singleCriterionFieldValue: criterionFieldValues) {
+        		singleCriterionFieldValue=singleCriterionFieldValue.trim();
         		 result = traceCondition(evaluationRequest, evaluateContainsKeyword(singleCriterionFieldValue, (String) evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
         	if (result)
         		break;
@@ -1138,9 +1160,9 @@ public class EvaluationCriterion
         }
         else {
           result = traceCondition(evaluationRequest, evaluateContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
-          break;
+         
         }
-          
+        break;  
         /*****************************************
         *
         *  containsKeyword operator
@@ -1151,6 +1173,7 @@ public class EvaluationCriterion
         	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
              {
              	for(String singleCriterionFieldValue:criterionFieldValues) {
+             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
              		result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) singleCriterionFieldValue, (String) evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
              	   if (!result)
              		break;
@@ -1166,9 +1189,12 @@ public class EvaluationCriterion
         *****************************************/
 
         case IsInSetOperator:
+        	 log.info("Is In Set operator");
         	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
              {
              	for(String singleCriterionFieldValue: criterionFieldValues) {
+             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
+             		log.info("value"+singleCriterionFieldValue);
              	   result = traceCondition(evaluationRequest, ((Set<String>) evaluatedArgument).contains((String) singleCriterionFieldValue), singleCriterionFieldValue, evaluatedArgument);
                   	if (result)
              		break;
@@ -1191,6 +1217,7 @@ public class EvaluationCriterion
         	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
              {
              	for(String singleCriterionFieldValue: criterionFieldValues) {
+             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
              		 result = traceCondition(evaluationRequest, !((Set<String>) evaluatedArgument).contains((String) singleCriterionFieldValue), singleCriterionFieldValue, evaluatedArgument);
                      if (!result)
              		break;
