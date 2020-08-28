@@ -293,11 +293,22 @@ public class DNBOToken extends Token
       }
     result.put("acceptedOfferID", getAcceptedOfferID());
     result.put("qtyAllocations", getBoundCount());
-    if (getPresentedOfferIDs() != null) result.put("qtyAllocatedOffers", getPresentedOfferIDs().size());
-    // TODO : we don't need PresentedOfferIDs ?
-    result.put("tokenStatus", Objects.toString(getTokenStatus(), ""));
+    if (getPresentedOfferIDs() != null)
+      {
+        result.put("qtyAllocatedOffers", getPresentedOfferIDs().size());
+        final JSONArray presentedOfferIDs = new JSONArray();
+        getPresentedOfferIDs().stream().forEach(offerID -> presentedOfferIDs.add(offerID));
+        result.put("presentedOfferIDs", presentedOfferIDs);
+      }
+    else
+      {
+        result.put("qtyAllocatedOffers", 0);
+        result.put("presentedOfferIDs", "");
+      }
+    result.put("tokenStatus", getTokenStatus() != null ? getTokenStatus().getExternalRepresentation() : "");
     result.put("moduleID", getModuleID());
     result.put("featureID", getFeatureID());
+    result.put("presentedOffersSalesChannel", getPresentedOffersSalesChannel());
     return result;
   }
   

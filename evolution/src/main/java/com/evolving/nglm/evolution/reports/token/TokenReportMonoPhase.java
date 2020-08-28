@@ -229,15 +229,14 @@ public class TokenReportMonoPhase implements ReportCsvFactory
         log.info("TokenReportESReader: arg " + arg);
       }
 
-    if (args.length < 4) {
+    if (args.length < 3) {
       log.warn(
-          "Usage : TokenReportMonoPhase <KafkaNodeList> <ESNode> <ES customer index> <csvfile>");
+          "Usage : TokenReportMonoPhase <ESNode> <ES customer index> <csvfile>");
       return;
     }
-    String kafkaNodeList   = args[0];
-    String esNode          = args[1];
-    String esIndexCustomer = args[2];
-    String csvfile         = args[3];
+    String esNode          = args[0];
+    String esIndexCustomer = args[1];
+    String csvfile         = args[2];
 
     log.info("Reading data from ES in "+esIndexCustomer+"  index and writing to "+csvfile+" file.");  
     ReportCsvFactory reportFactory = new TokenReportMonoPhase();
