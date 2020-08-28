@@ -946,14 +946,14 @@
     {
       "name"                : "journeyImpactReport",
       "display"             : "Journey Impact Report",
-      "description"         : "Description of the Journey Impact Report (1 pass)",
+      "description"         : "Description of the Journey Impact Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "journeyCustomerStatisticsReport",
       "display"             : "Journey Customer Statistics Report",
-      "description"         : "Description of the Journey Customer Statistics Report (1 pass)",
+      "description"         : "Description of the Journey Customer Statistics Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
