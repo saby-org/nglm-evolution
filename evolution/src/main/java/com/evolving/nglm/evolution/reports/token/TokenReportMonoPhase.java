@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *  TokenReportCsvWriter.java 
+ *  TokenReportMonoPhase.java 
  *
  ****************************************************************************/
 
@@ -44,10 +44,6 @@ public class TokenReportMonoPhase implements ReportCsvFactory
   private static JourneyService journeyService = null;
   private static LoyaltyProgramService loyaltyProgramService = null;
 
-  public TokenReportMonoPhase()
-  {
-
-  }
 
   /****************************************
    *

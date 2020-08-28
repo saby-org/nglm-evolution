@@ -1,33 +1,37 @@
 /****************************************************************************
  *
- *  TokenReportCsvWriter.java 
+ *  TokenOfferReportMonoPhase.java 
  *
  ****************************************************************************/
 
 package com.evolving.nglm.evolution.reports.tokenOffer;
 
-import com.evolving.nglm.evolution.reports.ReportsCommonCode;
-import com.evolving.nglm.core.AlternateID;
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.*;
-import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
-import com.evolving.nglm.evolution.Token.TokenStatus;
-import com.evolving.nglm.evolution.reports.ReportCsvFactory;
-import com.evolving.nglm.evolution.reports.ReportCsvWriter;
-import com.evolving.nglm.evolution.reports.ReportMonoPhase;
-import com.evolving.nglm.evolution.reports.ReportUtils;
-import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
-import com.evolving.nglm.evolution.reports.token.TokenReportMonoPhase;
+import java.io.IOException;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.zip.ZipOutputStream;
 
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.json.simple.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.zip.ZipOutputStream;
+import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.GUIManagedObject;
+import com.evolving.nglm.evolution.OfferService;
+import com.evolving.nglm.evolution.SalesChannelService;
+import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.reports.ReportCsvFactory;
+import com.evolving.nglm.evolution.reports.ReportMonoPhase;
+import com.evolving.nglm.evolution.reports.ReportUtils;
+import com.evolving.nglm.evolution.reports.ReportsCommonCode;
+import com.evolving.nglm.evolution.reports.token.TokenReportMonoPhase;
 
 public class TokenOfferReportMonoPhase implements ReportCsvFactory
 {
@@ -40,12 +44,6 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
   private static SalesChannelService salesChannelService;
   private static OfferService offerService = null;
 
-  public TokenOfferReportMonoPhase()
-  {
-
-  }
-
-
   public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
 
@@ -56,7 +54,6 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
     if (elasticFields != null)
       {
         String subscriberID = Objects.toString(elasticFields.get("subscriberID"));
-        Date now = SystemTime.getCurrentTime();
         if (subscriberID != null)
           {
             List<Map<String, Object>> tokensArray = (List<Map<String, Object>>) elasticFields.get("tokens");
@@ -113,6 +110,12 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                         else
                           {
                             result.put("voucherCode", "");
+                            result.put("offerName", "");
+                            result.put("offerStatus", "Allocated");
+                            result.put("offerRank", "");
+                            longDateToReport("lastAllocationDate", "allocationDate", result, token);
+                            result.put("redeemedDate", "");
+                            result.put("salesChannel", "");
 
                             /*
                             List<String> presentedOfferIDsArray = (List<String>) elasticFields.get("presentedOfferIDs");
@@ -133,9 +136,7 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                                       {
                                         result.put("offerName", "");
                                       }
-                                    result.put("offerStatus", "Allocated");
                                     result.put("offerRank", j + 1);
-                                    longDateToReport("lastAllocationDate", "allocationDate", result, token);
                                   }
                               }
                               */
@@ -165,7 +166,7 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                               {
                                 result.put("offerName", "");
                               }
-                            result.put("offerStatus", "Allocated"); // TODO Redeemed ?
+                            result.put("offerStatus", "Accepted");
                             int offerRank = 0;
                             List<String> presentedOfferIDsArray = (List<String>) elasticFields.get("presentedOfferIDs");
                             if (presentedOfferIDsArray != null && !presentedOfferIDsArray.isEmpty())
@@ -189,7 +190,7 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                       {
                         result.put("vocherCode", "");
                         result.put("offerName", "");
-                        result.put("offerStatus", "");                           
+                        result.put("offerStatus", "Expired");                           
                         result.put("offerRank", "");
                         result.put("allocationDate", "");
                         result.put("redeemedDate", "");
@@ -273,7 +274,7 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
     String csvfile         = args[2];
 
     log.info("Reading data from ES in "+esIndexCustomer+"  index and writing to "+csvfile+" file.");  
-    ReportCsvFactory reportFactory = new TokenReportMonoPhase();
+    ReportCsvFactory reportFactory = new TokenOfferReportMonoPhase();
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());

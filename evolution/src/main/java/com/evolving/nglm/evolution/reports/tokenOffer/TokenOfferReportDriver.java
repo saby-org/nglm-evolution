@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *  TokenReportDriver.java 
+ *  TokenOfferReportDriver.java 
  *
  ****************************************************************************/
 
@@ -34,7 +34,7 @@ public class TokenOfferReportDriver extends ReportDriver{
       int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
 
       TokenOfferReportMonoPhase.main(new String[]{
-          kafka, elasticSearch, esIndexSubscriber, csvFilename
+          elasticSearch, esIndexSubscriber, csvFilename
       });     
   
 	  log.debug("Finished with Token Report");
