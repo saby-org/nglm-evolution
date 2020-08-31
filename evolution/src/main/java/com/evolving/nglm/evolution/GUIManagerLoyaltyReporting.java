@@ -838,6 +838,26 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("communicationChannelCount", Deployment.getCommunicationChannels().size());
     response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived).size());
     response.put("resellerCount", resellerService.getStoredResellers(includeArchived).size());
+    if (jsonRoot.containsKey("areaAvailablity"))
+      {
+        int mailTemplateCount = 0;
+        Collection<GUIManagedObject> mailTemplates = subscriberMessageTemplateService.getStoredMailTemplates(true,
+            includeArchived);
+        for (GUIManagedObject template : mailTemplates)
+          {
+            if (template instanceof MailTemplate)
+              {
+                String templeteAreaAvailablity = ((MailTemplate) template).getJSONRepresentation()
+                    .get("areaAvailability").toString();
+                String areaAvailablity = jsonRoot.get("areaAvailablity").toString();
+                if (templeteAreaAvailablity.equals(areaAvailablity))
+                  {
+                    mailTemplateCount += mailTemplateCount;
+                  }
+              }
+          }
+        response.put("mailTemplateCount", mailTemplateCount);
+      }
     return JSONUtilities.encodeObject(response);
   }
 
