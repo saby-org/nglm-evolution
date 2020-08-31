@@ -6,29 +6,24 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
-import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
-
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
 public abstract class CriterionFieldRetriever
 {
@@ -460,11 +455,10 @@ public abstract class CriterionFieldRetriever
             if (! fieldNameMatcher.find()) throw new CriterionException("invalid criterionFieldBaseName field " + criterionFieldBaseName);
             String nature = fieldNameMatcher.group(1); // earned, consumed, expired
             String interval = fieldNameMatcher.group(2); // yesterday, last7days, last30days
-            evaluationDate = evaluationRequest.getEvaluationDate();
-            Date intervalBegin;
-            MetricHistory metric;
             if (pointBalance != null)
               {
+                Date intervalBegin;
+                MetricHistory metric;
                 switch (interval)
                 {
                   case "yesterday"  : intervalBegin = RLMDateUtils.addDays(evaluationDate, -1, Deployment.getBaseTimeZone()); break;
@@ -486,7 +480,11 @@ public abstract class CriterionFieldRetriever
                   }
                 else
                   {
-                    Long value = metric.getValue(intervalBegin, evaluationDate);
+                    evaluationDate = evaluationRequest.getEvaluationDate();
+                    Date beginningOfNow = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
+                    Date beginningOfIntervalBegin = RLMDateUtils.truncate(intervalBegin, Calendar.DATE, Deployment.getBaseTimeZone());
+
+                    Long value = metric.getValue(beginningOfIntervalBegin, beginningOfNow);
                     if (value > Integer.MAX_VALUE && value < Integer.MIN_VALUE)
                       {
                         log.info("Value for " + fieldName + " is outside of integer range : " + value + ", truncating");
