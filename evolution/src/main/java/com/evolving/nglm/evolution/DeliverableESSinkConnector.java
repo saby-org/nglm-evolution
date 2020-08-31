@@ -50,7 +50,8 @@ public class DeliverableESSinkConnector extends SimpleESSinkConnector
 
       try 
       {
-        return new Deliverable(guiManagedObject.getJSONRepresentation(), guiManagedObject.getEpoch(), guiManagedObject);
+        // TODO just check instanceof, do never construct an item based on JSONRepresentation... See Journey for reference.
+        return new Deliverable(guiManagedObject.getJSONRepresentation(), guiManagedObject.getEpoch(), guiManagedObject); 
       } 
       catch (GUIManagerException e) 
       {
