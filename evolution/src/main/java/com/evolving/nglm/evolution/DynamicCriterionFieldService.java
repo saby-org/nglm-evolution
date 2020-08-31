@@ -227,6 +227,17 @@ public class DynamicCriterionFieldService extends GUIService
     addPointCriterionField(point, newPoint, "balance", CriterionDataType.IntegerCriterion, null);
     addPointCriterionField(point, newPoint, "earliestexpirydate", CriterionDataType.DateCriterion, null);
     addPointCriterionField(point, newPoint, "earliestexpiryquantity", CriterionDataType.IntegerCriterion, null);
+
+    addPointMetricsCriterionFields(point, newPoint, "earned");
+    addPointMetricsCriterionFields(point, newPoint, "consumed");
+    addPointMetricsCriterionFields(point, newPoint, "expired");
+  }
+  
+  private void addPointMetricsCriterionFields(Point point, boolean newPoint, String nature) throws GUIManagerException
+  {
+    addPointCriterionField(point, newPoint, nature+".yesterday", CriterionDataType.IntegerCriterion, null);
+    addPointCriterionField(point, newPoint, nature+".last7days", CriterionDataType.IntegerCriterion, null);
+    addPointCriterionField(point, newPoint, nature+".last30days", CriterionDataType.IntegerCriterion, null);
   }
 
   /*****************************************
