@@ -188,8 +188,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("tags", notifNotification.getTags());
         String deliveryType = notifNotification.getDeliveryType();
         String channelID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryType);
-        documentMap.put("channelID", channelID);
-        
+        documentMap.put("channelID", channelID);        
       }
       else {
         PushNotificationManagerRequest pushNotification = (PushNotificationManagerRequest) notification;
