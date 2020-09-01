@@ -841,6 +841,9 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     if (jsonRoot.containsKey("areaAvailablity"))
       {
         int mailTemplateCount = 0;
+        int smsTemplateCount = 0;
+        int dialogTemplateCount = 0;
+        int pushTemplateCount = 0;
         Collection<GUIManagedObject> mailTemplates = subscriberMessageTemplateService.getStoredMailTemplates(true,
             includeArchived);
         for (GUIManagedObject template : mailTemplates)
@@ -849,14 +852,62 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               {
                 String templeteAreaAvailablity = ((MailTemplate) template).getJSONRepresentation()
                     .get("areaAvailability").toString();
-                String areaAvailablity = jsonRoot.get("areaAvailablity").toString();
-                if (templeteAreaAvailablity.equals(areaAvailablity))
+                JSONArray areaAvailablity = (JSONArray) jsonRoot.get("areaAvailablity");
+                if (areaAvailablity.contains(templeteAreaAvailablity))
                   {
                     mailTemplateCount += mailTemplateCount;
                   }
               }
           }
+        Collection<GUIManagedObject> smsTemplates = subscriberMessageTemplateService.getStoredSMSTemplates(true,
+            includeArchived);
+        for (GUIManagedObject template : smsTemplates)
+          {
+            if (template instanceof SMSTemplate)
+              {
+                String templeteAreaAvailablity = ((SMSTemplate) template).getJSONRepresentation()
+                    .get("areaAvailability").toString();
+                JSONArray areaAvailablity = (JSONArray) jsonRoot.get("areaAvailablity");
+                if (areaAvailablity.contains(templeteAreaAvailablity))
+                  {
+                    smsTemplateCount += smsTemplateCount;
+                  }
+              }
+          }
+        Collection<GUIManagedObject> dialogTemplates = subscriberMessageTemplateService.getStoredDialogTemplates(true,
+            includeArchived);
+        for (GUIManagedObject template : dialogTemplates)
+          {
+            if (template instanceof DialogTemplate)
+              {
+                String templeteAreaAvailablity = ((DialogTemplate) template).getJSONRepresentation()
+                    .get("areaAvailability").toString();
+                JSONArray areaAvailablity = (JSONArray) jsonRoot.get("areaAvailablity");
+                if (areaAvailablity.contains(templeteAreaAvailablity))
+                  {
+                    dialogTemplateCount += dialogTemplateCount;
+                  }
+              }
+          }
+        Collection<GUIManagedObject> pushTemplates = subscriberMessageTemplateService.getStoredPushTemplates(true,
+            includeArchived);
+        for (GUIManagedObject template : pushTemplates)
+          {
+            if (template instanceof PushTemplate)
+              {
+                String templeteAreaAvailablity = ((PushTemplate) template).getJSONRepresentation()
+                    .get("areaAvailability").toString();
+                JSONArray areaAvailablity = (JSONArray) jsonRoot.get("areaAvailablity");
+                if (areaAvailablity.contains(templeteAreaAvailablity))
+                  {
+                    pushTemplateCount += pushTemplateCount;
+                  }
+              }
+          }
         response.put("mailTemplateCount", mailTemplateCount);
+        response.put("smsTemplateCount", smsTemplateCount);
+        response.put("pushTemplateCount", pushTemplateCount);
+        response.put("dialogTemplateCount", dialogTemplateCount);
       }
     return JSONUtilities.encodeObject(response);
   }
