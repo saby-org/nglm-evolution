@@ -24967,7 +24967,21 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     for (GUIManagedObject modifiedJourney : modifiedJourneys)
       {
-        journeyService.putGUIManagedObject(modifiedJourney, date, false, null);
+        if (modifiedJourney instanceof Journey)
+          {
+            try
+              {
+                journeyService.putJourney(modifiedJourney, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, false, null);
+              }
+            catch (JSONUtilitiesException|GUIManagerException e)
+              {
+                  log.warn(e.getLocalizedMessage());
+              }
+          }
+        else
+          {
+            journeyService.putGUIManagedObject(modifiedJourney, date, false, null);
+          }
       }
   }
 
