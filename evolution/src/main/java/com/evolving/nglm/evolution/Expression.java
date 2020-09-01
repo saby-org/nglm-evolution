@@ -2370,7 +2370,6 @@ public abstract class Expression
     
     private Date evaluateDateAddOrConstantFunction(Date dateAddDate, Date strictScheduleDate, Number waitDuration, TimeUnit timeUnit, String dayOfWeek, String waitTimeString, TimeUnit baseTimeUnit, boolean roundDown)
     {
-      log.info("RAJ K evaluateDateAddOrConstantFunction dayOfWeek {} waitTimeString {}", dayOfWeek, waitTimeString);
       Date result = new Date(0L);
       List<Date> watingDates = new ArrayList<Date>();
       
@@ -2464,9 +2463,7 @@ public abstract class Expression
       
       if (watingDates.size() > 0)
         {
-          log.info("RAJ K evaluateDateAddOrConstantFunction watingDates before sort {}", watingDates);
           Collections.sort(watingDates);
-          log.info("RAJ K evaluateDateAddOrConstantFunction watingDates after sort {}", watingDates);
           result = watingDates.get(0);
         }
       
@@ -2474,7 +2471,6 @@ public abstract class Expression
       //  return
       //
       
-      log.info("RAJ K evaluateDateAddOrConstantFunction result {}", result);
       return result;
     }
 
