@@ -211,9 +211,21 @@ public class DynamicCriterionFieldService extends GUIService
 
   public void removeLoyaltyProgramCriterionFields(GUIManagedObject loyaltyProgram)
   {
-    removeDynamicCriterionField("loyaltyprogram" + "." + loyaltyProgram.getGUIManagedObjectID() + "." + "tier", null);
-    removeDynamicCriterionField("loyaltyprogram" + "." + loyaltyProgram.getGUIManagedObjectID() + "." + "rewardpoint.balance", null);
-    removeDynamicCriterionField("loyaltyprogram" + "." + loyaltyProgram.getGUIManagedObjectID() + "." + "statuspoint.balance", null);
+    String prefix = "loyaltyprogram" + "." + loyaltyProgram.getGUIManagedObjectID() + ".";
+    removeDynamicCriterionField(prefix + "tier", null);
+    removeDynamicCriterionField(prefix + "rewardpoint.balance", null);
+    removeDynamicCriterionField(prefix + "statuspoint.balance", null);
+    
+    if (loyaltyProgram instanceof LoyaltyProgramPoints)
+      {
+        LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+        String statusPointID = loyaltyProgramPoints.getStatusPointsID();
+        String rewardPointID = loyaltyProgramPoints.getRewardPointsID();
+        removeDynamicCriterionField(prefix + "statuspoint." + statusPointID + ".earliestexpirydate", null);
+        removeDynamicCriterionField(prefix + "rewardpoint." + rewardPointID + ".earliestexpirydate", null);
+        removeDynamicCriterionField(prefix + "statuspoint." + statusPointID + ".earliestexpiryquantity", null);
+        removeDynamicCriterionField(prefix + "rewardpoint." + rewardPointID + ".earliestexpiryquantity", null);
+      }
   }
 
   /*****************************************
@@ -287,6 +299,20 @@ public class DynamicCriterionFieldService extends GUIService
   public void removePointCriterionFields(GUIManagedObject point)
   {
     removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "balance", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earliestexpirydate", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earliestexpiryquantity", null);
+  
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earned.yesterday", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earned.last7days", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "earned.last30days", null);
+
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "consumed.yesterday", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "consumed.last7days", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "consumed.last30days", null);
+
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.yesterday", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.last7days", null);
+    removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.last30days", null);
   }
   
   /*****************************************
