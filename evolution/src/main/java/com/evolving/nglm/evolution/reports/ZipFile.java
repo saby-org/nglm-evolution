@@ -11,7 +11,7 @@ public class ZipFile {
  
 	private static Logger log = LoggerFactory.getLogger(ZipFile.class);
 	
-    static void zipFile(String filePath) {
+    public static void zipFile(String filePath) {
         try {
             File file = new File(filePath);
             String zipFileName = file.getName().concat(".zip");
