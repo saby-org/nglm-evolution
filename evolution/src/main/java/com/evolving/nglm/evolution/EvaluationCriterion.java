@@ -797,9 +797,9 @@ public class EvaluationCriterion
               if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
         {
         	criterionFieldValues=Arrays.asList(criterionFieldValue.toString().split(","));
-        	 log.info("total count"+criterionFieldValues.size()+criterionFieldValues.get(0));
+        	 
         }
-              log.info("Retrieved Value"+criterionFieldValue.toString());
+             
         /****************************************
         *
         *  evaluate argument
@@ -1194,8 +1194,7 @@ public class EvaluationCriterion
              {
              	for(String singleCriterionFieldValue: criterionFieldValues) {
              		singleCriterionFieldValue=singleCriterionFieldValue.trim();
-             		log.info("value"+singleCriterionFieldValue);
-             	   result = traceCondition(evaluationRequest, ((Set<String>) evaluatedArgument).contains((String) singleCriterionFieldValue), singleCriterionFieldValue, evaluatedArgument);
+             		result = traceCondition(evaluationRequest, ((Set<String>) evaluatedArgument).contains((String) singleCriterionFieldValue), singleCriterionFieldValue, evaluatedArgument);
                   	if (result)
              		break;
              	}
@@ -1356,7 +1355,7 @@ public class EvaluationCriterion
         query = query.filter(evaluationCriterion.esQuery());
       }
     
-    log.info("final es query:"+query.toString());
+    log.debug("final es query:"+query.toString());
     return query;
   }
   
