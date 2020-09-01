@@ -47,14 +47,9 @@ public class DeliverableESSinkConnector extends SimpleESSinkConnector
       Object guiManagedObjectValue = sinkRecord.value();
       Schema guiManagedObjectValueSchema = sinkRecord.valueSchema();
       GUIManagedObject guiManagedObject = GUIManagedObject.commonSerde().unpack(new SchemaAndValue(guiManagedObjectValueSchema, guiManagedObjectValue));
-
-      try 
-      {
-        // TODO just check instanceof, do never construct an item based on JSONRepresentation... See Journey for reference.
-        return new Deliverable(guiManagedObject.getJSONRepresentation(), guiManagedObject.getEpoch(), guiManagedObject); 
-      } 
-      catch (GUIManagerException e) 
-      {
+      if(guiManagedObject instanceof Deliverable) {
+        return (Deliverable) guiManagedObject;
+      } else {
         return null;
       }
     }
