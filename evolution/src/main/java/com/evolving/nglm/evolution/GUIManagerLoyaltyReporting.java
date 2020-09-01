@@ -840,6 +840,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         int smsTemplateCount = 0;
         int dialogTemplateCount = 0;
         int pushTemplateCount = 0;
+        String areaAvailablity = JSONUtilities.decodeString(jsonRoot, "areaAvailablity", false);
         Collection<GUIManagedObject> mailTemplates = subscriberMessageTemplateService.getStoredMailTemplates(true,
             includeArchived);
         if (mailTemplates.size() != 0 && mailTemplates != null)
@@ -850,7 +851,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   {
                     JSONArray templeteAreaAvailablity = (JSONArray) ((MailTemplate) template).getJSONRepresentation()
                         .get("areaAvailability");
-                    String areaAvailablity = JSONUtilities.decodeString(jsonRoot, "areaAvailablity", false);
                     if (templeteAreaAvailablity.contains(areaAvailablity))
                       {
                         mailTemplateCount += 1;
@@ -868,7 +868,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   {
                     JSONArray templeteAreaAvailablity = (JSONArray) ((SMSTemplate) template).getJSONRepresentation()
                         .get("areaAvailability");
-                    String areaAvailablity = JSONUtilities.decodeString(jsonRoot, "areaAvailablity", false);
                     if (templeteAreaAvailablity.contains(areaAvailablity))
                       {
                         smsTemplateCount += 1;
@@ -886,7 +885,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   {
                     JSONArray templeteAreaAvailablity = (JSONArray)((DialogTemplate) template).getJSONRepresentation()
                         .get("areaAvailability");
-                    String areaAvailablity = JSONUtilities.decodeString(jsonRoot, "areaAvailablity", false);
                     if (templeteAreaAvailablity.contains(areaAvailablity))
                       {
                         dialogTemplateCount += 1;
@@ -904,7 +902,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   {
                     JSONArray templeteAreaAvailablity = (JSONArray)((PushTemplate) template).getJSONRepresentation()
                         .get("areaAvailability");
-                    String areaAvailablity = JSONUtilities.decodeString(jsonRoot, "areaAvailablity", false);
                     if (templeteAreaAvailablity.contains(areaAvailablity))
                       {
                         pushTemplateCount += 1;
