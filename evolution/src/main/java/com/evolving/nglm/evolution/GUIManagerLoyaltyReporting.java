@@ -44,9 +44,11 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
-import com.evolving.nglm.evolution.reports.PercentageOfRandomLines;
+import com.evolving.nglm.evolution.reports.PercentageOfRandomRows;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.TopRows;
+import com.evolving.nglm.evolution.reports.UnZipFile;
+import com.evolving.nglm.evolution.reports.ZipFile;
 import com.sun.net.httpserver.HttpExchange;
 
 public class GUIManagerLoyaltyReporting extends GUIManager
@@ -756,18 +758,22 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 				if(reportFile != null) {
 					if(reportFile.length() > 0) {
 						try {
-							if(percentage != null) {
+							if(percentage != null) 
+							{
 								tempFile = File.createTempFile("tempReportPercentage", ""); 
 								String tempFileName = tempFile.getAbsolutePath(); 
-								PercentageOfRandomLines.displayPercentageOfRandomLines(reportFile.getAbsolutePath(),
-										tempFileName, percentage);
+								String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
+								PercentageOfRandomRows.extractPercentageOfRandomRows(unzippedFile, tempFileName, percentage);
+								ZipFile.zipFile(tempFileName);
 								reportFile = tempFile;
 							}
-							if(topRows != null) {
+							if(topRows != null) 
+							{
 								tempFile = File.createTempFile("tempReportTopRows", ""); 
 								String tempFileName = tempFile.getAbsolutePath(); 
-								TopRows.readFirstNLines(reportFile.getAbsolutePath(),
-										tempFileName, topRows);
+								String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
+								TopRows.extractTopRows(unzippedFile, tempFileName, topRows);
+								ZipFile.zipFile(tempFileName);
 								reportFile = tempFile;
 							}
 									
