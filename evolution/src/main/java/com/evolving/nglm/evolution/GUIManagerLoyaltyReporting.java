@@ -43,6 +43,8 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.sun.net.httpserver.HttpExchange;
 
@@ -608,6 +610,17 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     for (GUIManagedObject loyaltyProgram : loyaltyProgramObjects)
       {
         JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(loyaltyProgram, fullDetails, now);
+        try {
+          ElasticsearchClientAPI client = new ElasticsearchClientAPI("",0);
+          client.setConnection(this.elasticsearch);
+          long membersCount = client.getLoyaltyProgramCount(loyaltyProgram.getGUIManagedObjectID());
+          loyaltyPro.put("programsMembersCount", membersCount);
+        }
+        catch (ElasticsearchClientException e) {
+          StringWriter stackTraceWriter = new StringWriter();
+          e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+          log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        }
         loyaltyProgramList.add(loyaltyPro);
       }
 

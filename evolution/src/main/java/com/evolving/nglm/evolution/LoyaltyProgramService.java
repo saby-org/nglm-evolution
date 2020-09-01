@@ -10,6 +10,9 @@ import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 
 import org.json.simple.JSONArray;
@@ -17,6 +20,8 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashMap;
