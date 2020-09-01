@@ -852,7 +852,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               {
                 String templeteAreaAvailablity = ((MailTemplate) template).getJSONRepresentation()
                     .get("areaAvailability").toString();
-                JSONArray areaAvailablity = (JSONArray) jsonRoot.get("areaAvailablity");
+                Object areaAvailablityObject = jsonRoot.get("areaAvailablity");
+                JSONArray areaAvailablity = (JSONArray) areaAvailablityObject;
                 if (areaAvailablity.contains(templeteAreaAvailablity))
                   {
                     mailTemplateCount += mailTemplateCount;
