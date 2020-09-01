@@ -1947,9 +1947,10 @@ public class EvaluationCriterion
     return query;
   }
 
-  static String journeyName = "";
+  static HashSet journeyNames = new HashSet<Object>();
   static HashSet campaignNames = new HashSet<Object>();
-  static String bulkcampaignName = "";
+  static HashSet bulkcampaignNames = new HashSet<Object>();
+
   
   /*****************************************
   *
@@ -1965,12 +1966,12 @@ public class EvaluationCriterion
     String criterion = fieldNameMatcher.group(1);
     // TODO : necessary ? To be checked
     if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
-    String value = "";
+    //String value = "";
     HashSet<Object> values=new HashSet<Object>();
     switch (criterion)
     {
       case "Journey":
-        journeyName = (String) (argument.evaluate(null, null));
+        journeyNames = (HashSet<Object>) (argument.evaluate(null, null));
         return QueryBuilders.matchAllQuery();
         
       case "Campaign":
@@ -1978,11 +1979,11 @@ public class EvaluationCriterion
         return QueryBuilders.matchAllQuery();
         
       case "Bulkcampaign":
-        bulkcampaignName = (String) (argument.evaluate(null, null));
+    	  bulkcampaignNames = (HashSet<Object>) (argument.evaluate(null, null));
         return QueryBuilders.matchAllQuery();
         
       case "JourneyStatus":
-        value = journeyName;
+        values = journeyNames;
         break;
         
       case "CampaignStatus":
@@ -1990,16 +1991,14 @@ public class EvaluationCriterion
         break;
         
       case "BulkcampaignStatus":
-        value = bulkcampaignName;
+        values = bulkcampaignNames;
         break;
         
       default:
         throw new CriterionException("unknown criteria : " + esField);
     }
     
-    if(value!=null && !value.isEmpty())
-    values.add(value);
-    
+       
     QueryBuilder queryID = QueryBuilders.termsQuery("subscriberJourneys.journeyID", values);
     QueryBuilder queryStatus = null;
     QueryBuilder query = null;
