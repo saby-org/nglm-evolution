@@ -349,11 +349,11 @@ public abstract class CriterionFieldRetriever
       {
         switch (criterionFieldBaseName)
         {
-          case "optInDate":
+          case "optindate":
             result = optInDate;
             break;
 
-          case "optOutDate":
+          case "optoutdate":
             result = optOutDate;
             break;
             
@@ -386,15 +386,15 @@ public abstract class CriterionFieldRetriever
               result = loyaltyProgramPointsState.getRewardPoints();
               break;
 
-            case "tierUpdateDate":
+            case "tierupdatedate":
               result = loyaltyProgramPointsState.getTierEnrollmentDate();
               break;
 
-            case "optInDate":
+            case "optinDate":
               result = optInDate;
               break;
 
-            case "optOutDate":
+            case "optoutDate":
               result = optOutDate;
               break;
 
