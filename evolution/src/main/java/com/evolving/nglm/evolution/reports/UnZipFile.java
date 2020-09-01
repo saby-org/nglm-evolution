@@ -11,7 +11,7 @@ import java.util.zip.ZipInputStream;
 
 public class UnZipFile {
 
-    static String unzip(String zipFilePath) {
+    public static String unzip(String zipFilePath) {
         try {
         	Path destDirPath = Files.createTempDirectory("zip");
         	String destDir = destDirPath.toString();
