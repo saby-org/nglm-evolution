@@ -571,7 +571,7 @@ public abstract class CriterionFieldRetriever
     if(journeyIDs!=null && !journeyIDs.isEmpty())
     { for(String journeyID:journeyIDs) {
    	  if (journeyID == null) throw new CriterionException("invalid journey status request");
-   	status.add((evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID) != null) ? evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID).getExternalRepresentation() : null);
+   	status.add((evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID) != null) ? evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID).getExternalRepresentation() : "notEligible");
    	  }
      }
     comma_seperated_status=String.join(", ", status);
