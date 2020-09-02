@@ -2710,12 +2710,12 @@ public class GUIManagerGeneral extends GUIManager
       {
         String deliverableID = JSONUtilities.decodeString(jsonRoot, "id", false);
         deliverableIDs.add(deliverableID);
-        GUIManagedObject product = deliverableService.getStoredDeliverable(deliverableID);
-        if (product != null && (force || !product.getReadOnly()))
+        GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
+        if (deliverable != null && (force || !deliverable.getReadOnly()))
           singleIDresponseCode = "ok";
-        else if (product != null)
+        else if (deliverable != null)
           singleIDresponseCode = "failedReadOnly";
-        else singleIDresponseCode = "productNotFound";
+        else singleIDresponseCode = "deliverableNotFound";
       }
     //
     // multiple deletion
