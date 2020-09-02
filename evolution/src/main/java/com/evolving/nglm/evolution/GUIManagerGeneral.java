@@ -2731,7 +2731,7 @@ public class GUIManagerGeneral extends GUIManager
       {
         String deliverableID = deliverableIDs.get(i).toString();
         GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
-        if (deliverable == null && (force || !deliverable.getReadOnly())) 
+        if (deliverable != null && (force || !deliverable.getReadOnly())) 
           {
             deliverables.add(deliverable);
             validIDs.add(deliverableID);
@@ -2750,8 +2750,7 @@ public class GUIManagerGeneral extends GUIManager
       {
 
         GUIManagedObject deliverable = deliverables.get(i);
-        if (deliverable != null && (force || !deliverable.getReadOnly()))
-          deliverableService.removeDeliverable(deliverable.getGUIManagedObjectID(), userID);
+        deliverableService.removeDeliverable(deliverable.getGUIManagedObjectID(), userID);
 
         /*****************************************
          *
