@@ -14,8 +14,6 @@ import org.apache.kafka.connect.data.Timestamp;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.evolution.Journey.JourneyStatus;
-import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 
