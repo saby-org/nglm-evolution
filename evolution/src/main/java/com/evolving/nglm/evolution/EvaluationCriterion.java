@@ -336,7 +336,7 @@ public class EvaluationCriterion
     try
       {
         JSONObject argumentJSON = JSONUtilities.decodeJSONObject(jsonRoot, "argument", false);
-        this.argumentExpression = (argumentJSON != null) ? JSONUtilities.decodeString(argumentJSON, "expression", true) : null;
+        this.argumentExpression = (argumentJSON != null) ? JSONUtilities.decodeString(argumentJSON, "expression", false) : null;
         this.argumentBaseTimeUnit = (argumentJSON != null) ? TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(argumentJSON, "timeUnit", "(unknown)")) : TimeUnit.Unknown;
         parseArgument();
       }
