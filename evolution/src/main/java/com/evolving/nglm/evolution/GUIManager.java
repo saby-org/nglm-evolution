@@ -2148,8 +2148,15 @@ public class GUIManager
     long uniqueID = 0;
     String periodicGenerationCronEntry = "1,10,15,20,25,30,35,40,45,50 * * * *"; //1,15,30,45 * * * * //5 1,6,11,16,21 * * *
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob(uniqueID++, "Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getBaseTimeZone(), false);
-    if(recurrnetCampaignCreationJob.isProperlyConfigured()) guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
-    guiManagerJobScheduler.runScheduler();
+    if(recurrnetCampaignCreationJob.isProperlyConfigured())
+      {
+        guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
+        new Thread(guiManagerJobScheduler::runScheduler).start();
+      }
+    else
+      {
+        if (log.isErrorEnabled()) log.error("invalid recurrnetCampaignCreationJob cron");
+      }
     
     /*****************************************
     *
