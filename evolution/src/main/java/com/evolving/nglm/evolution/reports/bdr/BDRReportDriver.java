@@ -1,5 +1,7 @@
 package com.evolving.nglm.evolution.reports.bdr;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,4 +30,32 @@ public class BDRReportDriver extends ReportDriver{
     log.debug("Finished with BDR Report");
   }
 
+  @Override
+  public JSONArray reportFilters() {
+	  JSONArray responseJSON = new JSONArray();
+
+	  JSONObject filterJSON, argumentJSON;
+
+	  filterJSON = new JSONObject();
+	  filterJSON.put("criterionField", "moduleName");
+	  argumentJSON = new JSONObject();
+	  argumentJSON.put("expression", "");
+	  argumentJSON.put("valueType", "string");
+	  argumentJSON.put("value", new JSONArray());
+	  argumentJSON.put("timeUnit", null);
+	  filterJSON.put("argument", argumentJSON);
+	  responseJSON.add(argumentJSON);
+
+	  filterJSON = new JSONObject();
+	  filterJSON.put("criterionField", "deliveryStatus");
+	  argumentJSON = new JSONObject();
+	  argumentJSON.put("expression", "");
+	  argumentJSON.put("valueType", "string");
+	  argumentJSON.put("value", new JSONArray());
+	  argumentJSON.put("timeUnit", null);
+	  filterJSON.put("argument", argumentJSON);
+	  responseJSON.add(argumentJSON);
+
+	  return responseJSON;
+  }
 }
