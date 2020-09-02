@@ -754,6 +754,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 				}
 
 				File tempFile = null;
+				File tempZipFile = null;
 
 				if(reportFile != null) {
 					if(reportFile.length() > 0) {
@@ -764,8 +765,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 								String tempFileName = tempFile.getAbsolutePath(); 
 								String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
 								PercentageOfRandomRows.extractPercentageOfRandomRows(unzippedFile, tempFileName, percentage);
-								ZipFile.zipFile(tempFileName);
-								reportFile = tempFile;
+							    tempZipFile = File.createTempFile("reportPercentage", "zip");
+							    String tempZipFileName = tempZipFile.getAbsolutePath();
+								ZipFile.zipFile(tempFileName, tempZipFileName);
+								reportFile = new File(tempZipFileName);
 							}
 							if(topRows != null) 
 							{
@@ -773,8 +776,10 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 								String tempFileName = tempFile.getAbsolutePath(); 
 								String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
 								TopRows.extractTopRows(unzippedFile, tempFileName, topRows);
-								ZipFile.zipFile(tempFileName);
-								reportFile = tempFile;
+								tempZipFile = File.createTempFile("reportTopRows", "zip");
+							    String zipFileName = tempZipFile.getAbsolutePath();
+								ZipFile.zipFile(tempFileName, zipFileName);
+								reportFile = new File(zipFileName);
 							}
 									
 							FileInputStream fis = new FileInputStream(reportFile);
@@ -797,8 +802,9 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 						}
 
 						
-						if((percentage != null || topRows != null) && tempFile != null) {
+						if((percentage != null || topRows != null) && tempFile != null && tempZipFile != null) {
 							tempFile.delete();
+							tempZipFile.delete();
 						}
 						
 

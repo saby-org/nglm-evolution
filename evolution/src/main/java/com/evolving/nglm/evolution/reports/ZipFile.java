@@ -11,25 +11,24 @@ public class ZipFile {
  
 	private static Logger log = LoggerFactory.getLogger(ZipFile.class);
 	
-    public static void zipFile(String filePath) {
+    public static void zipFile(String inputFile, String outputFile) {
         try {
-            File file = new File(filePath);
-            String zipFileName = file.getName().concat(".zip");
+            File file = new File(inputFile);
  
-            FileOutputStream fos = new FileOutputStream(zipFileName);
+            FileOutputStream fos = new FileOutputStream(outputFile);
             ZipOutputStream zos = new ZipOutputStream(fos);
  
             zos.putNextEntry(new ZipEntry(file.getName()));
  
-            byte[] bytes = Files.readAllBytes(Paths.get(filePath));
+            byte[] bytes = Files.readAllBytes(Paths.get(inputFile));
             zos.write(bytes, 0, bytes.length);
             zos.closeEntry();
             zos.close();
  
         } catch (FileNotFoundException ex) {
-        	log.error("The file %s does not exist", filePath);
+        	log.error("The file does not exist", ex);
         } catch (IOException ex) {
-        	log.error("I/O error: " + ex);
+        	log.error("I/O error creating zip file", ex);
         }
     }
 }
