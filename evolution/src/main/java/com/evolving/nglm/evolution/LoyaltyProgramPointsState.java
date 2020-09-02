@@ -17,9 +17,12 @@ import org.apache.kafka.connect.data.Timestamp;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
+import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
+import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 
 
 public class LoyaltyProgramPointsState extends LoyaltyProgramState
@@ -191,7 +194,7 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
   *
   *****************************************/
 
-  public void update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toTier, Date enrollmentDate, String deliveryRequestID)
+  public void update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toTier, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService)
   {
     
     //
@@ -204,7 +207,21 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
     }
     String fromTier = (lastTierEntered == null ? null : lastTierEntered.getToTier());
     
-
+    //
+    // get the tier informations
+    //
+    Date now = SystemTime.getCurrentTime();
+    LoyaltyProgramTierChange tierChangeType = null;
+    if(loyaltyProgramHistory != null){
+      String loyaltyProgramID = loyaltyProgramHistory.getLoyaltyProgramID();
+      LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now);
+      if (loyaltyProgram instanceof LoyaltyProgramPoints) {
+        LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+        Tier tier = loyaltyProgramPoints.getTier(tierName);
+        Tier previousTier = loyaltyProgramPoints.getTier(previousTierName);
+        tierChangeType = Tier.changeFromTierToTier(previousTier, tier);
+        }
+    }
     switch (operation) {
     case Optin:
 
@@ -225,7 +242,7 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
       //  update history
       //
       
-      loyaltyProgramHistory.addTierHistory(fromTier, toTier, enrollmentDate, deliveryRequestID);
+      loyaltyProgramHistory.addTierHistory(fromTier, toTier, enrollmentDate, deliveryRequestID, tierChangeType);
       
       break;
 
@@ -248,7 +265,7 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
       //  update history
       //
       
-      loyaltyProgramHistory.addTierHistory(fromTier, toTier, enrollmentDate, deliveryRequestID);
+      loyaltyProgramHistory.addTierHistory(fromTier, toTier, enrollmentDate, deliveryRequestID,tierChangeType);
       
       break;
 

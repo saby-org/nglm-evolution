@@ -371,6 +371,8 @@ public abstract class CriterionFieldRetriever
         // retrieve
         //
         LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyProgramState;
+        TierHistory tierHistory = loyaltyProgramPointsState.getLoyaltyProgramHistory().getLastTierEntered(); 
+        tierUpdateType = tierHistory.getTierUpdateType().getExternalRepresentation();
 
         switch (criterionFieldBaseName)
           {
@@ -390,11 +392,11 @@ public abstract class CriterionFieldRetriever
               result = loyaltyProgramPointsState.getTierEnrollmentDate();
               break;
 
-            case "optinDate":
+            case "optindate":
               result = optInDate;
               break;
 
-            case "optoutDate":
+            case "optoutdate":
               result = optOutDate;
               break;
 
