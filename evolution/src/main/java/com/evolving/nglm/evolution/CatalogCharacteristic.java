@@ -225,6 +225,10 @@ public class CatalogCharacteristic extends GUIManagedObject
         case StringCriterion:
           this.dataType = allowMultipleValues ? CriterionDataType.StringSetCriterion : CriterionDataType.StringCriterion;
           break;
+          
+        case DoubleCriterion:
+            this.dataType = allowMultipleValues ? CriterionDataType.DoubleSetCriterion : CriterionDataType.DoubleCriterion;
+            break;
 
         default:
           this.dataType = baseDataType;
