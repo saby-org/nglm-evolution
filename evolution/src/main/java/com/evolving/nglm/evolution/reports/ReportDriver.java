@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution.reports;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.json.simple.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +40,8 @@ public abstract class ReportDriver {
 			String elasticSearch, 
 			String csvFilename,
 			String[] params);
+	
+	abstract public JSONArray reportFilters();
 	
 	/**
 	 * Returns a topic name that can be used, based on the report being produced and the date.
