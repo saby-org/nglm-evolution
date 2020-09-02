@@ -25,6 +25,7 @@ import java.io.StringWriter;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class LoyaltyProgramService extends GUIService
@@ -145,7 +146,24 @@ public class LoyaltyProgramService extends GUIService
   public void removeLoyaltyProgram(String loyaltyProgramID, String userID) 
   { 
     removeGUIManagedObject(loyaltyProgramID, SystemTime.getCurrentTime(), userID);
-    LoyaltyProgram loyaltyProgram = (LoyaltyProgram) getStoredLoyaltyProgram(loyaltyProgramID);
+    // LoyaltyProgram loyaltyProgram = (LoyaltyProgram) getStoredLoyaltyProgram(loyaltyProgramID);
+  }
+  
+  public JSONObject generateResponseJSON(GUIManagedObject guiManagedObject, boolean fullDetails, Date date)
+  {
+    JSONObject responseJSON = super.generateResponseJSON(guiManagedObject, fullDetails, date);
+    int tierCount = 0;
+    if (guiManagedObject instanceof LoyaltyProgramPoints)
+      {
+        LoyaltyProgramPoints lp = (LoyaltyProgramPoints) guiManagedObject;
+        List<Tier> tiers = lp.getTiers();
+        if (tiers != null)
+          {
+            tierCount = tiers.size();
+          }
+      }
+    responseJSON.put("tierCount", tierCount);
+    return responseJSON;
   }
 
   /*****************************************
