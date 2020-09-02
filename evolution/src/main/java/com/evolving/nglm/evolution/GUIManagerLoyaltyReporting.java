@@ -708,6 +708,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       }
     else
       {
+    	File tempFile = null;
         try
           {
             Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
@@ -740,7 +741,65 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               }else {
                 responseCode = "Cant find report with that name";
               }
+              //==
+              JSONArray filters = JSONUtilities.decodeJSONArray(jsonRoot, "filters", false);
+              if (filters != null)
+              {
+            	  // filter !
+            	  List<String> colsName = new ArrayList<>();
+            	  List<List<String>> colsValues = new ArrayList<>();
+            	  for (int i=0; i<filters.size(); i++)
+            	  {
+            		  JSONObject filterJSON = (JSONObject) filters.get(i);
+            		  // ...
+            		  String nameOfColumns = (String) filterJSON.get("criterionField");
+            		  colsName.add(nameOfColumns);
+            		  Object expression = filterJSON.get("expression");
+            		  String valueType = (String) filterJSON.get("valueType");
+            		  switch (valueType) {
+            		  case "simpleSelect.string":
+            			  String valueSimpleSelect = (String) expression;
+            			  List<String> valuesOfColumns = new ArrayList<>();
+            			  valuesOfColumns.add(valueSimpleSelect);
+            			  colsValues.add(valuesOfColumns);
+            			  break;
 
+            		  case "multiple.string":
+            			  // do something
+            			  //==
+            			 
+            			  //==
+            			  break;
+
+            		  default:
+            			  log.info("Received unsupported valueType : " + valueType);
+            			  break;
+            		  }
+            	  }
+
+            	  try {
+            		  tempFile = File.createTempFile("tempReportFilters", "");
+            	  } catch (Exception e) {
+            		  e.printStackTrace();
+            	  } 
+            	  String tempFileName = tempFile.getAbsolutePath();
+
+            	  //            	  tempFile = new File("...");
+
+            	  String[] colsNameArray = colsName.toArray(new String[0]);
+            	  String separator = null;
+            	  String delimiter = null;
+            	  // call displayRowsWithSpecificColumnsData(String InputFileName, String OutputFileName, String[] colsName, String[][] colsValues, String separator, String delimiter)
+            	 
+          		String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());//BDRReport_2020-08-31_09-07-23.csv.zip
+
+          		displayRowsWithSpecificColumnsData2(unzippedFile, tempFileName, colsName, colsValues, delimiter,
+          				separator);
+
+          		ZipFile.zipFile("newTest.txt");
+            	  
+              }
+              //==
               if(reportFile != null) {
                 if(reportFile.length() > 0) {
                   try {
