@@ -134,9 +134,13 @@ public class ExtractItem
     Map criterionMap = new HashMap();
     criterionMap.put("criterionField", criterion.getCriterionField().getID());
     criterionMap.put("criterionOperator", criterion.getCriterionOperator().getExternalRepresentation());
-    Map argument = new HashMap();
-    argument.put("expression", criterion.getArgumentExpression());
-    argument.put("timeUnit", criterion.getArgumentBaseTimeUnit().getExternalRepresentation());
+    Map argument = null;
+    if(criterion.getArgument() != null)
+    {
+      argument = new HashMap();
+      argument.put("expression", criterion.getArgumentExpression());
+      argument.put("timeUnit", criterion.getArgumentBaseTimeUnit().getExternalRepresentation());
+    }
     criterionMap.put("argument", argument);
     criterionMap.put("storyReference", criterion.getStoryReference());
     criterionMap.put("criterionDefault", criterion.getCriterionDefault());

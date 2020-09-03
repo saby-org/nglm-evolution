@@ -3307,31 +3307,32 @@ public class Deployment
           throw new ServerRuntimeException("deployment", e);
         }
 
-      //
-      // conf for voucher
-      //
+      //      
+      // conf for voucher 
+      //      
 
-      try
+      try     
         {
           // we won't deliver a voucher that expiry in less than X hours from now :
           minExpiryDelayForVoucherDeliveryInHours = JSONUtilities.decodeInteger(jsonRoot, "minExpiryDelayForVoucherDeliveryInHours",4);
           // the number of day after we clean up Expired voucher, in ES and SubscriberProfile
           cleanUpExpiredVoucherDelayInDays = JSONUtilities.decodeInteger(jsonRoot, "cleanUpExpiredVoucherDelayInDays",31);
-          // the bulk size when importing voucher file into ES
+          // the bulk size when importing voucher file into ES 
           importVoucherFileBulkSize = JSONUtilities.decodeInteger(jsonRoot, "importVoucherFileBulkSize",5000);
-          // the cache cleaner frequency in seconds for caching voucher with 0 stock from ES, and shrinking back "auto adjust concurrency number"
+          // the cache cleaner frequency in seconds for caching voucher with 0 stock from ES, and shrinking back "auto adjust concurrency number" 
           voucherESCacheCleanerFrequencyInSec = JSONUtilities.decodeInteger(jsonRoot, "voucherESCacheCleanerFrequencyInSec",300);
           // an approximation of number of total concurrent process tyring to allocate Voucher in // to ES, but should not need to configure, algo should auto-adjust this
           numberConcurrentVoucherAllocationToES = JSONUtilities.decodeInteger(jsonRoot, "numberConcurrentVoucherAllocationToES",10);
-          // the default number of replicas for voucher ES indices
+          // the default number of replicas for voucher ES indices 
           liveVoucherIndexNumberOfReplicas = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "liveVoucherIndexNumberOfReplicas","1"));
-          // the default number of shards for voucher ES indices
+          // the default number of shards for voucher ES indices 
           liveVoucherIndexNumberOfShards = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "liveVoucherIndexNumberOfShards","1"));
         }
       catch (JSONUtilitiesException|NumberFormatException e)
         {
           throw new ServerRuntimeException("deployment", e);
         }
+
 
       //
       // conf for propensity service
