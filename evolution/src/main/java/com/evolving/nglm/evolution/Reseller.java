@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.core.ConnectSerde;
@@ -27,8 +28,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
-@GUIDependencyDef(objectType = "reseller", serviceClass = ResellerService.class, dependencies = { })
+@GUIDependencyDef(objectType = "reseller", serviceClass = ResellerService.class, dependencies = {"reseller"})
 public class Reseller extends GUIManagedObject
 {
   /*****************************************
@@ -347,11 +349,59 @@ public class Reseller extends GUIManagedObject
         BillingMode billingMode = Deployment.getBillingModes().get(billingModeID);
         if (billingMode == null) throw new GUIManagerException("unknown billingModeID ", billingModeID);
       } 
+    
+    /*****************************************
+    *
+    *  validate reseller ancestors
+    *  - ensure all parents exist and are active
+    *  - ensure no cycles
+    *
+    *****************************************/
+
+    Reseller walk = this;
+    while (walk != null)
+      {
+        //
+        //  done if no parent
+        //
+        
+        if (walk.getParentResellerID() == null) break;
+        
+        //
+        //  verify parent
+        //   1) exists
+        //   2) is a Reseller
+        //   3) is active
+        //   4) does not create a cycle
+        //
+        
+        GUIManagedObject uncheckedParent = resellerService.getStoredReseller(walk.getParentResellerID());       
+        if (uncheckedParent == null) throw new GUIManagerException("unknown Reseller ancestor", walk.getParentResellerID());
+        if (uncheckedParent instanceof IncompleteObject) throw new GUIManagerException("invalid reseller ancestor", walk.getParentResellerID());
+        Reseller parent = (Reseller) uncheckedParent;
+        if (! resellerService.isActiveReseller(parent, date)) throw new GUIManagerException("inactive reseller ancestor", walk.getParentResellerID());
+        if (parent.equals(this)) throw new GUIManagerException("cycle in reseller hierarchy", getParentResellerID());
+
+        //
+        //  "recurse"
+        //
+        
+        walk = parent;
+      }
   }
+  
+  /*******************************
+   * 
+   * getGUIDependencies
+   * 
+   *******************************/
   
   @Override public Map<String, List<String>> getGUIDependencies()
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
+    List<String> resellerIDs = new ArrayList<>();
+    resellerIDs.add(parentResellerID);   
+    result.put("reseller", resellerIDs);    
     return result;
   }
 }

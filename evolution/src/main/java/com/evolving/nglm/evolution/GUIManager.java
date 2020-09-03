@@ -3862,7 +3862,6 @@ public class GUIManager
                   jsonResponse = guiManagerGeneral.processGetTenantList(userID, jsonRoot, true, includeArchived);
                   break;
                   
-
                 case putSupplierOffer:
                   jsonResponse = processPutSupplierOffer(userID, jsonRoot);
                   break;
@@ -10287,8 +10286,7 @@ public class GUIManager
         *****************************************/
         if (!dryRun)
           {
-
-            supplierService.putSupplier(supplier, (existingSupplier == null), userID);
+            supplierService.putSupplier(supplier, (existingSupplier == null), userID, supplierService);
 
             /*****************************************
              *
@@ -10326,11 +10324,11 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            supplierService.putSupplier(incompleteObject, (existingSupplier == null), userID);
+            supplierService.putSupplier(incompleteObject, (existingSupplier == null), userID, supplierService);
 
-            //
-            // revalidateProducts
-            //
+        //
+        //  revalidateProducts
+        //
 
             revalidateProducts(now);
             revalidateVouchers(now);
@@ -10357,26 +10355,27 @@ public class GUIManager
   }
 
   /*****************************************
-  *
-  *  processRemoveSupplier
-  *
-  *****************************************/
+   *
+   * processRemoveSupplier
+   *
+   *****************************************/
 
   private JSONObject processRemoveSupplier(String userID, JSONObject jsonRoot)
   {
     /****************************************
-    *
-    *  response
-    *
-    ****************************************/
+     *
+     * response
+     *
+     ****************************************/
 
-    HashMap<String,Object> response = new HashMap<String,Object>();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    JSONObject dependencyRequest = new JSONObject();
 
     /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
+     *
+     * now
+     *
+     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
 
@@ -10387,13 +10386,14 @@ public class GUIManager
     List<String> validIDs = new ArrayList<>();
 
     /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
+     *
+     * argument
+     *
+     ****************************************/
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+
     //
-    //remove single supplier
+    // remove single supplier
     //
     if (jsonRoot.containsKey("id"))
       {
@@ -10409,36 +10409,69 @@ public class GUIManager
     //
     // multiple deletion
     //
-    
+
     if (jsonRoot.containsKey("ids"))
       {
         supplierIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
       }
-       
+
     for (int i = 0; i < supplierIDs.size(); i++)
       {
         String supplierID = supplierIDs.get(i).toString();
         GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID);
-        
+
         if (supplier != null && (force || !supplier.getReadOnly()))
           {
+            dependencyRequest.put("apiVersion", 1);
+            dependencyRequest.put("objectType", "supplier");
+            dependencyRequest.put("id", supplier.getGUIManagedObjectID());
+
+            JSONObject dependenciesObject = guiManagerGeneral.processGetDependencies(userID, dependencyRequest);
+            JSONArray dependencies = JSONUtilities.decodeJSONArray(dependenciesObject, "dependencies", new JSONArray());
+            boolean parentDependency = false;
+            if (dependencies.size() != 0)
+              {
+                for (int j = 0; j < dependencies.size(); j++)
+                  {
+                    JSONObject dependent = (JSONObject) dependencies.get(j);
+                    String ojectType = JSONUtilities.decodeString(dependent, "objectType", false);
+                    if (("supplier".equals(ojectType)) || ("product".equals("ojectType")))
+                      {
+                        parentDependency = true;
+                        break;
+                      }
+                  }
+              }
+            if (!parentDependency) {
             suppliers.add(supplier);
             validIDs.add(supplierID);
+            }
+            else
+              {
+                if (jsonRoot.containsKey("id")) {
+                response.put("responseCode", RESTAPIGenericReturnCodes.DEPENDENCY_RESTRICTION.getGenericResponseCode());
+                response.put("responseMessage",
+                    RESTAPIGenericReturnCodes.DEPENDENCY_RESTRICTION.getGenericResponseMessage());
+                return JSONUtilities.encodeObject(response);
+                }
+              }
           }
       }
-        
-  
 
     /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-    for (int i = 0; i < suppliers.size(); i++)
+     *
+     * remove
+     *
+     *****************************************/
+    for (GUIManagedObject supplier :suppliers)
       {
+        if (supplier != null && (force || !supplier.getReadOnly()))
+          {
+                supplierService.removeSupplier(supplier.getGUIManagedObjectID(), userID);
+              
+            
 
-        GUIManagedObject supplier = suppliers.get(i);
-        supplierService.removeSupplier(supplier.getGUIManagedObjectID(), userID);
+          }
 
         /*****************************************
          *
@@ -10531,7 +10564,7 @@ public class GUIManager
                  *
                  *****************************************/
 
-                supplierService.putSupplier(supplier, (existingElement == null), userID);
+                supplierService.putSupplier(supplier, (existingElement == null), userID, supplierService);
 
                 /*****************************************
                  *
@@ -10554,7 +10587,7 @@ public class GUIManager
                 //
                 // store
                 //
-                supplierService.putSupplier(incompleteObject, (existingElement == null), userID);
+                supplierService.putSupplier(incompleteObject, (existingElement == null), userID, supplierService);
 
                 //
                 // revalidateProducts
@@ -19115,8 +19148,7 @@ public class GUIManager
         *****************************************/
         if (!dryRun)
           {
-
-            resellerService.putReseller(reseller, (existingReseller == null), userID);
+           resellerService.putReseller(reseller, (existingReseller == null), userID, resellerService);
           }
 
         /*****************************************
@@ -19145,7 +19177,7 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            resellerService.putReseller(incompleteObject, (existingReseller == null), userID);
+            resellerService.putReseller(incompleteObject, (existingReseller == null), userID, resellerService);
           }
 
         //
@@ -19203,7 +19235,7 @@ public class GUIManager
                  * store
                  *
                  *****************************************/
-                resellerService.putReseller(reseller, (existingElement == null), userID);
+                resellerService.putReseller(reseller, (existingElement == null), userID, resellerService);
                 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -19217,7 +19249,7 @@ public class GUIManager
                 //
                 // store
                 //
-                resellerService.putReseller(incompleteObject, (existingElement == null), userID);
+                resellerService.putReseller(incompleteObject, (existingElement == null), userID, resellerService);
 
                 //
                 // log
@@ -20012,76 +20044,117 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
-  /*****************************************
-  *
-  *  processRemoveReseller
-  *
-  *****************************************/
+   /*****************************************
+   *
+   * processRemoveReseller
+   *
+   *****************************************/
 
   private JSONObject processRemoveReseller(String userID, JSONObject jsonRoot)
   {
     /****************************************
-    *
-    *  response
-    *
-    ****************************************/
+     *
+     * response
+     *
+     ****************************************/
 
-    HashMap<String,Object> response = new HashMap<String,Object>();
+    HashMap<String, Object> response = new HashMap<String, Object>();
     Date now = SystemTime.getCurrentTime();
-
+    JSONObject dependencyRequest = new JSONObject();
     String responseCode = "";
+    String singleIDresponseCode = "";
     List<GUIManagedObject> existingResellers = new ArrayList<>();
     List<String> validIDs = new ArrayList<>();
     JSONArray resellerIDs = new JSONArray();
 
     /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    //
-    //remove single reseller
-    //
-    if (jsonRoot.containsKey("id"))
-      {
-        String resellerID = JSONUtilities.decodeString(jsonRoot, "id", false);
-        resellerIDs.add(resellerID);
-
-      }
-    //
-    // multiple deletion
-    //
-    
-    if (jsonRoot.containsKey("ids"))
-      {
-        resellerIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
-      }
+     *
+     * argument
+     *
+     ****************************************/
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
-   
-    for (int i = 0; i < resellerIDs.size(); i++)
-      {
-        String resellerID = resellerIDs.get(i).toString();
-        GUIManagedObject reseller = resellerService.getStoredGUIManagedObject(resellerID);
-        
-        if (reseller != null && (force || !reseller.getReadOnly()))
-          {
-            existingResellers.add(reseller);
-            validIDs.add(resellerID);
-          }
-      }
-        
-  
 
     /*****************************************
      *
      * remove
      *
      *****************************************/
-    for (int i = 0; i < existingResellers.size(); i++)
+    //
+    // remove single reseller
+    //
+    if (jsonRoot.containsKey("id"))
       {
+        String resellerID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        resellerIDs.add(resellerID);
+        GUIManagedObject reseller = resellerService.getStoredReseller(resellerID);
+        if (reseller != null && (force || !reseller.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (reseller != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "resellerNotFound";
+      }
+    //
+    // multiple deletion
+    //
 
-        GUIManagedObject existingReseller = existingResellers.get(i);
+    if (jsonRoot.containsKey("ids"))
+      {
+        resellerIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+
+    for (int i = 0; i < resellerIDs.size(); i++)
+      {
+        String resellerID = resellerIDs.get(i).toString();
+        GUIManagedObject reseller = resellerService.getStoredGUIManagedObject(resellerID);
+
+        if (reseller != null && (force || !reseller.getReadOnly()))
+          {
+
+            dependencyRequest.put("apiVersion", 1);
+            dependencyRequest.put("objectType", "reseller");
+            dependencyRequest.put("id", resellerID);
+
+            JSONObject dependenciesObject = guiManagerGeneral.processGetDependencies(userID, dependencyRequest);
+            JSONArray dependencies = JSONUtilities.decodeJSONArray(dependenciesObject, "dependencies", new JSONArray());
+            boolean parentDependency = false;
+            if (dependencies.size() != 0)
+              {
+                for (int j = 0; j < dependencies.size(); j++)
+                  {
+                    JSONObject dependent = (JSONObject) dependencies.get(j);
+                    String ojectType = JSONUtilities.decodeString(dependent, "objectType", false);
+                    if ("reseller".equals(ojectType))
+                      {
+                        parentDependency = true;
+                        break;
+                      }
+                  }
+              }
+            if (!parentDependency)
+              {
+                existingResellers.add(reseller);
+                validIDs.add(resellerID);
+              }
+            else
+              {
+                if (jsonRoot.containsKey("id"))
+                  {
+                    response.put("responseCode",
+                        RESTAPIGenericReturnCodes.DEPENDENCY_RESTRICTION.getGenericResponseCode());
+                    response.put("responseMessage",
+                        RESTAPIGenericReturnCodes.DEPENDENCY_RESTRICTION.getGenericResponseMessage());
+                    return JSONUtilities.encodeObject(response);
+                  }
+              }
+          }
+      }
+    /*****************************************
+     *
+     * remove
+     *
+     *****************************************/
+    for (GUIManagedObject existingReseller : existingResellers)
+      {
         long epoch = epochServer.getKey();
 
         resellerService.removeReseller(existingReseller.getGUIManagedObjectID(), userID);
@@ -20107,7 +20180,6 @@ public class GUIManager
                       {
                         newResellers.add(reseller);
                       }
-
                     /*****************************************
                      *
                      * Remove the old Reseller list and update with the new
@@ -20145,7 +20217,9 @@ public class GUIManager
 
               }
           }
+
       }
+
 
     /*****************************************
      *
@@ -20155,19 +20229,7 @@ public class GUIManager
 
     if (jsonRoot.containsKey("id"))
       {
-        String resellerID = resellerIDs.get(0).toString();
-        GUIManagedObject reseller = resellerService.getStoredGUIManagedObject(resellerID);
-        if (reseller != null && (force || !reseller.getReadOnly()))
-          responseCode = "ok";
-        else if (reseller != null)
-          responseCode = "failedReadOnly";
-        else
-          {
-            responseCode = "resellerNotFound";
-
-          }
-
-        response.put("responseCode", responseCode);
+        response.put("responseCode", singleIDresponseCode);
         return JSONUtilities.encodeObject(response);
       }
 
@@ -20185,7 +20247,7 @@ public class GUIManager
 
     return JSONUtilities.encodeObject(response);
   }
-  
+ 
   /*****************************************
   *
   *  processConfigAdaptorSubscriberMessageTemplate
@@ -22552,8 +22614,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     response.put("responseCode", "ok");
     response.put("statusSetIds", statusSetIDs);
     return JSONUtilities.encodeObject(response);
-  }
-  
+  }  
+    
   /*****************************************
   *
   *  processPutSupplierOffer
@@ -22571,11 +22633,33 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     Date now = SystemTime.getCurrentTime();
     HashMap<String, Object> response = new HashMap<String, Object>();  
     String user = JSONUtilities.decodeString(jsonRoot, "loginName", false);
-    String activeSupplier = activeSupplierID(user);
+    String activeSupplier = activeSupplierAndParentSupplierIDs(user).get("activeSupplierID");
     boolean offerCanBeModified = true;
     String existingproductID = null;
     String existingVoucherID = null;
     String existingSupplierID = null;
+    
+    /*****************************************
+     * check if the supplier parent is active
+     *
+     *****************************************/
+    if (activeSupplierAndParentSupplierIDs(user).get("parentSupplierID") != null)
+      {
+        String parentSupplierID = activeSupplierAndParentSupplierIDs(user).get("parentSupplierID");
+        if (parentSupplierID != null)
+          {
+            Supplier parentSupplier = supplierService.getActiveSupplier(parentSupplierID, now);
+            if (parentSupplier == null)
+              {
+                response.put("responseCode",
+                    RESTAPIGenericReturnCodes.PARENT_SUPPLIER_INACTIVE.getGenericResponseCode());
+                response.put("responseMessage",
+                    RESTAPIGenericReturnCodes.PARENT_SUPPLIER_INACTIVE.getGenericResponseMessage());
+                return JSONUtilities.encodeObject(response);
+              }
+          }
+
+      }
     
     /*****************************************
      *
@@ -22935,8 +23019,30 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     List<OfferProduct> products = new ArrayList<>();
     List<OfferVoucher> vouchers = new ArrayList<>();
     String user = JSONUtilities.decodeString(jsonRoot, "loginName", false);
+    Date now = SystemTime.getCurrentTime();
+    String activeSupplier = activeSupplierAndParentSupplierIDs(user).get("activeSupplierID");
+    
+    /*****************************************
+     * check if the supplier parent is active
+     *
+     *****************************************/
+    if (activeSupplierAndParentSupplierIDs(user).get("parentSupplierID") != null)
+      {
+        String parentSupplierID = activeSupplierAndParentSupplierIDs(user).get("parentSupplierID");
+        if (parentSupplierID != null)
+          {
+            Supplier parentSupplier = supplierService.getActiveSupplier(parentSupplierID, now);
+            if (parentSupplier == null)
+              {
+                response.put("responseCode",
+                    RESTAPIGenericReturnCodes.PARENT_SUPPLIER_INACTIVE.getGenericResponseCode());
+                response.put("responseMessage",
+                    RESTAPIGenericReturnCodes.PARENT_SUPPLIER_INACTIVE.getGenericResponseMessage());
+                return JSONUtilities.encodeObject(response);
+              }
+          }
 
-    String activeSupplier = activeSupplierID(user);
+      }
 
     if (activeSupplier != null && activeSupplier.equals("InactiveReseller"))
       {
@@ -23062,7 +23168,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     String offerID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
     String user = JSONUtilities.decodeString(jsonRoot, "loginName", false);
-    String activeSupplier = activeSupplierID(user);
+    String activeSupplier = activeSupplierAndParentSupplierIDs(user).get("activeSupplierID");
+    Date now = SystemTime.getCurrentTime();
 
     /*****************************************
      *
@@ -23074,6 +23181,27 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     if (offerObject != null)
       {
+        /*****************************************
+         * check if the supplier parent is active
+         *
+         *****************************************/
+        if (activeSupplierAndParentSupplierIDs(user).get("parentSupplierID") != null)
+          {
+            String parentSupplierID = activeSupplierAndParentSupplierIDs(user).get("parentSupplierID");
+            if (parentSupplierID != null)
+              {
+                Supplier parentSupplier = supplierService.getActiveSupplier(parentSupplierID, now);
+                if (parentSupplier == null)
+                  {
+                    response.put("responseCode",
+                        RESTAPIGenericReturnCodes.PARENT_SUPPLIER_INACTIVE.getGenericResponseCode());
+                    response.put("responseMessage",
+                        RESTAPIGenericReturnCodes.PARENT_SUPPLIER_INACTIVE.getGenericResponseMessage());
+                    return JSONUtilities.encodeObject(response);
+                  }
+              }
+
+          }
 
         if (activeSupplier != null && activeSupplier.equals("InactiveReseller"))
           {
@@ -26583,52 +26711,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         keySerializer.serialize(topic, new StringKey(subscriberID)),
         valueSerializer.serialize(topic, tokenChange)
         ));
-  }
+  } 
   
- public String activeSupplierID (String userID) {
-    
-    String activeSupplierID = null;      
-    HashMap<String,List<String>> response = new HashMap<String,List<String>>();
-    Date now = SystemTime.getCurrentTime();
-    
-    
-    for (GUIManagedObject storedSupplierObject : supplierService.getStoredSuppliers())
-      {
-        if (storedSupplierObject instanceof Supplier)
-          {
-            Supplier storedSupplier = (Supplier)storedSupplierObject;
-          
-            if (storedSupplier.getUserIDs() != null
-                && !((storedSupplier.getUserIDs()).isEmpty()))
-              {
-               List<String> supplierUserIds = storedSupplier.getUserIDs();
-
-                if (supplierUserIds.contains(userID))
-                  {
-                    if (supplierService.isActiveSupplier(storedSupplier, now))
-                      {
-                        activeSupplierID = storedSupplier.getSupplierID();                      
-                        break;
-                        
-                      }
-                    else
-                      {    
-                        activeSupplierID = "InactiveReseller";
-                        log.warn("The reseller is inactive" + storedSupplier.getSupplierID());
-                        break;                                                  
-                      }
-                  }
-              }
-
-          }
-      }
-   
-     return activeSupplierID;
-       
-      }
-  
-
-/************************************************************************
+ /************************************************************************
  *
  *  separate product and voucher  from offer json and 
  *  form a new json to create new product and new voucher with offer name.
@@ -26643,14 +26728,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     
     
     String userID = JSONUtilities.decodeString(jsonRoot, "loginName", true);
-    String activeSupplier = activeSupplierID(userID);
+    String activeSupplier = activeSupplierAndParentSupplierIDs(userID).get("activeSupplierID");
     if (productJSONArray != null &&!(productJSONArray.isEmpty()))
       {
         productJSONObject = ((JSONObject) productJSONArray.get(0));
         productJSON = JSONUtilities.decodeJSONObject(productJSONObject, "product", false);
         String productID = productService.generateProductID();
         productJSON.put("id", productID);
-        productJSON.put("supplierID", activeSupplier);        
+        productJSON.put("supplierID", activeSupplier);
         productJSON.put("apiVersion", JSONUtilities.decodeInteger(jsonRoot, "apiVersion"));
         productJSON.put("name", JSONUtilities.decodeString(jsonRoot, "name"));
         productJSON.put("display", JSONUtilities.decodeString(jsonRoot, "name"));
@@ -26688,14 +26773,17 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     response.put("productJSONObject", productJSONObject);
     response.put("productJSON",productJSON);
     response.put("voucherJSONObject", voucherJSONObject);
-    response.put("voucherJSON",voucherJSON);
-
-
-    
+    response.put("voucherJSON",voucherJSON);   
     
     
     return response;
   }
+  
+  /************************************************************************
+  *
+  * method to get the product , voucher and supplierID of an offer
+  *
+  ************************************************************************/
   
   public Map<String, Object> OfferProductVoucherAndSupplierIDs(Offer offer) {
     
@@ -26741,6 +26829,58 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     String id = JSONUtilities.decodeString(criteriaFieldJSON, "id", true);
     result = id.equals(CriterionContext.EVALUATION_WK_DAY_ID) || id.equals(CriterionContext.EVALUATION_TIME_ID) || id.equals(CriterionContext.EVALUATION_MONTH_ID) || id.equals(CriterionContext.EVALUATION_DAY_OF_MONTH_ID) || id.equals(CriterionContext.EVALUATION_ANIVERSARY_DAY_ID);
     return result;
+  }
+
+  /************************************************************************
+   *
+   * method to get the active suppler id and parentSupplier ID
+   *
+   ************************************************************************/
+  
+  public Map<String, String> activeSupplierAndParentSupplierIDs(String userID) {
+ 
+    String activeSupplierID = null;
+    String parentSupplierID = null;
+    HashMap<String, String> response = new HashMap<String, String>();
+    Date now = SystemTime.getCurrentTime();
+
+    for (GUIManagedObject storedSupplierObject : supplierService.getStoredSuppliers())
+      {
+        if (storedSupplierObject instanceof Supplier)
+          {
+            Supplier storedSupplier = (Supplier) storedSupplierObject;
+
+            if (storedSupplier.getUserIDs() != null && !((storedSupplier.getUserIDs()).isEmpty()))
+              {
+                List<String> supplierUserIds = storedSupplier.getUserIDs();
+
+                if (supplierUserIds.contains(userID))
+                  {
+                    if (supplierService.isActiveSupplier(storedSupplier, now))
+                      {
+                        parentSupplierID = storedSupplier.getParentSupplierID();
+                        activeSupplierID = storedSupplier.getSupplierID();
+                        response.put("activeSupplierID", activeSupplierID);
+                        response.put("parentSupplierID", parentSupplierID);
+                        break;
+
+                      }
+                    else
+                      {
+                        activeSupplierID = "InactiveReseller";
+                        response.put("activeSupplierID", activeSupplierID);
+                        response.put("parentSupplierID", parentSupplierID);
+                        log.warn("The reseller is inactive" + storedSupplier.getSupplierID());
+                        break;
+                      }
+                  }
+              }
+
+          }
+      }
+
+    return response;
+
   }
 
 }

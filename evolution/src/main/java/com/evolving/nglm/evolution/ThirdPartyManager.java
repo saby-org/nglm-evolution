@@ -891,7 +891,6 @@ public class ThirdPartyManager
             case getSupplierOfferList:
               jsonResponse = processGetSupplierOfferList(jsonRoot);
               break;
-              
             case removeSupplierOffer:
               jsonResponse = processRemoveSupplierOffer(jsonRoot);
               break;
@@ -2887,11 +2886,13 @@ public class ThirdPartyManager
     String endDateString = readString(jsonRoot, "endDate", false);
     String offerObjective = readString(jsonRoot, "objective", false);
     String userID = readString(jsonRoot, "loginName", true);
+    String parentResellerID = "";
+    Date now = SystemTime.getCurrentTime();
 
     Date offerStartDate = prepareStartDate(getDateFromString(startDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
     Date offerEndDate = prepareEndDate(getDateFromString(endDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
     
-    Map<String, List<String>> activeResellerAndSalesChannelIDs = activeResellerAndSalesChannelIDs(userID);   
+    Map<String, List<String>> activeResellerAndSalesChannelIDs = activeResellerAndSalesChannelIDs(userID);    
 
     try
     {
@@ -2905,7 +2906,28 @@ public class ThirdPartyManager
               return JSONUtilities.encodeObject(response);
             }
         }
-      
+        if (activeResellerAndSalesChannelIDs.get("parentResellerID") != null
+            && !(activeResellerAndSalesChannelIDs.get("parentResellerID").isEmpty()))
+          {
+            if (activeResellerAndSalesChannelIDs.get("parentResellerID").get(0) != null)
+              {
+                parentResellerID = activeResellerAndSalesChannelIDs.get("parentResellerID").get(0);
+                if (parentResellerID != null)
+                  {
+                    Reseller parentReseller = resellerService.getActiveReseller(parentResellerID, now);
+
+                    if (parentReseller == null)
+                      {
+                        response.put(GENERIC_RESPONSE_CODE,
+                            RESTAPIGenericReturnCodes.PARENT_RESELLER_INACTIVE.getGenericResponseCode());
+                        response.put(GENERIC_RESPONSE_MSG,
+                            RESTAPIGenericReturnCodes.PARENT_RESELLER_INACTIVE.getGenericResponseMessage());
+                        return JSONUtilities.encodeObject(response);
+                      }
+                  }
+              }
+          }
+    
       if ((activeResellerAndSalesChannelIDs.containsKey("activeReseller")) && (activeResellerAndSalesChannelIDs.get("activeReseller")).size() == 0) {
         updateResponse(response, RESTAPIGenericReturnCodes.INACTIVE_RESELLER);
         return JSONUtilities.encodeObject(response);
@@ -3010,6 +3032,12 @@ public class ThirdPartyManager
                   .collect(Collectors.toList());
 
             } 
+          //
+          // filter the offers based on the product supplier parent ID
+          //
+          
+          offers = offers.stream().filter(offer -> (offerValidation(offer.getOfferID()))).collect(Collectors.toList());
+          
 
           /*****************************************
            *
@@ -3936,6 +3964,9 @@ public class ThirdPartyManager
                   // not used anymore
                   // scoringStrategyIDs.add(strategyID);
                 }
+               
+              presentedOfferIDs = (ArrayList<String>) presentedOfferIDs.stream().filter(offerID -> (offerValidation(offerID))).collect(Collectors.toList());
+              
               String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
               String tokenTypeID = subscriberStoredToken.getTokenTypeID();
 
@@ -4125,7 +4156,22 @@ public class ThirdPartyManager
       String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation(); 
       Offer offer = offerService.getActiveOffer(offerID, now);
+      if (offer != null)
+        {
+          Boolean validOffer = offerValidation(offer.getOfferID());
+          if (!(validOffer))
+            {
+              response.put(GENERIC_RESPONSE_CODE,
+                  RESTAPIGenericReturnCodes.PRODUCT_PARENT_SUPPLIER_INACTIVE.getGenericResponseCode());
+              response.put(GENERIC_RESPONSE_MSG,
+                  RESTAPIGenericReturnCodes.PRODUCT_PARENT_SUPPLIER_INACTIVE.getGenericResponseMessage());
+              return JSONUtilities.encodeObject(response);
+            }
+        } 
+      
+       
       deliveryRequestID = purchaseOffer(subscriberProfile,false, subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, resellerID, kafkaProducer).getDeliveryRequestID();
+
       
       // Redeem the token : Send an AcceptanceLog to EvolutionEngine
 
@@ -4225,6 +4271,7 @@ public class ThirdPartyManager
     String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
     String offerDisplay = JSONUtilities.decodeString(jsonRoot, "offer", false);
     String salesChannel = JSONUtilities.decodeString(jsonRoot, "salesChannel", false);
+    Date now = SystemTime.getCurrentTime();
     if (salesChannel == null) // this is mandatory, but we want to control the return code
       {
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
@@ -4244,6 +4291,7 @@ public class ThirdPartyManager
     String userID = JSONUtilities.decodeString(jsonRoot, "loginName", true); 
     Map<String, List<String>> activeResellerAndSalesChannelIDs = activeResellerAndSalesChannelIDs(userID);
     String resellerID = "";
+    String parentResellerID = "";
     
     if ((activeResellerAndSalesChannelIDs.containsKey("activeReseller")) && (activeResellerAndSalesChannelIDs.get("activeReseller")).size() != 0) {
       resellerID = (activeResellerAndSalesChannelIDs.get("activeReseller")).get(0);
@@ -4259,6 +4307,27 @@ public class ThirdPartyManager
     {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
       
+      if (activeResellerAndSalesChannelIDs.get("parentResellerID") != null
+          && !(activeResellerAndSalesChannelIDs.get("parentResellerID").isEmpty()))
+        {
+          if (activeResellerAndSalesChannelIDs.get("parentResellerID").get(0) != null)
+            {
+              parentResellerID = activeResellerAndSalesChannelIDs.get("parentResellerID").get(0);
+              if (parentResellerID != null)
+                {
+                  Reseller parentReseller = resellerService.getActiveReseller(parentResellerID, now);
+
+                  if (parentReseller == null)
+                    {
+                      response.put(GENERIC_RESPONSE_CODE,
+                          RESTAPIGenericReturnCodes.PARENT_RESELLER_INACTIVE.getGenericResponseCode());
+                      response.put(GENERIC_RESPONSE_MSG,
+                          RESTAPIGenericReturnCodes.PARENT_RESELLER_INACTIVE.getGenericResponseMessage());
+                      return JSONUtilities.encodeObject(response);
+                    }
+                }
+            }
+        }
       if ((activeResellerAndSalesChannelIDs.containsKey("activeReseller")) && (activeResellerAndSalesChannelIDs.get("activeReseller")).size() == 0) {
         updateResponse(response, RESTAPIGenericReturnCodes.INACTIVE_RESELLER);
         return JSONUtilities.encodeObject(response);
@@ -4273,8 +4342,6 @@ public class ThirdPartyManager
           if (log.isDebugEnabled()) log.debug("SubscriberProfile is null for subscriberID {}", subscriberID);
           return JSONUtilities.encodeObject(response);
         }
-
-      Date now = SystemTime.getCurrentTime();
       
       if (offerID != null)
         {
@@ -4305,6 +4372,19 @@ public class ThirdPartyManager
           updateResponse(response, RESTAPIGenericReturnCodes.MISSING_PARAMETERS);
           return JSONUtilities.encodeObject(response);          
         }
+      
+        if (offerID != null)
+          {
+            Boolean validOffer = offerValidation(offerID);
+            if (!(validOffer))
+              {
+                response.put(GENERIC_RESPONSE_CODE,
+                    RESTAPIGenericReturnCodes.PRODUCT_PARENT_SUPPLIER_INACTIVE.getGenericResponseCode());
+                response.put(GENERIC_RESPONSE_MSG,
+                    RESTAPIGenericReturnCodes.PRODUCT_PARENT_SUPPLIER_INACTIVE.getGenericResponseMessage());
+                return JSONUtilities.encodeObject(response);
+              }
+          }
 
       String salesChannelID = null;
       for (SalesChannel sc : salesChannelService.getActiveSalesChannels(now))
@@ -5752,23 +5832,23 @@ public class ThirdPartyManager
   *  activeReseller and the SalesChannel List based on the userID
   *
   *****************************************/
-  
- public Map<String, List<String>> activeResellerAndSalesChannelIDs (String userID) {
-    
+
+  public Map<String, List<String>> activeResellerAndSalesChannelIDs(String userID)
+  {
+
     List<String> activeResellerID = new ArrayList<>();
-    List<String> salesChannelIDList = new ArrayList<>();      
-    HashMap<String,List<String>> response = new HashMap<String,List<String>>();
+    List<String> salesChannelIDList = new ArrayList<>();
+    List<String> parentResellerID = new ArrayList<>();
+    HashMap<String, List<String>> response = new HashMap<String, List<String>>();
     Date now = SystemTime.getCurrentTime();
-    
-    
+
     for (GUIManagedObject storedResellerObject : resellerService.getStoredResellers())
       {
         if (storedResellerObject instanceof Reseller)
           {
-            Reseller storedReseller = (Reseller)storedResellerObject;
-          
-            if (storedReseller.getUserIDs() != null
-                && !((storedReseller.getUserIDs()).isEmpty()))
+            Reseller storedReseller = (Reseller) storedResellerObject;
+
+            if (storedReseller.getUserIDs() != null && !((storedReseller.getUserIDs()).isEmpty()))
               {
 
                 if ((storedReseller.getUserIDs()).contains(userID))
@@ -5777,31 +5857,33 @@ public class ThirdPartyManager
                       {
                         activeResellerID.add(storedReseller.getResellerID());
                         response.put("activeReseller", activeResellerID);
+                        parentResellerID.add(storedReseller.getParentResellerID());
+                        response.put("parentResellerID", parentResellerID);
                         break;
-                        
+
                       }
                     else
-                      {    
+                      {
                         response.put("activeReseller", activeResellerID);
+                        response.put("parentResellerID", parentResellerID);
                         log.warn("The reseller is inactive" + storedReseller.getResellerID());
-                        break;                                                  
+                        break;
                       }
                   }
               }
 
           }
       }
-     
+
     if (activeResellerID.size() != 0)
       {
         for (GUIManagedObject storedSalesChannelObject : salesChannelService.getStoredSalesChannels())
           {
-            
+
             if (storedSalesChannelObject instanceof SalesChannel)
               {
-                SalesChannel storedSalesChannel = (SalesChannel)storedSalesChannelObject;
-                if (storedSalesChannel.getResellerIDs() != null
-                    && !((storedSalesChannel.getResellerIDs()).isEmpty()))
+                SalesChannel storedSalesChannel = (SalesChannel) storedSalesChannelObject;
+                if (storedSalesChannel.getResellerIDs() != null && !((storedSalesChannel.getResellerIDs()).isEmpty()))
                   {
 
                     if ((((SalesChannel) storedSalesChannel).getResellerIDs()).contains(activeResellerID.get(0)))
@@ -5814,9 +5896,101 @@ public class ThirdPartyManager
           }
         response.put("salesChannelIDsList", salesChannelIDList);
       }
-     return response;
-       
+
+    return response;
+
+  }
+  
+  /****************************************************
+   *
+   * validate the offers based on the parents partners
+   *
+   ******************************************************/
+
+  public Boolean offerValidation(String offerID)
+  {
+
+    Date now = SystemTime.getCurrentTime();
+    Offer offer = offerService.getActiveOffer(offerID, now);
+    Set<OfferVoucher> offerVouchers = new HashSet<>();
+    Set<OfferProduct> offerProducts = new HashSet<>();
+
+    String voucherID = null;
+    String productID = null;
+    String supplierID = "";
+    Boolean offerValid = true;
+
+    if (offer != null)
+      {
+        if (offer.getOfferVouchers() != null && !(offer.getOfferVouchers().isEmpty()))
+          {
+            offerVouchers = offer.getOfferVouchers();
+            for (OfferVoucher voucher : offerVouchers)
+              {
+                voucherID = voucher.getVoucherID();
+                Voucher offerVoucher = voucherService.getActiveVoucher(voucherID, now);
+                if (offerVoucher != null)
+                  {
+                    if (offerVoucher.getSupplierID() != null && !(offerVoucher.getSupplierID().isEmpty()))
+                      {
+                        supplierID = offerVoucher.getSupplierID();
+
+                      }
+                  }
+
+                break;
+              }
+          }
+        if (offer.getOfferProducts() != null && !(offer.getOfferProducts().isEmpty()))
+          {
+            offerProducts = offer.getOfferProducts();
+            for (OfferProduct product : offerProducts)
+              {
+                productID = product.getProductID();
+                Product offerproduct = productService.getActiveProduct(productID, now);
+                if (offerproduct != null)
+                  {
+                    if (offerproduct.getSupplierID() != null && !(offerproduct.getSupplierID().isEmpty()))
+                      {
+                        supplierID = offerproduct.getSupplierID();
+
+                      }
+                  }
+                break;
+              }
+          }
+
+        Supplier offerSupplier = supplierService.getActiveSupplier(supplierID, now);
+        if (offerSupplier != null)
+          {
+
+            if (supplierService.isActiveSupplier(offerSupplier, now))
+              {
+                String parentSupplierID = offerSupplier.getParentSupplierID();
+                if (parentSupplierID != null)
+                  {
+
+                    Supplier parentSupplier = supplierService.getActiveSupplier(parentSupplierID, now);
+
+                    if (parentSupplier != null)
+                      {
+
+                        offerValid = true;
+
+                      }
+                    else
+                      {
+                        offerValid = false;
+                      }
+                  }
+              }
+          }
       }
+
+    return offerValid;
+  }
+
+
 
   /*****************************************
    *
