@@ -728,7 +728,6 @@ public class EvolutionEngine
     evolutionEventSerdes.add(executeActionOtherSubscriberSerde);
     evolutionEventSerdes.add(recordSubscriberIDSerde);
     evolutionEventSerdes.add(journeyRequestSerde);
-    evolutionEventSerdes.add(journeyStatisticSerde);
     evolutionEventSerdes.add(loyaltyProgramRequestSerde);
     evolutionEventSerdes.add(subscriberGroupSerde);
     evolutionEventSerdes.add(subscriberTraceControlSerde);
@@ -6120,6 +6119,8 @@ public class EvolutionEngine
         result.addAll(subscriberState.getProfileSegmentChangeEvents());
         result.addAll(subscriberState.getProfileLoyaltyProgramChangeEvents());
       }
+    // enrich with alternateIds all here
+    result.stream().forEach(subscriberStreamOutput -> subscriberStreamOutput.enrichSubscriberStreamOutput(subscriberState.getSubscriberProfile(),subscriberGroupEpochReader));
     return result;
   }
 

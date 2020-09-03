@@ -7,35 +7,22 @@
 package com.evolving.nglm.evolution;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
 
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
+import com.evolving.nglm.core.*;
+import org.apache.kafka.connect.data.*;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.SubscriberStreamOutput;
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 
-public abstract class DeliveryRequest implements EvolutionEngineEvent, SubscriberStreamOutput, Action, Comparable
+public abstract class DeliveryRequest extends SubscriberStreamOutput implements EvolutionEngineEvent, Action, Comparable
 {
   /*****************************************
   *
@@ -199,20 +186,13 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   //
 
   private static Schema commonSchema = null;
-  private static Schema notificationSchema = null;
 
   static
   {
-    SchemaBuilder notificationSchemaBuilder = SchemaBuilder.struct();
-    notificationSchemaBuilder.name("notification_history");
-    notificationSchemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    notificationSchemaBuilder.field("channelID",Schema.STRING_SCHEMA);
-    notificationSchemaBuilder.field("metricHistory",MetricHistory.schema());
-    notificationSchema = notificationSchemaBuilder.build();
-
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("delivery_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(5));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),9));
+    for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("deliveryRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequestSource", Schema.STRING_SCHEMA);
     schemaBuilder.field("originatingDeliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
@@ -240,6 +220,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     schemaBuilder.field("diplomaticBriefcase", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).name("deliveryrequest_diplomaticBriefcase").schema());
     schemaBuilder.field("rescheduledDate", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("notificationHistory",MetricHistory.serde().optionalSchema());
+    schemaBuilder.field("subscriberFields", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).optional().schema());
     commonSchema = schemaBuilder.build();
   };
 
@@ -304,6 +285,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   private Map<String, String> diplomaticBriefcase;
   private Date rescheduledDate;
   private MetricHistory notificationHistory;
+  private Map<String,String> subscriberFields;
 
   /*****************************************
   *
@@ -338,6 +320,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   public boolean isPending() { return deliveryStatus == DeliveryStatus.Pending; }
   public Date getRescheduledDate() { return rescheduledDate; }
   public MetricHistory getNotificationHistory(){ return notificationHistory; }
+  public Map<String,String> getSubscriberFields(){return subscriberFields;}
 
   //
   //  setters
@@ -360,7 +343,8 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   public void setModuleID(String moduleID) { this.moduleID = moduleID; }
   public void setDiplomaticBriefcase(Map<String, String> diplomaticBriefcase) { this.diplomaticBriefcase = (diplomaticBriefcase != null) ? diplomaticBriefcase : new HashMap<String,String>(); }
   public void setRescheduledDate(Date rescheduledDate) { this.rescheduledDate = rescheduledDate; }
-  public void setNotificationHistory(MetricHistory notificationHistory){ this.notificationHistory = notificationHistory; };
+  public void setNotificationHistory(MetricHistory notificationHistory){ this.notificationHistory = notificationHistory; }
+  public void setSubscriberFields(Map<String,String> subscriberFields){this.subscriberFields=subscriberFields;}
 
   /*****************************************
   *
@@ -445,6 +429,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.diplomaticBriefcase = new HashMap<String, String>();
     this.rescheduledDate = null;
     this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
+    this.subscriberFields = buildSubscriberFields(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader());
   }
   
   /*******************************************
@@ -453,7 +438,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   *
   *******************************************/
 
-  protected DeliveryRequest(String uniqueKey, String subscriberID, String deliveryType, String deliveryRequestSource, boolean universalControlGroup)
+  protected DeliveryRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, String uniqueKey, String subscriberID, String deliveryType, String deliveryRequestSource, boolean universalControlGroup)
   {
     /*****************************************
     *
@@ -485,6 +470,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.diplomaticBriefcase = new HashMap<String, String>();
     this.rescheduledDate = null;
     this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
+    this.subscriberFields = buildSubscriberFields(subscriberProfile,subscriberGroupEpochReader);
   }
 
   /*****************************************
@@ -495,6 +481,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
 
   protected DeliveryRequest(DeliveryRequest deliveryRequest)
   {
+    super(deliveryRequest);
     this.deliveryRequestID = deliveryRequest.getDeliveryRequestID();
     this.deliveryRequestSource = deliveryRequest.getDeliveryRequestSource();
     this.originatingDeliveryRequestID = deliveryRequest.getOriginatingDeliveryRequestID();
@@ -519,22 +506,65 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.diplomaticBriefcase = deliveryRequest.getDiplomaticBriefcase();
     this.rescheduledDate = deliveryRequest.getRescheduledDate();
     this.notificationHistory = deliveryRequest.getNotificationHistory();
+    this.subscriberFields = new LinkedHashMap<>();
+    if(deliveryRequest.getSubscriberFields()!=null) subscriberFields.putAll(deliveryRequest.getSubscriberFields());
   }
 
   /*****************************************
-  *
-  *  constructor -- external
-  *
-  *****************************************/
+   *
+   *  constructor -- external full
+   *
+   *****************************************/
 
-  protected DeliveryRequest(JSONObject jsonRoot)
+  protected DeliveryRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject jsonRoot)
   {
     /*****************************************
-    *
-    *  simple fields
-    *
-    *****************************************/
+     *
+     *  simple fields
+     *
+     *****************************************/
 
+    super(subscriberProfile,subscriberGroupEpochReader);
+    this.deliveryRequestID = JSONUtilities.decodeString(jsonRoot, "deliveryRequestID", true);
+    this.deliveryRequestSource = "external";
+    this.originatingDeliveryRequestID = JSONUtilities.decodeString(jsonRoot, "originatingDeliveryRequestID", false);
+    this.originatingRequest = JSONUtilities.decodeBoolean(jsonRoot, "originatingRequest", Boolean.TRUE);
+    this.creationDate = SystemTime.getCurrentTime();
+    this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
+    this.deliveryPriority = DeliveryPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryPriority", "standard"));
+    this.eventID = JSONUtilities.decodeString(jsonRoot, "eventID", true);
+    this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", true);
+    this.featureID = JSONUtilities.decodeString(jsonRoot, "featureID", true);
+    this.deliveryPartition = null;
+    this.retries = 0;
+    this.timeout = null;
+    this.correlator = null;
+    this.control = JSONUtilities.decodeBoolean(jsonRoot, "control", Boolean.FALSE);
+    this.segmentContactPolicyID = null;
+    this.deliveryType = JSONUtilities.decodeString(jsonRoot, "deliveryType", true);
+    this.deliveryStatus = DeliveryStatus.Pending;
+    this.deliveryDate = null;
+    this.diplomaticBriefcase = (Map<String, String>) jsonRoot.get("diplomaticBriefcase");
+    this.rescheduledDate = JSONUtilities.decodeDate(jsonRoot, "rescheduledDate", false);
+    this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
+    this.subscriberFields = buildSubscriberFields(subscriberProfile,subscriberGroupEpochReader);
+  }
+
+  /*****************************************
+   *
+   *  constructor -- external full
+   *
+   *****************************************/
+
+  protected DeliveryRequest(DeliveryRequest originatingDeliveryRequest, JSONObject jsonRoot)
+  {
+    /*****************************************
+     *
+     *  simple fields
+     *
+     *****************************************/
+
+    super(originatingDeliveryRequest);
     this.deliveryRequestID = JSONUtilities.decodeString(jsonRoot, "deliveryRequestID", true);
     this.deliveryRequestSource = "external";
     this.originatingDeliveryRequestID = JSONUtilities.decodeString(jsonRoot, "originatingDeliveryRequestID", false);
@@ -559,6 +589,8 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.diplomaticBriefcase = (Map<String, String>) jsonRoot.get("diplomaticBriefcase");
     this.rescheduledDate = JSONUtilities.decodeDate(jsonRoot, "rescheduledDate", false);
     this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
+    this.subscriberFields = new LinkedHashMap<>();
+    if(originatingDeliveryRequest.getSubscriberFields()!=null) this.subscriberFields.putAll(originatingDeliveryRequest.getSubscriberFields());
   }
 
   /*****************************************
@@ -591,6 +623,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.diplomaticBriefcase = null;
     this.rescheduledDate = null;
     this.notificationHistory = null;
+    this.subscriberFields = null;
   }
 
   /*****************************************
@@ -601,6 +634,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
 
   protected static void packCommon(Struct struct, DeliveryRequest deliveryRequest)
   {
+    packSubscriberStreamOutput(struct,deliveryRequest);
     struct.put("deliveryRequestID", deliveryRequest.getDeliveryRequestID());
     struct.put("deliveryRequestSource", deliveryRequest.getDeliveryRequestSource());
     struct.put("originatingDeliveryRequestID", deliveryRequest.getOriginatingDeliveryRequestID());
@@ -625,6 +659,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     struct.put("diplomaticBriefcase", (deliveryRequest.getDiplomaticBriefcase() == null ? new HashMap<String, String>() : deliveryRequest.getDiplomaticBriefcase()));
     struct.put("rescheduledDate", deliveryRequest.getRescheduledDate() != null ? deliveryRequest.getRescheduledDate().getTime() : null);
     struct.put("notificationHistory",MetricHistory.serde().packOptional(deliveryRequest.getNotificationHistory()));
+    struct.put("subscriberFields",deliveryRequest.getSubscriberFields());
   }
 
   /*****************************************
@@ -635,13 +670,14 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
 
   protected DeliveryRequest(SchemaAndValue schemaAndValue)
   {
+    super(schemaAndValue);
     //
     //  data
     //
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
     //
     //  unpack
@@ -650,28 +686,29 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     Struct valueStruct = (Struct) value;
     String deliveryRequestID = valueStruct.getString("deliveryRequestID");
     String deliveryRequestSource = valueStruct.getString("deliveryRequestSource");
-    String originatingDeliveryRequestID = (schemaVersion >= 3) ? valueStruct.getString("originatingDeliveryRequestID") : null;
-    boolean originatingRequest = (schemaVersion >= 2) ? valueStruct.getBoolean("originatingRequest") : true;
-    Date creationDate = (schemaVersion >= 3) ? new Date(valueStruct.getInt64("creationDate")) : ((schemaVersion >= 2) ? (Date) valueStruct.get("creationDate") : SystemTime.getCurrentTime());
+    String originatingDeliveryRequestID = valueStruct.getString("originatingDeliveryRequestID");
+    boolean originatingRequest = valueStruct.getBoolean("originatingRequest");
+    Date creationDate = new Date(valueStruct.getInt64("creationDate"));
     String subscriberID = valueStruct.getString("subscriberID");
-    String originatingSubscriberID = (schemaVersion >=5) ? valueStruct.getString("originatingSubscriberID") : null;
-    String targetedSubscriberID = (schemaVersion >=5) ? valueStruct.getString("targetedSubscriberID") : null;
+    String originatingSubscriberID = (schemaVersion >=9) ? valueStruct.getString("originatingSubscriberID") : null;
+    String targetedSubscriberID = (schemaVersion >=9) ? valueStruct.getString("targetedSubscriberID") : null;
     DeliveryPriority deliveryPriority = DeliveryPriority.fromExternalRepresentation(valueStruct.getString("deliveryPriority"));
     String eventID = valueStruct.getString("eventID");
     String moduleID = valueStruct.getString("moduleID");
     String featureID = valueStruct.getString("featureID");
     Integer deliveryPartition = valueStruct.getInt32("deliveryPartition");
     int retries = valueStruct.getInt32("retries");
-    Date timeout = (schemaVersion >= 3) ? (valueStruct.get("timeout") != null ? new Date(valueStruct.getInt64("timeout")) : null) : (Date) valueStruct.get("timeout");
+    Date timeout = valueStruct.get("timeout") != null ? new Date(valueStruct.getInt64("timeout")) : null;
     String correlator = valueStruct.getString("correlator");
     boolean control = valueStruct.getBoolean("control");
     String segmentContactPolicyID = valueStruct.getString("segmentContactPolicyID");
     String deliveryType = valueStruct.getString("deliveryType");
     DeliveryStatus deliveryStatus = DeliveryStatus.fromExternalRepresentation(valueStruct.getString("deliveryStatus"));
-    Date deliveryDate = (schemaVersion >= 3) ? (valueStruct.get("deliveryDate") != null ? new Date(valueStruct.getInt64("deliveryDate")) : null) : (Date) valueStruct.get("deliveryDate");
+    Date deliveryDate = valueStruct.get("deliveryDate") != null ? new Date(valueStruct.getInt64("deliveryDate")) : null;
     Map<String, String> diplomaticBriefcase = (Map<String, String>) valueStruct.get("diplomaticBriefcase");
     Date rescheduledDate = (schemaVersion >= 4) ? (valueStruct.get("rescheduledDate") != null ? new Date(valueStruct.getInt64("rescheduledDate")) : null) : null;
     MetricHistory notificationHistory = schemaVersion >= 4 ?  MetricHistory.serde().unpackOptional(new SchemaAndValue(schema.field("notificationHistory").schema(),valueStruct.get("notificationHistory"))) : null;
+    Map<String,String> subscriberFields = (schemaVersion >= 8 && schema.field("subscriberFields")!=null && valueStruct.get("subscriberFields") != null) ? (Map<String,String>) valueStruct.get("subscriberFields") : new LinkedHashMap<>();
 
     //
     //  return
@@ -701,6 +738,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     this.diplomaticBriefcase = diplomaticBriefcase;
     this.rescheduledDate = rescheduledDate;
     this.notificationHistory = notificationHistory;
+    this.subscriberFields = subscriberFields;
   }
 
   /****************************************
@@ -721,6 +759,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     guiPresentationMap.put(ORIGINATINGDELIVERYREQUESTID, getOriginatingDeliveryRequestID());
     guiPresentationMap.put(EVENTDATE, getDateString(getEventDate()));
     guiPresentationMap.put(EVENTID, getEventID());    
+    guiPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation()); 
     guiPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
     guiPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
     guiPresentationMap.put(ACTIVITYTYPE, getActivityType().toString());
@@ -740,6 +779,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     thirdPartyPresentationMap.put(ORIGINATINGDELIVERYREQUESTID, getOriginatingDeliveryRequestID());
     thirdPartyPresentationMap.put(EVENTDATE, getDateString(getEventDate()));
     thirdPartyPresentationMap.put(EVENTID, getEventID()); 
+    thirdPartyPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation()); 
     thirdPartyPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
     thirdPartyPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
     thirdPartyPresentationMap.put(ACTIVITYTYPE, getActivityType().toString());
@@ -901,6 +941,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     b.append("," + rescheduledDate);
     b.append("," + originatingSubscriberID);
     b.append("," + targetedSubscriberID);
+    b.append("," + subscriberFields);
     return b.toString();
   }
 
@@ -961,6 +1002,22 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
             break;
           }
       }
+  }
+
+  // build subscriberFields populated
+  private Map<String,String> buildSubscriberFields(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader) {
+    Map<String,String> subscriberFields = new LinkedHashMap<>();
+    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
+    for(DeliveryManagerDeclaration deliveryManagerDeclaration:Deployment.getDeliveryManagers().values())
+    {
+      for(Map.Entry<String,CriterionField> entry:deliveryManagerDeclaration.getSubscriberProfileFields().entrySet())
+      {
+        String value = (String)entry.getValue().retrieveNormalized(evaluationRequest);
+        if(log.isTraceEnabled()) log.trace("adding {} {} for subscriber {}",entry.getKey(),value,subscriberProfile.getSubscriberID());
+        subscriberFields.put(entry.getKey(),value);
+      }
+    }
+    return subscriberFields;
   }
 
 }

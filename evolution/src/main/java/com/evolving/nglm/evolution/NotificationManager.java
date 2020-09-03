@@ -208,7 +208,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       {
         SchemaBuilder schemaBuilder = SchemaBuilder.struct();
         schemaBuilder.name("service_notification_request");
-        schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 3));
+        schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 8));
         for (Field field : commonSchema().fields())
           schemaBuilder.field(field.name(), field.schema());
         schemaBuilder.field("destination", Schema.STRING_SCHEMA);
@@ -595,7 +595,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
       Schema schema = schemaAndValue.schema();
       Object value = schemaAndValue.value();
-      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
+      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
 
       //
       // unpack
@@ -890,6 +890,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
              request = new NotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters);
              request.setModuleID(moduleID);
              request.setFeatureID(deliveryRequestSource);
+             request.setRestricted(contactType.getRestricted());
              request.setDeliveryPriority(contactType.getDeliveryPriority());
              request.setNotificationHistory(evolutionEventContext.getSubscriberState().getNotificationHistory());
            }

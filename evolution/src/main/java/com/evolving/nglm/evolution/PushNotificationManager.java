@@ -168,7 +168,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_pushnotification_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("destination", Schema.STRING_SCHEMA);
       schemaBuilder.field("language", Schema.STRING_SCHEMA);
@@ -295,24 +295,6 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
 
     /*****************************************
     *
-    *  constructor -- external
-    *
-    *****************************************/
-    
-    public PushNotificationManagerRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
-    {
-      super(jsonRoot);
-      this.destination = JSONUtilities.decodeString(jsonRoot, "destination", true);
-      this.language = JSONUtilities.decodeString(jsonRoot, "language", true);
-      this.templateID = JSONUtilities.decodeString(jsonRoot, "templateID", true);
-      this.tags = decodeTags(JSONUtilities.decodeJSONArray(jsonRoot, "tags", new JSONArray()));
-      this.status = MessageStatus.PENDING;
-      this.returnCode = MessageStatus.PENDING.getReturnCode();
-      this.returnCodeDetails = null;
-    }
-
-    /*****************************************
-    *
     *  decodeMessageTags
     *
     *****************************************/
@@ -428,7 +410,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
 
       Schema schema = schemaAndValue.schema();
       Object value = schemaAndValue.value();
-      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
+      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
 
       //
       //  unpack

@@ -141,6 +141,8 @@ public abstract class DeliveryManager
   private String responseTopic;
   private String routingTopic;
   private int deliveryRatePerMinute;
+  private int correlatorUpdateTimeoutSeconds;
+  private long correlatorCleanerFrequencyMilliSeconds;
   //
   //  derived configuration
   //
@@ -189,6 +191,7 @@ public abstract class DeliveryManager
 
   private Thread submitRequestWorkerThread = null;
   private Thread receiveCorrelatorUpdateWorkerThread = null;
+  private Timer correlatorCleanerThread = null;
 
   //
   //  internal processing
@@ -206,6 +209,7 @@ public abstract class DeliveryManager
   public String getResponseTopic() { return responseTopic; }
   public String getRoutingTopic() { return routingTopic; }
   public int getDeliveryRatePerMinute() { return deliveryRatePerMinute; }
+  public int getCorrelatorUpdateTimeoutSeconds() { return correlatorUpdateTimeoutSeconds; }
 
   //
   //  derived
@@ -376,6 +380,8 @@ public abstract class DeliveryManager
     this.responseTopic = deliveryManagerDeclaration.getResponseTopic();
     this.routingTopic = deliveryManagerDeclaration.getRoutingTopic();
     this.deliveryRatePerMinute = deliveryManagerDeclaration.getDeliveryRatePerMinute();
+    this.correlatorUpdateTimeoutSeconds = deliveryManagerDeclaration.getCorrelatorUpdateTimeoutSeconds();
+    this.correlatorCleanerFrequencyMilliSeconds = deliveryManagerDeclaration.getCorrelatorCleanerFrequencyMilliSeconds();
 
     /*****************************************
     *
@@ -458,6 +464,37 @@ public abstract class DeliveryManager
     receiveCorrelatorUpdateWorkerThread.start();
 
     /*****************************************
+    *
+    *  correlatorCleaner worker
+    *
+    *****************************************/
+    correlatorCleanerThread = new Timer(applicationID + "-CorrelatorCleaner",true);
+    correlatorCleanerThread.scheduleAtFixedRate(new TimerTask() {
+      @Override
+      public void run() {
+        long startTime = System.currentTimeMillis();
+        log.info("start execution");
+        int removed=0;
+        try{
+          if(waitingForCorrelatorUpdate!=null){
+            Set<String> toRemove = new HashSet<>();
+            // concurrent scan non locking (no clue if this is risky)
+            waitingForCorrelatorUpdate.entrySet().forEach(entry->{if(entry.getValue().getTimeout().after(SystemTime.getCurrentTime())) toRemove.add(entry.getKey());});
+            synchronized (this){
+              for(String key:toRemove){
+                waitingForCorrelatorUpdate.remove(key);
+                removed++;
+              }
+            }
+          }
+        }catch (Exception ex){
+          log.error("error during cleaning",ex);
+        }
+        log.info("finish execution removing {} entries in {} ms",removed,System.currentTimeMillis()-startTime);
+      }
+    }, correlatorCleanerFrequencyMilliSeconds, correlatorCleanerFrequencyMilliSeconds);
+
+    /*****************************************
      *
      *  contact policy processor
      *
@@ -491,6 +528,19 @@ public abstract class DeliveryManager
     }
     log.info("runSubmitRequestWorker: starting delivery");
 
+    ConsumerRebalanceListener listener = new ConsumerRebalanceListener()
+    {
+      @Override public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+        synchronized (this) {
+          log.info("requestConsumer partitions revoked: {}", partitions);
+          int nbWaiting = waitingForAcknowledgement.size();
+          waitingForAcknowledgement.clear();
+          log.info("requestConsumer partitions {} pending in memory request removed, {} request waiting for acknowledgement removed",submitRequestQueue.drainTo(new ArrayList<>(),nbWaiting));
+        }
+      }
+      @Override public void onPartitionsAssigned(Collection<TopicPartition> partitions) { log.info("requestConsumer partitions assigned: {}", partitions); }
+    };
+
     requestConsumer.subscribe(requestTopics);
     while (managerStatus.isRunning())
     {
@@ -500,6 +550,7 @@ public abstract class DeliveryManager
        *
        ****************************************/
 
+      long lastPollTime=System.currentTimeMillis();
       ConsumerRecords<byte[], byte[]> requestRecords;
       try
       {
@@ -549,7 +600,14 @@ public abstract class DeliveryManager
 
         submitDeliveryRequest(deliveryRequest, false, false, requestRecord.topic(), requestRecord.offset());
       }
-      requestConsumer.commitSync();
+      if (managerStatus.isDeliveringRequests()){
+        try{
+          requestConsumer.commitSync();
+        }catch (CommitFailedException ex){
+          long lastPoll_ms=System.currentTimeMillis()-lastPollTime;
+          log.info("CommitFailedException catched, can be normal rebalancing or poll time interval too long, last was {}ms ago",lastPoll_ms);
+        }
+      }
     }
   }
 
@@ -566,6 +624,10 @@ public abstract class DeliveryManager
     *  in progress
     *
     ****************************************/
+
+    // timeout in correlator waiting memory queue
+    Date timeout = RLMDateUtils.addSeconds(SystemTime.getCurrentTime(), getCorrelatorUpdateTimeoutSeconds());
+    deliveryRequest.setTimeout(timeout);
 
     synchronized(this)
       {
@@ -1030,7 +1092,7 @@ public abstract class DeliveryManager
           log.info("DeliveryManager assignRoutingConsumerPartitions: old routing format message, skipping");
           continue;
         }
-        if (deliveryRequest != null && deliveryRequest.getDiplomaticBriefcase().get(CORRELATOR_UPDATE_KEY)==null)
+        if (deliveryRequest != null && deliveryRequest.getDiplomaticBriefcase().get(CORRELATOR_UPDATE_KEY)==null && deliveryRequest.getTimeout()!=null && deliveryRequest.getTimeout().after(SystemTime.getCurrentTime()) )
         {
           setHackyDeliveryRequestInstanceIfNeeded(deliveryRequest);
           restartRequests.put(correlator, deliveryRequest);
@@ -1126,6 +1188,7 @@ public abstract class DeliveryManager
       *
       ****************************************/
 
+      long lastPollTime=System.currentTimeMillis();
       ConsumerRecords<byte[], byte[]> correlatorUpdateRecords;
       try
       {
@@ -1239,7 +1302,12 @@ public abstract class DeliveryManager
         }
 
       }
-      routingConsumer.commitSync();
+      try{
+        routingConsumer.commitSync();
+      }catch (CommitFailedException ex){
+        long lastPoll_ms=System.currentTimeMillis()-lastPollTime;
+        log.info("CommitFailedException catched, can be normal rebalancing or poll time interval too long, last was {}ms ago",lastPoll_ms);
+      }
     }
   }
 

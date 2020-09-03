@@ -192,7 +192,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_emptyfulfillment_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("providerID", Schema.STRING_SCHEMA);
       schemaBuilder.field("commodityID", Schema.STRING_SCHEMA);
@@ -295,24 +295,6 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
 
     /*****************************************
     *
-    *  constructor -- external
-    *
-    *****************************************/
-
-    public EmptyFulfillmentRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
-    {
-      super(jsonRoot);
-      this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
-      this.commodityID = JSONUtilities.decodeString(jsonRoot, "commodityID", true);
-      this.operation = EmptyFulfillmentOperation.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "operation", true));
-      this.amount = JSONUtilities.decodeInteger(jsonRoot, "amount", false);
-      this.status = EmptyFulfillmentStatus.PENDING;
-      this.returnCode = EmptyFulfillmentStatus.PENDING.getExternalRepresentation();
-      this.returnCodeDetails = "";
-    }
-
-    /*****************************************
-    *
     *  constructor -- unpack
     *
     *****************************************/
@@ -398,7 +380,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
 
       Schema schema = schemaAndValue.schema();
       Object value = schemaAndValue.value();
-      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
+      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
 
       //  unpack
       //

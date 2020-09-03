@@ -46,6 +46,7 @@ public class BDRReportCsvWriter implements ReportCsvFactory
   private static final String deliveryRequestID = "deliveryRequestID";
   private static final String originatingDeliveryRequestID = "originatingDeliveryRequestID";
   private static final String eventID = "eventID";
+  private static final String deliveryStatus = "deliveryStatus";
   private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
   private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
 
@@ -75,6 +76,7 @@ public class BDRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(deliveryRequestID);
     headerFieldsOrder.add(originatingDeliveryRequestID);
     headerFieldsOrder.add(eventID);
+    headerFieldsOrder.add(deliveryStatus);
   }
 
   @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
@@ -246,6 +248,11 @@ public class BDRReportCsvWriter implements ReportCsvFactory
                 bdrRecs.put(returnCode, code);
                 bdrRecs.put(returnCodeDescription, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
                 bdrRecs.put(returnCodeDetails, bdrFields.get(returnCodeDetails));
+                if (code instanceof Integer && code != null)
+                  {
+                    int codeInt = (int) code;
+                    bdrRecs.put(deliveryStatus, (codeInt == 0) ? DeliveryManager.DeliveryStatus.Delivered.toString() : DeliveryManager.DeliveryStatus.Failed.toString());
+                  }
               }
             
             //

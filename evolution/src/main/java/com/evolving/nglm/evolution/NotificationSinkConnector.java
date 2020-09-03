@@ -23,9 +23,6 @@ import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManager
 public class NotificationSinkConnector extends SimpleESSinkConnector
 {
   
-  private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
-  private static DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
-  
   private final Logger log = LoggerFactory.getLogger(NotificationSinkConnector.class);
 
   /****************************************
@@ -48,12 +45,8 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
   public static class NotificationSinkConnectorTask extends StreamESSinkTask
   {
 
-    /****************************************
-    *
-    *  attributes
-    *
-    ****************************************/
-    private SubscriberProfileService subscriberProfileService;
+    private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+    private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
     /*****************************************
     *
@@ -69,12 +62,6 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
 
       super.start(taskConfig);
 
-      //
-      //  services
-      //
-      
-      subscriberProfileService = SinkConnectorUtils.init();
-
     }
 
     /*****************************************
@@ -85,12 +72,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
 
     @Override public void stop()
     {
-      //
-      //  services
-      //
 
-      if (subscriberProfileService != null) subscriberProfileService.stop();
-      
       //
       //  super
       //
@@ -140,6 +122,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
           }
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", notification.getSubscriberID());
+        SinkConnectorUtils.putAlternateIDs(notification.getAlternateIDs(), documentMap);
         documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", "");
@@ -170,6 +153,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
             }
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", notification.getSubscriberID());
+          SinkConnectorUtils.putAlternateIDs(notification.getAlternateIDs(), documentMap);
           documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
           documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
           documentMap.put("eventID", "");
@@ -198,6 +182,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
             }
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", notification.getSubscriberID());
+          SinkConnectorUtils.putAlternateIDs(notification.getAlternateIDs(), documentMap);
           documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
           documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
           documentMap.put("eventID", "");
@@ -223,6 +208,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
             }
           documentMap = new HashMap<String,Object>();
           documentMap.put("subscriberID", notification.getSubscriberID());
+          SinkConnectorUtils.putAlternateIDs(notification.getAlternateIDs(), documentMap);
           documentMap.put("deliveryRequestID", notification.getDeliveryRequestID());
           documentMap.put("originatingDeliveryRequestID", notification.getOriginatingDeliveryRequestID());
           documentMap.put("eventID", "");

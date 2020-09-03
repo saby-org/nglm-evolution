@@ -18,6 +18,7 @@ import java.util.Properties;
 
 import javax.management.relation.RelationService;
 
+import com.evolving.nglm.core.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -34,12 +35,6 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
@@ -363,7 +358,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_commodityDelivery_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("externalSubscriberID", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("providerID", Schema.STRING_SCHEMA);
@@ -486,9 +481,32 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     *
     *****************************************/
 
-    public CommodityDeliveryRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+    public CommodityDeliveryRequest(DeliveryRequest originatingRequet,JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
     {
-      super(jsonRoot);
+      super(originatingRequet,jsonRoot);
+      this.setCorrelator(JSONUtilities.decodeString(jsonRoot, "correlator", false));
+      this.externalSubscriberID = JSONUtilities.decodeString(jsonRoot, "externalSubscriberID", false);
+      this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
+      this.commodityID = JSONUtilities.decodeString(jsonRoot, "commodityID", true);
+      this.commodityName = JSONUtilities.decodeString(jsonRoot, "commodityName", false);
+      this.operation = CommodityDeliveryOperation.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "operation", true));
+      this.amount = JSONUtilities.decodeInteger(jsonRoot, "amount", true);
+      this.validityPeriodType = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "validityPeriodType", false));
+      this.validityPeriodQuantity = JSONUtilities.decodeInteger(jsonRoot, "validityPeriodQuantity", false);
+      this.deliverableExpirationDate = JSONUtilities.decodeDate(jsonRoot, "deliverableExpirationDate", false);
+      this.commodityDeliveryStatus = CommodityDeliveryStatus.fromReturnCode(JSONUtilities.decodeInteger(jsonRoot, "commodityDeliveryStatusCode", true));
+      this.statusMessage = JSONUtilities.decodeString(jsonRoot, "statusMessage", false);
+    }
+
+    /*****************************************
+     *
+     *  constructor -- external
+     *
+     *****************************************/
+
+    public CommodityDeliveryRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader,JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+    {
+      super(subscriberProfile,subscriberGroupEpochReader,jsonRoot);
       this.setCorrelator(JSONUtilities.decodeString(jsonRoot, "correlator", false));
       this.externalSubscriberID = JSONUtilities.decodeString(jsonRoot, "externalSubscriberID", false);
       this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
@@ -645,7 +663,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
       Schema schema = schemaAndValue.schema();
       Object value = schemaAndValue.value();
-      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
+      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
 
       //  unpack
       //
@@ -770,7 +788,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
   *
   *****************************************/
 
-  public static void sendCommodityDeliveryRequest(JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryOperation operation, long amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity){
+  public static void sendCommodityDeliveryRequest(DeliveryRequest originatingDeliveryRequest, JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryOperation operation, long amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity){
 
     log.info("CommodityDeliveryManager.sendCommodityDeliveryRequest(..., "+subscriberID+", "+providerID+", "+commodityID+", "+operation+", "+amount+", "+validityPeriodType+", "+validityPeriodQuantity+", ...) : method called ...");
 
@@ -808,7 +826,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     if(briefcase != null){diplomaticBriefcase.put(APPLICATION_BRIEFCASE, briefcase.toJSONString());}
     requestData.put("diplomaticBriefcase", diplomaticBriefcase);
     
-    CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get("commodityDelivery"));
+    CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(originatingDeliveryRequest,JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get("commodityDelivery"));
     
     // ---------------------------------
     //
@@ -824,6 +842,64 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     // send the request
     
     commodityDeliveryRequestProducer.send(new ProducerRecord<byte[], byte[]>(requestTopic, StringKey.serde().serializer().serialize(requestTopic, new StringKey(commodityDeliveryRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)deliveryManagerDeclaration.getRequestSerde()).serializer().serialize(requestTopic, commodityDeliveryRequest))); 
+
+    log.info("CommodityDeliveryManager.sendCommodityDeliveryRequest(..., "+subscriberID+", "+providerID+", "+commodityID+", "+operation+", "+amount+", "+validityPeriodType+", "+validityPeriodQuantity+", ...) : DONE");
+  }
+
+  public static void sendCommodityDeliveryRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryOperation operation, long amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity){
+
+    log.info("CommodityDeliveryManager.sendCommodityDeliveryRequest(..., "+subscriberID+", "+providerID+", "+commodityID+", "+operation+", "+amount+", "+validityPeriodType+", "+validityPeriodQuantity+", ...) : method called ...");
+
+    // ---------------------------------
+    //
+    // generate the request
+    //
+    // ---------------------------------
+
+    HashMap<String,Object> requestData = new HashMap<String,Object>();
+
+    requestData.put("deliveryRequestID", deliveryRequestID);
+    requestData.put("originatingRequest", originatingRequest);
+    requestData.put("originatingDeliveryRequestID", originatingDeliveryRequestID);
+    requestData.put("deliveryType", "commodityDelivery");
+
+    requestData.put("eventID", eventID);
+    requestData.put("moduleID", moduleID);
+    requestData.put("featureID", featureID);
+
+    requestData.put("subscriberID", subscriberID);
+    //TODO:fix that hack
+    requestData.put("externalSubscriberID", subscriberID);
+    requestData.put("providerID", providerID);
+    requestData.put("commodityID", commodityID);
+    requestData.put("operation", operation.getExternalRepresentation());
+    requestData.put("amount", amount);
+    requestData.put("validityPeriodType", (validityPeriodType != null ? validityPeriodType.getExternalRepresentation() : null));
+    requestData.put("validityPeriodQuantity", validityPeriodQuantity);
+
+    requestData.put("commodityDeliveryStatusCode", CommodityDeliveryStatus.PENDING.getReturnCode());
+
+    Map<String,String> diplomaticBriefcase = new HashMap<String,String>();
+    if(applicationID != null){diplomaticBriefcase.put(APPLICATION_ID, applicationID);}
+    if(briefcase != null){diplomaticBriefcase.put(APPLICATION_BRIEFCASE, briefcase.toJSONString());}
+    requestData.put("diplomaticBriefcase", diplomaticBriefcase);
+
+    CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader, JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get("commodityDelivery"));
+
+    // ---------------------------------
+    //
+    // send the request
+    //
+    // ---------------------------------
+
+    // get kafka producer
+
+    DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get("commodityDelivery");
+    String requestTopic = deliveryManagerDeclaration.getDefaultRequestTopic();
+
+    // send the request
+
+    commodityDeliveryRequestProducer.send(new ProducerRecord<byte[], byte[]>(requestTopic, StringKey.serde().serializer().serialize(requestTopic, new StringKey(commodityDeliveryRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)deliveryManagerDeclaration.getRequestSerde()).serializer().serialize(requestTopic, commodityDeliveryRequest)));
 
     log.info("CommodityDeliveryManager.sendCommodityDeliveryRequest(..., "+subscriberID+", "+providerID+", "+commodityID+", "+operation+", "+amount+", "+validityPeriodType+", "+validityPeriodQuantity+", ...) : DONE");
   }
@@ -914,7 +990,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     try
       {
         JSONObject requestStatusJSON = (JSONObject) parser.parse(response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_BRIEFCASE));
-        commodityDeliveryRequest = new CommodityDeliveryRequest(requestStatusJSON, Deployment.getDeliveryManagers().get("commodityDelivery"));        
+        commodityDeliveryRequest = new CommodityDeliveryRequest(response, requestStatusJSON, Deployment.getDeliveryManagers().get("commodityDelivery"));
       } catch (ParseException e)
       {
         log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager.handleThirdPartirResponse(...) : ERROR while getting request status from '"+response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_BRIEFCASE)+"' => IGNORED");
@@ -1398,7 +1474,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
       if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.IN+" request DONE");
       
-      INFulfillmentRequest inRequest = new INFulfillmentRequest(JSONUtilities.encodeObject(inRequestData), Deployment.getDeliveryManagers().get(deliveryType));
+      INFulfillmentRequest inRequest = new INFulfillmentRequest(commodityDeliveryRequest,JSONUtilities.encodeObject(inRequestData), Deployment.getDeliveryManagers().get(deliveryType));
       KafkaProducer kafkaProducer = providerRequestProducers.get(commodityDeliveryRequest.getProviderID());
       if(kafkaProducer != null){
         kafkaProducer.send(new ProducerRecord<byte[], byte[]>(inRequestTopic, StringKey.serde().serializer().serialize(inRequestTopic, new StringKey(inRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)inManagerDeclaration.getRequestSerde()).serializer().serialize(inRequestTopic, inRequest))); 
@@ -1436,7 +1512,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       
       if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.POINT+" request DONE");
 
-      PointFulfillmentRequest pointRequest = new PointFulfillmentRequest(JSONUtilities.encodeObject(pointRequestData), Deployment.getDeliveryManagers().get(deliveryType));
+      PointFulfillmentRequest pointRequest = new PointFulfillmentRequest(commodityDeliveryRequest, JSONUtilities.encodeObject(pointRequestData), Deployment.getDeliveryManagers().get(deliveryType));
       KafkaProducer pointProducer = providerRequestProducers.get(commodityDeliveryRequest.getProviderID());
       if(pointProducer != null){
         pointProducer.send(new ProducerRecord<byte[], byte[]>(pointRequestTopic, StringKey.serde().serializer().serialize(pointRequestTopic, new StringKey(pointRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)pointManagerDeclaration.getRequestSerde()).serializer().serialize(pointRequestTopic, pointRequest))); 
@@ -1481,7 +1557,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       
       if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.REWARD+" request DONE");
 
-      RewardManagerRequest rewardRequest = new RewardManagerRequest(JSONUtilities.encodeObject(rewardRequestData), Deployment.getDeliveryManagers().get(deliveryType));
+      RewardManagerRequest rewardRequest = new RewardManagerRequest(commodityDeliveryRequest,JSONUtilities.encodeObject(rewardRequestData), Deployment.getDeliveryManagers().get(deliveryType));
       KafkaProducer rewardProducer = providerRequestProducers.get(commodityDeliveryRequest.getProviderID());
       if(rewardProducer != null){
         rewardProducer.send(new ProducerRecord<byte[], byte[]>(rewardRequestTopic, StringKey.serde().serializer().serialize(rewardRequestTopic, new StringKey(rewardRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)rewardManagerDeclaration.getRequestSerde()).serializer().serialize(rewardRequestTopic, rewardRequest))); 
@@ -1517,7 +1593,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       
       if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.JOURNEY+" request DONE");
 
-      JourneyRequest journeyRequest = new JourneyRequest(JSONUtilities.encodeObject(journeyRequestData), Deployment.getDeliveryManagers().get(deliveryType));
+      JourneyRequest journeyRequest = new JourneyRequest(commodityDeliveryRequest, JSONUtilities.encodeObject(journeyRequestData), Deployment.getDeliveryManagers().get(deliveryType));
       KafkaProducer journeyProducer = providerRequestProducers.get(commodityDeliveryRequest.getProviderID());
       if(journeyProducer != null){
         journeyProducer.send(new ProducerRecord<byte[], byte[]>(journeyRequestTopic, StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest))); 
