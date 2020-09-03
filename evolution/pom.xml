@@ -255,6 +255,9 @@
                     <include>bin/upgrade-run-postamble.sh</include>
                     <include>bin/fakein-run.sh</include>
                     <include>bin/kafka-lag-exporter-run.sh</include>
+                    <include>bin/kafka-multiple-topics.sh</include>
+                    <include>bin/java-evolution-setup.sh</include>
+                    <include>bin/prepare-curl.sh</include>
                     <include>config/deployment-*.json</include>
                     <include>config/grafana-*.json</include>
                     <include>config/grafana-*.yml</include>
