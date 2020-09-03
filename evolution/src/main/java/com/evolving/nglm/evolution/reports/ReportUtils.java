@@ -393,12 +393,12 @@ public class ReportUtils {
   //
   // format regular field
   //
-	private static void format(StringBuilder sb, String s)
+  private static void format(StringBuilder sb, String s)
   {
     String fieldSurrounder = Deployment.getReportManagerFieldSurrounder();
     // Surround s with fieldSurrounder, and escape fieldSurrounder inside it
     if (fieldSurrounder.isEmpty())
-        sb.append(s);
+      sb.append(s);
     else
       {
         boolean hasNewline = s.contains("\n");
