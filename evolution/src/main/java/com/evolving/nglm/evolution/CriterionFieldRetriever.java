@@ -342,10 +342,10 @@ public abstract class CriterionFieldRetriever
     // in program?
     //
 
-    if (loyaltyProgramState == null && loyaltyProgramStateAvailable == false)
+    if (loyaltyProgramState == null && !loyaltyProgramStateAvailable)
       return null;
 
-    else if (loyaltyProgramState == null && loyaltyProgramStateAvailable == true)
+    else if (loyaltyProgramState == null && loyaltyProgramStateAvailable)
       {
         switch (criterionFieldBaseName)
         {
