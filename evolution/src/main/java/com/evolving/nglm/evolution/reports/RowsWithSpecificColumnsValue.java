@@ -13,13 +13,11 @@ import org.slf4j.LoggerFactory;
 
 public class RowsWithSpecificColumnsValue {
 	
-	  private static final Logger log = LoggerFactory.getLogger(RowsWithSpecificColumnsValue.class);
-
+	private static final Logger log = LoggerFactory.getLogger(RowsWithSpecificColumnsValue.class);
 
 	public static void displayRowsWithSpecificColumnsData(String InputFileName, String OutputFileName,
 			List<String> colsName, List<List<String>> colsValues, String delimiter, String separator) 
 	{
-
 		if (colsName.size() == colsValues.size())
 		{
 			int[] numOfColm = new int[colsName.size()];
@@ -54,43 +52,46 @@ public class RowsWithSpecificColumnsValue {
 				}
 				if (!colsFound) 
 				{
-					System.out.println("Noneexistent column!");
+					log.error("Noneexistent column!");
 				}
 			}
 
 			// checking for the column values
 			BufferedWriter bw = new BufferedWriter(new FileWriter(OutputFileName));
 			String line;
-			
-			while ((line = br.readLine()) != null) 
+			if(separator == "'")
 			{
-				if (line.length() != 0 && separator == "'") 
+				bw.write(headerList.toString().substring(1, headerList.toString().length() - 1) + "\n");
+				while ((line = br.readLine()) != null) 
 				{
-					String regex = delimiter + "(?=(?:[^\\" + separator + "]*\\" + separator + "[^\\" + separator
-							+ "]*\\" + separator + ")*[^\\" + separator + "]*$)";
-					String[] cols = line.split(regex, -1);
+					if (line.length() != 0)  
+					{
+						String regex = delimiter + "(?=(?:[^\\" + separator + "]*\\" + separator + "[^\\" + separator
+								+ "]*\\" + separator + ")*[^\\" + separator + "]*$)";
+						String[] cols = line.split(regex, -1);
 
-					i = 0;
-					boolean filterInvalid = false;
-					for (List<String> listOfColsValues : colsValues) 
-					{
-						String valueToTest = cols[numOfColm[i]].replaceAll("^.|.$", "");
-						if (!listOfColsValues.contains(valueToTest)) 
+						i = 0;
+						boolean filterInvalid = false;
+						for (List<String> listOfColsValues : colsValues) 
 						{
-							filterInvalid = true;
-							break;
+							String valueToTest = cols[numOfColm[i]].replaceAll("^.|.$", "");
+							if (!listOfColsValues.contains(valueToTest)) 
+							{
+								filterInvalid = true;
+								break;
+							}
+							i++;
 						}
-						i++;
-					}
-					if (!filterInvalid) 
-					{
-						bw.write(line + "\n");
+						if (!filterInvalid) 
+						{
+							bw.write(line + "\n");
+						}
 					}
 				}
-				else
-				{
-					log.error("The separator should be a single quote (').");
-				}
+			}
+			else
+			{
+				log.error("The separator should be a single quote (').");
 			}
 
 			br.close();
@@ -98,7 +99,7 @@ public class RowsWithSpecificColumnsValue {
 			} 
 			catch (FileNotFoundException e) 
 			{
-				log.info("The file doesn't exist", ex);
+				log.info("The file doesn't exist", e);
 			} 
 			catch (Exception e) 
 			{
