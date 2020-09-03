@@ -9,6 +9,8 @@ package com.evolving.nglm.evolution;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -787,12 +789,19 @@ public class EvaluationCriterion
     *
     ****************************************/
     Object criterionFieldValue = null;
+    List<String> criterionFieldValues=new ArrayList<>();
+    
     Object evaluatedArgument = null;
     ExpressionDataType argumentType = null;
     try
       {        
         criterionFieldValue = criterionField.retrieveNormalized(evaluationRequest);
-    
+              if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+        {
+        	criterionFieldValues=Arrays.asList(criterionFieldValue.toString().split(","));
+        	 
+        }
+             
         /****************************************
         *
         *  evaluate argument
@@ -991,13 +1000,37 @@ public class EvaluationCriterion
         *****************************************/
 
         case EqualOperator:
-          result = traceCondition(evaluationRequest, criterionFieldValue.equals(evaluatedArgument), criterionFieldValue, evaluatedArgument);
-          break;
+        	log.info("inside equals operator");
+        	  
+        	if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+             {
+             	for(String singleCriterionFieldValue: criterionFieldValues) {
+             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
+             		 result = traceCondition(evaluationRequest, singleCriterionFieldValue.equals(evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
+             	    if (result)
+             		break;
+             	}
+             }else { 
+            	 log.info("inside equals operator");
+            	 result = traceCondition(evaluationRequest, criterionFieldValue.equals(evaluatedArgument), criterionFieldValue, evaluatedArgument);
+            }
+        	 break;
           
         case NotEqualOperator:
-          result = traceCondition(evaluationRequest, !criterionFieldValue.equals(evaluatedArgument), criterionFieldValue, evaluatedArgument);
-          break;
-          
+        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+             {
+             	for(String singleCriterionFieldValue: criterionFieldValues) {
+             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
+             		result = traceCondition(evaluationRequest, !singleCriterionFieldValue.equals(evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
+             	   if (!result)
+             		break;
+             	}
+             }
+             	else {
+        	result = traceCondition(evaluationRequest, !criterionFieldValue.equals(evaluatedArgument), criterionFieldValue, evaluatedArgument);
+             	}
+        	 break;
+             	         
         /*****************************************
         *
         *  relational operators
@@ -1085,12 +1118,31 @@ public class EvaluationCriterion
         *****************************************/
 
         case IsNullOperator:
-          result = traceCondition(evaluationRequest, criterionFieldValue == null, criterionFieldValue, evaluatedArgument);
-          break;
+        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+             {
+             	for(String singleCriterionFieldValue: criterionFieldValues) {
+             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
+             		result = traceCondition(evaluationRequest, (singleCriterionFieldValue == null || singleCriterionFieldValue.equalsIgnoreCase("null") ), singleCriterionFieldValue, evaluatedArgument);
+             		if (result)
+             		break;
+             	}
+             }
+        	else { result = traceCondition(evaluationRequest, criterionFieldValue == null, criterionFieldValue, evaluatedArgument);
+        }
+        break;
           
         case IsNotNullOperator:
-          result = traceCondition(evaluationRequest, criterionFieldValue != null, criterionFieldValue, evaluatedArgument);
-          break;
+        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+             {
+             	for(String singleCriterionFieldValue: criterionFieldValues) {
+             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
+             		result = traceCondition(evaluationRequest, !(singleCriterionFieldValue == null || singleCriterionFieldValue.equalsIgnoreCase("null")), singleCriterionFieldValue, evaluatedArgument);
+             		if (!result)
+             		break;
+             	}
+             }else {
+        	result = traceCondition(evaluationRequest, criterionFieldValue != null, criterionFieldValue, evaluatedArgument);
+             } break;
 
         /*****************************************
         *
@@ -1099,9 +1151,20 @@ public class EvaluationCriterion
         *****************************************/
 
         case ContainsKeywordOperator:
+        if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+        {
+        	for(String singleCriterionFieldValue: criterionFieldValues) {
+        		singleCriterionFieldValue=singleCriterionFieldValue.trim();
+        		 result = traceCondition(evaluationRequest, evaluateContainsKeyword(singleCriterionFieldValue, (String) evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
+        	if (result)
+        		break;
+        	}
+        }
+        else {
           result = traceCondition(evaluationRequest, evaluateContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
-          break;
-          
+         
+        }
+        break;  
         /*****************************************
         *
         *  doesNotContainsKeywordOperator operator
@@ -1109,8 +1172,17 @@ public class EvaluationCriterion
         *****************************************/
           
         case DoesNotContainsKeywordOperator:
-          result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
-          break;
+        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+             {
+             	for(String singleCriterionFieldValue:criterionFieldValues) {
+             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
+             		result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) singleCriterionFieldValue, (String) evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
+             	   if (!result)
+             		break;
+             	}
+             }
+        	 else { result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
+        } break;
 
         /*****************************************
         *
@@ -1119,6 +1191,17 @@ public class EvaluationCriterion
         *****************************************/
 
         case IsInSetOperator:
+        	 log.info("Is In Set operator");
+        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+             {
+             	for(String singleCriterionFieldValue: criterionFieldValues) {
+             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
+             		result = traceCondition(evaluationRequest, ((Set<String>) evaluatedArgument).contains((String) singleCriterionFieldValue), singleCriterionFieldValue, evaluatedArgument);
+                  	if (result)
+             		break;
+             	}
+             }
+        	else {
           switch (evaluationDataType)
             {
               case StringCriterion:
@@ -1128,10 +1211,21 @@ public class EvaluationCriterion
                 result = traceCondition(evaluationRequest, ((Set<Integer>) evaluatedArgument).contains((Integer) criterionFieldValue), criterionFieldValue, evaluatedArgument);
                 break;
             }
+        }
           break;
           
         case NotInSetOperator:
-          switch (evaluationDataType)
+        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
+             {
+             	for(String singleCriterionFieldValue: criterionFieldValues) {
+             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
+             		 result = traceCondition(evaluationRequest, !((Set<String>) evaluatedArgument).contains((String) singleCriterionFieldValue), singleCriterionFieldValue, evaluatedArgument);
+                     if (!result)
+             		break;
+             	}
+             }
+        	else { 
+            switch (evaluationDataType)
             {
               case StringCriterion:
                 result = traceCondition(evaluationRequest, !((Set<String>) evaluatedArgument).contains((String) criterionFieldValue), criterionFieldValue, evaluatedArgument);
@@ -1140,6 +1234,7 @@ public class EvaluationCriterion
                 result = traceCondition(evaluationRequest, !((Set<Integer>) evaluatedArgument).contains((Integer) criterionFieldValue), criterionFieldValue, evaluatedArgument);
                 break;
             }
+        	}
           break;
           
         case ContainsOperator:
@@ -1262,6 +1357,7 @@ public class EvaluationCriterion
         query = query.filter(evaluationCriterion.esQuery());
       }
     
+    log.debug("final es query:"+query.toString());
     return query;
   }
   
@@ -1853,9 +1949,10 @@ public class EvaluationCriterion
     return query;
   }
 
-  static String journeyName = "";
-  static String campaignName = "";
-  static String bulkcampaignName = "";
+  static HashSet journeyNames = new HashSet<Object>();
+  static HashSet campaignNames = new HashSet<Object>();
+  static HashSet bulkcampaignNames = new HashSet<Object>();
+
   
   /*****************************************
   *
@@ -1871,38 +1968,40 @@ public class EvaluationCriterion
     String criterion = fieldNameMatcher.group(1);
     // TODO : necessary ? To be checked
     if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
-    String value = "";
+    //String value = "";
+    HashSet<Object> values=new HashSet<Object>();
     switch (criterion)
     {
       case "Journey":
-        journeyName = (String) (argument.evaluate(null, null));
+        journeyNames = (HashSet<Object>) (argument.evaluate(null, null));
         return QueryBuilders.matchAllQuery();
         
       case "Campaign":
-        campaignName = (String) (argument.evaluate(null, null));
+    	  campaignNames = (HashSet<Object>) (argument.evaluate(null, null));
         return QueryBuilders.matchAllQuery();
         
       case "Bulkcampaign":
-        bulkcampaignName = (String) (argument.evaluate(null, null));
+    	  bulkcampaignNames = (HashSet<Object>) (argument.evaluate(null, null));
         return QueryBuilders.matchAllQuery();
         
       case "JourneyStatus":
-        value = journeyName;
+        values = journeyNames;
         break;
         
       case "CampaignStatus":
-        value = campaignName;
+    	  values = campaignNames;
         break;
         
       case "BulkcampaignStatus":
-        value = bulkcampaignName;
+        values = bulkcampaignNames;
         break;
         
       default:
         throw new CriterionException("unknown criteria : " + esField);
     }
     
-    QueryBuilder queryID = QueryBuilders.termQuery("subscriberJourneys.journeyID", value);
+       
+    QueryBuilder queryID = QueryBuilders.termsQuery("subscriberJourneys.journeyID", values);
     QueryBuilder queryStatus = null;
     QueryBuilder query = null;
     QueryBuilder insideQuery = null;

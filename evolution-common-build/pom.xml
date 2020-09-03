@@ -11,6 +11,7 @@
   <version>1.4.4_1-SNAPSHOT</version>
   <version>1.4.4_1-SNAPSHOT</version>
   <version>1.4.4_1-SNAPSHOT</version>
+  <version>1.4.4_1-SNAPSHOT</version>
   <version>release_1.4.4_1-EVPRO-487-SNAPSHOT</version>
   <version>release_1.4.4_1-EVPRO-488-SNAPSHOT</version>
   <version>EVPRO-335-SNAPSHOT</version>
@@ -20,6 +21,7 @@
   <version>release_1.4.4_1-EVPRO-515-SNAPSHOT</version>
   <version>EVPRO-426-1.4.4_1-SNAPSHOT</version>
   <version>EVPRO-432_1a-SNAPSHOT</version>
+  <version>EVPRO-455-v144-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 

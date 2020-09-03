@@ -24442,6 +24442,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     {
                       case Unknown:
                         break;
+                        
+                      case NotEligible:
+                          break;
 
                       default:
                         HashMap<String,Object> availableValue = new HashMap<String,Object>();

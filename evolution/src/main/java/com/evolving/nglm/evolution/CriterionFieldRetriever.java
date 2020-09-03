@@ -565,9 +565,17 @@ public abstract class CriterionFieldRetriever
   
   public static Object getEvaluationJourneyStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
   {
-    String journeyID = (String) evaluationRequest.getEvaluationVariables().get("evaluation.variable.journey");
-    if (journeyID == null) throw new CriterionException("invalid journey status request");
-    return (evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID) != null) ? evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID).getExternalRepresentation() : null;
+    Set<String> journeyIDs = ( Set<String>) evaluationRequest.getEvaluationVariables().get("evaluation.variable.journey");
+    Set<String> status=new HashSet<String>();
+    String comma_seperated_status=new String();
+    if(journeyIDs!=null && !journeyIDs.isEmpty())
+    { for(String journeyID:journeyIDs) {
+   	  if (journeyID == null) throw new CriterionException("invalid journey status request");
+   	status.add((evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID) != null) ? evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID).getExternalRepresentation() : null);
+   	  }
+     }
+    comma_seperated_status=String.join(", ", status);
+     return comma_seperated_status;
   }
 
   /*****************************************
