@@ -78,6 +78,7 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private CommunicationChannelBlackoutService blackoutService;
   private CommunicationChannelTimeWindowService timeWindowService;
+  private SourceAddressService sourceAddressService;
 
 
   /*****************************************
@@ -106,6 +107,10 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
     return statsPerChannels;
   }
 
+  public SourceAddressService getSourceAddressService() {
+    return sourceAddressService;
+  }
+
   protected DeliveryManagerForNotifications(String applicationID, String deliveryManagerKey, String bootstrapServers, ConnectSerde<? extends DeliveryRequest> requestSerde, DeliveryManagerDeclaration deliveryManagerDeclaration)
     {
       super(applicationID, deliveryManagerKey, bootstrapServers, requestSerde, deliveryManagerDeclaration);
@@ -130,6 +135,13 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
           
       timeWindowService = new CommunicationChannelTimeWindowService(Deployment.getBrokerServers(), "common-notificationmanager-communicationchanneltimewindowservice-" + deliveryManagerKey, Deployment.getCommunicationChannelTimeWindowTopic(), false);
       timeWindowService.start();
+
+      //
+      // source address service
+      //
+
+      sourceAddressService = new SourceAddressService(Deployment.getBrokerServers(), "common-notificationmanager-sourceaddressservice-" + deliveryManagerKey, Deployment.getSourceAddressTopic(),false);
+      sourceAddressService.start();
 //      
 //      //
 //      // statistics
@@ -160,7 +172,7 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
   
   public void updateDeliveryRequest(DeliveryRequest deliveryRequest)
   {
-    log.debug("SMSNotificationManager.updateDeliveryRequest(deliveryRequest="+deliveryRequest+")");
+    if(log.isDebugEnabled()) log.debug("SMSNotificationManager.updateDeliveryRequest(deliveryRequest="+deliveryRequest+")");
     updateRequest(deliveryRequest);
   }
 
@@ -177,7 +189,7 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
   
   public void completeDeliveryRequest(DeliveryRequest deliveryRequest)
   {
-    log.debug("DeliveryManagerForNotifications.completeDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
+    if(log.isDebugEnabled()) log.debug("DeliveryManagerForNotifications.completeDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
     completeRequest(deliveryRequest);
     // stats.updateMessageCount(pluginName, 1, deliveryRequest.getDeliveryStatus());
     // // TODO Stats ?
@@ -191,7 +203,7 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
 
   public void submitCorrelatorUpdateDeliveryRequest(String correlator, JSONObject correlatorUpdate)
   {
-    log.debug("DeliveryManagerForNotifications.submitCorrelatorUpdateDeliveryRequest(correlator=" + correlator + ", correlatorUpdate=" + correlatorUpdate.toJSONString() + ")");
+    if(log.isDebugEnabled()) log.debug("DeliveryManagerForNotifications.submitCorrelatorUpdateDeliveryRequest(correlator=" + correlator + ", correlatorUpdate=" + correlatorUpdate.toJSONString() + ")");
     submitCorrelatorUpdate(correlator, correlatorUpdate);
   }
 
@@ -208,7 +220,7 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
     INotificationRequest notificationRequest = (INotificationRequest) deliveryRequest;
     if (notificationRequest != null)
       {
-        log.debug("SMSNotificationManager.processCorrelatorUpdate(deliveryRequest=" + deliveryRequest.toString() + ", correlatorUpdate=" + correlatorUpdate.toJSONString() + ")");
+        if(log.isDebugEnabled()) log.debug("SMSNotificationManager.processCorrelatorUpdate(deliveryRequest=" + deliveryRequest.toString() + ", correlatorUpdate=" + correlatorUpdate.toJSONString() + ")");
         notificationRequest.setMessageStatus(MessageStatus.fromReturnCode(result));
         notificationRequest.setDeliveryStatus(getDeliveryStatus(notificationRequest.getMessageStatus()));
         notificationRequest.setDeliveryDate(SystemTime.getCurrentTime());

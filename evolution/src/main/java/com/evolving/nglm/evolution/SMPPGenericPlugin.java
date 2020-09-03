@@ -184,7 +184,12 @@ public class SMPPGenericPlugin implements NotificationInterface
         
     String destination = deliveryRequest.getDestination();
     
-    String source = (String) deliveryRequest.getNotificationParameters().get("node.parameter.fromaddress");
+    String source = deliveryRequest.getSourceAddressParam();
+    // replace here for stats (NOTE : this is duplicated from SimpleSMSSender as well, to clean once we have just generic channel)
+    if(source==null||source.trim().isEmpty()){
+      source = sender.get_source_addr();
+      deliveryRequest.setSourceAddressParam(source);
+    }
     Boolean receiptExpected = (Boolean) deliveryRequest.getNotificationParameters().get("node.parameter.confirmationexpected");
     Boolean flashSMS = (Boolean) deliveryRequest.getNotificationParameters().get("node.parameter.flashsms");
     if(sender == null)

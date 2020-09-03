@@ -174,7 +174,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("deliveryDate", notifNotification.getDeliveryDate()!=null?dateFormat.format(notifNotification.getDeliveryDate()):"");
         documentMap.put("moduleID", notifNotification.getModuleID());
         documentMap.put("featureID", notifNotification.getFeatureID());
-        documentMap.put("source", notifNotification.getNotificationParameters().get("node.parameter.fromaddress"));
+        documentMap.put("source", notifNotification.getSourceAddressParam());
         documentMap.put("returnCode", notifNotification.getReturnCode());
         documentMap.put("returnCodeDetails", notifNotification.getMessageDeliveryReturnCodeDetails());
         documentMap.put("templateID", notifNotification.getTemplateID());
