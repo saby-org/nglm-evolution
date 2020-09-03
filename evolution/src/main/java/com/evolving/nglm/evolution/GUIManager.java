@@ -10411,14 +10411,15 @@ public class GUIManager
             dependencyRequest.put("id", supplier.getGUIManagedObjectID());
 
             JSONObject dependenciesObject = guiManagerGeneral.processGetDependencies(userID, dependencyRequest);
-            JSONArray dependencies = (JSONArray) dependenciesObject.get("dependencies");
+            JSONArray dependencies = JSONUtilities.decodeJSONArray(dependenciesObject, "dependencies", false);
             boolean parentDependency = false;
             if (dependencies.size() != 0)
               {
-                for (int j = 0; j < dependencies.size(); i++)
+                for (int j = 0; j < dependencies.size(); j++)
                   {
                     JSONObject dependent = (JSONObject) dependencies.get(j);
-                    if (dependent.get("objectType").equals("supplier") || dependent.get("objectType").equals("product"))
+                    String ojectType = JSONUtilities.decodeString(dependent, "objectType", false);
+                    if (ojectType.equals("supplier") || ojectType.equals("product"))
                       {
                         parentDependency = true;
                         break;
@@ -20088,14 +20089,15 @@ public class GUIManager
             dependencyRequest.put("id", resellerID);
 
             JSONObject dependenciesObject = guiManagerGeneral.processGetDependencies(userID, dependencyRequest);
-            JSONArray dependencies = (JSONArray) dependenciesObject.get("dependencies");
+            JSONArray dependencies = JSONUtilities.decodeJSONArray(dependenciesObject, "dependencies", false);
             boolean parentDependency = false;
             if (dependencies.size() != 0)
               {
-                for (int j = 0; j < dependencies.size(); i++)
+                for (int j = 0; j < dependencies.size(); j++)
                   {
                     JSONObject dependent = (JSONObject) dependencies.get(j);
-                    if (dependent.get("objectType").equals("reseller"))
+                    String ojectType = JSONUtilities.decodeString(dependent, "objectType", false);
+                    if (ojectType.equals("reseller"))
                       {
                         parentDependency = true;
                         break;
