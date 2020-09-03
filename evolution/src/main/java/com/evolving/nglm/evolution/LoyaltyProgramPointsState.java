@@ -211,7 +211,7 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
     // get the tier informations
     //
     Date now = SystemTime.getCurrentTime();
-    LoyaltyProgramTierChange tierChangeType = LoyaltyProgramTierChange.NoChange;
+    LoyaltyProgramTierChange tierChangeType = LoyaltyProgramTierChange.Unknown;
     if(loyaltyProgramHistory != null){
       String loyaltyProgramID = loyaltyProgramHistory.getLoyaltyProgramID();
       LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now);
