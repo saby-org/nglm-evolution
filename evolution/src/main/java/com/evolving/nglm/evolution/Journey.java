@@ -178,7 +178,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   //  schema
   //
 
-  private static int currentSchemaVersion = 6;
+  private static int currentSchemaVersion = 7;
   private static Schema schema = null;
   static
   {
@@ -202,6 +202,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     schemaBuilder.field("boundParameters", ParameterMap.schema());
     schemaBuilder.field("appendInclusionLists", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("appendExclusionLists", SchemaBuilder.bool().defaultValue(false).schema());
+    schemaBuilder.field("appendUCG", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("approval", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("maxNoOfCustomers", Schema.OPTIONAL_INT32_SCHEMA);
     schema = schemaBuilder.build();
@@ -242,6 +243,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   private ParameterMap boundParameters;
   private boolean appendInclusionLists;
   private boolean appendExclusionLists;
+  private boolean appendUCG;
   private JourneyStatus approval;
   private Integer maxNoOfCustomers;
 
@@ -274,6 +276,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   public ParameterMap getBoundParameters() { return boundParameters; }
   public boolean getAppendInclusionLists() { return appendInclusionLists; }
   public boolean getAppendExclusionLists() { return appendExclusionLists; }
+  public boolean getAppendUCG() { return appendUCG; }
   public JourneyStatus getApproval() {return JourneyStatus.Unknown == approval ? JourneyStatus.Pending : approval; }
   public void setApproval(JourneyStatus approval) { this.approval = approval; }
   public Integer getMaxNoOfCustomers(){return maxNoOfCustomers;}
@@ -588,7 +591,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, JourneyStatus approval, Integer maxNoOfCustomers)
+  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, boolean appendUCG, JourneyStatus approval, Integer maxNoOfCustomers)
   {
     super(schemaAndValue);
     this.effectiveEntryPeriodEndDate = effectiveEntryPeriodEndDate;
@@ -607,6 +610,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     this.boundParameters = boundParameters;
     this.appendInclusionLists = appendInclusionLists;
     this.appendExclusionLists = appendExclusionLists;
+    this.appendUCG = appendUCG;
     this.approval = approval;
     this.maxNoOfCustomers = maxNoOfCustomers;
   }
@@ -638,6 +642,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     struct.put("boundParameters", ParameterMap.pack(journey.getBoundParameters()));
     struct.put("appendInclusionLists", journey.getAppendInclusionLists());
     struct.put("appendExclusionLists", journey.getAppendExclusionLists());
+    struct.put("appendUCG", journey.getAppendUCG());
     struct.put("approval", journey.getApproval().getExternalRepresentation());
     struct.put("maxNoOfCustomers", journey.getMaxNoOfCustomers());
     return struct;
@@ -782,6 +787,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     ParameterMap boundParameters = (schemaVersion >= 2) ? ParameterMap.unpack(new SchemaAndValue(schema.field("boundParameters").schema(), valueStruct.get("boundParameters"))) : new ParameterMap();
     boolean appendInclusionLists = (schemaVersion >= 3) ? valueStruct.getBoolean("appendInclusionLists") : false;
     boolean appendExclusionLists = (schemaVersion >= 3) ? valueStruct.getBoolean("appendExclusionLists") : false;
+    boolean appendUCG = (schemaVersion >= 7) ? valueStruct.getBoolean("appendUCG") : false;
     JourneyStatus approval = (schemaVersion >= 5) ? JourneyStatus.fromExternalRepresentation(valueStruct.getString("approval")) : JourneyStatus.Pending;
     Integer maxNoOfCustomers = (schemaVersion >=6) ? valueStruct.getInt32("maxNoOfCustomers") : null;
 
@@ -845,7 +851,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, approval, maxNoOfCustomers);
+    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, appendUCG, approval, maxNoOfCustomers);
   }
   
   /*****************************************
@@ -1083,6 +1089,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     this.journeyObjectiveInstances = decodeJourneyObjectiveInstances(JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", false), catalogCharacteristicService);
     this.appendInclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendInclusionLists", Boolean.FALSE);
     this.appendExclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendExclusionLists", Boolean.FALSE);
+    this.appendUCG = JSONUtilities.decodeBoolean(jsonRoot, "appendUCG", Boolean.FALSE);
     Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.templateParameters, Collections.<String,CriterionField>emptyMap(), true, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
     this.approval = approval;
@@ -3465,6 +3472,7 @@ public class Journey extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! Objects.equals(boundParameters, existingJourney.getBoundParameters());
         epochChanged = epochChanged || ! Objects.equals(appendInclusionLists, existingJourney.getAppendInclusionLists());
         epochChanged = epochChanged || ! Objects.equals(appendExclusionLists, existingJourney.getAppendExclusionLists());
+        epochChanged = epochChanged || ! Objects.equals(appendUCG, existingJourney.getAppendUCG());
         epochChanged = epochChanged || ! Objects.equals(approval, existingJourney.getApproval());
         return epochChanged;
       }
