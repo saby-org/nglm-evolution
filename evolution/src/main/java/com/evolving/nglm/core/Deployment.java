@@ -81,8 +81,8 @@ public class Deployment
   public static String getBaseTimeZone() { return baseTimeZone; }
   public static String getBaseLanguage() { return baseLanguage; }
   public static String getBaseCountry() { return baseCountry; }
-  public static String getEvolutionVersion() { return evolutionVersion; }
-  public static String getCustomerVersion() { return customerVersion; }
+  public static String getEvolutionVersion() { return evolutionVersion!=null?evolutionVersion:"unknown"; }
+  public static String getCustomerVersion() { return customerVersion!=null?evolutionVersion:"unknown"; }
   public static boolean getGenerateNumericIDs() { return generateNumericIDs; }
   public static String getRedisSentinels() { return System.getProperty("redis.sentinels",""); }
   public static Map<String,AlternateID> getAlternateIDs() { return alternateIDs; }

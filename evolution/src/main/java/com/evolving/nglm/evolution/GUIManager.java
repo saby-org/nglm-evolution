@@ -26723,9 +26723,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
   public JSONObject processSoftwareVersions(String userID, JSONObject jsonRoot)
   {
     Map<String, Object> response = new LinkedHashMap<String, Object>();
+    log.info("evolVer: "+ com.evolving.nglm.core.Deployment.getEvolutionVersion() + "custVer: "+ com.evolving.nglm.core.Deployment.getCustomerVersion());
     response.put("evolutionVersion", com.evolving.nglm.core.Deployment.getEvolutionVersion());
     response.put("customerVersion", com.evolving.nglm.core.Deployment.getCustomerVersion());
-    
+   
     return JSONUtilities.encodeObject(response);
    
   }
