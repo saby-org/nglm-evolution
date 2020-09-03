@@ -534,6 +534,8 @@ public class GUIManager
 
 
     getDependencies("getDependencies"),
+    
+    getSoftwareVersions("getSoftwareVersions"),
 
     
     //
@@ -3871,7 +3873,10 @@ public class GUIManager
                 case getDependencies:
                   jsonResponse = guiManagerGeneral.processGetDependencies(userID, jsonRoot);
                   break;
-
+                  
+                case getSoftwareVersions:
+                jsonResponse = guiManagerGeneral.processSoftwareVersions(userID, jsonRoot);
+                break;
               }
           }
         else
@@ -26714,6 +26719,15 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     result = id.equals(CriterionContext.EVALUATION_WK_DAY_ID) || id.equals(CriterionContext.EVALUATION_TIME_ID) || id.equals(CriterionContext.EVALUATION_MONTH_ID) || id.equals(CriterionContext.EVALUATION_DAY_OF_MONTH_ID) || id.equals(CriterionContext.EVALUATION_ANIVERSARY_DAY_ID);
     return result;
   }
-
+  
+  public JSONObject processSoftwareVersions(String userID, JSONObject jsonRoot)
+  {
+    Map<String, Object> response = new LinkedHashMap<String, Object>();
+    response.put("evolutionVersion", com.evolving.nglm.core.Deployment.getEvolutionVersion());
+    response.put("customerVersion", com.evolving.nglm.core.Deployment.getCustomerVersion());
+    
+    return JSONUtilities.encodeObject(response);
+   
+  }
 }
 

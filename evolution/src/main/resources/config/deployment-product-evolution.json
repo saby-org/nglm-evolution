@@ -1,3 +1,4 @@
+
 {
   "baseTimeZone"                             : "<_DEPLOYMENT_TIMEZONE_>",
   "baseLanguage"                             : "<_DEPLOYMENT_LOCALE_LANGUAGE_>",
@@ -14,13 +15,13 @@
     "ODR-preview"                    : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
     "ODR-definitive"                 : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
     "LoyaltyPrograms-preview"        : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "LoyaltyPrograms-definitive"     : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
+    "LoyaltyPrograms-definitive"     : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 0 * * *" },
     "SubscriberProfile-preview"      : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
-    "SubscriberProfile-definitive"   : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
+    "SubscriberProfile-definitive"   : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 0 * * *" },
     "Journeys"                       : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" }
   },
   "elasticsearchJobsScheduling" : {
-    "SubscriberProfileSnapshot"      : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "5 0 * * *" },
+    "SubscriberProfileSnapshot"      : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "5 0 * * *" },
     "JourneystatisticCleanUp"        : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" },
     "ExpiredVoucherCleanUp"          : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" }
   },
@@ -73,6 +74,7 @@
     "regr_criteria"
   ],
 
+  "evolutionVersion"                                     : "${project.version}",
   "emptyTopic"                                           : "${topic.empty}",
   "journeyTopic"                                         : "${topic.journey}",
   "journeyTemplateTopic"                                 : "${topic.journeytemplate}",
@@ -426,9 +428,9 @@
       { "id" : "loyaltyprograms",              "display" : "Loyalty Programs",             "dataType" : "stringSet", "tagFormat" : null, "tagMaxLength" : 100,  "esField" : "loyaltyprograms",                    "retriever" : "getLoyaltyPrograms",         "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : null },
       { "id" : "loyaltyprograms.tiers",        "display" : "Loyalty Programs Tiers",       "dataType" : "stringSet", "tagFormat" : null, "tagMaxLength" : 100,  "esField" : "loyaltyprogramstiers",               "retriever" : "getLoyaltyProgramsTiers",    "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : null },
       { "id" : "loyaltyprogram.name",          "display" : "Loyalty Program",              "dataType" : "stringSet", "tagFormat" : null, "tagMaxLength" : 100,  "esField" : "loyaltyprogram.name",                "retriever" : "getLoyaltyPrograms",         "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#loyaltyPrograms#" ] },
-      { "id" : "journey.name",                 "display" : "Journey Name",                 "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionJourney",            "retriever" : "getEvaluationJourney",       "minValue" : null, "maxValue" : null, "includedOperators" : [ "==" ], "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#historicalJourneys#" ],      "evaluationVariable" : true },
-      { "id" : "campaign.name",                "display" : "Campaign Name",                "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionCampaign",           "retriever" : "getEvaluationJourney",       "minValue" : null, "maxValue" : null, "includedOperators" : [ "==" ], "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#historicalCampaigns#" ],     "evaluationVariable" : true },
-      { "id" : "bulkcampaign.name",            "display" : "BulkCampaign Name",            "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionBulkcampaign",       "retriever" : "getEvaluationJourney",       "minValue" : null, "maxValue" : null, "includedOperators" : [ "==" ], "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#historicalBulkCampaigns#" ], "evaluationVariable" : true },
+      { "id" : "journey.name",                 "display" : "Journey Name",                 "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionJourney",            "retriever" : "getEvaluationJourney",       "minValue" : null, "maxValue" : null, "includedOperators" : [ "is in set" ], "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#historicalJourneys#" ],      "evaluationVariable" : true },
+      { "id" : "campaign.name",                "display" : "Campaign Name",                "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionCampaign",           "retriever" : "getEvaluationJourney",       "minValue" : null, "maxValue" : null, "includedOperators" : [ "is in set" ], "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#historicalCampaigns#" ],     "evaluationVariable" : true },
+      { "id" : "bulkcampaign.name",            "display" : "BulkCampaign Name",            "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionBulkcampaign",       "retriever" : "getEvaluationJourney",       "minValue" : null, "maxValue" : null, "includedOperators" : [ "is in set" ], "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#historicalBulkCampaigns#" ], "evaluationVariable" : true },
       { "id" : "journey.customer.status",      "display" : "Journey Customer Status",      "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionJourneyStatus",      "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] },
       { "id" : "campaign.customer.status",     "display" : "Campaign Customer Status",     "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionCampaignStatus",     "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] },
       { "id" : "bulkcampaign.customer.status", "display" : "BulkCampaign Customer Status", "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionBulkcampaignStatus", "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] }
@@ -947,14 +949,14 @@
       "name"                : "journeyImpactReport",
       "display"             : "Journey Impact Report",
       "description"         : "Description of the Journey Impact Report",
-      "class"               : "com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportMonoDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "journeyCustomerStatisticsReport",
       "display"             : "Journey Customer Statistics Report",
       "description"         : "Description of the Journey Customer Statistics Report",
-      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportMonoDriver",
+      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
@@ -1124,5 +1126,11 @@
     
     "enableProfileSegmentChange" : true,
     "enableEvaluateTargetRandomness" : false,
-    "enableContactPolicyProcessing" : true
+    "enableContactPolicyProcessing" : true,
+    
+    --
+    -- recurrentCampaignCreationDaysRange default value is 3 - creates child campaigns before x days and creates missing child campaigns whose start date with in now-x days
+    --
+    
+    "recurrentCampaignCreationDaysRange" : 3
 }
