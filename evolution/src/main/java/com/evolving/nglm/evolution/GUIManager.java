@@ -10411,7 +10411,7 @@ public class GUIManager
             dependencyRequest.put("id", supplier.getGUIManagedObjectID());
 
             JSONObject dependenciesObject = guiManagerGeneral.processGetDependencies(userID, dependencyRequest);
-            JSONArray dependencies = JSONUtilities.decodeJSONArray(dependenciesObject, "dependencies", false);
+            JSONArray dependencies = JSONUtilities.decodeJSONArray(dependenciesObject, "dependencies", new JSONArray());
             boolean parentDependency = false;
             if (dependencies.size() != 0)
               {
@@ -10419,7 +10419,7 @@ public class GUIManager
                   {
                     JSONObject dependent = (JSONObject) dependencies.get(j);
                     String ojectType = JSONUtilities.decodeString(dependent, "objectType", false);
-                    if (ojectType.equals("supplier") || ojectType.equals("product"))
+                    if ("supplier".equals(ojectType) || "product".equals("ojectType"))
                       {
                         parentDependency = true;
                         break;
@@ -20089,7 +20089,7 @@ public class GUIManager
             dependencyRequest.put("id", resellerID);
 
             JSONObject dependenciesObject = guiManagerGeneral.processGetDependencies(userID, dependencyRequest);
-            JSONArray dependencies = JSONUtilities.decodeJSONArray(dependenciesObject, "dependencies", false);
+            JSONArray dependencies = JSONUtilities.decodeJSONArray(dependenciesObject, "dependencies", new JSONArray());
             boolean parentDependency = false;
             if (dependencies.size() != 0)
               {
@@ -20097,7 +20097,7 @@ public class GUIManager
                   {
                     JSONObject dependent = (JSONObject) dependencies.get(j);
                     String ojectType = JSONUtilities.decodeString(dependent, "objectType", false);
-                    if (ojectType.equals("reseller"))
+                    if ("reseller".equals(ojectType))
                       {
                         parentDependency = true;
                         break;
