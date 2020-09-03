@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  GUIManager.java
+FO*  GUIManager.java
 *
 *****************************************************************************/
 
@@ -2151,7 +2151,7 @@ public class GUIManager
     if(recurrnetCampaignCreationJob.isProperlyConfigured())
       {
         guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
-        new Thread(guiManagerJobScheduler::runScheduler).start();
+        new Thread(guiManagerJobScheduler::runScheduler, "guiManagerJobScheduler").start();
       }
     else
       {
