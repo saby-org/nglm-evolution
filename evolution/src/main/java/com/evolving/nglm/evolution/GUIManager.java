@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  GUIManager.java
+FO*  GUIManager.java
 *
 *****************************************************************************/
 
@@ -60,6 +60,8 @@ import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
+import org.apache.kafka.streams.errors.InvalidStateStoreException;
+import org.apache.kafka.streams.state.KeyValueIterator;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -83,6 +85,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Alarm;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.CronFormat;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker;
@@ -97,6 +100,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
+import com.evolving.nglm.core.utilities.UtilitiesException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
@@ -683,6 +687,7 @@ public class GUIManager
   *****************************************/
 
   protected static UniqueKeyServer epochServer = new UniqueKeyServer();
+  
 
   /*****************************************
   *
@@ -2139,6 +2144,26 @@ public class GUIManager
 
     NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService));
 
+    /*****************************************
+    *
+    *  guiManagerJobScheduler
+    *
+    *****************************************/
+    
+    JobScheduler guiManagerJobScheduler = new JobScheduler("GUIManager");
+    long uniqueID = 0;
+    String periodicGenerationCronEntry = "1,10,15,20,25,30,35,40,45,50 * * * *"; //1,15,30,45 * * * * //5 1,6,11,16,21 * * *
+    ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob(uniqueID++, "Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getBaseTimeZone(), false);
+    if(recurrnetCampaignCreationJob.isProperlyConfigured())
+      {
+        guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
+        new Thread(guiManagerJobScheduler::runScheduler, "guiManagerJobScheduler").start();
+      }
+    else
+      {
+        if (log.isErrorEnabled()) log.error("invalid recurrnetCampaignCreationJob cron");
+      }
+    
     /*****************************************
     *
     *  log restServerStarted
@@ -5089,14 +5114,15 @@ public class GUIManager
   private JSONObject processGetJourneyList(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType, boolean fullDetails, boolean externalOnly, boolean includeArchived)
   {
     /*****************************************
-    *
-    *  retrieve and convert journeys
-    *
-    *****************************************/
+     *
+     * retrieve and convert journeys
+     *
+     *****************************************/
 
+    String parentId  = JSONUtilities.decodeString(jsonRoot, "parentId", false);
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> journeys = new ArrayList<JSONObject>();
-    Collection <GUIManagedObject> journeyObjects = new ArrayList<GUIManagedObject>();
+    Collection<GUIManagedObject> journeyObjects = new ArrayList<GUIManagedObject>();
     if (jsonRoot.containsKey("ids"))
       {
         JSONArray journeyIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
@@ -5110,79 +5136,104 @@ public class GUIManager
               }
 
           }
-      }
+      } 
     else
       {
         journeyObjects = journeyService.getStoredJourneys(includeArchived);
       }
+    
+    //
+    //  filter to present recurrent campaigns and normal campaigns
+    //
+    
+    switch (objectType)
+    {
+      case Campaign:
+      case BulkCampaign:
+        if (parentId != null && !parentId.isEmpty())
+          {
+            journeyObjects = journeyObjects.stream().filter(journey -> journeyService.isAChildJourney(journey)).collect(Collectors.toList());
+            journeyObjects = journeyObjects.stream().filter(journey -> parentId.equals(JSONUtilities.decodeString(journeyService.getJSONRepresentation(journey), "recurrenceId", true))).collect(Collectors.toList());
+          }
+        else
+          {
+            journeyObjects = journeyObjects.stream().filter(journey -> !journeyService.isAChildJourney(journey)).collect(Collectors.toList());
+          }
+        break;
+    }
+    
     for (GUIManagedObject journey : journeyObjects)
       {
-        if (journey.getGUIManagedObjectType().equals(objectType) && (! externalOnly || ! journey.getInternalOnly()))
+        if (journey.getGUIManagedObjectType().equals(objectType) && (!externalOnly || !journey.getInternalOnly()))
           {
             JSONObject journeyInfo = journeyService.generateResponseJSON(journey, fullDetails, now);
             long subscriberCount = 0;
             String journeyID = journey.getGUIManagedObjectID();
 
             //
-            //  retrieve from Elasticsearch if by pass is activated, JourneyTraffic Engine otherwise
-            // 
-            if(bypassJourneyTrafficEngine) {
-              try {
-                ElasticsearchClientAPI client = new ElasticsearchClientAPI("",0); // @rl deprecated use, change later
-                client.setConnection(this.elasticsearch);
-                Long count = client.getJourneySubscriberCount(journeyID);
-                subscriberCount = (count != null)? count : 0;
-              }
-              catch (ElasticsearchClientException e) {
-                // Log
-                StringWriter stackTraceWriter = new StringWriter();
-                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-              }
-            }
-            else {
-              JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
-              if (journeyTrafficHistory != null && journeyTrafficHistory.getCurrentData() != null && journeyTrafficHistory.getCurrentData().getGlobal() != null)
-                {
-                  subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberInflow();
-                }
-            }
+            // retrieve from Elasticsearch if by pass is activated, JourneyTraffic Engine
+            // otherwise
+            //
             
+            if (bypassJourneyTrafficEngine)
+              {
+                try
+                  {
+                    ElasticsearchClientAPI client = new ElasticsearchClientAPI("", 0); // @rl deprecated use, change
+                    client.setConnection(this.elasticsearch);
+                    Long count = client.getJourneySubscriberCount(journeyID);
+                    subscriberCount = (count != null) ? count : 0;
+                  } 
+                catch (ElasticsearchClientException e)
+                  {
+                    StringWriter stackTraceWriter = new StringWriter();
+                    e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                  }
+              } 
+            else
+              {
+                JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
+                if (journeyTrafficHistory != null && journeyTrafficHistory.getCurrentData() != null && journeyTrafficHistory.getCurrentData().getGlobal() != null)
+                  {
+                    subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberInflow();
+                  }
+              }
             journeyInfo.put("subscriberCount", subscriberCount);
             journeys.add(journeyInfo);
           }
       }
 
     /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
+     *
+     * response
+     *
+     *****************************************/
 
-    HashMap<String,Object> response = new HashMap<String,Object>();
+    HashMap<String, Object> response = new HashMap<String, Object>();
     response.put("responseCode", "ok");
     switch (objectType)
-      {
-        case Journey:
-          response.put("journeys", JSONUtilities.encodeArray(journeys));
-          break;
+    {
+      case Journey:
+        response.put("journeys", JSONUtilities.encodeArray(journeys));
+        break;
 
-        case Campaign:
-          response.put("campaigns", JSONUtilities.encodeArray(journeys));
-          break;
+      case Campaign:
+        response.put("campaigns", JSONUtilities.encodeArray(journeys));
+        break;
 
-        case Workflow:
-          response.put("workflows", JSONUtilities.encodeArray(journeys));
-          break;
+      case Workflow:
+        response.put("workflows", JSONUtilities.encodeArray(journeys));
+        break;
 
-        case BulkCampaign:
-          response.put("bulkCampaigns", JSONUtilities.encodeArray(journeys));
-          break;
+      case BulkCampaign:
+        response.put("bulkCampaigns", JSONUtilities.encodeArray(journeys));
+        break;
 
-        default:
-          response.put("journeys", JSONUtilities.encodeArray(journeys));
-          break;
-      }
+      default:
+        response.put("journeys", JSONUtilities.encodeArray(journeys));
+        break;
+    }
     return JSONUtilities.encodeObject(response);
   }
 
@@ -5297,6 +5348,15 @@ public class GUIManager
         journeyID = journeyService.generateJourneyID();
         jsonRoot.put("id", journeyID);
       }
+    
+    //
+    // recurrence
+    //
+    
+    boolean recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
+    String recurrenceID = JSONUtilities.decodeString(jsonRoot, "recurrenceId", false);
+    if (recurrence && recurrenceID == null) jsonRoot.put("recurrenceId", journeyID);
+    if (recurrence && JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false) == null) jsonRoot.put("lastCreatedOccurrenceNumber", 1);
     
     //
     // initial approval
@@ -6223,7 +6283,21 @@ public class GUIManager
     boolean active = JSONUtilities.decodeBoolean(jsonRoot, "active", Boolean.FALSE);
     JSONArray bulkCampaignJourneyObjectives = JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", true);
     JSONObject bulkCampaignStory = JSONUtilities.decodeJSONObject(jsonRoot, "story", true);
+    
     JSONArray bulkCampaignTargetCriteria = JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", true);
+    
+    //
+    //  recurrent
+    //
+    
+    boolean recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
+    String recurrenceId = JSONUtilities.decodeString(jsonRoot, "recurrenceId", false);
+    if (recurrence && recurrenceId == null) recurrenceId = bulkCampaignID;
+    Integer occurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "occurrenceNumber", recurrence);
+    JSONObject journeyScheduler = JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence);
+    Integer lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false);
+    if (recurrence && lastCreatedOccurrenceNumber == null) lastCreatedOccurrenceNumber = 1;
+    
     /*****************************************
     *
     *  existing journey
@@ -6258,6 +6332,17 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
+        //
+        // initial approval
+        //
+        
+        JourneyStatus approval = JourneyStatus.Pending;
+        
+        if (existingBulkCampaign != null && existingBulkCampaign.getAccepted())
+          {
+            approval = ((Journey) existingBulkCampaign).getApproval();
+          }
+        
         /*****************************************
         *
         *  templateJSONRepresentation
@@ -6297,6 +6382,12 @@ public class GUIManager
         campaignJSONRepresentation.put("journeyObjectives", bulkCampaignJourneyObjectives); 
         campaignJSONRepresentation.put("story", bulkCampaignStory);
         campaignJSONRepresentation.put("targetingCriteria", bulkCampaignTargetCriteria);
+        
+        campaignJSONRepresentation.put("recurrence", recurrence);
+        campaignJSONRepresentation.put("recurrenceId", recurrenceId);
+        campaignJSONRepresentation.put("occurrenceNumber", occurrenceNumber);
+        if (journeyScheduler != null)campaignJSONRepresentation.put("scheduler", JSONUtilities.encodeObject(journeyScheduler));
+        campaignJSONRepresentation.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
 
         //
         //  campaignJSON
@@ -6310,7 +6401,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+        Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, approval);
 
         //
         // Update targetCount
@@ -26883,5 +26974,325 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
   }
 
+  public class RecurrentCampaignCreationJob extends ScheduledJob
+  {
+    /***********************************
+     *
+     * constructor
+     *
+     ************************************/
+
+    public RecurrentCampaignCreationJob(long schedulingUniqueID, String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
+    {
+      super(schedulingUniqueID, jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart);
+    }
+
+    /***********************************
+     *
+     * run
+     *
+     ************************************/
+
+    @Override protected void run()
+    {
+      if (log.isInfoEnabled()) log.info("creating recurrent campaigns");
+      String tz = Deployment.getBaseTimeZone();
+      final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
+      int recurrentCampaignCreationDaysRange = Deployment.getRecurrentCampaignCreationDaysRange();
+      Date filterStartDate = RLMDateUtils.addDays(now, -1*recurrentCampaignCreationDaysRange, tz);
+      Date filterEndDate = RLMDateUtils.addDays(now, recurrentCampaignCreationDaysRange, tz);
+      Collection<Journey> recurrentJourneys = journeyService.getActiveAndCompletedRecurrentJourneys(SystemTime.getCurrentTime());
+      log.info("RAJ K recurrentJourneys {}", recurrentJourneys);
+      for (Journey recurrentJourney : recurrentJourneys)
+        {
+          List<Date> journeyCreationDates = new ArrayList<Date>();
+          JourneyScheduler journeyScheduler = recurrentJourney.getJourneyScheduler();
+          int limitCount = journeyScheduler.getNumberOfOccurrences() - recurrentJourney.getLastCreatedOccurrenceNumber();
+          if (log.isDebugEnabled()) log.debug("executing creation for {}, id {}", recurrentJourney.getGUIManagedObjectDisplay(), recurrentJourney.getGUIManagedObjectID());
+
+          //
+          // limit reached
+          //
+
+          if (limitCount <= 0)
+            {
+              if (log.isDebugEnabled()) log.debug("limit reached");
+              continue;
+            }
+
+          //
+          // scheduling
+          //
+
+          String scheduling = journeyScheduler.getRunEveryUnit().toLowerCase();
+          Integer scheduligInterval = journeyScheduler.getRunEveryDuration();
+          List<Date> tmpJourneyCreationDates = new ArrayList<Date>();
+          if ("week".equalsIgnoreCase(scheduling))
+            {
+              Date lastDateOfThisWk = getLastDate(now, Calendar.DAY_OF_WEEK);
+              Date tempStartDate = recurrentJourney.getEffectiveStartDate(); //RLMDateUtils.addWeeks(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
+              Date firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK);
+              Date lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK);
+              while(lastDateOfThisWk.compareTo(lastDateOfStartDateWk) >= 0)
+                {
+                  tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, journeyScheduler.getRunEveryWeekDay()));
+                  tempStartDate = RLMDateUtils.addWeeks(tempStartDate, scheduligInterval, tz);
+                  lastDateOfStartDateWk = getLastDate(tempStartDate, Calendar.DAY_OF_WEEK);
+                  firstDateOfStartDateWk = getFirstDate(tempStartDate, Calendar.DAY_OF_WEEK);
+                }
+              
+              //
+              // handle the edge (if start day of next wk)
+              //
+              
+              tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, journeyScheduler.getRunEveryWeekDay()));
+            } 
+          else if ("month".equalsIgnoreCase(scheduling))
+            {
+              Date lastDateOfThisMonth = getLastDate(now, Calendar.DAY_OF_MONTH);
+              Date tempStartDate = recurrentJourney.getEffectiveStartDate(); //RLMDateUtils.addMonths(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
+              Date firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH);
+              Date lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
+              while(lastDateOfThisMonth.compareTo(lastDateOfStartDateMonth) >= 0)
+                {
+                  tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay()));
+                  tempStartDate = RLMDateUtils.addMonths(tempStartDate, scheduligInterval, tz);
+                  firstDateOfStartDateMonth = getFirstDate(tempStartDate, Calendar.DAY_OF_MONTH);
+                  lastDateOfStartDateMonth = getLastDate(tempStartDate, Calendar.DAY_OF_MONTH);
+                }
+              
+              //
+              // handle the edge (if 1st day of next month)
+              //
+              
+              tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, journeyScheduler.getRunEveryMonthDay()));
+            }
+          else if ("day".equalsIgnoreCase(scheduling))
+            {
+              Date lastDate = filterEndDate;
+              Date tempStartDate = recurrentJourney.getEffectiveStartDate(); //RLMDateUtils.addDays(recurrentJourney.getEffectiveStartDate(), scheduligInterval, tz);
+              while(lastDate.compareTo(tempStartDate) >= 0)
+                {
+                  tmpJourneyCreationDates.add(new Date(tempStartDate.getTime()));
+                  tempStartDate = RLMDateUtils.addDays(tempStartDate, scheduligInterval, tz);
+                }
+            }
+          else
+            {
+              if (log.isErrorEnabled()) log.error("invalid scheduling {}", scheduling);
+            }
+          
+          //
+          // filter out if before start date and recurrentCampaignCreationDaysRange (before / after)
+          //
+          
+          log.info("RAJ K before filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
+          tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.after(recurrentJourney.getEffectiveStartDate())  && date.compareTo(filterStartDate) >= 0 && filterEndDate.compareTo(date) >= 0 ).collect(Collectors.toList());
+          log.info("RAJ K after filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
+          
+          //
+          //  exists
+          //
+          
+          Collection<Journey> recurrentSubJourneys = journeyService.getAllRecurrentJourneysByID(recurrentJourney.getJourneyID(), true);
+          for (Date expectedDate : tmpJourneyCreationDates)
+            {
+              boolean exists = false;
+              for (Journey subJourney : recurrentSubJourneys)
+                {
+                  exists = RLMDateUtils.truncatedCompareTo(expectedDate, subJourney.getEffectiveStartDate(), Calendar.DATE, Deployment.getBaseTimeZone()) == 0;
+                  if (exists) break;
+                }
+              if (!exists && limitCount > 0)
+                {
+                  journeyCreationDates.add(expectedDate);
+                  limitCount--;
+                }
+            }
+          
+
+          //
+          // createJourneys
+          //
+
+          if (!journeyCreationDates.isEmpty()) createJourneys(recurrentJourney, journeyCreationDates, recurrentJourney.getLastCreatedOccurrenceNumber());
+        }
+      if (log.isInfoEnabled())log.info("created recurrent campaigns");
+    }
+    
+    //
+    //  createJourneys
+    //
+    
+    private void createJourneys(Journey recurrentJourney, List<Date> journeyCreationDates, Integer lastCreatedOccurrenceNumber)
+    {
+      log.info("RAJ K createingJourneys of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
+      String timeZone = Deployment.getBaseTimeZone();
+      int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, timeZone), Deployment.getBaseTimeZone());
+      int occurrenceNumber = lastCreatedOccurrenceNumber;
+      for (Date startDate : journeyCreationDates)
+        {
+          //
+          //  prepare start and end date
+          //
+          
+          Date endDate = RLMDateUtils.addDays(startDate, daysBetween, timeZone);
+          endDate = RLMDateUtils.setField(endDate, Calendar.HOUR_OF_DAY, RLMDateUtils.getField(recurrentJourney.getEffectiveEndDate(), Calendar.HOUR_OF_DAY, timeZone), timeZone);
+          endDate = RLMDateUtils.setField(endDate, Calendar.MINUTE, RLMDateUtils.getField(recurrentJourney.getEffectiveEndDate(), Calendar.MINUTE, timeZone), timeZone);
+          endDate = RLMDateUtils.setField(endDate, Calendar.SECOND, RLMDateUtils.getField(recurrentJourney.getEffectiveEndDate(), Calendar.SECOND, timeZone), timeZone);
+          
+          startDate = RLMDateUtils.setField(startDate, Calendar.HOUR_OF_DAY, RLMDateUtils.getField(recurrentJourney.getEffectiveStartDate(), Calendar.HOUR_OF_DAY, timeZone), timeZone);
+          startDate = RLMDateUtils.setField(startDate, Calendar.MINUTE, RLMDateUtils.getField(recurrentJourney.getEffectiveStartDate(), Calendar.MINUTE, timeZone), timeZone);
+          startDate = RLMDateUtils.setField(startDate, Calendar.SECOND, RLMDateUtils.getField(recurrentJourney.getEffectiveStartDate(), Calendar.SECOND, timeZone), timeZone);
+          
+          //
+          //  journeyJSON
+          //
+          
+          JSONObject journeyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
+          journeyJSON.put("apiVersion", 1);
+          
+          //
+          //  remove
+          //
+          
+          journeyJSON.remove("recurrence");
+          journeyJSON.remove("scheduler");
+          journeyJSON.remove("status");
+          
+          //
+          //  add
+          //
+          
+          String journeyID = journeyService.generateJourneyID();
+          journeyJSON.put("id", journeyID);
+          journeyJSON.put("occurrenceNumber", ++occurrenceNumber);
+          journeyJSON.put("name", recurrentJourney.getGUIManagedObjectName() + "_" + occurrenceNumber);
+          journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + " - " + occurrenceNumber);
+          journeyJSON.put("effectiveStartDate", recurrentJourney.formatDateField(startDate));
+          journeyJSON.put("effectiveEndDate", recurrentJourney.formatDateField(endDate));
+          
+          //
+          //  create and activate
+          //
+          
+          if (GUIManagedObjectType.BulkCampaign == recurrentJourney.getGUIManagedObjectType())
+            {
+              processPutBulkCampaign("0", journeyJSON);
+              processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), true);
+              
+              //
+              //  lastCreatedOccurrenceNumber
+              //
+              
+              JSONObject recJourneyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
+              recJourneyJSON.put("lastCreatedOccurrenceNumber", occurrenceNumber);
+              processPutBulkCampaign("0", recJourneyJSON);
+            }
+          else
+            {
+              processPutJourney("0", journeyJSON, recurrentJourney.getGUIManagedObjectType());
+              processSetActive("0", journeyJSON, recurrentJourney.getGUIManagedObjectType(), true);
+              
+              //
+              //  lastCreatedOccurrenceNumber
+              //
+              
+              JSONObject recJourneyJSON = (JSONObject) journeyService.getJSONRepresentation(recurrentJourney).clone();
+              recJourneyJSON.put("lastCreatedOccurrenceNumber", occurrenceNumber);
+              processPutJourney("0", recJourneyJSON, recurrentJourney.getGUIManagedObjectType());
+            }
+          
+        }
+    }
+    
+    //
+    //  getExpectedCreationDates
+    //
+    
+    private List<Date> getExpectedCreationDates(Date firstDate, Date lastDate, String scheduling, List<String> runEveryDay)
+    {
+      List<Date> result = new ArrayList<Date>();
+      while (firstDate.before(lastDate) || firstDate.compareTo(lastDate) == 0)
+        {
+          int day = -1;
+          switch (scheduling)
+            {
+              case "week":
+                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
+                break;
+                
+              case "month":
+                day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
+                break;
+
+              default:
+                break;
+          }
+          String dayOf = String.valueOf(day);
+          if (runEveryDay.contains(dayOf)) result.add(new Date(firstDate.getTime()));
+          firstDate = RLMDateUtils.addDays(firstDate, 1, Deployment.getBaseTimeZone());
+        }
+      
+      //
+      //  handle last date of month
+      //
+      
+      if ("month".equalsIgnoreCase(scheduling))
+        {
+          int lastDayOfMonth = RLMDateUtils.getField(lastDate, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
+          for (String day : runEveryDay)
+            {
+              if (Integer.parseInt(day) > lastDayOfMonth) result.add(new Date(lastDate.getTime()));
+            }
+        }
+      return result;
+    }
+
+    //
+    //  getFirstDate
+    //
+    
+    private Date getFirstDate(Date now, int dayOf)
+    {
+      if (Calendar.DAY_OF_WEEK == dayOf)
+        {
+          Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getBaseTimeZone());
+          return RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getBaseTimeZone());
+        }
+      else
+        {
+          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+          c.setTime(now);
+          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
+          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getBaseTimeZone());
+          return firstDate;
+        }
+    }
+    
+    //
+    //  getLastDate
+    //
+    
+    private Date getLastDate(Date now, int dayOf)
+    {
+      Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getBaseTimeZone());
+      if (Calendar.DAY_OF_WEEK == dayOf)
+        {
+          Date firstDateOfthisWk = RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getBaseTimeZone());
+          return RLMDateUtils.addDays(firstDateOfthisWk, 6, Deployment.getBaseTimeZone());
+        }
+      else
+        {
+          Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+          c.setTime(now);
+          int toalNoOfDays = c.getActualMaximum(Calendar.DAY_OF_MONTH);
+          int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getBaseTimeZone());
+          Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getBaseTimeZone());
+          Date lastDate = RLMDateUtils.addDays(firstDate, toalNoOfDays-1, Deployment.getBaseTimeZone());
+          return lastDate;
+        }
+    }
+  }
 }
 

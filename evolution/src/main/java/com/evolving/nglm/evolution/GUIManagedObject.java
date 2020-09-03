@@ -717,4 +717,9 @@ public abstract class GUIManagedObject
     public String[] dependencies ();
     public Class<? extends GUIService> serviceClass();
   }
+  
+  @Override public String toString()
+  {
+    return "guiManagedObjectID=" + guiManagedObjectID + ", guiManagedObjectName="  + guiManagedObjectName + ", guiManagedObjectDisplay=" + guiManagedObjectDisplay;
+  }
 }
