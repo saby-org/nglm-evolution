@@ -1102,7 +1102,7 @@ public class EvaluationCriterion
           
         /*****************************************
         *
-        *  containsKeyword operator
+        *  doesNotContainsKeywordOperator operator
         *
         *****************************************/
           
@@ -1706,6 +1706,7 @@ public class EvaluationCriterion
           //
 
           String argumentValue = (String) argument.evaluateExpression(null, TimeUnit.Unknown);
+          if (argumentValue != null) argumentValue = argumentValue.toLowerCase();
 
           //
           //  script
@@ -1829,7 +1830,7 @@ public class EvaluationCriterion
           break;
           
         case DoesNotContainsKeywordOperator:
-            query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).mustNot(baseQuery);
+          query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).mustNot(baseQuery);
           break;
           
 
