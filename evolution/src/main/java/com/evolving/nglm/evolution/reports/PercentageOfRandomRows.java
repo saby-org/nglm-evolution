@@ -24,6 +24,7 @@ public class PercentageOfRandomRows {
 		{
 			br = new BufferedReader(new FileReader(inputFileName));
 
+			String header = br.readLine();
 			while((br.readLine()) != null) 
 			{
 				totalNmbrOfLinesInFile++;
@@ -31,6 +32,7 @@ public class PercentageOfRandomRows {
 			br.close();
 
 			BufferedWriter bw = new BufferedWriter(new FileWriter(outputFileName));
+			bw.write(header + "\n");
 			SamplerNRandomRows mySamplerOfRandomRows = new SamplerNRandomRows();
 
 			if (totalNmbrOfLinesInFile < 1)

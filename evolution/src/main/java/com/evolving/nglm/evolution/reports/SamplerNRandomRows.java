@@ -28,6 +28,7 @@ public class SamplerNRandomRows {
 		BufferedReader br = new BufferedReader(new FileReader(fileName));
 		int totalNmbrOfRowsInFile = 0;
 
+		String header = br.readLine();
 		while((br.readLine()) != null) {
 			totalNmbrOfRowsInFile++;
 		}
@@ -36,7 +37,6 @@ public class SamplerNRandomRows {
 
 		Random ra = new Random();
 		int randomNumber = 0;
-		Scanner sc = new Scanner(new File(fileName)).useDelimiter("\n");
 
 		if (nmbrOfRowsToBeExtracted <= 0) 
 		{
@@ -50,22 +50,22 @@ public class SamplerNRandomRows {
 
 		if (nmbrOfRowsToBeExtracted > 0 && nmbrOfRowsToBeExtracted < totalNmbrOfRowsInFile) 
 		{
-
-			while (sc.hasNext()) 
+			BufferedReader brr = new BufferedReader(new FileReader(fileName));
+			String tete = brr.readLine();
+			while((currentRow = brr.readLine()) != null) 
 			{
-				currentRow = sc.next();
 				cptCurrentRowNmbr++; 
-
 				if (cptCurrentRowNmbr <= nmbrOfRowsToBeExtracted) 
 				{
 					listOFRandomlyExtractedRows.add(currentRow);
-
 				} 
 				else if ((randomNumber = (int) ra.nextInt(cptCurrentRowNmbr)) < nmbrOfRowsToBeExtracted) 
 				{
 					listOFRandomlyExtractedRows.set(randomNumber, currentRow);
 				}
 			}
+			brr.close();
+			
 		}
 		}
 		catch (FileNotFoundException e) 
@@ -74,7 +74,7 @@ public class SamplerNRandomRows {
 		}
 		catch (IOException e) 
 		{
-			log.error("File is empty!");
+			log.error("The fiile is empty!", e);
 		}
 		return listOFRandomlyExtractedRows;
 	}
