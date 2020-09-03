@@ -11,20 +11,18 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.JourneyStatisticESSinkConnector;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
-import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneyRewardsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SegmentationDimensionsMap;
 
-public class JourneyRewardsDatacubeGenerator extends DatacubeGenerator
+public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
 {
   private static final String DATACUBE_ES_INDEX_PREFIX = "datacube_journeyrewards-";
   private static final String DATA_ES_INDEX_PREFIX = "journeystatistic-";
@@ -82,7 +80,6 @@ public class JourneyRewardsDatacubeGenerator extends DatacubeGenerator
   *
   *****************************************/
   @Override protected List<String> getFilterFields() { return filterFields; }
-  @Override protected List<CompositeValuesSourceBuilder<?>> getFilterComplexSources() { return new ArrayList<CompositeValuesSourceBuilder<?>>(); }
 
   @Override
   protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
@@ -156,7 +153,7 @@ public class JourneyRewardsDatacubeGenerator extends DatacubeGenerator
   }
 
   @Override
-  protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket, Map<String, Object> contextFilters) throws ClassCastException
+  protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
   {    
     HashMap<String, Object> metrics = new HashMap<String,Object>();
     

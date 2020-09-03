@@ -7,19 +7,26 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptType;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
+import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite;
 import org.elasticsearch.search.aggregations.bucket.composite.TermsValuesSourceBuilder;
-import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
+import org.elasticsearch.search.aggregations.bucket.nested.ParsedNested;
+import org.elasticsearch.search.aggregations.bucket.nested.ParsedReverseNested;
+import org.elasticsearch.search.aggregations.bucket.range.ParsedRange;
+import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
@@ -32,9 +39,6 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
 {
   private static final String DATACUBE_ES_INDEX = "datacube_loyaltyprogramschanges";
   private static final String DATA_ES_INDEX = "subscriberprofile";
-  private static final String DATA_ES_INDEX_SNAPSHOT_PREFIX = "subscriberprofile_snapshot-";
-  private static final String FILTER_ALL = "filters";
-  private static final Pattern LOYALTY_TIERS_PATTERN = Pattern.compile("\\[(.*), (.*), (.*), (.*)\\]");
 
   /*****************************************
   *
@@ -44,7 +48,6 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   private LoyaltyProgramsMap loyaltyProgramsMap;
 
   private boolean previewMode;
-  private boolean snapshotsAvailable;
   private long targetPeriod;
   private long targetPeriodStartIncluded;
   private String targetDay;
@@ -57,8 +60,8 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   public ProgramsChangesDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, LoyaltyProgramService loyaltyProgramService)
   {
     super(datacubeName, elasticsearch);
+    
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
-    this.snapshotsAvailable = true;
   }
 
   /*****************************************
@@ -66,122 +69,154 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   * Elasticsearch indices settings
   *
   *****************************************/
-  @Override protected String getDataESIndex() { 
-    if (this.previewMode || !this.snapshotsAvailable) {
-      return DATA_ES_INDEX;
-    } else {
-      return DATA_ES_INDEX_SNAPSHOT_PREFIX + targetDay; 
-    }
-  }
-  
+  @Override protected String getDataESIndex() { return DATA_ES_INDEX; }
   @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX; }
-  
-  //
-  // Subset of subscriberprofile
-  //
-  // When a newly created subscriber in Elasticsearch comes first by ExtendedSubscriberProfile sink connector,
-  // it has not yet any of the "product" main (& mandatory) fields.
-  // Those comes when the SubscriberProfile sink connector push them.
-  // For a while, it is possible a document in subscriberprofile index miss many product fields required by datacube generation.
-  // Therefore, we filter out those subscribers with missing data
-  @Override
-  protected QueryBuilder getSubsetQuery() 
-  {
-    return QueryBuilders.boolQuery().must(QueryBuilders.existsQuery("lastUpdateDate"));
-  }
 
   /*****************************************
   *
-  * Filters settings
+  * Datacube generation phases
   *
   *****************************************/
-  @Override protected List<String> getFilterFields() { return Collections.emptyList(); }
-  
-  @Override
-  protected List<CompositeValuesSourceBuilder<?>> getFilterComplexSources()
-  {
-    //
-    // LoyaltyProgram x New Tier x Previous Tier x Type ...
-    //
-    List<CompositeValuesSourceBuilder<?>> filterComplexSources = new ArrayList<CompositeValuesSourceBuilder<?>>();
-    
-    String dateBeginningIncluded = targetPeriodStartIncluded + "L";
-    String dateEndExcluded = (targetPeriodStartIncluded+targetPeriod) + "L";
-
-    TermsValuesSourceBuilder loyaltyProgramTier = new TermsValuesSourceBuilder(FILTER_ALL)
-        .script(new Script(ScriptType.INLINE, "painless", "def left = [];"
-            + " for (int i = 0; i < params._source['loyaltyPrograms'].length; i++) {"
-              + " if(params._source['loyaltyPrograms'][i]['tierUpdateDate']?.toString() != null && params._source['loyaltyPrograms'][i]['tierUpdateDate'] >= "+dateBeginningIncluded+" && params._source['loyaltyPrograms'][i]['tierUpdateDate'] < "+dateEndExcluded+"){"
-                + " def filter = [0,0,0,0];"
-                + " filter[0] = params._source['loyaltyPrograms'][i]['programID'];"
-                + " filter[1] = params._source['loyaltyPrograms'][i]['tierName']?.toString();"
-                + " filter[2] = params._source['loyaltyPrograms'][i]['previousTierName']?.toString();"
-                + " filter[3] = params._source['loyaltyPrograms'][i]['tierChangeType']?.toString();"
-                + " left.add(filter);"
-              + " }"
-            + " }"
-            + " return left;", Collections.emptyMap()));
-    filterComplexSources.add(loyaltyProgramTier);
-    
-    return filterComplexSources;
-  }
-  
   @Override
   protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
     loyaltyProgramsMap.update();
-    
-    this.snapshotsAvailable = true;
-    String initialDataIndex = getDataESIndex();
-    this.snapshotsAvailable = isESIndexAvailable(initialDataIndex);
-    if(!this.snapshotsAvailable) {
-      log.warn("Elasticsearch index [" + initialDataIndex + "] does not exist. We will execute request on [" + getDataESIndex() + "] instead.");
-    }
-    
     return true;
+  }
+
+  @Override
+  protected SearchRequest getElasticsearchRequest()
+  {
+    //
+    // Target index
+    //
+    String ESIndex = getDataESIndex();
+    
+    //
+    // Filter query
+    //
+    // Hack: When a newly created subscriber in Elasticsearch comes first by ExtendedSubscriberProfile sink connector,
+    // it has not yet any of the "product" main (& mandatory) fields.
+    // Those comes when the SubscriberProfile sink connector push them.
+    // For a while, it is possible a document in subscriberprofile index miss many product fields required by datacube generation.
+    // Therefore, we filter out those subscribers with missing data by looking for lastUpdateDate
+    QueryBuilder query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery("lastUpdateDate"));
+    
+    //
+    // Aggregations
+    //
+    List<CompositeValuesSourceBuilder<?>> sources = new ArrayList<>();
+    sources.add(new TermsValuesSourceBuilder("loyaltyProgramID").field("loyaltyPrograms.programID"));
+    sources.add(new TermsValuesSourceBuilder("newTier").field("loyaltyPrograms.tierName").missingBucket(true)); // Missing means opt-out. We need to catch them !
+    sources.add(new TermsValuesSourceBuilder("previousTier").field("loyaltyPrograms.previousTierName").missingBucket(true)); // Missing means opt-in. We need to catch them !
+    sources.add(new TermsValuesSourceBuilder("tierChangeType").field("loyaltyPrograms.tierChangeType"));
+    
+    //
+    // Sub Aggregation DATE
+    //
+    
+    RangeAggregationBuilder dateAgg = AggregationBuilders.range("DATE")
+        .field("loyaltyPrograms.tierUpdateDate")
+        .addRange(targetPeriodStartIncluded, targetPeriodStartIncluded + targetPeriod); // Reminder: from is included, to is excluded
+    
+    AggregationBuilder aggregation = AggregationBuilders.nested("DATACUBE", "loyaltyPrograms").subAggregation(
+        AggregationBuilders.composite("LOYALTY-COMPOSITE", sources).size(BUCKETS_MAX_NBR).subAggregation(dateAgg)
+    );
+    
+    //
+    // Datacube request
+    //
+    SearchSourceBuilder datacubeRequest = new SearchSourceBuilder()
+        .sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
+        .query(query)
+        .aggregation(aggregation)
+        .size(0);
+    
+    return new SearchRequest(ESIndex).source(datacubeRequest);
   }
 
   @Override
   protected void embellishFilters(Map<String, Object> filters)
   {
-    String loyaltyTiers = (String) filters.remove(FILTER_ALL);
-    String loyaltyProgramID = "undefined";
-    String newTierName = "undefined";
-    String previousTierName = "undefined";
-    String tierChangeType = "undefined";
-    Matcher m = LOYALTY_TIERS_PATTERN.matcher(loyaltyTiers);
-    if(m.matches()) 
-      {
-        loyaltyProgramID = m.group(1);
-        newTierName = m.group(2);
-        previousTierName = m.group(3);
-        tierChangeType = m.group(4);
+    String loyaltyProgramID = (String) filters.remove("loyaltyProgramID");
+    filters.put("loyaltyProgram", loyaltyProgramsMap.getDisplay(loyaltyProgramID, "loyaltyProgram"));
+    
+    // "newTier" stay the same (None is managed in extractDatacubeRows)
+    // "previousTier" stay the same (None is managed in extractDatacubeRows)
+    // "tierChangeType" stay the same
+  }
+  
+
+  @Override
+  protected List<Map<String, Object>> extractDatacubeRows(SearchResponse response, String timestamp, long period) throws ClassCastException
+  {
+    List<Map<String,Object>> result = new ArrayList<Map<String,Object>>();
+    
+    if (response.isTimedOut()
+        || response.getFailedShards() > 0
+        || response.getSkippedShards() > 0
+        || response.status() != RestStatus.OK) {
+      log.error("Elasticsearch search response return with bad status in {} generation.", getDatacubeName());
+      return result;
+    }
+    
+    if(response.getAggregations() == null) {
+      log.error("Main aggregation is missing in {} search response.", getDatacubeName());
+      return result;
+    }
+    
+    ParsedNested parsedNested = response.getAggregations().get("DATACUBE");
+    if(parsedNested == null || parsedNested.getAggregations() == null) {
+      log.error("Nested aggregation is missing in {} search response.", getDatacubeName());
+      return result;
+    }
+    
+    ParsedComposite parsedComposite = parsedNested.getAggregations().get("LOYALTY-COMPOSITE");
+    if(parsedComposite == null || parsedComposite.getBuckets() == null) {
+      log.error("Composite buckets are missing in {} search response.", getDatacubeName());
+      return result;
+    }
+    
+    for(ParsedComposite.ParsedBucket bucket: parsedComposite.getBuckets()) {
+      //
+      // Extract the filter
+      //
+      Map<String, Object> filters = bucket.getKey();
+      for(String key: filters.keySet()) {
+        if(filters.get(key) == null) {
+          filters.replace(key, "None"); // for newTier & previousTier
+        }
+      }
+
+      //
+      // Extract only the change of the day
+      //
+      if(bucket.getAggregations() == null) {
+        log.error("Aggregations in bucket is missing in {} search response.", getDatacubeName());
+        continue;
+      }
+      
+      ParsedRange parsedRange = bucket.getAggregations().get("DATE");
+      if(parsedRange == null || parsedRange.getBuckets() == null) {
+        log.error("Composite buckets are missing in {} search response.", getDatacubeName());
+        continue;
+      }
+
+      // There must be only one bucket !
+      for(org.elasticsearch.search.aggregations.bucket.range.Range.Bucket dateBucket: parsedRange.getBuckets()) {
+        long docCount = dateBucket.getDocCount();
         
         //
-        // rename
+        // Build row
         //
-        if(newTierName.equals("null")) { newTierName = "None"; }
-        if(previousTierName.equals("null")) { previousTierName = "None"; }
+        Map<String, Object> row = extractRow(filters, docCount, timestamp, period, Collections.emptyMap());
+        result.add(row);
       }
-    else 
-      {
-        log.warn("Unable to parse " + FILTER_ALL + " field.");
-      }
+    }
     
-    filters.put("newTier", newTierName);
-    filters.put("previousTier", previousTierName);
-    filters.put("tierChangeType", tierChangeType);
-    filters.put("loyaltyProgram", loyaltyProgramsMap.getDisplay(loyaltyProgramID, "loyaltyProgram"));
+    return result;
   }
-
-  /*****************************************
-  *
-  * Metrics settings
-  *
-  *****************************************/
-  @Override protected List<AggregationBuilder> getMetricAggregations() { return Collections.emptyList(); }
-  @Override protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket, Map<String, Object> contextFilters) throws ClassCastException { return Collections.emptyMap(); }
-
+  
   /*****************************************
   *
   * DocumentID settings
