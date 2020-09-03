@@ -2712,12 +2712,12 @@ public class GUIManagerGeneral extends GUIManager
       {
         String deliverableID = JSONUtilities.decodeString(jsonRoot, "id", false);
         deliverableIDs.add(deliverableID);
-        GUIManagedObject product = deliverableService.getStoredDeliverable(deliverableID);
-        if (product != null && (force || !product.getReadOnly()))
+        GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
+        if (deliverable != null && (force || !deliverable.getReadOnly()))
           singleIDresponseCode = "ok";
-        else if (product != null)
+        else if (deliverable != null)
           singleIDresponseCode = "failedReadOnly";
-        else singleIDresponseCode = "productNotFound";
+        else singleIDresponseCode = "deliverableNotFound";
       }
     //
     // multiple deletion
@@ -2733,7 +2733,7 @@ public class GUIManagerGeneral extends GUIManager
       {
         String deliverableID = deliverableIDs.get(i).toString();
         GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
-        if (deliverable == null && (force || !deliverable.getReadOnly())) 
+        if (deliverable != null && (force || !deliverable.getReadOnly())) 
           {
             deliverables.add(deliverable);
             validIDs.add(deliverableID);
@@ -2752,8 +2752,7 @@ public class GUIManagerGeneral extends GUIManager
       {
 
         GUIManagedObject deliverable = deliverables.get(i);
-        if (deliverable != null && (force || !deliverable.getReadOnly()))
-          deliverableService.removeDeliverable(deliverable.getGUIManagedObjectID(), userID);
+        deliverableService.removeDeliverable(deliverable.getGUIManagedObjectID(), userID);
 
         /*****************************************
          *
