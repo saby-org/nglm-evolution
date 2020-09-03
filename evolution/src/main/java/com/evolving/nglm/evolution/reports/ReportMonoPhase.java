@@ -51,11 +51,17 @@ public class ReportMonoPhase
   private LinkedHashMap<String, QueryBuilder> esIndex;
   private boolean onlyKeepAlternateIDs; // when we read subscriberprofile, only keep info about alternateIDs
   private boolean onlyKeepAlternateIDsExtended; // when we read subscriberprofile, only keep info about alternateIDs and a little more (for 2 specific reports)
+  private List<String> subscriberFields;
   private ReportCsvFactory reportFactory;
   private String csvfile;
   private RestHighLevelClient elasticsearchReaderClient;
 
   public ReportMonoPhase(String esNode, LinkedHashMap<String, QueryBuilder> esIndex, ReportCsvFactory factory, String csvfile, boolean onlyKeepAlternateIDs, boolean onlyKeepAlternateIDsExtended)
+  {
+    this(esNode, esIndex, factory, csvfile, onlyKeepAlternateIDs, onlyKeepAlternateIDsExtended, null);
+  }
+
+  public ReportMonoPhase(String esNode, LinkedHashMap<String, QueryBuilder> esIndex, ReportCsvFactory factory, String csvfile, boolean onlyKeepAlternateIDs, boolean onlyKeepAlternateIDsExtended, List<String> subscriberFields)
   {
     this.esNode = esNode;
     this.onlyKeepAlternateIDs = onlyKeepAlternateIDs;
@@ -69,8 +75,8 @@ public class ReportMonoPhase
     log.info("Starting ES read with indexes : " + this.esIndex);
     this.reportFactory = factory;
     this.csvfile = csvfile;
+    this.subscriberFields = subscriberFields;
     ReportsCommonCode.initializeDateFormats();
-
   }
 
   public ReportMonoPhase(String esNode, LinkedHashMap<String, QueryBuilder> esIndex, ReportCsvFactory factory, String csvfile)
@@ -170,8 +176,14 @@ public class ReportMonoPhase
 
       for (Entry<String, QueryBuilder> index : esIndex.entrySet())
         {
-
-          SearchRequest searchRequest = new SearchRequest().source(new SearchSourceBuilder().query(index.getValue())).allowPartialSearchResults(false);
+          SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(index.getValue());
+          if (subscriberFields != null && (i == (esIndex.size()-1))) // subscriber index is always last
+            {
+              String[] subscriberFieldsArray = subscriberFields.toArray(new String[0]);
+              log.debug("Only get these fields from " + index.getKey() + " : " + Arrays.toString(subscriberFieldsArray));
+              searchSourceBuilder = searchSourceBuilder.fetchSource(subscriberFieldsArray, null); // only get those fields
+            }
+          SearchRequest searchRequest = new SearchRequest().source(searchSourceBuilder).allowPartialSearchResults(false);
 
           // Read all docs from ES, on esIndex[i]
           // Write to topic, one message per document
@@ -338,7 +350,14 @@ public class ReportMonoPhase
         for (Entry<String, QueryBuilder> index : esIndex.entrySet())
           {
 
-            SearchRequest searchRequest = new SearchRequest().source(new SearchSourceBuilder().query(index.getValue())).allowPartialSearchResults(false);
+            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(index.getValue());
+            if (subscriberFields != null && (i == (esIndex.size()-1))) // subscriber index is always last
+              {
+                String[] subscriberFieldsArray = subscriberFields.toArray(new String[0]);
+                log.debug("Only get these fields from " + index.getKey() + " : " + Arrays.toString(subscriberFieldsArray));
+                searchSourceBuilder = searchSourceBuilder.fetchSource(subscriberFieldsArray, null); // only get those fields
+              }
+            SearchRequest searchRequest = new SearchRequest().source(searchSourceBuilder).allowPartialSearchResults(false);
 
             try
             {

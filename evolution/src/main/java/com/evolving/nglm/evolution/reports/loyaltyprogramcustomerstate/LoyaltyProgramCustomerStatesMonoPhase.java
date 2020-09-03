@@ -246,6 +246,14 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexSubscriber, QueryBuilders.matchAllQuery());
+    
+    List<String> subscriberFields = new ArrayList<>();
+    subscriberFields.add("subscriberID");
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values()){
+      subscriberFields.add(alternateID.getESField());
+    }
+    subscriberFields.add("loyaltyPrograms");
+    
     ReportCsvFactory reportFactory = new LoyaltyProgramCustomerStatesMonoPhase();
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "loyaltyprogramcustomerstatereport-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getLoyaltyProgramTopic(), false);
     loyaltyProgramService.start();
@@ -254,7 +262,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
         esNode,
         esIndexWithQuery,
         reportFactory,
-        csvfile, true, true
+        csvfile, true, true, subscriberFields
     );
 
     if (!reportMonoPhase.startOneToOne())
