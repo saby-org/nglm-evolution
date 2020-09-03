@@ -823,11 +823,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("journeyObjectiveCount", journeyObjectiveService.getStoredJourneyObjectives(includeArchived).size());
     response.put("offerObjectiveCount", offerObjectiveService.getStoredOfferObjectives(includeArchived).size());
     response.put("productTypeCount", productTypeService.getStoredProductTypes(includeArchived).size());
-    response.put("deliverableCount", deliverableService.getStoredDeliverables(includeArchived).size());
-    response.put("mailTemplateCount", subscriberMessageTemplateService.getStoredMailTemplates(true, includeArchived).size());
-    response.put("smsTemplateCount", subscriberMessageTemplateService.getStoredSMSTemplates(true, includeArchived).size());
-    response.put("pushTemplateCount", subscriberMessageTemplateService.getStoredPushTemplates(true, includeArchived).size());
-    response.put("dialogTemplateCount", subscriberMessageTemplateService.getStoredDialogTemplates(true, includeArchived).size());
+    response.put("deliverableCount", deliverableService.getStoredDeliverables(includeArchived).size());    
     response.put("reportsCount", reportService.getStoredReports(includeArchived).size());
     response.put("walletsCount", pointService.getStoredPoints(includeArchived).size() + tokenTypeService.getStoredTokenTypes(includeArchived).size() + voucherTypeService.getStoredVoucherTypes(includeArchived).size());
     response.put("ucgRuleCount", ucgRuleService.getStoredUCGRules(includeArchived).size());
@@ -838,6 +834,93 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("communicationChannelCount", Deployment.getCommunicationChannels().size());
     response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived).size());
     response.put("resellerCount", resellerService.getStoredResellers(includeArchived).size());
+    if (jsonRoot.containsKey("areaAvailablity"))
+      {
+        int mailTemplateCount = 0;
+        int smsTemplateCount = 0;
+        int dialogTemplateCount = 0;
+        int pushTemplateCount = 0;
+        String areaAvailablity = JSONUtilities.decodeString(jsonRoot, "areaAvailablity", false);
+        Collection<GUIManagedObject> mailTemplates = subscriberMessageTemplateService.getStoredMailTemplates(true,
+            includeArchived);
+        if (mailTemplates.size() != 0 && mailTemplates != null)
+          {
+            for (GUIManagedObject template : mailTemplates)
+              {
+                if (template instanceof MailTemplate)
+                  {
+                    JSONArray templeteAreaAvailablity = (JSONArray) ((MailTemplate) template).getJSONRepresentation()
+                        .get("areaAvailability");
+                    if (templeteAreaAvailablity.contains(areaAvailablity))
+                      {
+                        mailTemplateCount += 1;
+                      }
+                  }
+              }
+          }
+        Collection<GUIManagedObject> smsTemplates = subscriberMessageTemplateService.getStoredSMSTemplates(true,
+            includeArchived);
+        if (smsTemplates.size() != 0 && smsTemplates != null)
+          {
+            for (GUIManagedObject template : smsTemplates)
+              {
+                if (template instanceof SMSTemplate)
+                  {
+                    JSONArray templeteAreaAvailablity = (JSONArray) ((SMSTemplate) template).getJSONRepresentation()
+                        .get("areaAvailability");
+                    if (templeteAreaAvailablity.contains(areaAvailablity))
+                      {
+                        smsTemplateCount += 1;
+                      }
+                  }
+              }
+          }
+        Collection<GUIManagedObject> dialogTemplates = subscriberMessageTemplateService.getStoredDialogTemplates(true,
+            includeArchived);
+        if (dialogTemplates.size() != 0 && dialogTemplates != null)
+          {
+            for (GUIManagedObject template : dialogTemplates)
+              {
+                if (template instanceof DialogTemplate)
+                  {
+                    JSONArray templeteAreaAvailablity = (JSONArray)((DialogTemplate) template).getJSONRepresentation()
+                        .get("areaAvailability");
+                    if (templeteAreaAvailablity.contains(areaAvailablity))
+                      {
+                        dialogTemplateCount += 1;
+                      }
+                  }
+              }
+          }
+        Collection<GUIManagedObject> pushTemplates = subscriberMessageTemplateService.getStoredPushTemplates(true,
+            includeArchived);
+        if (pushTemplates.size() != 0 && pushTemplates != null)
+          {
+            for (GUIManagedObject template : pushTemplates)
+              {
+                if (template instanceof PushTemplate)
+                  {
+                    JSONArray templeteAreaAvailablity = (JSONArray)((PushTemplate) template).getJSONRepresentation()
+                        .get("areaAvailability");
+                    if (templeteAreaAvailablity.contains(areaAvailablity))
+                      {
+                        pushTemplateCount += 1;
+                      }
+                  }
+              }
+          }
+        response.put("mailTemplateCount", mailTemplateCount);
+        response.put("smsTemplateCount", smsTemplateCount);
+        response.put("pushTemplateCount", pushTemplateCount);
+        response.put("dialogTemplateCount", dialogTemplateCount);
+      }
+    else {
+      response.put("mailTemplateCount", subscriberMessageTemplateService.getStoredMailTemplates(true, includeArchived).size());
+      response.put("smsTemplateCount", subscriberMessageTemplateService.getStoredSMSTemplates(true, includeArchived).size());
+      response.put("pushTemplateCount", subscriberMessageTemplateService.getStoredPushTemplates(true, includeArchived).size());
+      response.put("dialogTemplateCount", subscriberMessageTemplateService.getStoredDialogTemplates(true, includeArchived).size());
+      
+    }
     return JSONUtilities.encodeObject(response);
   }
 
