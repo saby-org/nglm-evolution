@@ -675,12 +675,21 @@ public abstract class CriterionFieldRetriever
     Set<String> status=new HashSet<String>();
     String comma_seperated_status=new String();
     if(journeyIDs!=null && !journeyIDs.isEmpty())
-    { for(String journeyID:journeyIDs) {
+      { 
+        for(String journeyID:journeyIDs) {
    	  if (journeyID == null) throw new CriterionException("invalid journey status request");
-   	status.add((evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID) != null) ? evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID).getExternalRepresentation() : null);
-   	  }
-     }
+   	  status.add((evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID) != null) ? evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID).getExternalRepresentation() : null);
+   	}
+      }
+    else 
+      {
+        if(evaluationRequest.getJourneyState() != null) 
+          {
+            status.add(evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(evaluationRequest.getJourneyState().getJourneyID()).getExternalRepresentation());
+          }
+      }
     comma_seperated_status=String.join(", ", status);
+    if(status.isEmpty()) throw new CriterionException("invalid journey status request");
      return comma_seperated_status;
   }
 
