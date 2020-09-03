@@ -46,7 +46,7 @@
         "outputType"       : "static",
         "outputConnectors" : 
           [ 
-            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAddOrConstant(node.entryDate, node.parameter.schedule, node.parameter.duration, node.parameter.unit)" } } ] }
+            { "name" : "wait", "display" : "Wait", "evaluationPriority" : "first", "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAddOrConstant(node.entryDate, node.parameter.schedule, node.parameter.duration, node.parameter.unit, node.parameter.waitforday, node.parameter.waitfortime)" } } ] }
           ],
         "parameters"       :
           [
@@ -79,14 +79,35 @@
             },
             { 
               "id" : "node.parameter.schedule", 
-              "display" : "Wait Until", 
+              "display" : "Wait Until Date", 
               "dataType" : "date", 
               "width" : "100%", 
               "multiple" : false, 
               "mandatory" : false,
               "availableValues" : null,
               "defaultValue" : null
+            },
+            { 
+              "id" : "node.parameter.waitforday", 
+              "display" : "Wait Until Day", 
+              "dataType" : "string", 
+              "width" : "50%", 
+              "multiple" : false, 
+              "mandatory" : false,
+              "availableValues" : [ "#weekDays#" ],
+              "defaultValue" : null
+            },
+            { 
+              "id" : "node.parameter.waitfortime", 
+              "display" : "Wait Until Time", 
+              "dataType" : "time", 
+              "width" : "50%", 
+              "multiple" : false, 
+              "mandatory" : false,
+              "availableValues" : null,
+              "defaultValue" : null
             }
+            
           ]
       },
       

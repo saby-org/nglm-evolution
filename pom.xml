@@ -10,6 +10,7 @@
   <version>1.4.4_1-SNAPSHOT</version>
   <version>1.4.4_1-SNAPSHOT</version>
   <version>1.4.4_1-SNAPSHOT</version>
+  <version>1.4.4_1-SNAPSHOT</version>
   <version>release_1.4.4_1-EVPRO-487-SNAPSHOT</version>
   <version>release_1.4.4_1-EVPRO-488-SNAPSHOT</version>
   <version>EVPRO-335-SNAPSHOT</version>
@@ -18,6 +19,7 @@
   <version>release_1.4.4_1-EVPRO-428-SNAPSHOT</version>
   <version>release_1.4.4_1-EVPRO-515-SNAPSHOT</version>
   <version>EVPRO-426-1.4.4_1-SNAPSHOT</version>
+  <version>EVPRO-432_1a-SNAPSHOT</version>
   <name>evolution-root</name>
   <url>http://10.100.0.6:8090/artifactory/repo</url>
   <description>NGLM evolution</description>

@@ -13,6 +13,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -1800,7 +1801,7 @@ public abstract class Expression
       //  validate number of arguments
       //
       
-      if (arguments.size() != 4) throw new ExpressionTypeCheckException("type exception");
+      if (arguments.size() != 6) throw new ExpressionTypeCheckException("type exception");
 
       //
       //  arguments
@@ -1810,6 +1811,8 @@ public abstract class Expression
       Expression arg2 = (arguments.size() > 1) ? arguments.get(1) : null;
       Expression arg3 = (arguments.size() > 2) ? arguments.get(2) : null;
       Expression arg4 = (arguments.size() > 3) ? arguments.get(3) : null;
+      Expression arg5 = (arguments.size() > 4) ? arguments.get(4) : null;
+      Expression arg6 = (arguments.size() > 5) ? arguments.get(5) : null;
 
       //
       //  validate arg1
@@ -1857,6 +1860,32 @@ public abstract class Expression
       switch (arg4.getType())
         {
           case StringExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+      
+      //
+      //  validate arg5
+      //
+      
+      switch (arg5.getType())
+        {
+          case StringExpression:
+            break;
+
+          default:
+            throw new ExpressionTypeCheckException("type exception");
+        }
+      
+      //
+      //  validate arg6
+      //
+      
+      switch (arg6.getType())
+        {
+          case TimeExpression:
             break;
 
           default:
@@ -1946,6 +1975,9 @@ public abstract class Expression
       Object arg2Value = null;
       Object arg3Value = null;
       Object arg4Value = null;
+      Object arg5Value = null;
+      Object arg6Value = null;
+      
       try
         {
           arg1Value = (arguments.size() > 0) ? arguments.get(0).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
@@ -1982,6 +2014,24 @@ public abstract class Expression
           expressionNullExceptionOccoured = true;
           expressionNullException = e;
         }
+      try
+      {
+        arg5Value = (arguments.size() > 4) ? arguments.get(4).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+      } 
+    catch (ExpressionNullException e)
+      {
+        expressionNullExceptionOccoured = true;
+        expressionNullException = e;
+      }
+      try
+      {
+        arg6Value = (arguments.size() > 5) ? arguments.get(5).evaluate(subscriberEvaluationRequest, baseTimeUnit) : null;
+      } 
+    catch (ExpressionNullException e)
+      {
+        expressionNullExceptionOccoured = true;
+        expressionNullException = e;
+      }
 
       /*****************************************
       *
@@ -2012,7 +2062,7 @@ public abstract class Expression
             break;
             
           case DateAddOrConstantFunction:
-            result = evaluateDateAddOrConstantFunction((Date) arg1Value, (Date) arg2Value, (Number) arg3Value, TimeUnit.fromExternalRepresentation((String) arg4Value), baseTimeUnit, false);
+            result = evaluateDateAddOrConstantFunction((Date) arg1Value, (Date) arg2Value, (Number) arg3Value, TimeUnit.fromExternalRepresentation((String) arg4Value), (String) arg5Value, (String) arg6Value, baseTimeUnit, false);
             break;
             
           case RoundFunction:
@@ -2318,34 +2368,119 @@ public abstract class Expression
     //  evaluateDateAddOrConstantFunction
     //
     
-    private Date evaluateDateAddOrConstantFunction(Date dateAddDate, Date strictScheduleDate, Number waitDuration, TimeUnit timeUnit, TimeUnit baseTimeUnit, boolean roundDown)
+    private Date evaluateDateAddOrConstantFunction(Date dateAddDate, Date strictScheduleDate, Number waitDuration, TimeUnit timeUnit, String dayOfWeek, String waitTimeString, TimeUnit baseTimeUnit, boolean roundDown)
     {
-      boolean dateBasedWait = strictScheduleDate != null;
-      boolean timeBasedWait = waitDuration != null && timeUnit != TimeUnit.Unknown;
-      boolean dateAndTimeBasedWait = dateBasedWait && timeBasedWait;
-      
-      //
-      //  1970
-      //
-      
       Date result = new Date(0L);
+      List<Date> watingDates = new ArrayList<Date>();
       
-      if (dateAndTimeBasedWait)
+      //
+      // wait for Duration
+      //
+      
+      if (waitDuration != null && timeUnit != TimeUnit.Unknown)
         {
-          Date timeBasedDate = evaluateDateAddFunction(dateAddDate, waitDuration, timeUnit, baseTimeUnit, roundDown);
-          if (timeBasedDate.after(strictScheduleDate)) result = strictScheduleDate;
-          else result = timeBasedDate;
+          Date dateAfterWait = dateAddDate;
+          dateAfterWait = evaluateDateAddFunction(dateAfterWait, waitDuration, timeUnit, baseTimeUnit, roundDown);
+          watingDates.add(dateAfterWait);
         }
-      else if (dateBasedWait)
+      
+      //
+      // wait for strictScheduleDate
+      //
+      
+      if (strictScheduleDate != null) watingDates.add(strictScheduleDate);
+      
+      //
+      // wait for day
+      //
+      
+      if (dayOfWeek != null)
         {
-          result = strictScheduleDate;
+          Date nextDayDate = null;
+          switch (dayOfWeek.toUpperCase())
+          {
+            case "SUNDAY":
+              nextDayDate = getNextDayDate(dateAddDate, Calendar.SUNDAY);
+              break;
+              
+            case "MONDAY":
+              nextDayDate = getNextDayDate(dateAddDate, Calendar.MONDAY);
+              break;
+              
+            case "TUESDAY":
+              nextDayDate = getNextDayDate(dateAddDate, Calendar.TUESDAY);
+              break;
+              
+            case "WEDNESDAY":
+              nextDayDate = getNextDayDate(dateAddDate, Calendar.WEDNESDAY);
+              break;
+              
+            case "THURSDAY":
+              nextDayDate = getNextDayDate(dateAddDate, Calendar.THURSDAY);
+              break;
+              
+            case "FRIDAY":
+              nextDayDate = getNextDayDate(dateAddDate, Calendar.FRIDAY);
+              break;
+              
+            case "SATURDAY":
+              nextDayDate = getNextDayDate(dateAddDate, Calendar.SATURDAY);
+              break;
+
+            default:
+              break;
+          }
+          if (nextDayDate != null)
+            {
+              if (waitTimeString == null) waitTimeString = "00:00:00";
+              String[] args = waitTimeString.trim().split(":");
+              if (args.length != 3) throw new ExpressionEvaluationException();
+              int hh = Integer.parseInt(args[0]);
+              int mm = Integer.parseInt(args[1]);
+              int ss = Integer.parseInt(args[2]);
+              nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
+              nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
+              nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
+              watingDates.add(nextDayDate);
+            }
         }
-      else if (timeBasedWait)
+      else if (waitTimeString != null)
         {
-          result = evaluateDateAddFunction(dateAddDate, waitDuration, timeUnit, baseTimeUnit, roundDown);
+          String[] args = waitTimeString.trim().split(":");
+          int hh = Integer.parseInt(args[0]);
+          int mm = Integer.parseInt(args[1]);
+          int ss = Integer.parseInt(args[2]);
+          Date expectedDate = dateAddDate;
+          expectedDate = RLMDateUtils.setField(expectedDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
+          expectedDate = RLMDateUtils.setField(expectedDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
+          expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
+          watingDates.add(expectedDate);
         }
+      
+      //
+      //  sort to get the earliest date
+      //
+      
+      if (watingDates.size() > 0)
+        {
+          Collections.sort(watingDates);
+          result = watingDates.get(0);
+        }
+      
+      //
+      //  return
+      //
+      
       return result;
-      
+    }
+
+    private Date getNextDayDate(final Date dateAddDate, int dayOfWeek)
+    {
+      Date tempDate = dateAddDate;
+      if (dayOfWeek == RLMDateUtils.getField(dateAddDate, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone())) return dateAddDate;
+      tempDate = RLMDateUtils.setField(dateAddDate, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getBaseTimeZone());
+      tempDate = RLMDateUtils.addDays(tempDate, 7, Deployment.getBaseTimeZone());
+      return tempDate;
     }
 
     /*****************************************
@@ -3499,4 +3634,5 @@ public abstract class Expression
       super();
     }
   }
+  
 }
