@@ -74,6 +74,10 @@ public class JourneyCustomerStatesReportCsvWriter implements ReportCsvFactory
                     Object alternateId = journeyStats.get(alternateID.getID());
                     journeyInfo.put(alternateID.getName(), alternateId);
                   }
+                else
+                  {
+                    journeyInfo.put(alternateID.getName(), "");
+                  }
               }
             journeyInfo.put("journeyID", journey.getJourneyID());
             journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());

@@ -22,6 +22,7 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deliverable;
 import com.evolving.nglm.evolution.DeliverableService;
+import com.evolving.nglm.evolution.DeliveryManager;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.Deployment;
@@ -68,6 +69,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   private static final String operation = "operation";
   private static final String orgin = "origin";
   private static final String providerId = "providerID";
+  private static final String providerName = "providerName";
   private static final String returnCode = "returnCode";
   private static final String returnCodeDetails = "returnCodeDetails";
   private static final String returnCodeDescription = "returnCodeDescription";
@@ -84,7 +86,6 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(featureId);
     headerFieldsOrder.add(deliverableID);
     headerFieldsOrder.add(deliverableQty);
-    headerFieldsOrder.add(deliveryStatus);
     headerFieldsOrder.add(moduleName);
     headerFieldsOrder.add(featureDisplay);
     headerFieldsOrder.add(deliverableDisplay);
@@ -97,13 +98,14 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(eventDatetime);
     headerFieldsOrder.add(operation);
     headerFieldsOrder.add(orgin);
-    headerFieldsOrder.add(providerId);
+    headerFieldsOrder.add(providerName);
     headerFieldsOrder.add(returnCode);
     headerFieldsOrder.add(returnCodeDescription);
     headerFieldsOrder.add(returnCodeDetails);
     headerFieldsOrder.add(deliveryRequestID);
     headerFieldsOrder.add(originatingDeliveryRequestID);
     headerFieldsOrder.add(eventID);
+    headerFieldsOrder.add(deliveryStatus);
   }
 
   @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
@@ -117,7 +119,6 @@ public class BDRReportMonoPhase implements ReportCsvFactory
         String line = ReportUtils.formatResult(headerFieldsOrder, lineMap);
         log.trace("Writing to csv file : " + line);
         writer.write(line.getBytes());
-        writer.write("\n".getBytes());
       } 
     catch (IOException e)
       {
@@ -219,10 +220,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
           {
             bdrRecs.put(originatingDeliveryRequestID, bdrFields.get(originatingDeliveryRequestID));
           }
-        if (bdrFields.containsKey(deliveryStatus))
-          {
-            bdrRecs.put(deliveryStatus, bdrFields.get(deliveryStatus));
-          }
+       
         if (bdrFields.containsKey(eventDatetime))
           {
             if (bdrFields.get(eventDatetime) != null)
@@ -270,9 +268,11 @@ public class BDRReportMonoPhase implements ReportCsvFactory
               {
                 bdrRecs.put(orgin, bdrFields.get(orgin));
               }
+
             if (bdrFields.containsKey(providerId))
               {
-                bdrRecs.put(providerId, bdrFields.get(providerId));
+                String providerNam = Deployment.getFulfillmentProviders().get(bdrFields.get(providerId)).getProviderName();
+                bdrRecs.put(providerName, providerNam);
               }
             if (bdrFields.containsKey(returnCode))
               {
@@ -280,6 +280,11 @@ public class BDRReportMonoPhase implements ReportCsvFactory
                 bdrRecs.put(returnCode, code);
                 bdrRecs.put(returnCodeDescription, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
                 bdrRecs.put(returnCodeDetails, bdrFields.get(returnCodeDetails));
+                if (code instanceof Integer && code != null)
+                  {
+                    int codeInt = (int) code;
+                    bdrRecs.put(deliveryStatus, (codeInt == 0) ? DeliveryManager.DeliveryStatus.Delivered.toString() : DeliveryManager.DeliveryStatus.Failed.toString());
+                  }
               }
             
             //

@@ -888,29 +888,29 @@
     {
       "name"                : "journeyCustomerStatesReport",
       "display"             : "Journey Customer States Report",
-      "description"         : "Description of the Journey Customer States Report (1 pass)",
-      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportMonoDriver",
+      "description"         : "Description of the Journey Customer States Report",
+      "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "customerReport",
       "display"             : "Customer Report",
-      "description"         : "Description of the Customer Report (1 pass)",
-      "class"               : "com.evolving.nglm.evolution.reports.subscriber.SubscriberReportMonoDriver",
+      "description"         : "Description of the Customer Report",
+      "class"               : "com.evolving.nglm.evolution.reports.subscriber.SubscriberReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "BDRReport",
       "display"             : "BDR Report",
-      "description"         : "Description of the BDR Report (1 pass)",
-      "class"               : "com.evolving.nglm.evolution.reports.bdr.BDRReportMonoDriver",
+      "description"         : "Description of the BDR Report",
+      "class"               : "com.evolving.nglm.evolution.reports.bdr.BDRReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "ODRReport",
       "display"             : "ODR Report",
-      "description"         : "Description of the ODR Report (1 pass)",
-      "class"               : "com.evolving.nglm.evolution.reports.odr.ODRReportMonoDriver",
+      "description"         : "Description of the ODR Report",
+      "class"               : "com.evolving.nglm.evolution.reports.odr.ODRReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ],
       "defaultReportPeriodQuantity" : 1,
       "defaultReportPeriodUnit"     : "DAYS"
@@ -918,8 +918,8 @@
     {
       "name"                : "notificationReport",
       "display"             : "Notification Report",
-      "description"         : "Description of the Notification Report (1 pass)",
-      "class"               : "com.evolving.nglm.evolution.reports.notification.NotificationReportMonoDriver",
+      "description"         : "Description of the Notification Report",
+      "class"               : "com.evolving.nglm.evolution.reports.notification.NotificationReportDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
@@ -946,14 +946,14 @@
     {
       "name"                : "journeyImpactReport",
       "display"             : "Journey Impact Report",
-      "description"         : "Description of the Journey Impact Report (1 pass)",
+      "description"         : "Description of the Journey Impact Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "journeyCustomerStatisticsReport",
       "display"             : "Journey Customer Statistics Report",
-      "description"         : "Description of the Journey Customer Statistics Report (1 pass)",
+      "description"         : "Description of the Journey Customer Statistics Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportMonoDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
@@ -967,8 +967,8 @@
     {
       "name"                : "loyaltyProgramCustomerStates",
       "display"             : "Loyalty Program Customer States",
-      "description"         : "Description of the Loyalty Program Customer States Report (1 pass)",
-      "class"               : "com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate.LoyaltyProgramCustomerStatesMonoDriver",
+      "description"         : "Description of the Loyalty Program Customer States Report",
+      "class"               : "com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate.LoyaltyProgramCustomerStatesDriver",
       "availableScheduling" : [ "daily", "weekly", "monthly" ]
     },
     {

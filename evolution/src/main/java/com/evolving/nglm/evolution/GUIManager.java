@@ -3866,10 +3866,10 @@ public class GUIManager
                   
                 case loyaltyProgramOptOut:
                   jsonResponse = guiManagerLoyaltyReporting.processLoyaltyProgramOptInOut(jsonRoot, false);
+                  break;
 
                 case getDependencies:
                   jsonResponse = guiManagerGeneral.processGetDependencies(userID, jsonRoot);
-
                   break;
 
               }
@@ -6209,7 +6209,7 @@ public class GUIManager
     boolean active = JSONUtilities.decodeBoolean(jsonRoot, "active", Boolean.FALSE);
     JSONArray bulkCampaignJourneyObjectives = JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", true);
     JSONObject bulkCampaignStory = JSONUtilities.decodeJSONObject(jsonRoot, "story", true);
-    
+    JSONArray bulkCampaignTargetCriteria = JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", true);
     /*****************************************
     *
     *  existing journey
@@ -6282,6 +6282,7 @@ public class GUIManager
         campaignJSONRepresentation.put("active", active);
         campaignJSONRepresentation.put("journeyObjectives", bulkCampaignJourneyObjectives); 
         campaignJSONRepresentation.put("story", bulkCampaignStory);
+        campaignJSONRepresentation.put("targetingCriteria", bulkCampaignTargetCriteria);
 
         //
         //  campaignJSON
@@ -17317,7 +17318,8 @@ public class GUIManager
                               {
                                 JSONObject characteristics = new JSONObject();
                                 characteristics.put("catalogCharacteristicID", catalogCharacteristicInstance.getCatalogCharacteristicID());
-                                characteristics.put("value", catalogCharacteristicInstance.getValue());
+                                String catalogCharacteristicValue = "" + catalogCharacteristicInstance.getValue();
+                                characteristics.put("value", catalogCharacteristicValue);
                                 resultCharacteristics.add(characteristics);
                               }
                             
@@ -24966,7 +24968,21 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     for (GUIManagedObject modifiedJourney : modifiedJourneys)
       {
-        journeyService.putGUIManagedObject(modifiedJourney, date, false, null);
+        if (modifiedJourney instanceof Journey)
+          {
+            try
+              {
+                journeyService.putJourney(modifiedJourney, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, false, null);
+              }
+            catch (JSONUtilitiesException|GUIManagerException e)
+              {
+                  log.warn(e.getLocalizedMessage());
+              }
+          }
+        else
+          {
+            journeyService.putGUIManagedObject(modifiedJourney, date, false, null);
+          }
       }
   }
 

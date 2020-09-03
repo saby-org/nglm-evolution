@@ -4967,7 +4967,11 @@ public class ThirdPartyManager
     VoucherProfileStored voucherStored = null;
     for(VoucherProfileStored profileVoucher:subscriberProfile.getVouchers()){
       Voucher voucher = voucherService.getActiveVoucher(profileVoucher.getVoucherID(),now);
-      if(voucher==null) continue;//a voucher in subscriber profile with no more voucher conf associated, very likely to happen
+      //a voucher in subscriber profile with no more voucher conf associated, very likely to happen
+      if(voucher==null){
+        if(errorException==null) errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
+        continue;
+      }
       if(voucherCode.equals(profileVoucher.getVoucherCode()) && supplier.getSupplierID().equals(voucher.getSupplierID())){
 
         if(profileVoucher.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
@@ -4984,7 +4988,7 @@ public class ThirdPartyManager
 
     if(voucherStored==null){
       if(errorException!=null) throw errorException;
-      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
     }
 
     return new Pair<>(subscriberID,voucherStored);
@@ -6158,7 +6162,7 @@ public class ThirdPartyManager
     if (validateNotEmpty && (result == null || result.trim().isEmpty()))
       {
         log.error("readString validation error");
-        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
       }
     return result;
   }

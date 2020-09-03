@@ -477,7 +477,7 @@ public abstract class DeliveryManager
           if(waitingForCorrelatorUpdate!=null){
             Set<String> toRemove = new HashSet<>();
             // concurrent scan non locking (no clue if this is risky)
-            waitingForCorrelatorUpdate.entrySet().forEach(entry->{if(entry.getValue().getTimeout().after(SystemTime.getCurrentTime())) toRemove.add(entry.getKey());});
+            waitingForCorrelatorUpdate.entrySet().forEach(entry->{if(entry.getValue().getTimeout().before(SystemTime.getCurrentTime())) toRemove.add(entry.getKey());});
             synchronized (this){
               for(String key:toRemove){
                 waitingForCorrelatorUpdate.remove(key);
