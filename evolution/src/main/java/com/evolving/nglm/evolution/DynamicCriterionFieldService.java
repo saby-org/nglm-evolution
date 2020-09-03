@@ -133,8 +133,8 @@ public class DynamicCriterionFieldService extends GUIService
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "tierupdatedate", CriterionDataType.DateCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optindate", CriterionDataType.DateCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optoutdate", CriterionDataType.DateCriterion, null);
-      }
-    addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "tierupdatetype", CriterionDataType.StringCriterion, generateAvailableValuesForTierUpdateType());
+        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "tierupdatetype", CriterionDataType.StringCriterion, generateAvailableValuesForTierUpdateType());
+      }    
   }
   /*****************************************
   *
