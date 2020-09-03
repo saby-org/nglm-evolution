@@ -120,6 +120,7 @@ public class EvaluationCriterion
     NumberCriterion("number"),
     NoArgumentCriterion("noArgument"),
     IntegerSetCriterion("integerSet"),
+    DoubleSetCriterion("doubleSet"),
 
     //
     //  structure
@@ -154,6 +155,7 @@ public class EvaluationCriterion
             break;
 
           case IntegerSetCriterion:
+          case DoubleSetCriterion:
             result = NumberCriterion;
             break;
 

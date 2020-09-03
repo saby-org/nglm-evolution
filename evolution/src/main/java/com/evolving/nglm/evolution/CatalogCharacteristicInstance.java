@@ -146,6 +146,16 @@ public class CatalogCharacteristicInstance
             }
           value = integerSetValue;
           break;
+          
+        case DoubleSetCriterion:
+            JSONArray jsonArrayDouble = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+            Set<Object> doubleSetValue = new HashSet<Object>();
+            for (int i=0; i<jsonArrayDouble.size(); i++)
+              {
+            	doubleSetValue.add(new Integer(((Number) jsonArrayDouble.get(i)).intValue()));
+              }
+            value = doubleSetValue;
+            break;
 
         case TimeCriterion:
         case AniversaryCriterion:
