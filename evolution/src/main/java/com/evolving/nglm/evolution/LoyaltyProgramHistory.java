@@ -361,7 +361,7 @@ public class LoyaltyProgramHistory
       String toTier = valueStruct.getString("toTier");
       Date transitionDate = (Date) valueStruct.get("transitionDate");
       String deliveryRequestID = valueStruct.getString("deliveryRequestID");
-      LoyaltyProgramTierChange tierUpdateType = (schemaVersion >= 2) ? LoyaltyProgramTierChange.fromExternalRepresentation(valueStruct.getString("tierUpdateType")) : null;
+      LoyaltyProgramTierChange tierUpdateType = (schemaVersion >= 2) ? LoyaltyProgramTierChange.fromExternalRepresentation(valueStruct.getString("tierUpdateType")) : LoyaltyProgramTierChange.NoChange;
             
       //
       //  return
