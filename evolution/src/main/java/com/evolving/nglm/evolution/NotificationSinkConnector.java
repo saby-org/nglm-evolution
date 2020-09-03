@@ -141,6 +141,9 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         tags.put("textBodyTags", mailNotification.getTextBodyTags());
         tags.put("htmlBodyTags", mailNotification.getHtmlBodyTags());
         documentMap.put("tags", tags);
+        String deliveryType = mailNotification.getDeliveryType();
+        String channelID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryType);
+        documentMap.put("channelID", channelID);
       }
       else if (notification instanceof SMSNotificationManagerRequest) {
         SMSNotificationManagerRequest smsNotification = (SMSNotificationManagerRequest) notification;
@@ -162,6 +165,9 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         Map<String,List<String>> tags = new HashMap<>();
         tags.put("tags", smsNotification.getMessageTags());
         documentMap.put("tags", tags);
+        String deliveryType = smsNotification.getDeliveryType();
+        String channelID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryType);
+        documentMap.put("channelID", channelID);
       }
       else if (notification instanceof NotificationManagerRequest) {
         NotificationManagerRequest notifNotification = (NotificationManagerRequest) notification;
@@ -179,7 +185,9 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("returnCodeDetails", notifNotification.getMessageDeliveryReturnCodeDetails());
         documentMap.put("templateID", notifNotification.getTemplateID());
         documentMap.put("language", notifNotification.getLanguage());
-        documentMap.put("tags", notifNotification.getTags());
+        documentMap.put("tags", notifNotification.getTags());        
+        String channelID = notifNotification.getChannelID();
+        documentMap.put("channelID", channelID);        
       }
       else {
         PushNotificationManagerRequest pushNotification = (PushNotificationManagerRequest) notification;
@@ -198,6 +206,9 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("templateID", pushNotification.getTemplateID());
         documentMap.put("language", pushNotification.getLanguage());
         documentMap.put("tags", pushNotification.getTags()); // TODO
+        String deliveryType = pushNotification.getDeliveryType();
+        String channelID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryType);
+        documentMap.put("channelID", channelID);
       }
       
       return documentMap;
