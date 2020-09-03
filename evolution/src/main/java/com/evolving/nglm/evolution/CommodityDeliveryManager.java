@@ -1078,9 +1078,9 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
         // Get amount
         //
         
-        if(amount < 1){
+        if(amount < 0){
           log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : bad field value for amount");
-          submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BAD_FIELD_VALUE, "bad field value for amount (must be greater than 0, but recieved "+amount+")", null);
+          submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BAD_FIELD_VALUE, "bad field value for amount (must be greater or equal to 0, but recieved "+amount+")", null);
           continue;
         }
 
