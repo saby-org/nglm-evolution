@@ -6,8 +6,17 @@
 
 package com.evolving.nglm.evolution;
 
+
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
+
+import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
+import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
+
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -296,98 +305,156 @@ public abstract class CriterionFieldRetriever
     if (! fieldNameMatcher.find()) throw new CriterionException("invalid loyaltyprogram field " + fieldName);
     String loyaltyProgramID = fieldNameMatcher.group(1);
     String criterionFieldBaseName = fieldNameMatcher.group(2);
-
+    String tierUpdateType = null;
+    Object result = null;
+    Date optInDate = null;
+    Date optOutDate = null; 
+    boolean loyaltyProgramStateAvailable = false;
+    
     //
     //  loyaltyProgramState
     //
 
     LoyaltyProgramState loyaltyProgramState = evaluationRequest.getSubscriberProfile().getLoyaltyPrograms().get(loyaltyProgramID);
-
+    
+    ///
+    // optin and optout should be valid even if the customer left the program already
+    ///
+    if (loyaltyProgramState != null)
+      {
+        if (loyaltyProgramState instanceof LoyaltyProgramPointsState)
+          {
+            LoyaltyProgramPointsState loyaltyProgramPointsStateOptInOptOut = (LoyaltyProgramPointsState) loyaltyProgramState;
+            optInDate = loyaltyProgramPointsStateOptInOptOut.getLoyaltyProgramEnrollmentDate();
+            optOutDate = loyaltyProgramPointsStateOptInOptOut.getLoyaltyProgramExitDate();            
+          }
+      }
     //
-    //  opted out previously?
+    // opted out previously?
     //
 
     if (loyaltyProgramState != null && loyaltyProgramState.getLoyaltyProgramExitDate() != null)
       {
         loyaltyProgramState = null;
+        loyaltyProgramStateAvailable = true;
       }
 
     //
-    //  in program?
+    // in program?
     //
 
-    if (loyaltyProgramState == null) return null;
-    if (! (loyaltyProgramState instanceof LoyaltyProgramPointsState)) return null;
+    if (loyaltyProgramState == null && !loyaltyProgramStateAvailable)
+      return null;
 
-    //
-    //  retrieve
-    //
-    
-    LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyProgramState;
-    Object result = null;
-    switch (criterionFieldBaseName)
+    else if (loyaltyProgramState == null && loyaltyProgramStateAvailable)
       {
-        case "tier":
-          result = loyaltyProgramPointsState.getTierName();
-          break;
+        switch (criterionFieldBaseName)
+        {
+          case "optindate":
+            result = optInDate;
+            break;
 
-        case "statuspoint.balance":
-          result = loyaltyProgramPointsState.getStatusPoints();
-          break;
+          case "optoutdate":
+            result = optOutDate;
+            break;
+            
+          default:
+            result = null;
+            break;
+        }
+      }
 
-        case "rewardpoint.balance":
-          result = loyaltyProgramPointsState.getRewardPoints();
-          break;
-          
-        default:
-          fieldNamePattern = Pattern.compile("^([^.]+)\\.([^.]+)\\.([^.]+)$");
-          fieldNameMatcher = fieldNamePattern.matcher(criterionFieldBaseName);
-          if (! fieldNameMatcher.find()) throw new CriterionException("invalid criterionFieldBaseName field " + criterionFieldBaseName);
-          String pointName = fieldNameMatcher.group(1);
-          String pointID = fieldNameMatcher.group(2);
-          String request = fieldNameMatcher.group(3);
-          Date evaluationDate = evaluationRequest.getEvaluationDate();
-          Map<String, PointBalance> pointBalances = evaluationRequest.getSubscriberProfile().getPointBalances();
-          
-          Date earliestExpiration = evaluationDate;
-          int earliestExpiryQuantity = 0;
-          
-          if (pointBalances == null)
-            {
-              log.info("invalid point balances, using default value");
-            }
-          else
-            {
-              PointBalance pointBalance = pointBalances.get(pointID);
-              if (pointBalance == null)
-                {
-                  log.info("invalid point balance, using default value");
-                }
-              else
-                {
-                  earliestExpiration = pointBalance.getFirstExpirationDate(evaluationDate);
-                  earliestExpiryQuantity = pointBalance.getBalance(earliestExpiration);
-                }
-            }
-          
-          switch (request)
+    else
+      {
+
+        if (!(loyaltyProgramState instanceof LoyaltyProgramPointsState))
+          return null;
+        // retrieve
+        //
+        LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyProgramState;
+        TierHistory tierHistory = loyaltyProgramPointsState.getLoyaltyProgramHistory().getLastTierEntered(); 
+        tierUpdateType = tierHistory.getTierUpdateType().getExternalRepresentation();
+
+        switch (criterionFieldBaseName)
           {
-            case "earliestexpirydate":
-              result = earliestExpiration;
+            case "tier":
+              result = loyaltyProgramPointsState.getTierName();
               break;
 
-            case "earliestexpiryquantity":
-              result = earliestExpiryQuantity;
+            case "statuspoint.balance":
+              result = loyaltyProgramPointsState.getStatusPoints();
+              break;
+
+            case "rewardpoint.balance":
+              result = loyaltyProgramPointsState.getRewardPoints();
+              break;
+
+            case "tierupdatedate":
+              result = loyaltyProgramPointsState.getTierEnrollmentDate();
+              break;
+
+            case "optindate":
+              result = optInDate;
+              break;
+
+            case "optoutdate":
+              result = optOutDate;
+              break;
+
+            case "tierupdatetype":
+              result = tierUpdateType;
               break;
 
             default:
-              throw new CriterionException("invalid request " + criterionFieldBaseName + " " + request);
-          }
-          
-      }
+              fieldNamePattern = Pattern.compile("^([^.]+)\\.([^.]+)\\.([^.]+)$");
+              fieldNameMatcher = fieldNamePattern.matcher(criterionFieldBaseName);
+              if (!fieldNameMatcher.find())
+                throw new CriterionException("invalid criterionFieldBaseName field " + criterionFieldBaseName);
+              String pointName = fieldNameMatcher.group(1);
+              String pointID = fieldNameMatcher.group(2);
+              String request = fieldNameMatcher.group(3);
+              Date evaluationDate = evaluationRequest.getEvaluationDate();
+              Map<String, PointBalance> pointBalances = evaluationRequest.getSubscriberProfile().getPointBalances();
 
+              Date earliestExpiration = evaluationDate;
+              int earliestExpiryQuantity = 0;
+
+              if (pointBalances == null)
+                {
+                  log.info("invalid point balances, using default value");
+                }
+              else
+                {
+                  PointBalance pointBalance = pointBalances.get(pointID);
+                  if (pointBalance == null)
+                    {
+                      log.info("invalid point balance, using default value");
+                    }
+                  else
+                    {
+                      earliestExpiration = pointBalance.getFirstExpirationDate(evaluationDate);
+                      earliestExpiryQuantity = pointBalance.getBalance(earliestExpiration);
+                    }
+                }
+
+              switch (request)
+                {
+                  case "earliestexpirydate":
+                    result = earliestExpiration;
+                    break;
+
+                  case "earliestexpiryquantity":
+                    result = earliestExpiryQuantity;
+                    break;
+
+                  default:
+                    throw new CriterionException("invalid request " + criterionFieldBaseName + " " + request);
+                }
+          }
+      }
+        
     //
-    //  return
+    // return
     //
 
     return result;

@@ -14,6 +14,8 @@ import org.apache.kafka.connect.data.Timestamp;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos;
+import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 
 public class LoyaltyProgramHistory 
 {
@@ -210,9 +212,9 @@ public class LoyaltyProgramHistory
   *
   *****************************************/
   
-  public void addTierHistory(String fromTier, String toTier, Date enrollmentDate, String deliveryRequestID) 
+  public void addTierHistory(String fromTier, String toTier, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramTierChange tierUpdateType) 
   {
-    TierHistory tierHistory = new TierHistory(fromTier, toTier, enrollmentDate, deliveryRequestID);
+    TierHistory tierHistory = new TierHistory(fromTier, toTier, enrollmentDate, deliveryRequestID, tierUpdateType);
     this.tierHistory.add(tierHistory);
 
   }
@@ -239,6 +241,7 @@ public class LoyaltyProgramHistory
   
   public static class TierHistory
   {
+   
     /*****************************************
     *
     *  schema
@@ -254,11 +257,12 @@ public class LoyaltyProgramHistory
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("tier_history");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
       schemaBuilder.field("fromTier", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("toTier", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("transitionDate", Timestamp.builder().optional().schema());
       schemaBuilder.field("deliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("tierUpdateType", Schema.OPTIONAL_STRING_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -285,6 +289,7 @@ public class LoyaltyProgramHistory
     private String toTier;
     private Date transitionDate;
     private String deliveryRequestID;
+    private LoyaltyProgramTierChange tierUpdateType;
     
     /*****************************************
     *
@@ -296,6 +301,7 @@ public class LoyaltyProgramHistory
     public String getToTier() { return toTier; }
     public Date getTransitionDate() { return transitionDate; }
     public String getDeliveryRequestID() { return deliveryRequestID; }
+    public LoyaltyProgramTierChange getTierUpdateType() { return tierUpdateType; }
     
     /*****************************************
     *
@@ -311,6 +317,7 @@ public class LoyaltyProgramHistory
       struct.put("toTier", tierHistory.getToTier());
       struct.put("transitionDate", tierHistory.getTransitionDate());
       struct.put("deliveryRequestID", tierHistory.getDeliveryRequestID());
+      struct.put("tierUpdateType", tierHistory.getTierUpdateType().getExternalRepresentation());
       return struct;
     }
     
@@ -320,12 +327,13 @@ public class LoyaltyProgramHistory
     *
     *****************************************/
 
-    public TierHistory(String fromTier, String toTier, Date transitionDate, String deliveryRequestID)
+    public TierHistory(String fromTier, String toTier, Date transitionDate, String deliveryRequestID, LoyaltyProgramTierChange tierUpdateType)
     {
       this.fromTier = fromTier;
       this.toTier = toTier;
       this.transitionDate = transitionDate;
       this.deliveryRequestID = deliveryRequestID;
+      this.tierUpdateType = tierUpdateType;
     }
     
     /*****************************************
@@ -353,12 +361,13 @@ public class LoyaltyProgramHistory
       String toTier = valueStruct.getString("toTier");
       Date transitionDate = (Date) valueStruct.get("transitionDate");
       String deliveryRequestID = valueStruct.getString("deliveryRequestID");
-      
+      LoyaltyProgramTierChange tierUpdateType = (schemaVersion >= 2) ? LoyaltyProgramTierChange.fromExternalRepresentation(valueStruct.getString("tierUpdateType")) : LoyaltyProgramTierChange.Unknown;
+            
       //
       //  return
       //
 
-      return new TierHistory(fromTier, toTier, transitionDate, deliveryRequestID);
+      return new TierHistory(fromTier, toTier, transitionDate, deliveryRequestID, tierUpdateType);
     }
     
     /*****************************************
