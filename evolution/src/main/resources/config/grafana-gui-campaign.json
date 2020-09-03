@@ -1868,7 +1868,7 @@
     ]
   },
   "time": {
-    "from": "now-2d",
+    "from": "now-5y",
     "to": "now"
   },
   "timepicker": {
