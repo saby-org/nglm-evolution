@@ -6,9 +6,12 @@
 #
 #################################################################################
 
+TARGET_FILE=$1
+shift
+
 for var in "$@"
 do
     params="$params |||$var|||"
 done
 
-echo $params >> /app/setup/connectors/connectors 
+echo $params >> $TARGET_FILE

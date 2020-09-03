@@ -153,7 +153,7 @@ public class DatacubeManager
           @Override
           public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder)
           {
-            return requestConfigBuilder.setConnectTimeout(Deployment.getElasticSearchConnectTimeout()).setSocketTimeout(Deployment.getElasticSearchQueryTimeout());
+            return requestConfigBuilder.setConnectTimeout(com.evolving.nglm.core.Deployment.getElasticsearchConnectTimeout()).setSocketTimeout(com.evolving.nglm.core.Deployment.getElasticsearchQueryTimeout());
           }
         });
         elasticsearchRestClient = new RestHighLevelClient(restClientBuilder);

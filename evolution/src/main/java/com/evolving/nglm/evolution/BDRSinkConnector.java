@@ -40,7 +40,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
   {
     private static final Logger log = LoggerFactory.getLogger(BDRSinkConnector.class);
 
-    private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+    private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
     private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
     
     /*****************************************
