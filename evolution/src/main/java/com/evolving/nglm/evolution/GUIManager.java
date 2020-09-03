@@ -19885,7 +19885,16 @@ public class GUIManager
     String deliveryRequestID = zuks.getStringKey();
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
-      CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
+      GUIManagedObject pointObject = pointService.getStoredPoint(bonusID);
+      com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit validityPeriodType = null;
+      int validityPeriod = 0;
+      
+      if (pointObject != null && pointObject instanceof Point) {
+        Point point = (Point) pointObject;
+        validityPeriodType = point.getValidity().getPeriodType();
+        validityPeriod = point.getValidity().getPeriodQuantity();
+      }
+     CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod);
     } catch (SubscriberProfileServiceException e) {
       throw new GUIManagerException(e);
     }
