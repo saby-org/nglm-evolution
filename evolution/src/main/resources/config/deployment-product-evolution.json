@@ -974,6 +974,16 @@
     }
   ],
 
+  "extractManager" :
+  {
+    "extractManagerZookeeperDir"   : "${zookeeper.root}/extracts",
+    "extractManagerOutputPath"     : "/app/extracts",
+    "extractManagerDateFormat"     : "yyyy-MM-dd_HH-mm-ss",
+    "extractManagerFileExtension"  : "csv",
+    "extractManagerCsvSeparator"   : ";",
+    "extractManagerFieldSurrounder": "'"
+  },
+
   "licenseManagement" :
   {
     "timeLimit" :

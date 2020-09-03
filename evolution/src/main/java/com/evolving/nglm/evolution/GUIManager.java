@@ -479,6 +479,9 @@ public class GUIManager
     getTokenEventDetails("getTokenEventDetails"),
     getTenantList("getTenantList"),
     getOffersList("getOffersList"),
+    launchExtract("launchExtract"),
+    downloadExtractFile("downloadExtractFile"),
+    launchAndDownloadExtract("launchAndDownloadExtract"),
 
     //
     //  configAdaptor APIs
@@ -2083,6 +2086,10 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/loyaltyProgramOptOut", new APISimpleHandler(API.loyaltyProgramOptOut));
         restServer.createContext("/nglm-guimanager/getDependencies", new APISimpleHandler(API.getDependencies));
 
+        restServer.createContext("/nglm-guimanager/launchExtract", new APISimpleHandler(API.launchExtract));
+        restServer.createContext("/nglm-guimanager/downloadExtractFile", new APIComplexHandler(API.downloadExtractFile));
+        restServer.createContext("/nglm-guimanager/launchAndDownloadExtract", new APIComplexHandler(API.launchAndDownloadExtract));
+
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -2797,6 +2804,10 @@ public class GUIManager
 
                 case launchReport:
                   jsonResponse = guiManagerLoyaltyReporting.processLaunchReport(userID, jsonRoot);
+                  break;
+
+                case launchExtract:
+                  jsonResponse = guiManagerBaseManagement.processLaunchExtract(jsonRoot);
                   break;
 
                 case getPresentationStrategyList:
@@ -4020,6 +4031,11 @@ public class GUIManager
                 case downloadReport:
                   guiManagerLoyaltyReporting.processDownloadReport(userID, jsonRoot, jsonResponse, exchange);
                   break;
+                case downloadExtractFile:
+                  guiManagerBaseManagement.processDownloadExtract(jsonRoot, jsonResponse, exchange);
+                  break;
+                case launchAndDownloadExtract:
+                  guiManagerBaseManagement.processLaunchAndDownloadExtract(jsonRoot,jsonResponse,exchange);
               }
           }
         else
