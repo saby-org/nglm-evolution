@@ -46,6 +46,8 @@ import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileSer
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.sun.net.httpserver.HttpExchange;
 
+import com.evolving.nglm.evolution.reports.*;
+
 public class GUIManagerLoyaltyReporting extends GUIManager
 {
 
@@ -756,10 +758,12 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             		  colsName.add(nameOfColumns);
             		  Object expression = filterJSON.get("expression");
             		  String valueType = (String) filterJSON.get("valueType");
-            		  switch (valueType) {
+            		  List<String> valuesOfColumns;
+            		  switch (valueType) 
+            		  {
             		  case "simpleSelect.string":
             			  String valueSimpleSelect = (String) expression;
-            			  List<String> valuesOfColumns = new ArrayList<>();
+            			  valuesOfColumns = new ArrayList<>();
             			  valuesOfColumns.add(valueSimpleSelect);
             			  colsValues.add(valuesOfColumns);
             			  break;
@@ -767,7 +771,13 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             		  case "multiple.string":
             			  // do something
             			  //==
-            			 
+            			  String[] valueMultiple = (String[]) expression;
+            			  valuesOfColumns = new ArrayList<>();
+            			  for (int j = 0; j < valueMultiple.length; j++) 
+            			  {
+            				  valuesOfColumns.add(valueMultiple[j]);
+            			  }
+            			  colsValues.add(valuesOfColumns);
             			  //==
             			  break;
 
@@ -777,26 +787,24 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             		  }
             	  }
 
-            	  try {
+            	  try 
+            	  {
             		  tempFile = File.createTempFile("tempReportFilters", "");
             	  } catch (Exception e) {
             		  e.printStackTrace();
             	  } 
             	  String tempFileName = tempFile.getAbsolutePath();
 
-            	  //            	  tempFile = new File("...");
-
             	  String[] colsNameArray = colsName.toArray(new String[0]);
             	  String separator = null;
             	  String delimiter = null;
-            	  // call displayRowsWithSpecificColumnsData(String InputFileName, String OutputFileName, String[] colsName, String[][] colsValues, String separator, String delimiter)
-            	 
-          		String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());//BDRReport_2020-08-31_09-07-23.csv.zip
 
-          		displayRowsWithSpecificColumnsData2(unzippedFile, tempFileName, colsName, colsValues, delimiter,
-          				separator);
+            	  String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
 
-          		ZipFile.zipFile("newTest.txt");
+            	  RowsWithSpecificColumnsValue.displayRowsWithSpecificColumnsData(unzippedFile, tempFileName, colsName, colsValues, delimiter,
+            			  separator);
+
+            	  ZipFile.zipFile(tempFileName);
             	  
               }
               //==
@@ -821,6 +829,11 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                     excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
                     log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
                   }
+                  //==
+                  if(filters != null) {
+                	  tempFile.delete();
+                  }
+                  
                 }else {
                   responseCode = "Report size is 0, report file is empty";
                 }
