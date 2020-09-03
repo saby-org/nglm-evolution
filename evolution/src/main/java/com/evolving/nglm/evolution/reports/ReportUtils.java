@@ -398,9 +398,16 @@ public class ReportUtils {
     String fieldSurrounder = Deployment.getReportManagerFieldSurrounder();
     // Surround s with fieldSurrounder, and escape fieldSurrounder inside it
     if (fieldSurrounder.isEmpty())
-        sb.append(s);
+      sb.append(s);
     else
+      {
+        boolean hasNewline = s.contains("\n");
+        if (hasNewline)
+          {
+            s = s.replace("\n", " ");
+          }
         sb.append(fieldSurrounder).append(s.replace(fieldSurrounder, "\\" + fieldSurrounder)).append(fieldSurrounder);
+      }
   }
 
   //

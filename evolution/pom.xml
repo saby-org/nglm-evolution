@@ -3,6 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
+  <version>1.4.4_1-SNAPSHOT</version>
   <version>release-1.4.4_0-SNAPSHOT</version>
   <version>1.4.4_1-SNAPSHOT</version>
   <version>1.4.4_1-SNAPSHOT</version>
@@ -40,6 +41,7 @@
   <version>EVPRO-287-SNAPSHOT</version>
   <version>release_1.4.4_1-EVPRO-516-SNAPSHOT</version>
   <version>1.4.4_0-EVCOR-123b-SNAPSHOT</version>
+  <version>release_1.4.4_1-EVPRO-516-1-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
