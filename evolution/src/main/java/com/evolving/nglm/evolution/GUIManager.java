@@ -5281,7 +5281,6 @@ public class GUIManager
         ****************************************/
 
         Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, approval);
-
         if(GUIManagedObjectType.Workflow.equals(objectType)) {
           journey.setApproval(JourneyStatus.StartedApproved);
         }
@@ -5299,7 +5298,7 @@ public class GUIManager
         if (!dryRun)
           {
 
-            journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService,
+            journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, 
                 (existingJourney == null), userID);
 
             /*****************************************
@@ -5389,8 +5388,7 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService,
-                targetService, (existingJourney == null), userID);
+            journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingJourney == null), userID);
           }
         //
         //  log
@@ -5641,7 +5639,7 @@ public class GUIManager
                 Journey journey = new Journey(elementRoot, objectType, epoch, existingElement, journeyService,
                     catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
 
-                journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService,
+                journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService,
                     (existingElement == null), userID);
 
               }
@@ -5656,8 +5654,7 @@ public class GUIManager
                 //
                 // store
                 //
-                journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService,
-                    targetService, (existingElement == null), userID);
+                journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingElement == null), userID);
                 //
                 // log
                 //
@@ -5858,7 +5855,7 @@ public class GUIManager
              *
              *****************************************/
 
-            journeyService.putJourney(element, journeyObjectiveService, catalogCharacteristicService, targetService,
+            journeyService.putJourney(element, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService,
                 (existingJourneyElement == null), userID);
 
             /*****************************************
@@ -5908,8 +5905,7 @@ public class GUIManager
             // store
             //
 
-            journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService,
-                targetService, (existingJourneyElement == null), userID);
+            journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingJourneyElement == null), userID);
 
             //
             // log
@@ -6269,8 +6265,7 @@ public class GUIManager
         if (!dryRun)
           {
 
-            journeyService.putJourney(bulkCampaign, journeyObjectiveService, catalogCharacteristicService,
-                targetService, (existingBulkCampaign == null), userID);
+            journeyService.putJourney(bulkCampaign, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingBulkCampaign == null), userID);
           }
         /*****************************************
         *
@@ -6298,8 +6293,7 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService,
-                targetService, (existingBulkCampaign == null), userID);
+            journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingBulkCampaign == null), userID);
           }
         //
         //  log

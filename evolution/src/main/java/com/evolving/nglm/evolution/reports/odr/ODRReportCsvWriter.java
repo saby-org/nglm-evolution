@@ -29,7 +29,7 @@ public class ODRReportCsvWriter implements ReportCsvFactory
   private final static String moduleId = "moduleID";
   private final static String featureId = "featureID";
   private final static String moduleName = "moduleName";
-  private final static String featureDisplay = "featureDisplay";
+  private final static String featureName = "featureName";
   private final static String subscriberID = "subscriberID";
   private final static String offerID = "offerID";
   private final static String offerDisplay = "offerName";
@@ -58,7 +58,7 @@ public class ODRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(moduleId);
     headerFieldsOrder.add(featureId);
     headerFieldsOrder.add(moduleName);
-    headerFieldsOrder.add(featureDisplay);
+    headerFieldsOrder.add(featureName);
     headerFieldsOrder.add(offerID);
     headerFieldsOrder.add(offerDisplay);
     headerFieldsOrder.add(salesChannelID);
@@ -160,7 +160,7 @@ public class ODRReportCsvWriter implements ReportCsvFactory
         if(odrFields.containsKey(moduleId) && odrFields.containsKey(featureId)){
           Module module = Module.fromExternalRepresentation(String.valueOf(odrFields.get(moduleId)));
           String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(odrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
-          oderRecs.put(featureDisplay, feature);
+          oderRecs.put(featureName, feature);
           oderRecs.put(moduleName, module.toString());
           oderRecs.put(featureId, odrFields.get(featureId));
           oderRecs.put(moduleId, odrFields.get(moduleId));

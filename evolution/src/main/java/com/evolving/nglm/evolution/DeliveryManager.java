@@ -541,7 +541,7 @@ public abstract class DeliveryManager
       @Override public void onPartitionsAssigned(Collection<TopicPartition> partitions) { log.info("requestConsumer partitions assigned: {}", partitions); }
     };
 
-    requestConsumer.subscribe(requestTopics);
+    requestConsumer.subscribe(requestTopics,listener);
     while (managerStatus.isRunning())
     {
       /****************************************
@@ -1085,12 +1085,11 @@ public abstract class DeliveryManager
         //
 
         String correlator = stringKeySerde.deserializer().deserialize(topicPartition.topic(), progressRecord.key()).getKey();
-        DeliveryRequest deliveryRequest;
+        DeliveryRequest deliveryRequest = null;
         try{
           deliveryRequest = requestSerde.optionalDeserializer().deserialize(topicPartition.topic(), progressRecord.value());
         }catch (ClassCastException ex){
           log.info("DeliveryManager assignRoutingConsumerPartitions: old routing format message, skipping");
-          continue;
         }
         if (deliveryRequest != null && deliveryRequest.getDiplomaticBriefcase().get(CORRELATOR_UPDATE_KEY)==null && deliveryRequest.getTimeout()!=null && deliveryRequest.getTimeout().after(SystemTime.getCurrentTime()) )
         {
@@ -1179,6 +1178,17 @@ public abstract class DeliveryManager
       @Override public void onPartitionsAssigned(Collection<TopicPartition> partitions) { assignRoutingConsumerPartitions(partitions); }
     };
     routingConsumer.subscribe(Arrays.asList(routingTopic), listener);
+
+    // wait start
+    synchronized (this){
+      while(!managerStatus.isDeliveringRequests()){
+        try {
+          this.wait();
+        } catch (InterruptedException e){}
+      }
+    }
+    log.info("runReceiveCorrelatorWorker: starting delivery");
+
     while (managerStatus.isProcessingResponses())
     {
 
