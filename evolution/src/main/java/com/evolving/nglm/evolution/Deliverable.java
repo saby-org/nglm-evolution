@@ -38,12 +38,13 @@ public class Deliverable extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("deliverable");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("fulfillmentProviderID", Schema.STRING_SCHEMA);
     schemaBuilder.field("externalAccountID", SchemaBuilder.string().defaultValue("").schema());
     schemaBuilder.field("unitaryCost", Schema.INT32_SCHEMA);
     schemaBuilder.field("generatedFromAccount", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("label", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -70,7 +71,8 @@ public class Deliverable extends GUIManagedObject
   private String externalAccountID;
   private int unitaryCost;
   private boolean generatedFromAccount;
-
+  private String label;
+  
   /*****************************************
   *
   *  accessors
@@ -84,21 +86,23 @@ public class Deliverable extends GUIManagedObject
   public String getExternalAccountID() { return externalAccountID; }
   public int getUnitaryCost() { return unitaryCost; }
   public boolean getGeneratedFromAccount() { return generatedFromAccount; }
-  
+  public String getLabel() { return label; }
+   
   /*****************************************
   *
   *  constructor -- unpack
   *
   *****************************************/
 
-  public Deliverable(SchemaAndValue schemaAndValue, String fulfillmentProviderID, String externalAccountID, int unitaryCost, boolean generatedFromAccount)
+  public Deliverable(SchemaAndValue schemaAndValue, String fulfillmentProviderID, String externalAccountID, int unitaryCost, boolean generatedFromAccount, String label)
   {
     super(schemaAndValue);
     this.fulfillmentProviderID = fulfillmentProviderID;
     this.externalAccountID = externalAccountID;
     this.unitaryCost = unitaryCost;
     this.generatedFromAccount = generatedFromAccount;
-  }
+    this.label = label;
+   }
   
   /*****************************************
   *
@@ -115,6 +119,7 @@ public class Deliverable extends GUIManagedObject
     struct.put("externalAccountID", deliverable.getExternalAccountID());
     struct.put("unitaryCost", deliverable.getUnitaryCost());
     struct.put("generatedFromAccount", deliverable.getGeneratedFromAccount());
+    struct.put("label", deliverable.getLabel());
     return struct;
   }
 
@@ -143,12 +148,12 @@ public class Deliverable extends GUIManagedObject
     String externalAccountID = (schemaVersion >= 2) ? valueStruct.getString("externalAccountID") : fulfillmentProviderID;
     int unitaryCost = valueStruct.getInt32("unitaryCost");
     boolean generatedFromAccount = valueStruct.getBoolean("generatedFromAccount");
-    
-    //
+    String label = (schemaVersion >= 3) ? valueStruct.getString("label") : "";
+     //
     //  return
     //
 
-    return new Deliverable(schemaAndValue, fulfillmentProviderID, externalAccountID, unitaryCost, generatedFromAccount);
+    return new Deliverable(schemaAndValue, fulfillmentProviderID, externalAccountID, unitaryCost, generatedFromAccount, label);
   }
 
   /*****************************************
@@ -185,7 +190,8 @@ public class Deliverable extends GUIManagedObject
     this.externalAccountID = JSONUtilities.decodeString(jsonRoot, "externalAccountID", true);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
     this.generatedFromAccount = JSONUtilities.decodeBoolean(jsonRoot, "generatedFromAccount", Boolean.FALSE);
-
+    this.label = JSONUtilities.decodeString(jsonRoot, "label", false);
+    
     /*****************************************
     *
     *  validate
@@ -226,6 +232,7 @@ public class Deliverable extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(externalAccountID, existingDeliverable.getExternalAccountID());
         epochChanged = epochChanged || ! (unitaryCost == existingDeliverable.getUnitaryCost());
         epochChanged = epochChanged || ! (generatedFromAccount == existingDeliverable.getGeneratedFromAccount());
+        epochChanged = epochChanged || ! Objects.equals(label, existingDeliverable.getLabel());
         return epochChanged;
       }
     else

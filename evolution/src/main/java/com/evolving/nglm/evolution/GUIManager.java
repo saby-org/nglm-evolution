@@ -1089,6 +1089,7 @@ public class GUIManager
                     deliverableMap.put("unitaryCost", 0);
                     deliverableMap.put("readOnly", true);
                     deliverableMap.put("generatedFromAccount", true);
+                    deliverableMap.put("label", account.getLabel());
                     deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), providerEpoch, null);
                   }
                 catch (GUIManagerException e)
@@ -1148,6 +1149,7 @@ public class GUIManager
                     paymentMeanMap.put("active", true);
                     paymentMeanMap.put("readOnly", true);
                     paymentMeanMap.put("generatedFromAccount", true);
+                    paymentMeanMap.put("label", account.getLabel());
                     paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), providerEpoch, null);
                   }
                 catch (GUIManagerException e)
@@ -5392,6 +5394,7 @@ public class GUIManager
                         deliverableMap.put("display", journey.getJourneyName());
                         deliverableMap.put("active", true);
                         deliverableMap.put("unitaryCost", 0);
+                        deliverableMap.put("label", "campaign");
                         Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch,
                             null);
                         deliverableService.putDeliverable(deliverable, true, userID);
