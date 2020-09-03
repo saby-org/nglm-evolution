@@ -103,6 +103,7 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
       //
       // targets
       //
+      // TODO @rl: use ElasticsearchUtils ?
       String targets = "";
       for(String targetID : journey.getTargetID()) {
         GUIManagedObject target = targetService.getStoredGUIManagedObject(targetID);
@@ -123,6 +124,7 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
       //
       // objectives
       //
+      // TODO @rl: use ElasticsearchUtils ?
       String objectives = "";
       for(JourneyObjectiveInstance objectiveInstance : journey.getJourneyObjectiveInstances()) {
         GUIManagedObject journeyObjective = journeyObjectiveService.getStoredGUIManagedObject(objectiveInstance.getJourneyObjectiveID());

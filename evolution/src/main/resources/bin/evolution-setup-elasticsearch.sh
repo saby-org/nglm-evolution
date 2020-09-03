@@ -594,6 +594,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_odr -H'Content-Type
       "filter.salesChannel" : { "type" : "keyword" },
       "filter.meanOfPayment" : { "type" : "keyword" },
       "filter.meanOfPaymentProviderID" : { "type" : "keyword" },
+      "filter.offerObjectives" : { "type" : "keyword" },
       "count" : { "type" : "integer" },
       "metric.totalAmount" : { "type" : "integer" }
     }
