@@ -19,7 +19,7 @@ import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmen
 
 public class ODRSinkConnector extends SimpleESSinkConnector
 {
-  
+  private static DynamicCriterionFieldService dynamicCriterionFieldService;
   private static OfferService offerService;
   private static ProductService productService;
   private static VoucherService voucherService;
@@ -65,16 +65,20 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       //  services
       //
    
-      offerService = new OfferService(Deployment.getBrokerServers(), "ordsinkconnector-offerservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getOfferTopic(), false);
+      dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "odrsinkconnector-dynamiccriterionfieldservice-" + getTaskNumber(), Deployment.getDynamicCriterionFieldTopic(), false);
+      CriterionContext.initialize(dynamicCriterionFieldService);
+      dynamicCriterionFieldService.start();      
+      
+      offerService = new OfferService(Deployment.getBrokerServers(), "odrsinkconnector-offerservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getOfferTopic(), false);
       offerService.start();
       
-      productService = new ProductService(Deployment.getBrokerServers(), "ordsinkconnector-productservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getProductTopic(), false);
+      productService = new ProductService(Deployment.getBrokerServers(), "odrsinkconnector-productservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getProductTopic(), false);
       productService.start();
 
-      voucherService = new VoucherService(Deployment.getBrokerServers(), "ordsinkconnector-voucherservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getVoucherTopic());
+      voucherService = new VoucherService(Deployment.getBrokerServers(), "odrsinkconnector-voucherservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getVoucherTopic());
       voucherService.start();
 
-      paymentMeanService = new PaymentMeanService(Deployment.getBrokerServers(), "ordsinkconnector-paymentmeanservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getPaymentMeanTopic(), false);
+      paymentMeanService = new PaymentMeanService(Deployment.getBrokerServers(), "odrsinkconnector-paymentmeanservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getPaymentMeanTopic(), false);
       paymentMeanService.start();
     }
 
