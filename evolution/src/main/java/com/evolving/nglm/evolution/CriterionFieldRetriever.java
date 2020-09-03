@@ -6,28 +6,24 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
-import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
-
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
 public abstract class CriterionFieldRetriever
 {
@@ -413,19 +409,20 @@ public abstract class CriterionFieldRetriever
     String pointID = fieldNameMatcher.group(1);
     String criterionFieldBaseName = fieldNameMatcher.group(2);
     
-    Object result = null;
+    Object result = 0;
     Date evaluationDate = evaluationRequest.getEvaluationDate();
     Date earliestExpiration = evaluationDate;
     int earliestExpiryQuantity = 0;
     Integer balance = 0;
     Map<String, PointBalance> pointBalances = evaluationRequest.getSubscriberProfile().getPointBalances();
+    PointBalance pointBalance = null;
     if (pointBalances == null)
       {
         log.info("invalid point balances, using default value");
       }
     else
       {
-        PointBalance pointBalance = pointBalances.get(pointID);
+        pointBalance = pointBalances.get(pointID);
         if (pointBalance == null)
           {
             log.info("invalid point balance, using default value");
@@ -452,13 +449,55 @@ public abstract class CriterionFieldRetriever
             break;
 
           default:
-            throw new CriterionException("invalid criterionFieldBaseName " + criterionFieldBaseName);
+            // earned.yesterday,...
+            fieldNamePattern = Pattern.compile("^([^.]+)\\.([^.]+)$");
+            fieldNameMatcher = fieldNamePattern.matcher(criterionFieldBaseName);
+            if (! fieldNameMatcher.find()) throw new CriterionException("invalid criterionFieldBaseName field " + criterionFieldBaseName);
+            String nature = fieldNameMatcher.group(1); // earned, consumed, expired
+            String interval = fieldNameMatcher.group(2); // yesterday, last7days, last30days
+            if (pointBalance != null)
+              {
+                Date intervalBegin;
+                MetricHistory metric;
+                switch (interval)
+                {
+                  case "yesterday"  : intervalBegin = RLMDateUtils.addDays(evaluationDate, -1, Deployment.getBaseTimeZone()); break;
+                  case "last7days"  : intervalBegin = RLMDateUtils.addDays(evaluationDate, -7, Deployment.getBaseTimeZone()); break;
+                  case "last30days" : intervalBegin = RLMDateUtils.addDays(evaluationDate, -30, Deployment.getBaseTimeZone()); break;
+                  default: throw new CriterionException("invalid criterionField interval " + interval + " (should be yesterday, last7days, last30days)");
+
+                }
+                switch (nature)
+                {
+                  case "earned"   : metric = pointBalance.getEarnedHistory(); break;
+                  case "consumed" : metric = pointBalance.getConsumedHistory(); break;
+                  case "expired"  : metric = pointBalance.getExpiredHistory(); break;
+                  default: throw new CriterionException("invalid criterionField nature " + nature + " (should be earned, consumed, expired)");
+                }
+                if (metric == null)
+                  {
+                    log.info("invalid metric, returning default value 0");
+                  }
+                else
+                  {
+                    evaluationDate = evaluationRequest.getEvaluationDate();
+                    Date beginningOfNow = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
+                    Date beginningOfIntervalBegin = RLMDateUtils.truncate(intervalBegin, Calendar.DATE, Deployment.getBaseTimeZone());
+
+                    Long value = metric.getValue(beginningOfIntervalBegin, beginningOfNow);
+                    if (value > Integer.MAX_VALUE && value < Integer.MIN_VALUE)
+                      {
+                        log.info("Value for " + fieldName + " is outside of integer range : " + value + ", truncating");
+                        result = ((value > 0) ? Integer.MAX_VALUE : Integer.MIN_VALUE);
+                      }
+                    else
+                      {
+                        result = (int) value.longValue();
+                      }
+                    break;
+                  }
+              }
         }
-
-    //
-    //  return
-    //
-
     return result;
   }
   
