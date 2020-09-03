@@ -185,9 +185,8 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("returnCodeDetails", notifNotification.getMessageDeliveryReturnCodeDetails());
         documentMap.put("templateID", notifNotification.getTemplateID());
         documentMap.put("language", notifNotification.getLanguage());
-        documentMap.put("tags", notifNotification.getTags());
-        String deliveryType = notifNotification.getDeliveryType();
-        String channelID = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryType);
+        documentMap.put("tags", notifNotification.getTags());        
+        String channelID = notifNotification.getChannelID();
         documentMap.put("channelID", channelID);        
       }
       else {
