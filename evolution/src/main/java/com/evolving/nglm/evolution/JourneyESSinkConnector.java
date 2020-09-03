@@ -74,14 +74,10 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
     {
       Object guiManagedObjectValue = sinkRecord.value();
       Schema guiManagedObjectValueSchema = sinkRecord.valueSchema();
-
-      try
-      {
-        GUIManagedObject guiManagedObject = GUIManagedObject.commonSerde().unpack(new SchemaAndValue(guiManagedObjectValueSchema, guiManagedObjectValue));
-        return new Journey(guiManagedObject.getJSONRepresentation(), guiManagedObject.getGUIManagedObjectType(), guiManagedObject.getEpoch(), guiManagedObject, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
-      }
-      catch (GUIManagerException|SerializationException|Expression.ExpressionParseException|Expression.ExpressionTypeCheckException e)
-      {
+      GUIManagedObject guiManagedObject = GUIManagedObject.commonSerde().unpack(new SchemaAndValue(guiManagedObjectValueSchema, guiManagedObjectValue));
+      if(guiManagedObject instanceof Journey) {
+        return (Journey) guiManagedObject;
+      } else {
         return null;
       }
     }
