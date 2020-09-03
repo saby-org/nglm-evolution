@@ -217,8 +217,8 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
       LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now);
       if (loyaltyProgram instanceof LoyaltyProgramPoints) {
         LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
-        Tier tier = loyaltyProgramPoints.getTier(tierName);
-        Tier previousTier = loyaltyProgramPoints.getTier(previousTierName);
+        Tier tier = loyaltyProgramPoints.getTier(toTier);
+        Tier previousTier = loyaltyProgramPoints.getTier(fromTier);
         tierChangeType = Tier.changeFromTierToTier(previousTier, tier);
         }
     }
