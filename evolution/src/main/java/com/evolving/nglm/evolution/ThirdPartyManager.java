@@ -1833,26 +1833,7 @@ public class ThirdPartyManager
     String deliveryRequestID = zuks.getStringKey();
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
-      com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit validityPeriodType = null;
-      int validityPeriod = 0;      
-      String pointID = null;
-      Date now = SystemTime.getCurrentTime();
-      for (Point point : pointService.getActivePoints(now))
-        {
-          if (bonusName.equals(point.getGUIManagedObjectName()))
-            {
-              pointID = point.getGUIManagedObjectID();
-              break;
-            }
-        }
-      GUIManagedObject pointObject = pointService.getStoredPoint(pointID);
-      if (pointObject != null && pointObject instanceof Point) {
-        Point point = (Point) pointObject;
-        validityPeriodType = point.getValidity().getPeriodType();
-        validityPeriod = point.getValidity().getPeriodQuantity();
-      }
-    
-     CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, validityPeriodType, validityPeriod);
+      CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
     } catch (SubscriberProfileServiceException e) {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
