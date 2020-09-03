@@ -2105,6 +2105,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/loyaltyProgramOptIn", new APISimpleHandler(API.loyaltyProgramOptIn));
         restServer.createContext("/nglm-guimanager/loyaltyProgramOptOut", new APISimpleHandler(API.loyaltyProgramOptOut));
         restServer.createContext("/nglm-guimanager/getDependencies", new APISimpleHandler(API.getDependencies));
+        restServer.createContext("/nglm-guimanager/getSoftwareVersions", new APISimpleHandler(API.getSoftwareVersions));
 
         restServer.createContext("/nglm-guimanager/launchExtract", new APISimpleHandler(API.launchExtract));
         restServer.createContext("/nglm-guimanager/downloadExtractFile", new APIComplexHandler(API.downloadExtractFile));
