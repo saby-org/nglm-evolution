@@ -10419,7 +10419,7 @@ public class GUIManager
                   {
                     JSONObject dependent = (JSONObject) dependencies.get(j);
                     String ojectType = JSONUtilities.decodeString(dependent, "objectType", false);
-                    if ("supplier".equals(ojectType) || "product".equals("ojectType"))
+                    if (("supplier".equals(ojectType)) || ("product".equals("ojectType")))
                       {
                         parentDependency = true;
                         break;
