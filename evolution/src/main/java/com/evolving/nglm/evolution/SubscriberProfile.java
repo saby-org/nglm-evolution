@@ -41,6 +41,8 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
+import com.evolving.nglm.evolution.reports.ReportsCommonCode;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
 public abstract class SubscriberProfile
@@ -638,6 +640,32 @@ public abstract class SubscriberProfile
       }
     return relationships;  
   }
+  
+  /****************************************
+  *
+  *  getTokensJSON - 
+  *
+  ****************************************/
+  
+  public JSONArray getTokensJSON()
+  {
+    JSONArray tokens = new JSONArray();    
+    if (this.tokens != null)
+      {
+        for (Token tok : this.tokens)
+          {
+            if (!(tok instanceof DNBOToken))
+              {
+                log.warn("Token is not DNBOToken : " + tok.getClass().getName());
+                continue;
+              }
+            JSONObject obj = ((DNBOToken) tok).getJSON();
+            tokens.add(obj);
+          }
+      }
+    return tokens;  
+  }
+
   /****************************************
   *
   *  accessors - targets

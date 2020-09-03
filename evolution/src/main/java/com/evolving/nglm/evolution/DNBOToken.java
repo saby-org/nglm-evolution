@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -17,6 +18,8 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -24,7 +27,9 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Token;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 
 
 public class DNBOToken extends Token
@@ -263,6 +268,53 @@ public class DNBOToken extends Token
         + (presentedOffersSalesChannel != null ? "presentedOffersSalesChannel=" + presentedOffersSalesChannel + ", " : "")
         + (acceptedOfferID != null ? "acceptedOfferID=" + acceptedOfferID + ", " : "")
         + (presentationDates != null ? "presentationDates=" + presentationDates : "") + "]";
+  }
+  
+  
+  public JSONObject getJSON()
+  {
+    JSONObject result = new JSONObject();
+    result.put("tokenCode", getTokenCode());
+    result.put("tokenType", getTokenTypeID());
+    result.put("creationDate", getTimeOrNull(getCreationDate()));
+    result.put("expirationDate", getTimeOrNull(getTokenExpirationDate()));
+    result.put("redeemedDate", getTimeOrNull(getRedeemedDate()));
+    result.put("lastAllocationDate", getTimeOrNull(getBoundDate()));
+    result.put("presentationStrategyID", Objects.toString(getPresentationStrategyID(), ""));
+    if (getScoringStrategyIDs() != null)
+      {
+        final JSONArray scoringStrategies = new JSONArray();
+        getScoringStrategyIDs().stream().forEach(ssID -> scoringStrategyIDs.add(ssID));
+        result.put("scoringStrategyIDs", scoringStrategies);
+      }
+    else
+      {
+        result.put("scoringStrategyIDs", "");
+      }
+    result.put("acceptedOfferID", getAcceptedOfferID());
+    result.put("qtyAllocations", getBoundCount());
+    if (getPresentedOfferIDs() != null)
+      {
+        result.put("qtyAllocatedOffers", getPresentedOfferIDs().size());
+        final JSONArray presentedOfferIDs = new JSONArray();
+        getPresentedOfferIDs().stream().forEach(offerID -> presentedOfferIDs.add(offerID));
+        result.put("presentedOfferIDs", presentedOfferIDs);
+      }
+    else
+      {
+        result.put("qtyAllocatedOffers", 0);
+        result.put("presentedOfferIDs", "");
+      }
+    result.put("tokenStatus", getTokenStatus() != null ? getTokenStatus().getExternalRepresentation() : "");
+    result.put("moduleID", getModuleID());
+    result.put("featureID", getFeatureID());
+    result.put("presentedOffersSalesChannel", getPresentedOffersSalesChannel());
+    return result;
+  }
+  
+  private Object getTimeOrNull(Date date)
+  {
+    return (date == null) ? null : date.getTime();
   }
 
 }
