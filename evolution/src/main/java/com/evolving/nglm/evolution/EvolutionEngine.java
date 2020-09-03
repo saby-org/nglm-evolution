@@ -4727,6 +4727,13 @@ public class EvolutionEngine
 
         if (journey == null || journeyNode == null)
           {
+
+            // possible temporary inactive journey, do nothing at all ( so no reporting or anything here )
+            if(journeyService.getInterruptedGUIManagedObject(journeyState.getJourneyID(), now)!=null){
+                context.subscriberTrace("ignoring inactive for now journey {0}", journeyState.getJourneyID());
+                continue;
+            }
+
             journeyState.setJourneyExitDate(now);
             boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
             subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), now)));
