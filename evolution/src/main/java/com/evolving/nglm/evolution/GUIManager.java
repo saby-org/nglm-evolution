@@ -17318,7 +17318,8 @@ public class GUIManager
                               {
                                 JSONObject characteristics = new JSONObject();
                                 characteristics.put("catalogCharacteristicID", catalogCharacteristicInstance.getCatalogCharacteristicID());
-                                characteristics.put("value", catalogCharacteristicInstance.getValue());
+                                String catalogCharacteristicValue = "" + catalogCharacteristicInstance.getValue();
+                                characteristics.put("value", catalogCharacteristicValue);
                                 resultCharacteristics.add(characteristics);
                               }
                             
