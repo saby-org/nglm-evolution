@@ -566,6 +566,7 @@ public abstract class CriterionFieldRetriever
   public static Object getEvaluationJourneyStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
   {
     String journeyID = (String) evaluationRequest.getEvaluationVariables().get("evaluation.variable.journey");
+    if (journeyID == null && evaluationRequest.getJourneyState() != null) journeyID = evaluationRequest.getJourneyState().getJourneyID(); // if this is simply the status in the current campaign and not in an other one
     if (journeyID == null) throw new CriterionException("invalid journey status request");
     return (evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID) != null) ? evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID).getExternalRepresentation() : null;
   }
