@@ -10,6 +10,9 @@ import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 
 import org.json.simple.JSONArray;
@@ -17,9 +20,12 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class LoyaltyProgramService extends GUIService
@@ -140,7 +146,24 @@ public class LoyaltyProgramService extends GUIService
   public void removeLoyaltyProgram(String loyaltyProgramID, String userID) 
   { 
     removeGUIManagedObject(loyaltyProgramID, SystemTime.getCurrentTime(), userID);
-    LoyaltyProgram loyaltyProgram = (LoyaltyProgram) getStoredLoyaltyProgram(loyaltyProgramID);
+    // LoyaltyProgram loyaltyProgram = (LoyaltyProgram) getStoredLoyaltyProgram(loyaltyProgramID);
+  }
+  
+  public JSONObject generateResponseJSON(GUIManagedObject guiManagedObject, boolean fullDetails, Date date)
+  {
+    JSONObject responseJSON = super.generateResponseJSON(guiManagedObject, fullDetails, date);
+    int tierCount = 0;
+    if (guiManagedObject instanceof LoyaltyProgramPoints)
+      {
+        LoyaltyProgramPoints lp = (LoyaltyProgramPoints) guiManagedObject;
+        List<Tier> tiers = lp.getTiers();
+        if (tiers != null)
+          {
+            tierCount = tiers.size();
+          }
+      }
+    responseJSON.put("tierCount", tierCount);
+    return responseJSON;
   }
 
   /*****************************************

@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
@@ -16,6 +17,8 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
+import org.elasticsearch.index.query.MatchAllQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -24,6 +27,11 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.evolution.Expression;
+import com.evolving.nglm.evolution.SubscriberProfile;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.Expression.ExpressionDataType;
 
 public class ElasticsearchClientAPI
 {
@@ -348,5 +356,45 @@ public class ElasticsearchClientAPI
       e.printStackTrace();
       throw new ElasticsearchClientException(e.getMessage());
     }
+  }
+
+  public long getLoyaltyProgramCount(String loyaltyProgramID) throws ElasticsearchClientException
+  {
+    try {
+      this.checkConnectionIsEstablished();
+      QueryBuilder queryLoyaltyProgramID = QueryBuilders.termQuery("loyaltyPrograms.programID", loyaltyProgramID);
+      QueryBuilder queryEmptyExitDate = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("loyaltyPrograms.loyaltyProgramExitDate"));
+      QueryBuilder query = QueryBuilders.nestedQuery("loyaltyPrograms",
+                                            QueryBuilders.boolQuery()
+                                                            .filter(queryLoyaltyProgramID)
+                                                            .filter(queryEmptyExitDate), ScoreMode.Total);
+      CountRequest countRequest = new CountRequest("subscriberprofile").query(query);
+      CountResponse countResponse = elasticsearch.count(countRequest, RequestOptions.DEFAULT);
+      if (countResponse.getFailedShards() > 0) {
+        throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
+      }
+      return countResponse.getCount();
+    }
+    catch (ElasticsearchClientException e) { // forward
+      throw e;
+    }
+    catch (ElasticsearchStatusException e)
+    {
+      if(e.status() == RestStatus.NOT_FOUND) { // index not found
+        log.debug(e.getMessage());
+        return 0;
+      }
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (ElasticsearchException e) {
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getMessage());
+    }
+
   }
 }
