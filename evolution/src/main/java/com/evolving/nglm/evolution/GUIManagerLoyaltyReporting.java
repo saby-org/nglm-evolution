@@ -43,7 +43,6 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
-import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.sun.net.httpserver.HttpExchange;
 
 import com.evolving.nglm.evolution.reports.*;
@@ -796,12 +795,12 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             	  String tempFileName = tempFile.getAbsolutePath();
 
             	  String[] colsNameArray = colsName.toArray(new String[0]);
-            	  String separator = null;
-            	  String delimiter = null;
+            	  String delimiter = ";";
+            	  String separator = "'";
 
             	  String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
 
-            	  RowsWithSpecificColumnsValue.displayRowsWithSpecificColumnsData(unzippedFile, tempFileName, colsName, colsValues, delimiter,
+            	  Filtering.filteringReport(unzippedFile, tempFileName, colsName, colsValues, delimiter,
             			  separator);
 
             	  ZipFile.zipFile(tempFileName);
@@ -994,7 +993,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           {
             log.trace("In processGetReportList, adding : " + report);
           }
-        JSONObject reportResponse = reportService.generateResponseJSON(report, true, now);
+			JSONObject reportResponse = reportService.generateResponseJSON(report, true, now);
         reportResponse.put("isRunning", reportService.isReportRunning(((Report)report).getName()));
         reports.add(reportResponse);
       }
