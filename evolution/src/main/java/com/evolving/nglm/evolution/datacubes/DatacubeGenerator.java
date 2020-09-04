@@ -20,16 +20,8 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.aggregations.AggregationBuilder;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.bucket.composite.CompositeAggregationBuilder;
-import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
-import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite;
-import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
-import org.elasticsearch.search.aggregations.bucket.composite.TermsValuesSourceBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
@@ -53,7 +45,7 @@ public abstract class DatacubeGenerator
    * setting named search.max_buckets. It defaults to 10,000, requests that try to return more
    * than the limit will fail with an exception. */
   protected static final int BUCKETS_MAX_NBR = 10000; // TODO: factorize in ES client later (with some generic ES calls)
-  private static final String UNDEFINED_BUCKET_VALUE = "undefined";
+  protected static final String UNDEFINED_BUCKET_VALUE = "undefined";
 
   //
   // Date formats
@@ -78,8 +70,7 @@ public abstract class DatacubeGenerator
   *
   *****************************************/
   protected RestHighLevelClient elasticsearch;
-  private String datacubeName;
-  protected String compositeAggregationName = "DATACUBE";
+  protected String datacubeName;
   protected ByteBuffer tmpBuffer = null;
 
   /*****************************************
@@ -105,18 +96,17 @@ public abstract class DatacubeGenerator
   protected abstract String getDatacubeESIndex();
   
   //
-  // Filters settings
-  //
-  protected abstract List<String> getFilterFields();
-  protected abstract List<CompositeValuesSourceBuilder<?>> getFilterComplexSources();
+  // Datacube generation phases
+  // 
   protected abstract boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException; // return false if generation must stop here.
-  protected abstract void embellishFilters(Map<String, Object> filters);
+  protected abstract SearchRequest getElasticsearchRequest();
+  protected abstract List<Map<String,Object>> extractDatacubeRows(SearchResponse response, String timestamp, long period) throws ClassCastException;
   
   //
-  // Metrics settings
+  // Row extraction
   //
-  protected abstract List<AggregationBuilder> getMetricAggregations();
-  protected abstract Map<String, Object> extractMetrics(ParsedBucket compositeBucket, Map<String, Object> contextFilters) throws ClassCastException;
+  protected abstract void embellishFilters(Map<String, Object> filters);
+  
 
   /*****************************************
   *
@@ -126,12 +116,6 @@ public abstract class DatacubeGenerator
   protected String getDatacubeName() 
   {
     return this.datacubeName;
-  }
-  
-  // Target every documents of the index by default, can be overriden.
-  protected QueryBuilder getSubsetQuery() 
-  {
-    return QueryBuilders.matchAllQuery();
   }
   
   //
@@ -212,60 +196,61 @@ public abstract class DatacubeGenerator
     
     return true;
   }
-  
+
   /*****************************************
   *
-  *  getElasticsearchRequest
+  *  extractRow
   *
   *****************************************/
-  private SearchRequest getElasticsearchRequest() 
+  protected Map<String,Object> extractRow(Map<String, Object> filters, long count, String timestamp, long period, Map<String, Object> metrics) 
   {
-    String ESIndex = getDataESIndex();
-    
-    List<String> datacubeFilterFields = getFilterFields();
-    List<CompositeValuesSourceBuilder<?>> datacubeFilterComplexSources = getFilterComplexSources();
-    List<AggregationBuilder> datacubeMetricAggregations = getMetricAggregations();
+    //
+    // Add static filters that will be used for ID generation (such as date for instance)
+    //
+    addStaticFilters(filters);
     
     //
-    // Composite sources are created from datacube filters and complex sources (scripts)
+    // Extract documentID from filters & timestamp (before calling embellish)
     //
-    List<CompositeValuesSourceBuilder<?>> sources = new ArrayList<>();
-    for(String datacubeFilter: datacubeFilterFields) {
-      TermsValuesSourceBuilder sourceTerms = new TermsValuesSourceBuilder(datacubeFilter).field(datacubeFilter).missingBucket(true);
-      sources.add(sourceTerms);
+    String documentID = getDocumentID(filters, timestamp);
+    
+    //
+    // Embellish filters for Kibana/Grafana (display names), they won't be taken into account for documentID
+    //
+    embellishFilters(filters);
+    
+    //
+    // Build row
+    //
+    HashMap<String,Object> datacubeRow = new HashMap<String,Object>();
+    datacubeRow.put("_id",  documentID); // _id field is a temporary variable and will be removed before insertion
+    datacubeRow.put("timestamp", timestamp);
+    datacubeRow.put("period", period);
+    datacubeRow.put("count", count);
+    
+    //
+    // Flat filter fields for Kibana/Grafana
+    //
+    for(String filter: filters.keySet()) {
+      datacubeRow.put("filter." + filter, filters.get(filter));
     }
-    for(CompositeValuesSourceBuilder<?> complexSources: datacubeFilterComplexSources) {
-      sources.add(complexSources);
+    
+    //
+    // Flat metric fields for Kibana/Grafana
+    //
+    for(String metric : metrics.keySet()) {
+      datacubeRow.put("metric." + metric, metrics.get(metric));
     }
     
-    CompositeAggregationBuilder compositeAggregation = AggregationBuilders.composite(compositeAggregationName, sources)
-        .size(BUCKETS_MAX_NBR);
-
-    //
-    // Metric aggregations
-    //
-    for(AggregationBuilder subaggregation : datacubeMetricAggregations) {
-      compositeAggregation = compositeAggregation.subAggregation(subaggregation);
-    }
-    
-    //
-    // Datacube request
-    //
-    SearchSourceBuilder datacubeRequest = new SearchSourceBuilder()
-        .sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
-        .query(getSubsetQuery())
-        .aggregation(compositeAggregation)
-        .size(0);
-    
-    return new SearchRequest(ESIndex).source(datacubeRequest);
+    return datacubeRow;
   }
-
+  
   /*****************************************
   *
   *  executeESSearchRequest
   *
   *****************************************/
-  protected SearchResponse executeESSearchRequest(SearchRequest request) throws ElasticsearchException, IOException 
+  private SearchResponse executeESSearchRequest(SearchRequest request) throws ElasticsearchException, IOException 
   {
     try 
       {
@@ -282,98 +267,7 @@ public abstract class DatacubeGenerator
         }
       }
   }
-
-  /*****************************************
-  *
-  *  extractDatacubeRows
-  *
-  *****************************************/
-  private List<Map<String,Object>> extractDatacubeRows(SearchResponse response, String timestamp, long period) throws ClassCastException 
-  {
-    List<Map<String,Object>> result = new ArrayList<Map<String,Object>>();
-    
-    if (response.isTimedOut()
-        || response.getFailedShards() > 0
-        || response.getSkippedShards() > 0
-        || response.status() != RestStatus.OK) {
-      log.error("Elasticsearch search response return with bad status in {} generation.", getDatacubeName());
-      return result;
-    }
-    
-    if(response.getAggregations() == null) {
-      log.error("Main aggregation is missing in {} search response.", getDatacubeName());
-      return result;
-    }
-    
-    ParsedComposite compositeBuckets = response.getAggregations().get(compositeAggregationName);
-    if(compositeBuckets == null) {
-      log.error("Composite buckets are missing in {} search response.", getDatacubeName());
-      return result;
-    }
-    
-    for(ParsedBucket bucket: compositeBuckets.getBuckets()) {
-      long docCount = bucket.getDocCount();
-
-      //
-      // Extract filter, replace null
-      //
-      Map<String, Object> filters = bucket.getKey();
-      for(String key: filters.keySet()) {
-        if(filters.get(key) == null) {
-          filters.replace(key, UNDEFINED_BUCKET_VALUE);
-        }
-      }
-      
-      //
-      // Add static filters that will be used for ID generation (such as date for instance)
-      //
-      addStaticFilters(filters);
-      
-      //
-      // Extract documentID from filters & timestamp (before calling embellish)
-      //
-      String documentID = getDocumentID(filters, timestamp);
-      
-      //
-      // Embellish filters for Kibana/Grafana (display names), they won't be taken into account for documentID
-      //
-      embellishFilters(filters);
-      
-      //
-      // Extract metrics (@rl may also modify filters, see loyalty hack)
-      //
-      Map<String, Object> metrics = extractMetrics(bucket, filters);
-      
-      //
-      // Result
-      //
-      HashMap<String,Object> datacubeRow = new HashMap<String,Object>();
-      datacubeRow.put("_id",  documentID); // _id field is a temporary variable and will be removed before insertion
-      datacubeRow.put("timestamp", timestamp);
-      datacubeRow.put("period", period);
-      datacubeRow.put("count", docCount);
-      
-      //
-      // Flat filter fields for Kibana/Grafana
-      //
-      for(String filter: filters.keySet()) {
-        datacubeRow.put("filter." + filter, filters.get(filter));
-      }
-      
-      //
-      // Flat metric fields for Kibana/Grafana
-      //
-      for(String metric : metrics.keySet()) {
-        datacubeRow.put("metric." + metric, metrics.get(metric));
-      }
-      
-      result.add(datacubeRow);
-    }
-    
-    
-    return result;
-  }
-
+  
   /*****************************************
   *
   *  pushDatacubeRows

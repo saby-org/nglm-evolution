@@ -17,7 +17,6 @@ import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
@@ -25,15 +24,14 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
-import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
 import com.evolving.nglm.evolution.datacubes.mapping.SegmentationDimensionsMap;
 
-public class SubscriberProfileDatacubeGenerator extends DatacubeGenerator
+public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
 {
   private static final String DATACUBE_ES_INDEX = "datacube_subscriberprofile";
   private static final String DATA_ES_INDEX = "subscriberprofile";
-  private static final String DATA_ES_INDEX_SNAPSHOT_PREFIX = "subscriberprofile_snapshot-";
   private static final String FILTER_STRATUM_PREFIX = "stratum.";
   private static final String METRIC_PREFIX = "metric_";
 
@@ -46,7 +44,6 @@ public class SubscriberProfileDatacubeGenerator extends DatacubeGenerator
   private SegmentationDimensionsMap segmentationDimensionList;
 
   private boolean previewMode;
-  private boolean snapshotsAvailable;
   private String metricTargetDay;
   private long metricTargetDayStartTime;
   private long metricTargetDayDuration;
@@ -63,7 +60,6 @@ public class SubscriberProfileDatacubeGenerator extends DatacubeGenerator
     super(datacubeName, elasticsearch);
 
     this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
-    this.snapshotsAvailable = true;
     
     //
     // Filter fields
@@ -76,20 +72,13 @@ public class SubscriberProfileDatacubeGenerator extends DatacubeGenerator
   * Elasticsearch indices settings
   *
   *****************************************/
-  @Override protected String getDataESIndex() { 
-    if (this.previewMode || !this.snapshotsAvailable) {
-      return DATA_ES_INDEX;
-    } else {
-      return DATA_ES_INDEX_SNAPSHOT_PREFIX + metricTargetDay; 
-    }
-  }
-  
+  @Override protected String getDataESIndex() { return DATA_ES_INDEX; }
   @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX; }
   
   //
   // Subset of subscriberprofile
   //
-  // When a newly created subscriber in Elasticsearch comes first by ExtendedSubscriberProfile sink connector,
+  // Hack: When a newly created subscriber in Elasticsearch comes first by ExtendedSubscriberProfile sink connector,
   // it has not yet any of the "product" main (& mandatory) fields.
   // Those comes when the SubscriberProfile sink connector push them.
   // For a while, it is possible a document in subscriberprofile index miss many product fields required by datacube generation.
@@ -107,20 +96,11 @@ public class SubscriberProfileDatacubeGenerator extends DatacubeGenerator
   *
   *****************************************/
   @Override protected List<String> getFilterFields() { return filterFields; }
-  @Override protected List<CompositeValuesSourceBuilder<?>> getFilterComplexSources() { return new ArrayList<CompositeValuesSourceBuilder<?>>(); }
   
   @Override
   protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
     this.segmentationDimensionList.update();
-    
-    this.snapshotsAvailable = true;
-    String initialDataIndex = getDataESIndex();
-    this.snapshotsAvailable = isESIndexAvailable(initialDataIndex);
-    if(!this.snapshotsAvailable) {
-      log.warn("Elasticsearch index [" + initialDataIndex + "] does not exist. We will execute request on [" + getDataESIndex() + "] instead.");
-    }
-    
     this.filterFields = new ArrayList<String>();
     for(String dimensionID: segmentationDimensionList.keySet())
       {
@@ -184,7 +164,7 @@ public class SubscriberProfileDatacubeGenerator extends DatacubeGenerator
   }
 
   @Override
-  protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket, Map<String, Object> contextFilters) throws ClassCastException
+  protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
   {    
     HashMap<String, Object> metrics = new HashMap<String,Object>();
     
