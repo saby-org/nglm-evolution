@@ -2,7 +2,7 @@ gui-audit-logstash-<_KEY_>:
   image: ${env.DOCKER_REGISTRY}ev-gui.auditlogstash:${gui-audit.version}
   environment:
     ELASTICSEARCH: '<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>'
-    ELASTICSEARCH_INDEXNAME: 'auditlogs' 
+    ELASTICSEARCH_INDEXNAME: 'auditlogs'
     TZ: <_DEPLOYMENT_TIMEZONE_>
   volumes:
     - type: bind
