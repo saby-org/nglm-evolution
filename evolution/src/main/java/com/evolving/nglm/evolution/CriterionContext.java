@@ -238,6 +238,27 @@ public class CriterionContext
       }
 
     //
+    //  unknown relationship
+    //
+
+    try
+      {
+        Map<String,Object> evaluationEventNameJSON = new LinkedHashMap<String,Object>();
+        evaluationEventNameJSON.put("id", "unknown.relationship");
+        evaluationEventNameJSON.put("display", "unknown.relationship");
+        evaluationEventNameJSON.put("dataType", "boolean");
+        evaluationEventNameJSON.put("retriever", "isUnknownRelationship");
+        evaluationEventNameJSON.put("internalOnly", true);
+        evaluationEventName  = new CriterionField(JSONUtilities.encodeObject(evaluationEventNameJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
+    
+
+    //
     //  internalRandom100
     //
 

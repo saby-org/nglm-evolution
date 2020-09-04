@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
 
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
@@ -60,6 +61,27 @@ public abstract class CriterionFieldRetriever
   //
 
   public static Object getEvaluationDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getEvaluationDate(); }
+  public static Object getJourneyEvaluationEventName(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return (evaluationRequest.getSubscriberStreamEvent() != null && evaluationRequest.getSubscriberStreamEvent() instanceof EvolutionEngineEvent) ? ((EvolutionEngineEvent) evaluationRequest.getSubscriberStreamEvent()).getEventName() : null; }
+  public static Object isUnknownRelationship(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
+    { 
+      List<Pair<String, String>> unknownRelationships = evaluationRequest.getSubscriberProfile().getUnknownRelationships();
+      Pair<String, String> p = new Pair<>(evaluationRequest.getJourneyState().getJourneyID(), evaluationRequest.getJourneyNode().getNodeID());
+      if(unknownRelationships != null) {
+        for(Pair<String, String> current : unknownRelationships)
+          {
+            if(p.getFirstElement().equals(current.getFirstElement()) && p.getSecondElement().equals(current.getSecondElement())) {
+              return true;
+            }
+            else {
+              return false;
+            }
+          }
+      }
+      return false;
+    }
+  
+  
+  
   public static Object getEvaluationAniversary(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return getEvaluationDate(evaluationRequest, fieldName);}
   public static Object getJourneyEvaluationEventName(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return (evaluationRequest.getSubscriberStreamEvent() != null && evaluationRequest.getSubscriberStreamEvent() instanceof EvolutionEngineEvent) ? ((EvolutionEngineEvent) evaluationRequest.getSubscriberStreamEvent()).getEventName() : null; } 
   public static Object getRandom100(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return ThreadLocalRandom.current().nextInt(100); }

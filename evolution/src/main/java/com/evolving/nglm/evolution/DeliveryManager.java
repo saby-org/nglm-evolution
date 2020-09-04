@@ -120,6 +120,9 @@ public abstract class DeliveryManager
   //
 
   private static final Logger log = LoggerFactory.getLogger(DeliveryManager.class);
+  
+  public static final String TARGETED = "targeted-";
+  public static final String ORIGIN = "origin-";
 
   //
   //  configuration
@@ -914,10 +917,45 @@ public abstract class DeliveryManager
         *  retry required?
         *
         *****************************************/
+        
+        if(deliveryRequest.getOriginatingRequest()) 
+          {
+            // response to be sent indexed by subscriber ID
+            if(deliveryRequest.getOriginatingSubscriberID() != null) {
+              // EVPRO-178
+              // means this request has been made by originatingSubscriberID on behalf of current subscsriberID
+              // so need to send a response to:
+              // - originatingSubscriberID to unlock the current state of its Journey: SubscriberID = originatingSubscriberID and originatingSubscriberID becomes targeted-<effectivelyTargeted>
+              // - targeted subscriberID (i.e. the one which effectively got, by example, a SMS..., for delivery history: subscriberID = currentSubscriberID and originatingSubscriberID origin-<originating>
+              String originating = deliveryRequest.getOriginatingSubscriberID();
+              String targeted = deliveryRequest.getSubscriberID();
+              
+              // send the response to the originating:
+              deliveryRequest.setSubscriberID(originating);
+              deliveryRequest.setOriginatingSubscriberID(TARGETED + targeted);
+              StringKey key = new StringKey(originating);
+              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest)));
+              
+              // send the response to the targetted
+              deliveryRequest.setSubscriberID(targeted);
+              deliveryRequest.setOriginatingSubscriberID(ORIGIN + originating);
+              key = new StringKey(targeted);
+              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest)));
 
-        StringKey key = deliveryRequest.getOriginatingRequest() ? new StringKey(deliveryRequest.getSubscriberID()) : new StringKey(deliveryRequest.getDeliveryRequestID());
-        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest)));
-
+            }
+          else 
+            {
+              // normal case
+              StringKey key = new StringKey(deliveryRequest.getSubscriberID());
+              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest)));
+            }
+          }
+        else 
+          {
+            // index by requestID
+            StringKey key = new StringKey(deliveryRequest.getDeliveryRequestID());
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest)));
+          }
       }
   }
 
@@ -926,7 +964,6 @@ public abstract class DeliveryManager
    *  processSubmitCorrelatorUpdate  (note:  runs on subclass thread "blocking" until complete)
    *
    *****************************************/
-
   private static final String CORRELATOR_UPDATE_KEY = "correlatorUpdate";
   private void processSubmitCorrelatorUpdate(String correlator, JSONObject correlatorUpdate)
   {
@@ -941,6 +978,7 @@ public abstract class DeliveryManager
     DeliveryRequest deliveryRequestForCorrelatorUpdate = hackyDeliveryRequestInstance.copy();
     deliveryRequestForCorrelatorUpdate.getDiplomaticBriefcase().put(CORRELATOR_UPDATE_KEY,correlatorUpdate.toJSONString());
     kafkaProducer.send(new ProducerRecord<byte[], byte[]>(routingTopic, stringKeySerde.serializer().serialize(routingTopic, new StringKey(correlator)), requestSerde.serializer().serialize(routingTopic, deliveryRequestForCorrelatorUpdate)));
+
   }
 
   /*****************************************

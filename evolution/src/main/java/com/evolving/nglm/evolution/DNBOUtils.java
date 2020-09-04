@@ -522,7 +522,7 @@ public class DNBOUtils
       String salesChannelID = token.getPresentedOffersSalesChannel();
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
 
-      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "", "");
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext,  deliveryRequestSource, offerID, quantity, salesChannelID, "", "");
       request.setModuleID(DeliveryRequest.Module.Journey_Manager.getExternalRepresentation());
       request.setFeatureID(deliveryRequestSource);
       result.add(request);

@@ -114,6 +114,7 @@
   "evaluateTargetsTopic"                                 : "${topic.evaluatetargets}",
   "cleanupSubscriberTopic"                               : "${topic.cleanupsubscriber}",
   "subscriberProfileForceUpdateTopic"                    : "${topic.subscriberprofileforceupdate}",
+  "executeActionOtherSubscriberTopic"                    : "${topic.executeactionothersubscriber}",
   "tokenRedeemedTopic"                                   : "${topic.tokenredeemed}",
   "subscriberStateChangeLog"                             : "${changelog.evolutionengine.subscriberstate}",
   "subscriberStateChangeLogTopic"                        : "${changelog.evolutionengine.subscriberstate.topic}",

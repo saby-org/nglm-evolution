@@ -232,6 +232,10 @@ public abstract class SubscriberProfile
   private ExtendedSubscriberProfile extendedSubscriberProfile;
   private SubscriberHistory subscriberHistory;
   private Map<String,Integer> exclusionInclusionTargets; 
+  
+  // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
+  // the required relationship does not exist and must go out of the box through a special connector.
+  private List<Pair<String, String>> unknownRelationships = new ArrayList<>();  
 
   /****************************************
   *
@@ -257,6 +261,8 @@ public abstract class SubscriberProfile
   public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
   public SubscriberHistory getSubscriberHistory() { return subscriberHistory; }
   public Map<String, Integer> getExclusionInclusionTargets() { return exclusionInclusionTargets; }
+  
+  public List<Pair<String, String>> getUnknownRelationships(){ return unknownRelationships ; }
 
   //
   //  temporary (until we can update nglm-kazakhstan)
@@ -1723,6 +1729,8 @@ public abstract class SubscriberProfile
     this.extendedSubscriberProfile = subscriberProfile.getExtendedSubscriberProfile() != null ? ExtendedSubscriberProfile.copy(subscriberProfile.getExtendedSubscriberProfile()) : null;
     this.subscriberHistory = subscriberProfile.getSubscriberHistory() != null ? new SubscriberHistory(subscriberProfile.getSubscriberHistory()) : null;
     this.exclusionInclusionTargets = new HashMap<String, Integer>(subscriberProfile.getExclusionInclusionTargets());
+    
+    this.getUnknownRelationships().addAll(subscriberProfile.getUnknownRelationships());
   }
 
   /*****************************************

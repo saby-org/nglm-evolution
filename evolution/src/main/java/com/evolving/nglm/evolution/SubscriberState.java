@@ -288,7 +288,7 @@ public class SubscriberState implements StateStore
    *
    *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput, List<UUID> trackingIDs, List<TokenChange> tokenChanges, List<Pair<String,MetricHistory>> notificationHistory, List<VoucherChange> voucherChanges)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<ExecuteActionOtherSubscriber> executeActionsOtherSubscriber, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput, List<UUID> trackingIDs, List<TokenChange> tokenChanges, List<Pair<String,MetricHistory>> notificationHistory, List<VoucherChange> voucherChanges)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
@@ -310,7 +310,6 @@ public class SubscriberState implements StateStore
     this.journeyMetrics = journeyMetrics;
     this.profileChangeEvents = profileChangeEvents;
     this.profileSegmentChangeEvents = profileSegmentChangeEvents;
-
     this.profileLoyaltyProgramChangeEvents = profileLoyaltyProgramChangeEvents;
     this.subscriberTrace = subscriberTrace;
     this.externalAPIOutput = externalAPIOutput;
@@ -503,6 +502,7 @@ public class SubscriberState implements StateStore
     List<LoyaltyProgramRequest> loyaltyProgramResponses = new ArrayList<LoyaltyProgramRequest>();
     List<PointFulfillmentRequest> pointFulfillmentResponses = new ArrayList<PointFulfillmentRequest>();
     List<DeliveryRequest> deliveryRequests = new ArrayList<DeliveryRequest>();
+    List<ExecuteActionOtherSubscriber> executeActionsOtherSubscriber = new ArrayList<ExecuteActionOtherSubscriber>();
     List<JourneyStatisticWrapper> journeyStatisticWrappers = new ArrayList<JourneyStatisticWrapper>();
     List<JourneyMetric> journeyMetrics = new ArrayList<JourneyMetric>();
     List<ProfileChangeEvent> profileChangeEvents = new ArrayList<ProfileChangeEvent>();
@@ -519,7 +519,7 @@ public class SubscriberState implements StateStore
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, reScheduledDeliveryRequest, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, journeyStatisticWrappers, journeyMetrics, profileChangeEvents, profileSegmentChangeEvents, profileLoyaltyProgramChangeEvents, subscriberTrace, externalAPIOutput, trackingIDs, tokenChanges, notificationHistory, voucherChanges);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, reScheduledDeliveryRequest, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, executeActionsOtherSubscriber, journeyStatisticWrappers, journeyMetrics, profileChangeEvents, profileSegmentChangeEvents, profileLoyaltyProgramChangeEvents, subscriberTrace, externalAPIOutput, trackingIDs, tokenChanges, notificationHistory, voucherChanges);
   }
 
   /*****************************************

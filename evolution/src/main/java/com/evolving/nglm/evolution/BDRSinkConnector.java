@@ -97,6 +97,13 @@ public class BDRSinkConnector extends SimpleESSinkConnector
     @Override
     public Map<String, Object> getDocumentMap(CommodityDeliveryRequest commodityRequest)
     {
+
+      if(commodityRequest.getOriginatingSubscriberID() != null && commodityRequest.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+        {
+          // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
+          return null;
+        }
+
       Map<String,Object> documentMap = new HashMap<String,Object>();
       documentMap.put("subscriberID", commodityRequest.getSubscriberID());
       SinkConnectorUtils.putAlternateIDs(commodityRequest.getAlternateIDs(), documentMap);

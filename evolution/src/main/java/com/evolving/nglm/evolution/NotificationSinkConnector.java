@@ -122,6 +122,11 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       
       if (notification instanceof MailNotificationManagerRequest) {
         MailNotificationManagerRequest mailNotification = (MailNotificationManagerRequest) notification;
+        if(notification.getOriginatingSubscriberID() != null && notification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+          {
+            // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
+            return null;
+          }
         documentMap.put("subscriberID", mailNotification.getSubscriberID());
         SinkConnectorUtils.putAlternateIDs(mailNotification.getAlternateIDs(), documentMap);
         documentMap.put("deliveryRequestID", mailNotification.getDeliveryRequestID());
@@ -147,6 +152,11 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       }
       else if (notification instanceof SMSNotificationManagerRequest) {
         SMSNotificationManagerRequest smsNotification = (SMSNotificationManagerRequest) notification;
+        if(notification.getOriginatingSubscriberID() != null && notification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+          {
+            // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
+            return null;
+          }
         documentMap.put("subscriberID", smsNotification.getSubscriberID());
         SinkConnectorUtils.putAlternateIDs(smsNotification.getAlternateIDs(), documentMap);
         documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());
@@ -171,6 +181,11 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       }
       else if (notification instanceof NotificationManagerRequest) {
         NotificationManagerRequest notifNotification = (NotificationManagerRequest) notification;
+        if(notification.getOriginatingSubscriberID() != null && notification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+          {
+            // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
+            return null;
+          }
         documentMap.put("subscriberID", notifNotification.getSubscriberID());
         SinkConnectorUtils.putAlternateIDs(notifNotification.getAlternateIDs(), documentMap);
         documentMap.put("deliveryRequestID", notifNotification.getDeliveryRequestID());
@@ -191,6 +206,11 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       }
       else {
         PushNotificationManagerRequest pushNotification = (PushNotificationManagerRequest) notification;
+        if(notification.getOriginatingSubscriberID() != null && notification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+          {
+            // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
+            return null;
+          }
         documentMap.put("subscriberID", pushNotification.getSubscriberID());
         SinkConnectorUtils.putAlternateIDs(pushNotification.getAlternateIDs(), documentMap);
         documentMap.put("deliveryRequestID", pushNotification.getDeliveryRequestID());

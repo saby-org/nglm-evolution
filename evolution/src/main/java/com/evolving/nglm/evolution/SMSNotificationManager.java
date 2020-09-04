@@ -518,6 +518,9 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
 
     @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
+      
+
+      
       /*****************************************
       *
       *  parameters
@@ -552,6 +555,8 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       DialogMessage messageText = (template != null) ? template.getMessageText() : null;
       List<String> messageTags = (messageText != null) ? messageText.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
 
+
+      
       /*****************************************
       *
       *  request

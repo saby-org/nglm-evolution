@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.management.relation.RelationService;
+
 import com.evolving.nglm.core.*;
 import com.evolving.nglm.evolution.statistics.CounterStat;
 import com.evolving.nglm.evolution.statistics.StatBuilder;
