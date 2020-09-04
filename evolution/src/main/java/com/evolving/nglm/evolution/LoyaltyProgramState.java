@@ -6,10 +6,13 @@
 
 package com.evolving.nglm.evolution;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.evolving.nglm.evolution.retention.Cleanable;
+import com.evolving.nglm.evolution.retention.RetentionService;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -21,7 +24,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 
 
-public class LoyaltyProgramState
+public class LoyaltyProgramState implements Cleanable
 {
   /*****************************************
   *
@@ -92,6 +95,15 @@ public class LoyaltyProgramState
   public String getLoyaltyProgramID() { return loyaltyProgramID; }
   public Date getLoyaltyProgramEnrollmentDate() { return loyaltyProgramEnrollmentDate; }
   public Date getLoyaltyProgramExitDate() { return loyaltyProgramExitDate; }
+
+  @Override public Date getExpirationDate(RetentionService retentionService) { return getLoyaltyProgramExitDate(); }
+  @Override public Duration getRetention(RetentionType type, RetentionService retentionService) {
+    switch (type){
+      case KAFKA_DELETION:
+        return Duration.ofDays(Deployment.getKafkaRetentionDaysLoyaltyPrograms());
+    }
+    return null;
+  }
 
   /*****************************************
   *

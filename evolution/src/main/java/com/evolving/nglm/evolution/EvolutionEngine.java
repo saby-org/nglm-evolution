@@ -20,7 +20,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import com.evolving.nglm.evolution.propensity.PropensityService;
-import com.evolving.nglm.evolution.ConfigUtils;
+import com.evolving.nglm.evolution.retention.RetentionService;
 import com.evolving.nglm.evolution.statistics.CounterStat;
 import com.evolving.nglm.evolution.statistics.DurationStat;
 import com.evolving.nglm.evolution.statistics.StatBuilder;
@@ -153,7 +153,7 @@ public class EvolutionEngine
   //
 
   public static String baseTimeZone = Deployment.getBaseTimeZone();
-  
+
   /*****************************************
   *
   *  data
@@ -214,7 +214,8 @@ public class EvolutionEngine
   private static ExclusionInclusionTargetService exclusionInclusionTargetService;
   private static StockMonitor stockService;
   private static PropensityService propensityService;
-  
+  private static RetentionService retentionService;
+
   private static final int MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES = 5;
   private static Date kafkaSizeErrorLogDate = SystemTime.getCurrentTime();
 
@@ -534,6 +535,11 @@ public class EvolutionEngine
     propensityService = new PropensityService(subscriberGroupEpochReader);
 
     //
+    // retention service
+    //
+    retentionService = new RetentionService(journeyService);
+
+    //
     //  ucgStateReader
     //
 
@@ -822,7 +828,7 @@ public class EvolutionEngine
     //  delivery manager response source streams
     //
 
-    List<KStream<StringKey, ? extends SubscriberStreamEvent>> deliveryManagerResponseStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
+    List<KStream<StringKey, ? extends DeliveryRequest>> deliveryManagerResponseStreams = new ArrayList<>();
     for (DeliveryManagerDeclaration deliveryManagerDeclaration : Deployment.getDeliveryManagers().values())
       {
         deliveryManagerResponseStreams.add(builder.stream(deliveryManagerResponseTopics.get(deliveryManagerDeclaration), Consumed.with(stringKeySerde, deliveryManagerResponseSerdes.get(deliveryManagerDeclaration))).filter((key,value) -> value.getOriginatingRequest()));
@@ -1044,10 +1050,11 @@ public class EvolutionEngine
     //
 
     KStream subscriberHistoryCompositeStream = journeyStatisticStream;
+    subscriberHistoryCompositeStream = subscriberHistoryCompositeStream.merge(periodicTimedEvaluationStream);
     subscriberHistoryCompositeStream = subscriberHistoryCompositeStream.merge(cleanupSubscriberSourceStream);
-    for (KStream<StringKey, ? extends SubscriberStreamEvent> eventStream : deliveryManagerResponseStreams)
+    for (KStream<StringKey, ? extends DeliveryRequest> eventStream : deliveryManagerResponseStreams)
       {
-        subscriberHistoryCompositeStream = (subscriberHistoryCompositeStream == null) ? eventStream : subscriberHistoryCompositeStream.merge(eventStream);
+        subscriberHistoryCompositeStream = (subscriberHistoryCompositeStream == null) ? eventStream : subscriberHistoryCompositeStream.merge(eventStream.filter((key,value)->value.isToStoreInHistoryStateStore()));
       }
     KStream<StringKey, SubscriberStreamEvent> subscriberHistoryStream = (KStream<StringKey, SubscriberStreamEvent>) subscriberHistoryCompositeStream;
 
@@ -1807,6 +1814,8 @@ public class EvolutionEngine
     EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, uniqueKeyServer, SystemTime.getCurrentTime());
     boolean subscriberStateUpdated = (currentSubscriberState != null) ? false : true;
 
+    if(log.isTraceEnabled()) log.trace("updateSubscriberState on event "+evolutionEvent.getClass().getSimpleName()+ " for "+evolutionEvent.getSubscriberID());
+
     /*****************************************
     *
     *  now
@@ -1856,8 +1865,8 @@ public class EvolutionEngine
     *
     *****************************************/
     
-    ParameterMap profileSegmentChangeOldValues = saveProfileSegmentChangeOldValues(changeEventEvaluationRequest); 
-    
+    ParameterMap profileSegmentChangeOldValues = saveProfileSegmentChangeOldValues(changeEventEvaluationRequest);
+
     /*****************************************
     *
     *  update SubscriberProfile
@@ -1865,13 +1874,13 @@ public class EvolutionEngine
     *****************************************/
 
     subscriberStateUpdated = updateSubscriberProfile(context, evolutionEvent) || subscriberStateUpdated;
-    
+
     /*****************************************
     *
     *  executeActionOtherSubscriber : Actions triggered by another subscriber for this one.
     *
     *****************************************/
-    
+
     subscriberStateUpdated = executeActionOtherSubscriber(context, evolutionEvent) || subscriberStateUpdated;
 
     /*****************************************
@@ -2072,23 +2081,6 @@ public class EvolutionEngine
     //
 
     boolean subscriberStateUpdated = false;
-
-    //
-    //  recentJourneyStates
-    //
-
-    Date recentJourneyStateWindow = RLMDateUtils.addMonths(now, -3, Deployment.getBaseTimeZone());
-    Iterator<JourneyState> recentJourneyStates = subscriberState.getRecentJourneyStates().iterator();
-    while (recentJourneyStates.hasNext())
-      {
-        JourneyState recentJourneyState = recentJourneyStates.next();
-        if (recentJourneyState.getJourneyExitDate().before(recentJourneyStateWindow))
-          {
-            subscriberState.getSubscriberProfile().getSubscriberJourneys().remove(recentJourneyState.getJourneyID());
-            recentJourneyStates.remove();
-            subscriberStateUpdated = true;
-          }
-      }
 
     //
     //  scheduledEvaluations
@@ -2411,34 +2403,22 @@ public class EvolutionEngine
 
     // no we check all, if some expired, to clean, expired to generate event ???
     if(subscriberProfile.getVouchers()!=null && !subscriberProfile.getVouchers().isEmpty()){
-      Date cleanBeforeThisDate = EvolutionUtilities.addTime(now,-1*Deployment.getCleanUpExpiredVoucherDelayInDays(),TimeUnit.Day,Deployment.getBaseTimeZone());
-      // safety check
-      if(now.before(cleanBeforeThisDate)){
-        log.warn("check me!! clean up date is in the future !!");
-      }else{
-        Iterator<VoucherProfileStored> iterator=subscriberProfile.getVouchers().iterator();
-        while(iterator.hasNext()){
-          VoucherProfileStored voucherStored = iterator.next();
-          if(voucherStored.getVoucherExpiryDate()==null){
-            log.warn("voucher expiration date is null ???");
-            continue;
-          }
-          // clean up old ones
-          if(voucherStored.getVoucherExpiryDate().before(cleanBeforeThisDate)){
-            if(log.isDebugEnabled()) log.debug("removed expired voucher "+voucherStored+" from "+subscriberProfile.getSubscriberID()+" profile");
-            iterator.remove();//just remove it from subscriber profile
-            subscriberUpdated=true;
-          }
-          // change status to expired
-          if(voucherStored.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Expired
-                  && voucherStored.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Redeemed
-                  && voucherStored.getVoucherExpiryDate().before(now)){
-            voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
-            subscriberUpdated=true;
-          }
 
+      for(VoucherProfileStored voucherStored:subscriberProfile.getVouchers()){
+        if(voucherStored.getVoucherExpiryDate()==null){
+          log.warn("voucher expiration date is null ???");
+          continue;
         }
+        // change status to expired
+        if(voucherStored.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Expired
+                && voucherStored.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Redeemed
+                && retentionService.isExpired(voucherStored)){
+          voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
+          subscriberUpdated=true;
+        }
+
       }
+
     }else{
       if(log.isDebugEnabled()) log.debug("no vouchers stored in profile for "+subscriberProfile.getSubscriberID());
     }
@@ -2836,6 +2816,17 @@ public class EvolutionEngine
     *****************************************/
 
     Date now = context.now();
+
+    /*****************************************
+    *
+    *  apply retention
+    *
+    *****************************************/
+
+    if (evolutionEvent instanceof TimedEvaluation && ((TimedEvaluation)evolutionEvent).getPeriodicEvaluation())
+      {
+        subscriberProfileUpdated = retentionService.cleanSubscriberState(context.getSubscriberState()) || subscriberProfileUpdated;
+      }
 
     /*****************************************
     *
@@ -3358,47 +3349,47 @@ public class EvolutionEngine
 
     return subscriberProfileUpdated;
   }
-  
-  
+
+
   private static boolean executeActionOtherSubscriber(EvolutionEventContext evolutionEventContext, SubscriberStreamEvent evolutionEvent)
   {
     if(evolutionEvent instanceof ExecuteActionOtherSubscriber)
       {
         // This the request of an action (cf ActionManager)
         ExecuteActionOtherSubscriber executeActionOtherSubscriber = (ExecuteActionOtherSubscriber)evolutionEvent;
-        
+
         // set some data used to execute the associated actions (those data are cleaned a bit later just before return)
         evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(executeActionOtherSubscriber.getOutstandingDeliveryRequestID());
         evolutionEventContext.setExecuteActionOtherUserOriginalSubscriberID(executeActionOtherSubscriber.getOriginatingSubscriberID());
-        
+
         JourneyState originalJourneyState = executeActionOtherSubscriber.getOriginatedJourneyState();
         Journey originalJourney = evolutionEventContext.getJourneyService().getActiveJourney(executeActionOtherSubscriber.getOriginalJourneyID(), evolutionEventContext.now());
         ActionManager actionManager = null;
         JourneyNode originalJourneyNode = null;
         if(executeActionOtherSubscriber.getOriginatingNodeID() != null)
           {
-            originalJourneyNode = originalJourney.getJourneyNode(executeActionOtherSubscriber.getOriginatingNodeID()); 
+            originalJourneyNode = originalJourney.getJourneyNode(executeActionOtherSubscriber.getOriginatingNodeID());
             actionManager = originalJourneyNode.getNodeType().getActionManager();
           }
-        
+
         if(actionManager != null) {
           // build new SubscriberEvaluationRequest
           SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(
-              evolutionEventContext.getSubscriberState().getSubscriberProfile(), 
-              (ExtendedSubscriberProfile) null, 
-              subscriberGroupEpochReader, 
-              originalJourneyState, 
-              originalJourneyNode, 
-              null, 
-              null, 
+              evolutionEventContext.getSubscriberState().getSubscriberProfile(),
+              (ExtendedSubscriberProfile) null,
+              subscriberGroupEpochReader,
+              originalJourneyState,
+              originalJourneyNode,
+              null,
+              null,
               evolutionEventContext.now);
           List<Action> actions = actionManager.executeOnEntry(evolutionEventContext, subscriberEvaluationRequest);
           handleExecuteOnEntryActions(evolutionEventContext.getSubscriberState(), originalJourneyState, originalJourney, actions);
-          
+
           // clean temporary data to avoid next nodes considering this event
           evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(null);
-          evolutionEventContext.setExecuteActionOtherUserOriginalSubscriberID(null);         
-          
+          evolutionEventContext.setExecuteActionOtherUserOriginalSubscriberID(null);
+
           return true;
         }
       }
@@ -3938,6 +3929,16 @@ public class EvolutionEngine
               default:
                 break;
               }
+
+          // if loyalty got deleted (NOT JUST "suspended"), we need to optout to clean it from profile after a while
+          }else if(loyaltyProgram == null && subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramID).getLoyaltyProgramExitDate() == null){
+
+            if(loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID)==null){
+              if(log.isDebugEnabled()) log.debug("exiting deleted from conf loyalty program "+loyaltyProgramID+" for subscriber "+subscriberProfile.getSubscriberID());
+              loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramID);
+              ((LoyaltyProgramPointsState)loyaltyProgramState).update(loyaltyProgramState.getLoyaltyProgramEpoch(), LoyaltyProgramOperation.Optout, loyaltyProgramState.getLoyaltyProgramName(), null, now, null, loyaltyProgramService);
+            }
+
           }
         }
       }
@@ -4268,6 +4269,17 @@ public class EvolutionEngine
 
     Date now = context.now();
 
+    //TODO: before EVPRO-325 all restriction to enter journey were done based on subscriberState.getRecentJourneyStates(), now it is on subscriberState.getSubscriberProfile().getSubscriberJourneysEnded()
+    // so it is important to migrate data, but once all customer run over this version, this should be removed
+    // ------ START DATA MIGRATION COULD BE REMOVED
+    for(JourneyState recentJourneyState:subscriberState.getRecentJourneyStates()){
+      if(subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().get(recentJourneyState.getJourneyID())==null){
+        subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().put(recentJourneyState.getJourneyID(),recentJourneyState.getExpirationDate(retentionService)!=null?recentJourneyState.getExpirationDate(retentionService):now);
+      }
+    }
+    // ------ END DATA MIGRATION COULD BE REMOVED
+
+
     /*****************************************
     *
     *  determine permitted journeys by objective
@@ -4281,15 +4293,20 @@ public class EvolutionEngine
     Map<JourneyObjective, Integer> permittedSimultaneousJourneys = new HashMap<JourneyObjective, Integer>();
     Map<JourneyObjective, Boolean> permittedWaitingPeriod = new HashMap<JourneyObjective, Boolean>();
     Map<JourneyObjective, Integer> permittedSlidingWindowJourneys = new HashMap<JourneyObjective, Integer>();
-    for (JourneyState journeyState : Sets.union(subscriberState.getJourneyStates(), subscriberState.getRecentJourneyStates()))
+    // this will contains all journeyId subscriber has or ever had
+    Set<String> allJourneyId = new HashSet<>(subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().keySet());
+    if(!subscriberState.getJourneyStates().isEmpty()) subscriberState.getJourneyStates().stream().forEach(state->allJourneyId.add(state.getJourneyID()));
+    for (String journeyID : allJourneyId)
       {
         //
         //  candidate journey
         //
 
-        Journey candidateJourney = journeyService.getActiveJourney(journeyState.getJourneyID(), now);
+        Journey candidateJourney = journeyService.getActiveJourney(journeyID, now);
         if (candidateJourney == null) continue;
-        boolean activeJourney = subscriberState.getJourneyStates().contains(journeyState);
+        boolean activeJourney = subscriberState.getJourneyStates().stream().anyMatch(state->state.getJourneyID().equals(journeyID));
+        Date oldJourneyEndDate = null;//should never be used if journey is active!
+        oldJourneyEndDate = subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().get(journeyID);
 
         //
         //  process journey objectives
@@ -4321,12 +4338,12 @@ public class EvolutionEngine
                 if (log.isTraceEnabled()) log.trace("permittedSimultaneousJourneys put " + journeyObjective.getJourneyObjectiveName() + ":" + (permittedSimultaneousJourneys.get(journeyObjective) - 1));
                 permittedSimultaneousJourneys.put(journeyObjective, permittedSimultaneousJourneys.get(journeyObjective) - 1);
               }
-            if (journeyObjective.getEffectiveTargetingLimitMaxSimultaneous()==1 && (activeJourney || journeyState.getJourneyExitDate().compareTo(journeyObjective.getEffectiveWaitingPeriodEndDate(now)) >= 0))
+            if (journeyObjective.getEffectiveTargetingLimitMaxSimultaneous()==1 && (activeJourney || oldJourneyEndDate.compareTo(journeyObjective.getEffectiveWaitingPeriodEndDate(now)) >= 0))
               {
                 if (log.isTraceEnabled()) log.trace("permittedWaitingPeriod put " + journeyObjective.getJourneyObjectiveName() + ": static FALSE");
                 permittedWaitingPeriod.put(journeyObjective, Boolean.FALSE);
               }
-            if (activeJourney || journeyState.getJourneyExitDate().compareTo(journeyObjective.getEffectiveSlidingWindowStartDate(now)) >= 0)
+            if (activeJourney || oldJourneyEndDate.compareTo(journeyObjective.getEffectiveSlidingWindowStartDate(now)) >= 0)
               {
                 if (log.isTraceEnabled()) log.trace("permittedSlidingWindowJourneys put " + journeyObjective.getJourneyObjectiveName() + ":" + (permittedSlidingWindowJourneys.get(journeyObjective) - 1));
                 permittedSlidingWindowJourneys.put(journeyObjective, permittedSlidingWindowJourneys.get(journeyObjective) - 1);
@@ -4462,22 +4479,18 @@ public class EvolutionEngine
 
                 /*****************************************
                 *
-                *  recently in journey?
+                *  already been in journey?
                 *
                 *****************************************/
 
-                if (enterJourney)
+                if (enterJourney && journey.getGUIManagedObjectType()!=GUIManagedObjectType.Journey/*allowed for Journey to reenter but none of the other type*/)
                   {
-                    for (JourneyState journeyState : subscriberState.getRecentJourneyStates())
+                    for (String previousJourneyID : subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().keySet())
                       {
-                        if (Objects.equals(journeyState.getJourneyID(), journey.getJourneyID()))
+                        if (Objects.equals(previousJourneyID, journey.getJourneyID()))
                           {
-                            Date journeyReentryWindow = EvolutionUtilities.addTime(journeyState.getJourneyExitDate(), Deployment.getJourneyDefaultTargetingWindowDuration(), Deployment.getJourneyDefaultTargetingWindowUnit(), Deployment.getBaseTimeZone(), Deployment.getJourneyDefaultTargetingWindowRoundUp() ? RoundingSelection.RoundUp : RoundingSelection.NoRound);
-                            if (journeyReentryWindow.after(now))
-                              {
-                                context.subscriberTrace("NotEligible: recently in journey {0}, window ends {1}", journey.getJourneyID(), journeyReentryWindow);
-                                enterJourney = false;
-                              }
+                            context.subscriberTrace("NotEligible: already been in journey {0}", journey.getJourneyID());
+                            enterJourney = false;
                           }
                       }
                   }
@@ -4694,7 +4707,7 @@ public class EvolutionEngine
                 //
                 // check if JourneyMetrics enabled: Metrics should be generated for campaigns only (not journeys nor bulk campaigns)
                 //
-                if (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) 
+                if (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign && journey.getFullStatistics())
                   {
                     boolean metricsUpdated = journeyState.populateMetricsPrior(subscriberState);
                     subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
@@ -4896,7 +4909,7 @@ public class EvolutionEngine
             DeliveryRequest deliveryResponse = (DeliveryRequest) evolutionEvent;
             if(deliveryResponse.getOriginatingSubscriberID() == null || deliveryResponse.getOriginatingSubscriberID().startsWith(DeliveryManager.ORIGIN))
               {
-                // case where the response is to the parent into the relationship, so the history must be taken in account... 
+                // case where the response is to the parent into the relationship, so the history must be taken in account...
                 // this history is not taken in account for a response to the original subscriber as this response is only here to unlock the Journey
                 if (Objects.equals(deliveryResponse.getModuleID(), DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && Objects.equals(deliveryResponse.getFeatureID(), journeyState.getJourneyID()))
                   {
@@ -4906,7 +4919,7 @@ public class EvolutionEngine
                         subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, new RewardHistory(lastRewards), journeyState.getJourneyID()));
                       }
                   }
-              }            
+              }
           }
         
         /*****************************************
@@ -5151,10 +5164,10 @@ public class EvolutionEngine
                   {
                     try
                       {
-                        
+
                         List<Action> actions = new ArrayList<>();
                         SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now);
-                        
+
 
                         String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(entryActionEvaluationRequest, "node.parameter.relationship");
                         if (hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer"))
@@ -5170,26 +5183,26 @@ public class EvolutionEngine
                                 ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(subscriberRelatives.getParentSubscriberID(), entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
                                 actions.add(action);
                               }
-                            else 
+                            else
                               {
                                 // in case there is nobody as father in the given relation, then add this information temporarly into the subscriber profile
                                 subscriberState.getSubscriberProfile().getUnknownRelationships().add(new Pair(entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID()));
                               }
                           }
-                        else 
+                        else
                           {
                             //
                             // evaluate action normally as no hierarchy
                             //
-    
+
                             actions = journeyNode.getNodeType().getActionManager().executeOnEntry(context, entryActionEvaluationRequest);
                             context.getSubscriberTraceDetails().addAll(entryActionEvaluationRequest.getTraceDetails());
                           }
-    
+
                           //
                           // execute action
                           //
-    
+
                           handleExecuteOnEntryActions(subscriberState, journeyState, journey, actions);
                       }
                     catch (RuntimeException e)
@@ -5282,7 +5295,7 @@ public class EvolutionEngine
                     //
                     // check if JourneyMetrics enabled: Metrics should be generated for campaigns only (not journeys nor bulk campaigns)
                     //
-                    if (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) 
+                    if (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign && journey.getFullStatistics())
                       {
                         boolean metricsUpdated = journeyState.populateMetricsDuring(subscriberState);
                         subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
@@ -5330,7 +5343,7 @@ public class EvolutionEngine
                 //  journeyStatistic
                 //
                 
-                boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, firedLink.getDestination().getExitNode());
+                boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, journeyNode.getExitNode());
                 subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile())));
 
                 /*****************************************
@@ -5417,6 +5430,7 @@ public class EvolutionEngine
       {
         subscriberState.getRecentJourneyStates().add(journeyState);
         subscriberState.getJourneyStates().remove(journeyState);
+        subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().put(journeyState.getJourneyID(),now);
         subscriberStateUpdated = true;
       }
 
@@ -5436,7 +5450,7 @@ public class EvolutionEngine
             // check if JourneyMetrics enabled: Metrics should be generated for campaigns only (not journeys nor bulk campaigns)
             //
             // journey can be null if it has been removed in the meantime (happens with PTT tests, should not happen in prod)
-            if ((journey != null) && (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign)) 
+            if ((journey != null) && (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) && journey.getFullStatistics())
               {
                 boolean metricsUpdated = journeyState.populateMetricsPost(subscriberState, now);
                 subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
@@ -5490,7 +5504,7 @@ public class EvolutionEngine
               subscriberState.getDeliveryRequests().add(deliveryRequest);
               journeyState.setJourneyOutstandingDeliveryRequestID(deliveryRequest.getDeliveryRequestID());
               break;
-            
+
             case ExecuteActionOtherSubscriber:
               ExecuteActionOtherSubscriber executeActionOtherSubscriber = (ExecuteActionOtherSubscriber) action;
               if(executeActionOtherSubscriber.getOutstandingDeliveryRequestID() != null) { journeyState.setJourneyOutstandingDeliveryRequestID(executeActionOtherSubscriber.getOutstandingDeliveryRequestID()); }
@@ -5515,7 +5529,7 @@ public class EvolutionEngine
             case TokenUpdate:
               Token token = (Token) action;
               subscriberState.getSubscriberProfile().getTokens().add(token);
-              String featureID = journey.getJourneyID(); 
+              String featureID = journey.getJourneyID();
               token.setFeatureID(featureID);
               switch (token.getTokenStatus())
               {
@@ -5544,13 +5558,13 @@ public class EvolutionEngine
               TokenChange tokenChange = (TokenChange) action;
               subscriberState.getTokenChanges().add(tokenChange);
               break;
-              
+
             case TriggerEvent:
               JourneyTriggerEventAction triggerEventAction = (JourneyTriggerEventAction) action;
               EvolutionEngineEventDeclaration eventDeclaration =  triggerEventAction.getEventDeclaration();
               kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventDeclaration.getEventTopic(), StringKey.serde().serializer().serialize(eventDeclaration.getEventTopic(), new StringKey(subscriberState.getSubscriberProfile().getSubscriberID())), eventDeclaration.getEventSerde().serializer().serialize(eventDeclaration.getEventTopic(), triggerEventAction.getEventToTrigger())));
               break;
-              
+
             default:
               log.error("unsupported action {} on actionManager.executeOnExit", action.getActionType());
               break;
@@ -5765,36 +5779,11 @@ public class EvolutionEngine
 
   public static SubscriberHistory updateSubscriberHistory(StringKey aggKey, SubscriberStreamEvent evolutionEvent, SubscriberHistory currentSubscriberHistory)
   {
-    /****************************************
-    *
-    *  get (or create) entry
-    *
-    ****************************************/
+
+    if(log.isDebugEnabled()) log.debug("updateSubscriberHistory on event "+evolutionEvent.getClass().getSimpleName()+" for "+evolutionEvent.getSubscriberID());
 
     SubscriberHistory subscriberHistory = (currentSubscriberHistory != null) ? new SubscriberHistory(currentSubscriberHistory) : new SubscriberHistory(evolutionEvent.getSubscriberID());
     boolean subscriberHistoryUpdated = (currentSubscriberHistory != null) ? false : true;
-
-    /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-
-    /*****************************************
-    *
-    *  clear state
-    *
-    *****************************************/
-
-    subscriberHistoryUpdated = cleanSubscriberHistory(subscriberHistory, now) || subscriberHistoryUpdated;
-
-    /*****************************************
-    *
-    *  cleanup
-    *
-    *****************************************/
 
     switch (evolutionEvent.getSubscriberAction())
       {
@@ -5802,43 +5791,25 @@ public class EvolutionEngine
           return null;
           
         case Delete:
-          cleanSubscriberHistory(currentSubscriberHistory, now);
           SubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), currentSubscriberHistory);
           return currentSubscriberHistory;
       }
-    
-    /*****************************************
-    *
-    *  deliveryRequest
-    *
-    *****************************************/
+
+    if (evolutionEvent instanceof TimedEvaluation && ((TimedEvaluation)evolutionEvent).getPeriodicEvaluation())
+      {
+        subscriberHistoryUpdated = retentionService.cleanSubscriberHistory(subscriberHistory) || subscriberHistoryUpdated;
+      }
 
     if (evolutionEvent instanceof DeliveryRequest)
       {
-        // filter DeliveryRequest response that are related to a parent... keep history only if we are for the parent here...
-        DeliveryRequest dr = (DeliveryRequest)evolutionEvent;
-        if(dr.getOriginatingSubscriberID() == null || dr.getOriginatingSubscriberID().startsWith(DeliveryManager.ORIGIN)) 
-          {
-           subscriberHistoryUpdated = updateSubscriberHistoryDeliveryRequests(dr, subscriberHistory) || subscriberHistoryUpdated;
-          }
+        subscriberHistoryUpdated = updateSubscriberHistoryDeliveryRequests((DeliveryRequest) evolutionEvent, subscriberHistory) || subscriberHistoryUpdated;
       }
-
-    /*****************************************
-    *
-    *  journeyStatistic
-    *
-    *****************************************/
 
     if (evolutionEvent instanceof JourneyStatistic)
       {
         subscriberHistoryUpdated = updateSubscriberHistoryJourneyStatistics((JourneyStatistic) evolutionEvent, subscriberHistory) || subscriberHistoryUpdated;
       }
 
-    /*****************************************
-    *
-    *  stateStoreSerde
-    *
-    *****************************************/
 
     if (subscriberHistoryUpdated)
       {
@@ -5855,49 +5826,12 @@ public class EvolutionEngine
               {
                 log.error("HistoryStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberHistory.getKafkaRepresentation().length);
               }
-            cleanSubscriberHistory(currentSubscriberHistory, now);
             SubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), currentSubscriberHistory);
             subscriberHistoryUpdated = false;
           }
       }
 
-    /****************************************
-    *
-    *  return
-    *
-    ****************************************/
-
     return subscriberHistoryUpdated ? subscriberHistory : currentSubscriberHistory;
-  }
-
-  /*****************************************
-  *
-  *  cleanSubscriberHistory
-  *
-  *****************************************/
-
-  private static boolean cleanSubscriberHistory(SubscriberHistory subscriberHistory, Date now)
-  {
-    //
-    //  abort if null
-    //
-
-    if (subscriberHistory == null)
-      {
-        return false;
-      }
-    
-    //
-    //  subscriberHistoryUpdated
-    //
-
-    boolean subscriberHistoryUpdated = false;
-
-    //
-    //  return
-    //
-
-    return subscriberHistoryUpdated;
   }
 
   /*****************************************
@@ -5908,26 +5842,6 @@ public class EvolutionEngine
 
   private static boolean updateSubscriberHistoryDeliveryRequests(DeliveryRequest deliveryRequest, SubscriberHistory subscriberHistory)
   {
-    /*****************************************
-    *
-    *  clear older history
-    *
-    *****************************************/
-
-    //
-    //  TBD DEW
-    //
-
-    /*****************************************
-    *
-    *  ignore journeyRequests
-    *
-    *****************************************/
-
-    if (deliveryRequest instanceof JourneyRequest)
-      {
-        return false;
-      }
 
     /*****************************************
     *
@@ -6595,7 +6509,7 @@ public class EvolutionEngine
 
     public void setExecuteActionOtherSubscriberDeliveryRequestID(String requestID) { this.executeActionOtherUserDeliveryRequestID = requestID; }
     public void setExecuteActionOtherUserOriginalSubscriberID(String subscriberID) { this.executeActionOtherUserOriginalSubscriberID = subscriberID; }
-    
+
     /*****************************************
     *
     *  getUniqueKey
@@ -6839,24 +6753,6 @@ public class EvolutionEngine
         *  send response
         *
         *****************************************/
-
-        //
-        //  log
-        //
-
-        if (log.isDebugEnabled())
-          {
-            if (apiResponse.length > 0)
-              {
-                byte[] encodedSubscriberProfile = apiResponse;
-                SubscriberProfile result = SubscriberProfile.getSubscriberProfileSerde().deserializer().deserialize(Deployment.getSubscriberProfileRegistrySubject(), encodedSubscriberProfile);
-                log.debug("API (response): {}", result.toString(subscriberGroupEpochReader));
-              }
-            else
-              {
-                log.debug("API (response): {} not found", subscriberID);
-              }
-          }
 
         //
         //  responseCode
@@ -7390,8 +7286,7 @@ public class EvolutionEngine
 
   private void runPeriodicLogger()
   {
-    NGLMRuntime.registerSystemTimeDependency(evolutionEngineStatistics);
-    Date nextProcessingTime = RLMDateUtils.addSeconds(SystemTime.getCurrentTime(), 300);
+    Date nextProcessingTime = RLMDateUtils.addSeconds(SystemTime.getActualCurrentTime(), 300);
     while (true)
       {
         synchronized (evolutionEngineStatistics)
@@ -7400,7 +7295,7 @@ public class EvolutionEngine
             //  wait
             //
 
-            Date now = SystemTime.getCurrentTime();
+            Date now = SystemTime.getActualCurrentTime();
             while (now.before(nextProcessingTime))
               {
                 try
@@ -7411,7 +7306,7 @@ public class EvolutionEngine
                   {
                     // ignore
                   }
-                now = SystemTime.getCurrentTime();
+                now = SystemTime.getActualCurrentTime();
               }
 
             //

@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -45,6 +46,7 @@ public class Deployment
 
   private static JSONObject jsonRoot;
   private static String baseTimeZone;
+  private static ZoneId baseZoneId;
   private static String baseLanguage;
   private static String baseCountry;
   private static boolean generateNumericIDs;
@@ -77,6 +79,7 @@ public class Deployment
   public static String getBrokerServers() { return System.getProperty("broker.servers",""); }
   public static JSONObject getJSONRoot() { return jsonRoot; }
   public static String getBaseTimeZone() { return baseTimeZone; }
+  public static ZoneId getBaseZoneId() { return baseZoneId; }
   public static String getBaseLanguage() { return baseLanguage; }
   public static String getBaseCountry() { return baseCountry; }
   public static boolean getGenerateNumericIDs() { return generateNumericIDs; }
@@ -419,6 +422,7 @@ public class Deployment
     try
       {
         baseTimeZone = JSONUtilities.decodeString(jsonRoot, "baseTimeZone", true);
+        baseZoneId = ZoneId.of(baseTimeZone);
       }
     catch (JSONUtilitiesException e)
       {

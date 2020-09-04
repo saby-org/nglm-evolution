@@ -183,9 +183,6 @@ public class Deployment
   private static Map<String,DeliveryManagerDeclaration> deliveryManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
   private static Map<String,DeliveryManagerDeclaration> fulfillmentProviders = new LinkedHashMap<String,DeliveryManagerDeclaration>();
   private static Map<String,DeliveryManagerAccount> deliveryManagerAccounts = new HashMap<String,DeliveryManagerAccount>();
-  private static int journeyDefaultTargetingWindowDuration;
-  private static TimeUnit journeyDefaultTargetingWindowUnit;
-  private static boolean journeyDefaultTargetingWindowRoundUp;
   private static List<EvaluationCriterion> journeyUniversalEligibilityCriteria = new ArrayList<EvaluationCriterion>();
   private static Map<String,NodeType> nodeTypes = new LinkedHashMap<String,NodeType>();
   private static Map<String,ToolboxSection> journeyToolbox = new LinkedHashMap<String,ToolboxSection>();
@@ -244,7 +241,6 @@ public class Deployment
   private static String monthlyReportCronEntryString;
   private static boolean enableEvaluateTargetRandomness;
   private static int minExpiryDelayForVoucherDeliveryInHours;
-  private static int cleanUpExpiredVoucherDelayInDays;
   private static int importVoucherFileBulkSize;
   private static int voucherESCacheCleanerFrequencyInSec;
   private static int numberConcurrentVoucherAllocationToES;
@@ -252,6 +248,15 @@ public class Deployment
   private static int liveVoucherIndexNumberOfShards;
   private static int propensityReaderRefreshPeriodMs;
   private static int propensityWriterRefreshPeriodMs;
+  private static int kafkaRetentionDaysExpiredTokens;
+  private static int kafkaRetentionDaysExpiredVouchers;
+  private static int kafkaRetentionDaysJourneys;
+  private static int kafkaRetentionDaysCampaigns;
+  private static int kafkaRetentionDaysBulkCampaigns;
+  private static int kafkaRetentionDaysLoyaltyPrograms;
+  private static int kafkaRetentionDaysODR;
+  private static int kafkaRetentionDaysBDR;
+  private static int kafkaRetentionDaysMDR;
 
   private static boolean bypassJourneyTrafficEngine; // @rl Hack. TODO: remove later
   private static boolean enableContactPolicyProcessing;
@@ -435,9 +440,6 @@ public class Deployment
   public static Map<String,DeliveryManagerDeclaration> getDeliveryManagers() { return deliveryManagers; }
   public static Map<String,DeliveryManagerDeclaration> getFulfillmentProviders() { return fulfillmentProviders; }
   public static Map<String,DeliveryManagerAccount> getDeliveryManagerAccounts() { return deliveryManagerAccounts; }
-  public static int getJourneyDefaultTargetingWindowDuration() { return journeyDefaultTargetingWindowDuration; }
-  public static TimeUnit getJourneyDefaultTargetingWindowUnit() { return journeyDefaultTargetingWindowUnit; }
-  public static boolean getJourneyDefaultTargetingWindowRoundUp() { return journeyDefaultTargetingWindowRoundUp; }
   public static List<EvaluationCriterion> getJourneyUniversalEligibilityCriteria() { return journeyUniversalEligibilityCriteria; }
   public static Map<String,NodeType> getNodeTypes() { return nodeTypes; }
   public static Map<String,ToolboxSection> getJourneyToolbox() { return journeyToolbox; }
@@ -494,7 +496,6 @@ public class Deployment
   public static String getVoucherChangeRequestTopic() { return voucherChangeRequestTopic; }
   public static String getVoucherChangeResponseTopic() { return voucherChangeResponseTopic; }
   public static int getMinExpiryDelayForVoucherDeliveryInHours() { return minExpiryDelayForVoucherDeliveryInHours; }
-  public static int getCleanUpExpiredVoucherDelayInDays() {return cleanUpExpiredVoucherDelayInDays; }
   public static int getImportVoucherFileBulkSize() { return importVoucherFileBulkSize; }
   public static int getNumberConcurrentVoucherAllocationToES() { return numberConcurrentVoucherAllocationToES; }
   public static int getVoucherESCacheCleanerFrequencyInSec() { return voucherESCacheCleanerFrequencyInSec; }
@@ -507,6 +508,15 @@ public class Deployment
   public static boolean getEnableEvaluateTargetRandomness() { return enableEvaluateTargetRandomness; }
   public static int getPropensityReaderRefreshPeriodMs() { return propensityReaderRefreshPeriodMs; }
   public static int getPropensityWriterRefreshPeriodMs() { return propensityWriterRefreshPeriodMs; }
+  public static int getKafkaRetentionDaysExpiredTokens() { return kafkaRetentionDaysExpiredTokens; }
+  public static int getKafkaRetentionDaysExpiredVouchers() { return kafkaRetentionDaysExpiredVouchers; }
+  public static int getKafkaRetentionDaysJourneys() { return kafkaRetentionDaysJourneys; }
+  public static int getKafkaRetentionDaysCampaigns() { return kafkaRetentionDaysCampaigns; }
+  public static int getKafkaRetentionDaysBulkCampaigns() { return kafkaRetentionDaysBulkCampaigns; }
+  public static int getKafkaRetentionDaysLoyaltyPrograms() { return kafkaRetentionDaysLoyaltyPrograms; }
+  public static int getKafkaRetentionDaysODR() { return kafkaRetentionDaysODR; }
+  public static int getKafkaRetentionDaysBDR() { return kafkaRetentionDaysBDR; }
+  public static int getKafkaRetentionDaysMDR() { return kafkaRetentionDaysMDR; }
   public static boolean getBypassJourneyTrafficEngine() { return bypassJourneyTrafficEngine; }
   public static boolean getEnableContactPolicyProcessing(){ return  enableContactPolicyProcessing;}
   public static String getExtractManagerZookeeperDir() { return extractManagerZookeeperDir; }
@@ -2800,24 +2810,6 @@ public class Deployment
         }
 
       //
-      //  journeyDefaultTargetingWindowDuration
-      //
-
-      journeyDefaultTargetingWindowDuration = JSONUtilities.decodeInteger(jsonRoot, "journeyDefaultTargetingWindowDuration", 3);
-
-      //
-      //  journeyDefaultTargetingWindowUnit
-      //
-
-      journeyDefaultTargetingWindowUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "journeyDefaultTargetingWindowUnit", "month"));
-
-      //
-      //  journeyDefaultTargetingWindowRoundUp
-      //
-
-      journeyDefaultTargetingWindowRoundUp = JSONUtilities.decodeBoolean(jsonRoot, "journeyDefaultTargetingWindowRoundUp", Boolean.FALSE);
-
-      //
       //  journeyUniversalEligibilityCriteria
       //
 
@@ -3329,25 +3321,23 @@ public class Deployment
           throw new ServerRuntimeException("deployment", e);
         }
 
-      //      
-      // conf for voucher 
-      //      
+      //
+      // conf for voucher
+      //
 
-      try     
+      try
         {
           // we won't deliver a voucher that expiry in less than X hours from now :
           minExpiryDelayForVoucherDeliveryInHours = JSONUtilities.decodeInteger(jsonRoot, "minExpiryDelayForVoucherDeliveryInHours",4);
-          // the number of day after we clean up Expired voucher, in ES and SubscriberProfile
-          cleanUpExpiredVoucherDelayInDays = JSONUtilities.decodeInteger(jsonRoot, "cleanUpExpiredVoucherDelayInDays",31);
-          // the bulk size when importing voucher file into ES 
+          // the bulk size when importing voucher file into ES
           importVoucherFileBulkSize = JSONUtilities.decodeInteger(jsonRoot, "importVoucherFileBulkSize",5000);
-          // the cache cleaner frequency in seconds for caching voucher with 0 stock from ES, and shrinking back "auto adjust concurrency number" 
+          // the cache cleaner frequency in seconds for caching voucher with 0 stock from ES, and shrinking back "auto adjust concurrency number"
           voucherESCacheCleanerFrequencyInSec = JSONUtilities.decodeInteger(jsonRoot, "voucherESCacheCleanerFrequencyInSec",300);
           // an approximation of number of total concurrent process tyring to allocate Voucher in // to ES, but should not need to configure, algo should auto-adjust this
           numberConcurrentVoucherAllocationToES = JSONUtilities.decodeInteger(jsonRoot, "numberConcurrentVoucherAllocationToES",10);
-          // the default number of replicas for voucher ES indices 
+          // the default number of replicas for voucher ES indices
           liveVoucherIndexNumberOfReplicas = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "liveVoucherIndexNumberOfReplicas","1"));
-          // the default number of shards for voucher ES indices 
+          // the default number of shards for voucher ES indices
           liveVoucherIndexNumberOfShards = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "liveVoucherIndexNumberOfShards","1"));
         }
       catch (JSONUtilitiesException|NumberFormatException e)
@@ -3371,6 +3361,30 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
+
+        try
+          {
+            kafkaRetentionDaysExpiredTokens = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysExpiredTokens",31);
+            kafkaRetentionDaysExpiredVouchers = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysExpiredVouchers",31);
+            kafkaRetentionDaysJourneys = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysJourneys",31);
+            kafkaRetentionDaysCampaigns = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysCampaigns",31);
+            // adjusting and warning if too low for journey metric feature to work
+            for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()){
+              if(journeyMetricDeclaration.getPostPeriodDays()>kafkaRetentionDaysCampaigns+2){
+                kafkaRetentionDaysCampaigns=journeyMetricDeclaration.getPostPeriodDays()+2;
+                log.warn("Deployment: auto increasing kafkaRetentionDaysCampaigns to "+kafkaRetentionDaysCampaigns+" to comply with configured journey metric "+journeyMetricDeclaration.getID()+" postPeriodDays of "+journeyMetricDeclaration.getPostPeriodDays()+" (need at least 2 days more)");
+              }
+            }
+            kafkaRetentionDaysBulkCampaigns = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysBulkCampaigns",7);
+            kafkaRetentionDaysLoyaltyPrograms = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysLoyaltyPrograms",31);
+            kafkaRetentionDaysODR = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysODR",91);
+            kafkaRetentionDaysBDR = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysBDR",91);
+            kafkaRetentionDaysMDR = JSONUtilities.decodeInteger(jsonRoot, "kafkaRetentionDaysMDR",91);
+          }
+        catch (JSONUtilitiesException|NumberFormatException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
 
 
       //

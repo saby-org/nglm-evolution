@@ -7,6 +7,8 @@
 package com.evolving.nglm.evolution;
 
 import java.nio.ByteBuffer;
+import java.time.Duration;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -15,6 +17,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 
 public class EvolutionUtilities
@@ -180,6 +183,17 @@ public class EvolutionUtilities
   public static Date addTime(Date baseTime, int amount, TimeUnit timeUnit, String timeZone)
   {
     return addTime(baseTime, amount, timeUnit, timeZone, RoundingSelection.NoRound);
+  }
+
+  // this take care of the TimeZone, ie: day time saving
+  public static Date removeTime(Date baseTime, Period toRemove)
+  {
+    return new Date(baseTime.toInstant().atZone(Deployment.getBaseZoneId()).minus(toRemove).toInstant().toEpochMilli());
+  }
+  // this DOES NOT take care of the TimeZone, ie: day time saving (it means it can be inexact for a human mind of 1 hour, but it saved CPU)
+  public static Date removeTime(Date baseTime, Duration toRemove)
+  {
+    return new Date(baseTime.toInstant().minus(toRemove).toEpochMilli());
   }
   
 

@@ -17138,7 +17138,7 @@ public class GUIManager
                         journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
                         journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
                         journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
-                        journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate()!=null?getDateString(subsLatestStatistic.getJourneyExitDate()):"");
+                        journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService)):"");
                         journeyResponseMap.put("journeyState", journeyService.getJourneyStatus(storeJourney).getExternalRepresentation());
                         
                         List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
@@ -17435,7 +17435,7 @@ public class GUIManager
                         campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
                         campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
                         campaignResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
-                        campaignResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate()!=null?getDateString(subsLatestStatistic.getJourneyExitDate()):"");
+                        campaignResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate(journeyService)!=null?getDateString(subsLatestStatistic.getJourneyExitDate(journeyService)):"");
                         campaignResponseMap.put("campaignState", journeyService.getJourneyStatus(storeCampaign).getExternalRepresentation());
                         
                         List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
