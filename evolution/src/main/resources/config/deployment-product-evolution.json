@@ -76,7 +76,6 @@
 
   "evolutionVersion"                                     : "${nglm.evolution.version}",
   "customerVersion"                                      : "${project.version}",
-  "guiFrameworkVersion"									 : "${gui.framework.version}",
   "emptyTopic"                                           : "${topic.empty}",
   "journeyTopic"                                         : "${topic.journey}",
   "journeyTemplateTopic"                                 : "${topic.journeytemplate}",
