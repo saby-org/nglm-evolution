@@ -25,18 +25,18 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.3_8-SNAPSHOT</version>
+    <version>1.4.4_0-SNAPSHOT</version>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>1.4.3_8-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.4.4_0-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
     <flyway.version>qaveon-dnbo-2.5.0.10.4.6</flyway.version>
-    <flyway.gui.version>1.0.52</flyway.gui.version>
+    <flyway.gui.version>1.0.53</flyway.gui.version>
     
     <!-- evolution-common-build -->
     <common.build.phase.generate-evolution-scripts>none</common.build.phase.generate-evolution-scripts>

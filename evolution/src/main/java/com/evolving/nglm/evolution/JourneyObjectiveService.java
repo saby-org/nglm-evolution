@@ -10,6 +10,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
@@ -22,7 +23,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
-
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import org.slf4j.Logger;

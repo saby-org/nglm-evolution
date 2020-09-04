@@ -13,12 +13,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Scanner;
+import java.util.*;
 
+import com.evolving.nglm.evolution.*;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -32,13 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.CriterionContext;
-import com.evolving.nglm.evolution.Deployment;
-import com.evolving.nglm.evolution.DynamicCriterionFieldService;
-import com.evolving.nglm.evolution.GUIManagedObject;
-import com.evolving.nglm.evolution.LoggerInitialization;
-import com.evolving.nglm.evolution.Report;
-import com.evolving.nglm.evolution.ReportService;
 import com.evolving.nglm.evolution.ReportService.ReportListener;
 
 /**
@@ -345,6 +335,7 @@ public class ReportManager implements Watcher
         log.error("Config error : date format "+dateFormat+" is invalid, using default"+e.getLocalizedMessage(), e);
         sdf = new SimpleDateFormat(); // Default format, might not be valid in a filename, sigh...
       }
+      sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
       String fileSuffix = sdf.format(SystemTime.getCurrentTime());
       String csvFilename = "" 
           + outputPath 

@@ -22,6 +22,7 @@ public class ODRReportCsvWriter implements ReportCsvFactory
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
   private static JourneyService journeyService;
   private static OfferService offerService;
+  private static ResellerService resellerService;
   private static SalesChannelService salesChannelService;
   private static LoyaltyProgramService loyaltyProgramService;
   private static ProductService productService;
@@ -51,6 +52,8 @@ public class ODRReportCsvWriter implements ReportCsvFactory
   private static final String returnCode = "returnCode";
   private static final String returnCodeDescription  = "returnCodeDescription ";
   private static final String deliveryStatus = "deliveryStatus";
+  private final static String resellerID = "resellerID";
+  private final static String resellerDisplay = "resellerDisplay";
 
   private static List<String> headerFieldsOrder = new LinkedList<String>();
   static 
@@ -80,6 +83,7 @@ public class ODRReportCsvWriter implements ReportCsvFactory
     headerFieldsOrder.add(offerStock);
     headerFieldsOrder.add(origin);
     headerFieldsOrder.add(voucherCode);
+    headerFieldsOrder.add(resellerDisplay);
     headerFieldsOrder.add(returnCode);
     headerFieldsOrder.add(returnCodeDescription);
     headerFieldsOrder.add(deliveryStatus);
@@ -236,6 +240,19 @@ public class ODRReportCsvWriter implements ReportCsvFactory
           {
             oderRecs.put(voucherCode, odrFields.get(voucherCode));
           }
+        if (odrFields.containsKey(resellerID))
+          {
+            GUIManagedObject resellerObject = resellerService.getStoredReseller(String.valueOf(odrFields.get(resellerID)));
+            if (resellerObject instanceof Reseller)
+              {
+                String display = ((Reseller)resellerObject).getGUIManagedObjectDisplay(); 
+                oderRecs.put(resellerDisplay, display);
+              }
+            else {
+              oderRecs.put(resellerDisplay, "");
+            }
+
+          }
         if (odrFields.containsKey(returnCode))
           {
             Object code = odrFields.get(returnCode);
@@ -301,11 +318,14 @@ public class ODRReportCsvWriter implements ReportCsvFactory
       String salesChannelTopic = Deployment.getSalesChannelTopic();
       String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
       String productTopic = Deployment.getProductTopic();
-
+      String resellerTopic = Deployment.getResellerTopic();
+      
       salesChannelService = new SalesChannelService(kafkaNode, "odrreportcsvwriter-saleschannelservice-" + topic, salesChannelTopic, false);
       salesChannelService.start();
       offerService = new OfferService(kafkaNode, "odrreportcsvwriter-offerservice-" + topic, offerTopic, false);
       offerService.start();
+      resellerService = new ResellerService(kafkaNode, "odrreportcsvwriter-resellerService-" + topic, resellerTopic, false);
+      resellerService.start();
       journeyService = new JourneyService(kafkaNode, "odrreportcsvwriter-journeyservice-" + topic, journeyTopic, false);
       journeyService.start();
       loyaltyProgramService = new LoyaltyProgramService(kafkaNode, "odrreportcsvwriter-loyaltyprogramservice-" + topic, loyaltyProgramTopic, false);

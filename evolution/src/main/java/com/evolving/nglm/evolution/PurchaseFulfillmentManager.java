@@ -683,7 +683,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     ****************************************/
     
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
     {
       Module module = Module.fromExternalRepresentation(getModuleID());
       //
@@ -755,8 +755,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           guiPresentationMap.put(FEATUREID, getFeatureID());
           guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
           guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-          guiPresentationMap.put(ORIGIN, getOrigin());
-          guiPresentationMap.put(RESELLERID, getResellerID());
+          guiPresentationMap.put(ORIGIN, getOrigin()); 
+          String display = "";
+          GUIManagedObject reseller = resellerService.getStoredReseller(resellerID);
+          if (reseller instanceof Reseller)
+            {
+              display = ((Reseller) reseller).getGUIManagedObjectDisplay();
+            }
+          guiPresentationMap.put(RESELLERDISPLAY, display);
           guiPresentationMap.put(RETURNCODE, getReturnCode());
           guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
           guiPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
@@ -764,7 +770,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         }
     }
     
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
     {
       
       Module module = Module.fromExternalRepresentation(getModuleID());
@@ -834,7 +840,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
           thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
           thirdPartyPresentationMap.put(ORIGIN, getOrigin());
-          thirdPartyPresentationMap.put(RESELLERID, getResellerID());
+          GUIManagedObject reseller = resellerService.getStoredReseller(resellerID);
+          if (reseller instanceof Reseller) {
+            String display = ((Reseller)reseller).getGUIManagedObjectDisplay();
+            thirdPartyPresentationMap.put(RESELLERDISPLAY, display);
+          }
           thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
           thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
           thirdPartyPresentationMap.put(RETURNCODEDETAILS, getOfferDeliveryReturnCodeDetails());
@@ -2694,6 +2704,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *****************************************/
 
       return Collections.<Action>singletonList(request);
+    }
+    
+    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      String offerID = (String) journeyNode.getNodeParameters().get("node.parameter.offerid");
+      if (offerID != null) result.put("offer", offerID);
+      return result;
     }
   }
 }

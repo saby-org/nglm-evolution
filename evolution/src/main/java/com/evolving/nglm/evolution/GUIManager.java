@@ -356,6 +356,9 @@ public class GUIManager
     getVoucher("getVoucher"),
     removeVoucher("removeVoucher"),
     setStatusVoucher("setStatusVoucher"),
+    redeemVoucher("redeemVoucher"),
+    extendVoucherValidity("extendVoucherValidity"),
+    expireVoucher("expireVoucher"),
 
     getMailTemplateList("getMailTemplateList"),
     getFullMailTemplateList("getFullMailTemplateList"),
@@ -508,6 +511,7 @@ public class GUIManager
     getSourceAddress("getSourceAddress"),
     putSourceAddress("putSourceAddress"),
     removeSourceAddress("removeSourceAddress"),
+
     setStatusSourceAddress("setStatusSourceAddress"),
 
     putSupplierOffer("putSupplierOffer"),
@@ -516,6 +520,9 @@ public class GUIManager
 
     loyaltyProgramOptIn("loyaltyProgramOptIn"),
     loyaltyProgramOptOut("loyaltyProgramOptOut"),
+
+
+    getDependencies("getDependencies"),
 
     
     //
@@ -618,7 +625,9 @@ public class GUIManager
   protected static Method externalAPIMethodJourneyDeactivated;
   
   protected ZookeeperUniqueKeyServer zuks;
+  protected ZookeeperUniqueKeyServer zuksVoucherChange;
   protected KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
+  protected KafkaResponseListenerService<StringKey,VoucherChange> voucherChangeResponseListenerService;
   protected int httpTimeout = Deployment.getPurchaseTimeoutMs();
   
   private static final int connectTimeout = Deployment.getGUIManagerESConnectTimeout();
@@ -633,6 +642,10 @@ public class GUIManager
   //
 
   protected GUIManagerContext guiManagerContext;
+  
+  //
+  // helper classes
+  //
   
   private GUIManagerBaseManagement guiManagerBaseManagement;
   private GUIManagerLoyaltyReporting guiManagerLoyaltyReporting;
@@ -792,6 +805,7 @@ public class GUIManager
     //
  
     zuks = new ZookeeperUniqueKeyServer("commoditydelivery");
+    zuksVoucherChange = new ZookeeperUniqueKeyServer("voucherchange");
 
     //
     // RestHighLevelClient
@@ -829,6 +843,15 @@ public class GUIManager
     {
       @Override public void journeyActivated(Journey journey) {
           log.debug("journeyActivated: " + journey.getJourneyID()+" "+journey.getJourneyName());
+
+          // send the evaluate target order to evolution engine
+          if (journey.getTargetID() != null)
+          {
+            EvaluateTargets evaluateTargets = new EvaluateTargets(Collections.<String>singleton(journey.getJourneyID()), journey.getTargetID());
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getEvaluateTargetsTopic(), EvaluateTargets
+                  .serde().serializer().serialize(Deployment.getEvaluateTargetsTopic(), evaluateTargets)));
+          }
+
           if (externalAPIMethodJourneyActivated != null)
             {
               try
@@ -943,6 +966,8 @@ public class GUIManager
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
     purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(),StringKey.serde(),PurchaseFulfillmentRequest.serde());
     purchaseResponseListenerService.start();
+    voucherChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getVoucherChangeResponseTopic(),StringKey.serde(),VoucherChange.serde());
+    voucherChangeResponseListenerService.start();
 
     guiManagerBaseManagement = new GUIManagerBaseManagement(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader);
     guiManagerLoyaltyReporting = new GUIManagerLoyaltyReporting(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader);
@@ -1898,6 +1923,9 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getVoucher", new APISimpleHandler(API.getVoucher));
         restServer.createContext("/nglm-guimanager/removeVoucher", new APISimpleHandler(API.removeVoucher));
         restServer.createContext("/nglm-guimanager/setStatusVoucher", new APISimpleHandler(API.setStatusVoucher));
+        restServer.createContext("/nglm-guimanager/redeemVoucher", new APISimpleHandler(API.redeemVoucher));
+        restServer.createContext("/nglm-guimanager/extendVoucherValidity", new APISimpleHandler(API.extendVoucherValidity));
+        restServer.createContext("/nglm-guimanager/expireVoucher", new APISimpleHandler(API.expireVoucher));
 
         restServer.createContext("/nglm-guimanager/getMailTemplateList", new APISimpleHandler(API.getMailTemplateList));
         restServer.createContext("/nglm-guimanager/getFullMailTemplateList", new APISimpleHandler(API.getFullMailTemplateList));
@@ -2045,6 +2073,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSourceAddress", new APISimpleHandler(API.getSourceAddress));
         restServer.createContext("/nglm-guimanager/putSourceAddress", new APISimpleHandler(API.putSourceAddress));
         restServer.createContext("/nglm-guimanager/removeSourceAddress", new APISimpleHandler(API.removeSourceAddress));
+
         restServer.createContext("/nglm-guimanager/setStatusSourceAddress", new APISimpleHandler(API.setStatusSourceAddress));
         
         restServer.createContext("/nglm-guimanager/putSupplierOffer", new APISimpleHandler(API.putSupplierOffer));
@@ -2052,6 +2081,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeSupplierOffer", new APISimpleHandler(API.removeSupplierOffer));
         restServer.createContext("/nglm-guimanager/loyaltyProgramOptIn", new APISimpleHandler(API.loyaltyProgramOptIn));
         restServer.createContext("/nglm-guimanager/loyaltyProgramOptOut", new APISimpleHandler(API.loyaltyProgramOptOut));
+        restServer.createContext("/nglm-guimanager/getDependencies", new APISimpleHandler(API.getDependencies));
+
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -3188,6 +3219,18 @@ public class GUIManager
                   jsonResponse = processSetStatusVoucher(userID, jsonRoot);
                   break;
 
+                case redeemVoucher:
+                  jsonResponse = processVoucherChange(userID, jsonRoot, VoucherChange.VoucherChangeAction.Redeem);
+                  break;
+
+                case extendVoucherValidity:
+                  jsonResponse = processVoucherChange(userID, jsonRoot, VoucherChange.VoucherChangeAction.Extend);
+                  break;
+
+                case expireVoucher:
+                  jsonResponse = processVoucherChange(userID, jsonRoot, VoucherChange.VoucherChangeAction.Expire);
+                  break;
+
                 case getMailTemplateList:
                   jsonResponse = processGetMailTemplateList(userID, jsonRoot, true, true, includeArchived);
                   break;
@@ -3748,6 +3791,7 @@ public class GUIManager
                   jsonResponse = guiManagerGeneral.processGetTenantList(userID, jsonRoot, true, includeArchived);
                   break;
                   
+
                 case putSupplierOffer:
                   jsonResponse = processPutSupplierOffer(userID, jsonRoot);
                   break;
@@ -3765,6 +3809,10 @@ public class GUIManager
                   
                 case loyaltyProgramOptOut:
                   jsonResponse = guiManagerLoyaltyReporting.processLoyaltyProgramOptInOut(jsonRoot, false);
+
+                case getDependencies:
+                  jsonResponse = guiManagerGeneral.processGetDependencies(userID, jsonRoot);
+
                   break;
 
               }
@@ -5857,21 +5905,6 @@ public class GUIManager
 
             journeyService.putJourney(element, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService,
                 (existingJourneyElement == null), userID);
-
-            /*****************************************
-             *
-             * evaluate targets
-             *
-             *****************************************/
-
-            if (active && element.getTargetID() != null)
-              {
-                EvaluateTargets evaluateTargets = new EvaluateTargets(
-                    Collections.<String>singleton(element.getJourneyID()), element.getTargetID());
-                kafkaProducer
-                    .send(new ProducerRecord<byte[], byte[]>(Deployment.getEvaluateTargetsTopic(), EvaluateTargets
-                        .serde().serializer().serialize(Deployment.getEvaluateTargetsTopic(), evaluateTargets)));
-              }
 
             /*****************************************
              *
@@ -13887,6 +13920,68 @@ public class GUIManager
 
   /*****************************************
   *
+  *  process voucher change action
+  *
+  *****************************************/
+
+  private JSONObject processVoucherChange(String userID, JSONObject jsonRoot, VoucherChange.VoucherChangeAction voucherChangeAction) throws GUIManagerException
+  {
+
+    // response
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    Date now = SystemTime.getCurrentTime();
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String voucherCode = JSONUtilities.decodeString(jsonRoot, "voucherCode", true);
+    String voucherID = JSONUtilities.decodeString(jsonRoot, "voucherID", true);
+    Date newExpiryDate = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "expiryDate", voucherChangeAction.equals(VoucherChange.VoucherChangeAction.Extend)));
+    String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+
+    /*****************************************
+     *
+     *  resolve subscriberID
+     *
+     *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+    {
+      log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+      response.put("responseCode", "CustomerNotFound");
+      return JSONUtilities.encodeObject(response);
+    }
+    //build the request to send
+    VoucherChange request = new VoucherChange(
+            subscriberID,
+            SystemTime.getCurrentTime(),
+            newExpiryDate,
+            zuksVoucherChange.getStringKey(),
+            voucherChangeAction,
+            voucherCode,
+            voucherID,
+            null,
+            DeliveryRequest.Module.Customer_Care.getExternalRepresentation(),
+            (userID != null) ? userID : "1",//for PTT tests, never happens when called by browser
+            origin,
+            RESTAPIGenericReturnCodes.UNKNOWN);
+
+    // put a listener on the reponse topic
+    Future<VoucherChange> waitingResponse=voucherChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
+    // send the request
+    String requestTopic = Deployment.getVoucherChangeRequestTopic();
+    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
+            requestTopic,
+            StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)),
+            VoucherChange.serde().serializer().serialize(requestTopic, request)
+    ));
+    // check response
+    VoucherChange voucherChangeResponse = handleWaitingResponse(waitingResponse);
+    response.put("responseCode",voucherChangeResponse.getReturnStatus().equals(RESTAPIGenericReturnCodes.SUCCESS)?"ok":voucherChangeResponse.getReturnStatus().getGenericDescription());
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
   *  processGetMailTemplateList
   *
   *****************************************/
@@ -16105,7 +16200,7 @@ public class GUIManager
                     // prepare json
                     //
 
-                    deliveryRequestsJson = result.stream().map(deliveryRequest -> JSONUtilities.encodeObject(deliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService))).collect(Collectors.toList());
+                    deliveryRequestsJson = result.stream().map(deliveryRequest -> JSONUtilities.encodeObject(deliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService))).collect(Collectors.toList());
                   }
 
                 //
@@ -16287,7 +16382,7 @@ public class GUIManager
                       {
                         if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService);
+                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
                             BDRsJson.add(JSONUtilities.encodeObject(bdrMap));
                           }
                       }
@@ -16499,8 +16594,8 @@ public class GUIManager
                     for (DeliveryRequest odr : ODRs)
                       {
                         if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
-                          {
-                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService);
+                          {                            
+                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
                             ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
                           }
                       }
@@ -16639,7 +16734,7 @@ public class GUIManager
                       {
                         if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> messageMap = message.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService);
+                            Map<String, Object> messageMap = message.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService);
                             messagesJson.add(JSONUtilities.encodeObject(messageMap));
                           }
                       }
@@ -21321,13 +21416,15 @@ public class GUIManager
       else
         {
           Token subscriberToken = null;
-          List<Token> tokens = subscriberProfile.getTokens();
-          for (Token token : tokens)
+          if (tokenCode != null)
             {
-              if (token.getTokenCode().equals(tokenCode))
+              for (Token token : subscriberProfile.getTokens())
                 {
-                  subscriberToken = token;
-                  break;
+                  if (token.getTokenCode().equals(tokenCode))
+                    {
+                      subscriberToken = token;
+                      break;
+                    }
                 }
             }
           if (subscriberToken == null)
@@ -21558,7 +21655,7 @@ public class GUIManager
         else
           {
             purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer);
-            response.put("offer",purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService));
+            response.put("offer",purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService));
           }
       }
    }
@@ -22960,11 +23057,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       if(log.isDebugEnabled()) log.debug("response processed : "+response);
       return response;
     } catch (InterruptedException|ExecutionException e) {
-      String str = "Error waiting purchase response"; 
+      String str = "Error waiting response";
       log.warn(str);
       throw new GUIManagerException("Internal error", str);
     } catch (TimeoutException e) {
-      String str = "Timeout waiting purchase response";
+      String str = "Timeout waiting response";
       log.info(str);
       throw new GUIManagerException("Internal error", str);
     }
@@ -25377,7 +25474,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     revalidateVouchers(date);
   }
-
+  
   /****************************************
   *
   *  resolveSubscriberID
@@ -26294,16 +26391,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     String topic = Deployment.getTokenChangeTopic();
     Serializer<StringKey> keySerializer = StringKey.serde().serializer();
     Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
-    int userIDint = 1;
-    try
-    {
-      userIDint = (userID != null) ? Integer.parseInt(userID) : 1;
-    }
-    catch (NumberFormatException e)
-    {
-      log.warn("userID is not an integer : " + userID + " using " + userIDint);
-    }
-    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "guiManager", Module.Customer_Care, userIDint); 
+    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "guiManager", Module.Customer_Care, userID); 
     kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
         topic,
         keySerializer.serialize(topic, new StringKey(subscriberID)),

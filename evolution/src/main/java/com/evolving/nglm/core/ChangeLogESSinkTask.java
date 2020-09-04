@@ -15,7 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public abstract class ChangeLogESSinkTask extends SimpleESSinkTask
+public abstract class ChangeLogESSinkTask<T> extends SimpleESSinkTask
 {
   /*****************************************
   *
@@ -23,8 +23,9 @@ public abstract class ChangeLogESSinkTask extends SimpleESSinkTask
   *
   *****************************************/
 
-  public abstract String getDocumentID(SinkRecord sinkRecord);
-  public abstract Map<String,Object> getDocumentMap(SinkRecord sinkRecord);
+  public abstract T unpackRecord(SinkRecord sinkRecord);
+  public abstract String getDocumentID(T item);
+  public abstract Map<String,Object> getDocumentMap(T item);
   
   /*****************************************
   *
@@ -33,13 +34,15 @@ public abstract class ChangeLogESSinkTask extends SimpleESSinkTask
   *  when the name of the index is determined given information found in the document itself. 
   *    
   *    The reason behind this mechanism is because pipelines (as used in StreamESSinkTask) are not
-  *  available with UpdateRequest and therefore can not be used here in ChangeLogESSinkTask.
+  *  available with UpdateRequest and therefore can not be used in ChangeLogESSinkTask.
+  *  
+  *    It can also be useful in StreamESSinkTask when pipelines do not provide a good solution.
   *
   *****************************************/
   
-  protected String getDocumentIndexName(SinkRecord sinkRecord)
-  {
-    return this.getIndexName();
+  protected String getDocumentIndexName(T item) 
+  { 
+    return this.getDefaultIndexName(); 
   }
 
   /*****************************************
@@ -50,17 +53,17 @@ public abstract class ChangeLogESSinkTask extends SimpleESSinkTask
 
   @Override public List<DocWriteRequest> getRequests(SinkRecord sinkRecord)
   {
-    if (sinkRecord.value() != null && getDocumentMap(sinkRecord) != null)
-      {
-        UpdateRequest request = new UpdateRequest(getDocumentIndexName(sinkRecord), getDocumentID(sinkRecord));
-        request.doc(getDocumentMap(sinkRecord));
+    if (sinkRecord.value() != null) {
+      T item = unpackRecord(sinkRecord);
+      if (item != null) {
+        UpdateRequest request = new UpdateRequest(getDocumentIndexName(item), getDocumentID(item));
+        request.doc(getDocumentMap(item));
         request.docAsUpsert(true);
         request.retryOnConflict(4);
         return Collections.<DocWriteRequest>singletonList(request);
       }
-    else
-      {
-        return Collections.<DocWriteRequest>emptyList();
-      }
+    }
+    
+    return Collections.<DocWriteRequest>emptyList();
   }
 }

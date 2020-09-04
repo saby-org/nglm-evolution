@@ -132,11 +132,13 @@ public class NGLMRuntime
   *
   *****************************************/
 
+  @Deprecated // use com.evolving.nglm.evolution.statistics.Stats static methods in code directly to get stats instance (NOTE METRICS NAME WILL MOST LIKELY CHANGE, DASHBOARD CONF TO CHANGE !)
   public static void registerMonitoringObject(NGLMMonitoringObject monitoringObject) 
   {
     registerMonitoringObject(monitoringObject, false);
   }
 
+  @Deprecated // use com.evolving.nglm.evolution.statistics.Stats static methods in code directly to get stats instance (NOTE METRICS NAME WILL MOST LIKELY CHANGE, DASHBOARD CONF TO CHANGE !)
   public static void registerMonitoringObject(NGLMMonitoringObject monitoringObject, boolean replaceObject) 
   {
     try

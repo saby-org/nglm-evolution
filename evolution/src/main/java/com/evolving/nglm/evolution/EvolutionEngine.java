@@ -18,22 +18,8 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -104,6 +90,7 @@ import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
@@ -2403,6 +2390,8 @@ public class EvolutionEngine
               purchaseFulfillmentRequest.getOrigin()
             );
             subscriberProfile.getVouchers().add(voucherToStore);
+			// we keep voucher ordered by expiry data, this is important when we will apply change
+            sortVouchersPerExpiryDate(subscriberProfile);
             subscriberUpdated = true;
           }
         }
@@ -2456,6 +2445,7 @@ public class EvolutionEngine
         if(subscriberProfile.getVouchers()!=null && !subscriberProfile.getVouchers().isEmpty()){
           boolean voucherFound=false;
           for(VoucherProfileStored voucherStored:subscriberProfile.getVouchers()){
+            // note that this check can still match more than one voucher, but subscriberProfile.getVouchers() should be ordered soonest expiry date first
             if(voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID())){
               voucherFound=true;
               if(log.isDebugEnabled()) log.debug("need to apply to stored voucher "+voucherStored);
@@ -2463,46 +2453,54 @@ public class EvolutionEngine
               // redeem
               if(voucherChange.getAction()==VoucherChange.VoucherChangeAction.Redeem){
                 if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
+                  // already redeemed
                   voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
-                }
-                if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired){
+                } else if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired){
+                  // already expired
                   voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
-                }
-                // redeem voucher OK
-                if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Delivered){
+                } else if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Delivered){
+                  // redeem voucher OK
                   voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Redeemed);
                   voucherStored.setVoucherRedeemDate(now);
                   voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-                  break;//NOTE WE DO NOT ORDER VOUCHER PER EXPIRY DATE OR, WE TAKE THE FISRT ONE OK
+                  break;
+                } else{
+                  // default KO
+                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NON_REDEEMABLE);
                 }
-                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NON_REDEEMABLE);
               }
 
               // extend
               if(voucherChange.getAction()==VoucherChange.VoucherChangeAction.Extend){
                 if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
+                  // already redeemed
                   voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
+                } else{
+                  // extend voucher OK
+                  voucherStored.setVoucherExpiryDate(voucherChange.getNewVoucherExpiryDate());
+                  sortVouchersPerExpiryDate(subscriberProfile);
+                  if(voucherStored.getVoucherExpiryDate().after(now)) voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Delivered);
+                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+                  break;
                 }
-                // extend voucher OK
-                voucherStored.setVoucherExpiryDate(voucherChange.getNewVoucherExpiryDate());
-                if(voucherStored.getVoucherExpiryDate().after(now)) voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Delivered);
-                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-                break;//NOTE WE DO NOT ORDER VOUCHER PER EXPIRY DATE OR, WE TAKE THE FISRT ONE OK
               }
 
               // delete (expire it)
               if(voucherChange.getAction()==VoucherChange.VoucherChangeAction.Expire){
                 if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
+                  // already redeemed
                   voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
-                }
-                if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired){
+                } else if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired){
+                  // already expired
                   voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
+                } else {
+                  // expire voucher OK
+                  voucherStored.setVoucherExpiryDate(now);
+                  sortVouchersPerExpiryDate(subscriberProfile);
+                  voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
+                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+                  break;
                 }
-                // expire voucher OK
-                voucherStored.setVoucherExpiryDate(now);
-                if(voucherStored.getVoucherExpiryDate().after(now)) voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
-                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-                break;//NOTE WE DO NOT ORDER VOUCHER PER EXPIRY DATE OR, WE TAKE THE FISRT ONE OK
               }
 
             }
@@ -2519,6 +2517,14 @@ public class EvolutionEngine
     }
 
     return subscriberUpdated;
+  }
+
+  // sort vouchers stored in subscriberProfile soones expiry date first
+  private static void sortVouchersPerExpiryDate(SubscriberProfile subscriberProfile)
+  {
+    if(log.isTraceEnabled()) log.trace("sorting vouchers on expiry date, from soonest expiry to latest "+subscriberProfile.getVouchers());
+    subscriberProfile.getVouchers().sort(Comparator.comparing(VoucherProfileStored::getVoucherExpiryDate));
+    if(log.isTraceEnabled()) log.trace("sorting vouchers result "+subscriberProfile.getVouchers());
   }
 
   /*****************************************
@@ -3991,8 +3997,7 @@ public class EvolutionEngine
         String eventTokenCode = null;
         String moduleID = null;
         String userID = null;
-        String featureIDStr = null;
-        int featureID = 0;
+        String featureID = null;
         List<Token> subscriberTokens = subscriberProfile.getTokens();
         String tokenTypeID = null;
         DNBOToken presentationLogToken = null;
@@ -4005,7 +4010,7 @@ public class EvolutionEngine
           {
             eventTokenCode = ((PresentationLog) evolutionEvent).getPresentationToken();
             moduleID = ((PresentationLog)evolutionEvent).getModuleID();
-            featureIDStr = ((PresentationLog)evolutionEvent).getFeatureID();
+            featureID = ((PresentationLog)evolutionEvent).getFeatureID();
             tokenTypeID = ((PresentationLog)evolutionEvent).getTokenTypeID();
             presentationLogToken = ((PresentationLog) evolutionEvent).getToken();
           }
@@ -4013,7 +4018,7 @@ public class EvolutionEngine
           {
             eventTokenCode = ((AcceptanceLog) evolutionEvent).getPresentationToken();
             moduleID = ((AcceptanceLog)evolutionEvent).getModuleID();
-            featureIDStr = ((AcceptanceLog)evolutionEvent).getFeatureID();
+            featureID = ((AcceptanceLog)evolutionEvent).getFeatureID();
             tokenTypeID = ((AcceptanceLog)evolutionEvent).getTokenTypeID();
           }
 
@@ -4029,14 +4034,6 @@ public class EvolutionEngine
             return false;
           }
 
-        try
-        {
-          featureID = Integer.parseInt(featureIDStr);
-        }
-        catch (NumberFormatException e)
-        {
-          log.warn("featureID is not an integer : " + featureIDStr + " using " + featureID);
-        }
         if (moduleID == null)
           {
             moduleID = DeliveryRequest.Module.Unknown.getExternalRepresentation();
@@ -4685,32 +4682,13 @@ public class EvolutionEngine
                 *  populate journeyMetrics (prior and "during")
                 *
                 *****************************************/
-
-                for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
+                //
+                // check if JourneyMetrics enabled: Metrics should be generated for campaigns only (not journeys nor bulk campaigns)
+                //
+                if (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) 
                   {
-                    //
-                    //  metricHistory
-                    //
-
-                    MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
-
-                    //
-                    //  prior
-                    //
-
-                    Date journeyEntryDay = RLMDateUtils.truncate(journeyState.getJourneyEntryDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-                    Date metricStartDay = RLMDateUtils.addDays(journeyEntryDay, -1 * journeyMetricDeclaration.getPriorPeriodDays(), Deployment.getBaseTimeZone());
-                    Date metricEndDay = RLMDateUtils.addDays(journeyEntryDay, -1, Deployment.getBaseTimeZone());
-                    long priorMetricValue = metricHistory.getValue(metricStartDay, metricEndDay);
-                    journeyState.getJourneyMetricsPrior().put(journeyMetricDeclaration.getID(), priorMetricValue);
-
-                    //
-                    //  during (note:  at entry these are set to the "all-time-total" and will be fixed up when the journey ends
-                    //
-
-                    Long startMetricValue = metricHistory.getAllTimeBucket();
-                    journeyState.getJourneyMetricsDuring().put(journeyMetricDeclaration.getID(), startMetricValue);
-                    subscriberStateUpdated = true;
+                    boolean metricsUpdated = journeyState.populateMetricsPrior(subscriberState);
+                    subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                   }
 
                 /*****************************************
@@ -5285,15 +5263,13 @@ public class EvolutionEngine
                     *  populate journeyMetrics (during)
                     *
                     *****************************************/
-
-                    for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
+                    //
+                    // check if JourneyMetrics enabled: Metrics should be generated for campaigns only (not journeys nor bulk campaigns)
+                    //
+                    if (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) 
                       {
-                        MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
-                        long startMetricValue = journeyState.getJourneyMetricsDuring().get(journeyMetricDeclaration.getID());
-                        long endMetricValue = metricHistory.getAllTimeBucket();
-                        long duringMetricValue = endMetricValue - startMetricValue;
-                        journeyState.getJourneyMetricsDuring().put(journeyMetricDeclaration.getID(), duringMetricValue);
-                        subscriberStateUpdated = true;
+                        boolean metricsUpdated = journeyState.populateMetricsDuring(subscriberState);
+                        subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                       }
                   }
 
@@ -5434,50 +5410,42 @@ public class EvolutionEngine
 
     for (JourneyState journeyState : subscriberState.getRecentJourneyStates())
       {
-        //
-        //  close metrics
-        //
-
         if (journeyState.getJourneyCloseDate() == null)
           {
-            //
-            //  post metrics
-            //
-
-            for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
-              {
-                if (! journeyState.getJourneyMetricsPost().containsKey(journeyMetricDeclaration.getID()))
-                  {
-                    Date journeyExitDay = RLMDateUtils.truncate(journeyState.getJourneyExitDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-                    Date metricStartDay = RLMDateUtils.addDays(journeyExitDay, 1, Deployment.getBaseTimeZone());
-                    Date metricEndDay = RLMDateUtils.addDays(journeyExitDay, journeyMetricDeclaration.getPostPeriodDays(), Deployment.getBaseTimeZone());
-                    if (now.after(RLMDateUtils.addDays(metricEndDay, 1, Deployment.getBaseTimeZone())))
-                      {
-                        MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
-                        long postMetricValue = metricHistory.getValue(metricStartDay, metricEndDay);
-                        journeyState.getJourneyMetricsPost().put(journeyMetricDeclaration.getID(), postMetricValue);
-                        subscriberStateUpdated = true;
-                      }
-                  }
-              }
-
-            //
-            //  close?
-            //
-
-            boolean closeJourney = true;
-            for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
-              {
-                closeJourney = closeJourney && journeyState.getJourneyMetricsPost().containsKey(journeyMetricDeclaration.getID());
-              }
+            Journey journey = journeyService.getActiveJourney(journeyState.getJourneyID(), now);
             
             //
-            //  close
+            // check if JourneyMetrics enabled: Metrics should be generated for campaigns only (not journeys nor bulk campaigns)
             //
-
-            if (closeJourney)
+            // journey can be null if it has been removed in the meantime (happens with PTT tests, should not happen in prod)
+            if ((journey != null) && (journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign)) 
               {
-                subscriberState.getJourneyMetrics().add(new JourneyMetric(context, subscriberState.getSubscriberID(), journeyState));
+                boolean metricsUpdated = journeyState.populateMetricsPost(subscriberState, now);
+                subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
+                
+                //
+                //  close ?
+                //
+                boolean closeJourney = true;
+                for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
+                  {
+                    closeJourney = closeJourney && journeyState.getJourneyMetricsPost().containsKey(journeyMetricDeclaration.getID());
+                  }
+                
+                if (closeJourney)
+                  {
+                    // Create a JourneyMetric to be added to JourneyStatistic from journeyState
+                    subscriberState.getJourneyMetrics().add(new JourneyMetric(context, subscriberState.getSubscriberID(), journeyState));
+                    journeyState.setJourneyCloseDate(now);
+                    subscriberStateUpdated = true;
+                  }
+              }
+            else 
+              {
+                //
+                //  close journey if metrics disabled
+                //
+                if (journey == null) log.warn("journey " + journeyState.getJourneyID() + " cannot be found");
                 journeyState.setJourneyCloseDate(now);
                 subscriberStateUpdated = true;
               }
@@ -5493,6 +5461,7 @@ public class EvolutionEngine
     return subscriberStateUpdated;
   }
 
+  private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String action, Token token, int journeyID, String origin)
   private static void handleExecuteOnEntryActions(SubscriberState subscriberState, JourneyState journeyState, Journey journey, List<Action> actions)
   {
     for (Action action : actions)
@@ -5530,14 +5499,7 @@ public class EvolutionEngine
               Token token = (Token) action;
               subscriberState.getSubscriberProfile().getTokens().add(token);
               int featureID = 0;
-              try
-              {
-                featureID = Integer.parseInt(journey.getJourneyID());
-              }
-              catch (NumberFormatException e)
-              {
-                log.warn("journeyID is not an integer : "+journey.getJourneyID()+" using "+featureID);
-              }
+              String featureID = journey.getJourneyID(); 
               token.setFeatureID(featureID);
               switch (token.getTokenStatus())
               {
@@ -5580,7 +5542,7 @@ public class EvolutionEngine
       }
   }
 
-  private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String action, Token token, int journeyID, String origin)
+  private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String action, Token token, String journeyID, String origin)
   {
     return new TokenChange(subscriberId, eventDateTime, "", token.getTokenCode(), action, "OK", origin, Module.Journey_Manager, journeyID);
   }
@@ -7454,6 +7416,14 @@ public class EvolutionEngine
       *****************************************/
 
       return Collections.<Action>singletonList(request);
+    }
+
+    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      String journeyID = (String) journeyNode.getNodeParameters().get("node.parameter.journey");
+      if (journeyID != null) result.put("journey", journeyID);
+      return result;
     }
   }
   

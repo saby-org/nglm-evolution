@@ -238,6 +238,32 @@ public class ThirdPartyJSONGenerator
     voucherMap.put("quantity", offerVoucher.getQuantity());
     return JSONUtilities.encodeObject(voucherMap);
   }
+  
+  /*****************************************
+  *
+  *  getResellerJson
+  *
+  *****************************************/
+  
+  protected static JSONObject generateResellerJSONForThirdParty(Reseller reseller, ResellerService resellerService)
+  {
+    HashMap<String, Object> resellerDetailsMap = new HashMap<String, Object>();
+    if (null == reseller)
+      return JSONUtilities.encodeObject(resellerDetailsMap);
+    resellerDetailsMap.put("resellerDisplay", reseller.getGUIManagedObjectDisplay());
+    resellerDetailsMap.put("resellerName", reseller.getGUIManagedObjectName());
+    resellerDetailsMap.put("resellerDescription", reseller.getJSONRepresentation().get("description"));
+    resellerDetailsMap.put("resellerWebsite", reseller.getWebsite());
+    resellerDetailsMap.put("resellerActive",
+        resellerService.isActiveReseller(reseller, SystemTime.getCurrentTime()) ? "active" : "inactive");
+    resellerDetailsMap.put("resellerCreatedDate", getDateString(reseller.getCreatedDate()));
+    resellerDetailsMap.put("resellerUpdatedDate", getDateString(reseller.getUpdatedDate()));
+    resellerDetailsMap.put("resellerUserIDs", reseller.getUserIDs());
+    resellerDetailsMap.put("resellerEmail", reseller.getEmail());
+    resellerDetailsMap.put("resellerPhone", reseller.getPhone());
+    resellerDetailsMap.put("resellerParentID", reseller.getParentResellerID());
+    return JSONUtilities.encodeObject(resellerDetailsMap);
+  }
 
   /*****************************************
   *
@@ -289,8 +315,8 @@ public class ThirdPartyJSONGenerator
     tokenMap.put("tokenTypeDisplay", tokenType != null ? tokenType.getGUIManagedObjectDisplay() : "unknownTokenType");
     Module module = Module.fromExternalRepresentation(token.getModuleID());
     tokenMap.put("moduleName", module.toString());
-    Integer featureID = token.getFeatureID();
-    tokenMap.put("featureName", (featureID==null) ? "unknown feature" : DeliveryRequest.getFeatureDisplay(module, featureID.toString(), journeyService, offerService, loyaltyProgramService));
+    String featureID = token.getFeatureID();
+    tokenMap.put("featureName", (featureID==null) ? "unknown feature" : DeliveryRequest.getFeatureDisplay(module, featureID, journeyService, offerService, loyaltyProgramService));
     tokenMap.put("tokenCode", token.getTokenCode());
     if (token instanceof DNBOToken)
       {

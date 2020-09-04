@@ -7,8 +7,10 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.kafka.connect.data.Field;
@@ -21,6 +23,7 @@ import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public abstract class LoyaltyProgram extends GUIManagedObject
@@ -270,5 +273,7 @@ public abstract class LoyaltyProgram extends GUIManagedObject
   *****************************************/
   
   public abstract boolean validate() throws GUIManagerException;
+  
+
   
 }
