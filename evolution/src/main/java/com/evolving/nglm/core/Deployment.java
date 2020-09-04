@@ -49,6 +49,7 @@ public class Deployment
   private static String baseCountry;
   private static String evolutionVersion;
   private static String customerVersion;
+  private static String guiFrameworkVersion;
   private static boolean generateNumericIDs;
   private static Map<String,AlternateID> alternateIDs = new LinkedHashMap<String,AlternateID>();
   private static String assignSubscriberIDsTopic;
@@ -82,7 +83,8 @@ public class Deployment
   public static String getBaseLanguage() { return baseLanguage; }
   public static String getBaseCountry() { return baseCountry; }
   public static String getEvolutionVersion() { return evolutionVersion!=null?evolutionVersion:"unknown"; }
-  public static String getCustomerVersion() { return customerVersion!=null?evolutionVersion:"unknown"; }
+  public static String getCustomerVersion() { return customerVersion!=null?customerVersion:"unknown"; }
+  public static String getGuiFrameworkVersion() { return guiFrameworkVersion!=null?guiFrameworkVersion:"unknown"; }
   public static boolean getGenerateNumericIDs() { return generateNumericIDs; }
   public static String getRedisSentinels() { return System.getProperty("redis.sentinels",""); }
   public static Map<String,AlternateID> getAlternateIDs() { return alternateIDs; }
@@ -485,6 +487,18 @@ public class Deployment
         throw new ServerRuntimeException("deployment : customerVersion", e);
       }
     
+    //
+    // guiFrameworkVersion
+    //
+
+    try
+      {
+    	guiFrameworkVersion = JSONUtilities.decodeString(jsonRoot, "guiFrameworkVersion", Boolean.TRUE);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment : guiFrameworkVersion", e);
+      }
     
     /*****************************************
     *

@@ -75,6 +75,7 @@
   ],
 
   "evolutionVersion"                                     : "${project.version}",
+  "guiFrameworkVersion"									 : "${gui-fwk.version}",
   "emptyTopic"                                           : "${topic.empty}",
   "journeyTopic"                                         : "${topic.journey}",
   "journeyTemplateTopic"                                 : "${topic.journeytemplate}",
