@@ -27010,14 +27010,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     @Override protected void run()
     {
-      if (log.isInfoEnabled()) log.info("creating recurrent campaigns");
+      if (log.isDebugEnabled()) log.debug("creating recurrent campaigns");
       String tz = Deployment.getBaseTimeZone();
       final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
       int recurrentCampaignCreationDaysRange = Deployment.getRecurrentCampaignCreationDaysRange();
       Date filterStartDate = RLMDateUtils.addDays(now, -1*recurrentCampaignCreationDaysRange, tz);
       Date filterEndDate = RLMDateUtils.addDays(now, recurrentCampaignCreationDaysRange, tz);
       Collection<Journey> recurrentJourneys = journeyService.getActiveAndCompletedRecurrentJourneys(SystemTime.getCurrentTime());
-      log.info("RAJ K recurrentJourneys {}", recurrentJourneys);
+      if(log.isDebugEnabled()) log.debug("recurrentJourneys {}", recurrentJourneys);
       for (Journey recurrentJourney : recurrentJourneys)
         {
           List<Date> journeyCreationDates = new ArrayList<Date>();
@@ -27100,10 +27100,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           //
           // filter out if before start date and recurrentCampaignCreationDaysRange (before / after)
           //
-          
-          log.info("RAJ K before filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
+
+		  if(log.isDebugEnabled()) log.debug("before filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
           tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.after(recurrentJourney.getEffectiveStartDate())  && date.compareTo(filterStartDate) >= 0 && filterEndDate.compareTo(date) >= 0 ).collect(Collectors.toList());
-          log.info("RAJ K after filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
+		  if(log.isDebugEnabled()) log.debug("after filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
           
           //
           //  exists
@@ -27141,7 +27141,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     
     private void createJourneys(Journey recurrentJourney, List<Date> journeyCreationDates, Integer lastCreatedOccurrenceNumber)
     {
-      log.info("RAJ K createingJourneys of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
+      log.info("createingJourneys of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
       String timeZone = Deployment.getBaseTimeZone();
       int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, timeZone), Deployment.getBaseTimeZone());
       int occurrenceNumber = lastCreatedOccurrenceNumber;

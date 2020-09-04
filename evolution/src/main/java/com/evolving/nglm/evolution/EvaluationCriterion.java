@@ -1000,7 +1000,6 @@ public class EvaluationCriterion
         *****************************************/
 
         case EqualOperator:
-        	log.info("inside equals operator");
         	  
         	if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
              {
@@ -1010,8 +1009,7 @@ public class EvaluationCriterion
              	    if (result)
              		break;
              	}
-             }else { 
-            	 log.info("inside equals operator");
+             }else {
             	 result = traceCondition(evaluationRequest, criterionFieldValue.equals(evaluatedArgument), criterionFieldValue, evaluatedArgument);
             }
         	 break;
@@ -1191,7 +1189,6 @@ public class EvaluationCriterion
         *****************************************/
 
         case IsInSetOperator:
-        	 log.info("Is In Set operator");
         	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
              {
              	for(String singleCriterionFieldValue: criterionFieldValues) {
@@ -1357,7 +1354,7 @@ public class EvaluationCriterion
         query = query.filter(evaluationCriterion.esQuery());
       }
     
-    log.debug("final es query:"+query.toString());
+    if(log.isDebugEnabled()) log.debug("final es query:"+query.toString());
     return query;
   }
   
