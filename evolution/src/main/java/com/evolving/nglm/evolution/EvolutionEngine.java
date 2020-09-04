@@ -5479,7 +5479,6 @@ public class EvolutionEngine
     return subscriberStateUpdated;
   }
 
-  private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String action, Token token, int journeyID, String origin)
   private static void handleExecuteOnEntryActions(SubscriberState subscriberState, JourneyState journeyState, Journey journey, List<Action> actions)
   {
     for (Action action : actions)
@@ -5516,7 +5515,6 @@ public class EvolutionEngine
             case TokenUpdate:
               Token token = (Token) action;
               subscriberState.getSubscriberProfile().getTokens().add(token);
-              int featureID = 0;
               String featureID = journey.getJourneyID(); 
               token.setFeatureID(featureID);
               switch (token.getTokenStatus())

@@ -122,7 +122,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       
       if (notification instanceof MailNotificationManagerRequest) {
         MailNotificationManagerRequest mailNotification = (MailNotificationManagerRequest) notification;
-        if(notification.getOriginatingSubscriberID() != null && notification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+        if(mailNotification.getOriginatingSubscriberID() != null && mailNotification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
           {
             // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
             return null;
@@ -152,7 +152,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       }
       else if (notification instanceof SMSNotificationManagerRequest) {
         SMSNotificationManagerRequest smsNotification = (SMSNotificationManagerRequest) notification;
-        if(notification.getOriginatingSubscriberID() != null && notification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+        if(smsNotification.getOriginatingSubscriberID() != null && smsNotification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
           {
             // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
             return null;
@@ -181,7 +181,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       }
       else if (notification instanceof NotificationManagerRequest) {
         NotificationManagerRequest notifNotification = (NotificationManagerRequest) notification;
-        if(notification.getOriginatingSubscriberID() != null && notification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+        if(notifNotification.getOriginatingSubscriberID() != null && notifNotification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
           {
             // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
             return null;
@@ -206,7 +206,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       }
       else {
         PushNotificationManagerRequest pushNotification = (PushNotificationManagerRequest) notification;
-        if(notification.getOriginatingSubscriberID() != null && notification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
+        if(pushNotification.getOriginatingSubscriberID() != null && pushNotification.getOriginatingSubscriberID().startsWith(DeliveryManager.TARGETED))
           {
             // case where this is a delegated request and its response is for the original subscriberID, so this response must be ignored.
             return null;

@@ -15,7 +15,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 
-public class ExecuteActionOtherSubscriber implements SubscriberStreamEvent, Action, SubscriberStreamOutput
+public class ExecuteActionOtherSubscriber extends SubscriberStreamOutput implements SubscriberStreamEvent, Action
 {
   
 
