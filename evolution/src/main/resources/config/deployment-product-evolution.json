@@ -74,8 +74,9 @@
     "regr_criteria"
   ],
 
-  "evolutionVersion"                                     : "${project.version}",
-  "guiFrameworkVersion"									 : "${gui-fwk.version}",
+  "evolutionVersion"                                     : "${nglm.evolution.version}",
+  "customerVersion"                                      : "${project.version}",
+  "guiFrameworkVersion"									 : "${gui.framework.version}",
   "emptyTopic"                                           : "${topic.empty}",
   "journeyTopic"                                         : "${topic.journey}",
   "journeyTemplateTopic"                                 : "${topic.journeytemplate}",
