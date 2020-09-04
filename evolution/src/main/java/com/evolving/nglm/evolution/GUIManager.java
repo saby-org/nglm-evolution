@@ -19185,7 +19185,7 @@ public class GUIManager
        }
       } 
   
-    List<String> userIDs = JSONUtilities.decodeJSONArray(jsonRoot, "userIDs", false);
+    List<String> userIDs = JSONUtilities.decodeJSONArray(jsonRoot, "userIDs", new JSONArray());
  
     if (userIDs.size() != 0 && existingReseller == null) {
       for(String userId : userIDs) {
