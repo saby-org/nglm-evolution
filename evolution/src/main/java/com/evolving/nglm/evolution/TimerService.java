@@ -16,6 +16,10 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.utilities.UtilitiesException;
 import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
 
+import com.evolving.nglm.evolution.statistics.CounterStat;
+import com.evolving.nglm.evolution.statistics.DurationStat;
+import com.evolving.nglm.evolution.statistics.StatBuilder;
+import com.evolving.nglm.evolution.statistics.StatsBuilders;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -66,6 +70,7 @@ public class TimerService
   private volatile boolean stopRequested = false;
   private EvolutionEngine evolutionEngine = null;
   private ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore = null;
+  private StatBuilder<DurationStat> statsStateStoresDuration;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader = null;
   private TargetService targetService = null;
   private JourneyService journeyService = null;
@@ -99,6 +104,7 @@ public class TimerService
     *****************************************/
 
     this.evolutionEngine = evolutionEngine;
+    this.statsStateStoresDuration = StatsBuilders.getEvolutionDurationStatisticsBuilder("evolutionengine_statestore","evolutionengine-"+evolutionEngine.getEvolutionEngineKey());
 
     /*****************************************
     *
@@ -512,6 +518,7 @@ public class TimerService
         boolean loadScheduleCompleted = false;
         try
           {
+            long startTime = DurationStat.startTime();
             KeyValueIterator<StringKey,SubscriberState> subscriberStateStoreIterator = subscriberStateStore.all();
             while (! stopRequested && subscriberStateStoreIterator.hasNext())
               {
@@ -522,6 +529,9 @@ public class TimerService
                   }
               }
             subscriberStateStoreIterator.close();
+            statsStateStoresDuration.withLabel(StatsBuilders.LABEL.name.name(),"subscriberStateStore")
+                                    .withLabel(StatsBuilders.LABEL.operation.name(),"scheduleloader_all")
+                                    .getStats().add(startTime);
             loadScheduleCompleted = true;
           }
         catch (InvalidStateStoreException e)
@@ -655,6 +665,7 @@ public class TimerService
         boolean periodicEvaluationComplete = false;
         try
           {
+            long startTime = DurationStat.startTime();
             KeyValueIterator<StringKey,SubscriberState> subscriberStateStoreIterator = subscriberStateStore.all();
             while (! stopRequested && subscriberStateStoreIterator.hasNext())
               {
@@ -666,6 +677,9 @@ public class TimerService
                   }
               }
             subscriberStateStoreIterator.close();
+            statsStateStoresDuration.withLabel(StatsBuilders.LABEL.name.name(),"subscriberStateStore")
+                                    .withLabel(StatsBuilders.LABEL.operation.name(),"periodicevaluation_all")
+                                    .getStats().add(startTime);
             periodicEvaluationComplete = true;
           }
         catch (InvalidStateStoreException e)
@@ -895,6 +909,7 @@ public class TimerService
     Date now = SystemTime.getCurrentTime();
     EvaluateTargets evaluateTargetsJob = null;
     int nbOfExtraLoopToDo=0;
+    long startTimeStateStoreStats = DurationStat.startTime();
     KeyValueIterator<StringKey,SubscriberState> subscriberStateStoreIterator = null;
     while (! stopRequested)
       {
@@ -960,6 +975,7 @@ public class TimerService
                 if (subscriberStateStoreIterator == null)
                   {
 
+                    startTimeStateStoreStats = DurationStat.startTime();
                     subscriberStateStoreIterator = subscriberStateStore.all();
 
                     // no on going job, "randomness" activated (NOT RECOMMENDED REGARDING PERF)
@@ -981,6 +997,10 @@ public class TimerService
                       if(!subscriberStateStoreIterator.hasNext()){
                         log.warn("evaluateTargets lost 1 entire loop for nothing... "+reallySkiped+" subscribers skipped in "+durationInMs+" ms");
                         subscriberStateStoreIterator.close();
+                        statsStateStoresDuration.withLabel(StatsBuilders.LABEL.name.name(),"subscriberStateStore")
+                                                .withLabel(StatsBuilders.LABEL.operation.name(),"evaluatetarget_all")
+                                                .getStats().add(startTimeStateStoreStats);
+                        startTimeStateStoreStats = DurationStat.startTime();
                         subscriberStateStoreIterator=subscriberStateStore.all();
                       }
                     }
@@ -1071,6 +1091,10 @@ public class TimerService
                         Long durationInMs = System.currentTimeMillis() - startTime;
                         log.info("evaluateTargets first loop finish in "+durationInMs+" ms for "+nbSubsEvaluated+" subscribers evaluated, but still need to do "+nbOfExtraLoopToDo+" loop");
                         subscriberStateStoreIterator.close();
+                        statsStateStoresDuration.withLabel(StatsBuilders.LABEL.name.name(),"subscriberStateStore")
+                                                .withLabel(StatsBuilders.LABEL.operation.name(),"evaluatetarget_all")
+                                                .getStats().add(startTimeStateStoreStats);
+                        startTimeStateStoreStats=DurationStat.startTime();
                         subscriberStateStoreIterator=subscriberStateStore.all();
                         nbOfExtraLoopToDo--;
                       }
@@ -1102,6 +1126,9 @@ public class TimerService
                     log.info("evaluateTargets finished for "+evaluateTargetsJob+" in "+durationInMs+" ms for "+nbSubsEvaluated+" subscribers evaluated");
                     subscriberStateStoreIterator.close();
                     subscriberStateStoreIterator=null;
+                    statsStateStoresDuration.withLabel(StatsBuilders.LABEL.name.name(),"subscriberStateStore")
+                                            .withLabel(StatsBuilders.LABEL.operation.name(),"evaluatetarget_all")
+                                            .getStats().add(startTimeStateStoreStats);
                   }
 
                 //

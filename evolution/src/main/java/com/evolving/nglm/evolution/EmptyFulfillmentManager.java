@@ -8,18 +8,17 @@ package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
+import com.evolving.nglm.evolution.statistics.CounterStat;
+import com.evolving.nglm.evolution.statistics.StatBuilder;
+import com.evolving.nglm.evolution.statistics.StatsBuilders;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +27,6 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
   
@@ -126,7 +124,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
   *****************************************/
 
   private ArrayList<Thread> threads = new ArrayList<Thread>();
-  private BDRStatistics bdrStats = null;
+  private StatBuilder<CounterStat> statsCounter = null;
   
   /*****************************************
   *
@@ -145,12 +143,8 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
     //
     // statistics
     //
-    try{
-      bdrStats = new BDRStatistics("emptyFulfillment");
-    }catch(Exception e){
-      log.error("EmptyFulfillmentManager: could not load statistics ", e);
-      throw new RuntimeException("EmptyFulfillmentManager: could not load statistics  ", e);
-    }
+
+    statsCounter = StatsBuilders.getEvolutionCounterStatisticsBuilder("emptyfulfillmentdelivery","emptyfulfillmentmanager-"+deliveryManagerKey);
     
     //
     //  threads
@@ -606,7 +600,11 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
         deliveryRequest.setDeliveryStatus(getEmptyFulfillmentStatus(status));
         deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
         completeRequest(deliveryRequest);
-        bdrStats.updateBDREventCount(1, getEmptyFulfillmentStatus(status));
+
+        statsCounter.withLabel(StatsBuilders.LABEL.status.name(),((EmptyFulfillmentRequest) deliveryRequest).getStatus().name())
+                .withLabel(StatsBuilders.LABEL.operation.name(),((EmptyFulfillmentRequest) deliveryRequest).getOperation().name())
+                .withLabel(StatsBuilders.LABEL.module.name(), DeliveryRequest.Module.fromExternalRepresentation(deliveryRequest.getModuleID()).name())
+                .getStats().increment();
 
       }
   }

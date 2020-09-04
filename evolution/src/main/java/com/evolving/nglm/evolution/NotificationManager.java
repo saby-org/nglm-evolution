@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.evolving.nglm.evolution.statistics.CounterStat;
+import com.evolving.nglm.evolution.statistics.StatBuilder;
+import com.evolving.nglm.evolution.statistics.StatsBuilders;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -50,12 +53,10 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
   private int threadNumber = 5; // TODO : make this configurable
   private ArrayList<Thread> threads = new ArrayList<Thread>();
-  private String channelsString; // List of Channels as a key for stats
   private Map<String, NotificationInterface> pluginInstances = new HashMap();
-  private NotificationStatistics stats = null;
+
+  private static StatBuilder<CounterStat> statsCounter;
   private static String applicationID = "deliverymanager-notificationmanager";
-  private SubscriberMessageTemplateService subscriberMessageTemplateService;
-  private CommunicationChannelBlackoutService blackoutService;
   private ContactPolicyProcessor contactPolicyProcessor;
 
   //
@@ -69,16 +70,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
    * accessors
    *
    *****************************************/
-
-  public SubscriberMessageTemplateService getSubscriberMessageTemplateService()
-  {
-    return subscriberMessageTemplateService;
-  }
-
-  public CommunicationChannelBlackoutService getBlackoutService()
-  {
-    return blackoutService;
-  }
 
   /*****************************************
    *
@@ -95,20 +86,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), NotificationManagerRequest.serde, Deployment.getDeliveryManagers().get("notificationmanager"));
 
       //
-      // service
-      //
-
-      subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "notificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
-      subscriberMessageTemplateService.start();
-
-      //
-      // blackoutService
-      //
-
-      blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "notificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
-      blackoutService.start();
-
-      //
       // contact policy processor
       //
       contactPolicyProcessor = new ContactPolicyProcessor("notificationmanager-communicationchannel", deliveryManagerKey);
@@ -117,7 +94,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       // manager
       //
 
-      this.channelsString = channelsString;
       ArrayList<String> channels = new ArrayList<>();
       if (channelsString != null)
         {
@@ -160,15 +136,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       // statistics
       //
 
-      try
-        {
-          stats = new NotificationStatistics(applicationID, channelsString);
-        }
-      catch (Exception e)
-        {
-          log.error("NotificationManager: could not load statistics ", e);
-          throw new RuntimeException("NotificationManager: could not load statistics  ", e);
-        }
+      statsCounter = StatsBuilders.getEvolutionCounterStatisticsBuilder("notificationdelivery","notificationmanager-"+deliveryManagerKey);
 
       //
       // threads
@@ -962,7 +930,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         log.info("NotificationManagerRequest run deliveryRequest" + deliveryRequest);
 
         NotificationManagerRequest dialogRequest = (NotificationManagerRequest) deliveryRequest;
-        DialogTemplate dialogTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
+        DialogTemplate dialogTemplate = (DialogTemplate) getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
         
         if (dialogTemplate != null) 
           {
@@ -974,7 +942,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
                 CommunicationChannel channel = (CommunicationChannel) Deployment.getCommunicationChannels().get(dialogRequest.getChannelID());
                 if(channel != null) 
                   {
-                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(blackoutService, now);
+                    effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now);
                   }
 
                 if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))
@@ -1025,7 +993,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
           {
             log.info("NotificationManagerRequest run deliveryRequest : ERROR : template with id '"+dialogRequest.getTemplateID()+"' not found");
             log.info("subscriberMessageTemplateService contains :");
-            for(GUIManagedObject obj : subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now)){
+            for(GUIManagedObject obj : getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplates(now)){
               log.info("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
             }
             dialogRequest.setDeliveryStatus(DeliveryStatus.Failed);
@@ -1069,10 +1037,16 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
   
   public void completeDeliveryRequest(DeliveryRequest deliveryRequest)
   {
-    DeliveryRequest dr = (DeliveryRequest)deliveryRequest;
     log.info("NotificationManager.updateDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
-    completeRequest(dr);
-    stats.updateMessageCount(channelsString, 1, dr.getDeliveryStatus());
+    completeRequest(deliveryRequest);
+    // new stats for generic only (old way notification manager use old way "NotificationStatistics", to clean everything of this once not used anymore)
+    if(deliveryRequest instanceof NotificationManagerRequest){
+      NotificationManagerRequest dr = (NotificationManagerRequest)deliveryRequest;
+      statsCounter.withLabel(StatsBuilders.LABEL.status.name(),deliveryRequest.getDeliveryStatus().getExternalRepresentation())
+              .withLabel(StatsBuilders.LABEL.channel.name(),Deployment.getCommunicationChannels().get(dr.getChannelID()).getDisplay())
+              .withLabel(StatsBuilders.LABEL.module.name(), DeliveryRequest.Module.fromExternalRepresentation(dr.getModuleID()).name())
+              .getStats().increment();
+    }
   }
 
   /*****************************************
@@ -1229,11 +1203,11 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         }
         
         ToolBoxBuilder tb = new ToolBoxBuilder(current.getToolboxID(), current.getName(), current.getDisplay(), current.getIcon(), current.getToolboxHeight(), current.getToolboxWidth(), OutputType.Static);
-
+     
         tb.addFlatStringField("communicationChannelID", current.getID());
         tb.addOutputConnector(new OutputConnectorBuilder("delivered", "Delivered/Sent").addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'delivered', 'acknowledged' ]"))));
         tb.addOutputConnector(new OutputConnectorBuilder("failed", "Failed").addTransitionCriteria(new TransitionCriteriaBuilder("node.action.deliverystatus", CriterionOperator.IsInSetOperator, new ArgumentBuilder("[ 'failed', 'indeterminate', 'failedTimeout' ]"))));
-        tb.addOutputConnector(new OutputConnectorBuilder("timeout", "Timeout").addTransitionCriteria(new TransitionCriteriaBuilder("evaluation.date", CriterionOperator.GreaterThanOrEqualOperator, new ArgumentBuilder("dateAdd(node.entryDate, 1, 'hour')").setTimeUnit(TimeUnit.Instant))));
+        tb.addOutputConnector(new OutputConnectorBuilder("timeout", "Timeout").addTransitionCriteria(new TransitionCriteriaBuilder("evaluation.date", CriterionOperator.GreaterThanOrEqualOperator, new ArgumentBuilder("dateAdd(node.entryDate, " + current.getToolboxTimeout() + ", '" + current.getToolboxTimeoutUnit()+"')").setTimeUnit(TimeUnit.Instant))));
         tb.addOutputConnector(new OutputConnectorBuilder("unknown", "Unknown " + current.getProfileAddressField()).addTransitionCriteria(new TransitionCriteriaBuilder(current.getProfileAddressField(), CriterionOperator.IsNullOperator, null)));
         tb.addOutputConnector(new OutputConnectorBuilder("unknown_relationship", "UnknownRelationship").addTransitionCriteria(new TransitionCriteriaBuilder("unknown.relationship", CriterionOperator.EqualOperator, new ArgumentBuilder("true"))));
 

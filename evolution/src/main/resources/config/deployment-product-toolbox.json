@@ -366,7 +366,11 @@
               ],
             "transitionCriteria" : 
               [
-                { "name" : "event",   "display" : "Event",   "evaluationPriority" : "normal",  "evaluateContextVariables" : false,  "transitionCriteria" : [ { "criterionField" : "evaluation.eventname", "criterionOperator" : "==", "argument" : { "expression" : "link.parameter.eventname" } } ] }
+                {
+                  "argument": { "expression": "link.parameter.eventname" },
+                  "criterionField": "evaluation.eventname",
+                  "criterionOperator": "=="
+                }
               ],
             "additionalCriteria" : "link.parameter.additionalcriteria"
           },

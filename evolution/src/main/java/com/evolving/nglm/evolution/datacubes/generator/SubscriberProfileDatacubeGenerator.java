@@ -11,6 +11,8 @@ import java.util.Map;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -83,7 +85,22 @@ public class SubscriberProfileDatacubeGenerator extends DatacubeGenerator
   }
   
   @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX; }
-
+  
+  //
+  // Subset of subscriberprofile
+  //
+  // When a newly created subscriber in Elasticsearch comes first by ExtendedSubscriberProfile sink connector,
+  // it has not yet any of the "product" main (& mandatory) fields.
+  // Those comes when the SubscriberProfile sink connector push them.
+  // For a while, it is possible a document in subscriberprofile index miss many product fields required by datacube generation.
+  // Therefore, we filter out those subscribers with missing data
+  @Override
+  protected QueryBuilder getSubsetQuery() 
+  {
+    return QueryBuilders.boolQuery().must(QueryBuilders.existsQuery("lastUpdateDate"));
+  }
+  
+  
   /*****************************************
   *
   * Filters settings

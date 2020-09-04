@@ -6,27 +6,10 @@
 
 package com.evolving.nglm.evolution.reports;
 
-import static com.evolving.nglm.evolution.reports.ReportUtils.d;
-
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.SystemTime;
-
-import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
-
+import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 import org.apache.http.HttpHost;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
@@ -39,10 +22,10 @@ import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.Scroll;
@@ -51,8 +34,15 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.Deployment;
-import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+
+import static com.evolving.nglm.evolution.reports.ReportUtils.d;
 
 /**
  * A class that implements phase 1 of the Report Generation. It reads a list of
@@ -103,6 +93,7 @@ public class ReportEsReader
   private boolean onlyOneIndex;
   private boolean onlyKeepAlternateIDs; // when we read subscriberprofile, only keep info about alternateIDs
   private boolean onlyKeepAlternateIDsExtended; // when we read subscriberprofile, only keep info about alternateIDs and a little more (for 2 specific reports)
+  private int returnSize; //used when a desired size of subscriber base is returned
 
   /**
    * Create a {@code ReportEsReader} instance.
@@ -157,6 +148,12 @@ public class ReportEsReader
     this(elasticKey, topicName, kafkaNodeList, kzHostList, esNode, esIndex, onlyKeepAlternateIDs, false);
   }
 
+  public ReportEsReader(String elasticKey, String topicName, String kafkaNodeList, String kzHostList, String esNode, LinkedHashMap<String, QueryBuilder> esIndex,boolean onlyKeepAlternateIDs,int returnSize)
+  {
+    this(elasticKey, topicName, kafkaNodeList, kzHostList, esNode, esIndex, onlyKeepAlternateIDs);
+    this.returnSize = returnSize;
+  }
+
   public enum PERIOD
   {
     DAYS("DAYS"), WEEKS("WEEKS"), MONTHS("MONTHS"), UNKNOWN("UNKNOWN");
@@ -194,9 +191,16 @@ public class ReportEsReader
   {
 
     String indexes = "";
+    int scrollSize = getScrollSize();
     for (String s : esIndex.keySet())
       indexes += s + " ";
     log.info("Reading data from ES in \"" + indexes + "\" indexes and writing to \"" + topicName + "\" topic.");
+
+    //if returnSize is zero all record will be returned
+    if (returnSize == 0)
+    {
+      returnSize = Integer.MAX_VALUE;
+    }
 
     ReportUtils.createTopic(topicName, kzHostList); // In case it does not exist
 
@@ -217,6 +221,33 @@ public class ReportEsReader
     final AtomicLong before = new AtomicLong(SystemTime.getCurrentTime().getTime());
     final AtomicLong lastTS = new AtomicLong(0);
     final int traceInterval = 100_000;
+
+    // ESROUTER can have two access points
+    // need to cut the string to get at least one
+    String node = null;
+    int port = 0;
+    if (esNode.contains(","))
+      {
+        String[] split = esNode.split(",");
+        if (split[0] != null)
+          {
+            Scanner s = new Scanner(split[0]);
+            s.useDelimiter(":");
+            node = s.next();
+            port = s.nextInt();
+            s.close();
+          }
+      } else
+      {
+        Scanner s = new Scanner(esNode);
+        s.useDelimiter(":");
+        node = s.next();
+        port = s.nextInt();
+        s.close();
+      }
+
+    elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
+
     int i = 0;
     for (Entry<String, QueryBuilder> index : esIndex.entrySet())
       {
@@ -227,34 +258,6 @@ public class ReportEsReader
         // Write to topic, one message per document
         try
           {
-
-            // ESROUTER can have two access points
-            // need to cut the string to get at least one
-            String node = null;
-            int port = 0;
-            if (esNode.contains(","))
-              {
-                String[] split = esNode.split(",");
-                if (split[0] != null)
-                  {
-                    Scanner s = new Scanner(split[0]);
-                    s.useDelimiter(":");
-                    node = s.next();
-                    port = s.nextInt();
-                    s.close();
-                  }
-              } else
-              {
-                Scanner s = new Scanner(esNode);
-                s.useDelimiter(":");
-                node = s.next();
-                port = s.nextInt();
-                s.close();
-              }
-
-            elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
-            // Search for everyone
-
             Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
             String[] indicesToRead = getIndices(index.getKey());
             
@@ -288,7 +291,9 @@ public class ReportEsReader
               }
             boolean alreadyTraced1 = false;
             boolean alreadyTraced2 = false;
-            while (searchHits != null && searchHits.length > 0)
+            //label for break. When return size is beccoming zero out from for and while
+            returnSizeCompleted:
+            while (searchHits != null && searchHits.length > 0 )
               {
                 log.debug("got " + searchHits.length + " hits");
                 for (SearchHit searchHit : searchHits)
@@ -364,6 +369,11 @@ public class ReportEsReader
                             + " speed = " + d((int) speed) + " messages/sec" + " ( " + key + " , " + record.value() + " )");
                           }
                       }
+                    returnSize --;
+                    if (returnSize == 0)
+                    {
+                      break returnSizeCompleted;
+                    }
                   }
                 SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
                 scrollRequest.scroll(scroll);
@@ -380,10 +390,20 @@ public class ReportEsReader
               }
           } catch (IOException e)
           {
-            e.printStackTrace();
+            log.info("Exception while reading ElasticSearch " + e.getLocalizedMessage());
           }
         i++;
       }
+    
+    try
+    {
+      elasticsearchReaderClient.close();
+    }
+    catch (IOException e)
+    {
+      log.info("Exception while closing ElasticSearch client " + e.getLocalizedMessage());
+    }
+
 
     // send 1 marker per partition
     for (int partition = 0; partition < ReportUtils.getNbPartitions(); partition++)

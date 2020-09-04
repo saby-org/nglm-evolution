@@ -3,7 +3,9 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
+  <version>1.4.4_0-SNAPSHOT</version>
   <version>1.4.3_8-EVPRO-178-SNAPSHOT</version>
+  <version>1.4.4_1-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -25,18 +27,18 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.4_0-SNAPSHOT</version>
+    <version>1.4.4_1-SNAPSHOT</version>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>1.4.4_0-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.4.4_1-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
     <flyway.version>qaveon-dnbo-2.5.0.10.4.6</flyway.version>
-    <flyway.gui.version>1.0.53</flyway.gui.version>
+    <flyway.gui.version>1.0.54</flyway.gui.version>
     
     <!-- evolution-common-build -->
     <common.build.phase.generate-evolution-scripts>none</common.build.phase.generate-evolution-scripts>
@@ -63,6 +65,7 @@
     <common.build.phase.generate-reportscheduler-image>none</common.build.phase.generate-reportscheduler-image>
     <common.build.phase.generate-datacubemanager-image>none</common.build.phase.generate-datacubemanager-image>
     <common.build.phase.generate-upgrade-image>none</common.build.phase.generate-upgrade-image>
+    <common.build.phase.generate-extractmanager-image>none</common.build.phase.generate-extractmanager-image>
     <common.build.skip.docker-guimanager-image>true</common.build.skip.docker-guimanager-image>
     <common.build.skip.docker-thirdpartymanager-image>true</common.build.skip.docker-thirdpartymanager-image>
     <common.build.skip.docker-dnboproxy-image>true</common.build.skip.docker-dnboproxy-image>
@@ -83,6 +86,7 @@
     <common.build.skip.docker-reportscheduler-image>true</common.build.skip.docker-reportscheduler-image>
     <common.build.skip.docker-datacubemanager-image>true</common.build.skip.docker-datacubemanager-image>
     <common.build.skip.docker-upgrade-image>true</common.build.skip.docker-upgrade-image>
+    <common.build.skip.docker-extractmanager-image>true</common.build.skip.docker-extractmanager-image>
     
     <!-- topics -->
     <topic.empty>empty</topic.empty>
@@ -179,6 +183,7 @@
 
     <topic.communicationchannel>communicationchannel</topic.communicationchannel>
     <topic.blackoutperiod>blackoutperiod</topic.blackoutperiod>
+    <topic.timewindowperiod>timewindowperiod</topic.timewindowperiod>
     <topic.loyaltyprogram>loyaltyprogram</topic.loyaltyprogram>
     <topic.exclusioninclusiontarget>exclusioninclusiontarget</topic.exclusioninclusiontarget>
     <topic.segmentcontactpolicy>segmentcontactpolicy</topic.segmentcontactpolicy>

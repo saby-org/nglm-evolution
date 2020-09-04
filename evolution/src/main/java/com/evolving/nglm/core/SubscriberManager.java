@@ -491,7 +491,7 @@ public class SubscriberManager
 
         if (Objects.equals(alternateID.getID(), Deployment.getExternalSubscriberID()))
           {
-            updateAlternateIDStream.to(Deployment.getUpdateExternalSubscriberIDTopic(), Produced.with(stringKeySerde, updateAlternateIDSerde));
+            updateAlternateIDStream.to(updateExternalSubscriberIDTopic, Produced.with(stringKeySerde, updateAlternateIDSerde));
           }
 
         //
@@ -716,8 +716,8 @@ public class SubscriberManager
     //
     //  add/modify assignSubscriberIDs for autoProvision cases
     //
-    
-    if (autoProvisioned)
+
+    if (autoProvisioned || !(autoProvisionEvent instanceof UpdateAlternateID)/*Xavier: this is an hack to force subscriber creation even if already there (mainly to keep redis in sync...)*/)
       {
         if (autoProvisionEvent instanceof AssignSubscriberIDs)
           {
@@ -1228,15 +1228,12 @@ public class SubscriberManager
     switch (updateAlternateID.getAssignmentType())
       {
         case AssignSubscriberID:
-          if (newlyProvisioned || ! Objects.equals(currentProvisionedAlternateID.getAllSubscriberIDs(), provisionedAlternateID.getAllSubscriberIDs()))
-            {
-              provisionedAlternateID.setProvisionedSubscriberID(new RecordSubscriberID(updateAlternateID.getSubscriberID(), updateAlternateID.getIDField(), updateAlternateID.getAlternateID(), updateAlternateID.getEventDate(), com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Standard));
-              if (! newlyProvisioned && ! Deployment.getAlternateIDs().get(updateAlternateID.getIDField()).getSharedID())
-                {
-                  provisionedAlternateID.setDeprovisionedSubscriberID(new RecordSubscriberID(currentProvisionedAlternateID.getAllSubscriberIDs().iterator().next(), updateAlternateID.getIDField(), null, updateAlternateID.getEventDate(), com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Standard));
-                }
-              provisionedAlternateIDUpdated = true;
-            }
+            provisionedAlternateID.setProvisionedSubscriberID(new RecordSubscriberID(updateAlternateID.getSubscriberID(), updateAlternateID.getIDField(), updateAlternateID.getAlternateID(), updateAlternateID.getEventDate(), com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Standard));
+            if (! newlyProvisioned && ! Deployment.getAlternateIDs().get(updateAlternateID.getIDField()).getSharedID() && !currentProvisionedAlternateID.getAlternateID().equals(updateAlternateID.getAlternateID()))
+              {
+                provisionedAlternateID.setDeprovisionedSubscriberID(new RecordSubscriberID(currentProvisionedAlternateID.getAllSubscriberIDs().iterator().next(), updateAlternateID.getIDField(), null, updateAlternateID.getEventDate(), com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Standard));
+              }
+            provisionedAlternateIDUpdated = true;
           break;
 
         case UnassignSubscriberID:
@@ -1254,11 +1251,10 @@ public class SubscriberManager
     *
     *****************************************/
 
-    if (newlyProvisioned || ! Objects.equals(currentProvisionedAlternateID.getAllSubscriberIDs(), provisionedAlternateID.getAllSubscriberIDs()) || updateAlternateID.getSubscriberAction() == com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction.Delete)
-      {
-        provisionedAlternateID.setProvisionedAlternateID(new RecordAlternateID(updateAlternateID.getIDField(), updateAlternateID.getAlternateID(), provisionedAlternateID.getAllSubscriberIDs(), updateAlternateID.getEventDate(), updateAlternateID.getSubscriberAction()));
-        provisionedAlternateIDUpdated = true;
-      }
+    // always produce recordalternateid in case redis data was not OK
+    provisionedAlternateID.setProvisionedAlternateID(new RecordAlternateID(updateAlternateID.getIDField(), updateAlternateID.getAlternateID(), provisionedAlternateID.getAllSubscriberIDs(), updateAlternateID.getEventDate(), updateAlternateID.getSubscriberAction()));
+    provisionedAlternateIDUpdated = true;
+
     
     /*****************************************
     *

@@ -146,7 +146,7 @@ public class DNBOProxy
   private SubscriberIDService subscriberIDService;
   private KafkaProducer<byte[], byte[]> kafkaProducer;
   private KafkaConsumer<byte[], byte[]> kafkaConsumer;
-  private Map<AssignSubscriberIDs,LinkedBlockingQueue<String>> outstandingRequests = Collections.synchronizedMap(new HashMap<>());
+  private Map<AssignSubscriberIDs,LinkedBlockingQueue<String>> outstandingRequests = new HashMap<>();
   private Thread subscriberManagerTopicReaderThread = null;
   private volatile boolean stopRequested = false;
 
@@ -265,7 +265,7 @@ public class DNBOProxy
     // response processor
     //
 
-    Runnable subscriberManagerTopicReader = new Runnable() { @Override public void run() { readSubscriberManagerTopic(kafkaConsumer, outstandingRequests); } };
+    Runnable subscriberManagerTopicReader = new Runnable() { @Override public void run() { readSubscriberManagerTopic(kafkaConsumer); } };
     subscriberManagerTopicReaderThread = new Thread(subscriberManagerTopicReader, "SubscriberManagerTopicReader");
     subscriberManagerTopicReaderThread.start();
     
@@ -1062,16 +1062,18 @@ public class DNBOProxy
     *****************************************/
 
     String result = null;
+    LinkedBlockingQueue<String> responseQueue = new LinkedBlockingQueue<String>();
+    AssignSubscriberIDs assignSubscriberIDs = new AssignSubscriberIDs(effectiveSubscriberID, SystemTime.getCurrentTime(), assignAlternateIDs);
+    String topic = autoProvision ? Deployment.getAssignExternalSubscriberIDsTopic() : Deployment.getAssignSubscriberIDsTopic();
     try
       {
         //
         //  submit to Kafka
         //
-        
-        LinkedBlockingQueue<String> responseQueue = new LinkedBlockingQueue<String>();
-        AssignSubscriberIDs assignSubscriberIDs = new AssignSubscriberIDs(effectiveSubscriberID, SystemTime.getCurrentTime(), assignAlternateIDs);
-        String topic = autoProvision ? Deployment.getAssignExternalSubscriberIDsTopic() : Deployment.getAssignSubscriberIDsTopic();
-        outstandingRequests.put(assignSubscriberIDs, responseQueue);
+
+        synchronized (outstandingRequests){
+          outstandingRequests.put(assignSubscriberIDs, responseQueue);
+        }
         kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, StringKey.serde().serializer().serialize(topic, new StringKey(effectiveSubscriberID)), AssignSubscriberIDs.serde().serializer().serialize(topic, assignSubscriberIDs)));
 
         //
@@ -1089,7 +1091,9 @@ public class DNBOProxy
       }
     finally
       {
-        outstandingRequests.remove(effectiveSubscriberID);
+        synchronized (outstandingRequests){
+          outstandingRequests.remove(assignSubscriberIDs);
+        }
       }
     
     /*****************************************
@@ -1129,7 +1133,7 @@ public class DNBOProxy
   *
   *****************************************/
 
-  private void readSubscriberManagerTopic(KafkaConsumer<byte[], byte[]> kafkaConsumer, Map<AssignSubscriberIDs,LinkedBlockingQueue<String>> outstandingRequests)
+  private void readSubscriberManagerTopic(KafkaConsumer<byte[], byte[]> kafkaConsumer)
   {
     String externalSubscriberIDName = Deployment.getExternalSubscriberID();
     Map<String,LinkedBlockingQueue<String>> outstandingSubscriberIDs = new HashMap<String,LinkedBlockingQueue<String>>();

@@ -321,6 +321,10 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "base" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSegmentContactPolicy; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "subscriberID":"001", "includeExtendedSubscribeProfile" : true, "includeHistory" : true }' http://<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINT_>/nglm-evolutionengine/getSubscriberProfile; echo
+--
+-- this one is for support only ! to get statestores value
+--
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "subscriberID":"001", "includeExtendedSubscribeProfile" : true, "includeHistory" : true, "forSupport" : true }' http://<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINT_>/nglm-evolutionengine/getSubscriberProfile; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.status", "criterionOperator" : "is in set", "argument" : { "valueType" : "multiple", "value" : [ "active", "inactive" ], "expression" : "[ '\''active'\'', '\''inactive'\'' ]" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
@@ -489,6 +493,15 @@ curl -X POST -H "Content-Type: application/json" -d '{"id":"001","apiVersion":1}
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getReportGlobalConfiguration
 
 --
+--  extracts
+--
+docker service logs -f --tail 100 ev-extractmanager_extractmanager-001
+
+curl -X POST -H "Content-Type: application/json" -d `{"apiVersion":1,"extractName":"demo_extract","returnFields":null,"returnNoOfRecords":2,"evaluationCriterionList":[{"argument":{"expression":"'1'"},"criterionField":"internal.targets","criterionOperator":"contains"}],"userID":"demo-user"}` http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/launchExtract
+curl -X POST -H "Content-Type: application/json" -d `{"apiVersion":1,"extractName":"demo_extract","returnFields":null,"returnNoOfRecords":2,"evaluationCriterionList":[{"argument":{"expression":"'1'"},"criterionField":"internal.targets","criterionOperator":"contains"}],"userID":"demo-user"}` http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/launchAndDownloadExtract
+curl -X POST -H "Content-Type: application/json" -d `{"apiVersion":1,"extractName":"demo_extract","userID":"demo-user"}` http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/downloadExtractFile
+
+--
 --  examples of managing dimensions and segments  - new, add, remove, delete
 --  * creating dimensions
 --  * associating subscribers with dimensions and segments
@@ -500,6 +513,9 @@ $DEPLOY_ROOT/bin/update-subscribergroup.sh new segmentationDimension churnRisk s
 $DEPLOY_ROOT/bin/update-subscribergroup.sh add segmentationDimension churnRisk subscribergroup-churnrisk.002
 $DEPLOY_ROOT/bin/update-subscribergroup.sh remove segmentationDimension churnRisk subscribergroup-churnrisk.002
 $DEPLOY_ROOT/bin/update-subscribergroup.sh delete segmentationDimension churnRisk
+
+-- Dynamically change log levels for a container
+$DEPLOY_ROOT/bin/configlog.sh
 
 --
 --  storeconfiguration

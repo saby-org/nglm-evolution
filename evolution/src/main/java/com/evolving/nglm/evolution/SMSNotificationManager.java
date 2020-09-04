@@ -623,7 +623,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
             CommunicationChannel channel = Deployment.getCommunicationChannels().get(channelID);
             if(channel != null) 
               {
-                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(SMSNotificationManager.this.getBlackoutService(), now);
+                effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now);
               }
             
             if(effectiveDeliveryTime.equals(now) || effectiveDeliveryTime.before(now))

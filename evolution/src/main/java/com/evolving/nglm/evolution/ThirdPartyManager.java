@@ -36,8 +36,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.evolving.nglm.core.*;
-import com.evolving.nglm.evolution.statistics.EvolutionDurationStatistics;
-import com.evolving.nglm.evolution.statistics.Stats;
+import com.evolving.nglm.evolution.statistics.CounterStat;
+import com.evolving.nglm.evolution.statistics.DurationStat;
+import com.evolving.nglm.evolution.statistics.StatBuilder;
+import com.evolving.nglm.evolution.statistics.StatsBuilders;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -237,9 +239,7 @@ public class ThirdPartyManager
   // stats
   //
 
-  private EvolutionDurationStatistics statsOK = null;
-  private EvolutionDurationStatistics statsKO = null;
-  private EvolutionDurationStatistics statsUnknown = null;
+  private StatBuilder<DurationStat> statsDuration = null;
 
   //
   //  authCache
@@ -325,9 +325,7 @@ public class ThirdPartyManager
     //  statistics
     //
 
-    statsOK = Stats.getEvolutionDurationStatistics("thirdPartySuccess","thirdpartymanager-" + apiProcessKey);
-    statsKO = Stats.getEvolutionDurationStatistics("thirdPartyFailed","thirdpartymanager-" + apiProcessKey);
-    statsUnknown = Stats.getEvolutionDurationStatistics("thirdPartyUnknown","thirdpartymanager-" + apiProcessKey);
+    statsDuration = StatsBuilders.getEvolutionDurationStatisticsBuilder("thirdpartyaccess","thirdpartymanager-" + apiProcessKey);
 
     //
     // authCache
@@ -705,7 +703,7 @@ public class ThirdPartyManager
   private void handleAPI(API api, HttpExchange exchange) throws IOException
   {
     // save start time for call latency stats
-    long startTime = statsOK.startTime();
+    long startTime = DurationStat.startTime();
 
     try
     {
@@ -911,7 +909,7 @@ public class ThirdPartyManager
 
       if (jsonResponse == null)
         {
-          statsUnknown.add(api.name(),startTime);
+          addUnknownStats(api.name(),startTime);
           throw new ServerException("no handler for " + api);
         }
 
@@ -932,7 +930,7 @@ public class ThirdPartyManager
       //
 
       if (log.isDebugEnabled()) log.debug("API (raw response): {}", jsonResponse.toString());
-      statsOK.add(api.name(),startTime);
+      addOKStats(api.name(),startTime);
 
       //
       //  send
@@ -960,7 +958,7 @@ public class ThirdPartyManager
       //  statistics
       //
 
-      statsKO.add(api.name(),startTime);
+      addKOStats(api.name(),startTime);
 
       //
       //  send error response
@@ -1010,7 +1008,7 @@ public class ThirdPartyManager
         //  statistics
         //
 
-        statsKO.add(api.name(),startTime);
+        addKOStats(api.name(),startTime);
 
         //
         //  send error response
@@ -1053,7 +1051,7 @@ public class ThirdPartyManager
         //  statistics
         //
 
-        statsKO.add(api.name(),startTime);
+        addKOStats(api.name(),startTime);
 
         //
         //  send error response
@@ -4969,7 +4967,11 @@ public class ThirdPartyManager
     VoucherProfileStored voucherStored = null;
     for(VoucherProfileStored profileVoucher:subscriberProfile.getVouchers()){
       Voucher voucher = voucherService.getActiveVoucher(profileVoucher.getVoucherID(),now);
-      if(voucher==null) continue;//a voucher in subscriber profile with no more voucher conf associated, very likely to happen
+      //a voucher in subscriber profile with no more voucher conf associated, very likely to happen
+      if(voucher==null){
+        if(errorException==null) errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
+        continue;
+      }
       if(voucherCode.equals(profileVoucher.getVoucherCode()) && supplier.getSupplierID().equals(voucher.getSupplierID())){
 
         if(profileVoucher.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
@@ -4986,7 +4988,7 @@ public class ThirdPartyManager
 
     if(voucherStored==null){
       if(errorException!=null) throw errorException;
-      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
     }
 
     return new Pair<>(subscriberID,voucherStored);
@@ -6160,7 +6162,7 @@ public class ThirdPartyManager
     if (validateNotEmpty && (result == null || result.trim().isEmpty()))
       {
         log.error("readString validation error");
-        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
       }
     return result;
   }
@@ -6224,5 +6226,27 @@ public class ThirdPartyManager
         valueSerializer.serialize(topic, tokenChange)
         ));
   }
+
+  // helpers for stats
+  private void addOKStats(String apiName, long startTime){
+    addStats(apiName,startTime,StatsBuilders.STATUS.ok);
+  }
+  private void addKOStats(String apiName, long startTime){
+    addStats(apiName,startTime,StatsBuilders.STATUS.ko);
+  }
+  private void addUnknownStats(String apiName, long startTime){
+    addStats(apiName,startTime,StatsBuilders.STATUS.unknown);
+  }
+  private void addStats(String apiName, long startTime, StatsBuilders.STATUS status){
+    if(statsDuration==null){
+      log.warn("trying to add stats while not initialized "+apiName);
+      return;
+    }
+    // exact same for duration
+    statsDuration.withLabel(StatsBuilders.LABEL.name.name(),apiName)
+         .withLabel(StatsBuilders.LABEL.status.name(),status.name())
+         .getStats().add(startTime);
+  }
+
 
 }

@@ -110,8 +110,9 @@ public enum RESTAPIGenericReturnCodes
   public int getGenericResponseCode() { return genericResponseCode; }
   public String getGenericResponseMessage() { return genericResponseMessage; }
   public String getGenericDescription() { return genericDescription; }
-  public static RESTAPIGenericReturnCodes fromGenericResponseCode(int genericResponseCode) 
-  { 
+  public static RESTAPIGenericReturnCodes fromGenericResponseCode(Integer genericResponseCode)
+  {
+    if(genericResponseCode==null) return UNKNOWN;
     for (RESTAPIGenericReturnCodes enumeratedValue : RESTAPIGenericReturnCodes.values()) 
       { 
         if (enumeratedValue.getGenericResponseCode() == genericResponseCode) return enumeratedValue; 

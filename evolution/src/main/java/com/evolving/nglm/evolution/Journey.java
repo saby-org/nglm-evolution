@@ -1632,7 +1632,6 @@ public class Journey extends GUIManagedObject implements StockableItem
   {
     
     GUIManagedObject gmo = journeyService.getStoredJourney(journeyID);
-    
     Journey existingJourney = null;
     if (gmo instanceof Journey)
       {
@@ -1880,6 +1879,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                 boundParameters.put(parameterName, JSONUtilities.decodeBoolean(parameterJSON, "value", false));
                 break;
 
+              case AniversaryCriterion:
               case DateCriterion:
                 boundParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                 break;
@@ -1996,6 +1996,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                   }
                 break;
 
+              case AniversaryCriterion:
               case DateCriterion:
                 switch (parameterExpressionValue.getType())
                   {
@@ -2409,6 +2410,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                     case StringCriterion:
                     case BooleanCriterion:
                     case DateCriterion:
+                    case AniversaryCriterion:
                     case StringSetCriterion:
                       if (contextVariableFields.get(criterionField.getID()).getFieldDataType() != criterionField.getFieldDataType())
                         {
@@ -2629,6 +2631,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                 break;
                 
               case DateCriterion:
+              case AniversaryCriterion:
                 nodeParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                 break;
                 
@@ -2897,6 +2900,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                 break;
 
               case DateCriterion:
+              case AniversaryCriterion:
                 switch (parameterExpressionValue.getType())
                   {
                     case DateExpression:
@@ -3117,6 +3121,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                 outputConnectorParameters.put(parameterName, JSONUtilities.decodeBoolean(parameterJSON, "value", false));
                 break;
 
+              case AniversaryCriterion:
               case DateCriterion:
                 outputConnectorParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                 break;
@@ -3300,6 +3305,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                   }
                 break;
 
+              case AniversaryCriterion:
               case DateCriterion:
                 switch (parameterExpressionValue.getType())
                   {

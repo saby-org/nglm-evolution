@@ -1,5 +1,5 @@
 package com.evolving.nglm.evolution.statistics;
 
-public interface EvolutionDurationStatisticsMBean {
+public interface CounterStatMBean {
 	public long getTotal();
 }

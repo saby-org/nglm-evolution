@@ -77,6 +77,7 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
   private HashMap<String, NotificationStatistics> statsPerChannels = new HashMap<>();
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private CommunicationChannelBlackoutService blackoutService;
+  private CommunicationChannelTimeWindowService timeWindowService;
 
 
   /*****************************************
@@ -94,6 +95,11 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
   {
     return blackoutService;
   }
+  
+  public CommunicationChannelTimeWindowService getTimeWindowService() 
+  { 
+    return timeWindowService; 
+  }
 
   public HashMap<String, NotificationStatistics> getStatsPerChannels()
   {
@@ -108,15 +114,22 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
       // service
       //
 
-      subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "smsnotificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
+      subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "common-notificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
       subscriberMessageTemplateService.start();
 
       //
       // blackoutService
       //
 
-      blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "smsnotificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
+      blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "common-notificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
       blackoutService.start();
+      
+      //
+      //  timewindowService
+      //
+          
+      timeWindowService = new CommunicationChannelTimeWindowService(Deployment.getBrokerServers(), "common-notificationmanager-communicationchanneltimewindowservice-" + deliveryManagerKey, Deployment.getCommunicationChannelTimeWindowTopic(), false);
+      timeWindowService.start();
 //      
 //      //
 //      // statistics

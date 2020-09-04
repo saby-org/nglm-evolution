@@ -88,7 +88,14 @@ scrape_configs:
     # main config
     static_configs:
       - targets: [<_PURCHASEFULFILLMENTMANAGER_PROMETHEUS_>]
-      
+
+  # notificationmanager job
+  - job_name: 'notificationmanager'
+
+    # main config
+    static_configs:
+      - targets: [<_NOTIFICATIONMANAGER_PROMETHEUS_>]
+
   # notificationmanager job
   - job_name: 'notificationmanagersms'
 
@@ -158,3 +165,10 @@ scrape_configs:
     # main config
     static_configs:
       - targets: [<_KAFKA_LAG_EXPORTER_URL_>]
+
+  # extractmanager job
+  - job_name: 'extractmanager'
+
+    # main config
+    static_configs:
+      - targets: [<_EXTRACTMANAGER_PROMETHEUS_>]

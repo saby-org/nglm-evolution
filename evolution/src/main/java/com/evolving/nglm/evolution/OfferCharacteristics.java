@@ -682,6 +682,7 @@ public class OfferCharacteristics
             value = integerSetValue;
             break;
 
+          case AniversaryCriterion:
           case TimeCriterion:
           default:
             throw new GUIManagerException("unsupported catalogCharacteristic", catalogCharacteristicID);

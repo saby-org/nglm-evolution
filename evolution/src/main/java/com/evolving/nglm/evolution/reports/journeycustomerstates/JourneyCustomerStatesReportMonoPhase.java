@@ -56,7 +56,6 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
         String line = ReportUtils.formatResult(lineMap);
         log.trace("Writing to csv file : " + line);
         writer.write(line.getBytes());
-        writer.write("\n".getBytes());
       } 
     catch (IOException e)
       {
@@ -85,6 +84,10 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
                   {
                     Object alternateId = journeyStats.get(alternateID.getID());
                     journeyInfo.put(alternateID.getName(), alternateId);
+                  }
+                else
+                  {
+                    journeyInfo.put(alternateID.getName(), "");
                   }
               }
             journeyInfo.put("journeyID", journey.getJourneyID());
@@ -267,7 +270,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
     log.info("received " + args.length + " args");
     for (String arg : args)
       {
-        log.info("JourneyCustomerStatesReportonoPhase: arg " + arg);
+        log.info("JourneyCustomerStatesReportMonoPhase: arg " + arg);
       }
 
     if (args.length < 4)

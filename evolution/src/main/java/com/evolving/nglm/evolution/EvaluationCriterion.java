@@ -6,47 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.Expression.ExpressionContext;
-import com.evolving.nglm.evolution.Expression.ExpressionDataType;
-import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
-import com.evolving.nglm.evolution.Expression.ExpressionParseException;
-import com.evolving.nglm.evolution.Expression.ExpressionReader;
-import com.evolving.nglm.evolution.Expression.ExpressionTypeCheckException;
-
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SystemTime;
-
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.lucene.search.join.ScoreMode;
-import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptType;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.FieldSortBuilder;
-import org.elasticsearch.search.sort.SortOrder;
-import org.elasticsearch.client.core.CountRequest;
-import org.elasticsearch.client.core.CountResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.evolving.nglm.core.JSONUtilities;
-import org.json.simple.JSONObject;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -58,8 +17,42 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaAndValue;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.lucene.search.join.ScoreMode;
+import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.core.CountRequest;
+import org.elasticsearch.client.core.CountResponse;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptType;
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Expression.ExpressionContext;
+import com.evolving.nglm.evolution.Expression.ExpressionDataType;
+import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
+import com.evolving.nglm.evolution.Expression.ExpressionParseException;
+import com.evolving.nglm.evolution.Expression.ExpressionReader;
+import com.evolving.nglm.evolution.Expression.ExpressionTypeCheckException;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class EvaluationCriterion
 {
@@ -97,6 +90,7 @@ public class EvaluationCriterion
     BooleanCriterion("boolean"),
     DateCriterion("date"),
     TimeCriterion("time"),
+    AniversaryCriterion("aniversary"),
     StringSetCriterion("stringSet"),
     
     //
@@ -210,6 +204,7 @@ public class EvaluationCriterion
     IsNullOperator("is null"),
     IsNotNullOperator("is not null"),
     ContainsKeywordOperator("contains keyword"),
+    DoesNotContainsKeywordOperator("doesn't contains keyword"),
     IsInSetOperator("is in set"),
     NotInSetOperator("not in set"),
     ContainsOperator("contains"),
@@ -421,6 +416,7 @@ public class EvaluationCriterion
                   }
                 break;
                 
+              case AniversaryCriterion:  
               case DateCriterion:
                 switch (argumentType)
                   {
@@ -471,6 +467,7 @@ public class EvaluationCriterion
                   }
                 break;
                 
+              case AniversaryCriterion:
               case DateCriterion:
                 switch (argumentType)
                   {
@@ -515,6 +512,24 @@ public class EvaluationCriterion
           break;
           
         case ContainsKeywordOperator:
+          switch (criterionField.getFieldDataType())
+            {
+              case StringCriterion:
+                switch (argumentType)
+                  {
+                    case StringExpression:
+                      validCombination = true;
+                      break;
+                  }
+                break;
+
+              default:
+                validCombination = false;
+                break;
+            }
+          break;
+          
+        case DoesNotContainsKeywordOperator:
           switch (criterionField.getFieldDataType())
             {
               case StringCriterion:
@@ -941,6 +956,15 @@ public class EvaluationCriterion
               }
             break;
               
+          case AniversaryCriterion:
+            {
+              evaluatedArgument = RLMDateUtils.truncate((Date) evaluatedArgument, Calendar.DATE, Deployment.getBaseTimeZone());
+              criterionFieldValue = RLMDateUtils.truncate((Date) criterionFieldValue, Calendar.DATE, Deployment.getBaseTimeZone());
+              int yearOfEvaluatedArgument = RLMDateUtils.getField((Date) evaluatedArgument, Calendar.YEAR, Deployment.getBaseTimeZone());
+              criterionFieldValue = RLMDateUtils.setField((Date) criterionFieldValue, Calendar.YEAR, yearOfEvaluatedArgument, Deployment.getBaseTimeZone());
+              break;
+            }
+              
           case TimeCriterion:
             {
               Date now = SystemTime.getCurrentTime();
@@ -989,6 +1013,7 @@ public class EvaluationCriterion
                 break;
                 
               case TimeCriterion:
+              case AniversaryCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) > 0, criterionFieldValue, evaluatedArgument);
                 if (referencesEvaluationDate) evaluationRequest.getNextEvaluationDates().add((Date) evaluatedArgument);
@@ -1007,6 +1032,7 @@ public class EvaluationCriterion
                 break;
                 
               case TimeCriterion:
+              case AniversaryCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) >= 0, criterionFieldValue, evaluatedArgument);
                 if (referencesEvaluationDate) evaluationRequest.getNextEvaluationDates().add((Date) evaluatedArgument);
@@ -1025,6 +1051,7 @@ public class EvaluationCriterion
                 break;
               
               case TimeCriterion:
+              case AniversaryCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) < 0, criterionFieldValue, evaluatedArgument);
                 break;
@@ -1042,6 +1069,7 @@ public class EvaluationCriterion
                 break;
                 
               case TimeCriterion:
+              case AniversaryCriterion:
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) <= 0, criterionFieldValue, evaluatedArgument);
                 break;
@@ -1070,6 +1098,16 @@ public class EvaluationCriterion
 
         case ContainsKeywordOperator:
           result = traceCondition(evaluationRequest, evaluateContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
+          break;
+          
+        /*****************************************
+        *
+        *  containsKeyword operator
+        *
+        *****************************************/
+          
+        case DoesNotContainsKeywordOperator:
+          result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
           break;
 
         /*****************************************
@@ -1320,6 +1358,12 @@ public class EvaluationCriterion
 
     return m.find();
   }
+  
+  //
+  //  evaluateDoesNotContainsKeyword
+  //
+
+  private boolean evaluateDoesNotContainsKeyword(String data, String words) { return !evaluateContainsKeyword(data, words); }
 
   /*****************************************
   *
@@ -1487,6 +1531,9 @@ public class EvaluationCriterion
           script.append("def left = new ArrayList(); left.addAll(doc." + esField + "); ");
           break;
           
+        case AniversaryCriterion:
+          throw new UnsupportedOperationException("AniversaryCriterion is not supported");
+          
         case TimeCriterion:
           throw new UnsupportedOperationException("timeCriterion is not supported");
           
@@ -1554,6 +1601,8 @@ public class EvaluationCriterion
               case DateCriterion:
                 script.append("return (left != null) ? left.isAfter(right) : false; ");
                 break;
+              case AniversaryCriterion:
+                throw new UnsupportedOperationException("AniversaryCriterion is not supported");
               case TimeCriterion:
                 throw new UnsupportedOperationException("timeCriterion is not supported");
                 
@@ -1569,6 +1618,9 @@ public class EvaluationCriterion
               case DateCriterion:
                 script.append("return (left != null) ? !left.isBefore(right) : true; ");
                 break;
+                
+              case AniversaryCriterion:
+                throw new UnsupportedOperationException("AniversaryCriterion is not supported");
 
               case TimeCriterion:
                 throw new UnsupportedOperationException("timeCriterion is not supported");
@@ -1585,6 +1637,9 @@ public class EvaluationCriterion
               case DateCriterion:
                 script.append("return (left != null) ? left.isBefore(right) : false; ");
                 break;
+                
+              case AniversaryCriterion:
+                throw new UnsupportedOperationException("AniversaryCriterion is not supported");
 
               case TimeCriterion:
                 throw new UnsupportedOperationException("timeCriterion is not supported");
@@ -1601,6 +1656,9 @@ public class EvaluationCriterion
               case DateCriterion:
                 script.append("return (left != null) ? !left.isAfter(right) : true; ");
                 break;
+                
+              case AniversaryCriterion:
+                throw new UnsupportedOperationException("AniversaryCriterion is not supported");
                 
               case TimeCriterion:
                 throw new UnsupportedOperationException("timeCriterion is not supported");
@@ -1632,6 +1690,7 @@ public class EvaluationCriterion
         *****************************************/
 
         case ContainsKeywordOperator:
+        case DoesNotContainsKeywordOperator:
 
           //
           //  argument must be constant to evaluate esQuery
@@ -1659,7 +1718,7 @@ public class EvaluationCriterion
           //
 
           break;
-
+          
         /*****************************************
         *
         *  set operators
@@ -1768,6 +1827,11 @@ public class EvaluationCriterion
         case IsNotNullOperator:
           query = baseQuery;
           break;
+          
+        case DoesNotContainsKeywordOperator:
+            query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).mustNot(baseQuery);
+          break;
+          
 
         default:
           if (criterionDefault)
@@ -1834,12 +1898,77 @@ public class EvaluationCriterion
       default:
         throw new CriterionException("unknown criteria : " + esField);
     }
-    QueryBuilder queryID = buildCompareQueryWithValue("subscriberJourneys.journeyID", ExpressionDataType.StringExpression, value);
-    QueryBuilder queryStatus = buildCompareQuery("subscriberJourneys.status", ExpressionDataType.StringExpression);
-    QueryBuilder query = QueryBuilders.nestedQuery("subscriberJourneys",
-                                          QueryBuilders.boolQuery()
-                                                           .filter(queryID)
-                                                           .filter(queryStatus), ScoreMode.Total);
+    
+    QueryBuilder queryID = QueryBuilders.termQuery("subscriberJourneys.journeyID", value);
+    QueryBuilder queryStatus = null;
+    QueryBuilder query = null;
+    QueryBuilder insideQuery = null;
+    boolean isNot = false;
+    
+    switch (criterionOperator)
+    {
+      case NotInSetOperator:
+        isNot = true;
+        // fallthrough
+      case IsInSetOperator:
+        /*
+        {
+          "query": {
+            "nested" :
+            {
+              "path" : "subscriberJourneys",
+              "query" :{
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "subscriberJourneys.journeyID": "1104"
+                      }
+                    }
+                  ],
+                  "should": [
+                    {
+                      "term": {
+                        "subscriberJourneys.status": "other"
+                      }
+                    },
+                    {
+                      "term": {
+                        "subscriberJourneys.status": "entered"
+                      }
+                    }
+                  ],
+                  "minimum_should_match": 1
+                }
+              }
+            }
+          }
+        }
+        */
+        queryStatus = buildCompareQuery("subscriberJourneys.status", ExpressionDataType.StringSetExpression);
+        if (!(queryStatus instanceof BoolQueryBuilder))
+          {
+            throw new CriterionException("BoolQueryBuilder expected, got " + queryStatus.getClass().getName());
+          }
+        BoolQueryBuilder boolQuery = (BoolQueryBuilder) queryStatus;
+        BoolQueryBuilder insideQueryBool = QueryBuilders.boolQuery().must(queryID).minimumShouldMatch(1);
+        for (QueryBuilder should : boolQuery.should())
+          {
+            insideQueryBool = insideQueryBool.should(should);
+          }
+        insideQuery = insideQueryBool;
+        break;
+        
+      default:
+        queryStatus = buildCompareQuery("subscriberJourneys.status", ExpressionDataType.StringExpression);
+        insideQuery = QueryBuilders.boolQuery().must(queryID).must(queryStatus);
+        break;
+      }
+    query = QueryBuilders.nestedQuery("subscriberJourneys", insideQuery, ScoreMode.Total);
+    if (isNot)
+      {
+        query = QueryBuilders.boolQuery().mustNot(query);
+      }
     return query;
   }
 
@@ -2050,6 +2179,44 @@ public class EvaluationCriterion
         queryCompare = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery(field));
         break;
 
+      case IsInSetOperator:
+      case NotInSetOperator:
+        /*
+{
+  "query": {
+          "should": [
+            {
+              "term": {
+                "subscriberJourneys.status": "converted"
+              }
+            },
+            {
+              "term": {
+                "subscriberJourneys.status": "entered"
+              }
+            }
+          ]
+          }
+}
+        */
+        
+        Pattern fieldNamePattern = Pattern.compile("^([^.]+)\\.([^.]+)$");
+        Matcher fieldNameMatcher = fieldNamePattern.matcher(field);
+        if (! fieldNameMatcher.find()) throw new CriterionException("malformated field " + field);
+        String toplevel = fieldNameMatcher.group(1);
+        String subfield = fieldNameMatcher.group(2);
+        if (!(value instanceof Set<?>))
+          {
+            throw new CriterionException("Set expected, got " + value.getClass().getName());
+          }
+        BoolQueryBuilder queryCompareBool = QueryBuilders.boolQuery();
+        for (String possibleValue : (Set<String>) value)
+          {
+            queryCompareBool = queryCompareBool.should(QueryBuilders.termQuery(field, possibleValue));
+          }
+        queryCompare = queryCompareBool;
+        break;
+
       default:
         throw new CriterionException("not yet implemented : " + criterionOperator);
     }
@@ -2122,6 +2289,10 @@ public class EvaluationCriterion
           
         case BooleanExpression:
           value = ((Boolean) (argument.evaluate(null, null))).toString();
+          break;
+          
+        case StringSetExpression:
+          value = (Set<String>) (argument.evaluate(null, null));
           break;
           
         case TimeExpression:

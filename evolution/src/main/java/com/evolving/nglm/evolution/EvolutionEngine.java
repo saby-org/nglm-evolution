@@ -6,12 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -26,6 +21,11 @@ import java.util.stream.Collectors;
 
 import com.evolving.nglm.evolution.propensity.PropensityService;
 import com.evolving.nglm.evolution.ConfigUtils;
+import com.evolving.nglm.evolution.statistics.CounterStat;
+import com.evolving.nglm.evolution.statistics.DurationStat;
+import com.evolving.nglm.evolution.statistics.StatBuilder;
+import com.evolving.nglm.evolution.statistics.StatsBuilders;
+import io.confluent.kafka.formatter.AvroMessageFormatter;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -187,7 +187,15 @@ public class EvolutionEngine
   private static SubscriberMessageTemplateService subscriberMessageTemplateService;
   private static DeliverableService deliverableService;
   private static SegmentContactPolicyService segmentContactPolicyService;
+  // can not remove yet all of it, keep it for state store log stats, but not jmx exported anymore
   private static EvolutionEngineStatistics evolutionEngineStatistics;
+  // evolution event count
+  private static StatBuilder<CounterStat> statsEventCounter;
+  // evolution REST API stats
+  private static StatBuilder<DurationStat> statsApiDuration;
+  // evolution state store operation api
+  private static StatBuilder<DurationStat> statsStateStoresDuration;
+
   private static KStreamsUniqueKeyServer uniqueKeyServer = new KStreamsUniqueKeyServer();
   private static Method evolutionEngineExtensionUpdateSubscriberMethod;
   private static Method evolutionEngineExtensionUpdateExtendedSubscriberMethod;
@@ -209,6 +217,9 @@ public class EvolutionEngine
   
   private static final int MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES = 5;
   private static Date kafkaSizeErrorLogDate = SystemTime.getCurrentTime();
+
+  private String evolutionEngineKey;
+  public String getEvolutionEngineKey(){return evolutionEngineKey;}
   
 
   /****************************************
@@ -246,7 +257,7 @@ public class EvolutionEngine
     String applicationID = "streams-evolutionengine";
     String stateDirectory = args[0];
     String bootstrapServers = args[1];
-    String evolutionEngineKey = args[2];
+    evolutionEngineKey = args[2];
     String subscriberProfileHost = args[3];
     Integer subscriberProfilePort = Integer.parseInt(args[4]);
     Integer internalPort = Integer.parseInt(args[5]);
@@ -533,6 +544,9 @@ public class EvolutionEngine
     //
 
     evolutionEngineStatistics = new EvolutionEngineStatistics(applicationID);
+    statsEventCounter = StatsBuilders.getEvolutionCounterStatisticsBuilder("evolutionengine_event","evolutionengine-"+evolutionEngineKey);
+    statsApiDuration = StatsBuilders.getEvolutionDurationStatisticsBuilder("evolutionengine_api","evolutionengine-"+evolutionEngineKey);
+    statsStateStoresDuration = StatsBuilders.getEvolutionDurationStatisticsBuilder("evolutionengine_statestore","evolutionengine-"+evolutionEngineKey);
 
     //
     //  evolutionEngineExtensionUpdateSubscriberMethod
@@ -936,7 +950,7 @@ public class EvolutionEngine
         (key,value) -> (value instanceof SubscriberTrace),
 
         (key,value) -> (value instanceof ExternalAPIOutput),
-	      (key,value) -> (value instanceof ProfileChangeEvent),
+        (key,value) -> (value instanceof ProfileChangeEvent),
         (key,value) -> (value instanceof ProfileSegmentChangeEvent),
         (key,value) -> (value instanceof ProfileLoyaltyProgramChangeEvent),
         (key,value) -> (value instanceof TokenChange),
@@ -1701,11 +1715,6 @@ public class EvolutionEngine
 
     @Override public void shutdown(boolean normalShutdown)
     {
-      //
-      //  stop stats collection
-      //
-
-      if (evolutionEngineStatistics != null) evolutionEngineStatistics.unregister();
 
       //
       //  close reference data readers
@@ -2222,7 +2231,7 @@ public class EvolutionEngine
         subscriberStateUpdated = true;
       }
 
-	//
+    //
     //  profileLoayltyProgramChangeEvents cleaning
     //
 
@@ -2241,7 +2250,7 @@ public class EvolutionEngine
         subscriberState.setExternalAPIOutput(null);
         subscriberStateUpdated = true;
       }
-	  
+
 
 
     //
@@ -2390,7 +2399,7 @@ public class EvolutionEngine
               purchaseFulfillmentRequest.getOrigin()
             );
             subscriberProfile.getVouchers().add(voucherToStore);
-			// we keep voucher ordered by expiry data, this is important when we will apply change
+            // we keep voucher ordered by expiry data, this is important when we will apply change
             sortVouchersPerExpiryDate(subscriberProfile);
             subscriberUpdated = true;
           }
@@ -3339,7 +3348,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    updateEvolutionEngineStatistics(evolutionEvent);
+    statsEventCounter.withLabel(StatsBuilders.LABEL.name.name(),evolutionEvent.getClass().getSimpleName()).getStats().increment();
 
     /*****************************************
     *
@@ -5372,6 +5381,8 @@ public class EvolutionEngine
                         case DateCriterion:
                           journeyResults.put(Journey.generateJourneyResultID(journey, contextVariable), journeyState.getJourneyParameters().get(contextVariable.getID()));
                           break;
+                          
+                        case AniversaryCriterion:
                         case TimeCriterion:
                           throw new RuntimeException("unsupported contextVariable field datatype " + contextVariable.getFieldDataType());
                       }
@@ -5997,18 +6008,6 @@ public class EvolutionEngine
      *****************************************/
 
     return true;
-  }
-
-  /*****************************************
-  *
-  *  updateEvolutionEngineStatistics
-  *
-  *****************************************/
-
-  private static void updateEvolutionEngineStatistics(SubscriberStreamEvent event)
-  {
-    evolutionEngineStatistics.updateEventProcessedCount(1);
-    evolutionEngineStatistics.updateEventCount(event, 1);
   }
 
   /*****************************************
@@ -6759,6 +6758,7 @@ public class EvolutionEngine
 
   private void handleAPI(API api, HttpExchange exchange) throws IOException
   {
+    long startTime = DurationStat.startTime();
     try
       {
         /*****************************************
@@ -6800,6 +6800,7 @@ public class EvolutionEngine
         String subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
         boolean includeExtendedSubscriberProfile = JSONUtilities.decodeBoolean(jsonRoot, "includeExtendedSubscriberProfile", Boolean.FALSE);
         boolean includeHistory = JSONUtilities.decodeBoolean(jsonRoot, "includeHistory", Boolean.FALSE);
+        boolean forSupport = JSONUtilities.decodeBoolean(jsonRoot, "forSupport", Boolean.FALSE);// this is not a getSubscriberProfile this is a "get statestores data" call, only meant for support troubleshooting
 
         /*****************************************
         *
@@ -6811,11 +6812,11 @@ public class EvolutionEngine
         switch (api)
           {
             case getSubscriberProfile:
-              apiResponse = processGetSubscriberProfile(subscriberID, includeExtendedSubscriberProfile, includeHistory);
+              apiResponse = processGetSubscriberProfile(subscriberID, includeExtendedSubscriberProfile, includeHistory, forSupport);
               break;
 
             case retrieveSubscriberProfile:
-              apiResponse = processRetrieveSubscriberProfile(subscriberID, includeExtendedSubscriberProfile, includeHistory);
+              apiResponse = processRetrieveSubscriberProfile(subscriberID, includeExtendedSubscriberProfile, includeHistory, forSupport);
               break;
           }
 
@@ -6871,8 +6872,10 @@ public class EvolutionEngine
         //  response
         //
 
-        ByteBuffer response = ByteBuffer.allocate(apiResponseHeader.array().length + apiResponse.length);
-        response.put(apiResponseHeader.array());
+        boolean isForSupportResponse = forSupport && api.equals(API.getSubscriberProfile);
+
+        ByteBuffer response = ByteBuffer.allocate( (!isForSupportResponse?apiResponseHeader.array().length:0) + apiResponse.length);
+        if(!isForSupportResponse) response.put(apiResponseHeader.array());
         response.put(apiResponse);
 
         //
@@ -6882,6 +6885,11 @@ public class EvolutionEngine
         exchange.sendResponseHeaders(200, response.array().length);
         exchange.getResponseBody().write(response.array());
         exchange.close();
+
+        //stats
+        statsApiDuration.withLabel(StatsBuilders.LABEL.name.name(),api.getExternalRepresentation())
+                       .withLabel(StatsBuilders.LABEL.status.name(),apiResponse.length>0?StatsBuilders.STATUS.ok.name():StatsBuilders.STATUS.unknown.name())
+                       .getStats().add(startTime);
       }
     catch (org.json.simple.parser.ParseException | IOException | ServerException | RuntimeException e )
       {
@@ -6909,6 +6917,11 @@ public class EvolutionEngine
         exchange.sendResponseHeaders(200, apiResponseHeader.array().length);
         exchange.getResponseBody().write(apiResponseHeader.array());
         exchange.close();
+
+        //stats
+        statsApiDuration.withLabel(StatsBuilders.LABEL.name.name(),api.getExternalRepresentation())
+                       .withLabel(StatsBuilders.LABEL.status.name(),StatsBuilders.STATUS.ko.name())
+                       .getStats().add(startTime);
       }
   }
 
@@ -6918,7 +6931,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private byte[] processGetSubscriberProfile(String subscriberID, boolean includeExtendedSubscriberProfile, boolean includeHistory) throws ServerException
+  private byte[] processGetSubscriberProfile(String subscriberID, boolean includeExtendedSubscriberProfile, boolean includeHistory, boolean forSupport) throws ServerException
   {
     //
     //  timeout
@@ -6948,6 +6961,7 @@ public class EvolutionEngine
     request.put("subscriberID", subscriberID);
     request.put("includeExtendedSubscriberProfile", includeExtendedSubscriberProfile);
     request.put("includeHistory", includeHistory);
+    request.put("forSupport", forSupport);
     JSONObject requestJSON = JSONUtilities.encodeObject(request);
 
     //
@@ -7095,7 +7109,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private byte[] processRetrieveSubscriberProfile(String subscriberID, boolean includeExtendedSubscriberProfile, boolean includeHistory) throws ServerException
+  private byte[] processRetrieveSubscriberProfile(String subscriberID, boolean includeExtendedSubscriberProfile, boolean includeHistory, boolean forSupport) throws ServerException
   {
     /*****************************************
     *
@@ -7104,6 +7118,9 @@ public class EvolutionEngine
     *****************************************/
 
     SubscriberProfile subscriberProfile = null;
+    SubscriberState subscriberState = null;
+    ExtendedSubscriberProfile extendedSubscriberProfile = null;
+    SubscriberHistory subscriberHistory = null;
 
     /*****************************************
     *
@@ -7129,7 +7146,11 @@ public class EvolutionEngine
 
         try
           {
-            SubscriberState subscriberState = subscriberStateStore.get(new StringKey(subscriberID));
+            long startTime = DurationStat.startTime();
+            subscriberState = subscriberStateStore.get(new StringKey(subscriberID));
+            statsStateStoresDuration.withLabel(StatsBuilders.LABEL.name.name(),"subscriberStateStore")
+                                    .withLabel(StatsBuilders.LABEL.operation.name(),"get")
+                                    .getStats().add(startTime);
             if (subscriberState != null) subscriberProfile = subscriberState.getSubscriberProfile();
             stateStoreCallCompleted = true;
           }
@@ -7162,7 +7183,6 @@ public class EvolutionEngine
 
     if (subscriberProfile != null && includeExtendedSubscriberProfile)
       {
-        ExtendedSubscriberProfile extendedSubscriberProfile = null;
         now = SystemTime.getCurrentTime();
         retainedException = null;
         stateStoreCallCompleted = false;
@@ -7180,7 +7200,11 @@ public class EvolutionEngine
 
             try
               {
+                long startTime = DurationStat.startTime();
                 extendedSubscriberProfile = extendedSubscriberProfileStore.get(new StringKey(subscriberID));
+                statsStateStoresDuration.withLabel(StatsBuilders.LABEL.name.name(),"extendedSubscriberProfileStore")
+                                        .withLabel(StatsBuilders.LABEL.operation.name(),"get")
+                                        .getStats().add(startTime);
                 stateStoreCallCompleted = true;
               }
             catch (InvalidStateStoreException e)
@@ -7223,7 +7247,6 @@ public class EvolutionEngine
 
     if (subscriberProfile != null && includeHistory)
       {
-        SubscriberHistory subscriberHistory = null;
         now = SystemTime.getCurrentTime();
         retainedException = null;
         stateStoreCallCompleted = false;
@@ -7241,7 +7264,11 @@ public class EvolutionEngine
 
             try
               {
+                long startTime = DurationStat.startTime();
                 subscriberHistory = subscriberHistoryStore.get(new StringKey(subscriberID));
+                statsStateStoresDuration.withLabel(StatsBuilders.LABEL.name.name(),"subscriberHistoryStore")
+                                        .withLabel(StatsBuilders.LABEL.operation.name(),"get")
+                                        .getStats().add(startTime);
                 stateStoreCallCompleted = true;
               }
             catch (InvalidStateStoreException e)
@@ -7281,6 +7308,59 @@ public class EvolutionEngine
     *  response
     *
     *****************************************/
+
+    // for support only, containing entire objects of statestores
+    if(forSupport){
+
+      byte[] toRet;
+
+      // use the Avro formatter directly (same as avro console)
+      Properties props = new Properties();
+      props.put("schema.registry.url", System.getProperty("nglm.schemaRegistryURL"));
+      props.put("print.key","false");
+      props.put("line.separator","");
+      AvroMessageFormatter messageFormatter = new AvroMessageFormatter();
+      messageFormatter.init(props);
+
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      PrintStream ps = new PrintStream(baos);
+
+      try {
+        ps.write("{".getBytes());
+        if(subscriberState!=null){
+          // a fake record (partition and offset not accurate)
+          ConsumerRecord<byte[],byte[]> record = new ConsumerRecord<>(Deployment.getSubscriberStateChangeLogTopic(),0,0L,null, SubscriberState.serde().serializer().serialize(Deployment.getSubscriberStateChangeLogTopic(), subscriberState));
+          ps.write("\"subscriberState\":".getBytes());
+          messageFormatter.writeTo(record,ps);
+        }
+        if(subscriberHistory!=null){
+          // a fake record (partition and offset not accurate)
+          ConsumerRecord<byte[],byte[]> record = new ConsumerRecord<>(Deployment.getSubscriberHistoryChangeLogTopic(),0,0L,null, SubscriberHistory.serde().serializer().serialize(Deployment.getSubscriberHistoryChangeLogTopic(), subscriberHistory));
+          if(subscriberState!=null) ps.write(",".getBytes());
+          ps.write("\"subscriberHistory\":".getBytes());
+          messageFormatter.writeTo(record,ps);
+        }
+        if(extendedSubscriberProfile!=null){
+          // a fake record (partition and offset not accurate)
+          ConsumerRecord<byte[],byte[]> record = new ConsumerRecord<>(Deployment.getExtendedSubscriberProfileChangeLogTopic(),0,0L,null, ExtendedSubscriberProfile.stateStoreSerde().serializer().serialize(Deployment.getExtendedSubscriberProfileChangeLogTopic(), extendedSubscriberProfile));
+          if(subscriberState!=null||subscriberHistory!=null) ps.write(",".getBytes());
+          ps.write("\"extendedSubscriberProfile\":".getBytes());
+          messageFormatter.writeTo(record,ps);
+        }
+        ps.write("}".getBytes());
+        toRet = baos.toByteArray();
+      } catch (IOException e) {
+        throw new ServerException(e);
+      }
+      finally {
+        ps.close();
+        try { baos.close(); } catch (IOException e) {}
+        messageFormatter.close();
+      }
+
+      // support call just care about this so far
+      return toRet;
+    }
 
     byte[] result;
     if (subscriberProfile != null)

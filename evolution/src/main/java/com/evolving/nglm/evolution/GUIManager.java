@@ -429,12 +429,20 @@ public class GUIManager
     getCommunicationChannelList("getCommunicationChannelList"),
     getCommunicationChannelSummaryList("getCommunicationChannelSummaryList"),
     getCommunicationChannel("getCommunicationChannel"),
+    putCommunicationChannel("putCommunicationChannel"),
     getBlackoutPeriodsList("getBlackoutPeriodsList"),
     getBlackoutPeriodsSummaryList("getBlackoutPeriodsSummaryList"),
     getBlackoutPeriods("getBlackoutPeriods"),
     putBlackoutPeriods("putBlackoutPeriods"),
     removeBlackoutPeriods("removeBlackoutPeriods"),
     setStatusBlackoutPeriods("setStatusBlackoutPeriods"),
+    
+    getTimeWindowsList("getTimeWindowsList"),
+    getTimeWindowsSummaryList("getTimeWindowsSummaryList"),
+    getTimeWindows("getTimeWindows"),
+    putTimeWindows("putTimeWindows"),
+    removeTimeWindows("removeTimeWindows"),
+
     getLoyaltyProgramTypeList("getLoyaltyProgramTypeList"),
     getLoyaltyProgramList("getLoyaltyProgramList"),
     getLoyaltyProgramSummaryList("getLoyaltyProgramSummaryList"),
@@ -479,6 +487,9 @@ public class GUIManager
     getTokenEventDetails("getTokenEventDetails"),
     getTenantList("getTenantList"),
     getOffersList("getOffersList"),
+    launchExtract("launchExtract"),
+    downloadExtractFile("downloadExtractFile"),
+    launchAndDownloadExtract("launchAndDownloadExtract"),
 
     //
     //  configAdaptor APIs
@@ -614,6 +625,7 @@ public class GUIManager
   protected UploadedFileService uploadedFileService;
   protected TargetService targetService;
   protected CommunicationChannelBlackoutService communicationChannelBlackoutService;
+  protected CommunicationChannelTimeWindowService communicationChannelTimeWindowService;
   protected LoyaltyProgramService loyaltyProgramService;
   protected ExclusionInclusionTargetService exclusionInclusionTargetService;
   protected ResellerService resellerService;
@@ -751,6 +763,7 @@ public class GUIManager
     String targetTopic = Deployment.getTargetTopic();
     String communicationChannelTopic = Deployment.getCommunicationChannelTopic();
     String communicationChannelBlackoutTopic = Deployment.getCommunicationChannelBlackoutTopic();
+    String communicationChannelTimeWindowTopic = Deployment.getCommunicationChannelTimeWindowTopic();
     String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
     String exclusionInclusionTargetTopic = Deployment.getExclusionInclusionTargetTopic();
     String resellerTopic = Deployment.getResellerTopic();
@@ -956,6 +969,7 @@ public class GUIManager
     targetService = new TargetService(bootstrapServers, "guimanager-targetservice-" + apiProcessKey, targetTopic, true);
     voucherService = new VoucherService(bootstrapServers, "guimanager-voucherservice-" + apiProcessKey, voucherTopic, true,elasticsearch,uploadedFileService);
     communicationChannelBlackoutService = new CommunicationChannelBlackoutService(bootstrapServers, "guimanager-blackoutservice-" + apiProcessKey, communicationChannelBlackoutTopic, true);
+    communicationChannelTimeWindowService = new CommunicationChannelTimeWindowService(bootstrapServers, "guimanager-timewindowservice-" + apiProcessKey, communicationChannelTimeWindowTopic, true);
     loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, "guimanager-loyaltyprogramservice-"+apiProcessKey, loyaltyProgramTopic, true);
     exclusionInclusionTargetService = new ExclusionInclusionTargetService(bootstrapServers, "guimanager-exclusioninclusiontargetservice-" + apiProcessKey, exclusionInclusionTargetTopic, true);
     resellerService = new ResellerService(bootstrapServers, "guimanager-resellerservice-"+apiProcessKey, resellerTopic, true);
@@ -1995,11 +2009,18 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCommunicationChannelList", new APISimpleHandler(API.getCommunicationChannelList));
         restServer.createContext("/nglm-guimanager/getCommunicationChannelSummaryList", new APISimpleHandler(API.getCommunicationChannelSummaryList));
         restServer.createContext("/nglm-guimanager/getCommunicationChannel", new APISimpleHandler(API.getCommunicationChannel));
+        restServer.createContext("/nglm-guimanager/putCommunicationChannel", new APISimpleHandler(API.putCommunicationChannel));
         restServer.createContext("/nglm-guimanager/getBlackoutPeriodsList", new APISimpleHandler(API.getBlackoutPeriodsList));
         restServer.createContext("/nglm-guimanager/getBlackoutPeriodsSummaryList", new APISimpleHandler(API.getBlackoutPeriodsSummaryList));
         restServer.createContext("/nglm-guimanager/getBlackoutPeriods", new APISimpleHandler(API.getBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/putBlackoutPeriods", new APISimpleHandler(API.putBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/setStatusBlackoutPeriods", new APISimpleHandler(API.setStatusBlackoutPeriods));
+        
+        restServer.createContext("/nglm-guimanager/getTimeWindowsList", new APISimpleHandler(API.getTimeWindowsList));
+        restServer.createContext("/nglm-guimanager/getTimeWindowsSummaryList", new APISimpleHandler(API.getTimeWindowsSummaryList));
+        restServer.createContext("/nglm-guimanager/getTimeWindows", new APISimpleHandler(API.getTimeWindows));
+        restServer.createContext("/nglm-guimanager/putTimeWindows", new APISimpleHandler(API.putTimeWindows));
+
         restServer.createContext("/nglm-guimanager/removeBlackoutPeriods", new APISimpleHandler(API.removeBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramTypeList", new APISimpleHandler(API.getLoyaltyProgramTypeList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramList", new APISimpleHandler(API.getLoyaltyProgramList));
@@ -2082,6 +2103,10 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/loyaltyProgramOptIn", new APISimpleHandler(API.loyaltyProgramOptIn));
         restServer.createContext("/nglm-guimanager/loyaltyProgramOptOut", new APISimpleHandler(API.loyaltyProgramOptOut));
         restServer.createContext("/nglm-guimanager/getDependencies", new APISimpleHandler(API.getDependencies));
+
+        restServer.createContext("/nglm-guimanager/launchExtract", new APISimpleHandler(API.launchExtract));
+        restServer.createContext("/nglm-guimanager/downloadExtractFile", new APIComplexHandler(API.downloadExtractFile));
+        restServer.createContext("/nglm-guimanager/launchAndDownloadExtract", new APIComplexHandler(API.launchAndDownloadExtract));
 
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
@@ -2799,6 +2824,10 @@ public class GUIManager
                   jsonResponse = guiManagerLoyaltyReporting.processLaunchReport(userID, jsonRoot);
                   break;
 
+                case launchExtract:
+                  jsonResponse = guiManagerBaseManagement.processLaunchExtract(jsonRoot);
+                  break;
+
                 case getPresentationStrategyList:
                   jsonResponse = processGetPresentationStrategyList(userID, jsonRoot, true, includeArchived);
                   break;
@@ -3486,6 +3515,11 @@ public class GUIManager
                 case getCommunicationChannel:
                   jsonResponse = processGetCommunicationChannel(userID, jsonRoot, includeArchived);
                   break;
+                  
+                case putCommunicationChannel:
+                  jsonResponse = processPutCommunicationChannel(userID, jsonRoot);
+                  break;
+
 
                 case getBlackoutPeriodsList:
                   jsonResponse = processGetBlackoutPeriodsList(userID, jsonRoot, true, includeArchived);
@@ -3506,6 +3540,29 @@ public class GUIManager
                 case removeBlackoutPeriods:
                   jsonResponse = processRemoveBlackoutPeriods(userID, jsonRoot);
                   break;
+                  
+                  
+                  
+                case getTimeWindowsList:
+                  jsonResponse = CommunicationChannelTimeWindow.processGetChannelTimeWindowList(userID, jsonRoot, true, includeArchived, communicationChannelTimeWindowService);
+                  break;
+
+                case getTimeWindowsSummaryList:
+                  jsonResponse = CommunicationChannelTimeWindow.processGetChannelTimeWindowList(userID, jsonRoot, false, includeArchived, communicationChannelTimeWindowService);
+                  break;
+
+                case getTimeWindows:
+                  jsonResponse = CommunicationChannelTimeWindow.processGetTimeWindows(userID, jsonRoot, includeArchived, communicationChannelTimeWindowService);
+                  break;
+
+                case putTimeWindows:
+                  jsonResponse = CommunicationChannelTimeWindow.processPutTimeWindows(userID, jsonRoot, communicationChannelTimeWindowService, epochServer);
+                  break;
+
+                case removeTimeWindows:
+                  jsonResponse = CommunicationChannelTimeWindow.processRemoveTimeWindows(userID, jsonRoot, communicationChannelTimeWindowService);
+                  break;
+
 
                 case getLoyaltyProgramTypeList:
                   jsonResponse = guiManagerLoyaltyReporting.processGetLoyaltyProgramTypeList(userID, jsonRoot);
@@ -3809,10 +3866,10 @@ public class GUIManager
                   
                 case loyaltyProgramOptOut:
                   jsonResponse = guiManagerLoyaltyReporting.processLoyaltyProgramOptInOut(jsonRoot, false);
+                  break;
 
                 case getDependencies:
                   jsonResponse = guiManagerGeneral.processGetDependencies(userID, jsonRoot);
-
                   break;
 
               }
@@ -4020,6 +4077,11 @@ public class GUIManager
                 case downloadReport:
                   guiManagerLoyaltyReporting.processDownloadReport(userID, jsonRoot, jsonResponse, exchange);
                   break;
+                case downloadExtractFile:
+                  guiManagerBaseManagement.processDownloadExtract(jsonRoot, jsonResponse, exchange);
+                  break;
+                case launchAndDownloadExtract:
+                  guiManagerBaseManagement.processLaunchAndDownloadExtract(jsonRoot,jsonResponse,exchange);
               }
           }
         else
@@ -4553,26 +4615,13 @@ public class GUIManager
         CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters, expectedDataType), journeyNodeType, journeyNodeEvent, selectedJourney, expectedDataType);
         Map<String,List<JSONObject>> currentGroups = includeComparableFields ? new HashMap<>() : null;
         Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
+        journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly, currentGroups);
         
         //
         //  intersect and put only Evaluation week Day and Time (if schedule node)
         //
         
-        if (journeyNodeType.getScheduleNode())
-          {
-            CriterionField evaluationWkDay = unprocessedCriterionFields.get(CriterionContext.EVALUATION_WK_DAY_ID);
-            CriterionField evaluationTime = unprocessedCriterionFields.get(CriterionContext.EVALUATION_TIME_ID);
-            CriterionField evaluationMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_MONTH_ID);
-            CriterionField evaluationDayOfMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_DAY_OF_MONTH_ID);
-            unprocessedCriterionFields.clear();
-            if (evaluationWkDay != null) unprocessedCriterionFields.put(evaluationWkDay.getID(), evaluationWkDay);
-            if (evaluationTime != null) unprocessedCriterionFields.put(evaluationTime.getID(), evaluationTime);
-            if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
-            if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
-          }
-        
-        
-        journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly, currentGroups);
+        if (journeyNodeType.getScheduleNode()) journeyCriterionFields = journeyCriterionFields.stream().filter(criteriaFieldJSON -> IsJourneyScheduleNodeCriteria(criteriaFieldJSON)).collect(Collectors.toList());
         if (includeComparableFields)
           {
             for (String id : currentGroups.keySet())
@@ -4637,27 +4686,9 @@ public class GUIManager
     if (journeyNodeType != null)
       {
         CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, selectedJourney);
-        
         Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
-        
-        //
-        //  intersect and put only Evaluation week Day and Time (if schedule node)
-        //
-        
-        if (journeyNodeType.getScheduleNode())
-          {
-            CriterionField evaluationWkDay = unprocessedCriterionFields.get(CriterionContext.EVALUATION_WK_DAY_ID);
-            CriterionField evaluationTime = unprocessedCriterionFields.get(CriterionContext.EVALUATION_TIME_ID);
-            CriterionField evaluationMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_MONTH_ID);
-            CriterionField evaluationDayOfMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_DAY_OF_MONTH_ID);
-            unprocessedCriterionFields.clear();
-            if (evaluationWkDay != null) unprocessedCriterionFields.put(evaluationWkDay.getID(), evaluationWkDay);
-            if (evaluationTime != null) unprocessedCriterionFields.put(evaluationTime.getID(), evaluationTime);
-            if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
-            if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
-          }
-        
         journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly);
+        if (journeyNodeType.getScheduleNode()) journeyCriterionFields = journeyCriterionFields.stream().filter(criteriaFieldJSON -> IsJourneyScheduleNodeCriteria(criteriaFieldJSON)).collect(Collectors.toList());
       }
 
     /*****************************************
@@ -4736,28 +4767,9 @@ public class GUIManager
         if (journeyNodeType != null)
           {
             CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, selectedJourney);
-            
             Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
-            
-            //
-            //  intersect and put only Evaluation week Day and Time (if schedule node)
-            //
-            
-            if (journeyNodeType.getScheduleNode())
-              {
-
-                CriterionField evaluationWkDay = unprocessedCriterionFields.get(CriterionContext.EVALUATION_WK_DAY_ID);
-                CriterionField evaluationTime = unprocessedCriterionFields.get(CriterionContext.EVALUATION_TIME_ID);
-                CriterionField evaluationMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_MONTH_ID);
-                CriterionField evaluationDayOfMonth = unprocessedCriterionFields.get(CriterionContext.EVALUATION_DAY_OF_MONTH_ID);
-                unprocessedCriterionFields.clear();
-                if (evaluationWkDay != null) unprocessedCriterionFields.put(evaluationWkDay.getID(), evaluationWkDay);
-                if (evaluationTime != null) unprocessedCriterionFields.put(evaluationTime.getID(), evaluationTime);
-                if (evaluationMonth != null) unprocessedCriterionFields.put(evaluationMonth.getID(), evaluationMonth);
-                if (evaluationDayOfMonth != null) unprocessedCriterionFields.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);
-              }
-            
             journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, false);
+            if (journeyNodeType.getScheduleNode()) journeyCriterionFields = journeyCriterionFields.stream().filter(criteriaFieldJSON -> IsJourneyScheduleNodeCriteria(criteriaFieldJSON)).collect(Collectors.toList());
           }
 
         /*****************************************
@@ -6197,7 +6209,7 @@ public class GUIManager
     boolean active = JSONUtilities.decodeBoolean(jsonRoot, "active", Boolean.FALSE);
     JSONArray bulkCampaignJourneyObjectives = JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", true);
     JSONObject bulkCampaignStory = JSONUtilities.decodeJSONObject(jsonRoot, "story", true);
-    
+    JSONArray bulkCampaignTargetCriteria = JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", true);
     /*****************************************
     *
     *  existing journey
@@ -6270,6 +6282,7 @@ public class GUIManager
         campaignJSONRepresentation.put("active", active);
         campaignJSONRepresentation.put("journeyObjectives", bulkCampaignJourneyObjectives); 
         campaignJSONRepresentation.put("story", bulkCampaignStory);
+        campaignJSONRepresentation.put("targetingCriteria", bulkCampaignTargetCriteria);
 
         //
         //  campaignJSON
@@ -17305,7 +17318,8 @@ public class GUIManager
                               {
                                 JSONObject characteristics = new JSONObject();
                                 characteristics.put("catalogCharacteristicID", catalogCharacteristicInstance.getCatalogCharacteristicID());
-                                characteristics.put("value", catalogCharacteristicInstance.getValue());
+                                String catalogCharacteristicValue = "" + catalogCharacteristicInstance.getValue();
+                                characteristics.put("value", catalogCharacteristicValue);
                                 resultCharacteristics.add(characteristics);
                               }
                             
@@ -18223,7 +18237,17 @@ public class GUIManager
       }
     for (CommunicationChannel communicationChannel : communicationChannelObjects)
       {
-        JSONObject channel = communicationChannel.generateResponseJSON(fullDetails, now);
+        JSONObject channel = communicationChannel.generateResponseJSON(fullDetails, now);        
+        
+        CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannel.getID(), SystemTime.getCurrentTime());
+        
+        if(timeWindow != null) 
+          {
+            JSONObject timeWindowJsonRepresentation = timeWindow.getJSONRepresentation(); 
+            timeWindowJsonRepresentation.remove("communicationChannelID");
+            channel.put("notificationDailyWindows", timeWindowJsonRepresentation); 
+          }
+        
         communicationChannelList.add(channel);
       }
 
@@ -18237,8 +18261,11 @@ public class GUIManager
     response.put("responseCode", "ok");
     response.put("communicationChannels", JSONUtilities.encodeArray(communicationChannelList));
     if(fullDetails) {
-      NotificationDailyWindows notifWindows = Deployment.getNotificationDailyWindows().get("0");
-      response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
+      CommunicationChannelTimeWindow notifWindows = Deployment.getDefaultNotificationDailyWindows();
+      if(notifWindows != null)
+        {
+          response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
+        }
     }
     return JSONUtilities.encodeObject(response);
   }
@@ -18275,6 +18302,20 @@ public class GUIManager
 
     CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(communicationChannelID);
     JSONObject communicationChannelJSON = communicationChannel.generateResponseJSON(true, SystemTime.getCurrentTime());
+    
+    CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannelID, SystemTime.getCurrentTime());
+    if(timeWindow == null)
+      {
+        // use the default timeWindow
+        timeWindow = Deployment.getDefaultNotificationDailyWindows();        
+      }
+    
+    if(timeWindow != null) 
+      {
+        JSONObject timeWindowJsonRepresentation = timeWindow.getJSONRepresentation(); 
+        timeWindowJsonRepresentation.remove("communicationChannelID");
+        communicationChannelJSON.put("notificationDailyWindows", timeWindowJsonRepresentation); 
+      }
 
     /*****************************************
     *
@@ -18285,6 +18326,120 @@ public class GUIManager
     response.put("responseCode", (communicationChannel != null) ? "ok" : "communicationChannelNotFound");
     if (communicationChannel != null) response.put("communicationChannel", communicationChannelJSON);
     return JSONUtilities.encodeObject(response);
+  }
+  
+    /*****************************************
+  *
+  *  processPutCommunicationChannel ==> Deprecated, only for TimeWindow hack
+     * @throws GUIManagerException 
+  *
+  *****************************************/
+
+  private JSONObject processPutCommunicationChannel(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  communicationChannelID
+    *
+    *****************************************/
+
+    String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (communicationChannelID == null)
+      {
+        throw new GUIManagerException("No communication channel ID", "");
+      }
+
+    /*****************************************
+    *
+    *  process CommunicationChannel
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /*****************************************
+        *
+        *  extract TimeWindow
+        *
+        *****************************************/
+        
+        CommunicationChannelTimeWindow existingCommunicationChannelTimeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannelID, now);
+        
+        if(jsonRoot.get("notificationDailyWindows") != null) {
+          // let GUIMangedObject This (this is a F$$$ hack)
+          JSONObject json = (JSONObject) jsonRoot.get("notificationDailyWindows");
+          json.put("communicationChannelID", communicationChannelID);
+          json.put("id", "timewindow-" + communicationChannelID);
+          json.put("name", "timewindow-" + communicationChannelID);
+          json.put("display", "timewindow-" + communicationChannelID);
+          json.put("readOnly", false);
+          json.put("internalOnly", false);
+          json.put("active", true);
+          json.put("deleted", false);
+          json.put("userID", jsonRoot.get("userID"));
+          json.put("userName", jsonRoot.get("userName"));
+          json.put("groupID", jsonRoot.get("groupID"));          
+          
+          CommunicationChannelTimeWindow communicationChannelTimeWindow = new CommunicationChannelTimeWindow(json, epoch, existingCommunicationChannelTimeWindow);
+          
+          /*****************************************
+          *
+          *  store
+          *
+          *****************************************/
+
+          communicationChannelTimeWindowService.putCommunicationChannelTimeWindow(communicationChannelTimeWindow, (existingCommunicationChannelTimeWindow == null), userID);
+          
+        }else {
+          // delete this time window for the associated channel
+          communicationChannelTimeWindowService.removeCommunicationChannelTimeWindow(communicationChannelID, userID);
+        }
+        
+ 
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", communicationChannelID);
+        response.put("accepted", true);
+        response.put("valid", true);
+        response.put("processing", true);
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("communicationChannelID", communicationChannelID);
+        response.put("responseCode", "communicationChannelNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
   }
 
   /*****************************************
@@ -20468,7 +20623,17 @@ public class GUIManager
     *****************************************/
 
     CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(communicationChannelID);
+       
     JSONObject communicationChannelJSON = communicationChannel.generateResponseJSON(true, SystemTime.getCurrentTime());
+    
+    CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannel.getID(), SystemTime.getCurrentTime());
+    
+    if(timeWindow != null) 
+      {
+        JSONObject timeWindowJsonRepresentation = timeWindow.getJSONRepresentation(); 
+        timeWindowJsonRepresentation.remove("communicationChannelID");
+        communicationChannelJSON.put("notificationDailyWindows", timeWindowJsonRepresentation); 
+      }
 
     //
     //  remove gui specific fields
@@ -20902,7 +21067,7 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
-    NotificationDailyWindows notifWindows = Deployment.getNotificationDailyWindows().get("0");
+    CommunicationChannelTimeWindow notifWindows = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow("default", SystemTime.getCurrentTime());
     response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
     return JSONUtilities.encodeObject(response);
   }
@@ -23104,6 +23269,20 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               case DateCriterion:
                 criterionFields.put(criterionField.getID(), criterionField);
                 break;
+                
+              case AniversaryCriterion:
+                JSONObject tempCriterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation().clone();
+                tempCriterionFieldJSON.put("dataType", CriterionDataType.DateCriterion.getExternalRepresentation());
+                try
+                  {
+                    CriterionField dateCriterionField = new CriterionField(tempCriterionFieldJSON);
+                    criterionFields.put(dateCriterionField.getID(), dateCriterionField);
+                  } 
+                catch (GUIManagerException e)
+                  {
+                    e.printStackTrace();
+                  }
+                break;
 
               case StringSetCriterion:
                 if (! tagsOnly) criterionFields.put(criterionField.getID(), criterionField);
@@ -23165,7 +23344,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             //
             //  remove server-side fields
             //
-
+            
             JSONObject criterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation().clone();
             criterionFieldJSON.remove("esField");
             criterionFieldJSON.remove("retriever");
@@ -23239,6 +23418,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
             //
             //  normalize set-valued dataTypes to singleton-valued dataTypes (required by GUI)
+            //  normalize AniversaryCriterion dataTypes to DateCriterion dataTypes (required by GUI)
             //
 
             switch (criterionField.getFieldDataType())
@@ -23462,10 +23642,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     for (String comparableFieldID : includedComparableFieldIDs)
       {
         CriterionField criterionField = comparableFields.get(comparableFieldID);
-        if (     (! excludedComparableFieldIDs.contains(comparableFieldID))
-              && (singleton == criterionField.getFieldDataType().getSingletonType())
-//            && (! comparableFieldID.equals(criterionFieldID))
-           )
+        if ((!excludedComparableFieldIDs.contains(comparableFieldID)) && (singleton == criterionField.getFieldDataType().getSingletonType()))
           {
             HashMap<String,Object> comparableFieldJSON = new HashMap<String,Object>();
             comparableFieldJSON.put("id", criterionField.getID());
@@ -23473,23 +23650,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             result.add(JSONUtilities.encodeObject(comparableFieldJSON));
           }
       }
-
-//    // order list by ID
-//    Collections.sort(result, new Comparator<JSONObject>()
-//    {
-//      @Override
-//      public int compare(JSONObject o1, JSONObject o2)
-//      {
-//        String id1 = (String) o1.get("id");
-//        String id2 = (String) o2.get("id");
-//        return id1.compareTo(id2);
-//      }
-//    });
-
-    //
-    //  return
-    //
-
     return result;
   }
 
@@ -24823,7 +24983,21 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     for (GUIManagedObject modifiedJourney : modifiedJourneys)
       {
-        journeyService.putGUIManagedObject(modifiedJourney, date, false, null);
+        if (modifiedJourney instanceof Journey)
+          {
+            try
+              {
+                journeyService.putJourney(modifiedJourney, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, false, null);
+              }
+            catch (JSONUtilitiesException|GUIManagerException e)
+              {
+                  log.warn(e.getLocalizedMessage());
+              }
+          }
+        else
+          {
+            journeyService.putGUIManagedObject(modifiedJourney, date, false, null);
+          }
       }
   }
 
@@ -26547,6 +26721,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       }
    
     return response;
+  }
+  
+  private boolean IsJourneyScheduleNodeCriteria(JSONObject criteriaFieldJSON)
+  {
+    boolean result = false;
+    String id = JSONUtilities.decodeString(criteriaFieldJSON, "id", true);
+    result = id.equals(CriterionContext.EVALUATION_WK_DAY_ID) || id.equals(CriterionContext.EVALUATION_TIME_ID) || id.equals(CriterionContext.EVALUATION_MONTH_ID) || id.equals(CriterionContext.EVALUATION_DAY_OF_MONTH_ID) || id.equals(CriterionContext.EVALUATION_ANIVERSARY_DAY_ID);
+    return result;
   }
 
 }

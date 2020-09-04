@@ -9,6 +9,9 @@ package com.evolving.nglm.evolution;
 import java.util.*;
 
 import com.evolving.nglm.core.*;
+import com.evolving.nglm.evolution.statistics.CounterStat;
+import com.evolving.nglm.evolution.statistics.StatBuilder;
+import com.evolving.nglm.evolution.statistics.StatsBuilders;
 import org.apache.http.HttpHost;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -142,7 +145,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private StockMonitor stockService;
   private DeliverableService deliverableService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
-  private ODRStatistics odrStats = null;
+  private StatBuilder<CounterStat> statsCounter;
   private ZookeeperUniqueKeyServer zookeeperUniqueKeyServer;
   private String application_ID;
   
@@ -217,13 +220,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
     // statistics
     //
-    
-    try{
-      odrStats = new ODRStatistics("deliverymanager-purchasefulfillment");
-    }catch(Exception e){
-      log.error("PurchaseFulfillmentManager: could not load statistics ", e);
-      throw new RuntimeException("PurchaseFulfillmentManager: could not load statistics  ", e);
-    }
+
+    statsCounter = StatsBuilders.getEvolutionCounterStatisticsBuilder("purchasefulfillment","purchasefulfillmentmanager-"+deliveryManagerKey);
     
     //
     //  threads
@@ -1130,7 +1128,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     purchaseFulfillmentRequest.setDeliveryStatus(purchaseStatus.getDeliveryStatus());
     purchaseFulfillmentRequest.setDeliveryDate(SystemTime.getCurrentTime());
     completeRequest(deliveryRequest);
-    odrStats.updatePurchasesCount(1, deliveryRequest.getDeliveryStatus());
+
+    statsCounter.withLabel(StatsBuilders.LABEL.status.name(),purchaseFulfillmentRequest.getDeliveryStatus().getExternalRepresentation())
+                .withLabel(StatsBuilders.LABEL.module.name(), DeliveryRequest.Module.fromExternalRepresentation(purchaseFulfillmentRequest.getModuleID()).name())
+                .getStats().increment();
 
     if (log.isDebugEnabled()) log.debug("PurchaseFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : DONE");
 

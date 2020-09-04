@@ -192,7 +192,7 @@ public class Deployment
   private static Map<String,ToolboxSection> campaignToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ToolboxSection> workflowToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
-  private static Map<String,NotificationDailyWindows> notificationTimeWindowsMap = new LinkedHashMap<String,NotificationDailyWindows>();
+  private static CommunicationChannelTimeWindow defaultNotificationTimeWindowsMap;
   private static Integer authResponseCacheLifetimeInMinutes = null;
   private static Integer reportManagerMaxMessageLength = null;
   private static int stockRefreshPeriod;
@@ -214,6 +214,7 @@ public class Deployment
   private static String targetTopic;
   private static String communicationChannelTopic;
   public static String communicationChannelBlackoutTopic;
+  public static String communicationChannelTimeWindowTopic;
   public static String loyaltyProgramTopic;
   private static int ucgEngineESConnectTimeout;
   private static int ucgEngineESSocketTimeout;
@@ -252,8 +253,16 @@ public class Deployment
   private static int propensityReaderRefreshPeriodMs;
   private static int propensityWriterRefreshPeriodMs;
 
- private static boolean bypassJourneyTrafficEngine; // @rl Hack. TODO: remove later
+  private static boolean bypassJourneyTrafficEngine; // @rl Hack. TODO: remove later
   private static boolean enableContactPolicyProcessing;
+
+  //extracts configuration
+  private static String extractManagerZookeeperDir;
+  private static String extractManagerOutputPath;
+  private static String extractManagerDateFormat;
+  private static String extractManagerFileExtension;
+  private static String extractManagerCsvSeparator;
+  private static String extractManagerFieldSurrounder;
 
   /*****************************************
    *
@@ -448,9 +457,10 @@ public class Deployment
   public static String getAPIresponseDateFormat() { return APIresponseDateFormat; }
   public static String getUploadedFileTopic() { return uploadedFileTopic; }
   public static String getTargetTopic() { return targetTopic; }
-  public static Map<String,NotificationDailyWindows> getNotificationDailyWindows() { return notificationTimeWindowsMap; }
+  public static CommunicationChannelTimeWindow getDefaultNotificationDailyWindows() { return defaultNotificationTimeWindowsMap; }
   public static String getCommunicationChannelTopic() { return communicationChannelTopic; }
   public static String getCommunicationChannelBlackoutTopic() { return communicationChannelBlackoutTopic; }
+  public static String getCommunicationChannelTimeWindowTopic() { return communicationChannelTimeWindowTopic; }
   public static String getLoyaltyProgramTopic() { return loyaltyProgramTopic; }
   public static int getUcgEngineESConnectTimeout() { return ucgEngineESConnectTimeout; }
   public static int getUcgEngineESSocketTimeout(){ return ucgEngineESSocketTimeout; }
@@ -493,7 +503,13 @@ public class Deployment
   public static int getPropensityWriterRefreshPeriodMs() { return propensityWriterRefreshPeriodMs; }
   public static boolean getBypassJourneyTrafficEngine() { return bypassJourneyTrafficEngine; }
   public static boolean getEnableContactPolicyProcessing(){ return  enableContactPolicyProcessing;}
-  
+  public static String getExtractManagerZookeeperDir() { return extractManagerZookeeperDir; }
+  public static String getExtractManagerOutputPath() { return extractManagerOutputPath; }
+  public static String getExtractManagerDateFormat() { return extractManagerDateFormat; }
+  public static String getExtractManagerFileExtension() { return extractManagerFileExtension; }
+  public static String getExtractManagerCsvSeparator() { return extractManagerCsvSeparator; }
+  public static String getExtractManagerFieldSurrounder() { return extractManagerFieldSurrounder; }
+
   // addProfileCriterionField
   //
   public static void addProfileCriterionField(String key, CriterionField criterion) { profileCriterionFields.put(key, criterion); }
@@ -718,13 +734,13 @@ public class Deployment
        *****************************************/
 
       try
-      {
-        evolutionEngineStreamThreads = Integer.parseInt(System.getProperty("evolutionengine.streamthreads","1"));
-      }
+        {
+          evolutionEngineStreamThreads = Integer.parseInt(System.getProperty("evolutionengine.streamthreads","1"));
+        }
       catch (NumberFormatException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
       evolutionEngineInstanceNumbers = getSubscriberProfileEndpoints().split(",").length;
       if(evolutionEngineInstanceNumbers<1){
         log.warn("Deployment: subscriberprofile.endpoints : '" + getSubscriberProfileEndpoints() + "' seems wrong");
@@ -909,18 +925,18 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
-      
-      
+
+
       //
       //  communicationChannels
       //
-      
-      try 
+
+      try
         {
           JSONArray communicationChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "communicationChannels", new JSONArray());
           for (int i=0; i<communicationChannelsJSONArray.size(); i++)
             {
-              JSONObject communicationChannelJSON = (JSONObject) communicationChannelsJSONArray.get(i);              
+              JSONObject communicationChannelJSON = (JSONObject) communicationChannelsJSONArray.get(i);
               CommunicationChannel communicationChannel = new CommunicationChannel(communicationChannelJSON);
               communicationChannels.put(communicationChannel.getID(), communicationChannel);
             }
@@ -929,15 +945,23 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
-      
+
       //
       //  notificationDailyWindows
       //
 
       try
         {
-          NotificationDailyWindows notificationDailyWindows = new NotificationDailyWindows(JSONUtilities.decodeJSONObject(jsonRoot, "notificationDailyWindows", true));
-          notificationTimeWindowsMap.put("0", notificationDailyWindows);
+          JSONObject defaultTimeWindowJSON = (JSONObject) jsonRoot.get("notificationDailyWindows");
+          if(defaultTimeWindowJSON != null)
+            {
+              defaultTimeWindowJSON.put("id", "default");
+              defaultTimeWindowJSON.put("name", "default");
+              defaultTimeWindowJSON.put("display", "default");
+              defaultTimeWindowJSON.put("active", true);
+              defaultTimeWindowJSON.put("communicationChannelID", "default");
+            }
+          defaultNotificationTimeWindowsMap = new CommunicationChannelTimeWindow(defaultTimeWindowJSON, System.currentTimeMillis() * 1000, null);          
         }
       catch (GUIManagerException | JSONUtilitiesException e)
         {
@@ -1060,7 +1084,7 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
-      
+
       //
       //  elasticSearchConnectTimeout
       //
@@ -1073,7 +1097,7 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
-      
+
       //
       //  elasticSearchQueryTimeout
       //
@@ -1562,6 +1586,19 @@ public class Deployment
       try
         {
           communicationChannelBlackoutTopic = JSONUtilities.decodeString(jsonRoot, "communicationChannelBlackoutTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
+      //
+      //  communicationChannelTimeWindowTopic
+      //
+
+      try
+        {
+          communicationChannelTimeWindowTopic = JSONUtilities.decodeString(jsonRoot, "communicationChannelTimeWindowTopic", true);
         }
       catch (JSONUtilitiesException e)
         {
@@ -2176,14 +2213,14 @@ public class Deployment
       //
 
       try
-      {
-        voucherChangeRequestTopic = JSONUtilities.decodeString(jsonRoot, "voucherChangeRequestTopic", true);
-        voucherChangeResponseTopic = JSONUtilities.decodeString(jsonRoot, "voucherChangeResponseTopic", true);
-      }
+        {
+          voucherChangeRequestTopic = JSONUtilities.decodeString(jsonRoot, "voucherChangeRequestTopic", true);
+          voucherChangeResponseTopic = JSONUtilities.decodeString(jsonRoot, "voucherChangeResponseTopic", true);
+        }
       catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
 
       //
       //  baseLanguageID
@@ -2805,8 +2842,8 @@ public class Deployment
               NodeType nodeType = new NodeType(nodeTypeJSON);
               nodeTypes.put(nodeType.getID(), nodeType);
             }
-          
-          // Add generated Node Types: 
+
+          // Add generated Node Types:
           // * Generic Notification Manager
           ArrayList<String> notificationNodeTypesAsString = NotificationManager.getNotificationNodeTypes();
           for(String current : notificationNodeTypesAsString) {
@@ -2838,33 +2875,33 @@ public class Deployment
               ToolboxSection journeyToolboxSection = new ToolboxSection(journeyToolboxSectionValueJSON);
               journeyToolbox.put(journeyToolboxSection.getID(), journeyToolboxSection);
             }
-          
+
           // Iterate over the communication channels and, for generic ones, let enrich, if needed the journey toolbox
-          for(CommunicationChannel cc : getCommunicationChannels().values()) 
+          for(CommunicationChannel cc : getCommunicationChannels().values())
             {
-            if(cc.isGeneric() && cc.getJourneyGUINodeSectionID() != null) 
-              {
-                ToolboxSection section = journeyToolbox.get(cc.getJourneyGUINodeSectionID());
-                if(section == null) {
-                  log.warn("Deployment: Can't retrieve Journey ToolBoxSection for " + cc.getJourneyGUINodeSectionID() + " for communicationChannel " + cc.getID());
-                }
-                else {
-                  JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
-                  if(items != null) {
-                    JSONObject item = new JSONObject();
-                    item.put("id", cc.getToolboxID());
-                    item.put("name", cc.getName());
-                    // ensure this box effectively exists
-                    if(getNodeTypes().get(cc.getToolboxID()) != null) {
-                      items.add(item);
-                    } 
-                    else {
-                      log.warn("Deployment: Can't retrieve Journey NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
-                    }
+              if(cc.isGeneric() && cc.getJourneyGUINodeSectionID() != null)
+                {
+                  ToolboxSection section = journeyToolbox.get(cc.getJourneyGUINodeSectionID());
+                  if(section == null) {
+                    log.warn("Deployment: Can't retrieve Journey ToolBoxSection for " + cc.getJourneyGUINodeSectionID() + " for communicationChannel " + cc.getID());
                   }
-                  section.getJSONRepresentation().put("items", items);
+                  else {
+                    JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
+                    if(items != null) {
+                      JSONObject item = new JSONObject();
+                      item.put("id", cc.getToolboxID());
+                      item.put("name", cc.getName());
+                      // ensure this box effectively exists
+                      if(getNodeTypes().get(cc.getToolboxID()) != null) {
+                        items.add(item);
+                      }
+                      else {
+                        log.warn("Deployment: Can't retrieve Journey NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                      }
+                    }
+                    section.getJSONRepresentation().put("items", items);
+                  }
                 }
-              }
             }
         }
       catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
@@ -2885,33 +2922,33 @@ public class Deployment
               ToolboxSection campaignToolboxSection = new ToolboxSection(campaignToolboxSectionValueJSON);
               campaignToolbox.put(campaignToolboxSection.getID(), campaignToolboxSection);
             }
-          
+
           // Iterate over the communication channels and, for generic ones, let enrich, if needed the campaign toolbox
-          for(CommunicationChannel cc : getCommunicationChannels().values()) 
+          for(CommunicationChannel cc : getCommunicationChannels().values())
             {
-            if(cc.isGeneric() && cc.getCampaignGUINodeSectionID() != null) 
-              {
-                ToolboxSection section = campaignToolbox.get(cc.getCampaignGUINodeSectionID());
-                if(section == null) {
-                  log.warn("Deployment: Can't retrieve Campaign ToolBoxSection for " + cc.getCampaignGUINodeSectionID() + " for communicationChannel " + cc.getID());
-                }
-                else {
-                  JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
-                  if(items != null) {
-                    JSONObject item = new JSONObject();
-                    item.put("id", cc.getToolboxID());
-                    item.put("name", cc.getName());
-                    // ensure this box effectively exists
-                    if(getNodeTypes().get(cc.getToolboxID()) != null) {
-                      items.add(item);
-                    } 
-                    else {
-                      log.warn("Deployment: Can't retrieve Campaign NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
-                    }                    
+              if(cc.isGeneric() && cc.getCampaignGUINodeSectionID() != null)
+                {
+                  ToolboxSection section = campaignToolbox.get(cc.getCampaignGUINodeSectionID());
+                  if(section == null) {
+                    log.warn("Deployment: Can't retrieve Campaign ToolBoxSection for " + cc.getCampaignGUINodeSectionID() + " for communicationChannel " + cc.getID());
                   }
-                  section.getJSONRepresentation().put("items", items);
+                  else {
+                    JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
+                    if(items != null) {
+                      JSONObject item = new JSONObject();
+                      item.put("id", cc.getToolboxID());
+                      item.put("name", cc.getName());
+                      // ensure this box effectively exists
+                      if(getNodeTypes().get(cc.getToolboxID()) != null) {
+                        items.add(item);
+                      }
+                      else {
+                        log.warn("Deployment: Can't retrieve Campaign NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                      }
+                    }
+                    section.getJSONRepresentation().put("items", items);
+                  }
                 }
-              }
             }
         }
       catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
@@ -2932,33 +2969,33 @@ public class Deployment
               ToolboxSection workflowToolboxSection = new ToolboxSection(workflowToolboxSectionValueJSON);
               workflowToolbox.put(workflowToolboxSection.getID(), workflowToolboxSection);
             }
-          
+
           // Iterate over the communication channels and, for generic ones, let enrich, if needed the workflow toolbox
-          for(CommunicationChannel cc : getCommunicationChannels().values()) 
+          for(CommunicationChannel cc : getCommunicationChannels().values())
             {
-            if(cc.isGeneric() && cc.getWorkflowGUINodeSectionID() != null) 
-              {
-                ToolboxSection section = workflowToolbox.get(cc.getWorkflowGUINodeSectionID());
-                if(section == null) {
-                  log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getWorkflowGUINodeSectionID() + " for communicationChannel " + cc.getID());
-                }
-                else {
-                  JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
-                  if(items != null) {
-                    JSONObject item = new JSONObject();
-                    item.put("id", cc.getToolboxID());
-                    item.put("name", cc.getName());
-                    // ensure this box effectively exists
-                    if(getNodeTypes().get(cc.getToolboxID()) != null) {
-                      items.add(item);
-                    } 
-                    else {
-                      log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
-                    }
+              if(cc.isGeneric() && cc.getWorkflowGUINodeSectionID() != null)
+                {
+                  ToolboxSection section = workflowToolbox.get(cc.getWorkflowGUINodeSectionID());
+                  if(section == null) {
+                    log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getWorkflowGUINodeSectionID() + " for communicationChannel " + cc.getID());
                   }
-                  section.getJSONRepresentation().put("items", items);
+                  else {
+                    JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
+                    if(items != null) {
+                      JSONObject item = new JSONObject();
+                      item.put("id", cc.getToolboxID());
+                      item.put("name", cc.getName());
+                      // ensure this box effectively exists
+                      if(getNodeTypes().get(cc.getToolboxID()) != null) {
+                        items.add(item);
+                      }
+                      else {
+                        log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                      }
+                    }
+                    section.getJSONRepresentation().put("items", items);
+                  }
                 }
-              }
             }
         }
       catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
@@ -3007,7 +3044,7 @@ public class Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
-      
+
       //
       //  stockRefreshPeriod
       //
@@ -3219,7 +3256,7 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
-      
+
       //
       //  hourlyReportCronEntryString
       //
@@ -3272,7 +3309,6 @@ public class Deployment
           throw new ServerRuntimeException("deployment", e);
         }
 
-
       //
       //  enableProfileSegmentChange
       //
@@ -3282,51 +3318,52 @@ public class Deployment
           enableEvaluateTargetRandomness = JSONUtilities.decodeBoolean(jsonRoot, "enableEvaluateTargetRandomness", Boolean.FALSE);
         }
       catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
 
-      //
-      // conf for voucher
-      //
+      //      
+      // conf for voucher 
+      //      
 
-      try
-      {
-        // we won't deliver a voucher that expiry in less than X hours from now :
-        minExpiryDelayForVoucherDeliveryInHours = JSONUtilities.decodeInteger(jsonRoot, "minExpiryDelayForVoucherDeliveryInHours",4);
-        // the number of day after we clean up Expired voucher, in ES and SubscriberProfile
-        cleanUpExpiredVoucherDelayInDays = JSONUtilities.decodeInteger(jsonRoot, "cleanUpExpiredVoucherDelayInDays",31);
-        // the bulk size when importing voucher file into ES
-        importVoucherFileBulkSize = JSONUtilities.decodeInteger(jsonRoot, "importVoucherFileBulkSize",5000);
-        // the cache cleaner frequency in seconds for caching voucher with 0 stock from ES, and shrinking back "auto adjust concurrency number"
-        voucherESCacheCleanerFrequencyInSec = JSONUtilities.decodeInteger(jsonRoot, "voucherESCacheCleanerFrequencyInSec",300);
-        // an approximation of number of total concurrent process tyring to allocate Voucher in // to ES, but should not need to configure, algo should auto-adjust this
-        numberConcurrentVoucherAllocationToES = JSONUtilities.decodeInteger(jsonRoot, "numberConcurrentVoucherAllocationToES",10);
-        // the default number of replicas for voucher ES indices
-        liveVoucherIndexNumberOfReplicas = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "liveVoucherIndexNumberOfReplicas","1"));
-        // the default number of shards for voucher ES indices
-        liveVoucherIndexNumberOfShards = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "liveVoucherIndexNumberOfShards","1"));
-      }
+      try     
+        {
+          // we won't deliver a voucher that expiry in less than X hours from now :
+          minExpiryDelayForVoucherDeliveryInHours = JSONUtilities.decodeInteger(jsonRoot, "minExpiryDelayForVoucherDeliveryInHours",4);
+          // the number of day after we clean up Expired voucher, in ES and SubscriberProfile
+          cleanUpExpiredVoucherDelayInDays = JSONUtilities.decodeInteger(jsonRoot, "cleanUpExpiredVoucherDelayInDays",31);
+          // the bulk size when importing voucher file into ES 
+          importVoucherFileBulkSize = JSONUtilities.decodeInteger(jsonRoot, "importVoucherFileBulkSize",5000);
+          // the cache cleaner frequency in seconds for caching voucher with 0 stock from ES, and shrinking back "auto adjust concurrency number" 
+          voucherESCacheCleanerFrequencyInSec = JSONUtilities.decodeInteger(jsonRoot, "voucherESCacheCleanerFrequencyInSec",300);
+          // an approximation of number of total concurrent process tyring to allocate Voucher in // to ES, but should not need to configure, algo should auto-adjust this
+          numberConcurrentVoucherAllocationToES = JSONUtilities.decodeInteger(jsonRoot, "numberConcurrentVoucherAllocationToES",10);
+          // the default number of replicas for voucher ES indices 
+          liveVoucherIndexNumberOfReplicas = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "liveVoucherIndexNumberOfReplicas","1"));
+          // the default number of shards for voucher ES indices 
+          liveVoucherIndexNumberOfShards = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "liveVoucherIndexNumberOfShards","1"));
+        }
       catch (JSONUtilitiesException|NumberFormatException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
 
       //
       // conf for propensity service
       //
 
       try
-      {
-        // period in ms global propensity state will be read from zookeeper :
-        propensityReaderRefreshPeriodMs = JSONUtilities.decodeInteger(jsonRoot, "propensityReaderRefreshPeriodMs",10000);
-        // period in ms local propensity state will be write to zookeeper :
-        propensityWriterRefreshPeriodMs = JSONUtilities.decodeInteger(jsonRoot, "propensityWriterRefreshPeriodMs",10000);
-      }
+        {
+          // period in ms global propensity state will be read from zookeeper :
+          propensityReaderRefreshPeriodMs = JSONUtilities.decodeInteger(jsonRoot, "propensityReaderRefreshPeriodMs",10000);
+          // period in ms local propensity state will be write to zookeeper :
+          propensityWriterRefreshPeriodMs = JSONUtilities.decodeInteger(jsonRoot, "propensityWriterRefreshPeriodMs",10000);
+        }
       catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
 
 
       //
@@ -3338,7 +3375,7 @@ public class Deployment
         {
           bypassJourneyTrafficEngine = JSONUtilities.decodeBoolean(jsonRoot, "bypassJourneyTrafficEngine", Boolean.TRUE);
         }
-        catch (JSONUtilitiesException e)
+      catch (JSONUtilitiesException e)
         {
           throw new ServerRuntimeException("deployment", e);
         }
@@ -3350,6 +3387,50 @@ public class Deployment
       catch (JSONUtilitiesException e)
         {
           throw new ServerRuntimeException("deployment", e);
+        }
+
+      try
+        {
+          enableContactPolicyProcessing = JSONUtilities.decodeBoolean(jsonRoot, "enableContactPolicyProcessing", Boolean.TRUE);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      // configuration for extracts
+      //
+      try
+        {
+          JSONObject extractManager = JSONUtilities.decodeJSONObject(jsonRoot, "extractManager", false);
+          if (extractManager != null)
+            {
+              extractManagerZookeeperDir = JSONUtilities.decodeString(extractManager, "extractManagerZookeeperDir", true);
+              extractManagerOutputPath = JSONUtilities.decodeString(extractManager, "extractManagerOutputPath", "/app/extracts");
+              extractManagerDateFormat = JSONUtilities.decodeString(extractManager, "extractManagerDateFormat", "yyyy-MM-dd_HH-mm-ss_SSSS");
+              extractManagerFileExtension = JSONUtilities.decodeString(extractManager, "extractManagerFileExtension", "csv");
+              extractManagerCsvSeparator = JSONUtilities.decodeString(extractManager, "extractManagerCsvSeparator", ";");
+              extractManagerFieldSurrounder = JSONUtilities.decodeString(extractManager, "extractManagerFieldSurrounder", "'");
+            }
+          else
+            {
+              extractManagerZookeeperDir = Deployment.getZookeeperRoot() + File.separator + "extracts";
+              extractManagerOutputPath = "/app/extracts";
+              extractManagerDateFormat = "yyyy-MM-dd_HH-mm-ss_SSSS";
+              extractManagerFileExtension = "csv";
+              extractManagerCsvSeparator = ";";
+              extractManagerFieldSurrounder = "'";
+            }
+          if (extractManagerFieldSurrounder.length() > 1)
+            {
+              log.warn("extractManagerFieldSurrounder is not a single character, this would lead to errors in the extracts, truncating, please fix this : " + extractManagerFieldSurrounder);
+              extractManagerFieldSurrounder = extractManagerFieldSurrounder.substring(0, 1);
+            }
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment : extractManager", e);
         }
     }
 

@@ -121,7 +121,6 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                                   {
                                     log.info("tierUpdateDate is not a Long : " + tierUpdateDate.getClass().getName());
                                   }
-                                fullFields.put("tierUpdateDate", obj.get("tierUpdateDate"));
                               }
                             else
                               {
@@ -201,7 +200,6 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
               {
                 log.trace("Writing to csv file : " + line);
                 writer.write(line.getBytes());
-                writer.write("\n".getBytes());
               }
             else
               {

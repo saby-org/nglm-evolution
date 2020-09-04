@@ -148,8 +148,9 @@ public class CatalogCharacteristicInstance
           break;
 
         case TimeCriterion:
+        case AniversaryCriterion:
         default:
-          throw new GUIManagerException("unsupported catalogCharacteristic", catalogCharacteristicID);
+          throw new GUIManagerException("unsupported catalogCharacteristic data type", catalogCharacteristicID);
       }
 
     //
