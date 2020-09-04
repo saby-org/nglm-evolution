@@ -2822,10 +2822,12 @@ public class ThirdPartyManager
    /*****************************************
    *
    *  processGetOffersList
+   * @throws ParseException 
+   * @throws IOException 
    *
    *****************************************/
 
-  private JSONObject processGetOffersList(JSONObject jsonRoot) throws ThirdPartyManagerException
+  private JSONObject processGetOffersList(JSONObject jsonRoot) throws ThirdPartyManagerException, IOException, ParseException
   {
 
     /****************************************
@@ -2867,10 +2869,15 @@ public class ThirdPartyManager
     String startDateString = readString(jsonRoot, "startDate", false);
     String endDateString = readString(jsonRoot, "endDate", false);
     String offerObjective = readString(jsonRoot, "objective", false);
-    String userID = readString(jsonRoot, "loginName", true);
+    //String userID = readString(jsonRoot, "loginName", true);
     String parentResellerID = "";
     Date now = SystemTime.getCurrentTime();
-
+    AuthenticatedResponse authResponse = null;
+    ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
+    authResponse = authenticate(thirdPartyCredential);  
+    int user = (authResponse.getUserId());
+    String userID = Integer.toString(user);
+    
     Date offerStartDate = prepareStartDate(getDateFromString(startDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
     Date offerEndDate = prepareEndDate(getDateFromString(endDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
     
@@ -4229,10 +4236,12 @@ public class ThirdPartyManager
   /*****************************************
    *
    *  processPurchaseOffer
+   * @throws ParseException 
+   * @throws IOException 
    *
    *****************************************/
 
-  private JSONObject processPurchaseOffer(JSONObject jsonRoot, boolean sync) throws ThirdPartyManagerException
+  private JSONObject processPurchaseOffer(JSONObject jsonRoot, boolean sync) throws ThirdPartyManagerException, IOException, ParseException
   {
     /****************************************
      *
@@ -4270,7 +4279,11 @@ public class ThirdPartyManager
       }
     
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
-    String userID = JSONUtilities.decodeString(jsonRoot, "loginName", true); 
+    AuthenticatedResponse authResponse = null;
+    ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
+    authResponse = authenticate(thirdPartyCredential);  
+    int user = (authResponse.getUserId());
+    String userID = Integer.toString(user); 
     Map<String, List<String>> activeResellerAndSalesChannelIDs = activeResellerAndSalesChannelIDs(userID);
     String resellerID = "";
     String parentResellerID = "";
@@ -4964,10 +4977,12 @@ public class ThirdPartyManager
   /*****************************************
    *
    * processGetResellerDetails
+   * @throws ParseException 
+   * @throws IOException 
    *
    *****************************************/
 
-  private JSONObject processGetResellerDetails(JSONObject jsonRoot) throws ThirdPartyManagerException
+  private JSONObject processGetResellerDetails(JSONObject jsonRoot) throws ThirdPartyManagerException, IOException, ParseException
   {
 
     /****************************************
@@ -4977,7 +4992,11 @@ public class ThirdPartyManager
      ****************************************/
 
     Map<String, Object> response = new HashMap<String, Object>();
-    String user = readString(jsonRoot, "loginName", true);
+    AuthenticatedResponse authResponse = null;
+    ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
+    authResponse = authenticate(thirdPartyCredential);  
+    int userID = (authResponse.getUserId());
+    String user = Integer.toString(userID);
     for (GUIManagedObject reseller : resellerService.getStoredResellers())
       {
         if (reseller instanceof Reseller)
@@ -5093,7 +5112,14 @@ public class ThirdPartyManager
         *****************************************/
 
         HashMap<String,Object> request = new HashMap<String,Object>();
-        jsonRoot.put("apiVersion", 1);        
+        jsonRoot.put("apiVersion", 1); 
+        AuthenticatedResponse authResponse = null;
+        ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
+        authResponse = authenticate(thirdPartyCredential);  
+        int user = (authResponse.getUserId());
+        String userID = Integer.toString(user);
+        jsonRoot.put("userID", userID);
+        
         JSONObject result;
 
 
@@ -5176,6 +5202,12 @@ public class ThirdPartyManager
 
         HashMap<String, Object> request = new HashMap<String, Object>();
         jsonRoot.put("apiVersion", 1);
+        AuthenticatedResponse authResponse = null;
+        ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
+        authResponse = authenticate(thirdPartyCredential);  
+        int user = (authResponse.getUserId());
+        String userID = Integer.toString(user);
+        jsonRoot.put("userID", userID);
         JSONObject result;
 
         StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
@@ -5264,6 +5296,12 @@ public class ThirdPartyManager
 
         HashMap<String, Object> request = new HashMap<String, Object>();
         jsonRoot.put("apiVersion", 1);
+        AuthenticatedResponse authResponse = null;
+        ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
+        authResponse = authenticate(thirdPartyCredential);  
+        int user = (authResponse.getUserId());
+        String userID = Integer.toString(user);
+        jsonRoot.put("userID", userID);
         JSONObject result;
 
         StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
