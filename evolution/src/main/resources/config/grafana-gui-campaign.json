@@ -338,13 +338,13 @@
             {
               "field": "count",
               "id": "1",
-              "inlineScript": "long total = 0;  if (doc['filter.status'].value == 'Targeted') { total = doc['count'].value;} if (doc['filter.status'].value == 'Entered') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'Notified') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'Converted') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'ControlGroup') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'Control') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'ControlConverted') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'UCG') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'UCGConverted') { total = total + doc['count'].value;}  return total;",
+              "inlineScript": null,
               "meta": {},
-              "settings": {
-                "script": {
-                  "inline": "long total = 0;  if (doc['filter.status'].value == 'Targeted') { total = doc['count'].value;} if (doc['filter.status'].value == 'Entered') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'Notified') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'Converted') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'ControlGroup') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'Control') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'ControlConverted') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'UCG') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'UCGConverted') { total = total + doc['count'].value;}  return total;"
-                }
-              },
+              "settings": {},
+						   
+																																																																																																																																																																																																																																								
+				 
+				
               "type": "sum"
             }
           ],
@@ -353,7 +353,7 @@
           "timeField": "timestamp"
         },
         {
-          "alias": "TARGETED",
+          "alias": "TARGET GROUP",
           "bucketAggs": [
             {
               "fake": true,
@@ -382,15 +382,48 @@
           "metrics": [
             {
               "field": "count",
+              "hide": true,
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Targeted') { total = doc['count'].value;} if (doc['filter.status'].value == 'Notified') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'Converted') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'Targeted') { total = doc['count'].value;} if (doc['filter.status'].value == 'Notified') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'Converted') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
+            },
+            {
+              "field": "count",
+              "hide": true,
+              "id": "4",
+              "inlineScript": "int control = 0; if ((doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') && doc['count'].value > 0) {control = 1;} return control;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "int control = 0; if ((doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') && doc['count'].value > 0) {control = 1;} return control;"
+                }
+              },
+              "type": "max"
+            },
+            {
+              "field": "select field",
+              "id": "5",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "target",
+                  "pipelineAgg": "1"
+                },
+                {
+                  "name": "ctrl",
+                  "pipelineAgg": "4"
+                }
+              ],
+              "settings": {
+                "script": "params.target * params.ctrl"
+              },
+              "type": "bucket_script"
             }
           ],
           "query": "filter.journey:$journey",
@@ -398,7 +431,7 @@
           "timeField": "timestamp"
         },
         {
-          "alias": "CONTROL",
+          "alias": "CONTROL GROUP",
           "bucketAggs": [
             {
               "fake": true,
@@ -428,11 +461,11 @@
             {
               "field": "count",
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'ControlGroup') { total = doc['count'].value;} if (doc['filter.status'].value == 'ControlConverted') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'Control') { total = total + doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'ControlGroup') { total = doc['count'].value;} if (doc['filter.status'].value == 'ControlConverted') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'Control') { total = total + doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -473,11 +506,11 @@
             {
               "field": "count",
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Notified') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'Notified') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -518,11 +551,11 @@
             {
               "field": "count",
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Converted') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Converted') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'Converted') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Converted') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -563,11 +596,11 @@
             {
               "field": "count",
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'UCG') { total = doc['count'].value;} if (doc['filter.status'].value == 'UCGConverted') { total = total + doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'UCG' || doc['filter.status'].value == 'UCGConverted') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'UCG') { total = doc['count'].value;} if (doc['filter.status'].value == 'UCGConverted') { total = total + doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'UCG' || doc['filter.status'].value == 'UCGConverted') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -609,12 +642,12 @@
               "field": "count",
               "hide": true,
               "id": "1",
-              "inlineScript": "float total = 0; if (doc['filter.status'].value == 'Notified') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "missing": null,
                 "script": {
-                  "inline": "float total = 0; if (doc['filter.status'].value == 'Notified') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -623,12 +656,12 @@
               "field": "count",
               "hide": true,
               "id": "3",
-              "inlineScript": "long total = 0;  if (doc['filter.status'].value == 'Targeted') { total = doc['count'].value;} if (doc['filter.status'].value == 'Entered') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'Notified') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'Converted') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'ControlGroup') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'Control') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'ControlConverted') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'UCG') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'UCGConverted') { total = total + doc['count'].value;}  return total;",
+              "inlineScript": "long total = 0;  if (doc['filter.status'].value == 'Entered' || doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') {total = doc['count'].value;}  return total;",
               "meta": {},
               "settings": {
                 "missing": null,
                 "script": {
-                  "inline": "long total = 0;  if (doc['filter.status'].value == 'Targeted') { total = doc['count'].value;} if (doc['filter.status'].value == 'Entered') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'Notified') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'Converted') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'ControlGroup') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'Control') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'ControlConverted') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'UCG') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'UCGConverted') { total = total + doc['count'].value;}  return total;"
+                  "inline": "long total = 0;  if (doc['filter.status'].value == 'Entered' || doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') {total = doc['count'].value;}  return total;"
                 }
               },
               "type": "sum"
@@ -783,12 +816,12 @@
               "field": "count",
               "hide": true,
               "id": "3",
-              "inlineScript": "long total = 0;  if (doc['filter.status'].value == 'ControlGroup') { total = doc['count'].value;}  if (doc['filter.status'].value == 'Control') { total = doc['count'].value;} if (doc['filter.status'].value == 'ControlConverted') { total = total + doc['count'].value;}  return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;}  return total;",
               "meta": {},
               "settings": {
                 "missing": null,
                 "script": {
-                  "inline": "long total = 0;  if (doc['filter.status'].value == 'ControlGroup') { total = doc['count'].value;}  if (doc['filter.status'].value == 'Control') { total = doc['count'].value;} if (doc['filter.status'].value == 'ControlConverted') { total = total + doc['count'].value;}  return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;}  return total;"
                 }
               },
               "type": "sum"
@@ -1195,7 +1228,7 @@
               "field": "count",
               "hide": true,
               "id": "4",
-              "inlineScript": "float total = 0; if (doc['filter.status'].value == 'Notified') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
               "meta": {},
               "pipelineVariables": [
                 {
@@ -1205,7 +1238,7 @@
               ],
               "settings": {
                 "script": {
-                  "inline": "float total = 0; if (doc['filter.status'].value == 'Notified') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -1214,11 +1247,11 @@
               "field": "count",
               "hide": true,
               "id": "5",
-              "inlineScript": "long total = 0;  if (doc['filter.status'].value == 'Targeted') { total = doc['count'].value;} if (doc['filter.status'].value == 'Entered') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'Notified') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'Converted') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'ControlGroup') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'Control') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'ControlConverted') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'UCG') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'UCGConverted') { total = total + doc['count'].value;}  return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Entered' || doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') {total = doc['count'].value;}  return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0;  if (doc['filter.status'].value == 'Targeted') { total = doc['count'].value;} if (doc['filter.status'].value == 'Entered') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'Notified') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'Converted') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'ControlGroup') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'Control') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'ControlConverted') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'UCG') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'UCGConverted') { total = total + doc['count'].value;}  return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Entered' || doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') {total = doc['count'].value;}  return total;"
                 }
               },
               "type": "sum"
