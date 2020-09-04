@@ -324,6 +324,17 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
                 Map<String, String> resolvedParameters = req.getResolvedParameters(subscriberMessageTemplateService);
                 msgContentJSON.putAll(resolvedParameters);
               }
+            for (String key : msgContentJSON.keySet())
+              {
+                String value = (String) msgContentJSON.get(key);
+
+                boolean hasNewline = value.contains("\n");
+                if (hasNewline)
+                  {
+                    value = value.replace("\n", " ");
+                  }
+                msgContentJSON.put(key, value);
+              }          
             notifRecs.put(messageContent, ReportUtils.formatJSON(msgContentJSON));
           }
         
