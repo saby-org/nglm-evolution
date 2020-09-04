@@ -16,23 +16,13 @@ set -o errexit \
 
 cat /etc/kafka/log4j-evol.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' > /etc/kafka/log4j-evol-final.properties
 
-case "${ENTRYPOINT}" in
+#
+#  wait for services
+#
 
-  "guimanager" | "thirdpartymanager" | "notificationmanagermail" | "notificationmanagersms" | "notificationmanagerpush" | "notificationmanager" | "infulfillmentmanager" | "purchasefulfillment" | "evolutionengine")
-    ;;
-  "dnboproxy" | "datacubemanager" | "reportmanager" | "reportscheduler" | "emptyfulfillmentmanager" | "commoditydeliverymanager" | "ucgengine" | "journeytrafficengine" | "extractmanager")
-	#
-	#  wait for services
-	#
-
-	/app/bin/ev-cub zk-ready $ZOOKEEPER_SERVERS $CUB_ZOOKEEPER_MIN_NODES $CUB_ZOOKEEPER_TIMEOUT
-	/app/bin/ev-cub kafka-ready -b $BROKER_SERVERS $CUB_BROKER_MIN_NODES $CUB_KAFKA_TIMEOUT
-	/app/bin/ev-cub sr-ready $REGISTRY_SERVERS $CUB_REGISTRY_MIN_NODES $CUB_SCHEMA_REGISTRY_TIMEOUT
-    ;;
-  *)
-    echo -n "unknown"
-    ;;
-esac
+/app/bin/ev-cub zk-ready $ZOOKEEPER_SERVERS $CUB_ZOOKEEPER_MIN_NODES $CUB_ZOOKEEPER_TIMEOUT
+/app/bin/ev-cub kafka-ready -b $BROKER_SERVERS $CUB_BROKER_MIN_NODES $CUB_KAFKA_TIMEOUT
+/app/bin/ev-cub sr-ready $REGISTRY_SERVERS $CUB_REGISTRY_MIN_NODES $CUB_SCHEMA_REGISTRY_TIMEOUT
 
 #
 #  wait for deployment
