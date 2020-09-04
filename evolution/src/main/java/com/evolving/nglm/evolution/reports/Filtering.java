@@ -11,11 +11,11 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RowsWithSpecificColumnsValue {
+public class Filtering {
 	
-	private static final Logger log = LoggerFactory.getLogger(RowsWithSpecificColumnsValue.class);
+	private static final Logger log = LoggerFactory.getLogger(Filtering.class);
 
-	public static void displayRowsWithSpecificColumnsData(String InputFileName, String OutputFileName,
+	public static void filteringReport(String InputFileName, String OutputFileName,
 			List<String> colsName, List<List<String>> colsValues, String delimiter, String separator) 
 	{
 		if (colsName.size() == colsValues.size())
@@ -27,7 +27,7 @@ public class RowsWithSpecificColumnsValue {
 				br = new BufferedReader(new FileReader(InputFileName));
 			
 			List<String> headerList = new ArrayList<>();
-			String[] words = br.readLine().split(";", -1);
+			String[] words = br.readLine().split("delimiter", -1);
 
 			for (int i = 0; i < words.length; i++) 
 			{
