@@ -3,47 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>release-1.4.4_0-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>1.4.4_1-SNAPSHOT</version>
-  <version>release_1.4.4_1-EVPRO-487-SNAPSHOT</version>
-  <version>release_1.4.4_1-EVPRO-488-SNAPSHOT</version>
-  <version>EVPRO-335-SNAPSHOT</version>
-  <version>1.4.4_1-469-SNAPSHOT</version>
-  <version>release_1.4.4_1-EVPRO-215-1-SNAPSHOT</version>
-  <version>release_1.4.4_1-EVPRO-428-SNAPSHOT</version>
-  <version>release_1.4.4_1-EVPRO-515-SNAPSHOT</version>
-  <version>EVPRO-426-1.4.4_1-SNAPSHOT</version>
-  <version>EVPRO-432_1a-SNAPSHOT</version>
-  <version>EVPRO-455-v144-SNAPSHOT</version>
-  <version>1.4.4_1-507-SNAPSHOT</version>
-  <version>release_1.4.4_1-EVPRO-509-SNAPSHOT</version>
-  <version>release_1.4.4_1-EVPRO-289-SNAPSHOT</version>
-  <version>1.4.4_1-505-SNAPSHOT</version>
-  <version>release_1.4.4_1-EVPRO-493-SNAPSHOT</version>
-  <version>1.4.4_1-496-SNAPSHOT</version>
-  <version>EVPRO-287-SNAPSHOT</version>
-  <version>release_1.4.4_1-EVPRO-516-SNAPSHOT</version>
-  <version>1.4.4_0-EVCOR-123b-SNAPSHOT</version>
-  <version>release_1.4.4_1-EVPRO-516-1-SNAPSHOT</version>
-  <version>EVPRO-303-478-SNAPSHOT</version>
+  <version>1.4.5_0-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -67,13 +27,13 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>EVPRO-287-SNAPSHOT</version>
+    <version>1.4.5_0-SNAPSHOT</version>
   </parent>
 
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>EVPRO-287-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.4.5_0-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.4.21</gui-fwk.version>
