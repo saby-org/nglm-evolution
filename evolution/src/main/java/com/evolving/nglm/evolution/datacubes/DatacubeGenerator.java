@@ -167,10 +167,11 @@ public abstract class DatacubeGenerator
     List<String> sortedkeys = new ArrayList<String>(filters.keySet());
     Collections.sort(sortedkeys);
     
-    if(tmpBuffer == null) {
-      tmpBuffer = ByteBuffer.allocate(Integer.BYTES * (sortedkeys.size() + 1));
+    int bufferCapacity = Integer.BYTES * (sortedkeys.size() + 1);
+    if(tmpBuffer == null || tmpBuffer.capacity() != bufferCapacity) {
+      tmpBuffer = ByteBuffer.allocate(bufferCapacity);
     } else {
-      tmpBuffer.rewind();
+      tmpBuffer.rewind(); // re-use the buffer to optimize allocate calls.
     }
     
     tmpBuffer.putInt(timestamp.hashCode());
