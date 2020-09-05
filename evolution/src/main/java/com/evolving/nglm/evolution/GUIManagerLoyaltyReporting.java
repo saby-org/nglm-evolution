@@ -1026,6 +1026,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   SchedulingInterval eSchedule = SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr);
                   log.trace("Checking that "+eSchedule+" is allowed");
                   if (! availableScheduling.contains(eSchedule)) {
+                	  log.info("processing not condition");
                     response.put("id", jsonRoot.get("id"));
                     response.put("responseCode", "reportNotValid");
                     response.put("responseMessage", "scheduling "+eSchedule+" is not valid");
@@ -1046,6 +1047,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     long epoch = epochServer.getKey();
     try
       {
+    	log.info("processing put report"+jsonRoot.toJSONString());
         Report report = new Report(jsonRoot, epoch, existingReport);
         log.trace("new report : "+report);
         if (!dryRun)

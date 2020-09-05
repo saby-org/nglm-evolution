@@ -44,7 +44,7 @@ public class Report extends GUIManagedObject
     DAILY("daily", Deployment.getDailyReportCronEntryString()),
     HOURLY("hourly", Deployment.getHourlyReportCronEntryString()),
     UNKNOWN("(unknown)", ""),
-	NONE("(none)", "");
+	NONE("none", "");
     private String externalRepresentation;
     private String cron;
     private SchedulingInterval(String externalRepresentation, String cron) { this.externalRepresentation = externalRepresentation; this.cron = cron; }
@@ -190,8 +190,11 @@ public class Report extends GUIManagedObject
       for (int i=0; i<effectiveSchedulingJSONArray.size(); i++) {
     	  
         String schedulingIntervalStr = (String) effectiveSchedulingJSONArray.get(i);
-    	if(SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr).equals(SchedulingInterval.NONE))
+    	if(SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr).equals(SchedulingInterval.NONE)) {
+    	log.info("none received hence ignoring:"+schedulingIntervalStr);
     		continue;
+    	}
+    	log.info("not none received hence processing"+schedulingIntervalStr);
         this.effectiveScheduling.add(SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr));
       }
     }
