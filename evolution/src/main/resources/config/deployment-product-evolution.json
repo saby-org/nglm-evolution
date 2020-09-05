@@ -904,14 +904,14 @@
       "display"             : "BDR Report",
       "description"         : "Description of the BDR Report",
       "class"               : "com.evolving.nglm.evolution.reports.bdr.BDRReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "daily", "none" ]
     },
     {
       "name"                : "ODRReport",
       "display"             : "ODR Report",
       "description"         : "Description of the ODR Report",
       "class"               : "com.evolving.nglm.evolution.reports.odr.ODRReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ],
+      "availableScheduling" : [ "daily", "none" ],
       "defaultReportPeriodQuantity" : 1,
       "defaultReportPeriodUnit"     : "DAYS"
     },
@@ -920,7 +920,7 @@
       "display"             : "Notification Report",
       "description"         : "Description of the Notification Report",
       "class"               : "com.evolving.nglm.evolution.reports.notification.NotificationReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "daily", "none" ]
     },
     {
       "name"                : "journeysReport",
