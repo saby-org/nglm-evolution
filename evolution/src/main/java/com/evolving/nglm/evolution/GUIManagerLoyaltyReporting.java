@@ -1045,7 +1045,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             }
           }
       }
-    List<String> effectiveScheduling = new ArrayList<>();
+    JSONArray effectiveScheduling = new JSONArray();
     JSONArray effectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EFFECTIVE_SCHEDULING, false);
     if (effectiveSchedulingJSONArray != null) { 
         for (int i=0; i<effectiveSchedulingJSONArray.size(); i++) {
