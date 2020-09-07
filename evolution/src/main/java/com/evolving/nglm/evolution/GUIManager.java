@@ -19980,7 +19980,7 @@ public class GUIManager
     String deliveryRequestID = zuks.getStringKey();
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
-      CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
+      CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, null);
     } catch (SubscriberProfileServiceException e) {
       throw new GUIManagerException(e);
     }
