@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportManager;
 
@@ -249,8 +250,28 @@ public class ReportService extends GUIService
 			  Class<ReportDriver> reportClass = (Class<ReportDriver>) Class.forName(report.getReportClass());
 			  Constructor<ReportDriver> cons = reportClass.getConstructor();
 			  ReportDriver rd = cons.newInstance((Object[]) null);
-			  JSONArray json = rd.reportFilters();
-			  responseJSON.put("filters", json);
+			  List<FilterObject> filters = rd.reportFilters();
+			  JSONArray jsonArray = new JSONArray();
+
+			  for (FilterObject filter : filters)
+			  {
+				  JSONObject filterJSON, argumentJSON;
+				  filterJSON = new JSONObject();
+				  filterJSON.put("criterionField", filter.getColumnName());
+				  argumentJSON = new JSONObject();
+				  argumentJSON.put("expression", "");
+				  argumentJSON.put("valueType", filter.getColumnType().getExternalRepresentation());
+				  JSONArray valueJSON = new JSONArray();
+				  for (Object value : filter.getValues())
+				  {
+					  valueJSON.add(value);
+				  }
+				  argumentJSON.put("value", valueJSON);
+				  argumentJSON.put("timeUnit", null);
+				  filterJSON.put("argument", argumentJSON);
+				  jsonArray.add(filterJSON);
+			  }
+			  responseJSON.put("filters", jsonArray);
 		  }
 		  catch (Exception e)
 		  {
