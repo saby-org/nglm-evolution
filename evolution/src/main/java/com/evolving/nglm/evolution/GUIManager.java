@@ -22722,8 +22722,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
      ****************************************/
 
     Date now = SystemTime.getCurrentTime();
-    HashMap<String, Object> response = new HashMap<String, Object>();  
-    String user = JSONUtilities.decodeString(jsonRoot, "loginName", false);
+    HashMap<String, Object> response = new HashMap<String, Object>(); 
+    String user = JSONUtilities.decodeString(jsonRoot, "userID", false);
+   
     String activeSupplier = activeSupplierAndParentSupplierIDs(user).get("activeSupplierID");
     boolean offerCanBeModified = true;
     String existingproductID = null;
@@ -23109,7 +23110,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     List<Offer> offers = new ArrayList<>();
     List<OfferProduct> products = new ArrayList<>();
     List<OfferVoucher> vouchers = new ArrayList<>();
-    String user = JSONUtilities.decodeString(jsonRoot, "loginName", false);
+    String user = JSONUtilities.decodeString(jsonRoot, "userID", false);
     Date now = SystemTime.getCurrentTime();
     String activeSupplier = activeSupplierAndParentSupplierIDs(user).get("activeSupplierID");
     
@@ -23258,7 +23259,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     String offerID = JSONUtilities.decodeString(jsonRoot, "id", true);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
-    String user = JSONUtilities.decodeString(jsonRoot, "loginName", false);
+    String user = JSONUtilities.decodeString(jsonRoot, "userID", false);
     String activeSupplier = activeSupplierAndParentSupplierIDs(user).get("activeSupplierID");
     Date now = SystemTime.getCurrentTime();
 
@@ -26833,7 +26834,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     JSONObject voucherJSON = new JSONObject();
     
     
-    String userID = JSONUtilities.decodeString(jsonRoot, "loginName", true);
+    String userID = JSONUtilities.decodeString(jsonRoot, "userID", true);
     String activeSupplier = activeSupplierAndParentSupplierIDs(userID).get("activeSupplierID");
     if (productJSONArray != null &&!(productJSONArray.isEmpty()))
       {
