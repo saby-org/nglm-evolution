@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution.reports;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 import org.json.simple.JSONArray;
 import org.slf4j.Logger;
@@ -16,11 +17,15 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Report;
 
+
+
 /**
  * Abstract class that must be implemented to produce a report.
  *
  */
 public abstract class ReportDriver {
+	
+	
 	
 	private static final Logger log = LoggerFactory.getLogger(ReportDriver.class);
 
@@ -41,7 +46,7 @@ public abstract class ReportDriver {
 			String csvFilename,
 			String[] params);
 	
-	abstract public JSONArray reportFilters();
+	abstract public List<FilterObject> reportFilters();
 	
 	/**
 	 * Returns a topic name that can be used, based on the report being produced and the date.
