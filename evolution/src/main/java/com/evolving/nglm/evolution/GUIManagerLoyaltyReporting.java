@@ -755,47 +755,54 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             		  // ...
             		  if (!(filterJSON.get("criterionField") instanceof String))
             		  {
-            			  log.warn("Column name " + colNames + " is not a String : " + filterJSON.get("criterionField"));
+            			  log.warn("criterionField is not a String : " + filterJSON.get("criterionField"));
             			  colNames.add("");
             			  break;
             		  }
             		  String nameOfColumn = (String) filterJSON.get("criterionField");
             		  colNames.add(nameOfColumn);
-            		  Object expression = filterJSON.get("expression");
-            		  String valueType = (String) filterJSON.get("valueType");
+            		  
+            		  if (!(filterJSON.get("argument") instanceof List<?>))
+            		  {
+            			  log.warn("argument is not a JSONObject : " + filterJSON.get("argument"));
+            			  colsValues.add(new ArrayList<>());
+            			  break;
+            		  }
+            		  JSONObject argument = (JSONObject) filterJSON.get("argument");
+        			  String valueType = (String) argument.get("valueType");
+            		  Object value = (Object) argument.get("value");
+            				  
             		  List<String> valuesOfColumns;
             		  switch (valueType) 
             		  {
             		  case "simpleSelect.string":
-            			  if (!(expression instanceof String))
+            			  if (!(value instanceof String))
             			  {
-            				  log.warn("value of column " + nameOfColumn + " is not a String : " + expression);
+            				  log.warn("value of column " + nameOfColumn + " is not a String : " + value);
             				  colsValues.add(new ArrayList<>());
             				  break;
             			  }
 
-            			  String valueSimpleSelect = (String) expression;
+            			  String valueSimpleSelect = (String) value;
             			  valuesOfColumns = new ArrayList<>();
             			  valuesOfColumns.add(valueSimpleSelect);
             			  colsValues.add(valuesOfColumns);
             			  break;
 
             		  case "multiple.string":
-            			  //==
-            			  if (!(expression instanceof String[]))
+            			  if (!(value instanceof String[]))
             			  {
-            				  log.warn("value of column " + nameOfColumn + " is not an array of Strings : " + expression);
+            				  log.warn("value of column " + nameOfColumn + " is not an array of Strings : " + value);
             				  colsValues.add(new ArrayList<>());
             				  break;
             			  }
-            			  String[] valueMultiple = (String[]) expression;
+            			  String[] valueMultiple = (String[]) value;
             			  valuesOfColumns = new ArrayList<>();
             			  for (int j = 0; j < valueMultiple.length; j++) 
             			  {
             				  valuesOfColumns.add(valueMultiple[j]);
             			  }
             			  colsValues.add(valuesOfColumns);
-            			  //==
             			  break;
 
             		  default:
