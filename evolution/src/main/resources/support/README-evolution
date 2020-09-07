@@ -498,6 +498,7 @@ curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/r
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getReportList | jq
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1,"id":"1"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/downloadReport
 curl -X POST -H "Content-Type: application/json" -d '{"id":"001","apiVersion":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/launchReport; echo
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1,"id":"001", "backendsimulator" : true}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/launchReport; echo
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getReportGlobalConfiguration
 
 --

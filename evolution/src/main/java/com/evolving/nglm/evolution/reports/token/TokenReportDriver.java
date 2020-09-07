@@ -14,6 +14,7 @@ import com.evolving.nglm.evolution.reports.subscriber.SubscriberReportMonoPhase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 public class TokenReportDriver extends ReportDriver{
@@ -21,7 +22,8 @@ public class TokenReportDriver extends ReportDriver{
 
 	@Override
 	public void produceReport(
-            Report report, 
+            Report report,
+            final Date reportGenerationDate,
             String zookeeper, 
 			String kafka, 
 			String elasticSearch, 
@@ -29,7 +31,7 @@ public class TokenReportDriver extends ReportDriver{
 			String[] params) {
     	log.debug("Processing Token Report with "+report.getName());
     	
-    	String esIndexSubscriber = "subscriberprofile";
+    	String esIndexSubscriber = getSubscriberProfileIndex(reportGenerationDate);
       String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
       int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
 
@@ -39,5 +41,4 @@ public class TokenReportDriver extends ReportDriver{
   
 	  log.debug("Finished with Token Report");
 	}
-
 }

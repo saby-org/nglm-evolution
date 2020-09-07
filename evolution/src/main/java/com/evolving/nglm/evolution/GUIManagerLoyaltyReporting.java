@@ -1043,6 +1043,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     log.trace("In processLaunchReport : "+jsonRoot);
     HashMap<String,Object> response = new HashMap<String,Object>();
     String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean backendSimulator = JSONUtilities.decodeBoolean(jsonRoot, "backendsimulator", Boolean.FALSE);
     Report report = (Report) reportService.getStoredReport(reportID);
     log.trace("Looking for "+reportID+" and got "+report);
     String responseCode;
@@ -1058,7 +1059,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           }
         else
           {
-            reportService.launchReport(report.getName());
+            reportService.launchReport(report.getName(), backendSimulator);
             responseCode = "ok";
           }
       }

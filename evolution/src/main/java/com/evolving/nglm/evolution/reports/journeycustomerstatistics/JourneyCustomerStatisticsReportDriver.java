@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution.reports.journeycustomerstatistics;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ public class JourneyCustomerStatisticsReportDriver extends ReportDriver {
   @Override
   public void produceReport(
         Report report,
+        final Date reportGenerationDate,
         String zookeeper,
         String kafka,
         String elasticSearch,
@@ -37,7 +39,7 @@ public class JourneyCustomerStatisticsReportDriver extends ReportDriver {
       
       JourneyCustomerStatisticsReportMonoPhase.main(new String[]{
           elasticSearch, JOURNEY_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit
-      }, journeyService);         
+      }, journeyService, reportGenerationDate);         
       try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) {}
       
       journeyService.stop();

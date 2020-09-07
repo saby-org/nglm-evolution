@@ -7,12 +7,15 @@
 package com.evolving.nglm.evolution.reports;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.zip.ZipOutputStream;
 
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 
 /**
@@ -37,10 +40,7 @@ public interface ReportCsvFactory
    */
   default boolean dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer, boolean addHeader) throws IOException {return false;}
   default boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeader) throws IOException {return false;}
-  
   default void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)  {}
-
   default Map<String, List<Map<String, Object>>> getSplittedReportElementsForFile(ReportElement reportElement) {return null;}
   default Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String,Object> map) {return null;}
-
 }

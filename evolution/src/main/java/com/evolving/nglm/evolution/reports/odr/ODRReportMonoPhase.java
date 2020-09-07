@@ -341,7 +341,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
       }  
   }
 
-  public static void main(String[] args)
+  public static void main(String[] args, final Date reportGenerationDate)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -365,8 +365,8 @@ public class ODRReportMonoPhase implements ReportCsvFactory
         reportPeriodQuantity = Integer.parseInt(args[3]);
         reportPeriodUnit = args[4];
       }
-    Date fromDate = getFromDate(reportPeriodUnit, reportPeriodQuantity);
-    Date toDate = SystemTime.getCurrentTime();
+    Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
+    Date toDate = reportGenerationDate;
     
     List<String> esIndexDates = getEsIndexDates(fromDate, toDate);
     StringBuilder esIndexOdrList = new StringBuilder();
@@ -430,34 +430,34 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   }
 
 
-  private static Date getFromDate(String reportPeriodUnit, Integer reportPeriodQuantity)
+  private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit, Integer reportPeriodQuantity)
   {
     reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(1) : reportPeriodQuantity;
-    if (reportPeriodUnit == null) reportPeriodUnit  = PERIOD.DAYS.getExternalRepresentation();
-    
+    if (reportPeriodUnit == null) reportPeriodUnit = PERIOD.DAYS.getExternalRepresentation();
+
     //
     //
     //
-    
-    Date now = SystemTime.getCurrentTime();
+
+    Date now = reportGenerationDate;
     Date fromDate = null;
     switch (reportPeriodUnit.toUpperCase())
-      {
-        case "DAYS":
-          fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
-          break;
-          
-        case "WEEKS":
-          fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
-          break;
-          
-        case "MONTHS":
-          fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
-          break;
-          
-        default:
-          break;
-      }
+    {
+      case "DAYS":
+        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        break;
+
+      case "WEEKS":
+        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        break;
+
+      case "MONTHS":
+        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        break;
+
+      default:
+        break;
+    }
     return fromDate;
   }
 }

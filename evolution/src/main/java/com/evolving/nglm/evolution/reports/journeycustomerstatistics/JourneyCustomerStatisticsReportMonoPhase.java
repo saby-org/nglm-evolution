@@ -136,7 +136,7 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
     return result;
   }
 
-  public static void main(String[] args, JourneyService journeyService)
+  public static void main(String[] args, JourneyService journeyService, Date reportGenerationDate)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -153,7 +153,7 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
     String esIndexJourney = args[1];
     String csvfile = args[2];
     
-    Collection<Journey> activeJourneys = journeyService.getActiveJourneys(SystemTime.getCurrentTime());
+    Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate);
     StringBuilder activeJourneyEsIndex = new StringBuilder();
     boolean firstEntry = true;
     for (Journey journey : activeJourneys)

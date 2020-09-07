@@ -8,37 +8,26 @@ import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 
-public class JourneyCustomerStatesReportDriver extends ReportDriver {
+import java.util.Date;
+
+public class JourneyCustomerStatesReportDriver extends ReportDriver
+{
 
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatesReportDriver.class);
-  public static final String JOURNEY_ES_INDEX = "journeystatistic-";
-	  
-	@Override
-	public void produceReport(
-	      Report report,
-	      String zookeeper,
-	      String kafka,
-	      String elasticSearch,
-	      String csvFilename,
-	      String[] params) {
-		
-    log.debug("Processing Journey Customer States Mono Report with "+report+" and "+params);
+
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
+  {
+
+    log.debug("Processing Journey Customer States Report with " + report + " and " + params);
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-    // We add a random number to make sure each instance of this report starts from scratch
-    // If we need to parallelise this phase, remove the random number.
-    
+    String JOURNEY_ES_INDEX = "journeystatistic-";
     JourneyService journeyService = new JourneyService(kafka, "JourneyCustomerStatesReport-journeyservice-JourneyCustomerStatesReportMonoDriver", Deployment.getJourneyTopic(), false);
     journeyService.start();
-
     log.debug("PHASE 1 : read ElasticSearch");
-		JourneyCustomerStatesReportMonoPhase.main(new String[]{
-			elasticSearch, JOURNEY_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit
-		}, journeyService);			
-		
-		journeyService.stop();
-		
-	  log.debug("Finished with Journey Customer States Report");
-		
-	}
+    JourneyCustomerStatesReportMonoPhase.main(new String[] { elasticSearch, JOURNEY_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, journeyService, reportGenerationDate);
+    journeyService.stop();
+    log.debug("Finished with Journey Customer States Report");
+
+  }
 }
