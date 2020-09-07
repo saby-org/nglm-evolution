@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution.reports.journeyimpact;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -10,7 +11,8 @@ import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 
-public class JourneyImpactReportDriver extends ReportDriver {
+public class JourneyImpactReportDriver extends ReportDriver
+{
 
   private static final Logger log = LoggerFactory.getLogger(JourneyImpactReportDriver.class);
   public static final String JOURNEY_STATS_ES_INDEX = "journeystatistic-";
@@ -18,6 +20,7 @@ public class JourneyImpactReportDriver extends ReportDriver {
   @Override
   public void produceReport(
         Report report,
+        final Date reportGenerationDate,
         String zookeeper,
         String kafka,
         String elasticSearch,
@@ -37,7 +40,7 @@ public class JourneyImpactReportDriver extends ReportDriver {
 
       JourneyImpactReportMonoPhase.main(new String[]{
           elasticSearch, JOURNEY_STATS_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit
-      }, journeyService);         
+      }, journeyService, reportGenerationDate);         
       try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) {}      
       
       journeyService.stop();

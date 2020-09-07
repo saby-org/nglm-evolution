@@ -243,6 +243,7 @@ public class ReportCsvWriter
         
         final Consumer<String, ReportElement> consumer = createConsumer(topicIn);
         Map<String, List<Map<String, Object>>> records = new HashMap<String, List<Map<String, Object>>>();
+        List<ReportElement> reportElementList = new ArrayList<ReportUtils.ReportElement>();
         
         //
         //  set
@@ -283,19 +284,7 @@ public class ReportCsvWriter
                 log.trace("read " + re);
                 if (re.type != ReportElement.MARKER && re.isComplete)
                   {
-                    Map<String, List<Map<String, Object>>> splittedReportElements = reportFactory.getSplittedReportElementsForFile(record.value());
-                    for (String fileKey : splittedReportElements.keySet())
-                    
-                    if (records.containsKey(fileKey))
-                      {
-                        records.get(fileKey).addAll(splittedReportElements.get(fileKey));
-                      }
-                    else
-                      {
-                        List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
-                        elements.addAll(splittedReportElements.get(fileKey));
-                        records.put(fileKey, elements);
-                      }
+                    reportElementList.add(record.value());
                   }
               }
             while (true)
@@ -314,6 +303,26 @@ public class ReportCsvWriter
           }
         consumer.close();
         
+        //
+        //  split
+        //
+        
+        for (ReportElement reportElement : reportElementList)
+          {
+            Map<String, List<Map<String, Object>>>  splittedRecord = reportFactory.getSplittedReportElementsForFile(reportElement);
+            for (String key : splittedRecord.keySet())
+              {
+                if (records.containsKey(key))
+                  {
+                    records.get(key).addAll(splittedRecord.get(key));
+                  }
+                else
+                  {
+                    records.put(key, splittedRecord.get(key));
+                  }
+              }
+          }
+        
         try
           {
             //
@@ -323,6 +332,7 @@ public class ReportCsvWriter
             FileOutputStream fos = new FileOutputStream(file);
             ZipOutputStream writer = new ZipOutputStream(fos);
             
+            if(log.isDebugEnabled()) log.debug("wirting records {}", records);
             for (String key : records.keySet())
               {
                 //

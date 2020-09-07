@@ -351,35 +351,38 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     return esIndexOdrList;
   }
   
-  private static Date getFromDate(String reportPeriodUnit, Integer reportPeriodQuantity)
+  private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit, Integer reportPeriodQuantity)
   {
     reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(1) : reportPeriodQuantity;
-    if (reportPeriodUnit == null) reportPeriodUnit  = PERIOD.DAYS.getExternalRepresentation();
-    
-    Date now = SystemTime.getCurrentTime();
+    if (reportPeriodUnit == null) reportPeriodUnit = PERIOD.DAYS.getExternalRepresentation();
+
+    //
+    //
+    //
+
+    Date now = reportGenerationDate;
     Date fromDate = null;
     switch (reportPeriodUnit.toUpperCase())
-      {
-        case "DAYS":
-          fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
-          break;
-          
-        case "WEEKS":
-          fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
-          break;
-          
-        case "MONTHS":
-          fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
-          break;
-          
-        default:
-          break;
-      }
+    {
+      case "DAYS":
+        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        break;
+
+      case "WEEKS":
+        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        break;
+
+      case "MONTHS":
+        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, com.evolving.nglm.core.Deployment.getBaseTimeZone());
+        break;
+
+      default:
+        break;
+    }
     return fromDate;
   }
-
   
-  public static void main(String[] args)
+  public static void main(String[] args, final Date reportGenerationDate)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -403,8 +406,8 @@ public class BDRReportMonoPhase implements ReportCsvFactory
         reportPeriodUnit = args[4];
       }
     
-    Date fromDate = getFromDate(reportPeriodUnit, reportPeriodQuantity);
-    Date toDate = SystemTime.getCurrentTime();
+    Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
+    Date toDate = reportGenerationDate;
     
     List<String> esIndexDates = getEsIndexDates(fromDate, toDate);
     StringBuilder esIndexBdrList = new StringBuilder();
@@ -452,6 +455,4 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     
     log.info("Finished BDRReport");
   }
-  
-  
 }

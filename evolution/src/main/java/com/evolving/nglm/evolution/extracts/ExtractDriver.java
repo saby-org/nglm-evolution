@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -44,7 +45,7 @@ public class ExtractDriver extends ReportDriver
       //this part is based on report mechanism and reuse code from there
 
       log.debug("Processing extract " + extractItem.getExtractName());
-      String topic = "Targets_" + extractItem.getExtractName() + "_" + getTopicPrefixDate();
+      String topic = "Targets_" + extractItem.getExtractName() + "_" + getTopicPrefixDate(SystemTime.getCurrentTime());
       String esIndexSubscriber = "subscriberprofile";
       //String defaultReportPeriodUnit = target.getDefaultReportPeriodUnit();
       //int defaultReportPeriodQuantity = target.getDefaultReportPeriodQuantity();
@@ -83,7 +84,7 @@ public class ExtractDriver extends ReportDriver
    * @param csvFilename   filename of report to produce
    * @param params        from reportmanager-run.sh
    */
-  @Override public void produceReport(Report report, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
+  @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params)
   {
     //do nothing because this method will not be used
   }
