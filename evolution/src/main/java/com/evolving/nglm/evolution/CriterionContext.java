@@ -91,6 +91,7 @@ public class CriterionContext
   private static CriterionField evaluationTime;
   private static CriterionField evaluationMonth;
   private static CriterionField evaluationDayOfMonth;
+  private static CriterionField unknownRelationship;
   private static CriterionField evaluationEventName;
   private static CriterionField internalRandom100;
   private static CriterionField internalFalse;
@@ -243,19 +244,18 @@ public class CriterionContext
 
     try
       {
-        Map<String,Object> evaluationEventNameJSON = new LinkedHashMap<String,Object>();
-        evaluationEventNameJSON.put("id", "unknown.relationship");
-        evaluationEventNameJSON.put("display", "unknown.relationship");
-        evaluationEventNameJSON.put("dataType", "boolean");
-        evaluationEventNameJSON.put("retriever", "isUnknownRelationship");
-        evaluationEventNameJSON.put("internalOnly", true);
-        evaluationEventName  = new CriterionField(JSONUtilities.encodeObject(evaluationEventNameJSON));
+        Map<String,Object> unknownRelationshipJSON =  new LinkedHashMap<String,Object>();
+        unknownRelationshipJSON.put("id", "unknown.relationship");
+        unknownRelationshipJSON.put("display", "unknown.relationship");
+        unknownRelationshipJSON.put("dataType", "boolean");
+        unknownRelationshipJSON.put("retriever", "isUnknownRelationship");
+        unknownRelationshipJSON.put("internalOnly", true);
+        unknownRelationship  = new CriterionField(JSONUtilities.encodeObject(unknownRelationshipJSON));
       }
     catch (GUIManagerException e)
       {
         throw new ServerRuntimeException(e);
       }
-    
     
 
     //
@@ -795,6 +795,7 @@ public class CriterionContext
           result = new LinkedHashMap<String,CriterionField>();
           result.put(evaluationDate.getID(), evaluationDate);
           result.put(evaluationEventName.getID(), evaluationEventName);
+          result.put(unknownRelationship.getID(), unknownRelationship);
           result.put(internalRandom100.getID(), internalRandom100);
           result.put(internalFalse.getID(), internalFalse);
           result.put(internalTargets.getID(), internalTargets);

@@ -11,21 +11,27 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 
+import com.evolving.nglm.evolution.retention.Cleanable;
+import com.evolving.nglm.evolution.retention.RetentionService;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.time.Duration;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-public class JourneyState
+public class JourneyState implements Cleanable
 {
+
+  private static final Logger log = LoggerFactory.getLogger(JourneyState.class);
+
   /*****************************************
   *
   *  schema
@@ -131,6 +137,14 @@ public class JourneyState
   public void setJourneyOutstandingDeliveryRequestID(String journeyOutstandingDeliveryRequestID) { this.journeyOutstandingDeliveryRequestID = journeyOutstandingDeliveryRequestID; }
   public void setJourneyExitDate(Date journeyExitDate) { this.journeyExitDate = journeyExitDate; }
   public void setJourneyCloseDate(Date journeyCloseDate) { this.journeyCloseDate = journeyCloseDate; }
+
+  @Override public Date getExpirationDate(RetentionService retentionService) {
+    if(getJourneyExitDate()!=null) return getJourneyExitDate();//case subscriber ended the journey
+    return getJourneyEndDate();// case subscriber did not end the journey
+  }
+  @Override public Duration getRetention(RetentionType type, RetentionService retentionService) {
+    return retentionService.getJourneyRetention(type,getJourneyID());
+  }
 
   /*****************************************
   *

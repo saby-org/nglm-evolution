@@ -1,10 +1,14 @@
 package com.evolving.nglm.evolution;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+
+import com.evolving.nglm.evolution.retention.Cleanable;
+import com.evolving.nglm.evolution.retention.RetentionService;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -17,14 +21,15 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
-import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
-import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 
-public class JourneyHistory 
+public class JourneyHistory implements Cleanable
 {
+
+  protected static final Logger log = LoggerFactory.getLogger(JourneyHistory.class);
+
   /*****************************************
   *
   *  schema
@@ -98,6 +103,13 @@ public class JourneyHistory
     Boolean result = null;
     for (StatusHistory statusHistory : getStatusHistory()) { if (statusHistory.getStatusTargetGroup() != null) result = statusHistory.getStatusTargetGroup(); }
     return result;
+  }
+
+  @Override public Date getExpirationDate(RetentionService retentionService) {
+    return getJourneyExitDate(retentionService.getJourneyService());
+  }
+  @Override public Duration getRetention(RetentionType type, RetentionService retentionService) {
+    return retentionService.getJourneyRetention(type,getJourneyID());
   }
   
   /*****************************************
@@ -504,19 +516,45 @@ public class JourneyHistory
   *  getJourneyExitDate
   *
   *****************************************/
-  
+
+  /* TODO: Xavier, this one just can not work cause we don't update status while going to the end node
   public Date getJourneyExitDate()
   {
     if(this.statusHistory != null)
+    {
+      for(StatusHistory status : this.statusHistory)
       {
-        for(StatusHistory status : this.statusHistory)
-          {
-            if(status.getJourneyComplete())
-              {
-                return status.getDate();
-              }
-          }
+        if(status.getJourneyComplete())
+        {
+          return status.getDate();
+        }
       }
+    }
+    return null;
+  }
+  */
+  //TODO: this is probably a bad workarround but I can not modify status without checking all reporting and so
+  public Date getJourneyExitDate(JourneyService journeyService)
+  {
+    NodeHistory latestNodeEntered = getLastNodeEntered();
+    if(log.isTraceEnabled()) log.trace("JourneyHistory.getJourneyExitDate : "+getJourneyID()+" latestNodeEntered "+latestNodeEntered+getJourneyID());
+    if(latestNodeEntered==null) return null;
+    if(log.isTraceEnabled()) log.trace("JourneyHistory.getJourneyExitDate : "+getJourneyID()+" latestNodeEntered.getToNodeID() "+latestNodeEntered.getToNodeID());
+    if(latestNodeEntered.getToNodeID()==null) return null;
+    GUIManagedObject guiManagedObject = journeyService.getStoredJourney(getJourneyID());
+    if(guiManagedObject==null){
+      if(log.isDebugEnabled()) log.debug("JourneyHistory.getJourneyExitDate : "+getJourneyID()+" deleted campaign, returning current date");
+      return SystemTime.getCurrentTime();
+    }
+    if(!(guiManagedObject instanceof Journey)){
+      if(log.isDebugEnabled()) log.debug("JourneyHistory.getJourneyExitDate : "+getJourneyID()+" not valid campaign, returning null");
+      return null;
+    }
+    if(latestNodeEntered.getToNodeID().equals(((Journey)guiManagedObject).getEndNodeID())){
+      if(log.isTraceEnabled()) log.trace("JourneyHistory.getJourneyExitDate : "+latestNodeEntered.getToNodeID()+" is journey end node, returning "+latestNodeEntered.getTransitionDate());
+      return latestNodeEntered.getTransitionDate();
+    }
+    if(log.isTraceEnabled()) log.trace("JourneyHistory.getJourneyExitDate : "+latestNodeEntered.getToNodeID()+" is not journey end node "+((Journey)guiManagedObject).getEndNodeID()+", returning null");
     return null;
   }
   

@@ -109,7 +109,7 @@ public class VoucherService extends GUIService {
           }
 
           // this is a bulk delete of all vouchers a while after expiryDate is past, clean up of ES
-          Date expiryDate=EvolutionUtilities.addTime(now,-1*Deployment.getCleanUpExpiredVoucherDelayInDays(), EvolutionUtilities.TimeUnit.Day,Deployment.getBaseTimeZone());
+          Date expiryDate=EvolutionUtilities.addTime(now,-1*/*TODO use ES retention policy conf from EVPRO-296:*/Deployment.getKafkaRetentionDaysExpiredVouchers(), EvolutionUtilities.TimeUnit.Day,Deployment.getBaseTimeZone());
           // safety
           if(now.before(expiryDate)){
             log.error("VoucherPersonalESService-cleanUpExpiredVouchers : bug, expiryDate for cleanup is after now !! "+now+" vs "+expiryDate);

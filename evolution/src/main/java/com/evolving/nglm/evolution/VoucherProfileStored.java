@@ -2,11 +2,14 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.VoucherDelivery.VoucherStatus;
+import com.evolving.nglm.evolution.retention.Cleanable;
+import com.evolving.nglm.evolution.retention.RetentionService;
 import org.apache.kafka.connect.data.*;
 
+import java.time.Duration;
 import java.util.Date;
 
-public class VoucherProfileStored {
+public class VoucherProfileStored implements Cleanable {
 
   private static Schema voucherProfileStoredSchema = null;
   static {
@@ -95,6 +98,15 @@ public class VoucherProfileStored {
   public void setVoucherStatus(VoucherStatus voucherStatus) { this.voucherStatus = voucherStatus; }
   public void setVoucherExpiryDate(Date voucherExpiryDate) { this.voucherExpiryDate = voucherExpiryDate; }
   public void setVoucherRedeemDate(Date voucherRedeemDate) { this.voucherRedeemDate = voucherRedeemDate; }
+
+  @Override public Date getExpirationDate(RetentionService retentionService) { return getVoucherExpiryDate(); }
+  @Override public Duration getRetention(RetentionType type, RetentionService retentionService) {
+    switch (type){
+      case KAFKA_DELETION:
+        return Duration.ofDays(Deployment.getKafkaRetentionDaysExpiredVouchers());
+    }
+    return null;
+  }
 
 
   public VoucherProfileStored(String voucherID, String fileID, String voucherCode, VoucherStatus voucherStatus, Date voucherExpiryDate, Date voucherDeliveryDate, Date voucherRedeemDate, String offerID, String eventID, String moduleID, String featureID, String origin) {
