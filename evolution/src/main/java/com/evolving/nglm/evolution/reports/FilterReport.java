@@ -27,14 +27,14 @@ public class FilterReport {
 				BufferedReader br = new BufferedReader(new FileReader(InputFileName));
 
 				List<String> headerList = new ArrayList<>();
-				String[] words = br.readLine().split(";", -1);
+				String[] words = br.readLine().split(separator, -1);
 
 				for (int i = 0; i < words.length; i++) 
 				{
 					headerList.add(words[i].replaceAll("\\\\'", "'"));
 				}
 
-				log.debug("Check for column existence.");
+				log.debug("Check the existence of columns: " + colsName);
 				boolean colsFound = false;
 				int i = 0;
 				for (String col : colsName) 
@@ -53,15 +53,19 @@ public class FilterReport {
 					}
 					if (!colsFound) 
 					{
-						log.error("The column: " + col + " doesn't exist in the report: " + InputFileName + ". Thus no filter is applied.");
+						log.error("No filter is applied since column (" + col + ") doesn't exist in the report (" + InputFileName+")");
+						break;					
 					}
 				}
 
 				if (colsFound) 
 				{
-					log.debug("Look for matching values.");
+					log.debug("Look for matching values: "+colsValues);
 					BufferedWriter bw = new BufferedWriter(new FileWriter(OutputFileName));
 					String line;
+					
+					bw.write(headerList.toString().substring(1, headerList.toString().length() - 1) + "\n");
+					
 					while ((line = br.readLine()) != null) 
 					{
 						if (line.length() != 0) {
@@ -94,15 +98,15 @@ public class FilterReport {
 			} 
 			catch (FileNotFoundException e) 
 			{
-				log.error("The file doesn't exist!", e);
+				log.error("The file "+InputFileName+"  doesn't exist!", e);
 			} catch (Exception e) 
 			{
-				log.error("File is empty!", e);
+				log.error("The file "+InputFileName+"  is empty!", e);
 			}
 		} 
 		else 
 		{
-			log.error("column Names and column values should be of the same size!");
+			log.error("size of column names ("+colsName.size()+ ") != size of column values ("+colsValues+").");
 		}
 	}
 }
