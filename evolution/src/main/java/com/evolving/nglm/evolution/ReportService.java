@@ -253,25 +253,28 @@ public class ReportService extends GUIService
 			  List<FilterObject> filters = rd.reportFilters();
 			  JSONArray jsonArray = new JSONArray();
 
-			  for (FilterObject filter : filters)
+			  if(filters != null) 
 			  {
-				  JSONObject filterJSON, argumentJSON;
-				  filterJSON = new JSONObject();
-				  filterJSON.put("criterionField", filter.getColumnName());
-				  argumentJSON = new JSONObject();
-				  argumentJSON.put("expression", "");
-				  argumentJSON.put("valueType", filter.getColumnType().getExternalRepresentation());
-				  JSONArray valueJSON = new JSONArray();
-				  for (Object value : filter.getValues())
+				  for (FilterObject filter : filters)
 				  {
-					  valueJSON.add(value);
+					  JSONObject filterJSON, argumentJSON;
+					  filterJSON = new JSONObject();
+					  filterJSON.put("criterionField", filter.getColumnName());
+					  argumentJSON = new JSONObject();
+					  argumentJSON.put("expression", "");
+					  argumentJSON.put("valueType", filter.getColumnType().getExternalRepresentation());
+					  JSONArray valueJSON = new JSONArray();
+					  for (Object value : filter.getValues())
+					  {
+						  valueJSON.add(value);
+					  }
+					  argumentJSON.put("value", valueJSON);
+					  argumentJSON.put("timeUnit", null);
+					  filterJSON.put("argument", argumentJSON);
+					  jsonArray.add(filterJSON);
 				  }
-				  argumentJSON.put("value", valueJSON);
-				  argumentJSON.put("timeUnit", null);
-				  filterJSON.put("argument", argumentJSON);
-				  jsonArray.add(filterJSON);
+				  responseJSON.put("filters", jsonArray);
 			  }
-			  responseJSON.put("filters", jsonArray);
 		  }
 		  catch (Exception e)
 		  {
