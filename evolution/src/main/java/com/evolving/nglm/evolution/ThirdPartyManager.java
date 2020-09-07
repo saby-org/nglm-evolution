@@ -5891,7 +5891,7 @@ public class ThirdPartyManager
           }
       }
 
-    if (activeResellerID.size() != 0)
+    if (activeResellerID.size() != 0 && activeResellerID != null)
       {
         for (GUIManagedObject storedSalesChannelObject : salesChannelService.getStoredSalesChannels())
           {
