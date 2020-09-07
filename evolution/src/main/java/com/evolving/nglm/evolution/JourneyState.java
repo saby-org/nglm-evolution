@@ -350,6 +350,11 @@ public class JourneyState implements Cleanable
     boolean subscriberStateUpdated = false;
     for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values()) {
       MetricHistory metricHistory = journeyMetricDeclaration.getMetricHistory(subscriberState.getSubscriberProfile());
+      
+      // Check for journey metrics added while the journey was running
+      if(! this.getJourneyMetricsDuring().containsKey(journeyMetricDeclaration.getID())) {
+        continue;
+      }
       long startMetricValue = this.getJourneyMetricsDuring().get(journeyMetricDeclaration.getID());
       long endMetricValue = metricHistory.getAllTimeBucket();
       long duringMetricValue = endMetricValue - startMetricValue;
