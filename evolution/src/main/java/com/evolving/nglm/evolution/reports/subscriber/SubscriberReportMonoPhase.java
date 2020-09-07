@@ -54,6 +54,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
   private static List<String> allProfileFields = new ArrayList<>();
   private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
   private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
+  private static Map<String, String> dimNameDisplayMapping = new HashMap<String, String>();
 
   /****************************************
   *
@@ -144,8 +145,10 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
                           String[] couple = segmentsNames.get(segmentID.trim());
                           if (couple != null)
                             {
-                              // for this dimension, display segment 
-                              result.put(couple[INDEX_DIMENSION_NAME], couple[INDEX_SEGMENT_NAME]);
+                              String dimName = couple[INDEX_DIMENSION_NAME];
+                              String dimDisplay = dimNameDisplayMapping.get(dimName);
+                              if (dimDisplay == null || dimDisplay.isEmpty()) dimDisplay = dimName;
+                              result.put(dimDisplay, couple[INDEX_SEGMENT_NAME]);
                             }
                           else
                             {
@@ -221,7 +224,8 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
           {
             SegmentationDimension segmentation = (SegmentationDimension) dimension;
             //allDimensions.add(segmentation.getSegmentationDimensionName());
-            allDimensionsMap.put(segmentation.getSegmentationDimensionName(), "");
+            allDimensionsMap.put(segmentation.getGUIManagedObjectDisplay(), "");
+            dimNameDisplayMapping.put(segmentation.getSegmentationDimensionName(), dimension.getGUIManagedObjectDisplay());
             if (segmentation.getSegments() != null)
               {
                 for (Segment segment : segmentation.getSegments())
@@ -276,6 +280,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
         {
           allDimensionsMap.clear();
           segmentsNames.clear();
+          dimNameDisplayMapping.clear();
           initSegmentationData();
         }
       
