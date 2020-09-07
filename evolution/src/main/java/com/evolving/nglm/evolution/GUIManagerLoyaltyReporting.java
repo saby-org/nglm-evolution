@@ -747,20 +747,33 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               if (filters != null)
               {
             	  // filter !
-            	  List<String> colsName = new ArrayList<>();
+            	  List<String> colNames = new ArrayList<>();
             	  List<List<String>> colsValues = new ArrayList<>();
             	  for (int i=0; i<filters.size(); i++)
             	  {
             		  JSONObject filterJSON = (JSONObject) filters.get(i);
             		  // ...
-            		  String nameOfColumns = (String) filterJSON.get("criterionField");
-            		  colsName.add(nameOfColumns);
+            		  if (!(filterJSON.get("criterionField") instanceof String))
+            		  {
+            			  log.warn("Column name " + colNames + " is not a String : " + filterJSON.get("criterionField"));
+            			  colNames.add("");
+            			  break;
+            		  }
+            		  String nameOfColumn = (String) filterJSON.get("criterionField");
+            		  colNames.add(nameOfColumn);
             		  Object expression = filterJSON.get("expression");
             		  String valueType = (String) filterJSON.get("valueType");
             		  List<String> valuesOfColumns;
             		  switch (valueType) 
             		  {
             		  case "simpleSelect.string":
+            			  if (!(expression instanceof String))
+            			  {
+            				  log.warn("value of column " + nameOfColumn + " is not a String : " + expression);
+            				  colsValues.add(new ArrayList<>());
+            				  break;
+            			  }
+
             			  String valueSimpleSelect = (String) expression;
             			  valuesOfColumns = new ArrayList<>();
             			  valuesOfColumns.add(valueSimpleSelect);
@@ -768,8 +781,13 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             			  break;
 
             		  case "multiple.string":
-            			  // do something
             			  //==
+            			  if (!(expression instanceof String[]))
+            			  {
+            				  log.warn("value of column " + nameOfColumn + " is not an array of Strings : " + expression);
+            				  colsValues.add(new ArrayList<>());
+            				  break;
+            			  }
             			  String[] valueMultiple = (String[]) expression;
             			  valuesOfColumns = new ArrayList<>();
             			  for (int j = 0; j < valueMultiple.length; j++) 
@@ -794,17 +812,15 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             	  } 
             	  String tempFileName = tempFile.getAbsolutePath();
 
-            	  String[] colsNameArray = colsName.toArray(new String[0]);
-            	  String delimiter = ";";
-            	  String separator = "'";
+            	  String[] colsNameArray = colNames.toArray(new String[0]);
 
             	  String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
 
-            	  Filtering.filteringReport(unzippedFile, tempFileName, colsName, colsValues, delimiter,
-            			  separator);
+            	  FilterReport.filterReport(unzippedFile, tempFileName, colNames, colsValues, Deployment.getReportManagerCsvSeparator(),
+            			  Deployment.getReportManagerFieldSurrounder());
 
             	  ZipFile.zipFile(tempFileName);
-            	  
+            	  reportFile = tempFile;
               }
               //==
               if(reportFile != null) {
@@ -993,7 +1009,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           {
             log.trace("In processGetReportList, adding : " + report);
           }
-			JSONObject reportResponse = reportService.generateResponseJSON(report, true, now);
+        JSONObject reportResponse = reportService.generateResponseJSON(report, true, now);
         reportResponse.put("isRunning", reportService.isReportRunning(((Report)report).getName()));
         reports.add(reportResponse);
       }
