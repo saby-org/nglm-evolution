@@ -6,12 +6,14 @@
 
 package com.evolving.nglm.evolution.reports.subscriber;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 
@@ -43,6 +45,12 @@ public class SubscriberReportDriverOld extends ReportDriver{
 		});
 		ReportUtils.cleanupTopics(topic);
 	  log.debug("Finished with Subscriber Report");
+	}
+
+	@Override
+	public List<FilterObject> reportFilters() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

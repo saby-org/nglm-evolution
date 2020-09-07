@@ -1,9 +1,12 @@
 package com.evolving.nglm.evolution.reports.bdr;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 
 public class BDRReportMonoDriver extends ReportDriver{
@@ -27,5 +30,11 @@ public class BDRReportMonoDriver extends ReportDriver{
     });         
     log.debug("Finished with BDR Report");
   }
+
+@Override
+public List<FilterObject> reportFilters() {
+	// TODO Auto-generated method stub
+	return null;
+}
 
 }

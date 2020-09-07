@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution.extracts;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion;
 import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportEsReader;
 import com.evolving.nglm.evolution.reports.ReportUtils;
@@ -19,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -87,5 +89,11 @@ public class ExtractDriver extends ReportDriver
   {
     //do nothing because this method will not be used
   }
+
+@Override
+public List<FilterObject> reportFilters() {
+	// TODO Auto-generated method stub
+	return null;
+}
 
 }

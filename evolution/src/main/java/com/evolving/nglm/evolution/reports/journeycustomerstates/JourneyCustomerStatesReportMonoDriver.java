@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution.reports.journeycustomerstates;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportProcessor;
@@ -10,6 +11,7 @@ import com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCust
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class JourneyCustomerStatesReportMonoDriver extends ReportDriver {
@@ -44,5 +46,11 @@ public class JourneyCustomerStatesReportMonoDriver extends ReportDriver {
 		
 	  log.debug("Finished with Journey Customer States Report");
 		
+	}
+
+	@Override
+	public List<FilterObject> reportFilters() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

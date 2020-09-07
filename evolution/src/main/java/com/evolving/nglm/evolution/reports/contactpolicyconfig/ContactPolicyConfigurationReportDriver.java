@@ -10,6 +10,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.*;
+import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import org.json.simple.JSONArray;
@@ -235,4 +236,9 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
       if(journeyObjectiveService!=null){journeyObjectiveService.stop();log.trace("journeyObjectiveService stopped..");}
     }
   }
+@Override
+public List<FilterObject> reportFilters() {
+	// TODO Auto-generated method stub
+	return null;
+}
 }

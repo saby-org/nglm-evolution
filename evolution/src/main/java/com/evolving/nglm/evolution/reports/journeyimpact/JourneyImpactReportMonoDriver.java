@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution.reports.journeyimpact;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -8,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 
 public class JourneyImpactReportMonoDriver extends ReportDriver {
@@ -44,4 +46,10 @@ public class JourneyImpactReportMonoDriver extends ReportDriver {
       log.debug("Finished with Journey Impact Report");
       
   }
+
+@Override
+public List<FilterObject> reportFilters() {
+	// TODO Auto-generated method stub
+	return null;
+}
 }
