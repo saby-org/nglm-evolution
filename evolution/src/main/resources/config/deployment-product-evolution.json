@@ -867,11 +867,6 @@
       "permissions"  : ["API-REDEEM-VOUCHER"]
     },
     {
-      "id"           : "redeemVoucher",
-      "methodName"   : "redeemVoucher",
-      "permissions"  : ["API-REDEEM-VOUCHER"]
-    },
-    {
       "id"           : "putSupplierOffer",
       "methodName"   : "putSupplierOffer",
       "permissions"  : ["API-PUT-SUPPLIER-OFFER"]
