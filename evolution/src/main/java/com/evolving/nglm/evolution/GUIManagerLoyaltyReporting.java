@@ -742,17 +742,15 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               }else {
                 responseCode = "Cant find report with that name";
               }
-              //==
+              
               JSONArray filters = JSONUtilities.decodeJSONArray(jsonRoot, "filters", false);
               if (filters != null)
               {
-            	  // filter !
             	  List<String> colNames = new ArrayList<>();
             	  List<List<String>> colsValues = new ArrayList<>();
             	  for (int i=0; i<filters.size(); i++)
             	  {
             		  JSONObject filterJSON = (JSONObject) filters.get(i);
-            		  // ...
             		  if (!(filterJSON.get("criterionField") instanceof String))
             		  {
             			  log.warn("criterionField is not a String : " + filterJSON.get("criterionField"));
@@ -762,7 +760,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             		  String nameOfColumn = (String) filterJSON.get("criterionField");
             		  colNames.add(nameOfColumn);
             		  
-            		  if (!(filterJSON.get("argument") instanceof List<?>))
+            		  if (!(filterJSON.get("argument") instanceof JSONObject))
             		  {
             			  log.warn("argument is not a JSONObject : " + filterJSON.get("argument"));
             			  colsValues.add(new ArrayList<>());
@@ -814,7 +812,9 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             	  try 
             	  {
             		  tempFile = File.createTempFile("tempReportFilters", "");
-            	  } catch (Exception e) {
+            	  } 
+            	  catch (Exception e) 
+            	  {
             		  e.printStackTrace();
             	  } 
             	  String tempFileName = tempFile.getAbsolutePath();
@@ -829,7 +829,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             	  ZipFile.zipFile(tempFileName);
             	  reportFile = tempFile;
               }
-              //==
+              
               if(reportFile != null) {
                 if(reportFile.length() > 0) {
                   try {
