@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,7 @@ public class FilterReport {
   private static final Logger log = LoggerFactory.getLogger(FilterReport.class);
 
   public static void filterReport(String InputFileName, String OutputFileName,
-      List<String> colsName, List<List<String>> colsValues, String separator, String FieldSurrounder) 
+      List<String> colsName, List<List<String>> colsValues, String fieldSeparator, String fieldSurrounder) 
   {
 
     if (colsName.size() == colsValues.size()) 
@@ -28,7 +29,7 @@ public class FilterReport {
 
           List<String> headerList = new ArrayList<>();
           String headerVerbatim = br.readLine();
-          String[] words = headerVerbatim.split(separator, -1);
+          String[] words = headerVerbatim.split(fieldSeparator, -1);
 
           for (int i = 0; i < words.length; i++) 
             {
@@ -71,10 +72,11 @@ public class FilterReport {
               while ((line = br.readLine()) != null) 
                 {
                   if (line.length() != 0) {
-                    String regex = separator + "(?=(?:[^\\" + FieldSurrounder + "]*\\" + FieldSurrounder + "[^\\"
-                        + FieldSurrounder + "]*\\" + FieldSurrounder + ")*[^\\" + FieldSurrounder + "]*$)";
-                    String[] cols = line.split(regex, -1);
-
+                    String surrounder = Pattern.quote(fieldSurrounder);
+                    String separator = Pattern.quote(fieldSeparator);
+                    // :(?=(?:[^X]*X[^X]*X)*[^X]*$)
+                    String regex = separator + "(?=(?:[^" + surrounder + "]*" + surrounder + "[^" + surrounder + "]*" + surrounder + ")*[^" + surrounder + "]*$)";
+                    String[] cols = line.split(regex);
                     i = 0;
                     boolean filterInvalid = false;
                     for (List<String> listOfColsValues : colsValues) 
