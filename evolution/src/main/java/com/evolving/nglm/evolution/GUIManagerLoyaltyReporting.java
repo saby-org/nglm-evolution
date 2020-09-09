@@ -745,7 +745,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                 responseCode = "Cant find report with that name";
               }
               
-              JSONArray filters = JSONUtilities.decodeJSONArray(jsonRoot, "filters", false);
+              JSONArray filters = JSONUtilities.decodeJSONArray(jsonRoot, "criteria", false);
               if (filters != null)
               {
             	  List<String> colNames = new ArrayList<>();
