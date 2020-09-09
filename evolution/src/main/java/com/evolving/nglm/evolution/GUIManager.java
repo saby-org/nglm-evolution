@@ -23053,7 +23053,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                         //products.add(product);
                         offers.add(offer);
                       }
-                    else
+                    else if(offerName.equals(productName) && !(activeSupplier.equals(supplierID)))
                       {
 
                         response.put("responseCode",
@@ -23063,6 +23063,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                         return JSONUtilities.encodeObject(response);
 
                       }
+                    else {
+                      if(log.isInfoEnabled()) log.info("offer is not supplierOffer");
+                    }
                   }
                 if (voucher != null)
                   {
@@ -23074,7 +23077,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                         vouchers.add(voucher);
                         offers.add(offer);
                       }
-                    else
+                    else if(offerName.equals(voucherName) && !(activeSupplier.equals(supplierID)))
                       {
 
                         response.put("responseCode",
@@ -23084,6 +23087,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                         return JSONUtilities.encodeObject(response);
 
                       }
+                    else {
+                      if(log.isInfoEnabled()) log.info("offer is not supplierOffer");
+                    }
 
                   }
 
