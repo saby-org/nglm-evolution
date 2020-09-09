@@ -23066,7 +23066,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     }
                   }
                 if (voucher != null)
-                  {nn
+                  {
                     String voucherID = voucher.getVoucherID();
                     String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
