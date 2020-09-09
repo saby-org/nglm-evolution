@@ -10,6 +10,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -709,7 +710,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       }
     else
       {
-    	File tempFile = null;
         try
           {
             Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
@@ -728,7 +728,9 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               }});
 
               File reportFile = null;
-
+              File tempFile = null;
+              File tempFileZip = null;
+              
               long lastMod = Long.MIN_VALUE;
               if(listOfFiles != null && listOfFiles.length != 0) {
                 for (int i = 0; i < listOfFiles.length; i++) {
@@ -751,83 +753,90 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             	  for (int i=0; i<filters.size(); i++)
             	  {
             		  JSONObject filterJSON = (JSONObject) filters.get(i);
-            		  if (!(filterJSON.get("criterionField") instanceof String))
+            		  Object nameOfColumnObj = filterJSON.get("criterionField");
+            		  if (!(nameOfColumnObj instanceof String))
             		  {
-            			  log.warn("criterionField is not a String : " + filterJSON.get("criterionField"));
+            			  log.warn("criterionField is not a String : " + nameOfColumnObj.getClass().getName());
             			  colNames.add("");
             			  break;
             		  }
-            		  String nameOfColumn = (String) filterJSON.get("criterionField");
+            		  String nameOfColumn = (String) nameOfColumnObj;
             		  colNames.add(nameOfColumn);
             		  
-            		  if (!(filterJSON.get("argument") instanceof JSONObject))
+            		  Object argumentObj = filterJSON.get("argument");
+            		  if (!(argumentObj instanceof JSONObject))
             		  {
-            			  log.warn("argument is not a JSONObject : " + filterJSON.get("argument"));
+            			  log.warn("argument is not a JSONObject : " + argumentObj.getClass().getName());
             			  colsValues.add(new ArrayList<>());
             			  break;
             		  }
-            		  JSONObject argument = (JSONObject) filterJSON.get("argument");
-        			  String valueType = (String) argument.get("valueType");
+            		  JSONObject argument = (JSONObject) argumentObj;
+        			    String valueType = (String) argument.get("valueType");
             		  Object value = (Object) argument.get("value");
             				  
             		  List<String> valuesOfColumns;
             		  switch (valueType) 
             		  {
-            		  case "simpleSelect.string":
-            			  if (!(value instanceof String))
-            			  {
-            				  log.warn("value of column " + nameOfColumn + " is not a String : " + value);
-            				  colsValues.add(new ArrayList<>());
-            				  break;
-            			  }
+            		    case "simpleSelect.string":
+            		      if (!(value instanceof String))
+            		        {
+            		          log.warn("value of column " + nameOfColumn + " is not a String : " + value);
+            		          colsValues.add(new ArrayList<>());
+            		        }
+            		      else
+            		        {
+            		          String valueSimpleSelect = (String) value;
+            		          valuesOfColumns = new ArrayList<>();
+            		          valuesOfColumns.add(valueSimpleSelect);
+            		          colsValues.add(valuesOfColumns);
+            		        }
+            		      break;
 
-            			  String valueSimpleSelect = (String) value;
-            			  valuesOfColumns = new ArrayList<>();
-            			  valuesOfColumns.add(valueSimpleSelect);
-            			  colsValues.add(valuesOfColumns);
-            			  break;
+            		    case "multiple.string":
+                      valuesOfColumns = new ArrayList<>();
+            		      if (!(value instanceof JSONArray))
+            		        {
+            		          log.warn("value of column " + nameOfColumn + " is not an array : " + value.getClass().getName());
+            		        }
+            		      else
+            		        {
+            		          JSONArray valueMultiple = (JSONArray) value;
+            		          for (int j=0; j<valueMultiple.size(); j++)
+            		            {
+            		              Object obj = valueMultiple.get(j);
+            		              if (!(obj instanceof String))
+            		                {
+            		                  log.warn("value is not a String : " + obj.getClass().getName());
+            		                }
+            		              else
+            		                {
+            		                  valuesOfColumns.add((String) obj);
+            		                }
+            		            }
+            		        }
+                      colsValues.add(valuesOfColumns);
+            		      break;
 
-            		  case "multiple.string":
-            			  if (!(value instanceof String[]))
-            			  {
-            				  log.warn("value of column " + nameOfColumn + " is not an array of Strings : " + value);
-            				  colsValues.add(new ArrayList<>());
-            				  break;
-            			  }
-            			  String[] valueMultiple = (String[]) value;
-            			  valuesOfColumns = new ArrayList<>();
-            			  for (int j = 0; j < valueMultiple.length; j++) 
-            			  {
-            				  valuesOfColumns.add(valueMultiple[j]);
-            			  }
-            			  colsValues.add(valuesOfColumns);
-            			  break;
-
-            		  default:
-            			  log.info("Received unsupported valueType : " + valueType);
-            			  break;
+            		    default:
+            		      log.info("Received unsupported valueType : " + valueType);
+            		      break;
             		  }
             	  }
 
             	  try 
             	  {
-            		  tempFile = File.createTempFile("tempReportFilters", "");
-            	  } 
-            	  catch (Exception e) 
+            		  tempFile = File.createTempFile("tempReportFilters", ".csv");
+            		  String tempFileName = tempFile.getAbsolutePath();
+            		  String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
+            		  FilterReport.filterReport(unzippedFile, tempFileName, colNames, colsValues, Deployment.getReportManagerCsvSeparator(),
+            		      Deployment.getReportManagerFieldSurrounder());
+            		  tempFileZip = ZipFile.zipFile(tempFileName);
+            		  reportFile = tempFileZip;
+            	  }
+            	  catch (IOException e)
             	  {
-            		  e.printStackTrace();
-            	  } 
-            	  String tempFileName = tempFile.getAbsolutePath();
-
-            	  String[] colsNameArray = colNames.toArray(new String[0]);
-
-            	  String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
-
-            	  FilterReport.filterReport(unzippedFile, tempFileName, colNames, colsValues, Deployment.getReportManagerCsvSeparator(),
-            			  Deployment.getReportManagerFieldSurrounder());
-
-            	  ZipFile.zipFile(tempFileName);
-            	  reportFile = tempFile;
+            	    log.info("unable to create temp file " + e.getLocalizedMessage());
+            	  }
               }
               
               if(reportFile != null) {
@@ -851,9 +860,11 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                     excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
                     log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
                   }
-                  //==
-                  if(filters != null) {
+                  if(tempFile != null) {
                 	  tempFile.delete();
+                  }
+                  if(tempFileZip != null) {
+                    tempFileZip.delete();
                   }
                   
                 }else {
