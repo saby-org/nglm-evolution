@@ -51,6 +51,7 @@ import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator.Key
 import org.elasticsearch.search.aggregations.bucket.range.ParsedRange;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregator.Range;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
@@ -1719,6 +1720,11 @@ public class GUIManagerGeneral extends GUIManager
 
             RangeAggregationBuilder range = AggregationBuilders.range(RANGE_AGG_PREFIX+baseSplit.getSplitName());
 
+            //aici de scris codul cand nu exista range
+            //TermsAggregationBuilder term = AggregationBuilders.terms(RANGE_AGG_PREFIX+baseSplit.getSplitName());
+
+            //term = term.field(Deployment.getSu)
+
             //
             // Retrieving the ElasticSearch field from the Criterion field.
             //
@@ -1772,7 +1778,7 @@ public class GUIManagerGeneral extends GUIManager
     *  construct response (JSON object)
     *
     *****************************************/
-//trebuie inteles aici cum se conpun array-urile pentru citirea raspunsului
+
     JSONObject responseJSON = new JSONObject();
     List<JSONObject> responseBaseSplits = new ArrayList<JSONObject>();
     for(int i = 0; i < nbBaseSplits; i++)
