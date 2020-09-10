@@ -2019,7 +2019,25 @@ public abstract class Expression
           case RoundUpFunction:
           case RoundDownFunction:
             if (expressionNullExceptionOccoured) throw expressionNullException;
-            result = evaluateRoundFunction((Double) arg1Value, function);
+            Double argDouble;
+            if (arg1Value instanceof Long) 
+              {
+                // We accept int parameters to RoundXXX() as a convenience
+                argDouble = ((Long) arg1Value).doubleValue();
+              }
+            else
+              {
+                try
+                {
+                  argDouble = (Double) arg1Value;
+                }
+                catch (ClassCastException ex)
+                {
+                  log.info("Issue when converting parameter of " + function.getFunctionName() + " to Double, actual class is " + arg1Value.getClass().getName());
+                  argDouble = 0.0;
+                }
+              }
+            result = evaluateRoundFunction(argDouble, function);
             break;
             
           case DaysUntilFunction:
