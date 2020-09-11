@@ -1,4 +1,4 @@
-package com.evolving.nglm.evolution.datacubes;
+package com.evolving.nglm.evolution.elasticsearch;
 
 import java.io.IOException;
 import java.io.PrintWriter;

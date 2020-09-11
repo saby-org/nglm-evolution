@@ -30,7 +30,6 @@ import com.evolving.nglm.evolution.datacubes.generator.ProgramsChangesDatacubeGe
 import com.evolving.nglm.evolution.datacubes.generator.ProgramsHistoryDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.SubscriberProfileDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
-import com.evolving.nglm.evolution.datacubes.snapshots.SubscriberProfileSnapshot;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -569,15 +568,6 @@ public class DatacubeManager
     uniqueID = scheduleBDRDefinitive(datacubeScheduler, uniqueID);
     uniqueID = scheduleMDRDefinitive(datacubeScheduler, uniqueID);
     uniqueID = scheduleJourneyDatacubeDefinitive(datacubeScheduler, uniqueID);
-    
-    //
-    // Snapshots
-    //
-    ScheduledJob subscriberprofileSnapshot = new SubscriberProfileSnapshot(uniqueID++, elasticsearchRestClient);
-    if(subscriberprofileSnapshot.isProperlyConfigured())
-      {
-        datacubeScheduler.schedule(subscriberprofileSnapshot);
-      }
 
     log.info("Starting scheduler");
     datacubeScheduler.runScheduler();
