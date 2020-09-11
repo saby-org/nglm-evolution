@@ -23157,9 +23157,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 OfferVoucher voucher = (OfferVoucher) OfferProductVoucherAndSupplierIDs.get("offerVoucher");                
                 
                 Offer offer = (Offer) offerObject;
-                String offerName = offer.getGUIManagedObjectName();
-                
-               
+                String offerName = offer.getGUIManagedObjectName();                               
                 if (product != null)
                   {
                     String productID = product.getProductID();
@@ -23170,7 +23168,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                         //products.add(product);
                         offers.add(offer);
                       }
-                    else
+                    else if(offerName.equals(productName) && !(activeSupplier.equals(supplierID)))
                       {
 
                         response.put("responseCode",
@@ -23180,6 +23178,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                         return JSONUtilities.encodeObject(response);
 
                       }
+                    else {
+                      if(log.isInfoEnabled()) log.info("offer is not supplierOffer");
+                    }
                   }
                 if (voucher != null)
                   {
@@ -23191,7 +23192,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                         vouchers.add(voucher);
                         offers.add(offer);
                       }
-                    else
+                    else if(offerName.equals(voucherName) && !(activeSupplier.equals(supplierID)))
                       {
 
                         response.put("responseCode",
@@ -23201,6 +23202,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                         return JSONUtilities.encodeObject(response);
 
                       }
+                    else {
+                      if(log.isInfoEnabled()) log.info("offer is not supplierOffer");
+                    }
 
                   }
 
@@ -23306,6 +23310,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         else if (activeSupplier != null && activeSupplier != "InactiveReseller")
           {
             Offer offer = (Offer) offerObject;
+            String offerName = offer.getGUIManagedObjectName();
             Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(
                 (Offer) offerObject);
             String supplierID = (String) OfferProductVoucherAndSupplierIDs.get("supplierID");
@@ -23314,9 +23319,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             
             if (product != null)
               {
-                if (activeSupplier.equals(supplierID))
+                String productID = product.getProductID();
+                String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
+                if (activeSupplier.equals(supplierID) && offerName.equals(productName))
                   {
-                    String productId = product.getProductID();                  
+                    String productId = product.getProductID();
                     productService.removeProduct(productId, userID);
                     offerService.removeOffer(offerID, userID);
 
@@ -23325,7 +23332,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     response.put("responseCode", responseCode);
                   }
 
-                else
+                else if (offerName.equals(productName) && !(activeSupplier.equals(supplierID)))
+
                   {
 
                     response.put("responseCode",
@@ -23335,11 +23343,18 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     return JSONUtilities.encodeObject(response);
 
                   }
+                else
+                  {
+                    if (log.isInfoEnabled())
+                      log.info("offer is not supplierOffer");
+                  }
               }
             if (voucher != null)
               {
+                String voucherID = voucher.getVoucherID();
+                String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
-                if (activeSupplier.equals(supplierID))
+                if (activeSupplier.equals(supplierID) && offerName.equals(voucherName))
                   {
                     String voucherId = voucher.getVoucherID();
                     voucherService.removeVoucher(voucherId, userID, uploadedFileService);
@@ -23350,7 +23365,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     response.put("responseCode", responseCode);
                   }
 
-                else
+                else if (offerName.equals(voucherName) && !(activeSupplier.equals(supplierID)))
+
                   {
 
                     response.put("responseCode",
@@ -23360,6 +23376,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     return JSONUtilities.encodeObject(response);
 
                   }
+              }
+            else
+              {
+                if (log.isInfoEnabled())
+                  log.info("offer is not supplierOffer");
               }
 
           }
