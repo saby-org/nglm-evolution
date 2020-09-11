@@ -269,12 +269,12 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
     this.targetPeriodStartIncluded = beginningOfYesterday.getTime();
 
     this.previewMode = false;
-    this.targetDay = DAY_FORMAT.format(yesterday);
+    this.targetDay = RLMDateUtils.printDay(yesterday);
 
     //
     // Timestamp & period
     //
-    String timestamp = TIMESTAMP_FORMAT.format(endOfYesterday);
+    String timestamp = RLMDateUtils.printTimestamp(endOfYesterday);
     
     this.run(timestamp, targetPeriod);
   }
@@ -292,12 +292,12 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
     this.targetPeriodStartIncluded = beginningOfToday.getTime();
 
     this.previewMode = true;
-    this.targetDay = DAY_FORMAT.format(now);
+    this.targetDay = RLMDateUtils.printDay(now);
 
     //
     // Timestamp & period
     //
-    String timestamp = TIMESTAMP_FORMAT.format(now);
+    String timestamp = RLMDateUtils.printTimestamp(now);
     
     this.run(timestamp, targetPeriod);
   }

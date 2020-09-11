@@ -14,6 +14,7 @@ import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.JourneyStatisticESSinkConnector;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
@@ -184,7 +185,7 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
   {
     this.journeyID = journeyID;
 
-    String timestamp = TIMESTAMP_FORMAT.format(publishDate);
+    String timestamp = RLMDateUtils.printTimestamp(publishDate);
     long targetPeriod = publishDate.getTime() - journeyStartDateTime;
     this.run(timestamp, targetPeriod);
   }

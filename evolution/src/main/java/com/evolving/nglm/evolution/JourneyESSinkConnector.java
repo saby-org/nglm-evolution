@@ -16,6 +16,7 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import com.evolving.nglm.core.ChangeLogESSinkTask;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -156,10 +157,10 @@ public class JourneyESSinkConnector extends SimpleESSinkConnector
       documentMap.put("targets", targets);
       documentMap.put("targetCount", targetCount);
       documentMap.put("objectives", objectives);
-      documentMap.put("startDate", DatacubeGenerator.TIMESTAMP_FORMAT.format(journey.getEffectiveStartDate()));
-      documentMap.put("endDate", DatacubeGenerator.TIMESTAMP_FORMAT.format(journey.getEffectiveEndDate()));
+      documentMap.put("startDate", RLMDateUtils.printTimestamp(journey.getEffectiveStartDate()));
+      documentMap.put("endDate", RLMDateUtils.printTimestamp(journey.getEffectiveEndDate()));
       documentMap.put("active", journey.getActive());
-      documentMap.put("timestamp", DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime())); // @rl: TODO TIMESTAMP_FORMAT in more generic class ? Elasticsearch client ?
+      documentMap.put("timestamp", RLMDateUtils.printTimestamp(SystemTime.getCurrentTime()));
 
       //
       // return
