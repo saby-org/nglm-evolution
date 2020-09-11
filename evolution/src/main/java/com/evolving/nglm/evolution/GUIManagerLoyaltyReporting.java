@@ -43,7 +43,10 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.reports.ColumnsSubset;
 import com.evolving.nglm.evolution.reports.ReportUtils;
+import com.evolving.nglm.evolution.reports.UnZipFile;
+import com.evolving.nglm.evolution.reports.ZipFile;
 import com.sun.net.httpserver.HttpExchange;
 
 public class GUIManagerLoyaltyReporting extends GUIManager
@@ -741,9 +744,42 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                 responseCode = "Cant find report with that name";
               }
 
+              File tempFile = null;
+              File tempZipFile = null;
+              
               if(reportFile != null) {
                 if(reportFile.length() > 0) {
+              	  JSONArray colsSubset = JSONUtilities.decodeJSONArray(jsonRoot, "colsSubset", false);
                   try {
+                	  if (colsSubset != null)
+                	  {
+                		  List<String> colsNames = new ArrayList<>();
+                		  for (int i=0; i<colsSubset.size(); i++)
+                		  {
+                			  JSONObject filterJSON = (JSONObject) colsSubset.get(i);
+                			  if (!(filterJSON.get("criterionField") instanceof String))
+                			  {
+                				  log.warn("criterionField is not a String : " + filterJSON.get("criterionField"));
+                				  colsNames.add("");
+                				  break;
+                			  }
+                			  String nameOfColumn = (String) filterJSON.get("criterionField");
+                			  colsNames.add(nameOfColumn);
+                			  
+                			  tempFile = File.createTempFile("tempReportColsSubset", "");
+                			 
+                			  String tempFileName = tempFile.getAbsolutePath();
+
+                			  String[] colsNameArray = colsNames.toArray(new String[0]);
+
+                			  String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
+
+                			  ColumnsSubset.subsetOfCols(unzippedFile, tempFileName, colsNames, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
+
+                			  ZipFile.zipFile(tempFileName, unzippedFile);
+                			  reportFile = tempFile;
+                          }
+						}
                     FileInputStream fis = new FileInputStream(reportFile);
                     exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
                     exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
@@ -762,6 +798,12 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                     excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
                     log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
                   }
+                  
+                  if(colsSubset != null && tempFile != null && tempZipFile != null) {
+                	  tempFile.delete();
+                	  tempZipFile.delete();
+                  }
+                  
                 }else {
                   responseCode = "Report size is 0, report file is empty";
                 }
@@ -775,6 +817,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             responseCode = "internalError";
           }
       }
+    
     if(responseCode != null) {
       try {
         jsonResponse.put("responseCode", responseCode);
