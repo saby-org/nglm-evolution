@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
@@ -36,21 +37,22 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.ExistsQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.ParsedAggregation;
 import org.elasticsearch.search.aggregations.bucket.filter.Filters;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator;
 import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilter;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator.KeyedFilter;
+import org.elasticsearch.search.aggregations.bucket.nested.ParsedNested;
 import org.elasticsearch.search.aggregations.bucket.range.ParsedRange;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregator.Range;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregator;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
@@ -1910,6 +1912,183 @@ public class GUIManagerGeneral extends GUIManager
 
     response.put("result", responseJSON);
     response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+   *
+   *  processGetCountBySegmentationRanges
+   *
+   *****************************************/
+
+  JSONObject processGetCountBySegmentationRangesBySegmentId(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     *  response
+     *
+     ****************************************/
+
+    HashMap<String, Object> response = new HashMap<String, Object>();
+
+    /*****************************************
+     *
+     *  parse input (segmentationDimension)
+     *
+     *****************************************/
+
+    jsonRoot.put("id", "fake-id"); // fill segmentationDimensionID with anything
+    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
+    JSONObject responseJSON = new JSONObject();
+    String segmentsESFieldName = Deployment.getProfileCriterionFields().get("subscriber.segments").getESField();
+
+    SegmentationDimensionRanges segmentationDimensionRanges = null;
+    try
+    {
+      switch (SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true)))
+      {
+      case RANGES:
+        segmentationDimensionRanges = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
+        break;
+
+      case Unknown:
+        throw new GUIManagerException("unsupported dimension type", JSONUtilities.decodeString(jsonRoot, "targetingType", false));
+      }
+    }
+    catch (JSONUtilitiesException | GUIManagerException e)
+    {
+      //
+      //  log
+      //
+
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+      //
+      //  response
+      //
+
+      response.put("responseCode", "segmentationDimensionNotValid");
+      response.put("responseMessage", e.getMessage());
+      response.put("responseParameter", (e instanceof GUIManagerException) ?
+          ((GUIManagerException) e).getResponseParameter() :
+          null);
+      return JSONUtilities.encodeObject(response);
+    }
+
+    /*****************************************
+     *
+     *  extract BaseSplits
+     *
+     *****************************************/
+
+    List<BaseSplit> baseSplits = segmentationDimensionRanges.getBaseSplit();
+    int nbBaseSplits = baseSplits.size();
+
+    /*****************************************
+     *
+     *  construct query
+     *
+     *****************************************/
+    try
+    {
+      for (int i = 0; i < nbBaseSplits; i++)
+      {
+        BaseSplit baseSplit = baseSplits.get(i);
+        List<SegmentRanges> ranges = baseSplit.getSegments();
+
+        //create aggregations for all ids from a base split
+        TermsQueryBuilder splitTerms = QueryBuilders.termsQuery(segmentsESFieldName,ranges.stream().map(SegmentRanges::getID).collect(Collectors.toList()));
+        AggregationBuilder baseSpitAgg = AggregationBuilders.filter(baseSplit.getSplitName(),splitTerms);
+
+        //add subaggregations for each segment
+        for (SegmentRanges range : ranges)
+        {
+          TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery(segmentsESFieldName, range.getID());
+          baseSpitAgg.subAggregation(AggregationBuilders.filter(range.getName(),termQueryBuilder));
+        }
+
+        searchSourceBuilder.aggregation(baseSpitAgg);
+      }
+
+      /*****************************************
+       *
+       *  construct response (JSON object)
+       *
+       *****************************************/
+
+
+      List<JSONObject> responseBaseSplits = new ArrayList<JSONObject>();
+      for(int i = 0; i < nbBaseSplits; i++)
+      {
+        BaseSplit baseSplit = baseSplits.get(i);
+        JSONObject responseBaseSplit = new JSONObject();
+        List<JSONObject> responseSegments = new ArrayList<JSONObject>();
+        responseBaseSplit.put("splitName", baseSplit.getSplitName());
+
+        //
+        //  ranges
+        //   the "count" field will be filled with the result of the ElasticSearch query
+        //
+
+        for(SegmentRanges segment : baseSplit.getSegments())
+        {
+          JSONObject responseSegment = new JSONObject();
+          responseSegment.put("name", segment.getName());
+          responseSegments.add(responseSegment);
+        }
+        responseBaseSplit.put("segments", responseSegments);
+        responseBaseSplits.add(responseBaseSplit);
+      }
+
+      //
+      //  search in ES
+      //
+
+      SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
+      SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+
+      Aggregations resultAggs = searchResponse.getAggregations();
+
+      for(JSONObject responseBaseSplit : responseBaseSplits)
+      {
+        ParsedAggregation splitAgg = resultAggs.get((String) responseBaseSplit.get("splitName"));
+        responseBaseSplit.put("count",((ParsedFilter)splitAgg).getDocCount());
+        for(JSONObject responseSegment : (List<JSONObject>)responseBaseSplit.get("segments"))
+        {
+          ParsedFilter segmentFilter = ((ParsedFilter)splitAgg).getAggregations().get((String)responseSegment.get("name"));
+          responseSegment.put("count",segmentFilter.getDocCount());
+        }
+
+      }
+      responseJSON.put("baseSplit", responseBaseSplits);
+
+    }
+    catch (Exception e)
+    {
+      //
+      //  log
+      //
+
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+      //
+      //  response
+      //
+
+      response.put("responseCode", "argumentError");
+      response.put("responseMessage", e.getMessage());
+      response.put("responseParameter", (e instanceof GUIManagerException) ?
+          ((GUIManagerException) e).getResponseParameter() :
+          null);
+      return JSONUtilities.encodeObject(response);
+    }
+
+    response.put("responseCode", "ok");
+    response.put("result",responseJSON);
     return JSONUtilities.encodeObject(response);
   }
 
