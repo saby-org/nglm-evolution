@@ -872,7 +872,28 @@
       "id"           : "redeemVoucher",
       "methodName"   : "redeemVoucher",
       "permissions"  : ["API-REDEEM-VOUCHER"]
+    },
+    {
+      "id"           : "putSupplierOffer",
+      "methodName"   : "putSupplierOffer",
+      "permissions"  : ["API-PUT-SUPPLIER-OFFER"]
+    },
+    {
+      "id"           : "getSupplierOfferList",
+      "methodName"   : "getSupplierOfferList",
+      "permissions"  : ["API-GET-SUPPLIER-OFFER-LIST"]
+    },
+    {
+      "id"           : "removeSupplierOffer",
+      "methodName"   : "removeSupplierOffer",
+      "permissions"  : ["API-REMOVE-SUPPLIER-OFFER"]
+    },
+    {
+      "id"           : "getResellerDetails",
+      "methodName"   : "getResellerDetails",
+      "permissions"  : ["API-GET-RESELLER-DETAILS"]
     }
+    
 
   ],
 

@@ -2892,7 +2892,7 @@ public class ThirdPartyManager
     Date now = SystemTime.getCurrentTime();
     AuthenticatedResponse authResponse = null;
     ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
-    authResponse = authenticate(thirdPartyCredential);  
+    authResponse = authCache.get(thirdPartyCredential);
     int user = (authResponse.getUserId());
     String userID = Integer.toString(user);
     
@@ -4299,7 +4299,7 @@ public class ThirdPartyManager
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
     AuthenticatedResponse authResponse = null;
     ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
-    authResponse = authenticate(thirdPartyCredential);  
+    authResponse = authCache.get(thirdPartyCredential);  
     int user = (authResponse.getUserId());
     String userID = Integer.toString(user); 
     Map<String, List<String>> activeResellerAndSalesChannelIDs = activeResellerAndSalesChannelIDs(userID);
@@ -5012,7 +5012,7 @@ public class ThirdPartyManager
     Map<String, Object> response = new HashMap<String, Object>();
     AuthenticatedResponse authResponse = null;
     ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
-    authResponse = authenticate(thirdPartyCredential);  
+    authResponse = authCache.get(thirdPartyCredential); 
     int userID = (authResponse.getUserId());
     String user = Integer.toString(userID);
     for (GUIManagedObject reseller : resellerService.getStoredResellers())
@@ -5137,7 +5137,7 @@ public class ThirdPartyManager
         jsonRoot.put("apiVersion", 1); 
         AuthenticatedResponse authResponse = null;
         ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
-        authResponse = authenticate(thirdPartyCredential);  
+        authResponse = authCache.get(thirdPartyCredential); 
         int user = (authResponse.getUserId());
         String userID = Integer.toString(user);
         jsonRoot.put("userID", userID);
@@ -5226,7 +5226,7 @@ public class ThirdPartyManager
         jsonRoot.put("apiVersion", 1);
         AuthenticatedResponse authResponse = null;
         ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
-        authResponse = authenticate(thirdPartyCredential);  
+        authResponse = authCache.get(thirdPartyCredential);  
         int user = (authResponse.getUserId());
         String userID = Integer.toString(user);
         jsonRoot.put("userID", userID);
@@ -5320,7 +5320,7 @@ public class ThirdPartyManager
         jsonRoot.put("apiVersion", 1);
         AuthenticatedResponse authResponse = null;
         ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
-        authResponse = authenticate(thirdPartyCredential);  
+        authResponse = authCache.get(thirdPartyCredential);
         int user = (authResponse.getUserId());
         String userID = Integer.toString(user);
         jsonRoot.put("userID", userID);
