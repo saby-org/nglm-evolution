@@ -191,11 +191,9 @@ public class Report extends GUIManagedObject
     	  
         String schedulingIntervalStr = (String) effectiveSchedulingJSONArray.get(i);
     	if(SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr).equals(SchedulingInterval.NONE)) {
-    	log.info("none received hence ignoring:"+schedulingIntervalStr);
-    		continue;
+    	 		continue;
     	}
-    	log.info("not none received hence processing"+schedulingIntervalStr);
-        this.effectiveScheduling.add(SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr));
+    	this.effectiveScheduling.add(SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr));
       }
     }
 
