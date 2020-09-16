@@ -66,11 +66,12 @@ public class SubscriberState implements StateStore
 
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("subscriber_state");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(9));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(10));
       schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
       schemaBuilder.field("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().schema());
       schemaBuilder.field("journeyStates", SchemaBuilder.array(JourneyState.schema()).schema());
       schemaBuilder.field("recentJourneyStates", SchemaBuilder.array(JourneyState.schema()).schema());
+      schemaBuilder.field("scheduledEvaluations", SchemaBuilder.array(TimedEvaluation.schema()).optional());
       schemaBuilder.field("reScheduledDeliveryRequests", SchemaBuilder.array(ReScheduledDeliveryRequest.schema()).defaultValue(Collections.<ReScheduledDeliveryRequest>emptyList()).schema());
       schemaBuilder.field("ucgRuleID", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("ucgEpoch", Schema.OPTIONAL_INT32_SCHEMA);
@@ -402,6 +403,7 @@ public class SubscriberState implements StateStore
     struct.put("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().pack(subscriberState.getSubscriberProfile()));
     struct.put("journeyStates", packJourneyStates(subscriberState.getJourneyStates()));
     struct.put("recentJourneyStates", packJourneyStates(subscriberState.getRecentJourneyStates()));
+    struct.put("scheduledEvaluations", packScheduledEvaluations(subscriberState.getScheduledEvaluations()));
     struct.put("reScheduledDeliveryRequests", packReScheduledDeliveryRequests(subscriberState.getReScheduledDeliveryRequests()));
     struct.put("ucgRuleID", subscriberState.getUCGRuleID());
     struct.put("ucgEpoch", subscriberState.getUCGEpoch());
@@ -428,6 +430,25 @@ public class SubscriberState implements StateStore
     return result;
   }
 
+  /*****************************************
+   *
+   *  packScheduledEvaluations
+   *
+   *****************************************/
+
+  private static List<Object> packScheduledEvaluations(SortedSet<TimedEvaluation> scheduledEvaluations)
+  {
+    List<Object> result = new ArrayList<Object>();
+    if(scheduledEvaluations != null)
+      {
+      for (TimedEvaluation scheduledEvaluation : scheduledEvaluations)
+        {
+          result.add(TimedEvaluation.pack(scheduledEvaluation));
+        }
+      }
+    return result;
+  }
+  
   /*****************************************
   *
   *  packReScheduledDeliveryRequests
@@ -490,7 +511,7 @@ public class SubscriberState implements StateStore
     SubscriberProfile subscriberProfile = SubscriberProfile.getSubscriberProfileSerde().unpack(new SchemaAndValue(schema.field("subscriberProfile").schema(), valueStruct.get("subscriberProfile")));
     Set<JourneyState> journeyStates = unpackJourneyStates(schema.field("journeyStates").schema(), valueStruct.get("journeyStates"));
     Set<JourneyState> recentJourneyStates = unpackJourneyStates(schema.field("recentJourneyStates").schema(), valueStruct.get("recentJourneyStates"));
-    SortedSet<TimedEvaluation> scheduledEvaluations = new TreeSet<TimedEvaluation>();
+    SortedSet<TimedEvaluation> scheduledEvaluations = (schemaVersion >= 10) ? unpackScheduledEvaluations(schema.field("scheduledEvaluations").schema(), valueStruct.get("scheduledEvaluations")) : new TreeSet<>();
     Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequest = (schemaVersion >= 7) ? unpackReScheduledDeliveryRequests(schema.field("reScheduledDeliveryRequests").schema(), valueStruct.get("reScheduledDeliveryRequests")) : new HashSet<ReScheduledDeliveryRequest>();
     String ucgRuleID = valueStruct.getString("ucgRuleID");
     Integer ucgEpoch = valueStruct.getInt32("ucgEpoch");
@@ -555,7 +576,43 @@ public class SubscriberState implements StateStore
     return result;
   }
 
- 
+  /*****************************************
+   *
+   *  unpackScheduledEvaluations
+   *
+   *****************************************/
+
+  private static SortedSet<TimedEvaluation> unpackScheduledEvaluations(Schema schema, Object value)
+  {
+    
+    if(value == null) {
+      return new TreeSet<>();
+    }
+    
+    //
+    //  get schema for TimedEvaluation
+    //
+
+    Schema timedEvaluationSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    SortedSet<TimedEvaluation> result = new TreeSet<TimedEvaluation>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object scheduledEvaluation : valueArray)
+      {
+        result.add(TimedEvaluation.unpack(new SchemaAndValue(timedEvaluationSchema, scheduledEvaluation)));
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+  
   /*****************************************
   *
   *  unpackReScheduledDeliveryRequests
