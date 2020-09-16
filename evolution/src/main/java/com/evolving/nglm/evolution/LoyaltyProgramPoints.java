@@ -31,8 +31,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-@GUIDependencyDef(objectType = "loyaltyProgramPoints", serviceClass = LoyaltyProgramService.class, dependencies = {"point"})
+@GUIDependencyDef(objectType = "loyaltyProgramPoints", serviceClass = LoyaltyProgramService.class, dependencies = {"point" , "CatalogCharacteristic"})
 public class LoyaltyProgramPoints extends LoyaltyProgram
 {
   
@@ -578,12 +579,17 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
 	public Map<String, List<String>> getGUIDependencies() {
 		Map<String, List<String>> result = new HashMap<String, List<String>>();
 		List<String> pointIDs = new ArrayList<String>();
+		List<String> charIDs = new ArrayList<String>();
 		if (this.getRewardPointsID() != null)
 			pointIDs.add(this.getRewardPointsID().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
 		if (this.getStatusPointsID() != null)
 			pointIDs.add(this.getStatusPointsID().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
-
+		if (this.getCharacteristics() != null)
+		{	for(CatalogCharacteristicInstance character:this.getCharacteristics())
+				charIDs.add(character.getCatalogCharacteristicID());
+		} 
 		result.put("point", pointIDs);
+		result.put("CatalogCharacteristic", charIDs);
 		return result;
 
 	}

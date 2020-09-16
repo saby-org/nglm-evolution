@@ -58,6 +58,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
   //  CommodityOperation
   //
   final static String POINT_PREFIX="point-";
+  final static String JOURNEY_PREFIX="journey-";
   public enum CommodityDeliveryOperation
   {
     Credit("credit"),

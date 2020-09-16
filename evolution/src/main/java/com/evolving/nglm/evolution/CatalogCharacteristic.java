@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -29,6 +30,7 @@ import org.json.simple.JSONObject;
 
 import java.util.Objects;
 
+@GUIDependencyDef(objectType = "CatalogCharacteristic", serviceClass = CatalogCharacteristicService.class, dependencies = {  })
 public class CatalogCharacteristic extends GUIManagedObject
 {
   /*****************************************

@@ -58,7 +58,7 @@ import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
-@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "campaign", "journeyobjective" })
+@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "campaign", "journeyobjective" , "target"})
 public class Journey extends GUIManagedObject implements StockableItem
 {
   /*****************************************
@@ -3715,6 +3715,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   @Override public Map<String, List<String>> getGUIDependencies()
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
+    List<String> targetIDs = new ArrayList<String>();
     switch (getGUIManagedObjectType())
       {
         case Journey:
@@ -3736,7 +3737,11 @@ public class Journey extends GUIManagedObject implements StockableItem
           
           List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
           result.put("journeyobjective", journeyObjectiveIDs);
-            
+       
+          targetIDs = getTargetID();
+          result.put("target", targetIDs);
+          
+          
           break;
           
         case Campaign:
@@ -3761,6 +3766,9 @@ public class Journey extends GUIManagedObject implements StockableItem
           
           List<String> journeyObjIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
           result.put("journeyobjective", journeyObjIDs);
+          
+          targetIDs = getTargetID();
+          result.put("target", targetIDs);
             
           
           break;
@@ -3769,7 +3777,11 @@ public class Journey extends GUIManagedObject implements StockableItem
             List<String> blkpointIDs = new ArrayList<String>();
          if (this.boundParameters.containsKey("journey.deliverableID") && boundParameters.get("journey.deliverableID").toString().startsWith(CommodityDeliveryManager.POINT_PREFIX))
         	 blkpointIDs.add(boundParameters.get("journey.deliverableID").toString().replace(CommodityDeliveryManager.POINT_PREFIX, ""));
-             result.put("point", blkpointIDs);            
+             result.put("point", blkpointIDs);    
+             
+            targetIDs = getTargetID();
+             result.put("target", targetIDs);
+             
             break;
             
         default:
