@@ -46,7 +46,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
-@GUIDependencyDef(objectType = "presentationStrategy", serviceClass = PresentationStrategyService.class, dependencies = { "saleschannel" })
+@GUIDependencyDef(objectType = "presentationStrategy", serviceClass = PresentationStrategyService.class, dependencies = { "saleschannel","scoringStrategy" })
 public class PresentationStrategy extends GUIManagedObject
 {
   /*****************************************
@@ -328,6 +328,16 @@ public class PresentationStrategy extends GUIManagedObject
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     result.put("saleschannel", new ArrayList<>(getSalesChannelIDs()));
+    List<String> scoringStrList=new ArrayList<>();
+    Set<PositionElement> pes = new HashSet<>();
+    pes.addAll(setA.getPositions());
+    pes.addAll(setB.getPositions());
+    for (PositionElement pe : pes)
+      {
+        String scoringStrategyID = pe.getScoringStrategyID();
+        scoringStrList.add(scoringStrategyID);
+      }
+    result.put("scoringStrategy", scoringStrList);
     return result;
   }
 }

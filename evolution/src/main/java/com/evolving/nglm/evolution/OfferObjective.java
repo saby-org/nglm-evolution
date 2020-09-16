@@ -25,8 +25,10 @@ import org.json.simple.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.List;
+import java.util.Map;
 
 @GUIDependencyDef(objectType = "offerObjective", serviceClass = OfferObjectiveService.class, dependencies = {})
 public class OfferObjective extends GUIManagedObject
@@ -253,5 +255,12 @@ public class OfferObjective extends GUIManagedObject
         CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, date);
         if (catalogCharacteristic == null) throw new GUIManagerException("unknown catalog characteristic", catalogCharacteristicID);
       }
+  }
+  
+  @Override public Map<String, List<String>> getGUIDependencies()
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    result.put("CatalogCharacteristic", getCatalogCharacteristics());
+    return result;
   }
 }

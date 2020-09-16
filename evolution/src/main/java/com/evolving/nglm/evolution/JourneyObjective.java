@@ -388,6 +388,7 @@ public class JourneyObjective extends GUIManagedObject
     List<String> contactPolicyIDs = new ArrayList<String>();
     contactPolicyIDs.add(getContactPolicyID());
     result.put("contactPolicy", contactPolicyIDs);
+    result.put("CatalogCharacteristic", getCatalogCharacteristics());
     return result;
   }
 }

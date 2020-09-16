@@ -888,6 +888,8 @@ public class Offer extends GUIManagedObject implements StockableItem
     result.put("voucher", voucherIDs);
     result.put("saleschannel", saleschannelIDs);
     result.put("offerObjective", offerObjectiveIDs);
+   // result.put("CatalogCharacteristic", getCatalogCharacteristics());
+    
     
     return result;
   }

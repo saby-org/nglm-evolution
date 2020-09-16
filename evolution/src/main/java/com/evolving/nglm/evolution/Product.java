@@ -33,7 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-@GUIDependencyDef(objectType = "product", serviceClass = ProductService.class, dependencies = { "supplier" , "point" , "campaign" })
+@GUIDependencyDef(objectType = "product", serviceClass = ProductService.class, dependencies = { "supplier" , "point" , "campaign" , "productType" })
 public class Product extends GUIManagedObject implements StockableItem
 {
   /*****************************************
@@ -381,14 +381,19 @@ public class Product extends GUIManagedObject implements StockableItem
     List<String> supplierIDs = new ArrayList<String>();
     List<String> pointIDs = new ArrayList<String>();
     List<String> campaignIDs = new ArrayList<String>();
+    List<String> productTypeIDs = new ArrayList<String>();
     supplierIDs.add(getSupplierID());
     result.put("supplier", supplierIDs);
     String pointID=getDeliverableID().startsWith(CommodityDeliveryManager.POINT_PREFIX)?getDeliverableID().replace(CommodityDeliveryManager.POINT_PREFIX, ""):"";
     pointIDs.add(pointID);
     String campaignID=getDeliverableID().startsWith(CommodityDeliveryManager.JOURNEY_PREFIX)?getDeliverableID().replace(CommodityDeliveryManager.JOURNEY_PREFIX, ""):"";
     campaignIDs.add(campaignID);
+    for(ProductTypeInstance prdIn:getProductTypes()) {
+    	productTypeIDs.add(prdIn.getProductTypeID());	
+    }
     result.put("point", pointIDs);
     result.put("campaign", campaignIDs);
+    result.put("productType", productTypeIDs);
     return result;
   }
 }

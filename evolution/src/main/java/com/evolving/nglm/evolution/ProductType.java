@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -14,6 +15,7 @@ import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONObject;
 
 // at this time, ProductType is actually nothing else than OfferContentType but ready to diverge
+@GUIDependencyDef(objectType = "productType", serviceClass = ProductTypeService.class, dependencies = { })
 public class ProductType extends OfferContentType {
 
   private static Schema schema = null;
