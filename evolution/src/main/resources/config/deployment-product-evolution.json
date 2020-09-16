@@ -77,9 +77,7 @@
     "detailedrecords_offers-*",
     "detailedrecords_messages-*",
     "detailedrecords_tokens-*",
-    "journeystatistic*",
-    "journeymetric",
-    "regr_criteria"
+    "journeystatistic*"
   ],
 
   "emptyTopic"                                           : "${topic.empty}",

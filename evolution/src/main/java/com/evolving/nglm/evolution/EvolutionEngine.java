@@ -5842,6 +5842,17 @@ public class EvolutionEngine
 
   private static boolean updateSubscriberHistoryDeliveryRequests(DeliveryRequest deliveryRequest, SubscriberHistory subscriberHistory)
   {
+    
+    /*****************************************
+    *
+    *  ignore journeyRequests
+    *
+    *****************************************/
+
+    if (deliveryRequest instanceof JourneyRequest)
+      {
+        return false;
+      }
 
     /*****************************************
     *
