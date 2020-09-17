@@ -72,7 +72,10 @@ public class ColumnsSubset {
 					List<String> sortedColsNamesFoundInHeader = new ArrayList<>();
 					for (int j = 0; j < indexOfColsToExtract.length; j++) 
 					{
+						if (indexOfColsToExtract[j] != -1) 
+						{
 						sortedColsNamesFoundInHeader.add(headerList.get(indexOfColsToExtract[j]));
+						}
 					}
 					bw.write(sortedColsNamesFoundInHeader.toString().substring(1,
 							sortedColsNamesFoundInHeader.toString().length() - 1) + "\n");
