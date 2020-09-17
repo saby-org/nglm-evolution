@@ -26,7 +26,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "callingChannel", serviceClass = CallingChannelService.class, dependencies = {  })
+@GUIDependencyDef(objectType = "callingChannel", serviceClass = CallingChannelService.class, dependencies = { "catalogCharacteristic" })
 public class CallingChannel extends GUIManagedObject
 {
   /*****************************************

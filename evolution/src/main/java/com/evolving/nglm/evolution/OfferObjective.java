@@ -30,7 +30,7 @@ import java.util.Objects;
 import java.util.List;
 import java.util.Map;
 
-@GUIDependencyDef(objectType = "offerObjective", serviceClass = OfferObjectiveService.class, dependencies = {})
+@GUIDependencyDef(objectType = "offerObjective", serviceClass = OfferObjectiveService.class, dependencies = {"catalogCharacteristic"})
 public class OfferObjective extends GUIManagedObject
 {
 

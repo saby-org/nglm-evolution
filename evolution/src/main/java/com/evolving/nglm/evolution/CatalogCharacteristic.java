@@ -30,7 +30,7 @@ import org.json.simple.JSONObject;
 
 import java.util.Objects;
 
-@GUIDependencyDef(objectType = "CatalogCharacteristic", serviceClass = CatalogCharacteristicService.class, dependencies = {  })
+@GUIDependencyDef(objectType = "catalogCharacteristic", serviceClass = CatalogCharacteristicService.class, dependencies = {  })
 public class CatalogCharacteristic extends GUIManagedObject
 {
   /*****************************************
