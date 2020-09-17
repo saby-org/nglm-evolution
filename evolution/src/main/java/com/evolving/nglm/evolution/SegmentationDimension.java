@@ -21,7 +21,6 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import java.util.List;
 
-@GUIDependencyDef(objectType = "segmentationDimension", serviceClass = SegmentationDimensionService.class, dependencies = { })
 public abstract class SegmentationDimension extends GUIManagedObject
 {
   
