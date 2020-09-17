@@ -58,7 +58,7 @@ public class GUIDependencyModelTree
   {
     Set<String> result = new HashSet<String>();
     for (Class guiDependencyDefClass : guiDependencyDefClassList)
-      { System.out.println(GUIDependencyModelTree.class.getName());
+      { System.out.println(guiDependencyDefClass);
         GUIDependencyDef guiDependencyDef = (GUIDependencyDef) guiDependencyDefClass.getAnnotation(GUIDependencyDef.class);
         if (guiDependencyDef.dependencies().length > 0)
           {
