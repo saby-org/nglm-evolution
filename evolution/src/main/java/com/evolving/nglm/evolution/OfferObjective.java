@@ -260,7 +260,8 @@ public class OfferObjective extends GUIManagedObject
   @Override public Map<String, List<String>> getGUIDependencies()
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
-    result.put("CatalogCharacteristic", getCatalogCharacteristics());
+    System.out.println("oFFEROBJ:"+((getCatalogCharacteristics()!=null && getCatalogCharacteristics().size()>0 )?getCatalogCharacteristics().get(0):"no val"));
+    result.put("CatalogCharacteristic".toLowerCase(), getCatalogCharacteristics());
     return result;
   }
 }
