@@ -1,7 +1,9 @@
 package com.evolving.nglm.evolution;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
@@ -56,6 +58,7 @@ public class GUIDependencyModelTree
   
   private Set<String> prepareDependencyList(String guiManagedObjectType, final Set<Class<?>> guiDependencyDefClassList)
   {
+	  List<String> dependencyList=new ArrayList<>();
     Set<String> result = new HashSet<String>();
     for (Class guiDependencyDefClass : guiDependencyDefClassList)
       { System.out.println(guiDependencyDefClass +" ====for obj type"+ guiManagedObjectType);
@@ -63,9 +66,9 @@ public class GUIDependencyModelTree
         if (guiDependencyDef.dependencies().length > 0)
           {
         	for(String dep:guiDependencyDef.dependencies()) {
-        	System.out.println("values:"+dep);	
+        		dependencyList.add(dep.toLowerCase());
         	}
-            Set<String> thisDependencies = new HashSet<>(Arrays.asList(guiDependencyDef.dependencies()));
+            Set<String> thisDependencies = new HashSet<>(dependencyList);
             if (thisDependencies.contains(guiManagedObjectType)) result.add(guiDependencyDef.objectType());
           }
       }
