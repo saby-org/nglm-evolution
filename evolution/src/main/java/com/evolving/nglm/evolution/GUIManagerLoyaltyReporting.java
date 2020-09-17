@@ -767,17 +767,13 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                 			  colsNames.add(nameOfColumn);
                 			  
                 			  tempFile = File.createTempFile("tempReportColsSubset", "");
-                			 
                 			  String tempFileName = tempFile.getAbsolutePath();
-
                 			  String[] colsNameArray = colsNames.toArray(new String[0]);
-
                 			  String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
-
                 			  ColumnsSubset.subsetOfCols(unzippedFile, tempFileName, colsNames, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
-
+                			  String tempZipFileName = tempZipFile.getAbsolutePath(); 
                 			  ZipFile.zipFile(tempFileName, unzippedFile);
-                			  reportFile = tempFile;
+                			  reportFile = new File(tempZipFileName);
                           }
 						}
                     FileInputStream fis = new FileInputStream(reportFile);
