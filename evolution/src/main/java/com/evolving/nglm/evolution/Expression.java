@@ -2477,9 +2477,19 @@ public abstract class Expression
     private Date getNextDayDate(final Date dateAddDate, int dayOfWeek)
     {
       Date tempDate = dateAddDate;
-      if (dayOfWeek == RLMDateUtils.getField(dateAddDate, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone())) return dateAddDate;
-      tempDate = RLMDateUtils.setField(dateAddDate, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getBaseTimeZone());
-      tempDate = RLMDateUtils.addDays(tempDate, 7, Deployment.getBaseTimeZone());
+      if (dayOfWeek == RLMDateUtils.getField(dateAddDate, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone())) 
+        {
+          return dateAddDate;
+        }
+      else if(dayOfWeek < RLMDateUtils.getField(dateAddDate, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone()))
+        {
+          tempDate = RLMDateUtils.setField(dateAddDate, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getBaseTimeZone());
+          tempDate = RLMDateUtils.addDays(tempDate, 7, Deployment.getBaseTimeZone());
+        }
+      else 
+        {
+          tempDate = RLMDateUtils.setField(dateAddDate, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getBaseTimeZone());
+        }
       return tempDate;
     }
 
