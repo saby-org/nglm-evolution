@@ -81,6 +81,7 @@ public class GUIManagedObjectDependencyHelper
                 }
                 if (guiDependenciesRaw != null && !guiDependenciesRaw.isEmpty())
                 {
+                	guiDependenciesRaw.remove(null);
                 Map<String, List<String>> guiDependencies=guiDependenciesRaw.keySet().stream()
                 		.collect(Collectors.toMap(key -> key.toLowerCase(), key -> guiDependenciesRaw.get(key)));
                 
