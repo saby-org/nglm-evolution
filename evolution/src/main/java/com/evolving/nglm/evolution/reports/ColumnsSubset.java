@@ -16,10 +16,10 @@ public class ColumnsSubset {
 
 	private static final Logger log = LoggerFactory.getLogger(ColumnsSubset.class);
 
-	public static void subsetOfCols(String InputFileName, String OutputFileName, List<String> colsNames,
-			String separator, String fileSurrounder) {
+	public static void subsetOfCols(String InputFileName, String OutputFileName, List<String> columnNames,
+			String fieldSeparator, String fieldSurrounder) {
 
-		int[] indexOfColsToExtract = new int[colsNames.size()];
+		int[] indexOfColsToExtract = new int[columnNames.size()];
 
 		try 
 		{
@@ -28,26 +28,26 @@ public class ColumnsSubset {
 			BufferedReader br = new BufferedReader(new FileReader(InputFileName));
 			BufferedWriter bw = new BufferedWriter(new FileWriter(OutputFileName));
 
-			if (colsNames.size() != 0) 
+			if (columnNames.size() != 0) 
 			{
-				String[] words = br.readLine().split(separator, -1);
-				List<String> colsNamesFoundInHeader = new ArrayList<>();
+				String[] wordsOfHeader = br.readLine().split(fieldSeparator, -1);
+				List<String> colNamesFoundInHeader = new ArrayList<>();
 
-				for (int i = 0; i < words.length; i++) 
+				for (int i = 0; i < wordsOfHeader.length; i++) 
 				{
-					headerList.add(words[i].replaceAll("\\\\'", "'"));// replace the \' in the header with an '
+					headerList.add(wordsOfHeader[i].replaceAll("\\\\", ""));// remove the \ from the header
 				}
 
 				boolean colsFound = false;
 				int i = 0;
-				for (String col : colsNames) 
+				for (String col : columnNames) 
 				{
 					int headerIndex = 0;
 					for (String word : headerList) 
 					{
 						if (word.equals(col)) 
 						{
-							colsNamesFoundInHeader.add(word);
+							colNamesFoundInHeader.add(word);
 							colsFound = true;
 
 							indexOfColsToExtract[i++] = headerIndex;
@@ -78,15 +78,15 @@ public class ColumnsSubset {
 						}
 					}
 					bw.write(sortedColsNamesFoundInHeader.toString().substring(1,
-							sortedColsNamesFoundInHeader.toString().length() - 1) + "\n");
+							sortedColsNamesFoundInHeader.toString().length() - 1) + "\n"); // write the content of the lis without the brackets [] at the beginning and the end
 
 					String colsToExtract = "";
 					String line;
 					while ((line = br.readLine()) != null) {
 						if (line.length() != 0) 
 						{
-							String regex = separator + "(?=(?:[^\\" + fileSurrounder + "]*\\" + fileSurrounder + "[^\\"
-									+ fileSurrounder + "]*\\" + fileSurrounder + ")*[^\\" + fileSurrounder + "]*$)";
+							String regex = fieldSeparator + "(?=(?:[^\\" + fieldSurrounder + "]*\\" + fieldSurrounder + "[^\\"
+									+ fieldSurrounder + "]*\\" + fieldSurrounder + ")*[^\\" + fieldSurrounder + "]*$)";
 							String[] cols = line.split(regex, -1);
 
 							for (int cpt = 0; cpt < indexOfColsToExtract.length; cpt++) 
@@ -106,13 +106,13 @@ public class ColumnsSubset {
 				} 
 				else 
 				{
-					log.error("None of the demanded columns: " + colsNames + " exist in the report in use: "
+					log.error("The columns: " + columnNames + " don't exist in  "
 							+ InputFileName);
 				}
 			} 
 			else 
 			{
-				log.error("The column names array is empty!");
+				log.error("No column names were specified!");
 			}
 			br.close();
 			bw.close();
