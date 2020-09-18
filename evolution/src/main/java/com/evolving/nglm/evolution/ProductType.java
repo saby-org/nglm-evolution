@@ -30,7 +30,6 @@ public class ProductType extends OfferContentType {
     schemaBuilder.name("producttype");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(OfferContentType.commonSchema().version(),2));
     for (Field field : OfferContentType.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("catalogCharacteristics", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schema = schemaBuilder.build();
   }
 
