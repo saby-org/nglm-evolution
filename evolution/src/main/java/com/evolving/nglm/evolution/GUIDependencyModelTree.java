@@ -65,7 +65,7 @@ public class GUIDependencyModelTree
         GUIDependencyDef guiDependencyDef = (GUIDependencyDef) guiDependencyDefClass.getAnnotation(GUIDependencyDef.class);
         if (guiDependencyDef.dependencies().length > 0)
           {
-        	for(String dep:guiDependencyDef.dependencies()) {
+        	for(String dep : guiDependencyDef.dependencies()) {
         		dependencyList.add(dep.toLowerCase());
         	}
         	for(String test: dependencyList) {
