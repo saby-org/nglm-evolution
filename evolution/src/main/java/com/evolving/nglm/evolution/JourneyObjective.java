@@ -33,7 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-@GUIDependencyDef(objectType = "journeyObjective", serviceClass = JourneyObjectiveService.class, dependencies = { "contactPolicy" , "catalogCharacteristic" })
+@GUIDependencyDef(objectType = "journeyObjective", serviceClass = JourneyObjectiveService.class, dependencies = { "contactpolicy" , "catalogcharacteristic" })
 public class JourneyObjective extends GUIManagedObject
 {
 
@@ -387,8 +387,8 @@ public class JourneyObjective extends GUIManagedObject
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> contactPolicyIDs = new ArrayList<String>();
     contactPolicyIDs.add(getContactPolicyID());
-    result.put("contactPolicy", contactPolicyIDs);
-    result.put("CatalogCharacteristic".toLowerCase(), getCatalogCharacteristics());
+    result.put("contactpolicy", contactPolicyIDs);
+    result.put("catalogcharacteristic".toLowerCase(), getCatalogCharacteristics());
     return result;
   }
 }

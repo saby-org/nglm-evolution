@@ -30,7 +30,7 @@ import java.util.Objects;
 import java.util.List;
 import java.util.Map;
 
-@GUIDependencyDef(objectType = "offerObjective", serviceClass = OfferObjectiveService.class, dependencies = {"catalogCharacteristic"})
+@GUIDependencyDef(objectType = "offerObjective", serviceClass = OfferObjectiveService.class, dependencies = {"catalogcharacteristic"})
 public class OfferObjective extends GUIManagedObject
 {
 
@@ -260,8 +260,7 @@ public class OfferObjective extends GUIManagedObject
   @Override public Map<String, List<String>> getGUIDependencies()
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
-    System.out.println("oFFEROBJ:"+((getCatalogCharacteristics()!=null && getCatalogCharacteristics().size()>0 )?getCatalogCharacteristics().get(0):"no val"));
-    result.put("CatalogCharacteristic".toLowerCase(), getCatalogCharacteristics());
+    result.put("catalogcharacteristic".toLowerCase(), getCatalogCharacteristics());
     return result;
   }
 }

@@ -26,7 +26,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "callingChannel", serviceClass = CallingChannelService.class, dependencies = { "catalogCharacteristic" })
+@GUIDependencyDef(objectType = "callingChannel", serviceClass = CallingChannelService.class, dependencies = { "catalogcharacteristic" })
 public class CallingChannel extends GUIManagedObject
 {
   /*****************************************
@@ -230,9 +230,7 @@ public class CallingChannel extends GUIManagedObject
   @Override public Map<String, List<String>> getGUIDependencies()
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
-    System.out.println("CallingCha:"+((getCatalogCharacteristics()!=null && getCatalogCharacteristics().size()>0 )?getCatalogCharacteristics().get(0):"no val"));
-    
-   result.put("CatalogCharacteristic".toLowerCase(), getCatalogCharacteristics());
+    result.put("catalogcharacteristic".toLowerCase(), getCatalogCharacteristics());
     return result;
   }
 }

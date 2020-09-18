@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 
-@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "product" , "voucher", "saleschannel" , "offerObjective"})
+@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "product" , "voucher", "saleschannel" , "offerobjective"})
 public class Offer extends GUIManagedObject implements StockableItem
 {  
   //
@@ -887,7 +887,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     result.put("product", productIDs);
     result.put("voucher", voucherIDs);
     result.put("saleschannel", saleschannelIDs);
-    result.put("offerObjective", offerObjectiveIDs);
+    result.put("offerobjective", offerObjectiveIDs);
    // result.put("CatalogCharacteristic", getCatalogCharacteristics());
     
     

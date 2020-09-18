@@ -46,7 +46,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
-@GUIDependencyDef(objectType = "presentationStrategy", serviceClass = PresentationStrategyService.class, dependencies = { "saleschannel","scoringStrategy" })
+@GUIDependencyDef(objectType = "presentationStrategy", serviceClass = PresentationStrategyService.class, dependencies = { "saleschannel","scoringstrategy" })
 public class PresentationStrategy extends GUIManagedObject
 {
   /*****************************************
@@ -337,7 +337,7 @@ public class PresentationStrategy extends GUIManagedObject
         String scoringStrategyID = pe.getScoringStrategyID();
         scoringStrList.add(scoringStrategyID);
       }
-    result.put("scoringStrategy", scoringStrList);
+    result.put("scoringstrategy", scoringStrList);
     return result;
   }
 }

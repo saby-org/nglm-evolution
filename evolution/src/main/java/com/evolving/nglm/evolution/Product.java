@@ -33,7 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-@GUIDependencyDef(objectType = "product", serviceClass = ProductService.class, dependencies = { "supplier" , "point" , "campaign" , "productType" })
+@GUIDependencyDef(objectType = "product", serviceClass = ProductService.class, dependencies = { "supplier" , "point" , "campaign" , "producttype" })
 public class Product extends GUIManagedObject implements StockableItem
 {
   /*****************************************
@@ -393,7 +393,7 @@ public class Product extends GUIManagedObject implements StockableItem
     }
     result.put("point", pointIDs);
     result.put("campaign", campaignIDs);
-    result.put("productType", productTypeIDs);
+    result.put("producttype", productTypeIDs);
     return result;
   }
 }

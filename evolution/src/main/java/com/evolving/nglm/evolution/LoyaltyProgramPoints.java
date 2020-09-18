@@ -33,7 +33,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@GUIDependencyDef(objectType = "loyaltyProgramPoints", serviceClass = LoyaltyProgramService.class, dependencies = {"point" , "CatalogCharacteristic"})
+@GUIDependencyDef(objectType = "loyaltyProgramPoints", serviceClass = LoyaltyProgramService.class, dependencies = {"point" , "catalogcharacteristic"})
 public class LoyaltyProgramPoints extends LoyaltyProgram
 {
   
@@ -589,7 +589,7 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
 				charIDs.add(character.getCatalogCharacteristicID());
 		} 
 		result.put("point", pointIDs);
-		result.put("CatalogCharacteristic", charIDs);
+		result.put("catalogcharacteristic", charIDs);
 		return result;
 
 	}

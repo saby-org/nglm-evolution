@@ -21,7 +21,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 // at this time, ProductType is actually nothing else than OfferContentType but ready to diverge
-@GUIDependencyDef(objectType = "productType", serviceClass = ProductTypeService.class, dependencies = {"catalogCharacteristic"})
+@GUIDependencyDef(objectType = "productType", serviceClass = ProductTypeService.class, dependencies = {"catalogcharacteristic"})
 public class ProductType extends OfferContentType {
 
   private static Schema schema = null;
@@ -80,9 +80,7 @@ public class ProductType extends OfferContentType {
   @Override public Map<String, List<String>> getGUIDependencies()
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
-    System.out.println("PrdType:"+((getCatalogCharacteristics()!=null && getCatalogCharacteristics().size()>0 )?getCatalogCharacteristics().get(0):"no val"));
-    
-   result.put("CatalogCharacteristic".toLowerCase(), getCatalogCharacteristics());
+    result.put("catalogcharacteristic".toLowerCase(), getCatalogCharacteristics());
     return result;
   }
 
