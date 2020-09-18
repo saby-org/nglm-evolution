@@ -69,7 +69,7 @@ public class GUIDependencyModelTree
         		dependencyList.add(dep.toLowerCase());
         	}
             Set<String> thisDependencies = new HashSet<>(dependencyList);
-            if (thisDependencies.contains(guiManagedObjectType)) result.add(guiDependencyDef.objectType());
+            if (thisDependencies.contains(guiManagedObjectType)) result.add(guiDependencyDef.objectType().toLowerCase());
           }
       }
     return result;
