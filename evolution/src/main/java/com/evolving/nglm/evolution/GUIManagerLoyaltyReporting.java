@@ -10,6 +10,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -729,6 +730,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               }});
 
               File reportFile = null;
+              File tempFile = null;
+              File tempFileZip = null;
 
               long lastMod = Long.MIN_VALUE;
               if(listOfFiles != null && listOfFiles.length != 0) {
@@ -743,39 +746,43 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               }else {
                 responseCode = "Cant find report with that name";
               }
-
-              File tempFile = null;
-              File tempZipFile = null;
-              
+              //==
+              JSONArray headers = JSONUtilities.decodeJSONArray(jsonRoot, "header", false);
+              if (headers != null)
+        	  {
+        		  List<String> columnNames = new ArrayList<>();
+        		  for (int i=0; i<headers.size(); i++)
+        		  {
+        			  JSONObject headerJSON = (JSONObject) headers.get(i);
+        			  if (!(headerJSON.get("criterionField") instanceof String))
+        			  {
+        				  log.warn("criterionField is not a String : " + headerJSON.get("criterionField"));
+        				  columnNames.add("");
+        				  break;
+        			  }
+        			  String nameOfColumn = (String) headerJSON.get("criterionField");
+        			  columnNames.add(nameOfColumn);
+        			  
+        			  try {
+        				  tempFile = File.createTempFile("tempReportHeaders", ".csv");
+        				  String tempFileName = tempFile.getAbsolutePath();
+        				  String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
+        				  ColumnsSubset.subsetOfCols(unzippedFile, tempFileName, columnNames, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
+        				  
+        				  ZipFile.zipFile(tempFileName, unzippedFile);
+        				  String tempZipFileName = tempFileZip.getAbsolutePath(); 
+        				  reportFile = new File(tempZipFileName);
+        			  } 
+        			  catch (IOException e) 
+        			  {
+        				  log.info("unable to create temp file " + e.getLocalizedMessage());
+        			  }
+        		  }
+				}
+              //==
               if(reportFile != null) {
                 if(reportFile.length() > 0) {
-              	  JSONArray colsSubset = JSONUtilities.decodeJSONArray(jsonRoot, "colsSubset", false);
                   try {
-                	  if (colsSubset != null)
-                	  {
-                		  List<String> colsNames = new ArrayList<>();
-                		  for (int i=0; i<colsSubset.size(); i++)
-                		  {
-                			  JSONObject filterJSON = (JSONObject) colsSubset.get(i);
-                			  if (!(filterJSON.get("criterionField") instanceof String))
-                			  {
-                				  log.warn("criterionField is not a String : " + filterJSON.get("criterionField"));
-                				  colsNames.add("");
-                				  break;
-                			  }
-                			  String nameOfColumn = (String) filterJSON.get("criterionField");
-                			  colsNames.add(nameOfColumn);
-                			  
-                			  tempFile = File.createTempFile("tempReportColsSubset", "");
-                			  String tempFileName = tempFile.getAbsolutePath();
-                			  String[] colsNameArray = colsNames.toArray(new String[0]);
-                			  String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
-                			  ColumnsSubset.subsetOfCols(unzippedFile, tempFileName, colsNames, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
-                			  String tempZipFileName = tempZipFile.getAbsolutePath(); 
-                			  ZipFile.zipFile(tempFileName, unzippedFile);
-                			  reportFile = new File(tempZipFileName);
-                          }
-						}
                     FileInputStream fis = new FileInputStream(reportFile);
                     exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
                     exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
@@ -795,9 +802,9 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                     log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
                   }
                   
-                  if(colsSubset != null && tempFile != null && tempZipFile != null) {
+                  if(headers != null && (tempFile != null || tempFileZip != null)) {
                 	  tempFile.delete();
-                	  tempZipFile.delete();
+                	  tempFileZip.delete();
                   }
                   
                 }else {
