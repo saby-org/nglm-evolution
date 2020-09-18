@@ -71,13 +71,25 @@ public class GUIManagedObjectDependencyHelper
             	if(guiManagedObject.getGUIManagedObjectType()==GUIManagedObjectType.Other || guiManagedObject.getGUIManagedObjectType()==GUIManagedObjectType.Unknown || guiManagedObject.getGUIManagedObjectType().name().toLowerCase().equals(dependency.toLowerCase())){
                 Map<String, List<String>> guiDependenciesRaw = guiManagedObject.getGUIDependencies();
                 //make all tests case-insensitive
+                System.out.println("processing obj:"+guiManagedObject.getGUIManagedObjectName());
+                if(guiDependenciesRaw!=null) {
+                if(guiDependenciesRaw.keySet()!=null) {
+                	if(guiDependenciesRaw.keySet().size()>0)
+                	System.out.println("Not null and length >0 for dependencies");	
+                }else
+                	System.out.println("null keyset");	
+                }
+                if (guiDependenciesRaw != null && !guiDependenciesRaw.isEmpty())
+                {
                 Map<String, List<String>> guiDependencies=guiDependenciesRaw.keySet().stream()
                 		.collect(Collectors.toMap(key -> key.toLowerCase(), key -> guiDependenciesRaw.get(key)));
+                
                 if (guiDependencies != null && !guiDependencies.isEmpty())
                   {
                     List<String> guiDependencyList = guiDependencies.get(guiDependencyModelTree.getGuiManagedObjectType().toLowerCase());
                     if (guiDependencyList != null && guiDependencyList.contains(objectID)) containerObjectList.add(guiManagedObject);
                   }
+                }
                 
               }
               }
