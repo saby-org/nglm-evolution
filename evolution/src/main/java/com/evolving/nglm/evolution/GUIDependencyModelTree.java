@@ -58,10 +58,11 @@ public class GUIDependencyModelTree
   
   private Set<String> prepareDependencyList(String guiManagedObjectType, final Set<Class<?>> guiDependencyDefClassList)
   {
-	  List<String> dependencyList=new ArrayList<>();
+	  
     Set<String> result = new HashSet<String>();
     for (Class guiDependencyDefClass : guiDependencyDefClassList)
-      { System.out.println(guiDependencyDefClass +" ====for obj type"+ guiManagedObjectType);
+      { List<String> dependencyList=new ArrayList<>();
+    	System.out.println(guiDependencyDefClass +" ====for obj type"+ guiManagedObjectType);
         GUIDependencyDef guiDependencyDef = (GUIDependencyDef) guiDependencyDefClass.getAnnotation(GUIDependencyDef.class);
         if (guiDependencyDef.dependencies().length > 0)
           {
