@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.Report;
-import com.evolving.nglm.evolution.reports.FilterObject;
+import com.evolving.nglm.evolution.reports.HeaderObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 
 public class BDRReportDriver extends ReportDriver{
@@ -33,11 +33,11 @@ public class BDRReportDriver extends ReportDriver{
   }
 
 @Override
-public List<FilterObject> reportHeader() {
-	List<FilterObject> result = new ArrayList<>();
+public List<HeaderObject> reportHeader() {
+	List<HeaderObject> result = new ArrayList<>();
 	  
-	  result.add(new FilterObject(BDRReportMonoPhase.moduleName));
-	  result.add(new FilterObject(BDRReportMonoPhase.deliverableDisplay));
+	  result.add(new HeaderObject(BDRReportMonoPhase.moduleName));
+	  result.add(new HeaderObject(BDRReportMonoPhase.deliverableDisplay));
 	  
 	  return result;
 }

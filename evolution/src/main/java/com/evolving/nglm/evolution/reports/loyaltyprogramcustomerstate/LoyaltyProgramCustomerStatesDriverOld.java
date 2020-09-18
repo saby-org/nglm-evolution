@@ -1,12 +1,14 @@
 package com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate;
 
 import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.HeaderObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class LoyaltyProgramCustomerStatesDriverOld extends ReportDriver
@@ -39,5 +41,11 @@ public class LoyaltyProgramCustomerStatesDriverOld extends ReportDriver
     ReportUtils.cleanupTopics(topic1);
     log.debug("Finished with LoyaltyProgramCustomerStates Report");
   }
+
+@Override
+public List<HeaderObject> reportHeader() {
+	// TODO Auto-generated method stub
+	return null;
+}
 
 }

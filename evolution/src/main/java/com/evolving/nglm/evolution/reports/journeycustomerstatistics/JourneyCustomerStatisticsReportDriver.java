@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution.reports.journeycustomerstatistics;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -8,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.reports.HeaderObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 
@@ -64,4 +66,10 @@ public class JourneyCustomerStatisticsReportDriver extends ReportDriver {
       log.debug("Finished with Journey Customer Statistics Report");
       
   }
+
+@Override
+public List<HeaderObject> reportHeader() {
+	// TODO Auto-generated method stub
+	return null;
+}
 }
