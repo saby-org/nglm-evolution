@@ -68,8 +68,18 @@ public class GUIDependencyModelTree
         	for(String dep:guiDependencyDef.dependencies()) {
         		dependencyList.add(dep.toLowerCase());
         	}
+        	for(String test: dependencyList) {
+        	    System.out.println("1:"+test);  // Will invoke overrided `toString()` method
+        	}
             Set<String> thisDependencies = new HashSet<>(dependencyList);
-            if (thisDependencies.contains(guiManagedObjectType)) result.add(guiDependencyDef.objectType().toLowerCase());
+            for(String test1: thisDependencies) {
+        	    System.out.println("2:"+test1);  // Will invoke overrided `toString()` method
+        	}
+
+            if (thisDependencies.contains(guiManagedObjectType))
+            	{System.out.println("inside if");
+            	result.add(guiDependencyDef.objectType().toLowerCase());
+            	            	}
           }
       }
     return result;
