@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -19,12 +20,15 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooKeeper.States;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.reports.FilterObject;
+import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportManager;
 
 public class ReportService extends GUIService
@@ -232,6 +236,46 @@ public class ReportService extends GUIService
 	  }
 	  return isConnectionValid(zk);
   }
+	  //==
+	  public JSONObject generateResponseJSON(GUIManagedObject guiManagedObject, boolean fullDetails, Date date)
+	  {
+		  JSONObject responseJSON = super.generateResponseJSON(guiManagedObject, fullDetails, date);
+
+		  if (guiManagedObject instanceof Report)
+		  {
+			  Report report = (Report) guiManagedObject;
+			  try
+			  {
+				  Class<ReportDriver> reportClass = (Class<ReportDriver>) Class.forName(report.getReportClass());
+				  Constructor<ReportDriver> cons = reportClass.getConstructor();
+				  ReportDriver rd = cons.newInstance((Object[]) null);
+				  List<FilterObject> headers = rd.reportHeader();
+				  JSONArray jsonArray = new JSONArray();
+
+				  if(headers != null) 
+				  {
+					  for (FilterObject header : headers)
+					  {
+						  JSONObject headerJSON;
+						  headerJSON = new JSONObject();
+						  headerJSON.put("criterionField", header.getColumnName());
+					  }
+					  responseJSON.put("headers", jsonArray);
+				  }
+			  }
+			  catch (Exception e)
+			  {
+				  // handle any kind of exception that can happen during generating the report, and do not crash the container
+				  e.printStackTrace();
+			  }
+		  }
+		  else
+		  {
+			  log.error("Should never happen!");
+		  }
+		  return responseJSON;
+  }
+	  
 
 /*****************************************
  *
