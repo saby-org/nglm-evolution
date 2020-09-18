@@ -753,14 +753,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         		  List<String> columnNames = new ArrayList<>();
         		  for (int i=0; i<headers.size(); i++)
         		  {
-        			  JSONObject headerJSON = (JSONObject) headers.get(i);
-        			  if (!(headerJSON.get("criterionField") instanceof String))
-        			  {
-        				  log.warn("criterionField is not a String : " + headerJSON.get("criterionField"));
-        				  columnNames.add("");
-        				  break;
-        			  }
-        			  String nameOfColumn = (String) headerJSON.get("criterionField");
+        			  String nameOfColumn = (String) headers.get(i);
         			  columnNames.add(nameOfColumn);
         			  
         			  try {
