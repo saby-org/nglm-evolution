@@ -1,9 +1,9 @@
 package com.evolving.nglm.evolution.reports;
 
-public class FilterObject {
+public class HeaderObject {
 	String columnName;
 
-	public FilterObject(String columnName) {
+	public HeaderObject(String columnName) {
 		super();
 		this.columnName = columnName;
 	}
