@@ -761,10 +761,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         				  String tempFileName = tempFile.getAbsolutePath();
         				  String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
         				  ColumnsSubset.subsetOfCols(unzippedFile, tempFileName, columnNames, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
-        				  tempFileZip = File.createTempFile("reportSubsetColumns", "zip");
-        				  String tempZipFileName = tempFileZip.getAbsolutePath();
-        				  ZipFile.zipFile(tempFileName, unzippedFile);
-        				  reportFile = new File(tempZipFileName);
+        				  tempFileZip = ZipFile.zipFile(tempFileName);
+        				  reportFile = tempFileZip;
         			  } 
         			  catch (IOException e) 
         			  {

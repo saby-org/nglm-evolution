@@ -9,25 +9,36 @@ import org.slf4j.LoggerFactory;
 
 public class ZipFile {
 	private static final Logger log = LoggerFactory.getLogger(ZipFile.class);
+	private static final String ZIP_PREFIX = "zip";
 
-	public static void zipFile(String inputFile, String outputFile) {
+	public static File zipFile(String inputFile) {
 		try {
 			File file = new File(inputFile);
-
-			FileOutputStream fos = new FileOutputStream(outputFile);
+			String zipFileName = file.getAbsolutePath().concat("." + ZIP_PREFIX);
+			FileOutputStream fos = new FileOutputStream(zipFileName);
 			ZipOutputStream zos = new ZipOutputStream(fos);
 
 			zos.putNextEntry(new ZipEntry(file.getName()));
-
-			byte[] bytes = Files.readAllBytes(Paths.get(inputFile));
-			zos.write(bytes, 0, bytes.length);
+			zos.setLevel(Deflater.BEST_SPEED);
+			
+			
+			byte data[] = new byte[100 * 1024]; // allow some bufferization
+			int length;
+			FileInputStream fis = new FileInputStream(file);
+            while ((length = fis.read(data)) != -1) {
+			zos.write(data, 0, length);
+            }
 			zos.closeEntry();
 			zos.close();
+			fos.close();
 
+			return new File(zipFileName);
 		} catch (FileNotFoundException ex) {
-			log.error("The file does not exist", ex);
+			log.info("The file does not exist", ex.getLocalizedMessage());
+			return null;
 		} catch (IOException ex) {
-			log.error("I/O error creating zip file", ex);
+			log.info("error zipping intermediate file : " + ex.getLocalizedMessage());
+	          return null;
 		}
 	}
 }
