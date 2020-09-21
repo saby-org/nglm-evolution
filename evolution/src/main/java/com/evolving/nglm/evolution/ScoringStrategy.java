@@ -45,7 +45,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
-@GUIDependencyDef(objectType = "scoringStrategy", serviceClass = ScoringStrategyService.class, dependencies = { "segmentationdimension", "offerobjective"})
+@GUIDependencyDef(objectType = "scoringStrategy", serviceClass = ScoringStrategyService.class, dependencies = { "segmentationdimensioneligibility","segmentationdimensionfileimport","segmentationdimensioneligibility", "offerobjective"})
 public class ScoringStrategy extends GUIManagedObject
 {
   /*****************************************
@@ -385,7 +385,9 @@ public class ScoringStrategy extends GUIManagedObject
     {     
       allOfferObjectivesID.addAll(scoringSegments.getOfferObjectiveIDs());
     }
-      result.put("segmentationdimension", segmentationDimensionIDs);
+      result.put("segmentationdimensioneligibility", segmentationDimensionIDs);
+      result.put("segmentationdimensionfileimport", segmentationDimensionIDs);
+      result.put("segmentationdimensioneligibility", segmentationDimensionIDs);
       result.put("offerobjective", allOfferObjectivesID);
     
     return result;
