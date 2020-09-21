@@ -250,17 +250,14 @@ public class ReportService extends GUIService
 				  ReportDriver rd = cons.newInstance((Object[]) null);
 				  List<String> headers = rd.reportHeader();
 				  JSONArray jsonArray = new JSONArray();
-
-				  if(headers != null) 
+				  if (headers != null) 
 				  {
 					  for (String header : headers)
 					  {
-						  JSONObject headerJSON;
-						  headerJSON = new JSONObject();
-						  headerJSON.put("headers", header);
+						  jsonArray.add(header);
 					  }
-					  responseJSON.put("headers", jsonArray);
 				  }
+          responseJSON.put("header", jsonArray);
 			  }
 			  catch (Exception e)
 			  {
@@ -270,7 +267,7 @@ public class ReportService extends GUIService
 		  }
 		  else
 		  {
-			  log.error("Should never happen!");
+			  log.error("Expecting Report, got " + guiManagedObject.getClass().getName());
 		  }
 		  return responseJSON;
   }

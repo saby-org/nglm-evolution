@@ -35,8 +35,8 @@ public class BDRReportDriver extends ReportDriver{
 public List<String> reportHeader() {
 	List<String> result = new ArrayList<>();
 	  
-	  result.add(new String(BDRReportMonoPhase.moduleName));
-	  result.add(new String(BDRReportMonoPhase.deliverableDisplay));
+	  result.add(BDRReportMonoPhase.moduleName);
+	  result.add(BDRReportMonoPhase.deliverableDisplay);
 	  
 	  return result;
 }
