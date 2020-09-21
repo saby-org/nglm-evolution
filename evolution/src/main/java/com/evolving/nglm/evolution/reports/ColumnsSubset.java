@@ -84,7 +84,6 @@ public class ColumnsSubset {
 						bw.write(sortedColsNamesInHeader.get(j).concat(fieldSeparator));
 					}
 					bw.write(sortedColsNamesInHeader.get(sortedColsNamesInHeader.size() - 1));
-					bw.write("\n");
 
 					String colsToExtract = "";
 					String line;
@@ -102,9 +101,10 @@ public class ColumnsSubset {
 									colsToExtract = colsToExtract + cols[indexOfColsToExtract[cpt]] + ",";
 								}
 							}
+							bw.write("\n");
 							bw.write(colsToExtract);
 							bw.write(cols[indexOfColsToExtract[indexOfColsToExtract.length-1]]); // to avoid having a comma at the end of each written line
-							bw.write("\n");
+							
 							colsToExtract = "";
 
 						}
