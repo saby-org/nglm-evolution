@@ -755,8 +755,9 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         		  {
         			  String nameOfColumn = (String) headers.get(i);
         			  columnNames.add(nameOfColumn);
-        			  
-        			  try {
+        		  }
+        			  try 
+        			  {
         				  tempFile = File.createTempFile("tempReportHeaders", ".csv");
         				  String tempFileName = tempFile.getAbsolutePath();
         				  String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
@@ -768,8 +769,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         			  {
         				  log.info("unable to create temp file " + e.getLocalizedMessage());
         			  }
-        		  }
-				}
+        	  }
               //==
               if(reportFile != null) {
                 if(reportFile.length() > 0) {
