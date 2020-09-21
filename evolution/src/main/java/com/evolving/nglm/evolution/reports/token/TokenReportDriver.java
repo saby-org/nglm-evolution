@@ -7,7 +7,6 @@
 package com.evolving.nglm.evolution.reports.token;
 
 import com.evolving.nglm.evolution.Report;
-import com.evolving.nglm.evolution.reports.HeaderObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 
@@ -48,7 +47,7 @@ public class TokenReportDriver extends ReportDriver{
 	}
 
 	@Override
-	public List<HeaderObject> reportHeader() {
+	public List<String> reportHeader() {
 		// TODO Auto-generated method stub
 		return null;
 	}

@@ -1,7 +1,6 @@
 package com.evolving.nglm.evolution.reports.customerpointdetails;
 
 import com.evolving.nglm.evolution.Report;
-import com.evolving.nglm.evolution.reports.HeaderObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportMonoPhase;
@@ -38,7 +37,7 @@ public class CustomerPointDetailsDriver extends ReportDriver
   }
 
 @Override
-public List<HeaderObject> reportHeader() {
+public List<String> reportHeader() {
 	// TODO Auto-generated method stub
 	return null;
 }

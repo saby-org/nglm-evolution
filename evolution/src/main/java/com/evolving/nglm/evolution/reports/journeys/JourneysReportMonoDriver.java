@@ -36,7 +36,6 @@ import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.JourneyTrafficHistory;
 import com.evolving.nglm.evolution.PointService;
 import com.evolving.nglm.evolution.Report;
-import com.evolving.nglm.evolution.reports.HeaderObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
@@ -252,7 +251,7 @@ public class JourneysReportMonoDriver extends ReportDriver
   }
 
 @Override
-public List<HeaderObject> reportHeader() {
+public List<String> reportHeader() {
 	// TODO Auto-generated method stub
 	return null;
 }
