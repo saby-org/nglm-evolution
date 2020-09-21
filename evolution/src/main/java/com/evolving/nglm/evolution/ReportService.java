@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.reports.HeaderObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportManager;
 
@@ -249,16 +248,16 @@ public class ReportService extends GUIService
 				  Class<ReportDriver> reportClass = (Class<ReportDriver>) Class.forName(report.getReportClass());
 				  Constructor<ReportDriver> cons = reportClass.getConstructor();
 				  ReportDriver rd = cons.newInstance((Object[]) null);
-				  List<HeaderObject> headers = rd.reportHeader();
+				  List<String> headers = rd.reportHeader();
 				  JSONArray jsonArray = new JSONArray();
 
 				  if(headers != null) 
 				  {
-					  for (HeaderObject header : headers)
+					  for (String header : headers)
 					  {
 						  JSONObject headerJSON;
 						  headerJSON = new JSONObject();
-						  headerJSON.put("criterionField", header.getColumnName());
+						  headerJSON.put("headers", header);
 					  }
 					  responseJSON.put("headers", jsonArray);
 				  }

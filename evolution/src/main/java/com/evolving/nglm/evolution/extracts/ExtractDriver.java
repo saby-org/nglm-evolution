@@ -9,7 +9,6 @@ package com.evolving.nglm.evolution.extracts;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion;
 import com.evolving.nglm.evolution.Report;
-import com.evolving.nglm.evolution.reports.HeaderObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportEsReader;
 import com.evolving.nglm.evolution.reports.ReportUtils;
@@ -91,9 +90,8 @@ public class ExtractDriver extends ReportDriver
   }
 
 @Override
-public List<HeaderObject> reportHeader() {
+public List<String> reportHeader() {
 	// TODO Auto-generated method stub
 	return null;
 }
-
 }

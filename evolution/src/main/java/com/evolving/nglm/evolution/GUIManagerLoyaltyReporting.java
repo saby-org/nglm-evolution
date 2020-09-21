@@ -753,14 +753,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         		  List<String> columnNames = new ArrayList<>();
         		  for (int i=0; i<headers.size(); i++)
         		  {
-        			  JSONObject headerJSON = (JSONObject) headers.get(i);
-        			  if (!(headerJSON.get("criterionField") instanceof String))
-        			  {
-        				  log.warn("criterionField is not a String : " + headerJSON.get("criterionField"));
-        				  columnNames.add("");
-        				  break;
-        			  }
-        			  String nameOfColumn = (String) headerJSON.get("criterionField");
+        			  String nameOfColumn = (String) headers.get(i);
         			  columnNames.add(nameOfColumn);
         			  
         			  try {
@@ -768,10 +761,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         				  String tempFileName = tempFile.getAbsolutePath();
         				  String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
         				  ColumnsSubset.subsetOfCols(unzippedFile, tempFileName, columnNames, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
-        				  tempFileZip = File.createTempFile("reportSubsetColumns", "zip");
-        				  String tempZipFileName = tempFileZip.getAbsolutePath();
-        				  ZipFile.zipFile(tempFileName, unzippedFile);
-        				  reportFile = new File(tempZipFileName);
+        				  tempFileZip = ZipFile.zipFile(tempFileName);
+        				  reportFile = tempFileZip;
         			  } 
         			  catch (IOException e) 
         			  {

@@ -31,11 +31,11 @@ public class ColumnsSubset {
 			if (columnNames.size() != 0) 
 			{
 				String[] wordsOfHeader = br.readLine().split(fieldSeparator, -1);
-				List<String> colNamesFoundInHeader = new ArrayList<>();
+				List<String> colNamesInHeader = new ArrayList<>();
 
 				for (int i = 0; i < wordsOfHeader.length; i++) 
 				{
-					headerList.add(wordsOfHeader[i].replaceAll("\\\\", ""));// remove the \ from the header
+					headerList.add(wordsOfHeader[i].replaceAll("\\\\", ""));// remove the \ from the header if exist
 				}
 
 				boolean colsFound = false;
@@ -47,7 +47,7 @@ public class ColumnsSubset {
 					{
 						if (word.equals(col)) 
 						{
-							colNamesFoundInHeader.add(word);
+							colNamesInHeader.add(word);
 							colsFound = true;
 
 							indexOfColsToExtract[i++] = headerIndex;
@@ -69,16 +69,22 @@ public class ColumnsSubset {
 				if (colsFound) 
 				{
 					Arrays.sort(indexOfColsToExtract);
-					List<String> sortedColsNamesFoundInHeader = new ArrayList<>();
+					List<String> sortedColsNamesInHeader = new ArrayList<>();
 					for (int j = 0; j < indexOfColsToExtract.length; j++) 
 					{
 						if (indexOfColsToExtract[j] != -1) 
 						{
-						sortedColsNamesFoundInHeader.add(headerList.get(indexOfColsToExtract[j]));
+						sortedColsNamesInHeader.add(headerList.get(indexOfColsToExtract[j]));
 						}
 					}
-					bw.write(sortedColsNamesFoundInHeader.toString().substring(1,
-							sortedColsNamesFoundInHeader.toString().length() - 1) + "\n"); // write the content of the lis without the brackets [] at the beginning and the end
+					
+					// keep the same format of the header in the output file
+					for (int j = 0; j < sortedColsNamesInHeader.size() - 1; j++) 
+					{
+						bw.write(sortedColsNamesInHeader.get(j).concat(fieldSeparator));
+					}
+					bw.write(sortedColsNamesInHeader.get(sortedColsNamesInHeader.size() - 1));
+					bw.write("\n");
 
 					String colsToExtract = "";
 					String line;
@@ -89,7 +95,7 @@ public class ColumnsSubset {
 									+ fieldSurrounder + "]*\\" + fieldSurrounder + ")*[^\\" + fieldSurrounder + "]*$)";
 							String[] cols = line.split(regex, -1);
 
-							for (int cpt = 0; cpt < indexOfColsToExtract.length; cpt++) 
+							for (int cpt = 0; cpt < indexOfColsToExtract.length -1; cpt++) 
 							{
 								if (indexOfColsToExtract[cpt] != -1) 
 								{
@@ -97,12 +103,12 @@ public class ColumnsSubset {
 								}
 							}
 							bw.write(colsToExtract);
+							bw.write(cols[indexOfColsToExtract[indexOfColsToExtract.length-1]]); // to avoid having a comma at the end of each written line
 							bw.write("\n");
 							colsToExtract = "";
 
 						}
 					}
-
 				} 
 				else 
 				{

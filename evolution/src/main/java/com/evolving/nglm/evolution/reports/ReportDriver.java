@@ -71,7 +71,7 @@ public abstract class ReportDriver {
   }
   
   
-  abstract public List<HeaderObject> reportHeader(); 
+  abstract public List<String> reportHeader(); 
 	
 }
 
