@@ -62,23 +62,18 @@ public class GUIDependencyModelTree
     Set<String> result = new HashSet<String>();
     for (Class guiDependencyDefClass : guiDependencyDefClassList)
       { List<String> dependencyList=new ArrayList<>();
-    	System.out.println(guiDependencyDefClass +" ====for obj type"+ guiManagedObjectType);
-        GUIDependencyDef guiDependencyDef = (GUIDependencyDef) guiDependencyDefClass.getAnnotation(GUIDependencyDef.class);
+    	GUIDependencyDef guiDependencyDef = (GUIDependencyDef) guiDependencyDefClass.getAnnotation(GUIDependencyDef.class);
         if (guiDependencyDef.dependencies().length > 0)
           {
         	for(String dep : guiDependencyDef.dependencies()) {
         		dependencyList.add(dep.toLowerCase());
         	}
-        	for(String test: dependencyList) {
-        	    System.out.println("1:"+test);  // Will invoke overrided `toString()` method
-        	}
+        	
             Set<String> thisDependencies = new HashSet<>(dependencyList);
-            for(String test1: thisDependencies) {
-        	    System.out.println("2:"+test1);  // Will invoke overrided `toString()` method
-        	}
+            
 
             if (thisDependencies.contains(guiManagedObjectType))
-            	{System.out.println("inside if");
+            	{
             	result.add(guiDependencyDef.objectType().toLowerCase());
             	            	}
           }

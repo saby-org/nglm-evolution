@@ -25,7 +25,7 @@ import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "segmentationDimensionEligibility", serviceClass = SegmentationDimensionService.class, dependencies = { })
+@GUIDependencyDef(objectType = "segmentationDimension", serviceClass = SegmentationDimensionService.class, dependencies = { })
 public class SegmentationDimensionEligibility extends SegmentationDimension
 {
   

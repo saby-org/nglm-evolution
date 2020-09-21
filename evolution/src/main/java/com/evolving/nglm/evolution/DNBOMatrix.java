@@ -27,7 +27,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "dnboMatrix", serviceClass = DNBOMatrixService.class, dependencies = {  "segmentationdimensioneligibility","segmentationdimensionfileimport","segmentationdimensioneligibility"})
+@GUIDependencyDef(objectType = "dnboMatrix", serviceClass = DNBOMatrixService.class, dependencies = {  "segmentationdimension"})
 public class DNBOMatrix extends GUIManagedObject
 {
   /*****************************************
@@ -342,10 +342,8 @@ public class DNBOMatrix extends GUIManagedObject
     List<String> segmentationDimensionIDs = new ArrayList<>();
     segmentationDimensionIDs.add(getDimensionId());
    
-    result.put("segmentationdimensioneligibility", segmentationDimensionIDs);
-    result.put("segmentationdimensionfileimport", segmentationDimensionIDs);
-    result.put("segmentationdimensioneligibility", segmentationDimensionIDs);
-    
+    result.put("segmentationdimension", segmentationDimensionIDs);
+   
     return result;
   }
   

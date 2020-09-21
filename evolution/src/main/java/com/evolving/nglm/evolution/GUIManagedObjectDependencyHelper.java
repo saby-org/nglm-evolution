@@ -70,15 +70,7 @@ public class GUIManagedObjectDependencyHelper
             	
             	if(guiManagedObject.getGUIManagedObjectType()==GUIManagedObjectType.Other || guiManagedObject.getGUIManagedObjectType()==GUIManagedObjectType.Unknown || guiManagedObject.getGUIManagedObjectType().name().toLowerCase().equals(dependency.toLowerCase())){
                 Map<String, List<String>> guiDependencies = guiManagedObject.getGUIDependencies();
-                //make all tests case-insensitive
-                System.out.println("processing obj:"+guiManagedObject.getGUIManagedObjectName());
-                if(guiDependencies!=null) {
-                if(guiDependencies.keySet()!=null) {
-                	if(guiDependencies.keySet().size()>0)
-                	System.out.println("Not null and length >0 for dependencies");	
-                }else
-                	System.out.println("null keyset");	
-                }
+                
                 if (guiDependencies!= null && !guiDependencies.isEmpty())
                 {
                 	
