@@ -35,7 +35,7 @@ public class ColumnsSubset {
 
 				for (int i = 0; i < wordsOfHeader.length; i++) 
 				{
-					headerList.add(wordsOfHeader[i].replaceAll("\\\\", ""));// remove the \ from the header
+					headerList.add(wordsOfHeader[i].replaceAll("\\\\", ""));// remove the \ from the header if exist
 				}
 
 				boolean colsFound = false;
@@ -77,8 +77,14 @@ public class ColumnsSubset {
 						sortedColsNamesFoundInHeader.add(headerList.get(indexOfColsToExtract[j]));
 						}
 					}
-					bw.write(sortedColsNamesFoundInHeader.toString().substring(1,
-							sortedColsNamesFoundInHeader.toString().length() - 1) + "\n"); // write the content of the lis without the brackets [] at the beginning and the end
+					
+					// keep the same format of the header in the output file
+					for (int j = 0; j < sortedColsNamesFoundInHeader.size() - 1; j++) 
+					{
+						bw.write(sortedColsNamesFoundInHeader.get(j).concat(fieldSeparator));
+					}
+					bw.write(sortedColsNamesFoundInHeader.get(sortedColsNamesFoundInHeader.size() - 1));
+					bw.write("\n");
 
 					String colsToExtract = "";
 					String line;
@@ -89,7 +95,7 @@ public class ColumnsSubset {
 									+ fieldSurrounder + "]*\\" + fieldSurrounder + ")*[^\\" + fieldSurrounder + "]*$)";
 							String[] cols = line.split(regex, -1);
 
-							for (int cpt = 0; cpt < indexOfColsToExtract.length; cpt++) 
+							for (int cpt = 0; cpt < indexOfColsToExtract.length -1; cpt++) 
 							{
 								if (indexOfColsToExtract[cpt] != -1) 
 								{
@@ -97,6 +103,7 @@ public class ColumnsSubset {
 								}
 							}
 							bw.write(colsToExtract);
+							bw.write(cols[indexOfColsToExtract[indexOfColsToExtract.length-1]]); // to avoid having a comma at the end of each written line
 							bw.write("\n");
 							colsToExtract = "";
 
