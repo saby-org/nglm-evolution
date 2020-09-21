@@ -31,7 +31,7 @@ public class ColumnsSubset {
 			if (columnNames.size() != 0) 
 			{
 				String[] wordsOfHeader = br.readLine().split(fieldSeparator, -1);
-				List<String> colNamesFoundInHeader = new ArrayList<>();
+				List<String> colNamesInHeader = new ArrayList<>();
 
 				for (int i = 0; i < wordsOfHeader.length; i++) 
 				{
@@ -47,7 +47,7 @@ public class ColumnsSubset {
 					{
 						if (word.equals(col)) 
 						{
-							colNamesFoundInHeader.add(word);
+							colNamesInHeader.add(word);
 							colsFound = true;
 
 							indexOfColsToExtract[i++] = headerIndex;
@@ -69,21 +69,21 @@ public class ColumnsSubset {
 				if (colsFound) 
 				{
 					Arrays.sort(indexOfColsToExtract);
-					List<String> sortedColsNamesFoundInHeader = new ArrayList<>();
+					List<String> sortedColsNamesInHeader = new ArrayList<>();
 					for (int j = 0; j < indexOfColsToExtract.length; j++) 
 					{
 						if (indexOfColsToExtract[j] != -1) 
 						{
-						sortedColsNamesFoundInHeader.add(headerList.get(indexOfColsToExtract[j]));
+						sortedColsNamesInHeader.add(headerList.get(indexOfColsToExtract[j]));
 						}
 					}
 					
 					// keep the same format of the header in the output file
-					for (int j = 0; j < sortedColsNamesFoundInHeader.size() - 1; j++) 
+					for (int j = 0; j < sortedColsNamesInHeader.size() - 1; j++) 
 					{
-						bw.write(sortedColsNamesFoundInHeader.get(j).concat(fieldSeparator));
+						bw.write(sortedColsNamesInHeader.get(j).concat(fieldSeparator));
 					}
-					bw.write(sortedColsNamesFoundInHeader.get(sortedColsNamesFoundInHeader.size() - 1));
+					bw.write(sortedColsNamesInHeader.get(sortedColsNamesInHeader.size() - 1));
 					bw.write("\n");
 
 					String colsToExtract = "";
@@ -109,7 +109,6 @@ public class ColumnsSubset {
 
 						}
 					}
-
 				} 
 				else 
 				{
