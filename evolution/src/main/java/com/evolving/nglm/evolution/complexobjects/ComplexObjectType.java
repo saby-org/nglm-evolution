@@ -1,9 +1,12 @@
 package com.evolving.nglm.evolution.complexobjects;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -16,7 +19,11 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.CriterionField;
+import com.evolving.nglm.evolution.EvaluationCriterion;
 import com.evolving.nglm.evolution.GUIManagedObject;
+import com.evolving.nglm.evolution.JourneyObjectiveInstance;
+import com.evolving.nglm.evolution.ParameterMap;
 import com.evolving.nglm.evolution.Point;
 import com.evolving.nglm.evolution.PointValidity;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -43,11 +50,8 @@ public class ComplexObjectType extends GUIManagedObject
     schemaBuilder.name("complex_object");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("availableNames", );
-    schemaBuilder.field("fields", Schema.BOOLEAN_SCHEMA);
-    schemaBuilder.field("setable", Schema.BOOLEAN_SCHEMA);
-    schemaBuilder.field("validity", PointValidity.schema());
-    schemaBuilder.field("label", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("availableNames", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
+    schemaBuilder.field("fields", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).schema());
     schema = schemaBuilder.build();
   };
 
@@ -55,14 +59,14 @@ public class ComplexObjectType extends GUIManagedObject
   //  serde
   //
 
-  private static ConnectSerde<Point> serde = new ConnectSerde<Point>(schema, false, Point.class, Point::pack, Point::unpack);
+  private static ConnectSerde<ComplexObjectType> serde = new ConnectSerde<ComplexObjectType>(schema, false, ComplexObjectType.class, ComplexObjectType::pack, ComplexObjectType::unpack);
 
   //
   //  accessor
   //
 
   public static Schema schema() { return schema; }
-  public static ConnectSerde<Point> serde() { return serde; }
+  public static ConnectSerde<ComplexObjectType> serde() { return serde; }
 
   /****************************************
   *
@@ -83,14 +87,8 @@ public class ComplexObjectType extends GUIManagedObject
   //  public
   //
 
-  public String getPointID() { return getGUIManagedObjectID(); }
-  public String getPointName() { return getGUIManagedObjectName(); }
-  public String getDisplay() { return getGUIManagedObjectDisplay(); }
-  public boolean getDebitable() { return debitable; }
-  public boolean getCreditable() { return creditable; }
-  public boolean getSetable() { return setable; }
-  public PointValidity getValidity(){ return validity; }
-  public String getLabel() { return label; }
+  public List<String> getAvailableNames() { return availableNames; }
+  public Map<String, CriterionDataType> getFields() { return fields; }
   
   /*****************************************
   *
@@ -98,14 +96,11 @@ public class ComplexObjectType extends GUIManagedObject
   *
   *****************************************/
 
-  public Point(SchemaAndValue schemaAndValue, boolean debitable, boolean creditable, boolean setable, PointValidity validity, String label)
+  public ComplexObjectType(SchemaAndValue schemaAndValue, List<String> availableNames, Map<String, CriterionDataType> fields)
   {
     super(schemaAndValue);
-    this.debitable = debitable;
-    this.creditable = creditable;
-    this.setable = setable;
-    this.validity = validity;
-    this.label = label;
+    this.availableNames = availableNames;
+    this.fields = fields;
   }
 
   /*****************************************
@@ -114,14 +109,11 @@ public class ComplexObjectType extends GUIManagedObject
   *
   *****************************************/
 
-  private Point(Point point)
+  private ComplexObjectType(ComplexObjectType type)
   {
-    super(point.getJSONRepresentation(), point.getEpoch());
-    this.debitable = point.getDebitable();
-    this.creditable = point.getCreditable();
-    this.setable = point.getSetable();
-    this.validity = point.getValidity().copy();
-    this.label = point.getLabel();
+    super(type.getJSONRepresentation(), type.getEpoch());
+    this.availableNames = type.getAvailableNames();
+    this.fields = type.getFields();
   }
 
   /*****************************************
@@ -130,9 +122,9 @@ public class ComplexObjectType extends GUIManagedObject
   *
   *****************************************/
 
-  public Point copy()
+  public ComplexObjectType copy()
   {
-    return new Point(this);
+    return new ComplexObjectType(this);
   }
 
   /*****************************************
@@ -143,17 +135,32 @@ public class ComplexObjectType extends GUIManagedObject
 
   public static Object pack(Object value)
   {
-    Point point = (Point) value;
+    ComplexObjectType type = (ComplexObjectType) value;
     Struct struct = new Struct(schema);
-    packCommon(struct, point);
-    struct.put("debitable", point.getDebitable());
-    struct.put("creditable", point.getCreditable());
-    struct.put("setable", point.getSetable());
-    struct.put("validity", PointValidity.pack(point.getValidity()));
-    struct.put("label", point.getLabel());
+    packCommon(struct, type);
+    struct.put("availableNames", type.getAvailableNames());
+    struct.put("fields", packFields(type.getFields()));
     return struct;
   }
   
+  /****************************************
+  *
+  *  packFields
+  *
+  ****************************************/
+
+  private static Map<String,Object> packFields(Map<String,CriterionDataType> fields)
+  {
+    Map<String,Object> result = new LinkedHashMap<String,Object>();
+    for (String contextVariableName : fields.keySet())
+      {
+        CriterionDataType dataType = fields.get(contextVariableName);
+        result.put(contextVariableName, dataType.getExternalRepresentation());
+      }
+    return result;
+  }
+  
+
   /*****************************************
   *
   *  unpack
@@ -175,6 +182,8 @@ public class ComplexObjectType extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
+    List<String> availableNames = (List<String>) valueStruct.get("targetID");
+    
     boolean debitable = valueStruct.getBoolean("debitable");
     boolean creditable = valueStruct.getBoolean("creditable");
     boolean setable = valueStruct.getBoolean("setable");
