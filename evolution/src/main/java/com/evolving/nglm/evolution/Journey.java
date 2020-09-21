@@ -3756,7 +3756,14 @@ public class Journey extends GUIManagedObject implements StockableItem
               if (offerNode.getNodeType().getActionManager() != null)
                 {
                   String offerID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("offer");
-                  if (offerID != null) offerIDs.add(offerID);
+                  if (offerID != null) {
+                	  
+                	  System.out.println("offerid for campaign:"+ getJourneyName() + "====is"+ offerID);
+                	  offerIDs.add(offerID);
+                  }
+                  else {
+                	  System.out.println("offer id not found for campaign:"+ getJourneyName());
+                  }
                   String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode).get("point");
                   if (pointID != null) pointIDs.add(pointID);
                 }

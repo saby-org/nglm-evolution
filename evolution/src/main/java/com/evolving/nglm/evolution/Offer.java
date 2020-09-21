@@ -880,6 +880,11 @@ public class Offer extends GUIManagedObject implements StockableItem
     List<String> saleschannelIDs = new ArrayList<String>();
     List<String> offerObjectiveIDs = getOfferObjectives().stream().map(offerObjective -> offerObjective.getOfferObjectiveID()).collect(Collectors.toList());
    
+    for(OfferObjectiveInstance ofobjprd :  getOfferObjectives()) {
+    	System.out.println("offer Obj val for offer:"+ getDisplay()+"===is==="+ofobjprd.getOfferObjectiveID());
+    }
+    
+    
     for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : getOfferSalesChannelsAndPrices())
       {
         saleschannelIDs.addAll(offerSalesChannelsAndPrice.getSalesChannelIDs());
