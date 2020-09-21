@@ -98,7 +98,7 @@ public class ColumnsSubset {
 							{
 								if (indexOfColsToExtract[cpt] != -1) 
 								{
-									colsToExtract = colsToExtract + cols[indexOfColsToExtract[cpt]] + ",";
+									colsToExtract = colsToExtract + cols[indexOfColsToExtract[cpt]] + fieldSeparator;
 								}
 							}
 							bw.write("\n");
