@@ -23203,9 +23203,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
                       }
                     else {
-                      response.put("responseCode", RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseCode());
-                      response.put("responseMessage", RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseMessage());
-                      return JSONUtilities.encodeObject(response);
+                      if(log.isInfoEnabled()) log.info("offer is not supplierOffer");
                     }
 
                   }
