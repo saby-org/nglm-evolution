@@ -45,9 +45,14 @@ public class JourneyCustomerStatesReportDriver extends ReportDriver {
 		
 	}
 
-	@Override
-	public List<FilterObject> reportFilters() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override
+  public List<FilterObject> reportFilters() {
+    return null;
+  }
+
+  @Override
+  public List<String> reportHeader() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

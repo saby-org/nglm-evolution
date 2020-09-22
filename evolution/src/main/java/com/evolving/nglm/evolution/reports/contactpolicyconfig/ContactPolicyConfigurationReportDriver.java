@@ -236,9 +236,15 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
       if(journeyObjectiveService!=null){journeyObjectiveService.stop();log.trace("journeyObjectiveService stopped..");}
     }
   }
-@Override
-public List<FilterObject> reportFilters() {
-	// TODO Auto-generated method stub
-	return null;
-}
+
+  @Override
+  public List<FilterObject> reportFilters() {
+    return null;
+  }
+
+  @Override
+  public List<String> reportHeader() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

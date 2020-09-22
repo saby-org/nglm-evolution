@@ -31,10 +31,16 @@ public class BDRReportMonoDriver extends ReportDriver{
     log.debug("Finished with BDR Report");
   }
 
-@Override
-public List<FilterObject> reportFilters() {
-	// TODO Auto-generated method stub
-	return null;
-}
+
+  @Override
+  public List<FilterObject> reportFilters() {
+    return null;
+  }
+
+  @Override
+  public List<String> reportHeader() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
 }

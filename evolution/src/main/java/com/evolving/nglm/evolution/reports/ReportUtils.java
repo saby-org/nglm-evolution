@@ -6,7 +6,21 @@
 
 package com.evolving.nglm.evolution.reports;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +30,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.Deflater;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.ZkConnection;
@@ -496,6 +514,404 @@ public class ReportUtils {
     String res = JSONUtilities.encodeObject(json).toString();
     return res;
   }
+
+  public static String unzip(String zipFilePath) {
+    try {
+      Path destDirPath = Files.createTempDirectory("zipdir");
+      String destDir = destDirPath.toString();
+      FileInputStream fis;
+      byte[] buffer = new byte[100 * 1024];
+      File newFile = null;
+  
+      fis = new FileInputStream(zipFilePath);
+      ZipInputStream zis = new ZipInputStream(fis);
+      ZipEntry ze = zis.getNextEntry();
+      while(ze != null){
+        String fileName = ze.getName();
+        newFile = new File(destDir + File.separator + fileName);
+  
+        FileOutputStream fos = new FileOutputStream(newFile);
+        int len;
+        while ((len = zis.read(buffer)) > 0) {
+          fos.write(buffer, 0, len);
+        }
+        fos.close();
+        zis.closeEntry();
+        ze = zis.getNextEntry();
+      }
+      zis.closeEntry();
+      zis.close();
+      fis.close();
+      return newFile.getAbsolutePath();
+    } catch (IOException ex) {
+      log.info("error zipping intermediate file : " + ex.getLocalizedMessage());
+      return "";
+    }
+  }
+  
+  private static final String ZIP_PREFIX = "zip";
+
+  public static File zipFile(String filePath) {
+      try {
+          File file = new File(filePath);
+          String zipFileName = file.getAbsolutePath().concat("." + ZIP_PREFIX);
+          FileOutputStream fos = new FileOutputStream(zipFileName);
+          ZipOutputStream zos = new ZipOutputStream(fos);
+          zos.putNextEntry(new ZipEntry(file.getName()));
+          zos.setLevel(Deflater.BEST_SPEED);
+          byte data[] = new byte[100 * 1024]; // allow some bufferization
+          int length;
+          FileInputStream fis = new FileInputStream(file);
+          while ((length = fis.read(data)) != -1) {
+            zos.write(data, 0, length);
+          }
+          fis.close();
+          zos.closeEntry();
+          zos.close();
+          fos.close();
+          return new File(zipFileName);
+      } catch (FileNotFoundException ex) {
+        log.info("file does not exist : " + ex.getLocalizedMessage());
+        return null;
+      } catch (IOException ex) {
+        log.info("error zipping intermediate file : " + ex.getLocalizedMessage());
+        return null;
+      }
+  }
+
+  public static void zipFile(String inputFile, String outputFile) {
+      try {
+          File file = new File(inputFile);
+  
+          FileOutputStream fos = new FileOutputStream(outputFile);
+          ZipOutputStream zos = new ZipOutputStream(fos);
+  
+          zos.putNextEntry(new ZipEntry(file.getName()));
+  
+          byte[] bytes = Files.readAllBytes(Paths.get(inputFile));
+          zos.write(bytes, 0, bytes.length);
+          zos.closeEntry();
+          zos.close();
+  
+      } catch (FileNotFoundException ex) {
+      	log.error("The file does not exist", ex);
+      } catch (IOException ex) {
+      	log.error("I/O error creating zip file", ex);
+      }
+  }
+
+  public static void extractTopRows(String inputFile, String outputFile, int topRows) 
+  {
+  	try
+  	{
+  		String strLine;
+  		int i = 0;
+  		BufferedReader br = new BufferedReader(new FileReader(inputFile));
+  		BufferedWriter bw = new BufferedWriter(new FileWriter(outputFile));
+  		while ((strLine = br.readLine()) != null) 
+  		{
+  			if (i++ < topRows) 
+  			{
+  				bw.write(strLine);
+  				bw.write("\n");
+  			}
+  			else
+  				break;
+  
+  		}
+  		br.close();
+  		bw.close();
+  
+  	}
+  	catch (FileNotFoundException e) 
+  	{
+  		log.error("File doesn't exist", e);
+  	}
+  	catch (IOException e) 
+  	{
+  		log.error("Error processing " + inputFile + " or " + outputFile, e);
+  	}
+  }
+
+  public static void extractPercentageOfRandomRows(String inputFileName, String outputFileName,
+  		int percentage) {
+  
+  	int totalNmbrOfLinesInFile = 0;
+  	BufferedReader br;
+  
+  	try
+  	{
+  		br = new BufferedReader(new FileReader(inputFileName));
+  
+  		String header = br.readLine();
+  		while((br.readLine()) != null) 
+  		{
+  			totalNmbrOfLinesInFile++;
+  		}
+  		br.close();
+  
+  		BufferedWriter bw = new BufferedWriter(new FileWriter(outputFileName));
+  		bw.write(header + "\n");
+  		SamplerNRandomRows mySamplerOfRandomRows = new SamplerNRandomRows();
+  
+  		if (totalNmbrOfLinesInFile < 1)
+  		{
+  			log.info("The file is empty and thus no lines to be displayed!");
+  		}
+  		else if (percentage < 1 || percentage > 99)
+  		{
+  			log.info("The required percentage of lines is expected to be between 1 and 99 !");
+  		}
+  		else
+  		{
+  
+  			int nbLinesToExtract = (totalNmbrOfLinesInFile * percentage) / 100;
+  			int nbLinesEffective = 1;
+  
+  			if (nbLinesToExtract >= 1)
+  			{
+  				nbLinesEffective = (int) Math.ceil(nbLinesToExtract);
+  			}
+  
+  			List<String> myListOfRandomRows = mySamplerOfRandomRows.sampler(inputFileName, nbLinesEffective);
+  			for (int index = 0; index < myListOfRandomRows.size(); index++)
+  			{
+  				bw.write(myListOfRandomRows.get(index) + "\n");
+  			}
+  		}
+  
+  		bw.close();
+  	}
+  	catch (FileNotFoundException e) 
+  	{
+  		log.error("File doesn't exist", e);
+  	}
+  	catch (IOException e)
+  	{
+  	  log.error("Error processing " + inputFileName + " or " + outputFileName, e);
+  	}
+  }
+
+  public static void subsetOfCols(String inputFileName, String outputFileName, List<String> columnNames,
+      String fieldSeparator, String fieldSurrounder) {
+  
+        int[] indexOfColsToExtract = new int[columnNames.size()];
+  
+        try 
+        {
+          List<String> headerList = new ArrayList<>();
+  
+          BufferedReader br = new BufferedReader(new FileReader(inputFileName));
+          BufferedWriter bw = new BufferedWriter(new FileWriter(outputFileName));
+  
+          if (columnNames.size() != 0) 
+            {
+              String[] wordsOfHeader = br.readLine().split(fieldSeparator, -1);
+              List<String> colNamesInHeader = new ArrayList<>();
+  
+              for (int i = 0; i < wordsOfHeader.length; i++) 
+                {
+                  headerList.add(wordsOfHeader[i].replaceAll("\\\\", ""));// remove the \ from the header if exist
+                }
+  
+              boolean colsFound = false;
+              int i = 0;
+              for (String col : columnNames) 
+                {
+                  int headerIndex = 0;
+                  for (String word : headerList) 
+                    {
+                      if (word.equals(col)) 
+                        {
+                          colNamesInHeader.add(word);
+                          colsFound = true;
+  
+                          indexOfColsToExtract[i++] = headerIndex;
+                          break;
+                        } 
+                      else 
+                        {
+                          indexOfColsToExtract[i] = -1;
+                        }
+                      headerIndex++;
+                      if (headerIndex == headerList.size()) 
+                        {
+                          indexOfColsToExtract[i] = -1;
+                          i++;
+                          break;
+                        }
+                    }
+                }
+              if (colsFound) 
+                {
+                  Arrays.sort(indexOfColsToExtract);
+                  List<String> sortedColsNamesInHeader = new ArrayList<>();
+                  for (int j = 0; j < indexOfColsToExtract.length; j++) 
+                    {
+                      if (indexOfColsToExtract[j] != -1) 
+                        {
+                          sortedColsNamesInHeader.add(headerList.get(indexOfColsToExtract[j]));
+                        }
+                    }
+  
+                  // keep the same format of the header in the output file
+                  for (int j = 0; j < sortedColsNamesInHeader.size() - 1; j++) 
+                    {
+                      bw.write(sortedColsNamesInHeader.get(j).concat(fieldSeparator));
+                    }
+                  bw.write(sortedColsNamesInHeader.get(sortedColsNamesInHeader.size() - 1));
+                  bw.write("\n");
+  
+                  String colsToExtract = "";
+                  String line;
+                  while ((line = br.readLine()) != null) {
+                    if (line.length() != 0) 
+                      {
+                        String regex = fieldSeparator + "(?=(?:[^\\" + fieldSurrounder + "]*\\" + fieldSurrounder + "[^\\"
+                            + fieldSurrounder + "]*\\" + fieldSurrounder + ")*[^\\" + fieldSurrounder + "]*$)";
+                        String[] cols = line.split(regex, -1);
+  
+                        for (int cpt = 0; cpt < indexOfColsToExtract.length -1; cpt++) 
+                          {
+                            if (indexOfColsToExtract[cpt] != -1) 
+                              {
+                                colsToExtract = colsToExtract + cols[indexOfColsToExtract[cpt]] + fieldSeparator;
+                              }
+                          }
+                        bw.write(colsToExtract);
+                        bw.write(cols[indexOfColsToExtract[indexOfColsToExtract.length-1]]); // to avoid having the fieldSeparator at the end of each written line
+                        bw.write("\n");
+                        colsToExtract = "";
+  
+                      }
+                  }
+                } 
+              else 
+                {
+                  log.error("The columns: " + columnNames + " don't exist in  " + inputFileName);
+                }
+            } 
+          else 
+            {
+              log.error("No column names were specified!");
+            }
+          br.close();
+          bw.close();
+        } catch (FileNotFoundException e) {
+          log.error("The file " + inputFileName + " doesn't exist!", e);
+        }
+        catch (IOException e) 
+        {
+          log.error("Error processing " + inputFileName + " or " + outputFileName, e);
+        }
+  }
+
+  public static void filterReport(String InputFileName, String OutputFileName,
+      List<String> colsName, List<List<String>> colsValues, String fieldSeparator, String fieldSurrounder) 
+  {
+  
+    if (colsName.size() == colsValues.size()) 
+      {
+        int[] numOfColm = new int[colsName.size()];
+        try 
+        {
+          BufferedReader br = new BufferedReader(new FileReader(InputFileName));
+  
+          List<String> headerList = new ArrayList<>();
+          String headerVerbatim = br.readLine();
+          if (headerVerbatim == null)
+            {
+              log.error("The file "+InputFileName+" is empty");
+              br.close();
+              return;
+            }
+          String[] words = headerVerbatim.split(fieldSeparator, -1);
+  
+          for (int i = 0; i < words.length; i++) 
+            {
+              headerList.add(words[i].replaceAll("\\\\'", "'"));
+            }
+  
+          log.debug("Check the existence of columns: " + colsName);
+          boolean colsFound = false;
+          int i = 0;
+          for (String col : colsName) 
+            {
+              int colIndex = 0;
+              for (String word : headerList) 
+                {
+                  if (word.equals(col)) 
+                    {
+                      colsFound = true;
+                      numOfColm[i++] = colIndex;
+                      break;
+                    }
+                  colsFound = false;
+                  colIndex++;
+                }
+              if (!colsFound) 
+                {
+                  log.error("No filter is applied since column (" + col + ") doesn't exist in the report (" + InputFileName+")");
+                  break;					
+                }
+            }
+  
+          if (colsFound) 
+            {
+              log.debug("Look for matching values: "+colsValues);
+              BufferedWriter bw = new BufferedWriter(new FileWriter(OutputFileName));
+              String line;
+  
+              // write header
+              bw.write(headerVerbatim + "\n");
+  
+              while ((line = br.readLine()) != null) 
+                {
+                  if (line.length() != 0) {
+                    String surrounder = Pattern.quote(fieldSurrounder);
+                    String separator = Pattern.quote(fieldSeparator);
+                    // :(?=(?:[^X]*X[^X]*X)*[^X]*$)
+                    String regex = separator + "(?=(?:[^" + surrounder + "]*" + surrounder + "[^" + surrounder + "]*" + surrounder + ")*[^" + surrounder + "]*$)";
+                    String[] cols = line.split(regex);
+                    i = 0;
+                    boolean filterInvalid = false;
+                    for (List<String> listOfColsValues : colsValues) 
+                      {
+                        String valueToTest = cols[numOfColm[i]].replaceAll("^.|.$", "");
+                        if (!listOfColsValues.contains(valueToTest)) 
+                          {
+                            filterInvalid = true;
+                            break;
+                          }
+                        i++;
+                      }
+                    if (!filterInvalid) 
+                      {
+                        bw.write(line + "\n");
+                      }
+                  }
+                }
+  
+              br.close();
+              bw.close();
+            }
+        } 
+        catch (FileNotFoundException e) 
+        {
+          log.error("The file "+InputFileName+"  doesn't exist!", e);
+        }
+        catch (IOException e)
+          {
+            log.error("Exception while processing " + InputFileName + " or " + OutputFileName, e);
+          }
+      } 
+    else 
+      {
+        log.error("size of column names ("+colsName.size()+ ") != size of column values ("+colsValues+").");
+      }
+  }
+
+  
 
   
 }

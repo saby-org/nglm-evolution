@@ -76,6 +76,9 @@ public abstract class ReportDriver {
     }
     return topicSuffix;
   }
+  
+  
+  abstract public List<String> reportHeader(); 
 	
 }
 

@@ -33,9 +33,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
@@ -44,14 +44,8 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
-import com.evolving.nglm.evolution.reports.PercentageOfRandomRows;
 import com.evolving.nglm.evolution.reports.ReportUtils;
-import com.evolving.nglm.evolution.reports.TopRows;
-import com.evolving.nglm.evolution.reports.UnZipFile;
-import com.evolving.nglm.evolution.reports.ZipFile;
 import com.sun.net.httpserver.HttpExchange;
-
-import com.evolving.nglm.evolution.reports.*;
 
 public class GUIManagerLoyaltyReporting extends GUIManager
 {
@@ -709,6 +703,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     JSONArray filters = JSONUtilities.decodeJSONArray(jsonRoot, "criteria", false);
     Integer percentage = JSONUtilities.decodeInteger(jsonRoot, "percentage", false);
     Integer topRows = JSONUtilities.decodeInteger(jsonRoot, "topRows", false);
+    JSONArray header = JSONUtilities.decodeJSONArray(jsonRoot, "header", false);
+
     GUIManagedObject report1 = reportService.getStoredReport(reportID);
     log.trace("Looking for "+reportID+" and got "+report1);
     String responseCode = null;
@@ -719,34 +715,35 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       }
     else
       {
-        try {
-          Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
-          String reportName = report.getName();
+        try
+          {
+            Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
+            String reportName = report.getName();
 
-          String outputPath = Deployment.getReportManagerOutputPath()+File.separator;
-          String fileExtension = Deployment.getReportManagerFileExtension();
+            String outputPath = Deployment.getReportManagerOutputPath()+File.separator;
+            String fileExtension = Deployment.getReportManagerFileExtension();
 
-          File folder = new File(outputPath);
-          String csvFilenameRegex = reportName+ "_"+ ".*"+ "\\."+ fileExtension+ReportUtils.ZIP_EXTENSION;
+            File folder = new File(outputPath);
+            String csvFilenameRegex = reportName+ "_"+ ".*"+ "\\."+ fileExtension+ReportUtils.ZIP_EXTENSION;
 
-          File[] listOfFiles = folder.listFiles(new FileFilter(){
-            @Override
-            public boolean accept(File f) {
-              return Pattern.compile(csvFilenameRegex).matcher(f.getName()).matches();
-            }});
+            File[] listOfFiles = folder.listFiles(new FileFilter(){
+              @Override
+                  public boolean accept(File f) {
+                return Pattern.compile(csvFilenameRegex).matcher(f.getName()).matches();
+              }});
 
-          File reportFile = null;
+              File reportFile = null;
 
-          long lastMod = Long.MIN_VALUE;
-          if(listOfFiles != null && listOfFiles.length != 0) {
-            for (int i = 0; i < listOfFiles.length; i++) {
-              if (listOfFiles[i].isFile()) {
-                if(listOfFiles[i].lastModified() > lastMod) {
-                  reportFile = listOfFiles[i];
-                  lastMod = reportFile.lastModified();
+              long lastMod = Long.MIN_VALUE;
+              if(listOfFiles != null && listOfFiles.length != 0) {
+                for (int i = 0; i < listOfFiles.length; i++) {
+                  if (listOfFiles[i].isFile()) {
+                    if(listOfFiles[i].lastModified() > lastMod) {
+                      reportFile = listOfFiles[i];
+                      lastMod = reportFile.lastModified();
+                    }
+                  }
                 }
-              }
-            }
           } else {
             responseCode = "Cant find report with that name";
           }
@@ -754,6 +751,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           File filterOutTmpFile = reportFile;
           File percentageOutTmpFile = reportFile;
           File topRowsOutTmpFile = reportFile;
+          File headerOutTmpFile = reportFile;
           File finalZipFile = null;
 
           if(reportFile != null) {
@@ -762,11 +760,11 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                 String unzippedFile = null;
 
                 if (filters != null || percentage != null || topRows != null) {
-                  filterOutTmpFile = File.createTempFile("tempReport1", ".csv");
-                  percentageOutTmpFile = File.createTempFile("tempReport2", ".csv");
-                  topRowsOutTmpFile = File.createTempFile("tempReport3", ".csv");
-                  String tempFileName = filterOutTmpFile.getAbsolutePath();
-                  unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
+                  filterOutTmpFile = File.createTempFile("tempReportFilter", ".csv");
+                  percentageOutTmpFile = File.createTempFile("tempReportPercentage", ".csv");
+                  topRowsOutTmpFile = File.createTempFile("tempReportTopRows", ".csv");
+                  headerOutTmpFile = File.createTempFile("tempReportHeader", ".csv");
+                  unzippedFile = ReportUtils.unzip(reportFile.getAbsolutePath());
                 }
 
                 if (filters != null)
@@ -846,7 +844,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                         }
                       }
 
-                    FilterReport.filterReport(unzippedFile, filterOutTmpFile.getAbsolutePath(), colNames, colsValues, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
+                    ReportUtils.filterReport(unzippedFile, filterOutTmpFile.getAbsolutePath(), colNames, colsValues, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
                   }
                 else
                   {
@@ -855,7 +853,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 
                 if (percentage != null) 
                   {
-                    PercentageOfRandomRows.extractPercentageOfRandomRows(filterOutTmpFile.getAbsolutePath(), percentageOutTmpFile.getAbsolutePath(), percentage);
+                    ReportUtils.extractPercentageOfRandomRows(filterOutTmpFile.getAbsolutePath(), percentageOutTmpFile.getAbsolutePath(), percentage);
                   }
                 else
                   {
@@ -864,17 +862,32 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 
                 if (topRows != null) 
                   {
-                    TopRows.extractTopRows(percentageOutTmpFile.getAbsolutePath(), topRowsOutTmpFile.getAbsolutePath(), topRows);
+                    ReportUtils.extractTopRows(percentageOutTmpFile.getAbsolutePath(), topRowsOutTmpFile.getAbsolutePath(), topRows);
                   }
                 else
                   {
                     topRowsOutTmpFile = percentageOutTmpFile;
                   }
 
-                if (filters != null || percentage != null || topRows != null) {
+                if (header != null)
+                  {
+                    List<String> columnNames = new ArrayList<>();
+                    for (int i=0; i<header.size(); i++)
+                      {
+                        String nameOfColumn = (String) header.get(i);
+                        columnNames.add(nameOfColumn);
+                      }
+                    ReportUtils.subsetOfCols(topRowsOutTmpFile.getAbsolutePath(), headerOutTmpFile.getAbsolutePath(), columnNames, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
+                  }
+                else
+                  {
+                    headerOutTmpFile = topRowsOutTmpFile;
+                  }
+
+                if (filters != null || percentage != null || topRows != null || header != null) {
                   finalZipFile = File.createTempFile("reportFinal", "zip");
                   String finalZipFileName = finalZipFile.getAbsolutePath();
-                  ZipFile.zipFile(topRowsOutTmpFile.getAbsolutePath(), finalZipFileName);
+                  ReportUtils.zipFile(headerOutTmpFile.getAbsolutePath(), finalZipFileName);
                   reportFile = new File(finalZipFileName);
                 }
 
@@ -897,11 +910,12 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                 log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
               }
 
-              if (filters != null || percentage != null || topRows != null)
+              if (filters != null || percentage != null || topRows != null || header != null)
                 {
                   if (filterOutTmpFile != null) filterOutTmpFile.delete();
                   if (percentageOutTmpFile != null) percentageOutTmpFile.delete();
                   if (topRowsOutTmpFile != null) topRowsOutTmpFile.delete();
+                  if (headerOutTmpFile != null) headerOutTmpFile.delete();
                   if (finalZipFile != null) finalZipFile.delete();
                 }
 
@@ -917,6 +931,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
           responseCode = "internalError";
         }
       }
+    
     if(responseCode != null) {
       try {
         jsonResponse.put("responseCode", responseCode);

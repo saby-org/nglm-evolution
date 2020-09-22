@@ -237,7 +237,6 @@ public class ReportService extends GUIService
 	  return isConnectionValid(zk);
   }
   
-  //==
   public JSONObject generateResponseJSON(GUIManagedObject guiManagedObject, boolean fullDetails, Date date)
   {
 	  JSONObject responseJSON = super.generateResponseJSON(guiManagedObject, fullDetails, date);
@@ -250,6 +249,7 @@ public class ReportService extends GUIService
 			  Class<ReportDriver> reportClass = (Class<ReportDriver>) Class.forName(report.getReportClass());
 			  Constructor<ReportDriver> cons = reportClass.getConstructor();
 			  ReportDriver rd = cons.newInstance((Object[]) null);
+			  
 			  List<FilterObject> filters = rd.reportFilters();
 			  JSONArray jsonArray = new JSONArray();
 
@@ -275,6 +275,18 @@ public class ReportService extends GUIService
 				  }
 				  responseJSON.put("filters", jsonArray);
 			  }
+			  
+        List<String> headers = rd.reportHeader();
+        jsonArray = new JSONArray();
+        if (headers != null) 
+        {
+          for (String header : headers)
+          {
+            jsonArray.add(header);
+          }
+        }
+        responseJSON.put("header", jsonArray);
+
 		  }
 		  catch (Exception e)
 		  {

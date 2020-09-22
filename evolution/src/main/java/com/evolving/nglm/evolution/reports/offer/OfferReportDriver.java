@@ -425,7 +425,11 @@ public class OfferReportDriver extends ReportDriver
   }
 
 @Override
+<<<<<<< HEAD
 public List<FilterObject> reportFilters() {
+=======
+public List<String> reportHeader() {
+>>>>>>> EVPRO-461
 	// TODO Auto-generated method stub
 	return null;
 }
