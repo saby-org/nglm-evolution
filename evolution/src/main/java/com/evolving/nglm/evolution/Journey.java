@@ -193,6 +193,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     schemaBuilder.field("targetingType", Schema.STRING_SCHEMA);
     schemaBuilder.field("eligibilityCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schemaBuilder.field("targetingCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
+    schemaBuilder.field("targetingEventCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).optional().schema());
     schemaBuilder.field("targetID", SchemaBuilder.array(Schema.STRING_SCHEMA).optional().schema());
     schemaBuilder.field("startNodeID", Schema.STRING_SCHEMA);
     schemaBuilder.field("endNodeID", Schema.STRING_SCHEMA);
@@ -242,6 +243,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   private TargetingType targetingType;
   private List<EvaluationCriterion> eligibilityCriteria;
   private List<EvaluationCriterion> targetingCriteria;
+  private List<EvaluationCriterion> targetingEventCriteria;
   private List<String> targetID;
   private String startNodeID;
   private String endNodeID;
@@ -285,6 +287,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   public TargetingType getTargetingType() { return targetingType; }
   public List<EvaluationCriterion> getEligibilityCriteria() { return eligibilityCriteria; }
   public List<EvaluationCriterion> getTargetingCriteria() { return targetingCriteria; }
+  public List<EvaluationCriterion> getTargetingEventCriteria() { return targetingEventCriteria; }
   public List<String> getTargetID() { return targetID; }
   public String getStartNodeID() { return startNodeID; }
   public String getEndNodeID() { return endNodeID; }
@@ -626,7 +629,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, boolean appendUCG, JourneyStatus approval, Integer maxNoOfCustomers, boolean fullStatistics, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber)
+  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<EvaluationCriterion> targetingEventCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists, boolean appendUCG, JourneyStatus approval, Integer maxNoOfCustomers, boolean fullStatistics, boolean recurrence, String recurrenceId, Integer occurrenceNumber, JourneyScheduler scheduler, Integer lastCreatedOccurrenceNumber)
   {
     super(schemaAndValue);
     this.effectiveEntryPeriodEndDate = effectiveEntryPeriodEndDate;
@@ -636,6 +639,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     this.targetingType = targetingType;
     this.eligibilityCriteria = eligibilityCriteria;
     this.targetingCriteria = targetingCriteria;
+    this.targetingEventCriteria = targetingEventCriteria;
     this.targetID = targetID;
     this.startNodeID = startNodeID;
     this.endNodeID = endNodeID;
@@ -674,6 +678,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     struct.put("targetingType", journey.getTargetingType().getExternalRepresentation());
     struct.put("eligibilityCriteria", packCriteria(journey.getEligibilityCriteria()));
     struct.put("targetingCriteria", packCriteria(journey.getTargetingCriteria()));
+    struct.put("targetingEventCriteria", packCriteria(journey.getTargetingEventCriteria()));
     struct.put("targetID", journey.getTargetID());
     struct.put("startNodeID", journey.getStartNodeID());
     struct.put("endNodeID", journey.getEndNodeID());
@@ -825,6 +830,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     TargetingType targetingType = TargetingType.fromExternalRepresentation(valueStruct.getString("targetingType"));
     List<EvaluationCriterion> eligibilityCriteria = unpackCriteria(schema.field("eligibilityCriteria").schema(), valueStruct.get("eligibilityCriteria"));
     List<EvaluationCriterion> targetingCriteria = unpackCriteria(schema.field("targetingCriteria").schema(), valueStruct.get("targetingCriteria"));
+    List<EvaluationCriterion> targetingEventCriteria = (schemaVersion >=7) ? unpackCriteria(schema.field("targetingEventCriteria").schema(), valueStruct.get("targetingEventCriteria")) : new ArrayList<EvaluationCriterion>();
     List<String> targetID = (List<String>) valueStruct.get("targetID");
     String startNodeID = valueStruct.getString("startNodeID");
     String endNodeID = valueStruct.getString("endNodeID");
@@ -904,7 +910,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, appendUCG, approval, maxNoOfCustomers, fullStatistics, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber);
+    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetingEventCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists, appendUCG, approval, maxNoOfCustomers, fullStatistics, recurrence, recurrenceId, occurrenceNumber, scheduler, lastCreatedOccurrenceNumber);
   }
   
   /*****************************************
@@ -1138,6 +1144,30 @@ public class Journey extends GUIManagedObject implements StockableItem
     this.targetingType = TargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", "criteria"));
     this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), journeyUniversalEligibilityCriteria);
     this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>());
+    
+    //
+    // Targeting Event Criterion mgt
+    //
+    String targetingEvent = JSONUtilities.decodeString(jsonRoot, "targetingEvent", false);
+    if(targetingEvent != null)
+      {
+        JSONArray arrayEventNameCriterion = new JSONArray();
+        JSONObject eventNameCriterionJson = new JSONObject();
+        eventNameCriterionJson.put("criterionField", "evaluation.eventname");
+        eventNameCriterionJson.put("criterionOperator", "==");
+        JSONObject argumentJson = new JSONObject();
+        argumentJson.put("expression", "'" + targetingEvent + "'");
+        eventNameCriterionJson.put("argument", argumentJson);
+        arrayEventNameCriterion.add(eventNameCriterionJson);
+        
+        List<EvaluationCriterion> eventNameCriteria = decodeCriteria(arrayEventNameCriterion, new ArrayList<EvaluationCriterion>());        
+        this.targetingEventCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingEventCriteria", false), eventNameCriteria);
+      }
+    else 
+      {
+        this.targetingEventCriteria = new ArrayList<>();
+      }
+
     this.targetID = decodeTargetIDs(JSONUtilities.decodeJSONArray(jsonRoot, "targetID", new JSONArray()));
     this.journeyObjectiveInstances = decodeJourneyObjectiveInstances(JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", false), catalogCharacteristicService);
     this.appendInclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendInclusionLists", Boolean.FALSE);
@@ -1280,6 +1310,13 @@ public class Journey extends GUIManagedObject implements StockableItem
           //
 
           if (this.targetingCriteria.size() > 0) throw new GUIManagerException("workflow may not have targeting criteria", this.getJourneyID());
+          
+          //
+          //  no targeting event criteria
+          //
+
+          if (this.targetingEventCriteria.size() > 0) throw new GUIManagerException("workflow may not have targeting event criteria", this.getJourneyID());
+
 
           //
           //  no start/end dates
@@ -3528,6 +3565,7 @@ public class Journey extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! (targetingType == existingJourney.getTargetingType());
         epochChanged = epochChanged || ! Objects.equals(eligibilityCriteria, existingJourney.getEligibilityCriteria());
         epochChanged = epochChanged || ! Objects.equals(targetingCriteria, existingJourney.getTargetingCriteria());
+        epochChanged = epochChanged || ! Objects.equals(targetingEventCriteria, existingJourney.getTargetingEventCriteria());
         epochChanged = epochChanged || ! Objects.equals(targetID, existingJourney.getTargetID());
         epochChanged = epochChanged || ! Objects.equals(startNodeID, existingJourney.getStartNodeID());
         epochChanged = epochChanged || ! Objects.equals(endNodeID, existingJourney.getEndNodeID());

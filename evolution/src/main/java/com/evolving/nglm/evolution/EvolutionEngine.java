@@ -4562,10 +4562,14 @@ public class EvolutionEngine
 
                 if (enterJourney)
                   {
-                    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
+                    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now);
                     List<EvaluationCriterion> eligibilityAndTargetting = new ArrayList<>();
                     eligibilityAndTargetting.addAll(journey.getEligibilityCriteria());
                     eligibilityAndTargetting.addAll(journey.getTargetingCriteria());
+                    if(journey.getTargetingEventCriteria() != null) 
+                      {
+                        eligibilityAndTargetting.addAll(journey.getTargetingEventCriteria());
+                      }
                     boolean subscriberToBeProvisionned = EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityAndTargetting);
                     context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
                 
