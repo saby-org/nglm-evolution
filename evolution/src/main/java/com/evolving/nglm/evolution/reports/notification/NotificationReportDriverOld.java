@@ -44,13 +44,14 @@ public class NotificationReportDriverOld extends ReportDriver{
         log.debug("Finished with BDR Report");
   }
 
-@Override
-<<<<<<< HEAD
-public List<FilterObject> reportFilters() {
-=======
-public List<String> reportHeader() {
->>>>>>> EVPRO-461
-	// TODO Auto-generated method stub
-	return null;
-}
+  @Override
+  public List<FilterObject> reportFilters() {
+	  return null;
+  }
+
+  @Override
+  public List<String> reportHeader() {
+	  // TODO Auto-generated method stub
+	  return null;
+  }
 }
