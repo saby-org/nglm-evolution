@@ -131,6 +131,7 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
     modulesMap.updateFromElasticsearch(elasticsearch);
     salesChannelsMap.update();
     paymentMeansMap.update();
+    offerObjectivesMap.update();
     loyaltyProgramsMap.update();
     deliverablesMap.updateFromElasticsearch(elasticsearch);
     journeysMap.update();
