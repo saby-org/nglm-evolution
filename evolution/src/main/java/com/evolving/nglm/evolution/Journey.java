@@ -178,7 +178,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   //  schema
   //
 
-  private static int currentSchemaVersion = 7;
+  private static int currentSchemaVersion = 8;
   private static Schema schema = null;
   static
   {
@@ -830,7 +830,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     TargetingType targetingType = TargetingType.fromExternalRepresentation(valueStruct.getString("targetingType"));
     List<EvaluationCriterion> eligibilityCriteria = unpackCriteria(schema.field("eligibilityCriteria").schema(), valueStruct.get("eligibilityCriteria"));
     List<EvaluationCriterion> targetingCriteria = unpackCriteria(schema.field("targetingCriteria").schema(), valueStruct.get("targetingCriteria"));
-    List<EvaluationCriterion> targetingEventCriteria = (schemaVersion >=7) ? unpackCriteria(schema.field("targetingEventCriteria").schema(), valueStruct.get("targetingEventCriteria")) : new ArrayList<EvaluationCriterion>();
+    List<EvaluationCriterion> targetingEventCriteria = (schemaVersion >=8) ? unpackCriteria(schema.field("targetingEventCriteria").schema(), valueStruct.get("targetingEventCriteria")) : new ArrayList<EvaluationCriterion>();
     List<String> targetID = (List<String>) valueStruct.get("targetID");
     String startNodeID = valueStruct.getString("startNodeID");
     String endNodeID = valueStruct.getString("endNodeID");
