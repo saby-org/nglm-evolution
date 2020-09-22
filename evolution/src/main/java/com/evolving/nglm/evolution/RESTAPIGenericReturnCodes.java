@@ -75,6 +75,7 @@ public enum RESTAPIGenericReturnCodes
   PARENT_RESELLER_INACTIVE(430, "PARENT_RESELLER_INACTIVE", "parent Reseller is inactive"),
   PARENT_SUPPLIER_INACTIVE(431, "PARENT_SUPPLIER_INACTIVE", "parent Supplier is inactive"),
   PRODUCT_PARENT_SUPPLIER_INACTIVE(432, "PRODUCT_PARENT_SUPPLIER_INACTIVE", "product parent Supplier is inactive"),
+  OFFER_UNKNOWN(433, "OFFER_UNKNOWN", "supplier offer unknown"),
   INVALID_TOKEN_CODE(500, "INVALID_TOKEN_CODE", "The token-code is not valid"),
   MSISDN_TOKEN_CODE_NOT_COMPATIBLE(501, "MSISDN_TOKEN_CODE_NOT_COMPATIBLE", "The token-code is not associated to the current MSISDN"),
   CONCURRENT_ALLOCATION(502, "CONCURRENT_ALLOCATION", "The pair <MSISDN, token-code> is already in allocation phase"),
