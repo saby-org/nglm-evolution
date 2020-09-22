@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -69,11 +70,16 @@ public class GUIManagedObjectDependencyHelper
             	
             	if(guiManagedObject.getGUIManagedObjectType()==GUIManagedObjectType.Other || guiManagedObject.getGUIManagedObjectType()==GUIManagedObjectType.Unknown || guiManagedObject.getGUIManagedObjectType().name().toLowerCase().equals(dependency.toLowerCase())){
                 Map<String, List<String>> guiDependencies = guiManagedObject.getGUIDependencies();
+                
+                if (guiDependencies!= null && !guiDependencies.isEmpty())
+                {
+                	
                 if (guiDependencies != null && !guiDependencies.isEmpty())
                   {
                     List<String> guiDependencyList = guiDependencies.get(guiDependencyModelTree.getGuiManagedObjectType().toLowerCase());
                     if (guiDependencyList != null && guiDependencyList.contains(objectID)) containerObjectList.add(guiManagedObject);
                   }
+                }
                 
               }
               }

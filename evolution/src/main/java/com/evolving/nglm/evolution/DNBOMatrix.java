@@ -8,7 +8,9 @@ package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
@@ -22,8 +24,10 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+@GUIDependencyDef(objectType = "dnboMatrix", serviceClass = DNBOMatrixService.class, dependencies = {  "segmentationdimension"})
 public class DNBOMatrix extends GUIManagedObject
 {
   /*****************************************
@@ -332,6 +336,16 @@ public class DNBOMatrix extends GUIManagedObject
   {
   }
   
+  @Override public Map<String, List<String>> getGUIDependencies()
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    List<String> segmentationDimensionIDs = new ArrayList<>();
+    segmentationDimensionIDs.add(getDimensionId());
+   
+    result.put("segmentationdimension", segmentationDimensionIDs);
+   
+    return result;
+  }
   
   
 }

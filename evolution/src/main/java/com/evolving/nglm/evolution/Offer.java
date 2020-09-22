@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 
-@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "product" , "voucher", "saleschannel"})
+@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "product" , "voucher", "saleschannel" , "offerobjective"})
 public class Offer extends GUIManagedObject implements StockableItem
 {  
   //
@@ -878,6 +878,9 @@ public class Offer extends GUIManagedObject implements StockableItem
     List<String> productIDs = getOfferProducts().stream().map(product -> product.getProductID()).collect(Collectors.toList());
     List<String> voucherIDs = getOfferVouchers().stream().map(voucher -> voucher.getVoucherID()).collect(Collectors.toList());
     List<String> saleschannelIDs = new ArrayList<String>();
+    List<String> offerObjectiveIDs = getOfferObjectives().stream().map(offerObjective -> offerObjective.getOfferObjectiveID()).collect(Collectors.toList());
+   
+     
     for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : getOfferSalesChannelsAndPrices())
       {
         saleschannelIDs.addAll(offerSalesChannelsAndPrice.getSalesChannelIDs());
@@ -885,6 +888,10 @@ public class Offer extends GUIManagedObject implements StockableItem
     result.put("product", productIDs);
     result.put("voucher", voucherIDs);
     result.put("saleschannel", saleschannelIDs);
+    result.put("offerobjective", offerObjectiveIDs);
+   // result.put("CatalogCharacteristic", getCatalogCharacteristics());
+    
+    
     return result;
   }
 }

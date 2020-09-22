@@ -1,6 +1,10 @@
 package com.evolving.nglm.evolution;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
@@ -101,7 +105,14 @@ public abstract class Voucher extends GUIManagedObject {
     VoucherType voucherType = voucherTypeService.getActiveVoucherType(getVoucherTypeId(), date);
     if(voucherType==null || voucherType.getCodeType().equals(VoucherType.CodeType.Unknown)) throw new GUIManagerException("unknown voucherType", getVoucherTypeId());
   }
-
+  @Override public Map<String, List<String>> getGUIDependencies()
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    ArrayList<String> supplierIDs=new ArrayList<>();
+    supplierIDs.add(getSupplierID());
+    result.put("supplier",supplierIDs ) ;
+    return result;
+  }
   @Override
   public String toString() {
     return "supplierID:"+getSupplierID()+", voucherTypeId:"+getVoucherTypeId()+", unitaryCost:"+getUnitaryCost()+", recommendedPrice:"+getRecommendedPrice();

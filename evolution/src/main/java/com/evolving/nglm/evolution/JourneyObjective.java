@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -26,11 +27,13 @@ import org.json.simple.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@GUIDependencyDef(objectType = "journeyObjective", serviceClass = JourneyObjectiveService.class, dependencies = { "contactpolicy" , "catalogcharacteristic" })
 public class JourneyObjective extends GUIManagedObject
 {
 
@@ -377,5 +380,15 @@ public class JourneyObjective extends GUIManagedObject
         
         walk = parent;
       }
+  }
+  
+  @Override public Map<String, List<String>> getGUIDependencies()
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    List<String> contactPolicyIDs = new ArrayList<String>();
+    contactPolicyIDs.add(getContactPolicyID());
+    result.put("contactpolicy", contactPolicyIDs);
+    result.put("catalogcharacteristic".toLowerCase(), getCatalogCharacteristics());
+    return result;
   }
 }
