@@ -759,7 +759,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
               try {
                 String unzippedFile = null;
 
-                if (filters != null || percentage != null || topRows != null) {
+                if (filters != null || percentage != null || topRows != null || header != null) {
                   filterOutTmpFile = File.createTempFile("tempReportFilter", ".csv");
                   percentageOutTmpFile = File.createTempFile("tempReportPercentage", ".csv");
                   topRowsOutTmpFile = File.createTempFile("tempReportTopRows", ".csv");
