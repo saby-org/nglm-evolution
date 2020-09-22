@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -29,6 +30,12 @@ public class FilterReport {
 
           List<String> headerList = new ArrayList<>();
           String headerVerbatim = br.readLine();
+          if (headerVerbatim == null)
+            {
+              log.error("The file "+InputFileName+" is empty");
+              br.close();
+              return;
+            }
           String[] words = headerVerbatim.split(fieldSeparator, -1);
 
           for (int i = 0; i < words.length; i++) 
@@ -103,10 +110,11 @@ public class FilterReport {
         catch (FileNotFoundException e) 
         {
           log.error("The file "+InputFileName+"  doesn't exist!", e);
-        } catch (Exception e) 
-        {
-          log.error("The file "+InputFileName+"  is empty!", e);
         }
+        catch (IOException e)
+          {
+            log.error("Exception while processing " + InputFileName + " or " + OutputFileName, e);
+          }
       } 
     else 
       {

@@ -44,6 +44,11 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.reports.PercentageOfRandomRows;
+import com.evolving.nglm.evolution.reports.ReportUtils;
+import com.evolving.nglm.evolution.reports.TopRows;
+import com.evolving.nglm.evolution.reports.UnZipFile;
+import com.evolving.nglm.evolution.reports.ZipFile;
 import com.sun.net.httpserver.HttpExchange;
 
 import com.evolving.nglm.evolution.reports.*;
@@ -694,12 +699,16 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   /*****************************************
   *
   *  processDownloadReport
+ * @throws IOException 
   *
   *****************************************/
 
-  void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
+  void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange) throws IOException
   {
     String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    JSONArray filters = JSONUtilities.decodeJSONArray(jsonRoot, "criteria", false);
+    Integer percentage = JSONUtilities.decodeInteger(jsonRoot, "percentage", false);
+    Integer topRows = JSONUtilities.decodeInteger(jsonRoot, "topRows", false);
     GUIManagedObject report1 = reportService.getStoredReport(reportID);
     log.trace("Looking for "+reportID+" and got "+report1);
     String responseCode = null;
@@ -710,175 +719,203 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       }
     else
       {
-        try
-          {
-            Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
-            String reportName = report.getName();
+        try {
+          Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
+          String reportName = report.getName();
 
-            String outputPath = Deployment.getReportManagerOutputPath()+File.separator;
-            String fileExtension = Deployment.getReportManagerFileExtension();
+          String outputPath = Deployment.getReportManagerOutputPath()+File.separator;
+          String fileExtension = Deployment.getReportManagerFileExtension();
 
-            File folder = new File(outputPath);
-            String csvFilenameRegex = reportName+ "_"+ ".*"+ "\\."+ fileExtension+ReportUtils.ZIP_EXTENSION;
+          File folder = new File(outputPath);
+          String csvFilenameRegex = reportName+ "_"+ ".*"+ "\\."+ fileExtension+ReportUtils.ZIP_EXTENSION;
 
-            File[] listOfFiles = folder.listFiles(new FileFilter(){
-              @Override
-                  public boolean accept(File f) {
-                return Pattern.compile(csvFilenameRegex).matcher(f.getName()).matches();
-              }});
+          File[] listOfFiles = folder.listFiles(new FileFilter(){
+            @Override
+            public boolean accept(File f) {
+              return Pattern.compile(csvFilenameRegex).matcher(f.getName()).matches();
+            }});
 
-              File reportFile = null;
-              File tempFile = null;
-              File tempFileZip = null;
-              
-              long lastMod = Long.MIN_VALUE;
-              if(listOfFiles != null && listOfFiles.length != 0) {
-                for (int i = 0; i < listOfFiles.length; i++) {
-                  if (listOfFiles[i].isFile()) {
-                    if(listOfFiles[i].lastModified() > lastMod) {
-                      reportFile = listOfFiles[i];
-                      lastMod = reportFile.lastModified();
-                    }
-                  }
+          File reportFile = null;
+
+          long lastMod = Long.MIN_VALUE;
+          if(listOfFiles != null && listOfFiles.length != 0) {
+            for (int i = 0; i < listOfFiles.length; i++) {
+              if (listOfFiles[i].isFile()) {
+                if(listOfFiles[i].lastModified() > lastMod) {
+                  reportFile = listOfFiles[i];
+                  lastMod = reportFile.lastModified();
                 }
-              }else {
-                responseCode = "Cant find report with that name";
               }
-              
-              JSONArray filters = JSONUtilities.decodeJSONArray(jsonRoot, "criteria", false);
-              if (filters != null)
-              {
-            	  List<String> colNames = new ArrayList<>();
-            	  List<List<String>> colsValues = new ArrayList<>();
-            	  for (int i=0; i<filters.size(); i++)
-            	  {
-            		  JSONObject filterJSON = (JSONObject) filters.get(i);
-            		  Object nameOfColumnObj = filterJSON.get("criterionField");
-            		  if (!(nameOfColumnObj instanceof String))
-            		  {
-            			  log.warn("criterionField is not a String : " + nameOfColumnObj.getClass().getName());
-            			  colNames.add("");
-            			  break;
-            		  }
-            		  String nameOfColumn = (String) nameOfColumnObj;
-            		  colNames.add(nameOfColumn);
-            		  
-            		  Object argumentObj = filterJSON.get("argument");
-            		  if (!(argumentObj instanceof JSONObject))
-            		  {
-            			  log.warn("argument is not a JSONObject : " + argumentObj.getClass().getName());
-            			  colsValues.add(new ArrayList<>());
-            			  break;
-            		  }
-            		  JSONObject argument = (JSONObject) argumentObj;
-        			    String valueType = (String) argument.get("valueType");
-            		  Object value = (Object) argument.get("value");
-            				  
-            		  List<String> valuesOfColumns;
-            		  switch (valueType) 
-            		  {
-            		    case "simpleSelect.string":
-            		      if (!(value instanceof String))
-            		        {
-            		          log.warn("value of column " + nameOfColumn + " is not a String : " + value);
-            		          colsValues.add(new ArrayList<>());
-            		        }
-            		      else
-            		        {
-            		          String valueSimpleSelect = (String) value;
-            		          valuesOfColumns = new ArrayList<>();
-            		          valuesOfColumns.add(valueSimpleSelect);
-            		          colsValues.add(valuesOfColumns);
-            		        }
-            		      break;
+            }
+          } else {
+            responseCode = "Cant find report with that name";
+          }
 
-            		    case "multiple.string":
-                      valuesOfColumns = new ArrayList<>();
-            		      if (!(value instanceof JSONArray))
-            		        {
-            		          log.warn("value of column " + nameOfColumn + " is not an array : " + value.getClass().getName());
-            		        }
-            		      else
-            		        {
-            		          JSONArray valueMultiple = (JSONArray) value;
-            		          for (int j=0; j<valueMultiple.size(); j++)
-            		            {
-            		              Object obj = valueMultiple.get(j);
-            		              if (!(obj instanceof String))
-            		                {
-            		                  log.warn("value is not a String : " + obj.getClass().getName());
-            		                }
-            		              else
-            		                {
-            		                  valuesOfColumns.add((String) obj);
-            		                }
-            		            }
-            		        }
-                      colsValues.add(valuesOfColumns);
-            		      break;
+          File filterOutTmpFile = reportFile;
+          File percentageOutTmpFile = reportFile;
+          File topRowsOutTmpFile = reportFile;
+          File finalZipFile = null;
 
-            		    default:
-            		      log.info("Received unsupported valueType : " + valueType);
-            		      break;
-            		  }
-            	  }
+          if(reportFile != null) {
+            if(reportFile.length() > 0) {
+              try {
+                String unzippedFile = null;
 
-            	  try 
-            	  {
-            		  tempFile = File.createTempFile("tempReportFilters", ".csv");
-            		  String tempFileName = tempFile.getAbsolutePath();
-            		  String unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
-            		  FilterReport.filterReport(unzippedFile, tempFileName, colNames, colsValues, Deployment.getReportManagerCsvSeparator(),
-            		      Deployment.getReportManagerFieldSurrounder());
-            		  tempFileZip = ZipFile.zipFile(tempFileName);
-            		  reportFile = tempFileZip;
-            	  }
-            	  catch (IOException e)
-            	  {
-            	    log.info("unable to create temp file " + e.getLocalizedMessage());
-            	  }
-              }
-              
-              if(reportFile != null) {
-                if(reportFile.length() > 0) {
-                  try {
-                    FileInputStream fis = new FileInputStream(reportFile);
-                    exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
-                    exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
-                    exchange.sendResponseHeaders(200, reportFile.length());
-                    OutputStream os = exchange.getResponseBody();
-                    byte data[] = new byte[10_000]; // allow some bufferization
-                    int length;
-                    while ((length = fis.read(data)) != -1) {
-                      os.write(data, 0, length);
-                    }
-                    fis.close();
-                    os.flush();
-                    os.close();
-                  } catch (Exception excp) {
-                    StringWriter stackTraceWriter = new StringWriter();
-                    excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-                  }
-                  if(tempFile != null) {
-                	  tempFile.delete();
-                  }
-                  if(tempFileZip != null) {
-                    tempFileZip.delete();
-                  }
-                  
-                }else {
-                  responseCode = "Report size is 0, report file is empty";
+                if (filters != null || percentage != null || topRows != null) {
+                  filterOutTmpFile = File.createTempFile("tempReport1", ".csv");
+                  percentageOutTmpFile = File.createTempFile("tempReport2", ".csv");
+                  topRowsOutTmpFile = File.createTempFile("tempReport3", ".csv");
+                  String tempFileName = filterOutTmpFile.getAbsolutePath();
+                  unzippedFile = UnZipFile.unzip(reportFile.getAbsolutePath());
                 }
-              }else {
-                responseCode = "Report is null, cant find this report";
+
+                if (filters != null)
+                  {
+                    List<String> colNames = new ArrayList<>();
+                    List<List<String>> colsValues = new ArrayList<>();
+                    for (int i=0; i<filters.size(); i++)
+                      {
+                        JSONObject filterJSON = (JSONObject) filters.get(i);
+                        Object nameOfColumnObj = filterJSON.get("criterionField");
+                        if (!(nameOfColumnObj instanceof String))
+                          {
+                            log.warn("criterionField is not a String : " + nameOfColumnObj.getClass().getName());
+                            colNames.add("");
+                            break;
+                          }
+                        String nameOfColumn = (String) nameOfColumnObj;
+                        colNames.add(nameOfColumn);
+
+                        Object argumentObj = filterJSON.get("argument");
+                        if (!(argumentObj instanceof JSONObject))
+                          {
+                            log.warn("argument is not a JSONObject : " + argumentObj.getClass().getName());
+                            colsValues.add(new ArrayList<>());
+                            break;
+                          }
+                        JSONObject argument = (JSONObject) argumentObj;
+                        String valueType = (String) argument.get("valueType");
+                        Object value = (Object) argument.get("value");
+
+                        List<String> valuesOfColumns;
+                        switch (valueType) 
+                        {
+                          case "simpleSelect.string":
+                            if (!(value instanceof String))
+                              {
+                                log.warn("value of column " + nameOfColumn + " is not a String : " + value);
+                                colsValues.add(new ArrayList<>());
+                              }
+                            else
+                              {
+                                String valueSimpleSelect = (String) value;
+                                valuesOfColumns = new ArrayList<>();
+                                valuesOfColumns.add(valueSimpleSelect);
+                                colsValues.add(valuesOfColumns);
+                              }
+                            break;
+
+                          case "multiple.string":
+                            valuesOfColumns = new ArrayList<>();
+                            if (!(value instanceof JSONArray))
+                              {
+                                log.warn("value of column " + nameOfColumn + " is not an array : " + value.getClass().getName());
+                              }
+                            else
+                              {
+                                JSONArray valueMultiple = (JSONArray) value;
+                                for (int j=0; j<valueMultiple.size(); j++)
+                                  {
+                                    Object obj = valueMultiple.get(j);
+                                    if (!(obj instanceof String))
+                                      {
+                                        log.warn("value is not a String : " + obj.getClass().getName());
+                                      }
+                                    else
+                                      {
+                                        valuesOfColumns.add((String) obj);
+                                      }
+                                  }
+                              }
+                            colsValues.add(valuesOfColumns);
+                            break;
+
+                          default:
+                            log.info("Received unsupported valueType : " + valueType);
+                            break;
+                        }
+                      }
+
+                    FilterReport.filterReport(unzippedFile, filterOutTmpFile.getAbsolutePath(), colNames, colsValues, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
+                  }
+                else
+                  {
+                    filterOutTmpFile = new File(unzippedFile);
+                  }
+
+                if (percentage != null) 
+                  {
+                    PercentageOfRandomRows.extractPercentageOfRandomRows(filterOutTmpFile.getAbsolutePath(), percentageOutTmpFile.getAbsolutePath(), percentage);
+                  }
+                else
+                  {
+                    percentageOutTmpFile = filterOutTmpFile;
+                  }
+
+                if (topRows != null) 
+                  {
+                    TopRows.extractTopRows(percentageOutTmpFile.getAbsolutePath(), topRowsOutTmpFile.getAbsolutePath(), topRows);
+                  }
+                else
+                  {
+                    topRowsOutTmpFile = percentageOutTmpFile;
+                  }
+
+                if (filters != null || percentage != null || topRows != null) {
+                  finalZipFile = File.createTempFile("reportFinal", "zip");
+                  String finalZipFileName = finalZipFile.getAbsolutePath();
+                  ZipFile.zipFile(topRowsOutTmpFile.getAbsolutePath(), finalZipFileName);
+                  reportFile = new File(finalZipFileName);
+                }
+
+                FileInputStream fis = new FileInputStream(reportFile);
+                exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
+                exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
+                exchange.sendResponseHeaders(200, reportFile.length());
+                OutputStream os = exchange.getResponseBody();
+                byte data[] = new byte[10_000]; // allow some bufferization
+                int length;
+                while ((length = fis.read(data)) != -1) {
+                  os.write(data, 0, length);
+                }
+                fis.close();
+                os.flush();
+                os.close();
+              } catch (Exception excp) {
+                StringWriter stackTraceWriter = new StringWriter();
+                excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
               }
+
+              if (filters != null || percentage != null || topRows != null)
+                {
+                  if (filterOutTmpFile != null) filterOutTmpFile.delete();
+                  if (percentageOutTmpFile != null) percentageOutTmpFile.delete();
+                  if (topRowsOutTmpFile != null) topRowsOutTmpFile.delete();
+                  if (finalZipFile != null) finalZipFile.delete();
+                }
+
+            } else {
+              responseCode = "Report size is 0, report file is empty";
+            }
+          } else {
+            responseCode = "Report is null, cant find this report";
           }
-        catch (GUIManagerException e)
-          {
-            log.info("Exception when building report from "+report1+" : "+e.getLocalizedMessage());
-            responseCode = "internalError";
-          }
+        } catch (GUIManagerException e)
+        {
+          log.info("Exception when building report from "+report1+" : "+e.getLocalizedMessage());
+          responseCode = "internalError";
+        }
       }
     if(responseCode != null) {
       try {
