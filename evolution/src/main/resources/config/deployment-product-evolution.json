@@ -61,7 +61,6 @@
   "ESRetentionDaysJourneys"         : 15,
   "ESRetentionDaysCampaigns"        : 15,
   "ESRetentionDaysBulkCampaigns"    : 15,
-  "ESRetentionDaysCampaignsMetrics" : 15,
   "ESRetentionDaysExpiredVouchers"  : 31,
 
   "subscriberESIndexes" :

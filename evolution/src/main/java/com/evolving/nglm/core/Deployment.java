@@ -90,7 +90,6 @@ public class Deployment
   private static int elasticsearchRetentionDaysJourneys;
   private static int elasticsearchRetentionDaysCampaigns;
   private static int elasticsearchRetentionDaysBulkCampaigns;
-  private static int elasticsearchRetentionDaysCampaignsMetrics;
   private static int elasticsearchRetentionDaysExpiredVouchers;  
 
   //
@@ -147,7 +146,6 @@ public class Deployment
   public static int getElasticsearchRetentionDaysJourneys() { return elasticsearchRetentionDaysJourneys; }
   public static int getElasticsearchRetentionDaysCampaigns() { return elasticsearchRetentionDaysCampaigns; }
   public static int getElasticsearchRetentionDaysBulkCampaigns() { return elasticsearchRetentionDaysBulkCampaigns; }
-  public static int getElasticsearchRetentionDaysCampaignsMetrics() { return elasticsearchRetentionDaysCampaignsMetrics; }
   public static int getElasticsearchRetentionDaysExpiredVouchers() { return elasticsearchRetentionDaysExpiredVouchers; }  
   
   /*****************************************
@@ -841,7 +839,6 @@ public class Deployment
         elasticsearchRetentionDaysJourneys = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysJourneys", true);
         elasticsearchRetentionDaysCampaigns = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysCampaigns", true);
         elasticsearchRetentionDaysBulkCampaigns = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysBulkCampaigns", true);
-        elasticsearchRetentionDaysCampaignsMetrics = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysCampaignsMetrics", true);
         elasticsearchRetentionDaysExpiredVouchers = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysExpiredVouchers", true);
       }
     catch (JSONUtilitiesException|NumberFormatException e)
