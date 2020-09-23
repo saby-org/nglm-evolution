@@ -179,6 +179,7 @@ public class GUIManager
     getJourneyCriterionFields("getJourneyCriterionFields"),
     getJourneyCriterionFieldIDs("getJourneyCriterionFieldIDs"),
     getJourneyCriterionField("getJourneyCriterionField"),
+    getJourneyTriggerTargetingCriterionFields("getJourneyTriggerTargetingCriterionFields"),
     getOfferProperties("getOfferProperties"),
     getScoringEngines("scoringEngines"),
     getOfferOptimizationAlgorithms("getOfferOptimizationAlgorithms"),
@@ -1766,6 +1767,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getJourneyCriterionFields", new APISimpleHandler(API.getJourneyCriterionFields));
         restServer.createContext("/nglm-guimanager/getJourneyCriterionFieldIDs", new APISimpleHandler(API.getJourneyCriterionFieldIDs));
         restServer.createContext("/nglm-guimanager/getJourneyCriterionField", new APISimpleHandler(API.getJourneyCriterionField));
+        restServer.createContext("/nglm-guimanager/getJourneyTriggerTargetingCriterionFields", new APISimpleHandler(API.getJourneyTriggerTargetingCriterionFields));
         restServer.createContext("/nglm-guimanager/getOfferProperties", new APISimpleHandler(API.getOfferProperties));
         restServer.createContext("/nglm-guimanager/getScoringEngines", new APISimpleHandler(API.getScoringEngines));
         restServer.createContext("/nglm-guimanager/getOfferOptimizationAlgorithms", new APISimpleHandler(API.getOfferOptimizationAlgorithms));
@@ -2565,6 +2567,10 @@ public class GUIManager
 
                 case getJourneyCriterionField:
                   jsonResponse = processGetJourneyCriterionField(userID, jsonRoot);
+                  break;
+                  
+                case getJourneyTriggerTargetingCriterionFields:
+                  //jsonResponse = processGetJourneyTriggerTargetingCriterionFields(userID, jsonRoot);
                   break;
 
                 case getOfferProperties:
@@ -4855,6 +4861,8 @@ public class GUIManager
       }
     return JSONUtilities.encodeObject(response);
   }
+  
+
 
   /*****************************************
   *
