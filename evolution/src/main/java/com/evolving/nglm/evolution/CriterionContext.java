@@ -563,7 +563,7 @@ public class CriterionContext
     *****************************************/
 
     this.additionalCriterionFields = new LinkedHashMap<String,CriterionField>();
-    if (! journeyNodeType.getStartNode())
+    if (journeyNodeType == null /* case for journey targeting by trigger */ || !journeyNodeType.getStartNode())
       {
         //
         //  standard journey top-level fields
@@ -594,18 +594,33 @@ public class CriterionContext
         this.additionalCriterionFields.put(nodeEntryDate.getID(), nodeEntryDate);
         this.additionalCriterionFields.put(journeyActionDeliveryStatus.getID(), journeyActionDeliveryStatus);
         this.additionalCriterionFields.put(journeyActionJourneyStatus.getID(), journeyActionJourneyStatus);
+        
+        if(journeyNodeType != null)
+          {
 
-        //
-        //  node-level parameters
-        //
-
-        this.additionalCriterionFields.putAll(journeyNodeType.getParameters());
-
-        //
-        //  action-manager parameters
-        //
-
-        this.additionalCriterionFields.putAll((journeyNodeType.getActionManager() != null) ? journeyNodeType.getActionManager().getOutputAttributes() : Collections.<String,CriterionField>emptyMap());
+            //
+            //  node-level parameters
+            //
+    
+            this.additionalCriterionFields.putAll(journeyNodeType.getParameters());
+    
+            //
+            //  action-manager parameters
+            //
+    
+            this.additionalCriterionFields.putAll((journeyNodeType.getActionManager() != null) ? journeyNodeType.getActionManager().getOutputAttributes() : Collections.<String,CriterionField>emptyMap());
+            
+            //
+            //  scheduleNode
+            //
+            
+            if (journeyNodeType.getScheduleNode())
+              {
+                this.additionalCriterionFields.put(evaluationWeekday.getID(), evaluationWeekday);
+                this.additionalCriterionFields.put(evaluationTime.getID(), evaluationTime);
+                this.additionalCriterionFields.put(evaluationAniversary.getID(), evaluationAniversary);
+              }
+          }
 
         //
         //  trigger-level fields
@@ -629,17 +644,6 @@ public class CriterionContext
               }
           }
         
-        //
-        //  scheduleNode
-        //
-        
-        if (journeyNodeType.getScheduleNode())
-          {
-            this.additionalCriterionFields.put(evaluationWeekday.getID(), evaluationWeekday);
-            this.additionalCriterionFields.put(evaluationTime.getID(), evaluationTime);
-            this.additionalCriterionFields.put(evaluationAniversary.getID(), evaluationAniversary);
-          }
-
         if (expectedDataType != null)
           {
             // only keep criterion of this type

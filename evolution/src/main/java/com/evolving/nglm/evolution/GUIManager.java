@@ -2570,7 +2570,7 @@ public class GUIManager
                   break;
                   
                 case getJourneyTriggerTargetingCriterionFields:
-                  //jsonResponse = processGetJourneyTriggerTargetingCriterionFields(userID, jsonRoot);
+                  jsonResponse = processGetJourneyTriggerTargetingCriterionFields(userID, jsonRoot);
                   break;
 
                 case getOfferProperties:
@@ -4861,6 +4861,71 @@ public class GUIManager
       }
     return JSONUtilities.encodeObject(response);
   }
+  
+  
+  /*****************************************
+  *
+  *  getJourneyCriterionFields
+  *
+  *****************************************/
+
+  private JSONObject processGetJourneyTriggerTargetingCriterionFields(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    /*****************************************
+    *
+    *  arguments
+    *
+    *****************************************/
+
+    EvolutionEngineEventDeclaration targetingEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
+    boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
+    boolean includeComparableFields = JSONUtilities.decodeBoolean(jsonRoot, "includeComparableFields", Boolean.TRUE); 
+    
+    /*****************************************
+    *
+    *  retrieve journey criterion fields
+    *
+    *****************************************/
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    List<JSONObject> journeyCriterionFields = Collections.<JSONObject>emptyList();
+    List<JSONObject> groups = new ArrayList<>();
+    CriterionDataType expectedDataType = null;
+    
+    CriterionContext criterionContext = new CriterionContext(new HashMap<String,CriterionField>(), new HashMap<String,CriterionField>(), null, targetingEvent, null, expectedDataType);
+    Map<String,List<JSONObject>> currentGroups = includeComparableFields ? new HashMap<>() : null;
+    Map<String, CriterionField> unprocessedCriterionFields = criterionContext.getCriterionFields();
+    journeyCriterionFields = processCriterionFields(unprocessedCriterionFields, tagsOnly, currentGroups);
+        
+    //
+    //  intersect and put only Evaluation week Day and Time (if schedule node)
+    //
+        
+    if (includeComparableFields)
+      {
+        for (String id : currentGroups.keySet())
+          {
+            List<JSONObject> group = currentGroups.get(id);
+            HashMap<String,Object> groupJSON = new HashMap<String,Object>();
+            groupJSON.put("id", id);
+            groupJSON.put("value", JSONUtilities.encodeArray(group));
+            groups.add(JSONUtilities.encodeObject(groupJSON));
+          }
+      }
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", "ok");
+    response.put("journeyCriterionFields", JSONUtilities.encodeArray(journeyCriterionFields));
+    response.put("groups", JSONUtilities.encodeArray(groups));
+
+    return JSONUtilities.encodeObject(response);
+  }
+
   
 
 
