@@ -44,7 +44,7 @@ public class CallingChannel extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("calling_channel");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("catalogCharacteristics", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schema = schemaBuilder.build();
@@ -132,7 +132,7 @@ public class CallingChannel extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    List<String> catalogCharacteristics = (List<String>) valueStruct.get("catalogCharacteristics");
+    List<String> catalogCharacteristics = schemaVersion >= 3 ? (List<String>) valueStruct.get("catalogCharacteristics"):new ArrayList<String>();
      
     //
     //  return
