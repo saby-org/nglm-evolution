@@ -4257,7 +4257,7 @@ public class EvolutionEngine
     *  result
     *
     *****************************************/
-
+System.out.println("started update journey");
     SubscriberState subscriberState = context.getSubscriberState();
     boolean subscriberStateUpdated = false;
 
@@ -4585,7 +4585,7 @@ public class EvolutionEngine
                             }
                         }                    
                       }
-
+                    System.out.println("subscriber eligibility"+subscriberToBeProvisionned);
                     boolean targeting = subscriberToBeProvisionned && inAnyTarget;
                     switch (journey.getTargetingType())
                       {
@@ -4603,6 +4603,7 @@ public class EvolutionEngine
                             {
                               enterJourney = false;
                               context.subscriberTrace("NotEligible: targeting criteria {0}", journey.getJourneyID());
+                              System.out.println("NotEligible: targeting criteria "+journey.getJourneyID());
                             }
                           break;
                       }
@@ -4751,14 +4752,19 @@ public class EvolutionEngine
                     if (! journeyRequest.getEligible() || ! journeyRequest.getWaitForCompletion())
                       {
                         JourneyRequest journeyResponse = journeyRequest.copy();
+                        System.out.println("is enter journey "+enterJourney);
+                        
                         if(enterJourney)
                           {
+                            System.out.println("inside enter journey");
+                            
                             journeyResponse.setJourneyStatus(SubscriberJourneyStatus.Entered);
                             journeyResponse.setDeliveryStatus(DeliveryStatus.Delivered);
                             journeyResponse.setDeliveryDate(now);
                           }
                         else
                           {
+                        	 System.out.println("inside in eligible");
                             journeyResponse.setJourneyStatus(SubscriberJourneyStatus.NotEligible);
                             journeyResponse.setDeliveryStatus(DeliveryStatus.Failed);
                           }
