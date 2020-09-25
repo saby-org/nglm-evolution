@@ -361,6 +361,25 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getOfferDeliveryOfferContent() { return getOfferContent(); }
     public String getOfferDeliveryResellerID() { return getResellerID(); }
     
+    public String getResellerName_OfferDelivery() {
+      String display = "";
+//      GUIManagedObject reseller = resellerService.getStoredReseller(resellerID);
+//      if (reseller instanceof Reseller)
+//        {
+//          display = ((Reseller) reseller).getGUIManagedObjectDisplay();
+//        }
+      return display;
+    }
+    public String getSupplierName_OfferDelivery() {
+      String display = "";
+//      GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID);
+//      if (supplier instanceof Supplier)
+//        {
+//          display = ((Supplier) supplier).getGUIManagedObjectDisplay();
+//        }
+      return display;
+    }
+    
     /*****************************************
     *
     *  constructor
