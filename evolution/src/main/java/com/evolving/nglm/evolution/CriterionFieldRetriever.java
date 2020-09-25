@@ -444,14 +444,14 @@ public abstract class CriterionFieldRetriever
 
               if (pointBalances == null)
                 {
-                  log.info("invalid point balances, using default value");
+                  log.info("Error evaluating " + fieldName + " no pointBalances for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " on LP " + loyaltyProgramPointsState.getLoyaltyProgramName() + " in tier " + loyaltyProgramPointsState.getTierName());
                 }
               else
                 {
                   PointBalance pointBalance = pointBalances.get(pointID);
                   if (pointBalance == null)
                     {
-                      log.info("invalid point balance, using default value");
+                      log.info("Error evaluating " + fieldName + " no pointBalance for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " for point " + pointID + " on LP " + loyaltyProgramPointsState.getLoyaltyProgramName() + " in tier " + loyaltyProgramPointsState.getTierName());
                     }
                   else
                     {
@@ -471,7 +471,7 @@ public abstract class CriterionFieldRetriever
                     break;
 
                   default:
-                    throw new CriterionException("invalid request " + criterionFieldBaseName + " " + request);
+                    throw new CriterionException("Invalid criteria " + criterionFieldBaseName + " " + request + " for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " for point " + pointID + " on LP " + loyaltyProgramPointsState.getLoyaltyProgramName() + " in tier " + loyaltyProgramPointsState.getTierName());
                 }
           }
       }
@@ -508,14 +508,14 @@ public abstract class CriterionFieldRetriever
     PointBalance pointBalance = null;
     if (pointBalances == null)
       {
-        log.info("invalid point balances, using default value");
+        log.info("Error evaluating " + fieldName + " no pointBalances for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID());
       }
     else
       {
         pointBalance = pointBalances.get(pointID);
         if (pointBalance == null)
           {
-            log.info("invalid point balance, using default value");
+            log.info("Error evaluating " + fieldName + " no pointBalance for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " for point " + pointID);
           }
         else
           {
@@ -566,7 +566,7 @@ public abstract class CriterionFieldRetriever
                 }
                 if (metric == null)
                   {
-                    log.info("invalid metric, returning default value 0");
+                    log.info("null metric evaluating " + fieldName + " and " + criterionFieldBaseName + "for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " returning default value " + result);
                   }
                 else
                   {
@@ -577,7 +577,7 @@ public abstract class CriterionFieldRetriever
                     Long value = metric.getValue(beginningOfIntervalBegin, beginningOfNow);
                     if (value > Integer.MAX_VALUE && value < Integer.MIN_VALUE)
                       {
-                        log.info("Value for " + fieldName + " is outside of integer range : " + value + ", truncating");
+                        log.debug("Value for " + fieldName + " is outside of integer range : " + value + ", truncating");
                         result = ((value > 0) ? Integer.MAX_VALUE : Integer.MIN_VALUE);
                       }
                     else
