@@ -1438,7 +1438,8 @@ public abstract class Expression
       
       switch (arg1.getType())
         {
-          case DateExpression:
+          case StringExpression: // DaysUntil('2020-09-20')
+          case DateExpression: // DaysUntil(var.evaluationDate)
             break;
 
           default:
@@ -1452,7 +1453,19 @@ public abstract class Expression
       ****************************************/
       if (arg1.isConstant())
         {
-          Date arg1_value = (Date) arg1.evaluate(null, TimeUnit.Unknown);
+          Date arg1_value = null;
+          Object res = arg1.evaluate(null, TimeUnit.Unknown);
+          if (res instanceof String)
+            {
+              // DaysUntil('2020-09-20')
+              arg1_value = evaluateDateConstantFunction((String) res, TimeUnit.Unknown);
+            }
+          else if (res instanceof Date)
+            {
+              // DaysUntil(var.evaluationDate)
+              arg1_value = (Date) res;
+            }
+          
           try
           {
             switch (function)
@@ -2045,7 +2058,14 @@ public abstract class Expression
           case DaysSinceFunction:
           case MonthsSinceFunction:
             if (expressionNullExceptionOccoured) throw expressionNullException;
-            result = evaluateUntilFunction((Date) arg1Value, function);
+            if (arg1Value instanceof String)
+              {
+                result = preevaluatedResult;  // DaysUntil('2020-09-20')
+              }
+            else
+              {
+                result = evaluateUntilFunction((Date) arg1Value, function);    
+              }
             break;
             
           default:
