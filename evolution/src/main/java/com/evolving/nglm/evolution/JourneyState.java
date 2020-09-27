@@ -6,13 +6,12 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.SchemaUtilities;
+import java.time.Duration;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
-import com.evolving.nglm.evolution.retention.Cleanable;
-import com.evolving.nglm.evolution.retention.RetentionService;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -21,11 +20,13 @@ import org.apache.kafka.connect.data.Timestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
+import com.evolving.nglm.evolution.retention.Cleanable;
+import com.evolving.nglm.evolution.retention.RetentionService;
 
 public class JourneyState implements Cleanable
 {
@@ -157,6 +158,29 @@ public class JourneyState implements Cleanable
     this.callingJourneyRequest = callingJourneyRequest;
     this.journeyInstanceID = context.getUniqueKey();
     this.journeyID = journey.getJourneyID();
+    this.journeyNodeID = journey.getStartNodeID();
+    this.journeyParameters = new ParameterMap(journeyParameters);
+    this.journeyActionManagerContext = new ParameterMap();
+    this.journeyEntryDate = journeyEntryDate;
+    this.journeyExitDate = null;
+    this.journeyCloseDate = null;
+    this.journeyMetricsPrior = new HashMap<String,Long>();
+    this.journeyMetricsDuring = new HashMap<String,Long>();
+    this.journeyMetricsPost = new HashMap<String,Long>();
+    this.journeyNodeEntryDate = journeyEntryDate;
+    this.journeyOutstandingDeliveryRequestID = null;    
+    this.journeyHistory = journeyHistory;
+    this.journeyEndDate = journey.getEffectiveEndDate();
+  }
+  
+  public JourneyState(EvolutionEventContext context, Journey journey, JourneyRequest callingJourneyRequest, Map<String, Object> journeyParameters, Date journeyEntryDate, JourneyHistory journeyHistory,SubscriberJourneyStatus specialcase)
+  {
+    this.callingJourneyRequest = callingJourneyRequest;
+    this.journeyInstanceID = context.getUniqueKey();
+    this.journeyID = journey.getJourneyID();
+    if(specialcase!=null)
+    	this.journeyNodeID = journey.getEndNodeID();
+    else
     this.journeyNodeID = journey.getStartNodeID();
     this.journeyParameters = new ParameterMap(journeyParameters);
     this.journeyActionManagerContext = new ParameterMap();

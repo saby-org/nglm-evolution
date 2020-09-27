@@ -4449,6 +4449,7 @@ System.out.println("started update journey");
             *****************************************/
 
             boolean enterJourney = true;
+            SubscriberJourneyStatus currentStatus=null;
             boolean journeyMaxNumberOfCustomersReserved = false;
 
             /*****************************************
@@ -4585,8 +4586,8 @@ System.out.println("started update journey");
                             }
                         }                    
                       }
-                    System.out.println("subscriber eligibility"+subscriberToBeProvisionned);
                     boolean targeting = subscriberToBeProvisionned && inAnyTarget;
+                    System.out.println("subscriber eligibility"+targeting);
                     switch (journey.getTargetingType())
                       {
                         case Target:
@@ -4601,7 +4602,8 @@ System.out.println("started update journey");
                         case Manual:
                           if (! targeting)
                             {
-                              enterJourney = false;
+                              enterJourney = true;
+                              currentStatus=SubscriberJourneyStatus.NotEligible;
                               context.subscriberTrace("NotEligible: targeting criteria {0}", journey.getJourneyID());
                               System.out.println("NotEligible: targeting criteria "+journey.getJourneyID());
                             }
@@ -4642,7 +4644,8 @@ System.out.println("started update journey");
                 *  subscriberTrace
                 *
                 *****************************************/
-
+            	System.out.println("Entered journey");
+                
                 context.subscriberTrace("Eligible: {0}", journey.getJourneyID());
 
                 /*****************************************
@@ -4680,14 +4683,30 @@ System.out.println("started update journey");
                     stockService.confirmReservation(journey,1);
                   }
 
-                JourneyHistory journeyHistory = new JourneyHistory(journey.getJourneyID());
-                JourneyState journeyState = new JourneyState(context, journey, journeyRequest, boundParameters, SystemTime.getCurrentTime(), journeyHistory);
-                journeyState.getJourneyHistory().addNodeInformation(null, journeyState.getJourneyNodeID(), null, null);
-                boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(),journeyState, false);
-                subscriberState.getJourneyStates().add(journeyState);
-                subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile())));
-                subscriberState.getSubscriberProfile().getSubscriberJourneys().put(journey.getJourneyID(), Journey.getSubscriberJourneyStatus(journeyState));
-                subscriberStateUpdated = true;
+					JourneyHistory journeyHistory = new JourneyHistory(journey.getJourneyID());
+					JourneyState journeyState = new JourneyState(context, journey, journeyRequest, boundParameters,
+							SystemTime.getCurrentTime(), journeyHistory, currentStatus);
+					journeyState.getJourneyHistory().addNodeInformation(null, journeyState.getJourneyNodeID(), null,
+							null);
+					boolean statusUpdated = journeyState.getJourneyHistory()
+							.addStatusInformation(SystemTime.getCurrentTime(), journeyState, false);
+					subscriberState.getJourneyStates().add(journeyState);
+					subscriberState.getJourneyStatisticWrappers()
+							.add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(),
+									subscriberGroupEpochReader, ucgStateReader, statusUpdated,
+									new JourneyStatistic(context, subscriberState.getSubscriberID(),
+											journeyState.getJourneyHistory(), journeyState,
+											subscriberState.getSubscriberProfile()
+													.getSegmentsMap(subscriberGroupEpochReader),
+											subscriberState.getSubscriberProfile())));
+					if (currentStatus != null && currentStatus.in(SubscriberJourneyStatus.NotEligible)) {
+						System.out.println("inside current status"+currentStatus);
+						subscriberState.getSubscriberProfile().getSubscriberJourneys().put(journey.getJourneyID(),currentStatus);
+					}else
+						subscriberState.getSubscriberProfile().getSubscriberJourneys().put(journey.getJourneyID(),
+								Journey.getSubscriberJourneyStatus(journeyState));
+
+					subscriberStateUpdated = true;
 
                 /*****************************************
                 *
