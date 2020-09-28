@@ -139,10 +139,29 @@ public class JourneyService extends GUIService
   @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
   {
     JSONObject fullJSON = getJSONRepresentation(guiManagedObject);
+    
+    //
+    //  recurrence field
+    //
+    
+    boolean recurrence = JSONUtilities.decodeBoolean(fullJSON, "recurrence", false);
+    Integer occurrenceNumber =  JSONUtilities.decodeInteger(fullJSON, "occurrenceNumber", recurrence);
+    JSONObject scheduler = JSONUtilities.decodeJSONObject(fullJSON, "scheduler", recurrence);
+    Integer numberOfOccurrences =  null;
+    Integer lastCompletedOccurrenceNumber =  null;
+    if (recurrence)
+      {
+        numberOfOccurrences =  JSONUtilities.decodeInteger(scheduler, "numberOfOccurrences", recurrence);
+        lastCompletedOccurrenceNumber =  JSONUtilities.decodeInteger(fullJSON, "lastCreatedOccurrenceNumber", recurrence) - 1;
+      }
+    
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("status", getJourneyStatus(guiManagedObject).getExternalRepresentation());
-    result.put("recurrence", JSONUtilities.decodeBoolean(fullJSON, "recurrence", false));
-    result.put("occurrenceNumber", JSONUtilities.decodeInteger(fullJSON, "occurrenceNumber", false));
+    result.put("recurrence", recurrence);
+    result.put("occurrenceNumber", occurrenceNumber);
+    result.put("numberOfOccurrences", numberOfOccurrences);
+    result.put("lastCompletedOccurrenceNumber", lastCompletedOccurrenceNumber);
+    
     if (guiManagedObject.getGUIManagedObjectType().equals(GUIManagedObjectType.BulkCampaign))
       {
         result.put("journeyTemplateID", guiManagedObject.getJSONRepresentation().get("journeyTemplateID"));
