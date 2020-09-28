@@ -27,7 +27,7 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>EVPRO-555-SNAPSHOT</version>
+    <version>1.4.5_0-SNAPSHOT</version>
   </parent>
 
   <properties>
