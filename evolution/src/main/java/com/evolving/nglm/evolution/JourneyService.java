@@ -143,8 +143,8 @@ public class JourneyService extends GUIService
     //
     //  recurrence field
     //
-    
-    boolean recurrence = JSONUtilities.decodeBoolean(fullJSON, "recurrence", false);
+    log.info("RAJ K fullJSON {}", fullJSON);
+    boolean recurrence = JSONUtilities.decodeBoolean(fullJSON, "recurrence", Boolean.FALSE);
     Integer occurrenceNumber =  JSONUtilities.decodeInteger(fullJSON, "occurrenceNumber", recurrence);
     JSONObject scheduler = JSONUtilities.decodeJSONObject(fullJSON, "scheduler", recurrence);
     Integer numberOfOccurrences =  null;
