@@ -152,7 +152,7 @@ public class JourneyService extends GUIService
     if (recurrence)
       {
         numberOfOccurrences =  JSONUtilities.decodeInteger(scheduler, "numberOfOccurrences", recurrence);
-        lastCompletedOccurrenceNumber =  JSONUtilities.decodeInteger(fullJSON, "lastCreatedOccurrenceNumber", recurrence) - 1;
+        lastCompletedOccurrenceNumber =  JSONUtilities.decodeInteger(fullJSON, "lastCreatedOccurrenceNumber", recurrence);
       }
     
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
