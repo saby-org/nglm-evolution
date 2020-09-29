@@ -6,47 +6,21 @@
 
 package com.evolving.nglm.evolution;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.stream.Collectors;
+
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.JourneyStatus;
-
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.StringKey;
-
-import com.evolving.nglm.core.SystemTime;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.common.TopicPartition;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.stream.Collectors;
 
 public class JourneyService extends GUIService
 {
@@ -151,8 +125,15 @@ public class JourneyService extends GUIService
     Integer lastCompletedOccurrenceNumber =  null;
     if (recurrence)
       {
+        Collection<Journey> allRecs = getAllRecurrentJourneysByID(guiManagedObject.getGUIManagedObjectID(), true);
+        
+        //
+        //  filter completed
+        //
+        
+        allRecs = allRecs.stream().filter(journey -> JourneyStatus.Complete == getJourneyStatus(journey)).collect(Collectors.toList());
         numberOfOccurrences =  JSONUtilities.decodeInteger(scheduler, "numberOfOccurrences", recurrence);
-        lastCompletedOccurrenceNumber =  JSONUtilities.decodeInteger(fullJSON, "lastCreatedOccurrenceNumber", recurrence);
+        lastCompletedOccurrenceNumber =  allRecs.size();
       }
     
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
