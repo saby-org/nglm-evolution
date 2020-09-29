@@ -113,6 +113,7 @@ public class DNBOUtils
       *****************************************/
       String strategyID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest, "node.parameter.strategy");
       String tokenTypeID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest, "node.parameter.tokentype"); 
+      String supplierID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest, "node.parameter.supplier"); 
       
       /*****************************************
       *
@@ -143,7 +144,17 @@ public class DNBOUtils
         }
 
       log.debug("ActionManagerDNBO.handleToken() tokenType valid");
-
+      
+      /*****************************************
+      *
+      * supplier
+      *
+      *****************************************/
+      Supplier supplier = null;
+      if (supplierID != null) {
+        supplier = evolutionEventContext.getSupplierService().getActiveSupplier(supplierID, evolutionEventContext.now());
+      }
+      
       /*****************************************
       *
       *  action -- generate new token code (different from others already associated with this subscriber)
@@ -185,7 +196,7 @@ public class DNBOUtils
       *  return
       *
       *****************************************/
-      return new Object[] {actionList, token, contextUpdate, presentationStrategy, tokenType};
+      return new Object[] {actionList, token, contextUpdate, presentationStrategy, tokenType, supplier};
     }
     
     /*****************************************
@@ -407,6 +418,7 @@ public class DNBOUtils
       ContextUpdate tokenContextUpdate = (ContextUpdate) res[2];
       PresentationStrategy strategy = (PresentationStrategy) res[3];
       TokenType tokenType = (TokenType) res[4];
+      Supplier supplier = (Supplier) res[5];
       
       /*****************************************
       *

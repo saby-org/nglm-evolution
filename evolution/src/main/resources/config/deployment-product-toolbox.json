@@ -891,6 +891,16 @@
             "defaultValue": null
           },
           {
+            "id": "node.parameter.supplier",
+            "display": "Supplier",
+            "dataType": "string",
+            "width": "100%",
+            "multiple": false,
+            "mandatory": false,
+            "availableValues": [ "#suppliers#" ],
+            "defaultValue": null
+          },          
+          {
             "id": "node.parameter.tokentype",
             "display": "Token Type",
             "dataType": "string",
@@ -969,6 +979,16 @@
             "availableValues": [ "#presentationStrategies#" ],
             "defaultValue": null
           },
+          {
+            "id": "node.parameter.supplier",
+            "display": "Supplier",
+            "dataType": "string",
+            "width": "100%",
+            "multiple": false,
+            "mandatory": false,
+            "availableValues": [ "#suppliers#" ],
+            "defaultValue": null
+          }, 
           {
             "id": "node.parameter.tokentype",
             "display": "Token Type",
