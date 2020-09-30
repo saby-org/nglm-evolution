@@ -103,6 +103,8 @@ public class JourneyState implements Cleanable
   private String journeyOutstandingDeliveryRequestID;
   private JourneyHistory journeyHistory;
   private Date journeyEndDate;
+  private Boolean specialExit=false;
+  private SubscriberJourneyStatus specialExitReason=null;
 
   /*****************************************
   *
@@ -126,8 +128,8 @@ public class JourneyState implements Cleanable
   public String getJourneyOutstandingDeliveryRequestID() { return journeyOutstandingDeliveryRequestID; }
   public JourneyHistory getJourneyHistory() { return journeyHistory; }
   public Date getJourneyEndDate() { return journeyEndDate; }
-  
-
+  public Boolean isSpecialExit() {return specialExit;}
+  public SubscriberJourneyStatus getSpecialExitReason() {return specialExitReason;}
   /*****************************************
   *
   *  setters
@@ -179,7 +181,10 @@ public class JourneyState implements Cleanable
     this.journeyInstanceID = context.getUniqueKey();
     this.journeyID = journey.getJourneyID();
     if(specialcase!=null)
-    	this.journeyNodeID = journey.getEndNodeID();
+    	{this.journeyNodeID = journey.getEndNodeID();
+    	this.specialExit=true;
+    	specialExitReason=specialcase;
+    	}
     else
     this.journeyNodeID = journey.getStartNodeID();
     this.journeyParameters = new ParameterMap(journeyParameters);

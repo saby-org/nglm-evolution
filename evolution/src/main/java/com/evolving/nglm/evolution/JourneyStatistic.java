@@ -113,7 +113,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   private List<StatusHistory> journeyStatusHistory;
   private List<RewardHistory> journeyRewardHistory;
   private Map<String, String> subscriberStratum;
-
+  private String specialExitStatus;
   /*****************************************
   *
   *  accessors
@@ -144,7 +144,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   public List<RewardHistory> getJourneyRewardHistory() { return journeyRewardHistory; }
   public SubscriberJourneyStatus getSubscriberJourneyStatus() { return Journey.getSubscriberJourneyStatus(this); }
   public Map<String, String> getSubscriberStratum() { return subscriberStratum; }
-
+  public String getSpecialExitStatus() {return this.getSpecialExitStatus();}
   /*****************************************
   *
   *  constructor -- enter
@@ -161,6 +161,8 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.linkID = null;
     this.fromNodeID = null;
     this.toNodeID = journeyState.getJourneyNodeID();
+    if(journeyState.isSpecialExit())
+    	this.specialExitStatus=journeyState.getSpecialExitReason().getExternalRepresentation();
     this.deliveryRequestID = null;
     this.sample = null;
     this.markNotified = false;
@@ -264,7 +266,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   *
   *****************************************/
 
-  private JourneyStatistic(SchemaAndValue schemaAndValue, String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, String sample, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup, boolean journeyComplete, List<NodeHistory> journeyNodeHistory, List<StatusHistory> journeyStatusHistory, List<RewardHistory> journeyRewardHistory, Map<String, String> subscriberStratum)
+  private JourneyStatistic(SchemaAndValue schemaAndValue, String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, String sample, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup, boolean journeyComplete, List<NodeHistory> journeyNodeHistory, List<StatusHistory> journeyStatusHistory, List<RewardHistory> journeyRewardHistory, Map<String, String> subscriberStratum, String specialExitStatus)
   {
     super(schemaAndValue);
     this.journeyStatisticID = journeyStatisticID;
@@ -289,7 +291,10 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.journeyStatusHistory = journeyStatusHistory;
     this.journeyRewardHistory = journeyRewardHistory;
     this.subscriberStratum = subscriberStratum;
+    this.specialExitStatus=specialExitStatus;
   }
+  
+  
 
   /*****************************************
   *
@@ -420,6 +425,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     struct.put("journeyStatusHistory", packStatusHistory(journeyStatistic.getJourneyStatusHistory()));
     struct.put("journeyRewardHistory", packRewardHistory(journeyStatistic.getJourneyRewardHistory()));
     struct.put("subscriberStratum", journeyStatistic.getSubscriberStratum());
+    struct.put("specialExitStatus", journeyStatistic.getSpecialExitStatus());
     return struct;
   }
   
@@ -521,12 +527,12 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     List<NodeHistory> journeyNodeHistory =  unpackNodeHistory(schema.field("journeyNodeHistory").schema(), valueStruct.get("journeyNodeHistory"));
     List<StatusHistory> journeyStatusHistory =  unpackStatusHistory(schema.field("journeyStatusHistory").schema(), valueStruct.get("journeyStatusHistory"));
     Map<String, String> subscriberStratum = (Map<String,String>) valueStruct.get("subscriberStratum");
-    
+    String specialExitStatus=valueStruct.getString("valueStruct.getString(\"");
     //
     //  return
     //
 
-    return new JourneyStatistic(schemaAndValue, journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, sample, markNotified, markConverted, statusNotified, statusConverted, statusTargetGroup, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyNodeHistory, journeyStatusHistory, journeyRewardHistory, subscriberStratum);
+    return new JourneyStatistic(schemaAndValue, journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, sample, markNotified, markConverted, statusNotified, statusConverted, statusTargetGroup, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyNodeHistory, journeyStatusHistory, journeyRewardHistory, subscriberStratum , specialExitStatus);
   }
   
   /*****************************************

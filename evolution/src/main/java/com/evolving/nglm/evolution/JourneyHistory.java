@@ -466,6 +466,25 @@ public class JourneyHistory implements Cleanable
     return false;
   }
 
+  public boolean addStatusInformation(Date now, JourneyState journeyState, boolean journeyComplete,SubscriberJourneyStatus specialCase) 
+  {   if(specialCase!=null) {
+	  StatusHistory statusHistory = new StatusHistory(now,specialCase);
+	    
+	    //
+	    //  add
+	    //
+	    
+	    if(!this.statusHistory.contains(statusHistory)) 
+	      {
+	        this.statusHistory.add(statusHistory);
+	        return true;
+	      }
+
+	    return false; 
+  }
+  else
+	  return addStatusInformation(now, journeyState, journeyComplete);  
+  }
   /*****************************************
   *
   *  getLastNodeEntered
@@ -1008,6 +1027,13 @@ public class JourneyHistory implements Cleanable
       this.statusUniversalControlGroup = statusUniversalControlGroup;
       this.journeyComplete = journeyComplete;
       this.status = getSubscriberJourneyStatus().getExternalRepresentation();
+    }
+    
+    public StatusHistory(Date date,SubscriberJourneyStatus specialCase)
+    {
+      this.date = date;
+      this.journeyComplete = true;
+      this.status = specialCase.getExternalRepresentation();
     }
     
     /*****************************************

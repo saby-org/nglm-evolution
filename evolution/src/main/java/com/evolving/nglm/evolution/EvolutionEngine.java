@@ -4689,7 +4689,7 @@ System.out.println("started update journey");
 					journeyState.getJourneyHistory().addNodeInformation(null, journeyState.getJourneyNodeID(), null,
 							null);
 					boolean statusUpdated = journeyState.getJourneyHistory()
-							.addStatusInformation(SystemTime.getCurrentTime(), journeyState, false);
+							.addStatusInformation(SystemTime.getCurrentTime(), journeyState, false,currentStatus);
 					subscriberState.getJourneyStates().add(journeyState);
 					subscriberState.getJourneyStatisticWrappers()
 							.add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(),
@@ -4823,7 +4823,7 @@ System.out.println("started update journey");
         *
         *****************************************/
 
-        if (journey == null || journeyNode == null)
+        if (journey == null || journeyNode == null || journeyState.isSpecialExit())
           {
 
             // possible temporary inactive journey, do nothing at all ( so no reporting or anything here )
