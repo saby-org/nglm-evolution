@@ -144,7 +144,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   public List<RewardHistory> getJourneyRewardHistory() { return journeyRewardHistory; }
   public SubscriberJourneyStatus getSubscriberJourneyStatus() { return Journey.getSubscriberJourneyStatus(this); }
   public Map<String, String> getSubscriberStratum() { return subscriberStratum; }
-  public String getSpecialExitStatus() {return this.getSpecialExitStatus()==null?"":this.getSpecialExitStatus();}
+  public String getSpecialExitStatus() {return specialExitStatus==null?"":specialExitStatus;}
   /*****************************************
   *
   *  constructor -- enter
