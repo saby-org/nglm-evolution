@@ -23162,25 +23162,24 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   {
                     String productID = product.getProductID();
                     String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
-                    
+
                     if (activeSupplier.equals(supplierID) && offerName.equals(productName))
                       {
-                        //products.add(product);
+                        // products.add(product);
                         offers.add(offer);
                       }
-                    else if(offerName.equals(productName) && !(activeSupplier.equals(supplierID)))
+                    else if (offerName.equals(productName) && !(activeSupplier.equals(supplierID)))
                       {
 
-                        response.put("responseCode",
-                            RESTAPIGenericReturnCodes.OFFER_SUPPLIER_MISMATCH.getGenericResponseCode());
-                        response.put("responseMessage",
-                            RESTAPIGenericReturnCodes.OFFER_SUPPLIER_MISMATCH.getGenericResponseMessage());
-                        return JSONUtilities.encodeObject(response);
+                        if (log.isDebugEnabled())
+                          log.debug(offer + "- supplier mismatch");
 
                       }
-                    else {
-                      if(log.isInfoEnabled()) log.info("offer is not supplierOffer");
-                    }
+                    else
+                      {
+                        if (log.isDebugEnabled())
+                          log.debug(offer + " is not supplierOffer");
+                      }
                   }
                 if (voucher != null)
                   {
@@ -23192,19 +23191,18 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                         vouchers.add(voucher);
                         offers.add(offer);
                       }
-                    else if(offerName.equals(voucherName) && !(activeSupplier.equals(supplierID)))
+                    else if (offerName.equals(voucherName) && !(activeSupplier.equals(supplierID)))
                       {
 
-                        response.put("responseCode",
-                            RESTAPIGenericReturnCodes.OFFER_SUPPLIER_MISMATCH.getGenericResponseCode());
-                        response.put("responseMessage",
-                            RESTAPIGenericReturnCodes.OFFER_SUPPLIER_MISMATCH.getGenericResponseMessage());
-                        return JSONUtilities.encodeObject(response);
+                        if (log.isDebugEnabled())
+                          log.debug(offer + "- supplier mismatch");
 
                       }
-                    else {
-                      if(log.isInfoEnabled()) log.info("offer is not supplierOffer");
-                    }
+                    else
+                      {
+                        if (log.isDebugEnabled())
+                          log.debug(offer + " is not supplierOffer");
+                      }
 
                   }
 
@@ -23345,8 +23343,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   }
                 else
                   {
-                    if (log.isInfoEnabled())
-                      log.info("offer is not supplierOffer");
+                    response.put("responseCode", RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseCode());
+                    response.put("responseMessage", RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseMessage());
+                    return JSONUtilities.encodeObject(response);
                   }
               }
             if (voucher != null)
@@ -23376,13 +23375,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     return JSONUtilities.encodeObject(response);
 
                   }
-              }
-            else
-              {
-                response.put("responseCode", RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseCode());
-                response.put("responseMessage", RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseMessage());
-                return JSONUtilities.encodeObject(response);
-              }
+                else
+                  {
+                    response.put("responseCode", RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseCode());
+                    response.put("responseMessage", RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseMessage());
+                    return JSONUtilities.encodeObject(response);
+                  }
+              }         
 
           }
         else
