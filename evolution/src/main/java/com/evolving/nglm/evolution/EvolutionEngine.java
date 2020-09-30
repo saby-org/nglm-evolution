@@ -4828,10 +4828,14 @@ System.out.println("started update journey");
 
             // possible temporary inactive journey, do nothing at all ( so no reporting or anything here )
             if(journeyService.getInterruptedGUIManagedObject(journeyState.getJourneyID(), now)!=null){
+            	 if(journeyState.isSpecialExit())
+                 	System.out.println("special case encountered but null");
                 context.subscriberTrace("ignoring inactive for now journey {0}", journeyState.getJourneyID());
                 continue;
             }
 
+            if(journeyState.isSpecialExit())
+            	System.out.println("special case encountered");
             journeyState.setJourneyExitDate(now);
             boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
             subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), now)));
@@ -5400,7 +5404,7 @@ System.out.println("started update journey");
             //
             //  status
             //
-                
+            System.out.println("inactive journey fetching status==========");    
             journeyResponse.setJourneyStatus(Journey.getSubscriberJourneyStatus(journeyState));
             journeyResponse.setDeliveryStatus(DeliveryStatus.Delivered);
             journeyResponse.setDeliveryDate(SystemTime.getCurrentTime());

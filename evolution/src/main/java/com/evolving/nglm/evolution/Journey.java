@@ -538,7 +538,10 @@ public class Journey extends GUIManagedObject implements StockableItem
   public static SubscriberJourneyStatus getSubscriberJourneyStatus(JourneyState journeyState)
   {
 	  if(journeyState.isSpecialExit())
+	  {	 System.out.println(journeyState.getSpecialExitReason());
 		  return journeyState.getSpecialExitReason();
+	 
+	  }
 	  else {
     boolean statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
     boolean statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
