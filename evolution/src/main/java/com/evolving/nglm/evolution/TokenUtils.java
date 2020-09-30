@@ -292,7 +292,7 @@ public class TokenUtils
       ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
       SegmentationDimensionService segmentationDimensionService,
       DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters, OfferService offerService, StringBuffer returnedLog,
-      String msisdn) throws GetOfferException
+      String msisdn, Supplier supplier) throws GetOfferException
   {
     // check if we can call this PS
     int maximumPresentationsPeriodDays = presentationStrategy.getMaximumPresentationsPeriodDays();
@@ -372,7 +372,7 @@ public class TokenUtils
         Collection<ProposedOfferDetails> localScoring = scoringCache.get(scoringStrategyID);
         if (localScoring == null) // cache miss
           {
-            localScoring = getOffersWithScoringStrategy(now, salesChannelID, subscriberProfile, scoringStrategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, msisdn);
+            localScoring = getOffersWithScoringStrategy(now, salesChannelID, subscriberProfile, scoringStrategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, msisdn, supplier);
             scoringCache.put(scoringStrategyID, localScoring);
           }
         if (localScoring.size() < indexResult+1)
@@ -394,7 +394,7 @@ public class TokenUtils
     CatalogCharacteristicService catalogCharacteristicService,
     ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
     SegmentationDimensionService segmentationDimensionService, DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters,
-    OfferService offerService, StringBuffer returnedLog, String msisdn) throws GetOfferException
+    OfferService offerService, StringBuffer returnedLog, String msisdn, Supplier supplier) throws GetOfferException
   {
     String logFragment;
     ScoringSegment selectedScoringSegment = getScoringSegment(scoringStrategy, subscriberProfile, subscriberGroupEpochReader);
@@ -405,7 +405,7 @@ public class TokenUtils
       log.debug(logFragment);
     }
 
-    Set<Offer> offersForAlgo = getOffersToOptimize(now, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile, offerService, subscriberGroupEpochReader);
+    Set<Offer> offersForAlgo = getOffersToOptimize(now, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile, offerService, subscriberGroupEpochReader, supplier, productService, voucherService);
 
     OfferOptimizationAlgorithm algo = selectedScoringSegment.getOfferOptimizationAlgorithm();
     if (algo == null)
@@ -511,7 +511,7 @@ public class TokenUtils
   }
   
   private static Set<Offer> getOffersToOptimize(Date now, Set<String> catalogObjectiveIDs,
-      SubscriberProfile subscriberProfile, OfferService offerService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
+      SubscriberProfile subscriberProfile, OfferService offerService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, Supplier supplier, ProductService productService, VoucherService voucherService)
   {
     // Browse all offers:
     // - filter by offer objective coming from the split strategy
@@ -520,7 +520,53 @@ public class TokenUtils
     Collection<Offer> offers = offerService.getActiveOffers(Calendar.getInstance().getTime());
     Set<Offer> result = new HashSet<>();
     List<Token> tokens = subscriberProfile.getTokens();
-    for (Offer offer : offers)
+    Collection<Offer>filteredOffers = new ArrayList<>(); 
+    /**
+     * 
+     * filter offer based on the supplier
+     * 
+     */
+    if (supplier != null)
+      {
+        for (Offer offer : offers)
+          {
+            Set<OfferProduct> offerProducts = offer.getOfferProducts();
+            Set<OfferVoucher> offerVouchers = offer.getOfferVouchers();
+
+            if (offerProducts != null && offerProducts.size() != 0)
+              {
+                for (OfferProduct offerproduct : offerProducts)
+                  {
+                    String productID = offerproduct.getProductID();
+                    GUIManagedObject productObject = productService.getStoredProduct(productID);
+                    Product product = (Product) productObject;
+                    if (product.getSupplierID().equals(supplier.getSupplierID()))
+                      {
+                        filteredOffers.add(offer);
+                        break;
+                      }
+                  }
+              }
+            if (offerVouchers != null && offerVouchers.size() != 0)
+              {
+                for (OfferVoucher offerVoucher : offerVouchers)
+                  {
+                    String voucherID = offerVoucher.getVoucherID();
+                    GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherID);
+                    Voucher voucher = (Voucher) voucherObject;
+                    if (voucher.getSupplierID().equals(supplier.getSupplierID()))
+                      {
+                        filteredOffers.add(offer);
+                        break;
+                      }
+                  }
+              }
+          }
+      }
+    else {
+      filteredOffers = offers;
+    }
+    for (Offer offer : filteredOffers)
     {
       boolean nextOffer = false;
       

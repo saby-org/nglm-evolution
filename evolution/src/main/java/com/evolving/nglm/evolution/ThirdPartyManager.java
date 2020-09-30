@@ -3717,7 +3717,7 @@ public class ThirdPartyManager
          catalogCharacteristicService,
          scoringStrategyService,
          subscriberGroupEpochReader,
-         segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
+         segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, null
          );
      String tokenCode = newToken.getTokenCode();
      if (presentedOffers.isEmpty())
@@ -3937,7 +3937,7 @@ public class ThirdPartyManager
               catalogCharacteristicService,
               scoringStrategyService,
               subscriberGroupEpochReader,
-              segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
+              segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, null
               );
 
           if (presentedOffers.isEmpty())

@@ -21596,7 +21596,7 @@ public class GUIManager
                   catalogCharacteristicService,
                   scoringStrategyService,
                   subscriberGroupEpochReader,
-                  segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
+                  segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, null
                   );
 
               if (presentedOffers.isEmpty())

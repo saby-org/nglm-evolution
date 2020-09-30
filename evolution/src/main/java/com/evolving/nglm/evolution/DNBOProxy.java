@@ -914,7 +914,7 @@ public class DNBOProxy
           now, salesChannelID, subscriberProfile, scoringStrategy,
           productService, productTypeService, voucherService, voucherTypeService,
           catalogCharacteristicService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService,
-          returnedLog, msisdn);
+          returnedLog, msisdn, null);
       if (offerAvailabilityFromPropensityAlgo == null)
         {
           log.warn("DNBOProxy.getOffers Exception "+returnedLog);
