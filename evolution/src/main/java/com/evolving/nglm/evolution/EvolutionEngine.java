@@ -4999,8 +4999,11 @@ public class EvolutionEngine
               {
                 for (Date nextEvaluationDate : nextEvaluationDates)
                   {
-                    subscriberState.getScheduledEvaluations().add(new TimedEvaluation(subscriberState.getSubscriberID(), nextEvaluationDate));
-                    subscriberStateUpdated = true;
+                    if(nextEvaluationDate.before(RLMDateUtils.addDays(SystemTime.getCurrentTime(), 2, Deployment.getBaseTimeZone())))
+                      {
+                        subscriberState.getScheduledEvaluations().add(new TimedEvaluation(subscriberState.getSubscriberID(), nextEvaluationDate));
+                        subscriberStateUpdated = true;
+                      }
                   }
               }
 

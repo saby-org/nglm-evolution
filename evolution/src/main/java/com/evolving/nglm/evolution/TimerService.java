@@ -58,7 +58,7 @@ public class TimerService
   //  limites
   //
 
-  private int entriesInMemoryLimit = 100000;
+  private int entriesInMemoryLimit = 5000000;
   private int reloadThreshold = 20000;
 
   /*****************************************
