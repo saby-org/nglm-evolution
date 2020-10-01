@@ -35,7 +35,7 @@ public class ExtractItem
   public ExtractItem(JSONObject jsonRoot) throws GUIManager.GUIManagerException
   {
     this.extractName = JSONUtilities.decodeString(jsonRoot, "extractName", true);
-    this.returnFields = JSONUtilities.decodeJSONArray(jsonRoot, "returnFileds", false);
+    this.returnFields = JSONUtilities.decodeJSONArray(jsonRoot, "returnFields", false);
     //this is used when the information is transfered in json between gui manager and extract manager
     //when is set from gui manager user id is comming as param at processing
     //when is taken by service this have to be in JSON because is used to compose the file. (Multiple users can generate extract with the same name)
