@@ -765,126 +765,124 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   topRowsOutTmpFile = File.createTempFile("tempReportTopRows", ".csv");
                   headerOutTmpFile = File.createTempFile("tempReportHeader", ".csv");
                   unzippedFile = ReportUtils.unzip(reportFile.getAbsolutePath());
-                }
 
-                if (filters != null)
-                  {
-                    List<String> colNames = new ArrayList<>();
-                    List<List<String>> colsValues = new ArrayList<>();
-                    for (int i=0; i<filters.size(); i++)
-                      {
-                        JSONObject filterJSON = (JSONObject) filters.get(i);
-                        Object nameOfColumnObj = filterJSON.get("criterionField");
-                        if (!(nameOfColumnObj instanceof String))
-                          {
-                            log.warn("criterionField is not a String : " + nameOfColumnObj.getClass().getName());
-                            colNames.add("");
-                            break;
-                          }
-                        String nameOfColumn = (String) nameOfColumnObj;
-                        colNames.add(nameOfColumn);
-
-                        Object argumentObj = filterJSON.get("argument");
-                        if (!(argumentObj instanceof JSONObject))
-                          {
-                            log.warn("argument is not a JSONObject : " + argumentObj.getClass().getName());
-                            colsValues.add(new ArrayList<>());
-                            break;
-                          }
-                        JSONObject argument = (JSONObject) argumentObj;
-                        String valueType = (String) argument.get("valueType");
-                        Object value = (Object) argument.get("value");
-
-                        List<String> valuesOfColumns;
-                        switch (valueType) 
+                  if (filters != null)
+                    {
+                      List<String> colNames = new ArrayList<>();
+                      List<List<String>> colsValues = new ArrayList<>();
+                      for (int i=0; i<filters.size(); i++)
                         {
-                          case "simpleSelect.string":
-                            if (!(value instanceof String))
-                              {
-                                log.warn("value of column " + nameOfColumn + " is not a String : " + value);
-                                colsValues.add(new ArrayList<>());
-                              }
-                            else
-                              {
-                                String valueSimpleSelect = (String) value;
-                                valuesOfColumns = new ArrayList<>();
-                                valuesOfColumns.add(valueSimpleSelect);
-                                colsValues.add(valuesOfColumns);
-                              }
-                            break;
+                          JSONObject filterJSON = (JSONObject) filters.get(i);
+                          Object nameOfColumnObj = filterJSON.get("criterionField");
+                          if (!(nameOfColumnObj instanceof String))
+                            {
+                              log.warn("criterionField is not a String : " + nameOfColumnObj.getClass().getName());
+                              colNames.add("");
+                              break;
+                            }
+                          String nameOfColumn = (String) nameOfColumnObj;
+                          colNames.add(nameOfColumn);
 
-                          case "multiple.string":
-                            valuesOfColumns = new ArrayList<>();
-                            if (!(value instanceof JSONArray))
-                              {
-                                log.warn("value of column " + nameOfColumn + " is not an array : " + value.getClass().getName());
-                              }
-                            else
-                              {
-                                JSONArray valueMultiple = (JSONArray) value;
-                                for (int j=0; j<valueMultiple.size(); j++)
-                                  {
-                                    Object obj = valueMultiple.get(j);
-                                    if (!(obj instanceof String))
-                                      {
-                                        log.warn("value is not a String : " + obj.getClass().getName());
-                                      }
-                                    else
-                                      {
-                                        valuesOfColumns.add((String) obj);
-                                      }
-                                  }
-                              }
-                            colsValues.add(valuesOfColumns);
-                            break;
+                          Object argumentObj = filterJSON.get("argument");
+                          if (!(argumentObj instanceof JSONObject))
+                            {
+                              log.warn("argument is not a JSONObject : " + argumentObj.getClass().getName());
+                              colsValues.add(new ArrayList<>());
+                              break;
+                            }
+                          JSONObject argument = (JSONObject) argumentObj;
+                          String valueType = (String) argument.get("valueType");
+                          Object value = (Object) argument.get("value");
 
-                          default:
-                            log.info("Received unsupported valueType : " + valueType);
-                            break;
+                          List<String> valuesOfColumns;
+                          switch (valueType) 
+                          {
+                            case "simpleSelect.string":
+                              if (!(value instanceof String))
+                                {
+                                  log.warn("value of column " + nameOfColumn + " is not a String : " + value);
+                                  colsValues.add(new ArrayList<>());
+                                }
+                              else
+                                {
+                                  String valueSimpleSelect = (String) value;
+                                  valuesOfColumns = new ArrayList<>();
+                                  valuesOfColumns.add(valueSimpleSelect);
+                                  colsValues.add(valuesOfColumns);
+                                }
+                              break;
+
+                            case "multiple.string":
+                              valuesOfColumns = new ArrayList<>();
+                              if (!(value instanceof JSONArray))
+                                {
+                                  log.warn("value of column " + nameOfColumn + " is not an array : " + value.getClass().getName());
+                                }
+                              else
+                                {
+                                  JSONArray valueMultiple = (JSONArray) value;
+                                  for (int j=0; j<valueMultiple.size(); j++)
+                                    {
+                                      Object obj = valueMultiple.get(j);
+                                      if (!(obj instanceof String))
+                                        {
+                                          log.warn("value is not a String : " + obj.getClass().getName());
+                                        }
+                                      else
+                                        {
+                                          valuesOfColumns.add((String) obj);
+                                        }
+                                    }
+                                }
+                              colsValues.add(valuesOfColumns);
+                              break;
+
+                            default:
+                              log.info("Received unsupported valueType : " + valueType);
+                              break;
+                          }
                         }
-                      }
 
-                    ReportUtils.filterReport(unzippedFile, filterOutTmpFile.getAbsolutePath(), colNames, colsValues, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
-                  }
-                else
-                  {
-                    filterOutTmpFile = new File(unzippedFile);
-                  }
+                      ReportUtils.filterReport(unzippedFile, filterOutTmpFile.getAbsolutePath(), colNames, colsValues, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
+                    }
+                  else
+                    {
+                      filterOutTmpFile = new File(unzippedFile);
+                    }
 
-                if (percentage != null) 
-                  {
-                    ReportUtils.extractPercentageOfRandomRows(filterOutTmpFile.getAbsolutePath(), percentageOutTmpFile.getAbsolutePath(), percentage);
-                  }
-                else
-                  {
-                    percentageOutTmpFile = filterOutTmpFile;
-                  }
+                  if (percentage != null) 
+                    {
+                      ReportUtils.extractPercentageOfRandomRows(filterOutTmpFile.getAbsolutePath(), percentageOutTmpFile.getAbsolutePath(), percentage);
+                    }
+                  else
+                    {
+                      percentageOutTmpFile = filterOutTmpFile;
+                    }
 
-                if (topRows != null) 
-                  {
-                    ReportUtils.extractTopRows(percentageOutTmpFile.getAbsolutePath(), topRowsOutTmpFile.getAbsolutePath(), topRows);
-                  }
-                else
-                  {
-                    topRowsOutTmpFile = percentageOutTmpFile;
-                  }
+                  if (topRows != null) 
+                    {
+                      ReportUtils.extractTopRows(percentageOutTmpFile.getAbsolutePath(), topRowsOutTmpFile.getAbsolutePath(), topRows);
+                    }
+                  else
+                    {
+                      topRowsOutTmpFile = percentageOutTmpFile;
+                    }
 
-                if (header != null)
-                  {
-                    List<String> columnNames = new ArrayList<>();
-                    for (int i=0; i<header.size(); i++)
-                      {
-                        String nameOfColumn = (String) header.get(i);
-                        columnNames.add(nameOfColumn);
-                      }
-                    ReportUtils.subsetOfCols(topRowsOutTmpFile.getAbsolutePath(), headerOutTmpFile.getAbsolutePath(), columnNames, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
-                  }
-                else
-                  {
-                    headerOutTmpFile = topRowsOutTmpFile;
-                  }
+                  if (header != null)
+                    {
+                      List<String> columnNames = new ArrayList<>();
+                      for (int i=0; i<header.size(); i++)
+                        {
+                          String nameOfColumn = (String) header.get(i);
+                          columnNames.add(nameOfColumn);
+                        }
+                      ReportUtils.subsetOfCols(topRowsOutTmpFile.getAbsolutePath(), headerOutTmpFile.getAbsolutePath(), columnNames, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
+                    }
+                  else
+                    {
+                      headerOutTmpFile = topRowsOutTmpFile;
+                    }
 
-                if (filters != null || percentage != null || topRows != null || header != null) {
                   finalZipFile = File.createTempFile("reportFinal", "zip");
                   String finalZipFileName = finalZipFile.getAbsolutePath();
                   ReportUtils.zipFile(headerOutTmpFile.getAbsolutePath(), finalZipFileName);
