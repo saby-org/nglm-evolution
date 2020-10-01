@@ -39,11 +39,11 @@ import com.evolving.nglm.evolution.datacubes.mapping.OffersMap;
 import com.evolving.nglm.evolution.datacubes.mapping.PaymentMeansMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SalesChannelsMap;
 
-public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
+public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
 {
-  private static final String DATACUBE_ES_INDEX = "datacube_odr";
-  private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_offers-";
-  private static final String METRIC_TOTAL_AMOUNT = "totalAmount";
+  private static final String DATACUBE_ES_INDEX = "datacube_bdr";
+  private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_bonuses-";
+  private static final String METRIC_TOTAL_QUANTITY = "totalQty";
 
   /*****************************************
   *
@@ -69,7 +69,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public ODRDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService)  
+  public BDRDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService)  
   {
     super(datacubeName, elasticsearch);
 
@@ -85,13 +85,15 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     //
     // Filter fields
     //
+      
     this.filterFields = new ArrayList<String>();
-    this.filterFields.add("offerID");
     this.filterFields.add("moduleID");
     this.filterFields.add("featureID");
-    this.filterFields.add("salesChannelID");
-    this.filterFields.add("meanOfPayment");
+    this.filterFields.add("providerID");
+    this.filterFields.add("operation");
+    this.filterFields.add("deliverableID");
     this.filterFields.add("returnCode");
+    this.filterFields.add("deliverableQty");
     
     //
     // Data Aggregations
@@ -99,8 +101,8 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     //
     this.metricAggregations = new ArrayList<AggregationBuilder>();
     
-    AggregationBuilder totalAmount = AggregationBuilders.sum(METRIC_TOTAL_AMOUNT)
-            .script(new Script(ScriptType.INLINE, "painless", "doc['offerPrice'].value * doc['offerQty'].value", Collections.emptyMap()));
+    AggregationBuilder totalAmount = AggregationBuilders.sum(METRIC_TOTAL_QUANTITY)
+            .script(new Script(ScriptType.INLINE, "painless", "doc['deliverableQty'].value", Collections.emptyMap()));
     metricAggregations.add(totalAmount);
   }
 
@@ -141,25 +143,19 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
   @Override
   protected void embellishFilters(Map<String, Object> filters)
   {
-    String offerID = (String) filters.remove("offerID");
-    filters.put("offer", offersMap.getDisplay(offerID, "offer"));
-
     String moduleID = (String) filters.remove("moduleID");
     filters.put("module", modulesMap.getDisplay(moduleID, "module"));
 
     DatacubeUtils.embelishFeature(filters, moduleID, modulesMap, loyaltyProgramsMap, deliverablesMap, offersMap, journeysMap);
-
-    String salesChannelID = (String) filters.remove("salesChannelID");
-    filters.put("salesChannel", salesChannelsMap.getDisplay(salesChannelID, "salesChannel"));
-
-    String meanOfPayment = (String) filters.remove("meanOfPayment");
-    filters.put("meanOfPayment", paymentMeansMap.getDisplay(meanOfPayment, "meanOfPayment"));
-    filters.put("meanOfPaymentProviderID", paymentMeansMap.getProviderID(meanOfPayment, "meanOfPayment"));
     
-    // Offer objectives are directly put as a Set<String> (because there is a 1-1 linked with the offer)
-    Set<String> offerObjectivesID = offersMap.getOfferObjectivesID(offerID, "offer");
-    filters.put("offerObjectives", offerObjectivesMap.getOfferObjectiveDisplaySet(offerObjectivesID, "offerObjective") );
+    String providerID = (String) filters.remove("providerID");
+    filters.put("provider", com.evolving.nglm.evolution.Deployment.getFulfillmentProviders().get(providerID).getProviderName());
     
+    String deliverableID = (String) filters.remove("deliverableID");
+    filters.put("deliverable", deliverablesMap.getDisplay(deliverableID, "deliverable"));
+
+    filters.remove("deliverableQty"); // TODO : check that the aggregation stays; Otherwise put it back
+
     DatacubeUtils.embelishReturnCode(filters);
   }
 
@@ -179,12 +175,12 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
       return metrics;
     }
     
-    ParsedSum dataTotalAmountBucket = compositeBucket.getAggregations().get(METRIC_TOTAL_AMOUNT);
-    if (dataTotalAmountBucket == null) {
-      log.error("Unable to extract totalAmount metric, aggregation is missing.");
+    ParsedSum dataTotalQuantityBucket = compositeBucket.getAggregations().get(METRIC_TOTAL_QUANTITY);
+    if (dataTotalQuantityBucket == null) {
+      log.error("Unable to extract totalQuantity metric, aggregation is missing.");
       return metrics;
     }
-    metrics.put(METRIC_TOTAL_AMOUNT, (int) dataTotalAmountBucket.getValue());
+    metrics.put(METRIC_TOTAL_QUANTITY, (int) dataTotalQuantityBucket.getValue());
     
     return metrics;
   }

@@ -4,6 +4,7 @@ echo "This script will allow you to change the log configuration of a running co
 echo "*********************************************************************************"
 echo
 
+export DOCKER_STACK=${DOCKER_STACK:-ev}
 declare -a containers
 for name in `docker ps --format '{{.Names}}' | grep -v ${DOCKER_STACK}-gui_ | sort`
 do

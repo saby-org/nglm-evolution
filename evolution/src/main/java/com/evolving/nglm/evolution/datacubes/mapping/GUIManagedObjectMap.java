@@ -34,6 +34,7 @@ public abstract class GUIManagedObjectMap<T extends GUIManagedObject>
   {
     this.typeOfT = typeOfT;
     this.guiManagedObjects = Collections.emptyMap();
+    this.warnings = new HashSet<String>();
   }
 
   /*****************************************

@@ -610,6 +610,47 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_odr -H'Content-Type
 }'
 echo
 
+curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_bdr -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["datacube_bdr"],
+  "mappings" : {
+    "properties" : {
+      "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+      "period" : { "type" : "long" },
+      "filter.module" : { "type" : "keyword" },
+      "filter.feature" : { "type" : "keyword" },
+      "filter.provider" : { "type" : "keyword" },
+      "filter.operation" : { "type" : "keyword" },
+      "filter.salesChannel" : { "type" : "keyword" },
+      "filter.deliverable" : { "type" : "keyword" },
+      "filter.returnCode" : { "type" : "keyword" },
+      "count" : { "type" : "integer" },
+      "metric.totalQty" : { "type" : "integer" }
+    }
+  }
+}'
+echo
+
+curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_messages -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["datacube_messages"],
+  "mappings" : {
+    "properties" : {
+      "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+      "period" : { "type" : "long" },
+      "filter.module" : { "type" : "keyword" },
+      "filter.feature" : { "type" : "keyword" },
+      "filter.provider" : { "type" : "keyword" },
+      "filter.language" : { "type" : "keyword" },
+      "filter.template" : { "type" : "keyword" },
+      "filter.channel" : { "type" : "keyword" },
+      "filter.returnCode" : { "type" : "keyword" },
+      "count" : { "type" : "integer" },
+      "metric.totalQty" : { "type" : "integer" }
+    }
+  }
+}'
+echo
 # -------------------------------------------------------------------------------
 #
 # mappings
@@ -723,3 +764,40 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_deliverables -H'Cont
   }
 }'
 echo
+
+curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_basemanagement -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["mapping_basemanagement"],
+  "mappings" : {
+    "properties" : {
+      "id"            : { "type" : "keyword" },
+      "display"       : { "type" : "keyword" },
+      "active"        : { "type" : "boolean" },
+      "targetingType" : { "type" : "keyword" },
+      "segments"      : { "type" : "nested",
+      	   "properties" : {
+              "id"    : { "type" : "keyword" },
+              "name"  : { "type" : "keyword" }
+           }
+      },
+      "createdDate"   : { "type" : "date" },
+      "timestamp"     : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
+    }
+  }
+}'
+echo
+
+curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeyobjective -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["mapping_journeyobjective"],
+  "mappings" : {
+    "properties" : {
+      "id"            : { "type" : "keyword" },
+      "display"       : { "type" : "keyword" },
+      "contactPolicy" : { "type" : "keyword" }
+      "timestamp"     : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
+    }
+  }
+}'
+echo
+
