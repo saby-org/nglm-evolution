@@ -4571,6 +4571,7 @@ System.out.println("started update journey");
                     context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
                 
                     List<List<EvaluationCriterion>> targetsCriteria = journey.getAllTargetsCriteria(targetService, now);
+                   System.out.println("targets criteria size:"+targetsCriteria.size());
                     boolean inAnyTarget = targetsCriteria.size() == 0 ? true : false; // if no target is defined into the journey, then this boolean is true otherwise, false by default 
                     List<EvaluationCriterion> targets = new ArrayList<>();
 
@@ -4602,6 +4603,8 @@ System.out.println("started update journey");
                         case Manual:
                           if (! targeting)
                             {
+                        	  System.out.println("subscriberToBeProvisionned:"+ subscriberToBeProvisionned);
+                        	  System.out.println("inAnyTarget:"+ inAnyTarget);
                               enterJourney = true;
                               currentStatus=SubscriberJourneyStatus.NotEligible;
                               context.subscriberTrace("NotEligible: targeting criteria {0}", journey.getJourneyID());

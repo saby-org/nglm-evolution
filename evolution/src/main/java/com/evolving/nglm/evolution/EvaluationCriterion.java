@@ -1334,6 +1334,7 @@ public class EvaluationCriterion
     boolean result = true;
     for (EvaluationCriterion criterion : criteria)
       {
+    	System.out.println("criteria"+criteria.toString());
         result = result && criterion.evaluate(evaluationRequest);
       }
     return result;
