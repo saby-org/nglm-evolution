@@ -12627,7 +12627,7 @@ public class GUIManager
         for (int i = 0; i < productTypeIDs.size(); i++)
           {
             String productTypeID = productTypeIDs.get(i).toString();
-            GUIManagedObject productType = productService.getStoredProduct(productTypeID, includeArchived);
+            GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID, includeArchived);
             if (productType != null)
               {
                 productTypeObjects.add(productType);
