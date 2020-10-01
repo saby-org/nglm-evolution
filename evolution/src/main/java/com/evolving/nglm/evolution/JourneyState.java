@@ -183,7 +183,7 @@ public class JourneyState implements Cleanable
     if(specialcase!=null)
     	{this.journeyNodeID = journey.getEndNodeID();
     	this.specialExit=true;
-    	specialExitReason=specialcase;
+    	this.specialExitReason=specialcase;
     	}
     else
     this.journeyNodeID = journey.getStartNodeID();

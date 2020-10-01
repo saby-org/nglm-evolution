@@ -4705,9 +4705,11 @@ System.out.println("started update journey");
 					if (currentStatus != null && currentStatus.in(SubscriberJourneyStatus.NotEligible)) {
 						System.out.println("inside current status"+currentStatus);
 						subscriberState.getSubscriberProfile().getSubscriberJourneys().put(journey.getJourneyID(),currentStatus);
-					}else
+					}else {
+						System.out.println("updating subscriber profile"+journey.getJourneyID()+" and special exit"+journeyState.isSpecialExit());
 						subscriberState.getSubscriberProfile().getSubscriberJourneys().put(journey.getJourneyID(),
 								Journey.getSubscriberJourneyStatus(journeyState));
+					}
 
 					subscriberStateUpdated = true;
 
@@ -4825,20 +4827,24 @@ System.out.println("started update journey");
         *  inactive journey
         *
         *****************************************/
-
-        if (journey == null || journeyNode == null || journeyState.isSpecialExit())
+        if(journeyState.isSpecialExit())
+        {
+        	System.out.println("special case encountered");
+        	inactiveJourneyStates.add(journeyState);
+            continue;
+        	
+        }
+        if (journey == null || journeyNode == null)
           {
 
             // possible temporary inactive journey, do nothing at all ( so no reporting or anything here )
             if(journeyService.getInterruptedGUIManagedObject(journeyState.getJourneyID(), now)!=null){
             	 if(journeyState.isSpecialExit())
-                 	System.out.println("special case encountered but null");
                 context.subscriberTrace("ignoring inactive for now journey {0}", journeyState.getJourneyID());
                 continue;
             }
 
             if(journeyState.isSpecialExit())
-            	System.out.println("special case encountered");
             journeyState.setJourneyExitDate(now);
             boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
             subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), now)));
