@@ -2836,6 +2836,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                     dialogMessageFieldsMandatory.put(param.getID(), param.getMandatoryParameter());
                   }
                 }
+                log.info("RAJ K parameterJSON {}", parameterJSON);
                 JSONObject value = (JSONObject)parameterJSON.get("value");
                 JSONArray message = JSONUtilities.decodeJSONArray(value, "message");
                 // in case of TemplateID reference:
