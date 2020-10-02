@@ -21496,9 +21496,23 @@ public class GUIManager
      *
      ****************************************/
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
+    String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);    
     Boolean viewOffersOnly = JSONUtilities.decodeBoolean(jsonRoot, "viewOffersOnly", Boolean.FALSE);
-
+    String supplierID = JSONUtilities.decodeString(jsonRoot, "supplier", false);
+    Supplier supplier = null;
+    
+    /*****************************************
+    *
+    *  getSupplier
+    *
+    *****************************************/
+    if (supplierID != null) {
+      GUIManagedObject supplierObject = supplierService.getStoredSupplier(supplierID);
+      if (supplierObject instanceof Supplier) {
+        supplier = (Supplier) supplierObject;
+      }
+    }
+    
     /*****************************************
      *
      *  resolve subscriberID
@@ -21596,7 +21610,7 @@ public class GUIManager
                   catalogCharacteristicService,
                   scoringStrategyService,
                   subscriberGroupEpochReader,
-                  segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, null
+                  segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, supplier
                   );
 
               if (presentedOffers.isEmpty())

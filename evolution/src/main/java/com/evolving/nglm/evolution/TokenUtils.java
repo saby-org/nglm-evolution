@@ -539,12 +539,19 @@ public class TokenUtils
                   {
                     String productID = offerproduct.getProductID();
                     GUIManagedObject productObject = productService.getStoredProduct(productID);
-                    Product product = (Product) productObject;
-                    if (product.getSupplierID().equals(supplier.getSupplierID()))
+                    if (productObject instanceof Product)
                       {
-                        filteredOffers.add(offer);
-                        break;
+                        Product product = (Product) productObject;
+                        if (product.getSupplierID().equals(supplier.getSupplierID()))
+                          {
+                            filteredOffers.add(offer);
+                            break;
+                          }
                       }
+                    else {
+                      if(log.isDebugEnabled())
+                        log.debug(productObject + "is not a complete product");
+                    }
                   }
               }
             if (offerVouchers != null && offerVouchers.size() != 0)
@@ -553,11 +560,20 @@ public class TokenUtils
                   {
                     String voucherID = offerVoucher.getVoucherID();
                     GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherID);
-                    Voucher voucher = (Voucher) voucherObject;
-                    if (voucher.getSupplierID().equals(supplier.getSupplierID()))
+                    if (voucherObject instanceof Voucher)
                       {
-                        filteredOffers.add(offer);
-                        break;
+                        Voucher voucher = (Voucher) voucherObject;
+                        if (voucher.getSupplierID().equals(supplier.getSupplierID()))
+                          {
+                            filteredOffers.add(offer);
+                            break;
+                          }
+                      }
+
+                    else
+                      {
+                        if (log.isDebugEnabled())
+                          log.debug(voucherObject + "is not a complete voucher");
                       }
                   }
               }
