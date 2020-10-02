@@ -764,12 +764,12 @@
     {
       "id"           : "getActiveOffer",
       "methodName"   : "getActiveOffer",
-      "permissions"  : ["?????"]
+      "permissions"  : ["API-GET-ACTIVE-OFFER"]
     },
     {
       "id"           : "getActiveOffers",
       "methodName"   : "getActiveOffers",
-      "permissions"  : ["??????"]
+      "permissions"  : ["API-GET-ACTIVE-OFFERS"]
     },
     {
       "id"           : "getCustomerJourneys",
