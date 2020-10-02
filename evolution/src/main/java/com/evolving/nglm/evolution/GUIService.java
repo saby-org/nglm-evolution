@@ -828,7 +828,7 @@ public class GUIService
               }
             catch (SerializationException e)
               {
-                log.info("error reading guiManagedObject: {}", e.getMessage());
+                log.info("error reading guiManagedObject on " + guiManagedObjectTopic + " : {}", e.getMessage());
                 guiManagedObject = incompleteObjectSerde.optionalDeserializer().deserialize(guiManagedObjectRecord.topic(), guiManagedObjectRecord.value());
               }
 
