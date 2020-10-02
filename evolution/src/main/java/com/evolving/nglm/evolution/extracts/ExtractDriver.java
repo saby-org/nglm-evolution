@@ -9,9 +9,8 @@ package com.evolving.nglm.evolution.extracts;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion;
 import com.evolving.nglm.evolution.Report;
-import com.evolving.nglm.evolution.reports.ReportDriver;
-import com.evolving.nglm.evolution.reports.ReportEsReader;
-import com.evolving.nglm.evolution.reports.ReportUtils;
+import com.evolving.nglm.evolution.reports.*;
+import com.evolving.nglm.evolution.reports.subscriber.SubscriberReportMonoPhase;
 import com.evolving.nglm.evolution.reports.subscriber.SubscriberReportObjects;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.slf4j.Logger;
@@ -53,20 +52,12 @@ public class ExtractDriver extends ReportDriver
       LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
       esIndexWithQuery.put(esIndexSubscriber, EvaluationCriterion.esCountMatchCriteriaGetQuery(extractItem.getEvaluationCriterionList()));
 
-      ReportEsReader reportEsReader = new ReportEsReader(SubscriberReportObjects.KEY_STR, topic, kafka, zookeeper, elasticSearch, esIndexWithQuery, true, extractItem.getReturnNoOfRecords());
-      reportEsReader.start();
-      try
-      {
-        TimeUnit.SECONDS.sleep(1);
-      }
-      catch (InterruptedException e)
-      {
-      }
+      ReportCsvFactory reportFactory = new ExtractCsvWriter(extractItem.getReturnNoOfRecords(),extractItem.getReturnFields());
 
-      log.debug("PHASE 2 : write csv file ");
-      ExtractCsvWriter.main(new String[] { kafka, topic, csvFilename });
-      ReportUtils.cleanupTopics(topic);
-      log.debug("Finished with extract");
+      ReportMonoPhase reportMonoPhase = new ReportMonoPhase(elasticSearch,esIndexWithQuery,reportFactory,csvFilename,true);
+      reportMonoPhase.startOneToOne();
+
+      log.debug("Finished with extractv "+extractItem.getExtractName());
     }
     catch (Exception ex)
     {
