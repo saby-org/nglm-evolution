@@ -2977,10 +2977,11 @@ public class EvolutionEngine
             //
             
             Point newPoint = point.copy();
-            if(pointFulfillmentRequest.getValidityPeriodType() != null && !pointFulfillmentRequest.getValidityPeriodType().equals(TimeUnit.Unknown) && pointFulfillmentRequest.getValidityPeriodQuantity() > 0){
-              newPoint.getValidity().setPeriodType(pointFulfillmentRequest.getValidityPeriodType());
-              newPoint.getValidity().setPeriodQuantity(pointFulfillmentRequest.getValidityPeriodQuantity());
-            }
+            if (pointFulfillmentRequest.getValidityPeriodType() != null && !pointFulfillmentRequest.getValidityPeriodType().equals(TimeUnit.Unknown) && pointFulfillmentRequest.getValidityPeriodQuantity() != null && pointFulfillmentRequest.getValidityPeriodQuantity() > 0)
+              {
+                newPoint.getValidity().setPeriodType(pointFulfillmentRequest.getValidityPeriodType());
+                newPoint.getValidity().setPeriodQuantity(pointFulfillmentRequest.getValidityPeriodQuantity());
+              }
             
             //
             // update balance 
