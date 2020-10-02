@@ -370,6 +370,56 @@ prepare-curl -XPOST $CONNECT_URL_DELIVERABLE_ES/connectors -H "Content-Type: app
   }' 
 
 #
+#  sink connector -- mapping_basemanagement (elasticsearch)
+#
+
+export CONNECT_URL_BASEMANAGEMENT_ES=${CONNECT_URL_BASEMANAGEMENT_ES:-$DEFAULT_CONNECT_URL}
+export CONNECT_ES_BASEMANAGEMENT_SINK_TASKS=${CONNECT_ES_BASEMANAGEMENT_SINK_TASKS:-'1'}
+export CONNECT_ES_BASEMANAGEMENT_BATCHRECORDCOUNT=${CONNECT_ES_BASEMANAGEMENT_BATCHRECORDCOUNT:-'1000'}
+export CONNECT_ES_BASEMANAGEMENT_BATCHSIZEMB=${CONNECT_ES_BASEMANAGEMENT_BATCHSIZEMB:-'5'}
+prepare-curl -XPOST $CONNECT_URL_BASEMANAGEMENT_ES/connectors -H "Content-Type: application/json" -d '
+  {
+    "name" : "mapping_basemanagement_es_sink_connector",
+    "config" :
+      {
+      "connector.class" : "com.evolving.nglm.evolution.SegmentationDimensionESSinkConnector",
+      "tasks.max" : '$CONNECT_ES_BASEMANAGEMENT_SINK_TASKS',
+      "topics" : "${topic.segmentationdimension}",
+      "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+      "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+      "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
+      "indexName" : "mapping_basemanagement",
+      "batchRecordCount" : "'$CONNECT_ES_BASEMANAGEMENT_BATCHRECORDCOUNT'",
+      "batchSize" : "'$CONNECT_ES_BASEMANAGEMENT_BATCHSIZEMB'"
+      }
+  }' 
+
+#
+#  sink connector -- mapping_journeyobjective (elasticsearch)
+#
+
+export CONNECT_URL_JOURNEYOBJECTIVE_ES=${CONNECT_URL_JOURNEYOBJECTIVE_ES:-$DEFAULT_CONNECT_URL}
+export CONNECT_ES_JOURNEYOBJECTIVE_SINK_TASKS=${CONNECT_ES_JOURNEYOBJECTIVE_SINK_TASKS:-'1'}
+export CONNECT_ES_JOURNEYOBJECTIVE_BATCHRECORDCOUNT=${CONNECT_ES_JOURNEYOBJECTIVE_BATCHRECORDCOUNT:-'1000'}
+export CONNECT_ES_JOURNEYOBJECTIVE_BATCHSIZEMB=${CONNECT_ES_JOURNEYOBJECTIVE_BATCHSIZEMB:-'5'}
+prepare-curl -XPOST $CONNECT_URL_JOURNEYOBJECTIVE_ES/connectors -H "Content-Type: application/json" -d '
+  {
+    "name" : "mapping_journeyobjective_es_sink_connector",
+    "config" :
+      {
+      "connector.class" : "com.evolving.nglm.evolution.JourneyObjectiveESSinkConnector",
+      "tasks.max" : '$CONNECT_ES_JOURNEYOBJECTIVE_SINK_TASKS',
+      "topics" : "${topic.journeyobjective}",
+      "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+      "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+      "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
+      "indexName" : "mapping_journeyobjective",
+      "batchRecordCount" : "'$CONNECT_ES_JOURNEYOBJECTIVE_BATCHRECORDCOUNT'",
+      "batchSize" : "'$CONNECT_ES_JOURNEYOBJECTIVE_BATCHSIZEMB'"
+      }
+  }' 
+
+#
 #  sink connector -- Journey (elasticsearch)
 #
 

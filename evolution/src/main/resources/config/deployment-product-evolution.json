@@ -23,6 +23,10 @@
   "datacubeJobsScheduling" : {
     "ODR-preview"                    : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
     "ODR-definitive"                 : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
+    "BDR-preview"                    : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
+    "BDR-definitive"                 : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
+    "MDR-preview"                    : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
+    "MDR-definitive"                 : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
     "LoyaltyPrograms-preview"        : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
     "LoyaltyPrograms-definitive"     : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 0 * * *" },
     "SubscriberProfile-preview"      : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },

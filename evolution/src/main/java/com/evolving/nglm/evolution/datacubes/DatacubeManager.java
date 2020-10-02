@@ -20,8 +20,11 @@ import com.evolving.nglm.evolution.PaymentMeanService;
 import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
+import com.evolving.nglm.evolution.SubscriberMessageTemplateService;
+import com.evolving.nglm.evolution.datacubes.generator.BDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.JourneyRewardsDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.JourneyTrafficDatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.generator.MDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.ODRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.ProgramsChangesDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.ProgramsHistoryDatacubeGenerator;
@@ -73,6 +76,7 @@ public class DatacubeManager
   private static PaymentMeanService paymentMeanService;
   private static OfferObjectiveService offerObjectiveService;
   private static RestHighLevelClient elasticsearchRestClient;
+  private static SubscriberMessageTemplateService subscriberMessageTemplateService;
   
   //
   // Maps
@@ -87,6 +91,8 @@ public class DatacubeManager
   private static JourneyTrafficDatacubeGenerator trafficDatacube;
   private static JourneyRewardsDatacubeGenerator rewardsDatacube;
   private static ODRDatacubeGenerator odrDatacube;
+  private static BDRDatacubeGenerator bdrDatacube;
+  private static MDRDatacubeGenerator mdrDatacube;
   private static SubscriberProfileDatacubeGenerator subscriberProfileDatacube;
   
   /*****************************************
@@ -132,6 +138,8 @@ public class DatacubeManager
     paymentMeanService.start();
     offerObjectiveService = new OfferObjectiveService(bootstrapServers, applicationID + "-offerobjectiveservice-" + instanceID, Deployment.getOfferObjectiveTopic(), false);
     offerObjectiveService.start();
+    subscriberMessageTemplateService = new SubscriberMessageTemplateService(bootstrapServers, applicationID + "-subscribermessagetemplateservice-" + instanceID, Deployment.getSubscriberMessageTemplateTopic(), false);
+    subscriberMessageTemplateService.start();
     
     //
     // initialize ES client & GUI client
@@ -168,6 +176,8 @@ public class DatacubeManager
     trafficDatacube = new JourneyTrafficDatacubeGenerator("Journey:Traffic", elasticsearchRestClient, segmentationDimensionService, journeyService);
     rewardsDatacube = new JourneyRewardsDatacubeGenerator("Journey:Rewards", elasticsearchRestClient, segmentationDimensionService, journeyService);
     odrDatacube = new ODRDatacubeGenerator("ODR", elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
+    bdrDatacube = new BDRDatacubeGenerator("BDR", elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
+    mdrDatacube = new MDRDatacubeGenerator("MDR", elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
     subscriberProfileDatacube = new SubscriberProfileDatacubeGenerator("SubscriberProfile", elasticsearchRestClient, segmentationDimensionService);
   }
 
@@ -360,7 +370,129 @@ public class DatacubeManager
       return nextAvailableID;
     }
   }
+
+  /*
+   * BDR preview
+   *
+   * This will generated a datacube preview of the day from the detailedrecords_bonuses-YYYY-MM-dd index of the day
+   * Those data are not definitive, the day is not ended yet, new BDR can still be added.
+   */
+  private static long scheduleBDRPreview(JobScheduler scheduler, long nextAvailableID) {
+    String datacubeName = "BDR-preview";
+    
+    ScheduledJob job = new ScheduledJob(nextAvailableID,
+        datacubeName, 
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+    {
+      @Override
+      protected void run()
+      {
+        bdrDatacube.preview();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
   
+  /*
+   * BDR definitive
+   *
+   * This will generated a datacube every day from the detailedrecords_bonuses-YYYY-MM-dd index of the previous day.
+   */
+  private static long scheduleBDRDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String datacubeName = "BDR-definitive";
+    
+    ScheduledJob job = new ScheduledJob(nextAvailableID,
+        datacubeName, 
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+    {
+      @Override
+      protected void run()
+      {
+        bdrDatacube.definitive();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+
+  /*
+   * MDR preview
+   *
+   * This will generated a datacube preview of the day from the detailedrecords_messages-YYYY-MM-dd index of the day
+   * Those data are not definitive, the day is not ended yet, new MDR can still be added.
+   */
+  private static long scheduleMDRPreview(JobScheduler scheduler, long nextAvailableID) {
+    String datacubeName = "MDR-preview";
+    
+    ScheduledJob job = new ScheduledJob(nextAvailableID,
+        datacubeName, 
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+    {
+      @Override
+      protected void run()
+      {
+        mdrDatacube.preview();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+  
+  /*
+   * MDR definitive
+   *
+   * This will generated a datacube every day from the detailedrecords_messages-YYYY-MM-dd index of the previous day.
+   */
+  private static long scheduleMDRDefinitive(JobScheduler scheduler, long nextAvailableID) {
+    String datacubeName = "MDR-definitive";
+    
+    ScheduledJob job = new ScheduledJob(nextAvailableID,
+        datacubeName, 
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+        Deployment.getBaseTimeZone(),
+        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+    {
+      @Override
+      protected void run()
+      {
+        mdrDatacube.definitive();
+      }
+    };
+    
+    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+      scheduler.schedule(job);
+      return nextAvailableID + 1;
+    } 
+    else {
+      return nextAvailableID;
+    }
+  }
+
   /*
    * Journey datacube
    *
@@ -425,6 +557,8 @@ public class DatacubeManager
     uniqueID = scheduleLoyaltyProgramsPreview(datacubeScheduler, uniqueID);
     uniqueID = scheduleSubscriberProfilePreview(datacubeScheduler, uniqueID);
     uniqueID = scheduleODRPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleBDRPreview(datacubeScheduler, uniqueID);
+    uniqueID = scheduleMDRPreview(datacubeScheduler, uniqueID);
     
     //
     // Definitives datacubes 
@@ -432,6 +566,8 @@ public class DatacubeManager
     uniqueID = scheduleLoyaltyProgramsDefinitive(datacubeScheduler, uniqueID);
     uniqueID = scheduleSubscriberProfileDefinitive(datacubeScheduler, uniqueID);
     uniqueID = scheduleODRDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleBDRDefinitive(datacubeScheduler, uniqueID);
+    uniqueID = scheduleMDRDefinitive(datacubeScheduler, uniqueID);
     uniqueID = scheduleJourneyDatacubeDefinitive(datacubeScheduler, uniqueID);
     
     //

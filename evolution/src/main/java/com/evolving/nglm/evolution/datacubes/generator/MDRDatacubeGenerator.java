@@ -27,7 +27,9 @@ import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.OfferObjectiveService;
 import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.PaymentMeanService;
+import com.evolving.nglm.evolution.RESTAPIGenericReturnCodes;
 import com.evolving.nglm.evolution.SalesChannelService;
+import com.evolving.nglm.evolution.SubscriberMessageTemplateService;
 import com.evolving.nglm.evolution.datacubes.DatacubeUtils;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.DeliverablesMap;
@@ -38,11 +40,12 @@ import com.evolving.nglm.evolution.datacubes.mapping.OfferObjectivesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.OffersMap;
 import com.evolving.nglm.evolution.datacubes.mapping.PaymentMeansMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SalesChannelsMap;
+import com.evolving.nglm.evolution.datacubes.mapping.SubscriberMessageTemplatesMap;
 
-public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
+public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
 {
-  private static final String DATACUBE_ES_INDEX = "datacube_odr";
-  private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_offers-";
+  private static final String DATACUBE_ES_INDEX = "datacube_messages";
+  private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_messages-";
   private static final String METRIC_TOTAL_AMOUNT = "totalAmount";
 
   /*****************************************
@@ -60,6 +63,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
   private LoyaltyProgramsMap loyaltyProgramsMap;
   private DeliverablesMap deliverablesMap;
   private JourneysMap journeysMap;
+  private SubscriberMessageTemplatesMap subscriberMessageTemplatesMap;
 
   private boolean previewMode;
   private String targetDay;
@@ -69,7 +73,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public ODRDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService)  
+  public MDRDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService)  
   {
     super(datacubeName, elasticsearch);
 
@@ -81,27 +85,24 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
     this.deliverablesMap = new DeliverablesMap();
     this.journeysMap = new JourneysMap(journeyService);
+    this.subscriberMessageTemplatesMap = new SubscriberMessageTemplatesMap(subscriberMessageTemplateService);
     
     //
     // Filter fields
     //
+
     this.filterFields = new ArrayList<String>();
-    this.filterFields.add("offerID");
     this.filterFields.add("moduleID");
     this.filterFields.add("featureID");
-    this.filterFields.add("salesChannelID");
-    this.filterFields.add("meanOfPayment");
+    this.filterFields.add("language");
+    this.filterFields.add("templateID");
     this.filterFields.add("returnCode");
+    this.filterFields.add("channelID");
     
     //
     // Data Aggregations
-    // - totalAmount
     //
     this.metricAggregations = new ArrayList<AggregationBuilder>();
-    
-    AggregationBuilder totalAmount = AggregationBuilders.sum(METRIC_TOTAL_AMOUNT)
-            .script(new Script(ScriptType.INLINE, "painless", "doc['offerPrice'].value * doc['offerQty'].value", Collections.emptyMap()));
-    metricAggregations.add(totalAmount);
   }
 
   /*****************************************
@@ -131,10 +132,10 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     modulesMap.updateFromElasticsearch(elasticsearch);
     salesChannelsMap.update();
     paymentMeansMap.update();
-    offerObjectivesMap.update();
     loyaltyProgramsMap.update();
     deliverablesMap.updateFromElasticsearch(elasticsearch);
     journeysMap.update();
+    subscriberMessageTemplatesMap.update();
     
     return true;
   }
@@ -142,24 +143,16 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
   @Override
   protected void embellishFilters(Map<String, Object> filters)
   {
-    String offerID = (String) filters.remove("offerID");
-    filters.put("offer", offersMap.getDisplay(offerID, "offer"));
-
     String moduleID = (String) filters.remove("moduleID");
     filters.put("module", modulesMap.getDisplay(moduleID, "module"));
 
     DatacubeUtils.embelishFeature(filters, moduleID, modulesMap, loyaltyProgramsMap, deliverablesMap, offersMap, journeysMap);
 
-    String salesChannelID = (String) filters.remove("salesChannelID");
-    filters.put("salesChannel", salesChannelsMap.getDisplay(salesChannelID, "salesChannel"));
-
-    String meanOfPayment = (String) filters.remove("meanOfPayment");
-    filters.put("meanOfPayment", paymentMeansMap.getDisplay(meanOfPayment, "meanOfPayment"));
-    filters.put("meanOfPaymentProviderID", paymentMeansMap.getProviderID(meanOfPayment, "meanOfPayment"));
+    String templateID = (String) filters.remove("templateID");
+    filters.put("template", subscriberMessageTemplatesMap.getDisplay(templateID, "template"));
     
-    // Offer objectives are directly put as a Set<String> (because there is a 1-1 linked with the offer)
-    Set<String> offerObjectivesID = offersMap.getOfferObjectivesID(offerID, "offer");
-    filters.put("offerObjectives", offerObjectivesMap.getOfferObjectiveDisplaySet(offerObjectivesID, "offerObjective") );
+    String channelID = (String) filters.remove("channelID");
+    filters.put("channel", com.evolving.nglm.evolution.Deployment.getCommunicationChannels().get(channelID).getDisplay());
     
     DatacubeUtils.embelishReturnCode(filters);
   }
