@@ -916,28 +916,28 @@
       "display"             : "Journey Customer States Report",
       "description"         : "Description of the Journey Customer States Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none", "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "customerReport",
       "display"             : "Customer Report",
       "description"         : "Description of the Customer Report",
       "class"               : "com.evolving.nglm.evolution.reports.subscriber.SubscriberReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none", "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "BDRReport",
       "display"             : "BDR Report",
       "description"         : "Description of the BDR Report",
       "class"               : "com.evolving.nglm.evolution.reports.bdr.BDRReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily" ]
     },
     {
       "name"                : "ODRReport",
       "display"             : "ODR Report",
       "description"         : "Description of the ODR Report",
       "class"               : "com.evolving.nglm.evolution.reports.odr.ODRReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ],
+      "availableScheduling" : [ "none","daily" ],
       "defaultReportPeriodQuantity" : 1,
       "defaultReportPeriodUnit"     : "DAYS"
     },
@@ -946,70 +946,70 @@
       "display"             : "Notification Report",
       "description"         : "Description of the Notification Report",
       "class"               : "com.evolving.nglm.evolution.reports.notification.NotificationReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily" ]
     },
     {
       "name"                : "journeysReport",
       "display"             : "Journeys Report",
       "description"         : "Description of the Journeys Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeys.JourneysReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
       "name"                : "productReport",
       "display"             : "Product Report",
       "description"         : "Description of the Product Report",
       "class"               : "com.evolving.nglm.evolution.reports.product.ProductReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
       "name"                : "offerReport",
       "display"             : "Offer Report",
       "description"         : "Description of the Offer Report",
       "class"               : "com.evolving.nglm.evolution.reports.offer.OfferReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
       "name"                : "journeyImpactReport",
       "display"             : "Journey Impact Report",
       "description"         : "Description of the Journey Impact Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
       "name"                : "journeyCustomerStatisticsReport",
       "display"             : "Journey Customer Statistics Report",
       "description"         : "Description of the Journey Customer Statistics Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
       "name"                : "contactPolicyConfiguration",
       "display"             : "Contact Policy Configuration",
       "description"         : "Description of the Contact Policy Configuration Report",
       "class"               : "com.evolving.nglm.evolution.reports.contactpolicyconfig.ContactPolicyConfigurationReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
       "name"                : "loyaltyProgramCustomerStates",
       "display"             : "Loyalty Program Customer States",
       "description"         : "Description of the Loyalty Program Customer States Report",
       "class"               : "com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate.LoyaltyProgramCustomerStatesDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
       "name"                : "customerPointsDetails",
       "display"             : "Customer Points Details",
       "description"         : "Description of the Customer Points Details Report",
       "class"               : "com.evolving.nglm.evolution.reports.customerpointdetails.CustomerPointDetailsDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
       "name"                : "tokenReport",
       "display"             : "Token Report",
       "description"         : "Description of the characteristics of the token",
       "class"               : "com.evolving.nglm.evolution.reports.token.TokenReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ],
+      "availableScheduling" : [ "none","daily","monthly"],
       "effectiveScheduling" : [ "monthly" ]
     },
     {
@@ -1017,7 +1017,7 @@
       "display"             : "Token Offer Report",
       "description"         : "Description offer details of the tokens",
       "class"               : "com.evolving.nglm.evolution.reports.tokenOffer.TokenOfferReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     }
   ],
 

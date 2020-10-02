@@ -1123,6 +1123,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   SchedulingInterval eSchedule = SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr);
                   log.trace("Checking that "+eSchedule+" is allowed");
                   if (! availableScheduling.contains(eSchedule)) {
+                	 
                     response.put("id", jsonRoot.get("id"));
                     response.put("responseCode", "reportNotValid");
                     response.put("responseMessage", "scheduling "+eSchedule+" is not valid");
@@ -1134,21 +1135,37 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                     response.put("responseParameter", respMsg.toString());
                     return JSONUtilities.encodeObject(response);
                   }
+                 
+
                 }
               }
             }
           }
       }
-
+    JSONArray effectiveScheduling = new JSONArray();
+    JSONArray effectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EFFECTIVE_SCHEDULING, false);
+    if (effectiveSchedulingJSONArray != null) { 
+        for (int i=0; i<effectiveSchedulingJSONArray.size(); i++) {
+        	 String schedulingIntervalStr = (String) effectiveSchedulingJSONArray.get(i);
+        	 SchedulingInterval eSchedule = SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr);
+              if(eSchedule.equals(SchedulingInterval.NONE))
+           		continue;
+            effectiveScheduling.add(schedulingIntervalStr);
+        }
+        }
+        
+    jsonRoot.remove(Report.EFFECTIVE_SCHEDULING);
+    jsonRoot.put(Report.EFFECTIVE_SCHEDULING, effectiveScheduling);  
     long epoch = epochServer.getKey();
     try
-      {
+      {    	
         Report report = new Report(jsonRoot, epoch, existingReport);
         log.trace("new report : "+report);
         if (!dryRun)
           {
-            reportService.putReport(report, (existingReport == null), userID);
+        	            reportService.putReport(report, (existingReport == null), userID);
           }
+      
         response.put("id", report.getReportID());
         response.put("accepted", report.getAccepted());
         response.put("valid", report.getAccepted());
