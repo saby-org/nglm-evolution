@@ -535,6 +535,19 @@ public abstract class GUIManagedObject
     return (date != null) ? standardDateFormats.get(0).format(date) : null;
   }
 
+  public Date parseWithStandardDateFormat(String str)
+  {
+    try
+      {
+        return standardDateFormats.get(0).parse(str);
+      }
+    catch (ParseException e)
+      {
+        if (log.isDebugEnabled()) log.debug("unable to parse " + str + " as a date with format : " + standardDateFormats.get(0));
+        return null;
+      }
+  }
+  
   /*****************************************
   *
   *  equals

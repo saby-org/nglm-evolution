@@ -9,6 +9,8 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
@@ -111,11 +113,37 @@ public class SegmentationDimensionESSinkConnector extends SimpleESSinkConnector
     public Map<String, Object> getDocumentMap(SegmentationDimension segmentationDimension)
     {
       Map<String,Object> documentMap = new HashMap<String,Object>();
+      
+      // We read all data from JSONRepresentation()
+      // because native data in object is sometimes not correct
+      
       documentMap.put("id", segmentationDimension.getGUIManagedObjectID());
       documentMap.put("display", segmentationDimension.getGUIManagedObjectDisplay());
       documentMap.put("targetingType", segmentationDimension.getTargetingType().name());
       documentMap.put("createdDate", segmentationDimension.getCreatedDate());
       documentMap.put("active", segmentationDimension.getActive());
+      
+
+      
+      
+      JSONObject jr = segmentationDimension.getJSONRepresentation();
+      documentMap.put("jr", jr);
+      documentMap.put("display from JR",jr.get("display"));
+      documentMap.put("targetingType from JR",jr.get("targetingType"));
+      documentMap.put("createdDate from JR", GUIManagedObject.parseDateField((String) jr.get("createdDate")));
+      JSONArray segmentsJSON = (JSONArray) jr.get("segments");
+      List<Map<String,String>> segments1 = new ArrayList<>();
+      for (int i = 0; i < segmentsJSON.size(); i++)
+        {
+          JSONObject segmentJSON = (JSONObject) segmentsJSON.get(i);
+          Map<String,String> segmentMap = new HashMap<>();
+          segmentMap.put("id", (String) segmentJSON.get("id"));
+          segmentMap.put("name", (String) segmentJSON.get("name"));
+          segments1.add(segmentMap);
+        }
+      documentMap.put("segments from jr", segments1);
+      
+      
       List<Map<String,String>> segments = new ArrayList<>();
       for (Segment segment : segmentationDimension.getSegments())
         {

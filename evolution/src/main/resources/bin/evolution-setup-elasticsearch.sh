@@ -781,6 +781,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_basemanagement -H'Co
            }
       },
       "createdDate"   : { "type" : "date" },
+      "createdDate from JR": { "type" : "date" },
       "timestamp"     : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
     }
   }
@@ -794,8 +795,16 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeyobjective -H'
     "properties" : {
       "id"            : { "type" : "keyword" },
       "display"       : { "type" : "keyword" },
-      "contactPolicy" : { "type" : "keyword" }
-      "timestamp"     : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
+      "contactPolicy" : { "type" : "keyword" },
+      "timestamp"     : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+      "getEffectiveWaitingPeriodEndDate"     : { "type" : "date" },
+      "getEffectiveSlidingWindowStartDate"     : { "type" : "date" },
+      "getEpoch"     : { "type" : "date" },
+      "getEffectiveStartDate"     : { "type" : "date" },
+      "getEffectiveEndDate"     : { "type" : "date" },
+      "getCreatedDate"     : { "type" : "date" },
+      "getUpdatedDate"     : { "type" : "date" }
+      
     }
   }
 }'
