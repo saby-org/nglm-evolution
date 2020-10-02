@@ -2132,16 +2132,28 @@ public class EvaluationCriterion
     String pointID = fieldNameMatcher.group(1);
     String criterionFieldBaseName = fieldNameMatcher.group(2);
     QueryBuilder queryPointID = QueryBuilders.termQuery("pointBalances.pointID", pointID);
-    if (!"balance".equals(criterionFieldBaseName))
-      {
-        throw new CriterionException("Internal error, unknown criterion field : " + esField);
-      }
-    if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
-    QueryBuilder queryBalance = buildCompareQuery("pointBalances." + SubscriberProfile.CURRENT_BALANCE, ExpressionDataType.IntegerExpression);
+    QueryBuilder queryInternal = null;
+    switch (criterionFieldBaseName)
+    {
+      case "balance":
+        queryInternal = buildCompareQuery("pointBalances." + SubscriberProfile.CURRENT_BALANCE, ExpressionDataType.IntegerExpression);
+        break;
+
+      case "earliestexpirydate":
+        queryInternal = buildCompareQuery("pointBalances." + SubscriberProfile.EARLIEST_EXPIRATION_DATE, ExpressionDataType.DateExpression);
+        break;
+
+      case "earliestexpiryquantity":
+        queryInternal = buildCompareQuery("pointBalances." + SubscriberProfile.EARLIEST_EXPIRATION_QUANTITY, ExpressionDataType.IntegerExpression);
+        break;
+        
+      default:
+        throw new CriterionException("Internal error, unsupported criterion field : " + esField);
+    }
     QueryBuilder query = QueryBuilders.nestedQuery("pointBalances",
                                           QueryBuilders.boolQuery()
                                                           .filter(queryPointID)
-                                                          .filter(queryBalance), ScoreMode.Total);
+                                                          .filter(queryInternal), ScoreMode.Total);
     return query;
   }
 
