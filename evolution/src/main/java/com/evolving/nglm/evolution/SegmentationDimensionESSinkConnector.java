@@ -117,42 +117,23 @@ public class SegmentationDimensionESSinkConnector extends SimpleESSinkConnector
       // We read all data from JSONRepresentation()
       // because native data in object is sometimes not correct
       
-      documentMap.put("id", segmentationDimension.getGUIManagedObjectID());
-      documentMap.put("display", segmentationDimension.getGUIManagedObjectDisplay());
-      documentMap.put("targetingType", segmentationDimension.getTargetingType().name());
-      documentMap.put("createdDate", segmentationDimension.getCreatedDate());
-      documentMap.put("active", segmentationDimension.getActive());
-      
-
-      
-      
       JSONObject jr = segmentationDimension.getJSONRepresentation();
-      documentMap.put("jr", jr);
-      documentMap.put("display from JR",jr.get("display"));
-      documentMap.put("targetingType from JR",jr.get("targetingType"));
-      documentMap.put("createdDate from JR", GUIManagedObject.parseDateField((String) jr.get("createdDate")));
+      documentMap.put("id",            jr.get("id"));
+      documentMap.put("display",       jr.get("display"));
+      documentMap.put("targetingType", jr.get("targetingType"));
+      documentMap.put("active",        jr.get("active"));
+      documentMap.put("createdDate",   GUIManagedObject.parseDateField((String) jr.get("createdDate")));
       JSONArray segmentsJSON = (JSONArray) jr.get("segments");
-      List<Map<String,String>> segments1 = new ArrayList<>();
+      List<Map<String,String>> segments = new ArrayList<>();
       for (int i = 0; i < segmentsJSON.size(); i++)
         {
           JSONObject segmentJSON = (JSONObject) segmentsJSON.get(i);
           Map<String,String> segmentMap = new HashMap<>();
           segmentMap.put("id", (String) segmentJSON.get("id"));
           segmentMap.put("name", (String) segmentJSON.get("name"));
-          segments1.add(segmentMap);
-        }
-      documentMap.put("segments from jr", segments1);
-      
-      
-      List<Map<String,String>> segments = new ArrayList<>();
-      for (Segment segment : segmentationDimension.getSegments())
-        {
-          Map<String,String> segmentMap = new HashMap<>();
-          segmentMap.put("id", segment.getID());
-          segmentMap.put("name", segment.getName());
           segments.add(segmentMap);
         }
-      documentMap.put("segments", segments);
+      documentMap.put("segments",  segments);
       documentMap.put("timestamp", DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime()));
       return documentMap;
     }

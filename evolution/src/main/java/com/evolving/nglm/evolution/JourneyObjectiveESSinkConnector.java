@@ -126,51 +126,18 @@ public class JourneyObjectiveESSinkConnector extends SimpleESSinkConnector
     public Map<String, Object> getDocumentMap(JourneyObjective journeyObjective)
     {
       Date now = SystemTime.getCurrentTime();
-      ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(journeyObjective.getContactPolicyID(), now);
-      
       Map<String,Object> documentMap = new HashMap<String,Object>();
-      documentMap.put("id", journeyObjective.getJourneyObjectiveID());
-      documentMap.put("display", journeyObjective.getGUIManagedObjectDisplay());
-      documentMap.put("contactPolicy", (contactPolicy == null)? "" : contactPolicy.getGUIManagedObjectDisplay());
-      documentMap.put("timestamp", DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime()));
+           
+      // We read all data from JSONRepresentation()
+      // because native data in object is sometimes not correct
       
       JSONObject jr = journeyObjective.getJSONRepresentation();
-      documentMap.put("jr", jr);
-      
-      documentMap.put("display from JR",jr.get("display"));
-      documentMap.put("contactPolicyID from JR",jr.get("contactPolicyID"));
-      documentMap.put("id from JR",jr.get("id"));
-      
-      JSONObject journeyObjectiveJSON = journeyObjectiveService.generateResponseJSON(journeyObjective, true, now);
-      documentMap.put("rj", journeyObjectiveJSON.toString());
-      
-      documentMap.put("getJourneyObjectiveID", journeyObjective.getJourneyObjectiveID());
-      documentMap.put("getJourneyObjectiveName", journeyObjective.getJourneyObjectiveName());
-      documentMap.put("getParentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
-      documentMap.put("getTargetingLimitMaxSimultaneous", journeyObjective.getTargetingLimitMaxSimultaneous());
-      documentMap.put("getTargetingLimitWaitingPeriodDuration", journeyObjective.getTargetingLimitWaitingPeriodDuration());
-      documentMap.put("getTargetingLimitWaitingPeriodTimeUnit", journeyObjective.getTargetingLimitWaitingPeriodTimeUnit());
-      documentMap.put("getTargetingLimitMaxOccurrence", journeyObjective.getTargetingLimitMaxOccurrence());
-      documentMap.put("getTargetingLimitSlidingWindowDuration", journeyObjective.getTargetingLimitSlidingWindowDuration());
-      documentMap.put("getTargetingLimitSlidingWindowTimeUnit", journeyObjective.getTargetingLimitSlidingWindowTimeUnit());
-      documentMap.put("getContactPolicyID", journeyObjective.getContactPolicyID());
-      documentMap.put("getCatalogCharacteristics", journeyObjective.getCatalogCharacteristics());
-      documentMap.put("getEffectiveTargetingLimitMaxSimultaneous", journeyObjective.getEffectiveTargetingLimitMaxSimultaneous());
-      documentMap.put("getEffectiveWaitingPeriodEndDate", journeyObjective.getEffectiveWaitingPeriodEndDate(now));
-      documentMap.put("getEffectiveTargetingLimitMaxOccurrence", journeyObjective.getEffectiveTargetingLimitMaxOccurrence());
-      documentMap.put("getEffectiveSlidingWindowStartDate", journeyObjective.getEffectiveSlidingWindowStartDate(now));
-
-      documentMap.put("getGUIManagedObjectID", journeyObjective.getGUIManagedObjectID());
-      documentMap.put("getGUIManagedObjectName", journeyObjective.getGUIManagedObjectName());
-      documentMap.put("getGUIManagedObjectDisplay", journeyObjective.getGUIManagedObjectDisplay());
-      documentMap.put("getGUIManagedObjectType", journeyObjective.getGUIManagedObjectType());
-      documentMap.put("getEpoch", journeyObjective.getEpoch());
-      documentMap.put("getEffectiveStartDate", journeyObjective.getEffectiveStartDate());
-      documentMap.put("getEffectiveEndDate", journeyObjective.getEffectiveEndDate());
-      documentMap.put("getUserID", journeyObjective.getUserID());
-      documentMap.put("getUserName", journeyObjective.getUserName());
-      documentMap.put("getCreatedDate", journeyObjective.getCreatedDate());
-      documentMap.put("getUpdatedDate", journeyObjective.getUpdatedDate());
+      documentMap.put("id",      jr.get("id"));
+      documentMap.put("display", jr.get("display"));
+      String contactPolicyID = (String) jr.get("contactPolicyID");
+      ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, now);
+      documentMap.put("contactPolicy", (contactPolicy == null) ? "" : contactPolicy.getGUIManagedObjectDisplay());
+      documentMap.put("timestamp",     DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime()));
       
       return documentMap;
     }
