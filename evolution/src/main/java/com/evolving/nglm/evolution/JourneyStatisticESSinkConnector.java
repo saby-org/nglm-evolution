@@ -172,7 +172,7 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       documentMap.put("statusControlGroup", journeyStatistic.getStatusControlGroup());
       documentMap.put("statusUniversalControlGroup", journeyStatistic.getStatusUniversalControlGroup());
       documentMap.put("journeyComplete", journeyStatistic.getJourneyComplete());
-      documentMap.put("exitDate", journeyStatistic.getExitDate());
+      documentMap.put("exitDate", journeyStatistic.getExitDate()==null?"null":journeyStatistic.getExitDate());
       
       documentMap.put("nodeID", journeyStatistic.getToNodeID());
       if(journeyStatistic.getSpecialExitStatus()!=null && !journeyStatistic.getSpecialExitStatus().equalsIgnoreCase("null") && !journeyStatistic.getSpecialExitStatus().isEmpty())

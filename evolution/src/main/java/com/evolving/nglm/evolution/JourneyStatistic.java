@@ -438,6 +438,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     struct.put("journeyRewardHistory", packRewardHistory(journeyStatistic.getJourneyRewardHistory()));
     struct.put("subscriberStratum", journeyStatistic.getSubscriberStratum());
     struct.put("specialExitStatus", journeyStatistic.getSpecialExitStatus());
+    if(journeyStatistic.getExitDate()!=null)
     struct.put("exitDate", journeyStatistic.getExitDate());
     return struct;
   }
