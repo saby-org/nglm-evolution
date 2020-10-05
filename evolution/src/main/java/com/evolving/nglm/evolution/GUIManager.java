@@ -5338,6 +5338,10 @@ public class GUIManager
       case Workflow:
         response.put("workflows", JSONUtilities.encodeArray(journeys));
         break;
+        
+      case LoyaltyWorkflow:
+        response.put("loyaltyWorkflows", JSONUtilities.encodeArray(journeys));
+        break;
 
       case BulkCampaign:
         response.put("bulkCampaigns", JSONUtilities.encodeArray(journeys));
@@ -5405,6 +5409,11 @@ public class GUIManager
         case Workflow:
           response.put("responseCode", (journey != null) ? "ok" : "workflowNotFound");
           if (journey != null) response.put("workflow", journeyJSON);
+          break;
+
+        case LoyaltyWorkflow:
+          response.put("responseCode", (journey != null) ? "ok" : "loyaltyWorkflowNotFound");
+          if (journey != null) response.put("loyaltyWorkflow", journeyJSON);
           break;
 
         case BulkCampaign:
