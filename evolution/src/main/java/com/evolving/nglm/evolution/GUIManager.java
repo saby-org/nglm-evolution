@@ -5673,12 +5673,16 @@ public class GUIManager
               response.put("responseCode", "workflowNotValid");
               break;
 
+            case LoyaltyWorkflow:
+              response.put("responseCode", "loyaltyWorkflowNotValid");
+              break;
+
             case BulkCampaign:
               response.put("responseCode", "bulkCampaignNotValid");
               break;
 
             default:
-              response.put("responseCode", "notValid");
+              response.put("responseCode", "NotValid");
               break;
           }
         response.put("responseMessage", e.getMessage());
