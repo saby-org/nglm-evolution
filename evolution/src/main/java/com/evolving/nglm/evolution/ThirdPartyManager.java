@@ -3045,7 +3045,7 @@ public class ThirdPartyManager
                         {
                           String productID = offerproduct.getProductID();
                           GUIManagedObject productObject = productService.getStoredProduct(productID);
-                          if (productObject instanceof Product)
+                          if (productObject != null && productObject instanceof Product)
                             {
                               Product product = (Product) productObject;
                               GUIManagedObject SupplierObject = supplierService
@@ -3075,7 +3075,7 @@ public class ThirdPartyManager
                         {
                           String voucherID = offerVoucher.getVoucherID();
                           GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherID);
-                          if (voucherObject instanceof Voucher)
+                          if (voucherObject != null && voucherObject instanceof Voucher)
                             {
                               Voucher voucher = (Voucher) voucherObject;
                               GUIManagedObject SupplierObject = supplierService
