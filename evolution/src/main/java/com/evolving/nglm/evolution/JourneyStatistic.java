@@ -69,6 +69,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     schemaBuilder.field("journeyRewardHistory", SchemaBuilder.array(RewardHistory.schema()).schema());
     schemaBuilder.field("subscriberStratum", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("specialExitStatus", Schema.STRING_SCHEMA);
+    schemaBuilder.field("exitDate", Timestamp.SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -115,6 +116,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   private List<RewardHistory> journeyRewardHistory;
   private Map<String, String> subscriberStratum;
   private String specialExitStatus;
+  private Date exitDate;
   /*****************************************
   *
   *  accessors
@@ -146,6 +148,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   public SubscriberJourneyStatus getSubscriberJourneyStatus() { return Journey.getSubscriberJourneyStatus(this); }
   public Map<String, String> getSubscriberStratum() { return subscriberStratum; }
   public String getSpecialExitStatus() {return specialExitStatus==null?"":specialExitStatus;}
+  public Date getExitDate() { return exitDate; }
   /*****************************************
   *
   *  constructor -- enter
@@ -154,6 +157,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
 
   public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyState journeyState, Map<String, String> subscriberStratum, SubscriberProfile subscriberProfile)
   {
+	  boolean thisJourneyComplete=false;
     this.journeyStatisticID = context.getUniqueKey();
     this.journeyInstanceID = journeyState.getJourneyInstanceID();
     this.journeyID = journeyState.getJourneyID();
@@ -163,7 +167,10 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.fromNodeID = null;
     this.toNodeID = journeyState.getJourneyNodeID();
     if(journeyState.isSpecialExit())
-    	this.specialExitStatus=journeyState.getSpecialExitReason().getExternalRepresentation();
+    {	this.specialExitStatus=journeyState.getSpecialExitReason().getExternalRepresentation();
+    thisJourneyComplete=true;
+    this.exitDate=journeyState.getJourneyExitDate();
+    }
     this.deliveryRequestID = null;
     this.sample = null;
     this.markNotified = false;
@@ -173,11 +180,12 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.statusTargetGroup = null;
     this.statusControlGroup = null;
     this.statusUniversalControlGroup = null;
-    this.journeyComplete = false;
+    this.journeyComplete = thisJourneyComplete;
     this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
     this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
     this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
     this.subscriberStratum = subscriberStratum;
+    
   }
 
   /*****************************************
@@ -219,6 +227,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
     this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
     this.subscriberStratum = subscriberStratum;
+    this.exitDate=journeyState.getJourneyExitDate()==null?null:journeyState.getJourneyExitDate();
   }
 
   /*****************************************
@@ -259,6 +268,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
     this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
     this.subscriberStratum = subscriberStratum;
+    this.exitDate=journeyState.getJourneyExitDate();
   }
 
   /*****************************************
@@ -267,7 +277,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
   *
   *****************************************/
 
-  private JourneyStatistic(SchemaAndValue schemaAndValue, String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, String sample, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup, boolean journeyComplete, List<NodeHistory> journeyNodeHistory, List<StatusHistory> journeyStatusHistory, List<RewardHistory> journeyRewardHistory, Map<String, String> subscriberStratum, String specialExitStatus)
+  private JourneyStatistic(SchemaAndValue schemaAndValue, String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, String sample, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, Boolean statusTargetGroup, Boolean statusControlGroup, Boolean statusUniversalControlGroup, boolean journeyComplete, List<NodeHistory> journeyNodeHistory, List<StatusHistory> journeyStatusHistory, List<RewardHistory> journeyRewardHistory, Map<String, String> subscriberStratum, String specialExitStatus,Date exitDate)
   {
     super(schemaAndValue);
     this.journeyStatisticID = journeyStatisticID;
@@ -293,6 +303,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.journeyRewardHistory = journeyRewardHistory;
     this.subscriberStratum = subscriberStratum;
     this.specialExitStatus=specialExitStatus;
+    this.exitDate=exitDate;
   }
   
   
@@ -324,7 +335,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     this.statusControlGroup = journeyStatistic.getStatusControlGroup();
     this.statusUniversalControlGroup = journeyStatistic.getStatusUniversalControlGroup();
     this.journeyComplete = journeyStatistic.getJourneyComplete();
-    
+    this.exitDate=journeyStatistic.getExitDate();
     this.journeyNodeHistory = new ArrayList<NodeHistory>();
     for(NodeHistory stat : journeyStatistic.getJourneyNodeHistory())
       {
@@ -427,6 +438,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     struct.put("journeyRewardHistory", packRewardHistory(journeyStatistic.getJourneyRewardHistory()));
     struct.put("subscriberStratum", journeyStatistic.getSubscriberStratum());
     struct.put("specialExitStatus", journeyStatistic.getSpecialExitStatus());
+    struct.put("exitDate", journeyStatistic.getExitDate());
     return struct;
   }
   
@@ -529,11 +541,12 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     List<StatusHistory> journeyStatusHistory =  unpackStatusHistory(schema.field("journeyStatusHistory").schema(), valueStruct.get("journeyStatusHistory"));
     Map<String, String> subscriberStratum = (Map<String,String>) valueStruct.get("subscriberStratum");
     String specialExitStatus=valueStruct.getString("specialExitStatus");
+    Date exitDate = (Date) valueStruct.get("exitDate");
     //
     //  return
     //
 
-    return new JourneyStatistic(schemaAndValue, journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, sample, markNotified, markConverted, statusNotified, statusConverted, statusTargetGroup, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyNodeHistory, journeyStatusHistory, journeyRewardHistory, subscriberStratum , specialExitStatus);
+    return new JourneyStatistic(schemaAndValue, journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, sample, markNotified, markConverted, statusNotified, statusConverted, statusTargetGroup, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyNodeHistory, journeyStatusHistory, journeyRewardHistory, subscriberStratum , specialExitStatus , exitDate);
   }
   
   /*****************************************
@@ -742,6 +755,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
         + (journeyStatusHistory != null ? "journeyStatusHistory=" + toString(journeyStatusHistory, maxLen) + ", " : "") 
         + (journeyRewardHistory != null ? "journeyRewardHistory=" + toString(journeyRewardHistory, maxLen) + ", " : "") 
         + (subscriberStratum != null ? "subscriberStratum=" + toString(subscriberStratum.entrySet(), maxLen) : "")
+        + (exitDate != null ? "exitDate=" + exitDate + ", " : "") 
         + "]";
   }
 

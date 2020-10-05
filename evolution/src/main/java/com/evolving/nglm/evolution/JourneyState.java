@@ -184,13 +184,16 @@ public class JourneyState implements Cleanable
     	{this.journeyNodeID = journey.getEndNodeID();
     	this.specialExit=true;
     	this.specialExitReason=specialcase;
+    	this.journeyExitDate=journeyEntryDate;
     	}
     else
-    this.journeyNodeID = journey.getStartNodeID();
+    {  this.journeyNodeID = journey.getStartNodeID();
+       this.journeyExitDate = null;
+    }
     this.journeyParameters = new ParameterMap(journeyParameters);
     this.journeyActionManagerContext = new ParameterMap();
     this.journeyEntryDate = journeyEntryDate;
-    this.journeyExitDate = null;
+    
     this.journeyCloseDate = null;
     this.journeyMetricsPrior = new HashMap<String,Long>();
     this.journeyMetricsDuring = new HashMap<String,Long>();
