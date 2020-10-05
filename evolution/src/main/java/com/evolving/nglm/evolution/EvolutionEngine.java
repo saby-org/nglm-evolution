@@ -3470,7 +3470,6 @@ public class EvolutionEngine
                   //
 
                   loyaltyProgramPointState.update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newTierName, now, deliveryRequestID, loyaltyProgramService);
-                  launchChangeTierWorkflows(subscriberState, subscriberProfile, loyaltyProgramPoints, currentTier, newTierName);
 
                   //
                   //  generate new event (tier changed)
@@ -3482,6 +3481,7 @@ public class EvolutionEngine
                   ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
                   subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
 
+                  launchChangeTierWorkflows(subscriberState, subscriberProfile, loyaltyProgramPoints, currentTier, newTierName);
                 }
             }
 
@@ -3495,12 +3495,10 @@ public class EvolutionEngine
     
     // Exit tier workflow
     Tier oldTier = loyaltyProgramPoints.getTier(oldTierName);
-    log.info("MK TIERS exit " + oldTierName + " " + oldTier);
     if (oldTier != null) triggerLoyaltyWorflow(subscriberState, subscriberProfile, oldTier.getWorkflowExit());
     
     // Enter tier workflow
     Tier newTier = loyaltyProgramPoints.getTier(newTierName);
-    log.info("MK TIERS enter " + newTierName + " " + newTier);
     if (newTier != null) triggerLoyaltyWorflow(subscriberState, subscriberProfile, newTier.getWorkflowEnter());
   }
 
@@ -3508,7 +3506,6 @@ public class EvolutionEngine
   public static boolean triggerLoyaltyWorflow(SubscriberState subscriberState, SubscriberProfile subscriberProfile, String loyaltyWorflowID)
   {
     boolean response = false;
-    log.info("  MK trigger " + loyaltyWorflowID);
     if (loyaltyWorflowID != null)
       {
         String uniqueKey = UUID.randomUUID().toString();
@@ -3692,6 +3689,7 @@ public class EvolutionEngine
                     infos.put(LoyaltyProgramPointsEventInfos.NEW_TIER.getExternalRepresentation(), newTierName);
                     ProfileLoyaltyProgramChangeEvent profileChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), infos);
                     subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileChangeEvent);
+                    
                     launchChangeTierWorkflows(subscriberState, subscriberProfile, loyaltyProgramPoints, null, newTierName);
                   }
                 else
@@ -3725,6 +3723,7 @@ public class EvolutionEngine
                         info.put(LoyaltyProgramPointsEventInfos.NEW_TIER.getExternalRepresentation(), newTierName);
                         ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
                         subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
+                        
                         launchChangeTierWorkflows(subscriberState, subscriberProfile, loyaltyProgramPoints, currentTier, newTierName);
                       }
                   }
@@ -3789,6 +3788,8 @@ public class EvolutionEngine
                 ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
                 subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
                 
+                launchChangeTierWorkflows(subscriberState, subscriberProfile, loyaltyProgramPoints, oldTier, null);
+
                 //
                 //  return
                 //
@@ -3957,7 +3958,6 @@ public class EvolutionEngine
                           updatePointBalance(context, null, rewardEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true);
                           
                           // TODO Previous call might have changed tier -> do we need to generate tier changed event + trigger workflow for tier change ?
-                          
                           triggerLoyaltyWorflow(subscriberState, subscriberProfile, subscriberCurrentTierDefinition.getWorkflowReward());
                           subscriberProfileUpdated = true;
                         }

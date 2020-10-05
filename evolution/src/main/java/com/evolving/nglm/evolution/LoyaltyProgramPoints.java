@@ -609,6 +609,13 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
           return LoyaltyProgramTierChange.NoChange;
         }
     }
+    
+    @Override
+    public String toString()
+    {
+      return "Tier [" + (tierName != null ? "tierName=" + tierName + ", " : "") + "statusPointLevel=" + statusPointLevel + ", " + (statusEventName != null ? "statusEventName=" + statusEventName + ", " : "") + "numberOfStatusPointsPerUnit=" + numberOfStatusPointsPerUnit + ", " + (rewardEventName != null ? "rewardEventName=" + rewardEventName + ", " : "") + "numberOfRewardPointsPerUnit=" + numberOfRewardPointsPerUnit + ", " + (workflowEnter != null ? "workflowEnter=" + workflowEnter + ", " : "")
+          + (workflowExit != null ? "workflowExit=" + workflowExit + ", " : "") + (workflowReward != null ? "workflowReward=" + workflowReward + ", " : "") + (workflowStatus != null ? "workflowStatus=" + workflowStatus + ", " : "") + (workflowDaily != null ? "workflowDaily=" + workflowDaily : "") + "]";
+    }
   }
 
 	@Override
