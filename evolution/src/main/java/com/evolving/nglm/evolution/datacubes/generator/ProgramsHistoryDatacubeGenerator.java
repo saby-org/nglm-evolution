@@ -302,7 +302,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
         //
         // Build row
         //
-        Map<String, Object> row = extractRow(filters, docCount, timestamp, period, metrics);
+        Map<String, Object> row = extractRow(filtersCopy, docCount, timestamp, period, metrics);
         result.add(row);
       }
     }
