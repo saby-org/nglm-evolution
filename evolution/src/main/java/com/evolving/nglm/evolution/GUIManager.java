@@ -210,6 +210,14 @@ public class GUIManager
     putWorkflow("putWorkflow"),
     removeWorkflow("removeWorkflow"),
     setStatusWorkflow("setStatusWorkflow"),
+    
+    getLoyaltyWorkflowList("getLoyaltyWorkflowList"),
+    getLoyaltyWorkflowSummaryList("getLoyaltyWorkflowSummaryList"),
+    getLoyaltyWorkflow("getLoyaltyWorkflow"),
+    putLoyaltyWorkflow("putLoyaltyWorkflow"),
+    removeLoyaltyWorkflow("removeLoyaltyWorkflow"),
+    getLoyaltyWorkflowToolbox("getLoyaltyWorkflowToolbox"),
+    
     getBulkCampaignList("getBulkCampaignList"),
     getBulkCampaignSummaryList("getBulkCampaignSummaryList"),
     getBulkCampaign("getBulkCampaign"),
@@ -1798,6 +1806,14 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putWorkflow", new APISimpleHandler(API.putWorkflow));
         restServer.createContext("/nglm-guimanager/removeWorkflow", new APISimpleHandler(API.removeWorkflow));
         restServer.createContext("/nglm-guimanager/setStatusWorkflow", new APISimpleHandler(API.setStatusWorkflow));
+        
+        restServer.createContext("/nglm-guimanager/getLoyaltyWorkflowList", new APISimpleHandler(API.getLoyaltyWorkflowList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyWorkflowSummaryList", new APISimpleHandler(API.getLoyaltyWorkflowSummaryList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyWorkflow", new APISimpleHandler(API.getLoyaltyWorkflow));
+        restServer.createContext("/nglm-guimanager/putLoyaltyWorkflow", new APISimpleHandler(API.putLoyaltyWorkflow));
+        restServer.createContext("/nglm-guimanager/removeLoyaltyWorkflow", new APISimpleHandler(API.removeLoyaltyWorkflow));
+        restServer.createContext("/nglm-guimanager/getLoyaltyWorkflowToolbox", new APISimpleHandler(API.getLoyaltyWorkflowToolbox));
+        
         restServer.createContext("/nglm-guimanager/getBulkCampaignList", new APISimpleHandler(API.getBulkCampaignList));
         restServer.createContext("/nglm-guimanager/getBulkCampaignSummaryList", new APISimpleHandler(API.getBulkCampaignSummaryList));
         restServer.createContext("/nglm-guimanager/getBulkCampaign", new APISimpleHandler(API.getBulkCampaign));
@@ -2691,6 +2707,30 @@ public class GUIManager
                   
                 case setStatusWorkflow:
                   jsonResponse = processSetStatusJourney(userID, jsonRoot, GUIManagedObjectType.Workflow);
+                  break;
+                  
+                case getLoyaltyWorkflowList:
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow, true, true, includeArchived);
+                  break;
+
+                case getLoyaltyWorkflowSummaryList:
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow, false, true, includeArchived);
+                  break;
+                  
+                case getLoyaltyWorkflow:
+                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow, true, includeArchived);
+                  break;
+
+                case putLoyaltyWorkflow:
+                  jsonResponse = processPutJourney(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow);
+                  break;
+
+                case removeLoyaltyWorkflow:
+                  jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow);
+                  break;
+                  
+                case getLoyaltyWorkflowToolbox:
+                  jsonResponse = processGetLoyaltyWorkflowToolbox(userID, jsonRoot);
                   break;
 
                 case getBulkCampaignList:
@@ -5487,7 +5527,7 @@ public class GUIManager
         ****************************************/
 
         Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, approval);
-        if(GUIManagedObjectType.Workflow.equals(objectType)) {
+        if(GUIManagedObjectType.Workflow.equals(objectType) || GUIManagedObjectType.LoyaltyWorkflow.equals(objectType)) {
           journey.setApproval(JourneyStatus.StartedApproved);
         }
         
@@ -6208,6 +6248,39 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  /*****************************************
+  *
+  *  processGetLoyaltyWorkflowToolbox
+  *
+  *****************************************/
+
+  private JSONObject processGetLoyaltyWorkflowToolbox(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve loyaltyWorkflowToolboxSections
+    *
+    *****************************************/
+
+    List<JSONObject> loyaltyWorkflowToolboxSections = new ArrayList<JSONObject>();
+    for (ToolboxSection loyaltyWorkflowToolboxSection : Deployment.getLoyaltyWorkflowToolbox().values())
+      {
+        JSONObject workflowToolboxSectionJSON = loyaltyWorkflowToolboxSection.getJSONRepresentation();
+        loyaltyWorkflowToolboxSections.add(workflowToolboxSectionJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("loyaltyWorkflowToolbox", JSONUtilities.encodeArray(loyaltyWorkflowToolboxSections));
+    return JSONUtilities.encodeObject(response);
+  }
+  
   /*****************************************
   *
   *  processGetBulkCampaignCapacity

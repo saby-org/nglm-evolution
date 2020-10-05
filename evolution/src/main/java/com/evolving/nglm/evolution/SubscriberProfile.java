@@ -456,7 +456,6 @@ public abstract class SubscriberProfile
                     Tier tier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getTierName());
                     Tier previousTier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getPreviousTierName());
                     loyalty.put("tierChangeType", Tier.changeFromTierToTier(previousTier, tier).getExternalRepresentation());
-                  
                     if(this.pointBalances != null && !this.pointBalances.isEmpty()) 
                       { 
                         String rewardPointsID = loyaltyProgramPoints.getRewardPointsID();
@@ -921,6 +920,7 @@ public abstract class SubscriberProfile
               //
               
               LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+
               String statusPointID = loyaltyProgramPoints.getStatusPointsID();
               PointBalance pointBalance = pointBalances.get(statusPointID);
               if(pointBalance != null)

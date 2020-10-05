@@ -165,7 +165,7 @@ public class JourneyService extends GUIService
   public Journey getActiveJourney(String journeyID, Date date) 
   { 
     Journey activeJourney = (Journey) getActiveGUIManagedObject(journeyID, date);
-    if (!Deployment.getAutoApproveGuiObjects() && activeJourney != null && GUIManagedObjectType.Workflow != activeJourney.getGUIManagedObjectType())
+    if (!Deployment.getAutoApproveGuiObjects() && activeJourney != null && GUIManagedObjectType.Workflow != activeJourney.getGUIManagedObjectType()&& GUIManagedObjectType.LoyaltyWorkflow != activeJourney.getGUIManagedObjectType())
       {
         return JourneyStatus.StartedApproved == activeJourney.getApproval() ? activeJourney : null; 
       }

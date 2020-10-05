@@ -93,7 +93,7 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("loyalty_program_points");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(LoyaltyProgram.commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(LoyaltyProgram.commonSchema().version(),2));
     for (Field field : LoyaltyProgram.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("rewardPointID", Schema.STRING_SCHEMA);
     schemaBuilder.field("statusPointID", Schema.STRING_SCHEMA);
@@ -150,9 +150,10 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
    *****************************************/
   public Tier getTier(String tierName)
   {
-    for(Tier tier: tiers)
+    if (tierName == null) return null; // optimization
+    for (Tier tier : tiers)
       {
-        if(tier.getTierName().equals(tierName))
+        if (tierName.equals(tier.getTierName()))
           {
             return tier;
           }
@@ -221,7 +222,7 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
 
     //
     //  unpack
@@ -303,7 +304,7 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
     this.rewardPointID = JSONUtilities.decodeString(jsonRoot, "rewardPointID", true);
     this.statusPointID = JSONUtilities.decodeString(jsonRoot, "statusPointID", true);
     this.tiers = decodeLoyaltyProgramTiers(JSONUtilities.decodeJSONArray(jsonRoot, "tiers", true));
-    
+
     /*****************************************
      *
      *  epoch
@@ -407,13 +408,18 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("tier");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
       schemaBuilder.field("tierName", Schema.STRING_SCHEMA);
       schemaBuilder.field("statusPointLevel", Schema.INT32_SCHEMA);
       schemaBuilder.field("statusEventName", Schema.STRING_SCHEMA);
       schemaBuilder.field("numberOfStatusPointsPerUnit", Schema.INT32_SCHEMA);
       schemaBuilder.field("rewardEventName", Schema.STRING_SCHEMA);
       schemaBuilder.field("numberOfRewardPointsPerUnit", Schema.INT32_SCHEMA);
+      schemaBuilder.field("workflowEnter", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("workflowExit", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("workflowReward", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("workflowStatus", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("workflowDaily", Schema.OPTIONAL_STRING_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -442,6 +448,11 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
     private int numberOfStatusPointsPerUnit = 0;
     private String rewardEventName = null;
     private int numberOfRewardPointsPerUnit = 0;
+    private String workflowEnter = null;
+    private String workflowExit = null;
+    private String workflowReward = null;
+    private String workflowStatus = null;
+    private String workflowDaily = null;
 
 
     /*****************************************
@@ -456,6 +467,11 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
     public int getNumberOfStatusPointsPerUnit() { return numberOfStatusPointsPerUnit; }
     public String getRewardEventName() { return rewardEventName; }
     public int getNumberOfRewardPointsPerUnit() { return numberOfRewardPointsPerUnit; }
+    public String getWorkflowEnter()    {      return workflowEnter;    }
+    public String getWorkflowExit()    {      return workflowExit;    }
+    public String getWorkflowReward()    {      return workflowReward;    }
+    public String getWorkflowStatus()    {      return workflowStatus;    }
+    public String getWorkflowDaily()    {      return workflowDaily;    }
 
 
     /*****************************************
@@ -464,7 +480,7 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
      *
      *****************************************/
 
-    public Tier(String tierName, int statusPointLevel, String statusEventName, int numberOfStatusPointsPerUnit, String rewardEventName, int numberOfRewardPointsPerUnit)
+    public Tier(String tierName, int statusPointLevel, String statusEventName, int numberOfStatusPointsPerUnit, String rewardEventName, int numberOfRewardPointsPerUnit, String workflowEnter, String workflowExit, String workflowReward, String workflowStatus, String workflowDaily)
     {
       this.tierName = tierName;
       this.statusPointLevel = statusPointLevel;
@@ -472,6 +488,11 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
       this.numberOfStatusPointsPerUnit = numberOfStatusPointsPerUnit;
       this.rewardEventName = rewardEventName;
       this.numberOfRewardPointsPerUnit = numberOfRewardPointsPerUnit;
+      this.workflowEnter = workflowEnter;
+      this.workflowExit = workflowExit;
+      this.workflowReward = workflowReward;
+      this.workflowStatus = workflowStatus;
+      this.workflowDaily = workflowDaily;
     }
 
     /*****************************************
@@ -490,6 +511,11 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
       struct.put("numberOfStatusPointsPerUnit", tier.getNumberOfStatusPointsPerUnit());
       struct.put("rewardEventName", tier.getRewardEventName());
       struct.put("numberOfRewardPointsPerUnit", tier.getNumberOfRewardPointsPerUnit());
+      struct.put("workflowEnter", tier.getWorkflowEnter());
+      struct.put("workflowExit", tier.getWorkflowExit());
+      struct.put("workflowReward", tier.getWorkflowReward());
+      struct.put("workflowStatus", tier.getWorkflowStatus());
+      struct.put("workflowDaily", tier.getWorkflowDaily());
       return struct;
     }
 
@@ -507,7 +533,7 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
 
       Schema schema = schemaAndValue.schema();
       Object value = schemaAndValue.value();
-      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
+      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
 
       //
       //  unpack
@@ -520,12 +546,17 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
       int numberOfStatusPointsPerUnit = valueStruct.getInt32("numberOfStatusPointsPerUnit");
       String rewardEventName = valueStruct.getString("rewardEventName");
       int numberOfRewardPointsPerUnit = valueStruct.getInt32("numberOfRewardPointsPerUnit");
+      String workflowEnter = (schemaVersion >=2) ? valueStruct.getString("workflowEnter") : null;
+      String workflowExit = (schemaVersion >=2) ? valueStruct.getString("workflowExit") : null;
+      String workflowReward = (schemaVersion >=2) ? valueStruct.getString("workflowReward") : null;
+      String workflowStatus = (schemaVersion >=2) ? valueStruct.getString("workflowStatus") : null;
+      String workflowDaily = (schemaVersion >=2) ? valueStruct.getString("workflowDaily") : null;
 
       //
       //  return
       //
 
-      return new Tier(tierName, statusPointLevel, statusEventName, numberOfStatusPointsPerUnit, rewardEventName, numberOfRewardPointsPerUnit);
+      return new Tier(tierName, statusPointLevel, statusEventName, numberOfStatusPointsPerUnit, rewardEventName, numberOfRewardPointsPerUnit, workflowEnter, workflowExit, workflowReward, workflowStatus, workflowDaily);
     }
 
     /*****************************************
@@ -547,7 +578,12 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
       this.statusEventName = JSONUtilities.decodeString(jsonRoot, "statusEventName", true);
       this.numberOfStatusPointsPerUnit = JSONUtilities.decodeInteger(jsonRoot, "numberOfStatusPointsPerUnit", true);
       this.rewardEventName = JSONUtilities.decodeString(jsonRoot, "rewardEventName", true);
-      this.numberOfRewardPointsPerUnit = JSONUtilities.decodeInteger(jsonRoot, "numberOfRewardPointsPerUnit", true); 
+      this.numberOfRewardPointsPerUnit = JSONUtilities.decodeInteger(jsonRoot, "numberOfRewardPointsPerUnit", true);
+      this.workflowEnter = JSONUtilities.decodeString(jsonRoot, "workflowEnter", false);
+      this.workflowExit = JSONUtilities.decodeString(jsonRoot, "workflowExit", false);
+      this.workflowReward = JSONUtilities.decodeString(jsonRoot, "workflowReward", false);
+      this.workflowStatus = JSONUtilities.decodeString(jsonRoot, "workflowStatus", false);
+      this.workflowDaily = JSONUtilities.decodeString(jsonRoot, "workflowDaily", false);
     }
 
     /*****************************************
