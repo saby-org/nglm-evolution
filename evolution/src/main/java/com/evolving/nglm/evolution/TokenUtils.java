@@ -539,7 +539,7 @@ public class TokenUtils
                   {
                     String productID = offerproduct.getProductID();
                     GUIManagedObject productObject = productService.getStoredProduct(productID);
-                    if (productObject instanceof Product)
+                    if (productObject != null && productObject instanceof Product)
                       {
                         Product product = (Product) productObject;
                         if (product.getSupplierID().equals(supplier.getSupplierID()))
@@ -560,7 +560,7 @@ public class TokenUtils
                   {
                     String voucherID = offerVoucher.getVoucherID();
                     GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherID);
-                    if (voucherObject instanceof Voucher)
+                    if (voucherObject != null && voucherObject instanceof Voucher)
                       {
                         Voucher voucher = (Voucher) voucherObject;
                         if (voucher.getSupplierID().equals(supplier.getSupplierID()))
