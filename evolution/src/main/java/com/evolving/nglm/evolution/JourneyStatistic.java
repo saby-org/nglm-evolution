@@ -69,7 +69,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     schemaBuilder.field("journeyRewardHistory", SchemaBuilder.array(RewardHistory.schema()).schema());
     schemaBuilder.field("subscriberStratum", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("specialExitStatus", Schema.STRING_SCHEMA);
-    schemaBuilder.field("exitDate", Schema.OPTIONAL_INT64_SCHEMA);
+    schemaBuilder.field("exitDate", Timestamp.builder().optional().schema());
     schema = schemaBuilder.build();
   };
 
