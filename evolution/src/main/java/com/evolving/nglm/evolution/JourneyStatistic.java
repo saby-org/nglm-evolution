@@ -69,7 +69,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     schemaBuilder.field("journeyRewardHistory", SchemaBuilder.array(RewardHistory.schema()).schema());
     schemaBuilder.field("subscriberStratum", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("specialExitStatus", Schema.STRING_SCHEMA);
-    schemaBuilder.field("exitDate", Timestamp.SCHEMA);
+    schemaBuilder.field("exitDate", Schema.OPTIONAL_INT64_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -438,8 +438,7 @@ public class JourneyStatistic extends SubscriberStreamOutput implements Subscrib
     struct.put("journeyRewardHistory", packRewardHistory(journeyStatistic.getJourneyRewardHistory()));
     struct.put("subscriberStratum", journeyStatistic.getSubscriberStratum());
     struct.put("specialExitStatus", journeyStatistic.getSpecialExitStatus());
-    if(journeyStatistic.getExitDate()!=null)
-    struct.put("exitDate", journeyStatistic.getExitDate());
+    struct.put("exitDate", journeyStatistic.getExitDate()==null?null:journeyStatistic.getExitDate());
     return struct;
   }
   
