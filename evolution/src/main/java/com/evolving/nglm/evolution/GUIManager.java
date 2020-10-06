@@ -15826,10 +15826,10 @@ public class GUIManager
         *
         *****************************************/
 
-        if (dialogTemplate.getParameterTags().size() > 0)
+        if (dialogTemplate.getAllTags().size() > 0)
           {
             List<JSONObject> parameterTags = new ArrayList<JSONObject>();
-            for (CriterionField parameterTag : dialogTemplate.getParameterTags())
+            for (CriterionField parameterTag : dialogTemplate.getAllTags())
               {
                 parameterTags.add(parameterTag.getJSONRepresentation());
               }
