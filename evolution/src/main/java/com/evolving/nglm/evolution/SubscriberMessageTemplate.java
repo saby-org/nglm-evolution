@@ -399,11 +399,11 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
       {
         for (CriterionField parameterTag : dialogMessage.getParameterTags())
           {
-            parameterTags.add(parameterTag);
-            /*
-             * if (! parameterTagIDs.contains(parameterTag.getID())) {
-             * parameterTags.add(parameterTag); parameterTagIDs.add(parameterTag.getID()); }
-             */
+            if (! parameterTagIDs.contains(parameterTag.getID()))
+              {
+                parameterTags.add(parameterTag);
+                parameterTagIDs.add(parameterTag.getID());
+              }
           }
       }
     return parameterTags;
@@ -423,11 +423,11 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
       {
         for (CriterionField parameterTag : dialogMessage.getAllTags())
           {
-            if (! allTagIDs.contains(parameterTag.getID()))
-              {
-                allTags.add(parameterTag);
-                allTagIDs.add(parameterTag.getID());
-              }
+            allTags.add(parameterTag);
+            /*
+             * if (! allTagIDs.contains(parameterTag.getID())) { allTags.add(parameterTag);
+             * allTagIDs.add(parameterTag.getID()); }
+             */
           }
       }
     return allTags;
