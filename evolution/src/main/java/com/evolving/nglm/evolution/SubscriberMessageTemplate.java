@@ -418,16 +418,11 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   public static List<CriterionField> resolveAllTags(Map<String,DialogMessage> dialogMessages)
   {
     List<CriterionField> allTags = new ArrayList<CriterionField>();
-    Set<String> allTagIDs = new HashSet<String>();
     for (DialogMessage dialogMessage : dialogMessages.values())
       {
         for (CriterionField parameterTag : dialogMessage.getAllTags())
           {
             allTags.add(parameterTag);
-            /*
-             * if (! allTagIDs.contains(parameterTag.getID())) { allTags.add(parameterTag);
-             * allTagIDs.add(parameterTag.getID()); }
-             */
           }
       }
     return allTags;
