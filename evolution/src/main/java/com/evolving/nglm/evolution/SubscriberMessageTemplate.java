@@ -399,11 +399,11 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
       {
         for (CriterionField parameterTag : dialogMessage.getParameterTags())
           {
-            if (! parameterTagIDs.contains(parameterTag.getID()))
-              {
-                parameterTags.add(parameterTag);
-                parameterTagIDs.add(parameterTag.getID());
-              }
+            parameterTags.add(parameterTag);
+            /*
+             * if (! parameterTagIDs.contains(parameterTag.getID())) {
+             * parameterTags.add(parameterTag); parameterTagIDs.add(parameterTag.getID()); }
+             */
           }
       }
     return parameterTags;
