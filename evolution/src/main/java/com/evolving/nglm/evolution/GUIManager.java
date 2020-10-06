@@ -14390,10 +14390,10 @@ public class GUIManager
         *
         *****************************************/
 
-        if (mailTemplate.getParameterTags().size() > 0)
+        if (mailTemplate.getAllTags().size() > 0)
           {
             List<JSONObject> parameterTags = new ArrayList<JSONObject>();
-            for (CriterionField parameterTag : mailTemplate.getParameterTags())
+            for (CriterionField parameterTag : mailTemplate.getAllTags())
               {
                 parameterTags.add(parameterTag.getJSONRepresentation());
               }
@@ -14860,10 +14860,10 @@ public class GUIManager
         *
         *****************************************/
 
-        if (smsTemplate.getParameterTags().size() > 0)
+        if (smsTemplate.getAllTags().size() > 0)
           {
             List<JSONObject> parameterTags = new ArrayList<JSONObject>();
-            for (CriterionField parameterTag : smsTemplate.getParameterTags())
+            for (CriterionField parameterTag : smsTemplate.getAllTags())
               {
                 parameterTags.add(parameterTag.getJSONRepresentation());
               }
@@ -15343,10 +15343,10 @@ public class GUIManager
         *
         *****************************************/
 
-        if (pushTemplate.getParameterTags().size() > 0)
+        if (pushTemplate.getAllTags().size() > 0)
           {
             List<JSONObject> parameterTags = new ArrayList<JSONObject>();
-            for (CriterionField parameterTag : pushTemplate.getParameterTags())
+            for (CriterionField parameterTag : pushTemplate.getAllTags())
               {
                 parameterTags.add(parameterTag.getJSONRepresentation());
               }
