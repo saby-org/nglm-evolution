@@ -12,23 +12,24 @@
       }
     ]
   },
+  "description": "Story EVPRO-524",
   "editable": true,
   "gnetId": null,
-  "graphTooltip": 1,
-  "id": null,
-  "iteration": 1588160588875,
+  "graphTooltip": 0,
+  "id": 5,
+  "iteration": 1601978591200,
   "links": [],
   "panels": [
     {
       "collapsed": false,
-      "datasource": "prometheus-core",
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 0
       },
-      "id": 21,
+      "id": 37,
       "panels": [],
       "title": "General Information and Figures",
       "type": "row"
@@ -83,8 +84,8 @@
       "pageSize": null,
       "showHeader": true,
       "sort": {
-        "col": 0,
-        "desc": true
+        "col": null,
+        "desc": false
       },
       "styles": [
         {
@@ -212,12 +213,13 @@
           "pattern": "targetCount",
           "thresholds": [],
           "type": "number",
-          "unit": "short"
+          "unit": "none"
         }
       ],
       "targets": [
         {
           "bucketAggs": [],
+          "datasource": "JourneysMapping",
           "metrics": [
             {
               "field": "select field",
@@ -248,6 +250,18 @@
       "type": "table"
     },
     {
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "id": 35,
+      "title": "Current Cumulative Figures",
+      "type": "row"
+    },
+    {
       "columns": [],
       "datasource": "AllJourneyTraffic",
       "fontSize": "100%",
@@ -255,15 +269,15 @@
         "h": 3,
         "w": 24,
         "x": 0,
-        "y": 4
+        "y": 5
       },
       "id": 29,
       "options": {},
       "pageSize": 1,
       "showHeader": true,
       "sort": {
-        "col": 7,
-        "desc": true
+        "col": null,
+        "desc": false
       },
       "styles": [
         {
@@ -282,7 +296,7 @@
             "rgba(50, 172, 45, 0.97)"
           ],
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 0,
+          "decimals": 2,
           "mappingType": 1,
           "pattern": "/.*Effect/",
           "thresholds": [],
@@ -298,7 +312,7 @@
             "rgba(50, 172, 45, 0.97)"
           ],
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 0,
+          "decimals": 2,
           "mappingType": 1,
           "pattern": "/.*Rate/",
           "thresholds": [],
@@ -338,13 +352,13 @@
             {
               "field": "count",
               "id": "1",
-              "inlineScript": null,
+              "inlineScript": "long total = 0;  if (doc['timestamp'].value.hour == 23) { total = total + doc['count'].value;} return total;",
               "meta": {},
-              "settings": {},
-						   
-																																																																																																																																																																																																																																								
-				 
-				
+              "settings": {
+                "script": {
+                  "inline": "long total = 0;  if (doc['timestamp'].value.hour == 23) { total = total + doc['count'].value;} return total;"
+                }
+              },
               "type": "sum"
             }
           ],
@@ -353,7 +367,7 @@
           "timeField": "timestamp"
         },
         {
-          "alias": "TARGET GROUP",
+          "alias": "TARGETED",
           "bucketAggs": [
             {
               "fake": true,
@@ -382,48 +396,15 @@
           "metrics": [
             {
               "field": "count",
-              "hide": true,
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
-            },
-            {
-              "field": "count",
-              "hide": true,
-              "id": "4",
-              "inlineScript": "int control = 0; if ((doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') && doc['count'].value > 0) {control = 1;} return control;",
-              "meta": {},
-              "settings": {
-                "script": {
-                  "inline": "int control = 0; if ((doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') && doc['count'].value > 0) {control = 1;} return control;"
-                }
-              },
-              "type": "max"
-            },
-            {
-              "field": "select field",
-              "id": "5",
-              "meta": {},
-              "pipelineVariables": [
-                {
-                  "name": "target",
-                  "pipelineAgg": "1"
-                },
-                {
-                  "name": "ctrl",
-                  "pipelineAgg": "4"
-                }
-              ],
-              "settings": {
-                "script": "params.target * params.ctrl"
-              },
-              "type": "bucket_script"
             }
           ],
           "query": "filter.journey:$journey",
@@ -431,7 +412,7 @@
           "timeField": "timestamp"
         },
         {
-          "alias": "CONTROL GROUP",
+          "alias": "CONTROL",
           "bucketAggs": [
             {
               "fake": true,
@@ -461,11 +442,11 @@
             {
               "field": "count",
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -506,11 +487,11 @@
             {
               "field": "count",
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -551,11 +532,11 @@
             {
               "field": "count",
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Converted') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Converted') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'Converted') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Converted') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -563,6 +544,51 @@
           ],
           "query": "filter.journey:$journey",
           "refId": "E",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "CONTROLCONVERTED",
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "timestamp",
+              "id": "3",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "desc",
+                "orderBy": "_term",
+                "size": "1"
+              },
+              "type": "terms"
+            },
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1s",
+                "min_doc_count": 1,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "hide": false,
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;"
+                }
+              },
+              "type": "sum"
+            }
+          ],
+          "query": "filter.journey:$journey",
+          "refId": "J",
           "timeField": "timestamp"
         },
         {
@@ -596,11 +622,11 @@
             {
               "field": "count",
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'UCG' || doc['filter.status'].value == 'UCGConverted') { total = doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'UCG' || doc['filter.status'].value == 'UCGConverted') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'UCG' || doc['filter.status'].value == 'UCGConverted') { total = doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'UCG' || doc['filter.status'].value == 'UCGConverted') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -608,6 +634,51 @@
           ],
           "query": "filter.journey:$journey",
           "refId": "F",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "BLOCKED",
+          "bucketAggs": [
+            {
+              "fake": true,
+              "field": "timestamp",
+              "id": "3",
+              "settings": {
+                "min_doc_count": 1,
+                "order": "desc",
+                "orderBy": "_term",
+                "size": "1"
+              },
+              "type": "terms"
+            },
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1s",
+                "min_doc_count": 1,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "hide": false,
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'notEligible' || doc['filter.status'].value == 'NotEligible') { total = doc['count'].value;} return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'notEligible' || doc['filter.status'].value == 'NotEligible') { total = doc['count'].value;} return total;"
+                }
+              },
+              "type": "sum"
+            }
+          ],
+          "query": "filter.journey:$journey",
+          "refId": "K",
           "timeField": "timestamp"
         },
         {
@@ -642,12 +713,12 @@
               "field": "count",
               "hide": true,
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "missing": null,
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -656,12 +727,12 @@
               "field": "count",
               "hide": true,
               "id": "3",
-              "inlineScript": "long total = 0;  if (doc['filter.status'].value == 'Entered' || doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') {total = doc['count'].value;}  return total;",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "missing": null,
                 "script": {
-                  "inline": "long total = 0;  if (doc['filter.status'].value == 'Entered' || doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') {total = doc['count'].value;}  return total;"
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -722,12 +793,12 @@
               "field": "count",
               "hide": true,
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value; } return total;",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value; } return total;",
               "meta": {},
               "settings": {
                 "missing": null,
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value; } return total;"
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value; } return total;"
                 }
               },
               "type": "sum"
@@ -736,12 +807,12 @@
               "field": "count",
               "hide": true,
               "id": "3",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value; } return total;",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value; } return total;",
               "meta": {},
               "settings": {
                 "missing": null,
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value; } return total;"
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value; } return total;"
                 }
               },
               "type": "sum"
@@ -802,12 +873,12 @@
               "field": "count",
               "hide": true,
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value; } return total;",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value; } return total;",
               "meta": {},
               "settings": {
                 "missing": null,
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value; } return total;"
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value; } return total;"
                 }
               },
               "type": "sum"
@@ -816,12 +887,12 @@
               "field": "count",
               "hide": true,
               "id": "3",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;}  return total;",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value; } return total;",
               "meta": {},
               "settings": {
                 "missing": null,
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;}  return total;"
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value; } return total;"
                 }
               },
               "type": "sum"
@@ -864,7 +935,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 8
       },
       "id": 14,
       "panels": [],
@@ -873,39 +944,38 @@
     },
     {
       "aliasColors": {},
-      "bars": true,
+      "bars": false,
       "dashLength": 10,
       "dashes": false,
       "datasource": "AllJourneyTraffic",
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 10,
-        "w": 8,
+        "h": 9,
+        "w": 7,
         "x": 0,
-        "y": 8
+        "y": 9
       },
       "hiddenSeries": false,
-      "id": 5,
+      "id": 41,
       "legend": {
         "avg": false,
         "current": false,
         "max": false,
         "min": false,
-        "show": false,
+        "show": true,
         "total": false,
         "values": false
       },
-      "lines": false,
+      "lines": true,
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
       "percentage": false,
-      "pluginVersion": "6.5.2",
       "pointradius": 2,
-      "points": false,
+      "points": true,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
@@ -913,27 +983,14 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "",
+          "alias": "ENTERED",
           "bucketAggs": [
             {
-              "fake": true,
-              "field": "filter.status",
-              "id": "6",
-              "settings": {
-                "min_doc_count": 1,
-                "order": "desc",
-                "orderBy": "_term",
-                "size": "10"
-              },
-              "type": "terms"
-            },
-            {
-              "fake": true,
               "field": "timestamp",
-              "id": "5",
+              "id": "2",
               "settings": {
-                "interval": "1s",
-                "min_doc_count": 1,
+                "interval": "1d",
+                "min_doc_count": 0,
                 "trimEdges": 0
               },
               "type": "date_histogram"
@@ -942,21 +999,274 @@
           "metrics": [
             {
               "field": "count",
-              "id": "4",
-              "inlineScript": null,
+              "hide": true,
+              "id": "1",
+              "inlineScript": "long total = 0;  if (doc['timestamp'].value.hour == 23) { total = total + doc['count'].value;} return total;",
               "meta": {},
-              "pipelineVariables": [
-                {
-                  "name": "",
-                  "pipelineAgg": "select metric"
+              "settings": {
+                "script": {
+                  "inline": "long total = 0;  if (doc['timestamp'].value.hour == 23) { total = total + doc['count'].value;} return total;"
                 }
-              ],
-              "settings": {},
+              },
               "type": "sum"
+            },
+            {
+              "field": "1",
+              "id": "3",
+              "meta": {},
+              "pipelineAgg": "1",
+              "settings": {},
+              "type": "derivative"
             }
           ],
           "query": "filter.journey:$journey",
           "refId": "A",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "TARGET",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "hide": true,
+              "id": "1",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "1",
+              "id": "3",
+              "meta": {},
+              "pipelineAgg": "1",
+              "settings": {},
+              "type": "derivative"
+            }
+          ],
+          "query": "filter.journey:$journey",
+          "refId": "B",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "CONTROL",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "hide": true,
+              "id": "1",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "1",
+              "id": "3",
+              "meta": {},
+              "pipelineAgg": "1",
+              "settings": {},
+              "type": "derivative"
+            }
+          ],
+          "query": "filter.journey:$journey",
+          "refId": "C",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "NOTIFIED",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "hide": true,
+              "id": "1",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "1",
+              "id": "3",
+              "meta": {},
+              "pipelineAgg": "1",
+              "settings": {},
+              "type": "derivative"
+            }
+          ],
+          "query": "filter.journey:$journey",
+          "refId": "D",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "CONVERTED",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "hide": true,
+              "id": "1",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Converted') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Converted') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "1",
+              "id": "3",
+              "meta": {},
+              "pipelineAgg": "1",
+              "settings": {},
+              "type": "derivative"
+            }
+          ],
+          "query": "filter.journey:$journey",
+          "refId": "E",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "CONTROLCONVERTED",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "hide": true,
+              "id": "1",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "1",
+              "id": "3",
+              "meta": {},
+              "pipelineAgg": "1",
+              "settings": {},
+              "type": "derivative"
+            }
+          ],
+          "query": "filter.journey:$journey",
+          "refId": "F",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "UCG",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "metrics": [
+            {
+              "field": "count",
+              "hide": true,
+              "id": "1",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'UCG' || doc['filter.status'].value == 'UCGConverted') { total = doc['count'].value;} return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'UCG' || doc['filter.status'].value == 'UCGConverted') { total = doc['count'].value;} return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "1",
+              "id": "3",
+              "meta": {},
+              "pipelineAgg": "1",
+              "settings": {},
+              "type": "derivative"
+            }
+          ],
+          "query": "filter.journey:$journey",
+          "refId": "G",
           "timeField": "timestamp"
         }
       ],
@@ -964,29 +1274,27 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Target Statuses",
+      "title": "Day-Wise Campaign Stats History",
       "tooltip": {
-        "shared": false,
+        "shared": true,
         "sort": 0,
         "value_type": "individual"
       },
       "type": "graph",
       "xaxis": {
         "buckets": null,
-        "mode": "series",
+        "mode": "time",
         "name": null,
         "show": true,
-        "values": [
-          "current"
-        ]
+        "values": []
       },
       "yaxes": [
         {
-          "format": "locale",
+          "format": "short",
           "label": null,
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
@@ -995,7 +1303,7 @@
           "logBase": 1,
           "max": null,
           "min": null,
-          "show": false
+          "show": true
         }
       ],
       "yaxis": {
@@ -1009,16 +1317,16 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "AllJourneyTraffic",
-      "fill": 2,
+      "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 10,
-        "w": 8,
-        "x": 8,
-        "y": 8
+        "h": 9,
+        "w": 9,
+        "x": 7,
+        "y": 9
       },
       "hiddenSeries": false,
-      "id": 9,
+      "id": 31,
       "legend": {
         "avg": false,
         "current": false,
@@ -1029,14 +1337,13 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
       "percentage": false,
-      "pluginVersion": "6.5.2",
-      "pointradius": 1,
+      "pointradius": 2,
       "points": true,
       "renderer": "flot",
       "seriesOverrides": [],
@@ -1045,46 +1352,41 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "",
+          "alias": "ENTERED",
           "bucketAggs": [
             {
-              "fake": true,
-              "field": "filter.status",
-              "id": "6",
-              "settings": {
-                "min_doc_count": 1,
-                "order": "desc",
-                "orderBy": "_term",
-                "size": "10"
-              },
-              "type": "terms"
-            },
-            {
-              "fake": true,
               "field": "timestamp",
-              "id": "5",
+              "id": "2",
               "settings": {
-                "interval": "1s",
-                "min_doc_count": 1,
+                "interval": "1d",
+                "min_doc_count": 0,
                 "trimEdges": 0
               },
               "type": "date_histogram"
             }
           ],
+          "datasource": "AllJourneyTraffic",
           "metrics": [
             {
               "field": "count",
-              "id": "4",
-              "inlineScript": null,
+              "id": "5",
+              "inlineScript": "long total = 0;  if (doc['timestamp'].value.hour == 23) { total = total + doc['count'].value;} return total;",
               "meta": {},
-              "pipelineVariables": [
-                {
-                  "name": "",
-                  "pipelineAgg": "select metric"
+              "settings": {
+                "script": {
+                  "inline": "long total = 0;  if (doc['timestamp'].value.hour == 23) { total = total + doc['count'].value;} return total;"
                 }
-              ],
-              "settings": {},
+              },
               "type": "sum"
+            },
+            {
+              "field": "5",
+              "hide": true,
+              "id": "6",
+              "meta": {},
+              "pipelineAgg": "5",
+              "settings": {},
+              "type": "derivative"
             }
           ],
           "query": "filter.journey:$journey",
@@ -1092,38 +1394,256 @@
           "timeField": "timestamp"
         },
         {
-          "alias": "Total",
+          "alias": "TARGET",
           "bucketAggs": [
             {
-              "fake": true,
               "field": "timestamp",
-              "id": "5",
+              "id": "2",
               "settings": {
-                "interval": "1s",
-                "min_doc_count": 1,
+                "interval": "1d",
+                "min_doc_count": 0,
                 "trimEdges": 0
               },
               "type": "date_histogram"
             }
           ],
+          "datasource": "AllJourneyTraffic",
           "metrics": [
             {
               "field": "count",
-              "id": "4",
-              "inlineScript": null,
+              "id": "5",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
               "meta": {},
-              "pipelineVariables": [
-                {
-                  "name": "",
-                  "pipelineAgg": "select metric"
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
                 }
-              ],
-              "settings": {},
+              },
               "type": "sum"
+            },
+            {
+              "field": "5",
+              "hide": true,
+              "id": "6",
+              "meta": {},
+              "pipelineAgg": "5",
+              "settings": {},
+              "type": "derivative"
             }
           ],
           "query": "filter.journey:$journey",
           "refId": "B",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "CONTROL",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "datasource": "AllJourneyTraffic",
+          "metrics": [
+            {
+              "field": "count",
+              "id": "5",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "5",
+              "hide": true,
+              "id": "6",
+              "meta": {},
+              "pipelineAgg": "5",
+              "settings": {},
+              "type": "derivative"
+            }
+          ],
+          "query": "filter.journey:$journey",
+          "refId": "C",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "NOTIFIED",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "datasource": "AllJourneyTraffic",
+          "metrics": [
+            {
+              "field": "count",
+              "id": "5",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "5",
+              "hide": true,
+              "id": "6",
+              "meta": {},
+              "pipelineAgg": "5",
+              "settings": {},
+              "type": "derivative"
+            }
+          ],
+          "query": "filter.journey:$journey",
+          "refId": "D",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "CONVERTED",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "datasource": "AllJourneyTraffic",
+          "metrics": [
+            {
+              "field": "count",
+              "hide": true,
+              "id": "5",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Converted') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Converted') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "5",
+              "id": "6",
+              "meta": {},
+              "pipelineAgg": "5",
+              "settings": {},
+              "type": "derivative"
+            }
+          ],
+          "query": "filter.journey:$journey",
+          "refId": "E",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "CONTROLCONVERTED",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "datasource": "AllJourneyTraffic",
+          "metrics": [
+            {
+              "field": "count",
+              "id": "5",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "5",
+              "hide": true,
+              "id": "6",
+              "meta": {},
+              "pipelineAgg": "5",
+              "settings": {},
+              "type": "derivative"
+            }
+          ],
+          "query": "filter.journey:$journey",
+          "refId": "F",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "UCG",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "datasource": "AllJourneyTraffic",
+          "metrics": [
+            {
+              "field": "count",
+              "id": "5",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'UCG' || doc['filter.status'].value == 'UCGConverted') { total = doc['count'].value;} return total;",
+              "meta": {},
+              "settings": {
+                "missing": null,
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'UCG' || doc['filter.status'].value == 'UCGConverted') { total = doc['count'].value;} return total;"
+                }
+              },
+              "type": "sum"
+            },
+            {
+              "field": "5",
+              "hide": true,
+              "id": "6",
+              "meta": {},
+              "pipelineAgg": "5",
+              "settings": {},
+              "type": "derivative"
+            }
+          ],
+          "query": "filter.journey:$journey",
+          "refId": "G",
           "timeField": "timestamp"
         }
       ],
@@ -1147,11 +1667,11 @@
       },
       "yaxes": [
         {
-          "format": "locale",
+          "format": "short",
           "label": null,
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
@@ -1160,7 +1680,7 @@
           "logBase": 1,
           "max": null,
           "min": null,
-          "show": false
+          "show": true
         }
       ],
       "yaxis": {
@@ -1177,10 +1697,10 @@
       "fill": 2,
       "fillGradient": 0,
       "gridPos": {
-        "h": 10,
+        "h": 9,
         "w": 8,
         "x": 16,
-        "y": 8
+        "y": 9
       },
       "hiddenSeries": false,
       "id": 15,
@@ -1228,7 +1748,7 @@
               "field": "count",
               "hide": true,
               "id": "4",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
+              "inlineScript": "float total = 0; if (doc['filter.status'].value == 'Notified') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;} return total;",
               "meta": {},
               "pipelineVariables": [
                 {
@@ -1238,7 +1758,7 @@
               ],
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
+                  "inline": "float total = 0; if (doc['filter.status'].value == 'Notified') { total = doc['count'].value;} if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -1247,11 +1767,11 @@
               "field": "count",
               "hide": true,
               "id": "5",
-              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Entered' || doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') {total = doc['count'].value;}  return total;",
+              "inlineScript": "long total = 0;  if (doc['filter.status'].value == 'Targeted') { total = doc['count'].value;} if (doc['filter.status'].value == 'Entered') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'Notified') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'Converted') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'ControlGroup') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'Control') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'ControlConverted') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'UCG') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'UCGConverted') { total = total + doc['count'].value;}  return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['filter.status'].value == 'Entered' || doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') {total = doc['count'].value;}  return total;"
+                  "inline": "long total = 0;  if (doc['filter.status'].value == 'Targeted') { total = doc['count'].value;} if (doc['filter.status'].value == 'Entered') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'Notified') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'Converted') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'ConvertedNotified') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'ControlGroup') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'Control') { total = total + doc['count'].value;} if (doc['filter.status'].value == 'ControlConverted') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'UCG') { total = total + doc['count'].value;}  if (doc['filter.status'].value == 'UCGConverted') { total = total + doc['count'].value;}  return total;"
                 }
               },
               "type": "sum"
@@ -1395,13 +1915,194 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
+      "datasource": "Messages",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "hiddenSeries": false,
+      "id": 39,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": true,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "alias": "SUCCESS",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "datasource": "Messages",
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.returnCode'].value == 'SUCCESS') { total = doc['count'].value; } return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.returnCode'].value == 'SUCCESS') { total = doc['count'].value; } return total;"
+                }
+              },
+              "type": "sum"
+            }
+          ],
+          "query": "filter.feature:$journey",
+          "refId": "A",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "ERROR",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "datasource": "Messages",
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.returnCode'].value == 'ERROR') { total = doc['count'].value; } return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.returnCode'].value == 'ERROR') { total = doc['count'].value; } return total;"
+                }
+              },
+              "type": "sum"
+            }
+          ],
+          "query": "filter.feature:$journey",
+          "refId": "B",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "EXPIRED",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "datasource": "Messages",
+          "metrics": [
+            {
+              "field": "count",
+              "id": "1",
+              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.returnCode'].value == 'EXPIRED') { total = doc['count'].value; } return total;",
+              "meta": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.returnCode'].value == 'EXPIRED') { total = doc['count'].value; } return total;"
+                }
+              },
+              "type": "sum"
+            }
+          ],
+          "query": "filter.feature:$journey",
+          "refId": "C",
+          "timeField": "timestamp"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Messages",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": "Channel",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
       "datasource": "AllJourneyRewards",
       "fill": 5,
       "fillGradient": 0,
       "gridPos": {
         "h": 10,
         "w": 12,
-        "x": 0,
+        "x": 12,
         "y": 18
       },
       "hiddenSeries": false,
@@ -1507,136 +2208,6 @@
         "align": false,
         "alignLevel": null
       }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "AllJourneyTraffic",
-      "fill": 2,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 10,
-        "w": 12,
-        "x": 12,
-        "y": 18
-      },
-      "hiddenSeries": false,
-      "id": 16,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 2,
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pluginVersion": "6.5.2",
-      "pointradius": 1,
-      "points": true,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "alias": "",
-          "bucketAggs": [
-            {
-              "fake": true,
-              "field": "filter.node",
-              "id": "6",
-              "settings": {
-                "min_doc_count": 1,
-                "order": "desc",
-                "orderBy": "_term",
-                "size": "10"
-              },
-              "type": "terms"
-            },
-            {
-              "fake": true,
-              "field": "timestamp",
-              "id": "5",
-              "settings": {
-                "interval": "1s",
-                "min_doc_count": 1,
-                "trimEdges": 0
-              },
-              "type": "date_histogram"
-            }
-          ],
-          "metrics": [
-            {
-              "field": "count",
-              "id": "4",
-              "inlineScript": null,
-              "meta": {},
-              "pipelineVariables": [
-                {
-                  "name": "",
-                  "pipelineAgg": "select metric"
-                }
-              ],
-              "settings": {},
-              "type": "sum"
-            }
-          ],
-          "query": "filter.journey:$journey",
-          "refId": "A",
-          "timeField": "timestamp"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Nodes Transitions",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "locale",
-          "label": "Quantity of Customers",
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
     }
   ],
   "refresh": false,
@@ -1647,7 +2218,10 @@
     "list": [
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "text": "Reward Points",
+          "value": "Reward Points"
+        },
         "datasource": "AllJourneyRewards",
         "definition": "{\"find\" : \"fields\", \"type\": \"integer\", \"query\": \"journeyID:$journeyID\"}",
         "hide": 2,
@@ -1669,7 +2243,11 @@
       },
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "tags": [],
+          "text": "Test campaign R005",
+          "value": "Test campaign R005"
+        },
         "datasource": "JourneysMapping",
         "definition": "{\"find\": \"terms\", \"field\": \"display\", \"size\": 10000}",
         "hide": 0,
@@ -1691,7 +2269,10 @@
       },
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "text": "12",
+          "value": "12"
+        },
         "datasource": "JourneysMapping",
         "definition": "{\"find\": \"terms\", \"field\": \"journeyID\", \"size\": 10000, \"query\": \"display:$journey\"}",
         "hide": 2,
@@ -1713,7 +2294,12 @@
       },
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "isNone": true,
+          "selected": false,
+          "text": "None",
+          "value": ""
+        },
         "datasource": "JourneyRewardsMapping",
         "definition": "{\"find\": \"terms\", \"field\": \"reward\", \"query\": \"journeyID:$journeyID\"}",
         "hide": 0,
@@ -1735,7 +2321,10 @@
       },
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "text": "Carrier Segment",
+          "value": "Carrier Segment"
+        },
         "datasource": "AllJourneyTraffic",
         "definition": "{\"find\" : \"fields\", \"type\": \"keyword\", \"field\": \"filter.display.$journey\"}",
         "hide": 2,
@@ -1757,7 +2346,12 @@
       },
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "isNone": true,
+          "selected": false,
+          "text": "None",
+          "value": ""
+        },
         "datasource": "AllJourneyTraffic",
         "definition": "{\"find\": \"terms\", \"field\": \"filter.subscriberStratum.$dimension1\"}",
         "hide": 2,
@@ -1779,7 +2373,10 @@
       },
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "text": "Carrier Segment",
+          "value": "Carrier Segment"
+        },
         "datasource": "AllJourneyTraffic",
         "definition": "{\"find\" : \"fields\", \"type\": \"keyword\"}",
         "hide": 2,
@@ -1801,7 +2398,12 @@
       },
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "isNone": true,
+          "selected": false,
+          "text": "None",
+          "value": ""
+        },
         "datasource": "AllJourneyTraffic",
         "definition": "{\"find\": \"terms\", \"field\": \"filter.subscriberStratum.$dimension2\"}",
         "hide": 2,
@@ -1823,7 +2425,10 @@
       },
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "text": "Carrier Segment",
+          "value": "Carrier Segment"
+        },
         "datasource": "AllJourneyTraffic",
         "definition": "{\"find\" : \"fields\", \"type\": \"keyword\"}",
         "hide": 2,
@@ -1845,7 +2450,12 @@
       },
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "isNone": true,
+          "selected": false,
+          "text": "None",
+          "value": ""
+        },
         "datasource": "AllJourneyTraffic",
         "definition": "{\"find\": \"terms\", \"field\": \"filter.subscriberStratum.$dimension3\"}",
         "hide": 2,
@@ -1868,7 +2478,7 @@
     ]
   },
   "time": {
-    "from": "now-5y",
+    "from": "now-15d",
     "to": "now"
   },
   "timepicker": {
@@ -1887,7 +2497,7 @@
     ]
   },
   "timezone": "",
-  "title": "Campaign Dashboard",
-  "uid": "F5f6_kf555",
-  "version": 4
+  "title": "Improvements Campaign Dashboard",
+  "uid": "X5gK27KMk",
+  "version": 117
 }
