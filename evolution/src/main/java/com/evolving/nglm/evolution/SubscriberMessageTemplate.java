@@ -421,7 +421,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     Set<String> allTagIDs = new HashSet<String>();
     for (DialogMessage dialogMessage : dialogMessages.values())
       {
-        for (CriterionField parameterTag : dialogMessage.getParameterTags())
+        for (CriterionField parameterTag : dialogMessage.getAllTags())
           {
             if (! allTagIDs.contains(parameterTag.getID()))
               {
