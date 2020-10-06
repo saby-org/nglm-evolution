@@ -423,8 +423,12 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
       {
         for (CriterionField parameterTag : dialogMessage.getAllTags())
           {
-            allTags.add(parameterTag);
-            allTagIDs.add(parameterTag.getID());
+            if (! allTagIDs.contains(parameterTag.getID()))
+              {
+                allTags.add(parameterTag);
+                allTagIDs.add(parameterTag.getID());
+
+              }
           }
       }
     return allTags;
