@@ -176,14 +176,10 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       
       documentMap.put("nodeID", journeyStatistic.getToNodeID());
       if(journeyStatistic.getSpecialExitStatus()!=null && !journeyStatistic.getSpecialExitStatus().equalsIgnoreCase("null") && !journeyStatistic.getSpecialExitStatus().isEmpty())
-      { System.out.println("======================================================"+journeyStatistic.getSpecialExitStatus() +" so status is "+ SubscriberJourneyStatus.fromExternalRepresentation(journeyStatistic.getSpecialExitStatus()).getDisplay());
-    	  documentMap.put("status", SubscriberJourneyStatus.fromExternalRepresentation(journeyStatistic.getSpecialExitStatus()).getDisplay());
-      }  else
-      { 
-    	  System.out.println("*********************************** status is"+journeyStatistic.getSubscriberJourneyStatus().getDisplay());
-    	  documentMap.put("status", journeyStatistic.getSubscriberJourneyStatus().getDisplay());
+      documentMap.put("status", SubscriberJourneyStatus.fromExternalRepresentation(journeyStatistic.getSpecialExitStatus()).getDisplay());
+       else
+      documentMap.put("status", journeyStatistic.getSubscriberJourneyStatus().getDisplay());
       
-      }
       documentMap.put("subscriberStratum", journeyStatistic.getSubscriberStratum());
       documentMap.put("rewards", rewards);
 

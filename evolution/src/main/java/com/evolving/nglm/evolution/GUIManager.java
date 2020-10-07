@@ -17417,11 +17417,9 @@ public class GUIManager
                         boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
                         SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
                         SubscriberJourneyStatus profilejourneyStatus= baseSubscriberProfile.getSubscriberJourneys().get(storeCampaign.getJourneyID()+"");
-                        System.out.println("status========"+profilejourneyStatus);
                         if(profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible,SubscriberJourneyStatus.UniversalControlGroup,SubscriberJourneyStatus.Excluded,SubscriberJourneyStatus.ObjectiveLimitReached))
-                        {	System.out.println("inside subscriber get status"+profilejourneyStatus);
                         	customerStatusInJourney=profilejourneyStatus;	
-                        }
+                        
                         
                         if (customerStatus != null)
                           {

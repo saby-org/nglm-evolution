@@ -4258,7 +4258,7 @@ public class EvolutionEngine
     *  result
     *
     *****************************************/
-System.out.println("started update journey");
+
     SubscriberState subscriberState = context.getSubscriberState();
     boolean subscriberStateUpdated = false;
 
@@ -4393,7 +4393,6 @@ System.out.println("started update journey");
     SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
     boolean inclusionList = (activeJourneys.size() > 0) ? subscriberState.getSubscriberProfile().getInInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now) : false;
     boolean exclusionList = (activeJourneys.size() > 0) ? subscriberState.getSubscriberProfile().getInExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now) : false;
-   System.out.println("susbscriber"+subscriberState.getSubscriberProfile().getMSISDN()+" ==== is excluded"+ exclusionList);
     context.getSubscriberTraceDetails().addAll(inclusionExclusionEvaluationRequest.getTraceDetails());
     
     /*****************************************
@@ -4554,7 +4553,6 @@ System.out.println("started update journey");
                     switch (journey.getTargetingType())
                       {
                         case Target:
-                        	System.out.println("journey is "+journey.getAppendExclusionLists()+" ==== is excluded"+ exclusionList);
                          if (!journey.getAppendExclusionLists() && exclusionList)
                             {
                               enterJourney = true;
@@ -4581,7 +4579,6 @@ System.out.println("started update journey");
                     context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
                 
                     List<List<EvaluationCriterion>> targetsCriteria = journey.getAllTargetsCriteria(targetService, now);
-                   System.out.println("targets criteria size:"+targetsCriteria.size());
                     boolean inAnyTarget = targetsCriteria.size() == 0 ? true : false; // if no target is defined into the journey, then this boolean is true otherwise, false by default 
                     List<EvaluationCriterion> targets = new ArrayList<>();
 
@@ -4598,19 +4595,20 @@ System.out.println("started update journey");
                         }                    
                       }
                     boolean targeting = subscriberToBeProvisionned && inAnyTarget;
-                    System.out.println("subscriber eligibility"+targeting);
                     switch (journey.getTargetingType())
                       {
                         case Target:
                           if (!(journey.getAppendInclusionLists() && inclusionList) && ! targeting)
                             {
-                        	  System.out.println("subscriberToBeProvisionned:"+ subscriberToBeProvisionned);
-                        	  System.out.println("inAnyTarget:"+ inAnyTarget);
-                              enterJourney = true;
-                              currentStatus=SubscriberJourneyStatus.NotEligible;
+                        	  enterJourney = false;
                               context.subscriberTrace("NotEligible: targeting criteria / inclusion list {0}", journey.getJourneyID());
-                              System.out.println("NotEligible: targeting criteria "+journey.getJourneyID());
-                            }
+                                               }
+                          if(!enterJourney && inAnyTarget)
+                          {
+                        	  //EVPRO-530: allow targetted customers who are not eligible
+                        	  enterJourney = true;
+                              currentStatus=SubscriberJourneyStatus.NotEligible;
+                             }
                           break;
 
                         case Event:
@@ -4658,9 +4656,7 @@ System.out.println("started update journey");
                 *  subscriberTrace
                 *
                 *****************************************/
-            	System.out.println("Entered journey");
-                
-                context.subscriberTrace("Eligible: {0}", journey.getJourneyID());
+            	context.subscriberTrace("Eligible: {0}", journey.getJourneyID());
 
                 /*****************************************
                 *
@@ -4713,7 +4709,6 @@ System.out.println("started update journey");
 											subscriberState.getSubscriberProfile()
 													.getSegmentsMap(subscriberGroupEpochReader),
 											subscriberState.getSubscriberProfile())));
-					System.out.println("updating subscriber profile"+journey.getJourneyID()+" and special exit"+journeyState.isSpecialExit());
 					subscriberState.getSubscriberProfile().getSubscriberJourneys().put(journey.getJourneyID(),
 					Journey.getSubscriberJourneyStatus(journeyState));
 					subscriberStateUpdated = true;
@@ -4781,20 +4776,16 @@ System.out.println("started update journey");
                     if (! journeyRequest.getEligible() || ! journeyRequest.getWaitForCompletion())
                       {
                         JourneyRequest journeyResponse = journeyRequest.copy();
-                        System.out.println("is enter journey "+enterJourney);
                         
                         if(enterJourney)
                           {
-                            System.out.println("inside enter journey");
-                            
                             journeyResponse.setJourneyStatus(SubscriberJourneyStatus.Entered);
                             journeyResponse.setDeliveryStatus(DeliveryStatus.Delivered);
                             journeyResponse.setDeliveryDate(now);
                           }
                         else
                           {
-                        	 System.out.println("inside in eligible");
-                            journeyResponse.setJourneyStatus(SubscriberJourneyStatus.NotEligible);
+                        	journeyResponse.setJourneyStatus(SubscriberJourneyStatus.NotEligible);
                             journeyResponse.setDeliveryStatus(DeliveryStatus.Failed);
                           }
                         context.getSubscriberState().getJourneyResponses().add(journeyResponse);
@@ -4834,7 +4825,6 @@ System.out.println("started update journey");
         *****************************************/
         if(journeyState.isSpecialExit())
         {
-        	System.out.println("special case encountered");
         	inactiveJourneyStates.add(journeyState);
             continue;
         	
@@ -5418,7 +5408,6 @@ System.out.println("started update journey");
             //
             //  status
             //
-            System.out.println("inactive journey fetching status==========");    
             journeyResponse.setJourneyStatus(Journey.getSubscriberJourneyStatus(journeyState));
             journeyResponse.setDeliveryStatus(DeliveryStatus.Delivered);
             journeyResponse.setDeliveryDate(SystemTime.getCurrentTime());
