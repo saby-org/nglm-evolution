@@ -262,11 +262,16 @@ public abstract class GUIManagedObject
   //  package protected
   //
 
-  boolean getReadOnly() { return readOnly; }
-  boolean getInternalOnly() { return internalOnly; }
-  boolean getActive() { return active; }
-  boolean getDeleted() { return deleted; }
-  String getGroupID() { return groupID; }
+  /**
+   * @rl 2020-10-07: Those fields were package protected in order to be hidden from nglm-{project} 
+   * and more generally outside nglm-evolution. We cannot retrieve the reason behind this mechanism.
+   * We need them for mapping, see EVPRO-594. We put them back to public for the moment. 
+   */
+  public boolean getReadOnly() { return readOnly; }
+  public boolean getInternalOnly() { return internalOnly; }
+  public boolean getActive() { return active; }
+  public boolean getDeleted() { return deleted; }
+  public String getGroupID() { return groupID; }
 
   //
   //  private
