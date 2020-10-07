@@ -96,6 +96,7 @@ import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
+import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
@@ -4508,6 +4509,11 @@ System.out.println("started update journey");
                       {
                         if (permittedJourneys.get(journeyObjective) < 1)
                           {
+                        	if(journey.getTargetingType().equals(TargetingType.Target)) //EVPRO-530 Only for targetted customers
+                        	{enterJourney = true;
+                        	currentStatus=SubscriberJourneyStatus.ObjectiveLimitReached;
+                        	   }
+                        	else
                             enterJourney = false;
                             context.subscriberTrace("NotEligible: journey {0}, objective {1}", journey.getJourneyID(), journeyObjective.getJourneyObjectiveID());
                             break;
@@ -4528,7 +4534,8 @@ System.out.println("started update journey");
                         case Target:
                           if (!journey.getAppendUCG() && subscriberState.getSubscriberProfile().getUniversalControlGroup())
                             {
-                              enterJourney = false;
+                              enterJourney = true;
+                              currentStatus=SubscriberJourneyStatus.UniversalControlGroup;
                               context.subscriberTrace("NotEligible: user is UCG {0}", journey.getJourneyID());
                             }
                           break;
@@ -4548,7 +4555,8 @@ System.out.println("started update journey");
                         case Target:
                           if (!journey.getAppendExclusionLists() && exclusionList)
                             {
-                              enterJourney = false;
+                              enterJourney = true;
+                              currentStatus=SubscriberJourneyStatus.Excluded;
                               context.subscriberTrace("NotEligible: user is in exclusion list {0}", journey.getJourneyID());
                             }
                           break;
@@ -4594,8 +4602,12 @@ System.out.println("started update journey");
                         case Target:
                           if (!(journey.getAppendInclusionLists() && inclusionList) && ! targeting)
                             {
-                              enterJourney = false;
+                        	  System.out.println("subscriberToBeProvisionned:"+ subscriberToBeProvisionned);
+                        	  System.out.println("inAnyTarget:"+ inAnyTarget);
+                              enterJourney = true;
+                              currentStatus=SubscriberJourneyStatus.NotEligible;
                               context.subscriberTrace("NotEligible: targeting criteria / inclusion list {0}", journey.getJourneyID());
+                              System.out.println("NotEligible: targeting criteria "+journey.getJourneyID());
                             }
                           break;
 
@@ -4603,12 +4615,9 @@ System.out.println("started update journey");
                         case Manual:
                           if (! targeting)
                             {
-                        	  System.out.println("subscriberToBeProvisionned:"+ subscriberToBeProvisionned);
-                        	  System.out.println("inAnyTarget:"+ inAnyTarget);
-                              enterJourney = true;
-                              currentStatus=SubscriberJourneyStatus.NotEligible;
+                        	  enterJourney = false;
                               context.subscriberTrace("NotEligible: targeting criteria {0}", journey.getJourneyID());
-                              System.out.println("NotEligible: targeting criteria "+journey.getJourneyID());
+                        
                             }
                           break;
                       }
@@ -4702,15 +4711,9 @@ System.out.println("started update journey");
 											subscriberState.getSubscriberProfile()
 													.getSegmentsMap(subscriberGroupEpochReader),
 											subscriberState.getSubscriberProfile())));
-					if (currentStatus != null && currentStatus.in(SubscriberJourneyStatus.NotEligible)) {
-						System.out.println("inside current status"+currentStatus);
-						subscriberState.getSubscriberProfile().getSubscriberJourneys().put(journey.getJourneyID(),currentStatus);
-					}else {
-						System.out.println("updating subscriber profile"+journey.getJourneyID()+" and special exit"+journeyState.isSpecialExit());
-						subscriberState.getSubscriberProfile().getSubscriberJourneys().put(journey.getJourneyID(),
-								Journey.getSubscriberJourneyStatus(journeyState));
-					}
-
+					System.out.println("updating subscriber profile"+journey.getJourneyID()+" and special exit"+journeyState.isSpecialExit());
+					subscriberState.getSubscriberProfile().getSubscriberJourneys().put(journey.getJourneyID(),
+					Journey.getSubscriberJourneyStatus(journeyState));
 					subscriberStateUpdated = true;
 
                 /*****************************************

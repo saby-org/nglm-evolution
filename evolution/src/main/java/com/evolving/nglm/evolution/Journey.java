@@ -111,6 +111,8 @@ public class Journey extends GUIManagedObject implements StockableItem
   public enum SubscriberJourneyStatus
   {
     NotEligible("notEligible", "NotEligible"),
+    Excluded("excluded", "Excluded"),
+    ObjectiveLimitReached("objective_limitReached", "ObjectiveLimitReached"),
     Entered("entered", "Entered"),
     Targeted("targeted", "Targeted"),
     Notified("notified", "Notified"),
