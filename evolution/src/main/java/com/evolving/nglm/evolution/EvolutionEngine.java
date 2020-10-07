@@ -4393,6 +4393,7 @@ System.out.println("started update journey");
     SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
     boolean inclusionList = (activeJourneys.size() > 0) ? subscriberState.getSubscriberProfile().getInInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now) : false;
     boolean exclusionList = (activeJourneys.size() > 0) ? subscriberState.getSubscriberProfile().getInExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now) : false;
+   System.out.println("susbscriber"+subscriberState.getSubscriberProfile().getMSISDN()+" ==== is excluded"+ exclusionList);
     context.getSubscriberTraceDetails().addAll(inclusionExclusionEvaluationRequest.getTraceDetails());
     
     /*****************************************
@@ -4553,7 +4554,8 @@ System.out.println("started update journey");
                     switch (journey.getTargetingType())
                       {
                         case Target:
-                          if (!journey.getAppendExclusionLists() && exclusionList)
+                        	System.out.println("journey is "+journey.getAppendExclusionLists()+" ==== is excluded"+ exclusionList);
+                         if (!journey.getAppendExclusionLists() && exclusionList)
                             {
                               enterJourney = true;
                               currentStatus=SubscriberJourneyStatus.Excluded;
