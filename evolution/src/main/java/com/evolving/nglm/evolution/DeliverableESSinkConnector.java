@@ -63,7 +63,7 @@ public class DeliverableESSinkConnector extends SimpleESSinkConnector
     {
       Map<String,Object> documentMap = new HashMap<String,Object>();
       documentMap.put("deliverableID", deliverable.getDeliverableID());
-      documentMap.put("deliverableName", deliverable.getDeliverableName());
+      documentMap.put("deliverableName", deliverable.getDeliverableDisplay());
       documentMap.put("deliverableActive", deliverable.getActive());
       documentMap.put("deliverableProviderID", deliverable.getFulfillmentProviderID());
       
