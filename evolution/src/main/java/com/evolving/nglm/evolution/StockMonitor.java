@@ -66,8 +66,8 @@ public class StockMonitor implements Runnable
   //
 
   private Set<GUIService> stockItemServices;
-  private Set<StockableItem> stockableItems = new HashSet<StockableItem>();
-  private Set<StockableItem> updatedStockableItems = new HashSet<StockableItem>();
+  private Map<String,StockableItem> stockableItems = new HashMap<>();
+  private Map<String,StockableItem> updatedStockableItems = new HashMap<>();
   
   //
   //  local stock
@@ -203,7 +203,7 @@ public class StockMonitor implements Runnable
         //  update allocations/used
         //
 
-        if (! stockableItems.contains(stockableItem))
+        if (! stockableItems.keySet().contains(stockableItem.getStockableItemID()))
           {
             localAllocations.put(stockableItem.getStockableItemID(), new LocalAllocation());
             localUncommitted.put(stockableItem.getStockableItemID(), new LocalUncommitted());
@@ -213,10 +213,10 @@ public class StockMonitor implements Runnable
         //  update stockableItems
         //
 
-        stockableItems.remove(stockableItem);
-        stockableItems.add(stockableItem);
-        updatedStockableItems.remove(stockableItem);
-        updatedStockableItems.add(stockableItem);
+        stockableItems.remove(stockableItem.getStockableItemID());
+        stockableItems.put(stockableItem.getStockableItemID(),stockableItem);
+        updatedStockableItems.remove(stockableItem.getStockableItemID());
+        updatedStockableItems.put(stockableItem.getStockableItemID(),stockableItem);
 
         //
         //  notify
@@ -353,7 +353,7 @@ public class StockMonitor implements Runnable
     *
     *****************************************/
 
-    Set<StockableItem> stockableItemsToProcess = new HashSet<StockableItem>();
+    List<StockableItem> stockableItemsToProcess = new ArrayList<>();
 
     /*****************************************
     *
@@ -377,7 +377,7 @@ public class StockMonitor implements Runnable
             //  updatedStockableItems
             //
 
-            stockableItemsToProcess.addAll(updatedStockableItems);
+            stockableItemsToProcess.addAll(updatedStockableItems.values());
             updatedStockableItems.clear();
 
             //
@@ -385,9 +385,11 @@ public class StockMonitor implements Runnable
             //
 
             Date now = SystemTime.getCurrentTime();
+            boolean periodicCheck = false;
             if (now.compareTo(nextProcessingTime) >= 0)
               {
-                stockableItemsToProcess.addAll(stockableItems);
+                stockableItemsToProcess.addAll(stockableItems.values());
+                periodicCheck = true;
                 while (now.compareTo(nextProcessingTime) >= 0)
                   {
                     nextProcessingTime = RLMDateUtils.addSeconds(nextProcessingTime, 30);
@@ -398,9 +400,9 @@ public class StockMonitor implements Runnable
             //  stockMonitorKeysChanged
             //
 
-            if (stockMonitorKeysChanged)
+            if (!periodicCheck && stockMonitorKeysChanged)
               {
-                stockableItemsToProcess.addAll(stockableItems);
+                stockableItemsToProcess.addAll(stockableItems.values());
                 stockMonitorKeysChanged = false;
               }
           }
@@ -448,7 +450,7 @@ public class StockMonitor implements Runnable
     stockableItemsToProcess.clear();
     synchronized (this)
       {
-        stockableItemsToProcess.addAll(stockableItems);
+        stockableItemsToProcess.addAll(stockableItems.values());
       }
 
     //
