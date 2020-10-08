@@ -74,6 +74,8 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.sun.net.httpserver.HttpExchange;
 
 public class GUIManagerGeneral extends GUIManager
@@ -99,7 +101,7 @@ public class GUIManagerGeneral extends GUIManager
    * 
    ***************************/
   
-  public GUIManagerGeneral(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, RestHighLevelClient elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
+  public GUIManagerGeneral(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, RestHighLevelClient elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
   {
     super.callingChannelService = callingChannelService;
     super.catalogCharacteristicService = catalogCharacteristicService;
@@ -116,6 +118,7 @@ public class GUIManagerGeneral extends GUIManager
     super.offerService = offerService;
     super.paymentMeanService = paymentMeanService;
     super.pointService = pointService;
+    super.complexObjectTypeService = complexObjectTypeService;
     super.presentationStrategyService = presentationStrategyService;
     super.productService = productService;
     super.productTypeService = productTypeService;
@@ -1512,6 +1515,443 @@ public class GUIManagerGeneral extends GUIManager
     response.put("statusSetIds", statusSetIDs);
     return JSONUtilities.encodeObject(response);
   }
+  
+  
+  /*****************************************
+  *
+  *  processGetComplexObjectTypeList
+  *
+  *****************************************/
+
+  JSONObject processGetComplexObjectTypeList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert ComplexObjectTypes
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> complexObjectTypes = new ArrayList<JSONObject>();
+    Collection <GUIManagedObject> complexObjectTypeObjects = new ArrayList<GUIManagedObject>();
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray complexObjectTypeIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < complexObjectTypeIDs.size(); i++)
+          {
+            String complexObjectTypeID = complexObjectTypeIDs.get(i).toString();
+            GUIManagedObject complexObjectType = complexObjectTypeService.getStoredComplexObjectType(complexObjectTypeID, includeArchived);
+            if (complexObjectType != null)
+              {
+                complexObjectTypeObjects.add(complexObjectType);
+              }
+          }                
+      }          
+    else
+      {
+        complexObjectTypeObjects = complexObjectTypeService.getStoredComplexObjectTypes(includeArchived);
+      }
+          
+    for (GUIManagedObject complexObjectType : complexObjectTypeObjects)
+      {
+        complexObjectTypes.add(complexObjectTypeService.generateResponseJSON(complexObjectType, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("complexObjectTypes", JSONUtilities.encodeArray(complexObjectTypes));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetComplexObjectType
+  *
+  *****************************************/
+
+  JSONObject processGetComplexObjectType(String userID, JSONObject jsonRoot, boolean includeArchived)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String complexObjectTypeID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate complexObjectType
+    *
+    *****************************************/
+
+    GUIManagedObject complexObjectType = complexObjectTypeService.getStoredComplexObjectType(complexObjectTypeID, includeArchived);
+    JSONObject complexObjectTypeJSON = complexObjectTypeService.generateResponseJSON(complexObjectType, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (complexObjectType != null) ? "ok" : "complexObjectTypeNotFound");
+    if (complexObjectType != null) response.put("complexObjectType", complexObjectTypeJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutComplexObjectType
+  *
+  *****************************************/
+
+  JSONObject processPutComplexObjectType(String userID, JSONObject jsonRoot)
+  {
+    
+    //{ "id" : "45", "name" : "ComplexTypeA", "display" : "ComplexTypeA", "active" : true, "availableNames" : ["name1", "name2"], "fields" : { "field1" :  "string", "field2" : "integer"} , "apiVersion" : 1 }
+
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
+
+    /*****************************************
+    *
+    *  complexObjectTypeID
+    *
+    *****************************************/
+
+    String complexObjectTypeID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (complexObjectTypeID == null)
+      {
+        String idString = complexObjectTypeService.generateComplexObjectTypeID();
+        jsonRoot.put("id", complexObjectTypeID);
+      }
+
+    /*****************************************
+    *
+    *  existing complexObjectType
+    *
+    *****************************************/
+
+    GUIManagedObject existingComplexObjectType = complexObjectTypeService.getStoredComplexObjectType(complexObjectTypeID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingComplexObjectType != null && existingComplexObjectType.getReadOnly())
+      {
+        response.put("id", existingComplexObjectType.getGUIManagedObjectID());
+        response.put("accepted", existingComplexObjectType.getAccepted());
+        response.put("valid", existingComplexObjectType.getAccepted());
+        response.put("processing", complexObjectTypeService.isActiveComplexObjectType(existingComplexObjectType, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process complexObjectType
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate ComplexObjectType
+        *
+        ****************************************/
+
+        ComplexObjectType complexObjectType = new ComplexObjectType(jsonRoot, epoch, existingComplexObjectType);
+
+        /*****************************************
+         *
+         * store
+         *
+         *****************************************/
+        if (!dryRun)
+          {
+
+            complexObjectTypeService.putComplexObjectType(complexObjectType, (existingComplexObjectType == null), userID);
+
+            /*****************************************
+             *
+             * add dynamic criterion fields)
+             *
+             *****************************************/
+
+            dynamicCriterionFieldService.addComplexObjectTypeCriterionFields(complexObjectType, (existingComplexObjectType == null));
+
+          }
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", complexObjectType.getComplexObjectTypeID());
+        response.put("accepted", complexObjectType.getAccepted());
+        response.put("valid", complexObjectType.getAccepted());
+        response.put("processing", complexObjectTypeService.isActiveComplexObjectType(complexObjectType, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+        if (!dryRun)
+          {
+            complexObjectTypeService.putIncompleteComplexObjectType(incompleteObject, (existingComplexObjectType == null), userID);
+          }
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("complexObjectTypeID", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "complexObjectTypeNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveComplexObjectType
+  *
+  *****************************************/
+
+  JSONObject processRemoveComplexObjectType(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> complexObjectTypes = new ArrayList<GUIManagedObject>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray complexObjectTypeIDs = new JSONArray();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single complexObjectType
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String complexObjectTypeID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        complexObjectTypeIDs.add(complexObjectTypeID);
+        GUIManagedObject complexObjectType = complexObjectTypeService.getStoredComplexObjectType(complexObjectTypeID);
+        if (complexObjectType != null && (force || !complexObjectType.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (complexObjectType != null)
+          singleIDresponseCode = "failedReadOnly";
+        else
+          {
+            singleIDresponseCode = "complexObjectTypeNotFound";
+          }
+
+
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        complexObjectTypeIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }  
+
+    for (int i = 0; i < complexObjectTypeIDs.size(); i++)
+      {
+        String complexObjectTypeID = complexObjectTypeIDs.get(i).toString();
+        GUIManagedObject complexObjectType = complexObjectTypeService.getStoredComplexObjectType(complexObjectTypeID);
+
+        if (complexObjectType != null && (force || !complexObjectType.getReadOnly()))
+          {
+            complexObjectTypes.add(complexObjectType);
+            validIDs.add(complexObjectTypeID);
+          }
+      }
+
+    /*****************************************
+     *
+     * remove related deliverable and related paymentMean
+     *
+     *****************************************/
+    for (int i = 0; i < complexObjectTypes.size(); i++)
+      {
+        GUIManagedObject complexObjectType = complexObjectTypes.get(i);
+        DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("complexObjectTypeFulfillment");
+        JSONObject deliveryManagerJSON = (deliveryManager != null) ? deliveryManager.getJSONRepresentation() : null;
+        String providerID = (deliveryManagerJSON != null) ? (String) deliveryManagerJSON.get("providerID") : null;
+        if (providerID != null)
+          {
+            //
+            // deliverable
+            //
+
+            Collection<GUIManagedObject> deliverableObjects = deliverableService.getStoredDeliverables();
+            for (GUIManagedObject deliverableObject : deliverableObjects)
+              {
+                if (deliverableObject instanceof Deliverable)
+                  {
+                    Deliverable deliverable = (Deliverable) deliverableObject;
+                    if (deliverable.getFulfillmentProviderID().equals(providerID)
+                        && deliverable.getExternalAccountID().equals(complexObjectType.getGUIManagedObjectID()))
+                      {
+                        deliverableService.removeDeliverable(deliverable.getDeliverableID(), "0");
+                      }
+                  }
+              }
+
+            //
+            // paymentMean
+            //
+
+            Collection<GUIManagedObject> paymentMeanObjects = paymentMeanService.getStoredPaymentMeans();
+            for (GUIManagedObject paymentMeanObject : paymentMeanObjects)
+              {
+                if (paymentMeanObject instanceof PaymentMean)
+                  {
+                    PaymentMean paymentMean = (PaymentMean) paymentMeanObject;
+                    if (paymentMean.getFulfillmentProviderID().equals(providerID)
+                        && paymentMean.getExternalAccountID().equals(complexObjectType.getGUIManagedObjectID()))
+                      {
+                        paymentMeanService.removePaymentMean(paymentMean.getPaymentMeanID(), "0");
+                      }
+                  }
+              }
+          }
+
+        /*****************************************
+         *
+         * remove
+         *
+         *****************************************/
+
+        //
+        // remove complexObjectType
+        //
+
+        complexObjectTypeService.removeComplexObjectType(complexObjectType.getGUIManagedObjectID(), userID);
+
+        //
+        // remove dynamic criterion fields
+        //
+
+        dynamicCriterionFieldService.removeComplexObjectTypeCriterionFields(complexObjectType);
+
+        //
+        // revalidate
+        //
+
+        revalidateSubscriberMessageTemplates(now);
+        revalidateTargets(now);
+        revalidateJourneys(now);
+          
+      }
+        /*****************************************
+         *
+         * responseCode
+         *
+         *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
+
+    else
+      {
+        response.put("responseCode", "ok");
+      }
+
+    /*****************************************
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedComplexObjectTypeIDs", JSONUtilities.encodeArray(validIDs));
+
+    return JSONUtilities.encodeObject(response);
+  }
+
 
   /*****************************************
   *

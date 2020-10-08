@@ -2,6 +2,8 @@ package com.evolving.nglm.evolution.complexobjects;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +25,8 @@ import com.evolving.nglm.evolution.CriterionField;
 import com.evolving.nglm.evolution.EvaluationCriterion;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.JourneyObjectiveInstance;
+import com.evolving.nglm.evolution.LoyaltyProgramState;
 import com.evolving.nglm.evolution.ParameterMap;
-import com.evolving.nglm.evolution.Point;
-import com.evolving.nglm.evolution.PointValidity;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class ComplexObjectType extends GUIManagedObject
@@ -86,7 +87,9 @@ public class ComplexObjectType extends GUIManagedObject
   //
   //  public
   //
-
+  public String getComplexObjectTypeID() { return getGUIManagedObjectID(); }
+  public String getComplexObjectTypeName() { return getGUIManagedObjectName(); }
+  public String getDisplay() { return getGUIManagedObjectDisplay(); }
   public List<String> getAvailableNames() { return availableNames; }
   public Map<String, CriterionDataType> getFields() { return fields; }
   
@@ -167,7 +170,7 @@ public class ComplexObjectType extends GUIManagedObject
   *
   *****************************************/
 
-  public static Point unpack(SchemaAndValue schemaAndValue)
+  public static ComplexObjectType unpack(SchemaAndValue schemaAndValue)
   {
     //
     //  data
@@ -182,19 +185,48 @@ public class ComplexObjectType extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    List<String> availableNames = (List<String>) valueStruct.get("targetID");
+    List<String> availableNames = (List<String>) valueStruct.get("availableNames");
+    Map<String, CriterionDataType> fields = unpackFields(schema.field("fields").schema(), (Map<String,Object>) valueStruct.get("fields"));
     
-    boolean debitable = valueStruct.getBoolean("debitable");
-    boolean creditable = valueStruct.getBoolean("creditable");
-    boolean setable = valueStruct.getBoolean("setable");
-    PointValidity validity = PointValidity.unpack(new SchemaAndValue(schema.field("validity").schema(), valueStruct.get("validity")));
-    String label = (schemaVersion >= 2) ? valueStruct.getString("label") : "";
+    //
+    //  return
+    //
+
+    return new ComplexObjectType(schemaAndValue, availableNames, fields);
+  }
+  
+  /*****************************************
+  *
+  *  unpackLoyaltyPrograms
+  *
+  *****************************************/
+
+  private static Map<String,CriterionDataType> unpackFields(Schema schema, Map<String,Object> value)
+  {
+    //
+    //  get schema for LoyaltyProgramState
+    //
+
+    Schema fieldsSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    Map<String,CriterionDataType> result = new HashMap<String,CriterionDataType>();
+    if(value != null)
+      {
+        for (String key : value.keySet())
+          {
+            result.put(key, CriterionDataType.fromExternalRepresentation((String)(value.get(key))));
+          }
+      }
 
     //
     //  return
     //
 
-    return new Point(schemaAndValue, debitable, creditable, setable, validity, label);
+    return result;
   }
   
   /*****************************************
@@ -203,7 +235,7 @@ public class ComplexObjectType extends GUIManagedObject
   *
   *****************************************/
 
-  public Point(JSONObject jsonRoot, long epoch, GUIManagedObject existingPointUnchecked) throws GUIManagerException
+  public ComplexObjectType(JSONObject jsonRoot, long epoch, GUIManagedObject existingComplexObjectTypeUnchecked) throws GUIManagerException
   {
     /*****************************************
     *
@@ -211,15 +243,15 @@ public class ComplexObjectType extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingPointUnchecked != null) ? existingPointUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingComplexObjectTypeUnchecked != null) ? existingComplexObjectTypeUnchecked.getEpoch() : epoch);
 
     /*****************************************
     *
-    *  existingPoint
+    *  existingComplexObjectType
     *
     *****************************************/
 
-    Point existingPoint = (existingPointUnchecked != null && existingPointUnchecked instanceof Point) ? (Point) existingPointUnchecked : null;
+    ComplexObjectType existingComplexObjectType = (existingComplexObjectTypeUnchecked != null && existingComplexObjectTypeUnchecked instanceof ComplexObjectType) ? (ComplexObjectType) existingComplexObjectTypeUnchecked : null;
 
     /*****************************************
     *
@@ -227,11 +259,13 @@ public class ComplexObjectType extends GUIManagedObject
     *
     *****************************************/
 
-    this.debitable = JSONUtilities.decodeBoolean(jsonRoot, "debitable", Boolean.TRUE);
-    this.creditable = JSONUtilities.decodeBoolean(jsonRoot, "creditable", Boolean.TRUE);
-    this.setable = JSONUtilities.decodeBoolean(jsonRoot, "setable", Boolean.FALSE);
-    this.validity = new PointValidity(JSONUtilities.decodeJSONObject(jsonRoot, "validity", true));
-    this.label = JSONUtilities.decodeString(jsonRoot, "label", false);
+    this.availableNames = JSONUtilities.decodeJSONArray(jsonRoot, "availableNames", true);
+    Map<String, String> f = JSONUtilities.decodeJSONObject(jsonRoot, "fields", true);
+    this.fields = new HashMap<>();
+    for(Map.Entry<String,String> current : f.entrySet())
+      {
+        this.fields.put(current.getKey(), CriterionDataType.fromExternalRepresentation(current.getValue()));
+      }
     
     /*****************************************
     *
@@ -239,7 +273,7 @@ public class ComplexObjectType extends GUIManagedObject
     *
     *****************************************/
 
-    if (epochChanged(existingPoint))
+    if (epochChanged(existingComplexObjectType))
       {
         this.setEpoch(epoch);
       }
@@ -251,16 +285,13 @@ public class ComplexObjectType extends GUIManagedObject
   *
   *****************************************/
 
-  private boolean epochChanged(Point point)
+  private boolean epochChanged(ComplexObjectType complexObjectType)
   {
-    if (point != null && point.getAccepted())
+    if (complexObjectType != null && complexObjectType.getAccepted())
       {
         boolean epochChanged = false;
-        epochChanged = epochChanged || ! Objects.equals(getDebitable(), point.getDebitable());
-        epochChanged = epochChanged || ! Objects.equals(getCreditable(), point.getCreditable());
-        epochChanged = epochChanged || ! Objects.equals(getSetable(), point.getSetable());
-        epochChanged = epochChanged || ! Objects.equals(getValidity(), point.getValidity());
-        epochChanged = epochChanged || ! Objects.equals(getLabel(), point.getLabel());
+        epochChanged = epochChanged || ! Objects.equals(getAvailableNames(), complexObjectType.getAvailableNames());
+        epochChanged = epochChanged || ! Objects.equals(getFields(), complexObjectType.getFields());
         return epochChanged;
       }
     else
@@ -268,7 +299,4 @@ public class ComplexObjectType extends GUIManagedObject
         return true;
       }
    }
-
-
-
 }

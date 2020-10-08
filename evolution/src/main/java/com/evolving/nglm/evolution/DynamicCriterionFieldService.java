@@ -23,6 +23,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
 
 public class DynamicCriterionFieldService extends GUIService
 {
@@ -255,6 +256,24 @@ public class DynamicCriterionFieldService extends GUIService
   *****************************************/
 
   public void addPointCriterionFields(Point point, boolean newPoint) throws GUIManagerException
+  {
+    addPointCriterionField(point, newPoint, "balance", CriterionDataType.IntegerCriterion, null);
+    addPointCriterionField(point, newPoint, "earliestexpirydate", CriterionDataType.DateCriterion, null);
+    addPointCriterionField(point, newPoint, "earliestexpiryquantity", CriterionDataType.IntegerCriterion, null);
+
+    addPointMetricsCriterionFields(point, newPoint, "earned");
+    addPointMetricsCriterionFields(point, newPoint, "consumed");
+    addPointMetricsCriterionFields(point, newPoint, "expired");
+  }
+  
+  /*****************************************
+  *
+  *    public void addComplexObjectTypeCriterionFields(Point point, boolean newPoint) throws GUIManagerException
+
+  *
+  *****************************************/
+
+  public void addComplexObjectTypeCriterionFields(ComplexObjectType complexObjectType, boolean newPoint) throws GUIManagerException
   {
     addPointCriterionField(point, newPoint, "balance", CriterionDataType.IntegerCriterion, null);
     addPointCriterionField(point, newPoint, "earliestexpirydate", CriterionDataType.DateCriterion, null);
