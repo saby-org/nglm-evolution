@@ -813,7 +813,9 @@ public class Journey extends GUIManagedObject implements StockableItem
     *****************************************/
 
     Schema schema = schemaAndValue.schema();
+    
     Object value = schemaAndValue.value();
+    
     Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
     /*****************************************
@@ -840,16 +842,16 @@ public class Journey extends GUIManagedObject implements StockableItem
     ParameterMap boundParameters = (schemaVersion >= 2) ? ParameterMap.unpack(new SchemaAndValue(schema.field("boundParameters").schema(), valueStruct.get("boundParameters"))) : new ParameterMap();
     boolean appendInclusionLists = (schemaVersion >= 3) ? valueStruct.getBoolean("appendInclusionLists") : false;
     boolean appendExclusionLists = (schemaVersion >= 3) ? valueStruct.getBoolean("appendExclusionLists") : false;
-    boolean appendUCG = (schemaVersion >= 7) ? valueStruct.getBoolean("appendUCG") : false;
+    boolean appendUCG = (schema.field("appendUCG") != null) ? valueStruct.getBoolean("appendUCG") : false;
     JourneyStatus approval = (schemaVersion >= 5) ? JourneyStatus.fromExternalRepresentation(valueStruct.getString("approval")) : JourneyStatus.Pending;
     Integer maxNoOfCustomers = (schemaVersion >=6) ? valueStruct.getInt32("maxNoOfCustomers") : null;
-    boolean fullStatistics = (schemaVersion >= 7) ? valueStruct.getBoolean("fullStatistics") : false;
+    boolean fullStatistics = (schema.field("fullStatistics") != null) ? valueStruct.getBoolean("fullStatistics") : false;
 
-    boolean recurrence = (schemaVersion >= 7) ? valueStruct.getBoolean("recurrence") : false;
-    String recurrenceId = (schemaVersion >= 7) ? valueStruct.getString("recurrenceId") : null;
-    Integer occurrenceNumber = (schemaVersion >= 7) ? valueStruct.getInt32("occurrenceNumber") : null;
-    JourneyScheduler scheduler = (schemaVersion >= 7) ? JourneyScheduler.serde().unpackOptional(new SchemaAndValue(schema.field("scheduler").schema(),valueStruct.get("scheduler"))) : null;
-    Integer lastCreatedOccurrenceNumber = (schemaVersion >= 7) ? valueStruct.getInt32("lastCreatedOccurrenceNumber") : null;
+    boolean recurrence = (schema.field("recurrence") != null) ? valueStruct.getBoolean("recurrence") : false;
+    String recurrenceId = (schema.field("recurrenceId") != null) ? valueStruct.getString("recurrenceId") : null;
+    Integer occurrenceNumber = (schema.field("occurrenceNumber") != null) ? valueStruct.getInt32("occurrenceNumber") : null;
+    JourneyScheduler scheduler = (schema.field("scheduler")!= null) ? JourneyScheduler.serde().unpackOptional(new SchemaAndValue(schema.field("scheduler").schema(),valueStruct.get("scheduler"))) : null;
+    Integer lastCreatedOccurrenceNumber = (schema.field("lastCreatedOccurrenceNumber")!= null) ? valueStruct.getInt32("lastCreatedOccurrenceNumber") : null;
     /*****************************************
     *
     *  validate
