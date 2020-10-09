@@ -23537,7 +23537,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
-    PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, SystemTime.getCurrentTime());
+    PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, SystemTime.getCurrentTime());
 
     Future<PurchaseFulfillmentRequest> waitingResponse=null;
     if(sync){
@@ -24893,6 +24893,33 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 }
             }
           break;
+          
+        case "resellers":
+          if (includeDynamic)
+            {
+              for (Reseller reseller : resellerService.getActiveResellers(now))
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", reseller.getGUIManagedObjectID());
+                  availableValue.put("display", reseller.getGUIManagedObjectDisplay());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+          
+        case "suppliers":
+          if (includeDynamic)
+            {
+              for (Supplier supplier : supplierService.getActiveSuppliers(now))
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", supplier.getGUIManagedObjectID());
+                  availableValue.put("display", supplier.getGUIManagedObjectDisplay());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+          
         case "weekDays":
           if (includeDynamic)
             {
