@@ -22803,28 +22803,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     String existingproductID = null;
     String existingVoucherID = null;
     String existingSupplierID = null;
-    
-    /*****************************************
-     * check if the supplier parent is active
-     *
-     *****************************************/
-    if (activeSupplierAndParentSupplierIDs(user).get("parentSupplierID") != null)
-      {
-        String parentSupplierID = activeSupplierAndParentSupplierIDs(user).get("parentSupplierID");
-        if (parentSupplierID != null)
-          {
-            Supplier parentSupplier = supplierService.getActiveSupplier(parentSupplierID, now);
-            if (parentSupplier == null)
-              {
-                response.put("responseCode",
-                    RESTAPIGenericReturnCodes.PARENT_SUPPLIER_INACTIVE.getGenericResponseCode());
-                response.put("responseMessage",
-                    RESTAPIGenericReturnCodes.PARENT_SUPPLIER_INACTIVE.getGenericResponseMessage());
-                return JSONUtilities.encodeObject(response);
-              }
-          }
-
-      }
+ 
     
     /*****************************************
      *
@@ -23186,28 +23165,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     String user = JSONUtilities.decodeString(jsonRoot, "userID", false);
     Date now = SystemTime.getCurrentTime();
     String activeSupplier = activeSupplierAndParentSupplierIDs(user).get("activeSupplierID");
-    
-    /*****************************************
-     * check if the supplier parent is active
-     *
-     *****************************************/
-    if (activeSupplierAndParentSupplierIDs(user).get("parentSupplierID") != null)
-      {
-        String parentSupplierID = activeSupplierAndParentSupplierIDs(user).get("parentSupplierID");
-        if (parentSupplierID != null)
-          {
-            Supplier parentSupplier = supplierService.getActiveSupplier(parentSupplierID, now);
-            if (parentSupplier == null)
-              {
-                response.put("responseCode",
-                    RESTAPIGenericReturnCodes.PARENT_SUPPLIER_INACTIVE.getGenericResponseCode());
-                response.put("responseMessage",
-                    RESTAPIGenericReturnCodes.PARENT_SUPPLIER_INACTIVE.getGenericResponseMessage());
-                return JSONUtilities.encodeObject(response);
-              }
-          }
-
-      }
+ 
 
     if (activeSupplier != null && activeSupplier.equals("InactiveReseller"))
       {
@@ -23348,28 +23306,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     if (offerObject != null)
       {
-        /*****************************************
-         * check if the supplier parent is active
-         *
-         *****************************************/
-        if (activeSupplierAndParentSupplierIDs(user).get("parentSupplierID") != null)
-          {
-            String parentSupplierID = activeSupplierAndParentSupplierIDs(user).get("parentSupplierID");
-            if (parentSupplierID != null)
-              {
-                Supplier parentSupplier = supplierService.getActiveSupplier(parentSupplierID, now);
-                if (parentSupplier == null)
-                  {
-                    response.put("responseCode",
-                        RESTAPIGenericReturnCodes.PARENT_SUPPLIER_INACTIVE.getGenericResponseCode());
-                    response.put("responseMessage",
-                        RESTAPIGenericReturnCodes.PARENT_SUPPLIER_INACTIVE.getGenericResponseMessage());
-                    return JSONUtilities.encodeObject(response);
-                  }
-              }
-
-          }
-
         if (activeSupplier != null && activeSupplier.equals("InactiveReseller"))
           {
 
