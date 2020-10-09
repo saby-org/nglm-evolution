@@ -2920,27 +2920,6 @@ public class ThirdPartyManager
               return JSONUtilities.encodeObject(response);
             }
         }
-        if (activeResellerAndSalesChannelIDs.get("parentResellerID") != null
-            && !(activeResellerAndSalesChannelIDs.get("parentResellerID").isEmpty()))
-          {
-            if (activeResellerAndSalesChannelIDs.get("parentResellerID").get(0) != null)
-              {
-                parentResellerID = activeResellerAndSalesChannelIDs.get("parentResellerID").get(0);
-                if (parentResellerID != null)
-                  {
-                    Reseller parentReseller = resellerService.getActiveReseller(parentResellerID, now);
-
-                    if (parentReseller == null)
-                      {
-                        response.put(GENERIC_RESPONSE_CODE,
-                            RESTAPIGenericReturnCodes.PARENT_RESELLER_INACTIVE.getGenericResponseCode());
-                        response.put(GENERIC_RESPONSE_MSG,
-                            RESTAPIGenericReturnCodes.PARENT_RESELLER_INACTIVE.getGenericResponseMessage());
-                        return JSONUtilities.encodeObject(response);
-                      }
-                  }
-              }
-          }
     
       if ((activeResellerAndSalesChannelIDs.containsKey("activeReseller")) && (activeResellerAndSalesChannelIDs.get("activeReseller")).size() == 0) {
         updateResponse(response, RESTAPIGenericReturnCodes.INACTIVE_RESELLER);
@@ -4333,28 +4312,7 @@ public class ThirdPartyManager
     try
     {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
-      
-      if (activeResellerAndSalesChannelIDs.get("parentResellerID") != null
-          && !(activeResellerAndSalesChannelIDs.get("parentResellerID").isEmpty()))
-        {
-          if (activeResellerAndSalesChannelIDs.get("parentResellerID").get(0) != null)
-            {
-              parentResellerID = activeResellerAndSalesChannelIDs.get("parentResellerID").get(0);
-              if (parentResellerID != null)
-                {
-                  Reseller parentReseller = resellerService.getActiveReseller(parentResellerID, now);
-
-                  if (parentReseller == null)
-                    {
-                      response.put(GENERIC_RESPONSE_CODE,
-                          RESTAPIGenericReturnCodes.PARENT_RESELLER_INACTIVE.getGenericResponseCode());
-                      response.put(GENERIC_RESPONSE_MSG,
-                          RESTAPIGenericReturnCodes.PARENT_RESELLER_INACTIVE.getGenericResponseMessage());
-                      return JSONUtilities.encodeObject(response);
-                    }
-                }
-            }
-        }
+    
       if ((activeResellerAndSalesChannelIDs.containsKey("activeReseller")) && (activeResellerAndSalesChannelIDs.get("activeReseller")).size() == 0) {
         updateResponse(response, RESTAPIGenericReturnCodes.INACTIVE_RESELLER);
         return JSONUtilities.encodeObject(response);
@@ -5208,12 +5166,12 @@ public class ThirdPartyManager
         else if (httpResponse != null && httpResponse.getStatusLine() != null)
           {
             log.error("GUI server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.PUT_SUPPLIEROFFER_FAILED.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
           }
         else
           {
             log.error("GUI server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse, httpResponse.getStatusLine());
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.PUT_SUPPLIEROFFER_FAILED.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
           }
         return result;
       }
@@ -5306,15 +5264,15 @@ public class ThirdPartyManager
         else if (httpResponse != null && httpResponse.getStatusLine() != null)
           {
             log.error("GUI server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(),
-                RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.GET_SUPPLIEROFFERS_FAILED.getGenericResponseMessage(),
+                RESTAPIGenericReturnCodes.GET_SUPPLIEROFFERS_FAILED.getGenericResponseCode());
           }
         else
           {
             log.error("GUI server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse,
                 httpResponse.getStatusLine());
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(),
-                RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.GET_SUPPLIEROFFERS_FAILED.getGenericResponseMessage(),
+                RESTAPIGenericReturnCodes.GET_SUPPLIEROFFERS_FAILED.getGenericResponseCode());
           }
         return result;
       }
@@ -5407,15 +5365,15 @@ public class ThirdPartyManager
         else if (httpResponse != null && httpResponse.getStatusLine() != null)
           {
             log.error("GUI server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(),
-                RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseMessage(),
+                RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseCode());
           }
         else
           {
             log.error("GUI server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse,
                 httpResponse.getStatusLine());
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(),
-                RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseMessage(),
+                RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseCode());
           }
         return result;
       }
@@ -5696,12 +5654,12 @@ public class ThirdPartyManager
       else if (httpResponse != null && httpResponse.getStatusLine() != null)
         {
           log.error("FWK server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
-          throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+          throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE);
         }
       else
         {
           log.error("FWK server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse, httpResponse.getStatusLine());
-          throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+          throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE);
         }
     }
     catch(ParseException pe) 
