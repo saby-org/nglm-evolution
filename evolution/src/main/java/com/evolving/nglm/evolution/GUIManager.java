@@ -532,9 +532,9 @@ public class GUIManager
 
     setStatusSourceAddress("setStatusSourceAddress"),
 
-    putSupplierOffer("putSupplierOffer"),
-    getSupplierOfferList("getSupplierOfferList"),
-    removeSupplierOffer("removeSupplierOffer"),
+    putSimpleOffer("putSimpleOffer"),
+    getSimpleOfferList("getSimpleOfferList"),
+    removeSimpleOffer("removeSimpleOffer"),
 
     loyaltyProgramOptIn("loyaltyProgramOptIn"),
     loyaltyProgramOptOut("loyaltyProgramOptOut"),
@@ -2110,9 +2110,9 @@ public class GUIManager
 
         restServer.createContext("/nglm-guimanager/setStatusSourceAddress", new APISimpleHandler(API.setStatusSourceAddress));
         
-        restServer.createContext("/nglm-guimanager/putSupplierOffer", new APISimpleHandler(API.putSupplierOffer));
-        restServer.createContext("/nglm-guimanager/getSupplierOfferList", new APISimpleHandler(API.getSupplierOfferList));
-        restServer.createContext("/nglm-guimanager/removeSupplierOffer", new APISimpleHandler(API.removeSupplierOffer));
+        restServer.createContext("/nglm-guimanager/putSimpleOffer", new APISimpleHandler(API.putSimpleOffer));
+        restServer.createContext("/nglm-guimanager/getSimpleOfferList", new APISimpleHandler(API.getSimpleOfferList));
+        restServer.createContext("/nglm-guimanager/removeSimpleOffer", new APISimpleHandler(API.removeSimpleOffer));
         restServer.createContext("/nglm-guimanager/loyaltyProgramOptIn", new APISimpleHandler(API.loyaltyProgramOptIn));
         restServer.createContext("/nglm-guimanager/loyaltyProgramOptOut", new APISimpleHandler(API.loyaltyProgramOptOut));
         restServer.createContext("/nglm-guimanager/getDependencies", new APISimpleHandler(API.getDependencies));
@@ -3893,16 +3893,16 @@ public class GUIManager
                   jsonResponse = guiManagerGeneral.processGetTenantList(userID, jsonRoot, true, includeArchived);
                   break;
                   
-                case putSupplierOffer:
-                  jsonResponse = processPutSupplierOffer(userID, jsonRoot);
+                case putSimpleOffer:
+                  jsonResponse = processPutSimpleOffer(userID, jsonRoot);
                   break;
                   
-                case getSupplierOfferList:
-                  jsonResponse = processGetSupplierOfferList(userID, jsonRoot);
+                case getSimpleOfferList:
+                  jsonResponse = processGetSimpleOfferList(userID, jsonRoot);
                   break;
                   
-                case removeSupplierOffer:
-                  jsonResponse = processRemoveSupplierOffer(userID, jsonRoot);
+                case removeSimpleOffer:
+                  jsonResponse = processRemoveSimpleOffer(userID, jsonRoot);
                   break;   
                 case loyaltyProgramOptIn:
                   jsonResponse = guiManagerLoyaltyReporting.processLoyaltyProgramOptInOut(jsonRoot, true);
@@ -22782,11 +22782,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     
   /*****************************************
   *
-  *  processPutSupplierOffer
+  *  processPutSimpleOffer
   *
   *****************************************/
   
-  private JSONObject processPutSupplierOffer(String userID, JSONObject jsonRoot)
+  private JSONObject processPutSimpleOffer(String userID, JSONObject jsonRoot)
   {
     /****************************************
      *
@@ -23167,10 +23167,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
   /*****************************************
   *
-  *  processGetSupplierOffers
+  *  processGetSimpleOfferList
   *
   *****************************************/
-  private JSONObject processGetSupplierOfferList(String userID, JSONObject jsonRoot)
+  private JSONObject processGetSimpleOfferList(String userID, JSONObject jsonRoot)
   {
 
     /****************************************
@@ -23312,11 +23312,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
   /*****************************************
   *
-  *  processRemoveSupplierOffer
+  *  processRemoveSimpleOffer
   *
   *****************************************/
 
-  private JSONObject processRemoveSupplierOffer(String userID, JSONObject jsonRoot)
+  private JSONObject processRemoveSimpleOffer(String userID, JSONObject jsonRoot)
   {
     /****************************************
      *
@@ -23332,21 +23332,46 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
      *
      ****************************************/
 
-    String offerID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    String offerID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    String offerDisplay = JSONUtilities.decodeString(jsonRoot, "offerName", false);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
     String user = JSONUtilities.decodeString(jsonRoot, "userID", false);
     String activeSupplier = activeSupplierAndParentSupplierIDs(user).get("activeSupplierID");
     Date now = SystemTime.getCurrentTime();
+    Offer offer = null;
 
     /*****************************************
      *
      * remove
      *
      *****************************************/
-    GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
+    if (jsonRoot.containsKey("id") && offerID != null)
+      {
+        GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
+        offer = (Offer) offerObject;
+      }
+    else if (jsonRoot.containsKey("offerName") && offerDisplay != null)
+      {
+        Collection<GUIManagedObject> offers = offerService.getStoredOffers();
+        for (GUIManagedObject offerObject : offers)
+          {
+            Offer currentOffer = (Offer) offerObject;
+            if (currentOffer.getGUIManagedObjectDisplay().equals(offerDisplay))
+              {
+                offer = currentOffer;
+                break;
+              }
+          }
+      }
+    else
+      {
+        if (log.isInfoEnabled())
+          log.info("Invalid offer");
+      }
+    
     String responseCode = null;
 
-    if (offerObject != null)
+    if (offer != null)
       {
         /*****************************************
          * check if the supplier parent is active
@@ -23380,10 +23405,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
         else if (activeSupplier != null && activeSupplier != "InactiveReseller")
           {
-            Offer offer = (Offer) offerObject;
             String offerName = offer.getGUIManagedObjectName();
-            Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(
-                (Offer) offerObject);
+            Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(offer);
             String supplierID = (String) OfferProductVoucherAndSupplierIDs.get("supplierID");
             OfferProduct product = (OfferProduct) OfferProductVoucherAndSupplierIDs.get("offerProduct");
             OfferVoucher voucher = (OfferVoucher) OfferProductVoucherAndSupplierIDs.get("offerVoucher");                   
@@ -23396,7 +23419,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   {
                     String productId = product.getProductID();
                     productService.removeProduct(productId, userID);
-                    offerService.removeOffer(offerID, userID);
+                    offerService.removeOffer(offer.getOfferID(), userID);
 
                     responseCode = "ok";
 
@@ -23430,7 +23453,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   {
                     String voucherId = voucher.getVoucherID();
                     voucherService.removeVoucher(voucherId, userID, uploadedFileService);
-                    offerService.removeOffer(offerID, userID);
+                    offerService.removeOffer(offer.getOfferID(), userID);
 
                     responseCode = "ok";
 
