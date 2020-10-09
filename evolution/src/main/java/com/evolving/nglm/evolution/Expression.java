@@ -1814,7 +1814,7 @@ public abstract class Expression
       //  validate number of arguments
       //
       
-      if (arguments.size() != 6) throw new ExpressionTypeCheckException("type exception");
+      if (arguments.size() != 6 && arguments.size() != 4 /*Because of migration due to EVPRO-432: this second condition (!=4) to be removed lated when all customer have a version >= 1.4.5_1*/) throw new ExpressionTypeCheckException("type exception");
 
       //
       //  arguments
@@ -1882,27 +1882,31 @@ public abstract class Expression
       //
       //  validate arg5
       //
-      
-      switch (arg5.getType())
+      if(arg5 != null) /*this if because of migration due to EVPRO-432: this second conditon to be removed lated when all customer have a version >= 1.4.5_1*/
         {
-          case StringExpression:
-            break;
-
-          default:
-            throw new ExpressionTypeCheckException("type exception");
+          switch (arg5.getType())
+            {
+              case StringExpression:
+                break;
+    
+              default:
+                throw new ExpressionTypeCheckException("type exception");
+            }
         }
       
       //
       //  validate arg6
       //
-      
-      switch (arg6.getType())
+      if(arg6 != null) /*this if because of migration due to EVPRO-432: this second conditon to be removed lated when all customer have a version >= 1.4.5_1*/
         {
-          case TimeExpression:
-            break;
-
-          default:
-            throw new ExpressionTypeCheckException("type exception");
+        switch (arg6.getType())
+          {
+            case TimeExpression:
+              break;
+  
+            default:
+              throw new ExpressionTypeCheckException("type exception");
+          }
         }
       
       //
