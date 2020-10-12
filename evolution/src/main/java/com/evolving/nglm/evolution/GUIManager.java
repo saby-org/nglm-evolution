@@ -26877,7 +26877,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         productJSON.put("supplierID", activeSupplier);
         productJSON.put("apiVersion", 1);
         productJSON.put("name", JSONUtilities.decodeString(jsonRoot, "name"));
-        productJSON.put("display", JSONUtilities.decodeString(jsonRoot, "name"));
+        productJSON.put("display", JSONUtilities.decodeString(jsonRoot, "display"));
         productJSON.put("processing", JSONUtilities.decodeBoolean(jsonRoot, "processing"));
         productJSON.put("accepted", JSONUtilities.decodeBoolean(jsonRoot, "accepted"));
         productJSON.put("active", JSONUtilities.decodeBoolean(jsonRoot, "active"));
@@ -26897,7 +26897,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         voucherJSON.put("supplierID", activeSupplier);
         voucherJSON.put("apiVersion", 1);
         voucherJSON.put("name", JSONUtilities.decodeString(jsonRoot, "name"));
-        voucherJSON.put("display", JSONUtilities.decodeString(jsonRoot, "name"));
+        voucherJSON.put("display", JSONUtilities.decodeString(jsonRoot, "display"));
         voucherJSON.put("processing", JSONUtilities.decodeBoolean(jsonRoot, "processing"));
         voucherJSON.put("accepted", JSONUtilities.decodeBoolean(jsonRoot, "accepted"));
         voucherJSON.put("active", JSONUtilities.decodeBoolean(jsonRoot, "active"));
