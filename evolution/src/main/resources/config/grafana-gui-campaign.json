@@ -17,7 +17,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 11,
-  "iteration": 1602162192313,
+  "iteration": 1602495503483,
   "links": [],
   "panels": [
     {
@@ -395,11 +395,11 @@
             {
               "field": "count",
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified')) { total = doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified')) { total = doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -472,11 +472,11 @@
             {
               "field": "count",
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted')) { total = doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted')) { total = doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -517,11 +517,11 @@
             {
               "field": "count",
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified')) { total = doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified')) { total = doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -562,11 +562,11 @@
             {
               "field": "count",
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified')) { total = doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified')) { total = doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -607,11 +607,11 @@
             {
               "field": "count",
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'UCG' || doc['filter.status'].value == 'UCGConverted')) { total = doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'UCG' || doc['filter.status'].value == 'UCGConverted') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'UCG' || doc['filter.status'].value == 'UCGConverted')) { total = doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'UCG' || doc['filter.status'].value == 'UCGConverted') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -652,11 +652,11 @@
             {
               "field": "count",
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'notEligible' || doc['filter.status'].value == 'NotEligible')) { total = doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'NotEligible' || doc['filter.status'].value == 'Excluded' || doc['filter.status'].value == 'ObjectiveLimitReached') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "script": {
-                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'notEligible' || doc['filter.status'].value == 'NotEligible')) { total = doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'NotEligible' || doc['filter.status'].value == 'Excluded' || doc['filter.status'].value == 'ObjectiveLimitReached') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -698,12 +698,12 @@
               "field": "count",
               "hide": true,
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified')) { total = doc['count'].value;} return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;",
               "meta": {},
               "settings": {
                 "missing": null,
                 "script": {
-                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified')) { total = doc['count'].value;} return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value;} return total;"
                 }
               },
               "type": "sum"
@@ -712,12 +712,12 @@
               "field": "count",
               "hide": true,
               "id": "3",
-              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Entered' || doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified')) {total = doc['count'].value;}  return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Entered' || doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') {total = doc['count'].value;}  return total;",
               "meta": {},
               "settings": {
                 "missing": null,
                 "script": {
-                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Entered' || doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified')) {total = doc['count'].value;}  return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Entered' || doc['filter.status'].value == 'Targeted' || doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') {total = doc['count'].value;}  return total;"
                 }
               },
               "type": "sum"
@@ -778,12 +778,12 @@
               "field": "count",
               "hide": true,
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified')) { total = doc['count'].value; } return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value; } return total;",
               "meta": {},
               "settings": {
                 "missing": null,
                 "script": {
-                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified')) { total = doc['count'].value; } return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Converted' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value; } return total;"
                 }
               },
               "type": "sum"
@@ -792,12 +792,12 @@
               "field": "count",
               "hide": true,
               "id": "3",
-              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified')) { total = doc['count'].value; } return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value; } return total;",
               "meta": {},
               "settings": {
                 "missing": null,
                 "script": {
-                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified')) { total = doc['count'].value; } return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Notified' || doc['filter.status'].value == 'ConvertedNotified') { total = doc['count'].value; } return total;"
                 }
               },
               "type": "sum"
@@ -858,12 +858,12 @@
               "field": "count",
               "hide": true,
               "id": "1",
-              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value; } return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value; } return total;",
               "meta": {},
               "settings": {
                 "missing": null,
                 "script": {
-                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value; } return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value; } return total;"
                 }
               },
               "type": "sum"
@@ -872,12 +872,12 @@
               "field": "count",
               "hide": true,
               "id": "3",
-              "inlineScript": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted')) { total = doc['count'].value;}  return total;",
+              "inlineScript": "long total = 0; if (doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;}  return total;",
               "meta": {},
               "settings": {
                 "missing": null,
                 "script": {
-                  "inline": "long total = 0; if (doc['timestamp'].value.hour == 23 && (doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted')) { total = doc['count'].value;}  return total;"
+                  "inline": "long total = 0; if (doc['filter.status'].value == 'Control' || doc['filter.status'].value == 'ControlConverted') { total = doc['count'].value;}  return total;"
                 }
               },
               "type": "sum"
@@ -937,7 +937,7 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 9,
-        "w": 7,
+        "w": 8,
         "x": 0,
         "y": 9
       },
@@ -989,6 +989,7 @@
               "inlineScript": "long total = 0;  if (doc['timestamp'].value.hour == 23) { total = total + doc['count'].value;} return total;",
               "meta": {},
               "settings": {
+                "missing": null,
                 "script": {
                   "inline": "long total = 0;  if (doc['timestamp'].value.hour == 23) { total = total + doc['count'].value;} return total;"
                 }
@@ -997,11 +998,27 @@
             },
             {
               "field": "1",
+              "hide": true,
               "id": "3",
               "meta": {},
               "pipelineAgg": "1",
               "settings": {},
               "type": "derivative"
+            },
+            {
+              "field": "select field",
+              "id": "4",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var1",
+                  "pipelineAgg": "1"
+                }
+              ],
+              "settings": {
+                "script": "if (params.var1 > 0 ) {return params.var1}"
+              },
+              "type": "bucket_script"
             }
           ],
           "query": "filter.journey:$journey",
@@ -1038,11 +1055,27 @@
             },
             {
               "field": "1",
+              "hide": true,
               "id": "3",
               "meta": {},
               "pipelineAgg": "1",
               "settings": {},
               "type": "derivative"
+            },
+            {
+              "field": "select field",
+              "id": "4",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var1",
+                  "pipelineAgg": "1"
+                }
+              ],
+              "settings": {
+                "script": "if (params.var1 > 0 ) {return params.var1}"
+              },
+              "type": "bucket_script"
             }
           ],
           "query": "filter.journey:$journey",
@@ -1079,11 +1112,27 @@
             },
             {
               "field": "1",
+              "hide": true,
               "id": "3",
               "meta": {},
               "pipelineAgg": "1",
               "settings": {},
               "type": "derivative"
+            },
+            {
+              "field": "select field",
+              "id": "4",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var1",
+                  "pipelineAgg": "1"
+                }
+              ],
+              "settings": {
+                "script": "if (params.var1 > 0 ) {return params.var1}"
+              },
+              "type": "bucket_script"
             }
           ],
           "query": "filter.journey:$journey",
@@ -1120,11 +1169,27 @@
             },
             {
               "field": "1",
+              "hide": true,
               "id": "3",
               "meta": {},
               "pipelineAgg": "1",
               "settings": {},
               "type": "derivative"
+            },
+            {
+              "field": "select field",
+              "id": "4",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var1",
+                  "pipelineAgg": "1"
+                }
+              ],
+              "settings": {
+                "script": "if (params.var1 > 0 ) {return params.var1}"
+              },
+              "type": "bucket_script"
             }
           ],
           "query": "filter.journey:$journey",
@@ -1161,11 +1226,27 @@
             },
             {
               "field": "1",
+              "hide": true,
               "id": "3",
               "meta": {},
               "pipelineAgg": "1",
               "settings": {},
               "type": "derivative"
+            },
+            {
+              "field": "select field",
+              "id": "4",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var1",
+                  "pipelineAgg": "1"
+                }
+              ],
+              "settings": {
+                "script": "if (params.var1 > 0 ) {return params.var1}"
+              },
+              "type": "bucket_script"
             }
           ],
           "query": "filter.journey:$journey",
@@ -1202,11 +1283,27 @@
             },
             {
               "field": "1",
+              "hide": true,
               "id": "3",
               "meta": {},
               "pipelineAgg": "1",
               "settings": {},
               "type": "derivative"
+            },
+            {
+              "field": "select field",
+              "id": "4",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var1",
+                  "pipelineAgg": "1"
+                }
+              ],
+              "settings": {
+                "script": "if (params.var1 > 0 ) {return params.var1}"
+              },
+              "type": "bucket_script"
             }
           ],
           "query": "filter.journey:$journey",
@@ -1265,8 +1362,8 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 9,
-        "w": 9,
-        "x": 7,
+        "w": 8,
+        "x": 8,
         "y": 9
       },
       "hiddenSeries": false,
@@ -2010,7 +2107,7 @@
               "field": "timestamp",
               "id": "2",
               "settings": {
-                "interval": "auto",
+                "interval": "1d",
                 "min_doc_count": 0,
                 "trimEdges": 0
               },
@@ -2022,17 +2119,38 @@
               "field": "metric.reward.$rewards",
               "hide": true,
               "id": "1",
+              "inlineScript": "long total = 0;  if (doc['timestamp'].value.hour == 23) { total = total + doc['metric.reward.$rewards'].value;} return total;",
               "meta": {},
-              "settings": {},
+              "settings": {
+                "script": {
+                  "inline": "long total = 0;  if (doc['timestamp'].value.hour == 23) { total = total + doc['metric.reward.$rewards'].value;} return total;"
+                }
+              },
               "type": "sum"
             },
             {
               "field": "1",
+              "hide": true,
               "id": "3",
               "meta": {},
               "pipelineAgg": "1",
               "settings": {},
               "type": "derivative"
+            },
+            {
+              "field": "select field",
+              "id": "4",
+              "meta": {},
+              "pipelineVariables": [
+                {
+                  "name": "var1",
+                  "pipelineAgg": "1"
+                }
+              ],
+              "settings": {
+                "script": "if (params.var1 > 0 ) {return params.var1}"
+              },
+              "type": "bucket_script"
             }
           ],
           "query": "filter.journey:$journey",
@@ -2450,5 +2568,5 @@
   "timezone": "",
   "title": "Improvements Campaign Dashboard___TEST",
   "uid": "X5gK27KMk",
-  "version": 8
+  "version": 30
 }
