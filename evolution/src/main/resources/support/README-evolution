@@ -564,6 +564,7 @@ java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.a
 
 
 3. Error returned by GUI Manager � but the actually the object is saved - (was not reproduced)
+4. Can’t Save a Campaign is there is a “G_Mail’ node not filled in on all fields. Fixed
 5. The following methods need to be updated: getDialogTemplateSummaryList, getPushTemplateSummaryList (in JMR,STG, LPM) - Fixed
 9. Strange behavior of Bulk Campaign Edit/Save: - Fixed
 11. getProductTypeList - with List of IDs - Fixed
