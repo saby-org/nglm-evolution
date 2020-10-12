@@ -2876,7 +2876,7 @@ public class Journey extends GUIManagedObject implements StockableItem
                   }
                 }
                 log.info("RAJ K parameterJSON {}", parameterJSON);
-                JSONObject value = (JSONObject)parameterJSON.get("value");
+                JSONObject value = JSONUtilities.decodeJSONObject(parameterJSON, "value", new JSONObject()); //(JSONObject)parameterJSON.get("value");
                 if (value == null) throw new GUIManagerException("Dialog value cannot be null", parameterJSON.toJSONString());
                 JSONArray message = JSONUtilities.decodeJSONArray(value, "message");
                 // in case of TemplateID reference:
