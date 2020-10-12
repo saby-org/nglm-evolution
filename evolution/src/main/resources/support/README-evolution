@@ -563,8 +563,8 @@ java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.a
 #
 
 
-3. Error returned by GUI Manager – but the actually the object is saved - (was not reproduced)
-5. The following methods need to be updated: getDialogTemplateSummaryList, getPushTemplateSummaryList (in JMR,STG, LPM) 
+3. Error returned by GUI Manager ï¿½ but the actually the object is saved - (was not reproduced)
+5. The following methods need to be updated: getDialogTemplateSummaryList, getPushTemplateSummaryList (in JMR,STG, LPM) - Fixed
 9. Strange behavior of Bulk Campaign Edit/Save: - Fixed
 11. getProductTypeList - with List of IDs - Fixed
 
