@@ -23930,7 +23930,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
      ****************************************/
 
     Map<String, Object> response = new HashMap<String, Object>();
-    List<GUIManagedObject> offerObjects = new ArrayList<>();
+    Collection<GUIManagedObject> offerObjects = new ArrayList<>();
     List<OfferProduct> products = new ArrayList<>();
     List<OfferVoucher> vouchers = new ArrayList<>();
     List<JSONObject> offers = new ArrayList<JSONObject>();
@@ -23943,102 +23943,61 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           {
             String offerID = offerIDs.get(i).toString();
             GUIManagedObject offerObject = offerService.getStoredOffer(offerID, includeArchived);
-            if (offerObject != null && offerObject instanceof Offer)
-              {
-
-                Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(
-                    (Offer) offerObject);
-                OfferProduct product = (OfferProduct) OfferProductVoucherAndSupplierIDs.get("offerProduct");
-                OfferVoucher voucher = (OfferVoucher) OfferProductVoucherAndSupplierIDs.get("offerVoucher");
-
-                Offer offer = (Offer) offerObject;
-                String offerName = offer.getGUIManagedObjectName();
-                if (product != null)
-                  {
-                    String productID = product.getProductID();
-                    String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
-
-                    if (offerName.equals(productName))
-                      {
-                        offerObjects.add(offerObject);
-                      }
-                    else
-                      {
-                        if (log.isDebugEnabled())
-                          log.debug(offer + " is not supplierOffer");
-                      }
-                  }
-                if (voucher != null)
-                  {
-                    String voucherID = voucher.getVoucherID();
-                    String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
-
-                    if (offerName.equals(voucherName))
-                      {
-                        offerObjects.add(offerObject);
-                      }
-                    else
-                      {
-                        if (log.isDebugEnabled())
-                          log.debug(offer + " is not supplierOffer");
-                      }
-
-                  }
-
-              }
+            offerObjects.add(offerObject);
           }
       }
     else
       {
-        for (GUIManagedObject offerObject : offerService.getStoredOffers())
+        offerObjects = offerService.getStoredOffers(includeArchived);
+      }
+    
+    for (GUIManagedObject offerObject : offerObjects)
+      {
+        if (offerObject != null && offerObject instanceof Offer)
           {
-            if (offerObject instanceof Offer)
+
+            Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(
+                (Offer) offerObject);
+            OfferProduct product = (OfferProduct) OfferProductVoucherAndSupplierIDs.get("offerProduct");
+            OfferVoucher voucher = (OfferVoucher) OfferProductVoucherAndSupplierIDs.get("offerVoucher");
+
+            Offer offer = (Offer) offerObject;
+            String offerName = offer.getGUIManagedObjectName();
+            if (product != null)
               {
-                Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(
-                    (Offer) offerObject);
-                OfferProduct product = (OfferProduct) OfferProductVoucherAndSupplierIDs.get("offerProduct");
-                OfferVoucher voucher = (OfferVoucher) OfferProductVoucherAndSupplierIDs.get("offerVoucher");
+                String productID = product.getProductID();
+                String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
 
-                Offer offer = (Offer) offerObject;
-                String offerName = offer.getGUIManagedObjectName();
-                if (product != null)
+                if (offerName.equals(productName))
                   {
-                    String productID = product.getProductID();
-                    String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
-
-                    if (offerName.equals(productName))
-                      {
-                        offerObjects.add(offerObject);
-                      }
-                    else
-                      {
-                        if (log.isDebugEnabled())
-                          log.debug(offer + " is not supplierOffer");
-                      }
+                    offers.add(offerService.generateResponseJSON(offer, fullDetails, now));
                   }
-                if (voucher != null)
+                else
                   {
-                    String voucherID = voucher.getVoucherID();
-                    String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
+                    if (log.isDebugEnabled())
+                      log.debug(offer + " is not supplierOffer");
+                  }
+              }
+            if (voucher != null)
+              {
+                String voucherID = voucher.getVoucherID();
+                String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
-                    if (offerName.equals(voucherName))
-                      {
-                        offerObjects.add(offerObject);
-                      }
-                    else
-                      {
-                        if (log.isDebugEnabled())
-                          log.debug(offer + " is not supplierOffer");
-                      }
+                if (offerName.equals(voucherName))
+                  {
 
+                    offers.add(offerService.generateResponseJSON(offer, fullDetails, now));
+                  }
+                else
+                  {
+                    if (log.isDebugEnabled())
+                      log.debug(offer + " is not supplierOffer");
                   }
 
               }
+
           }
-      }
-    for (GUIManagedObject offer : offerObjects)
-      {
-        offers.add(offerService.generateResponseJSON(offer, fullDetails, now));
+      
       }
 
     /*****************************************
