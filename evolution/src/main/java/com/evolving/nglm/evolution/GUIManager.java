@@ -24964,7 +24964,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         case "supportedRelationships":
           HashMap<String, Object> availableValue = new HashMap<String, Object>();
           availableValue.put("id", "customer");
-          availableValue.put("display", "customer");
+          availableValue.put("display", "Customer");
           result.add(JSONUtilities.encodeObject(availableValue));
           
           for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
@@ -24974,6 +24974,46 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
               availableValue.put("display", supportedRelationship.getDisplay());
               result.add(JSONUtilities.encodeObject(availableValue));
             }
+          break;
+
+        case "supportedRelationshipsAndPartners":
+          availableValue = new HashMap<String, Object>();
+          availableValue.put("id", "customer");
+          availableValue.put("display", "Customer");
+          result.add(JSONUtilities.encodeObject(availableValue));
+          for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+            {
+              availableValue = new HashMap<String, Object>();
+              availableValue.put("id", "hierarchy_" + supportedRelationship.getID());
+              availableValue.put("display", supportedRelationship.getDisplay());
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          
+          availableValue = new HashMap<String, Object>();
+          availableValue.put("id", "InternalID-Supplier");
+          availableValue.put("display", "Supplier");
+          
+          result.add(JSONUtilities.encodeObject(availableValue));
+          availableValue.put("id", "InternalID-Reseller");
+          availableValue.put("display", "Reseller");
+          result.add(JSONUtilities.encodeObject(availableValue));
+          
+          /*
+          for (Supplier supplier : supplierService.getActiveSuppliers(now))
+            {
+              availableValue = new HashMap<String, Object>();
+              availableValue.put("id", "supplier_" + supplier.getGUIManagedObjectID());
+              availableValue.put("display", supplier.getGUIManagedObjectDisplay() + " (partner)");
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          for (Reseller reseller : resellerService.getActiveResellers(now))
+            {
+              availableValue = new HashMap<String, Object>();
+              availableValue.put("id", "reseller_" + reseller.getGUIManagedObjectID());
+              availableValue.put("display", reseller.getGUIManagedObjectDisplay() + " (partner)");
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+            */
           break;
 
       default:

@@ -5178,7 +5178,17 @@ public class EvolutionEngine
 
 
                         String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(entryActionEvaluationRequest, "node.parameter.relationship");
-                        if (hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer"))
+                        if (hierarchyRelationship != null && hierarchyRelationship.trim().equals("InternalID-Supplier"))
+                          {
+                            String customerIDSupplier = XX; // Find customer ID of the supplier
+                            ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(customerIDSupplier, entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
+                            actions.add(action);
+                          }
+                        else if (hierarchyRelationship != null && hierarchyRelationship.trim().equals("InternalID-Reseller"))
+                          {
+                            
+                          }
+                        else if (hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer"))
                           {
                             //
                             // evaluate hierarchy relationship
