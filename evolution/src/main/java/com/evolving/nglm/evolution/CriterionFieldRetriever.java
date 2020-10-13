@@ -547,16 +547,7 @@ public abstract class CriterionFieldRetriever
             String interval = fieldNameMatcher.group(2); // yesterday, last7days, last30days
             if (pointBalance != null)
               {
-                Date intervalBegin;
                 MetricHistory metric;
-                switch (interval)
-                {
-                  case "yesterday"  : intervalBegin = RLMDateUtils.addDays(evaluationDate, -1, Deployment.getBaseTimeZone()); break;
-                  case "last7days"  : intervalBegin = RLMDateUtils.addDays(evaluationDate, -7, Deployment.getBaseTimeZone()); break;
-                  case "last30days" : intervalBegin = RLMDateUtils.addDays(evaluationDate, -30, Deployment.getBaseTimeZone()); break;
-                  default: throw new CriterionException("invalid criterionField interval " + interval + " (should be yesterday, last7days, last30days)");
-
-                }
                 switch (nature)
                 {
                   case "earned"   : metric = pointBalance.getEarnedHistory(); break;
@@ -570,11 +561,14 @@ public abstract class CriterionFieldRetriever
                   }
                 else
                   {
-                    evaluationDate = evaluationRequest.getEvaluationDate();
-                    Date beginningOfNow = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
-                    Date beginningOfIntervalBegin = RLMDateUtils.truncate(intervalBegin, Calendar.DATE, Deployment.getBaseTimeZone());
-
-                    Long value = metric.getValue(beginningOfIntervalBegin, beginningOfNow);
+                    Long value = 0L;
+                    switch (interval)
+                    {
+                      case "yesterday"  : value = metric.getYesterday(evaluationDate); break;
+                      case "last7days"  : value = metric.getPrevious7Days(evaluationDate); break;
+                      case "last30days" : value = metric.getPrevious30Days(evaluationDate); break;
+                      default: throw new CriterionException("invalid criterionField interval " + interval + " (should be yesterday, last7days, last30days)");
+                    }
                     if (value > Integer.MAX_VALUE && value < Integer.MIN_VALUE)
                       {
                         log.debug("Value for " + fieldName + " is outside of integer range : " + value + ", truncating");
