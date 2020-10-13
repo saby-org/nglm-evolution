@@ -760,6 +760,7 @@ public class ThirdPartyManager
         {
           authenticateAndCheckAccess(jsonRoot, api.name());
         }
+
       /*****************************************
        *
        *  license state
