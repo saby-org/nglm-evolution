@@ -756,11 +756,10 @@ public class ThirdPartyManager
        *
        *****************************************/
 
-      /*if (! Deployment.getRegressionMode())
+      if (! Deployment.getRegressionMode())
         {
           authenticateAndCheckAccess(jsonRoot, api.name());
-        }*/
-      authenticateAndCheckAccess(jsonRoot, api.name());
+        }
       /*****************************************
        *
        *  license state
