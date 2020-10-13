@@ -291,11 +291,13 @@ public class NGLMRuntime
   *  shutdown
   *
   *****************************************/
-  
-  public static void shutdown()
+
+  public static void shutdown(){shutdown(0);}
+  public static void failureShutdown(){shutdown(-1);}
+  private static void shutdown(int status)
   {
     log.error("NGLM shutdown");
-    Runnable exit = new Runnable() { @Override public void run() { System.exit(0); } };
+    Runnable exit = new Runnable() { @Override public void run() { System.exit(status); } };
     Thread exitThread = new Thread(exit, "NGLMExit");
     exitThread.start();
   }
