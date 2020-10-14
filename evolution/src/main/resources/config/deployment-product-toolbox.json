@@ -788,6 +788,74 @@
             "operation" : "opt-out"
           }
       },
+      
+      {
+        "id"                     : "140",
+        "name"                   : "voucher.redeem",
+        "display"                : "Redeem Voucher",
+        "icon"                   : "jmr_components/styles/images/objects/opt-out.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "outputType"             : "static",
+        "outputConnectors"       : 
+          [ 
+            { "name" : "deregistered",  "display" : "Deregistered",  "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
+            { "name" : "failed",        "display" : "Failed",        "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
+            { "name" : "timeout",       "display" : "Timeout",       "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] } 
+          ],
+        "parameters" :
+          [
+            { 
+              "id" : "node.parameter.loyaltyProgramId",
+              "display" : "Loyalty Program", 
+              "dataType" : "string", 
+              "multiple" : false,
+              "mandatory" : true,
+              "availableValues" : [ "#callableLoyaltyPrograms#" ],
+              "defaultValue" : null
+            }
+          ],
+        "action" : 
+          {
+            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$LoyaltyProgramAction",
+            "moduleID" : "1",
+            "operation" : "opt-out"
+          }
+      },
+      
+      {
+        "id"                     : "141",
+        "name"                   : "voucher.validate",
+        "display"                : "Validate Voucher",
+        "icon"                   : "jmr_components/styles/images/objects/opt-out.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "outputType"             : "static",
+        "outputConnectors"       : 
+          [ 
+            { "name" : "deregistered",  "display" : "Deregistered",  "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
+            { "name" : "failed",        "display" : "Failed",        "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
+            { "name" : "timeout",       "display" : "Timeout",       "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] } 
+          ],
+        "parameters" :
+          [
+            { 
+              "id" : "node.parameter.loyaltyProgramId",
+              "display" : "Loyalty Program", 
+              "dataType" : "string", 
+              "multiple" : false,
+              "mandatory" : true,
+              "availableValues" : [ "#callableLoyaltyPrograms#" ],
+              "defaultValue" : null
+            }
+          ],
+        "action" : 
+          {
+            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$LoyaltyProgramAction",
+            "moduleID" : "1",
+            "operation" : "opt-out"
+          }
+      },
 
 
       {
@@ -1250,7 +1318,9 @@
             { "id" : "138", "name" : "bonus.point.debit" },
             { "id" : "135", "name" : "loyalty.opt-in" },
             { "id" : "139", "name" : "loyalty.opt-out" },
-            { "id" : "136", "name" : "purchase.offer" }
+            { "id" : "136", "name" : "purchase.offer" },
+            { "id" : "140", "name" : "voucher.redeem" },
+            { "id" : "141", "name" : "voucher.validate" }
           ]
       },
       {
@@ -1322,7 +1392,9 @@
             { "id" : "138", "name" : "bonus.point.debit" },
             { "id" : "135", "name" : "loyalty.opt-in" },
             { "id" : "139", "name" : "loyalty.opt-out" },
-            { "id" : "136", "name" : "purchase.offer" }
+            { "id" : "136", "name" : "purchase.offer" },
+            { "id" : "140", "name" : "voucher.redeem" },
+            { "id" : "141", "name" : "voucher.validate" }
           ]
       },
       {
