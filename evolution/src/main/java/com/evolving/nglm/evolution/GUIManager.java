@@ -356,6 +356,7 @@ public class GUIManager
     removeVoucherType("removeVoucherType"),
 
     getVoucherCodeFormatList("getVoucherCodeFormatList"),
+    generateVouchers("generateVouchers"),
     
     getVoucherList("getVoucherList"),
     getVoucherSummaryList("getVoucherSummaryList"),
@@ -367,6 +368,8 @@ public class GUIManager
     extendVoucherValidity("extendVoucherValidity"),
     expireVoucher("expireVoucher"),
 
+    getVoucherCodePatternList("getVoucherCodePatternList"),
+    
     getMailTemplateList("getMailTemplateList"),
     getFullMailTemplateList("getFullMailTemplateList"),
     getMailTemplateSummaryList("getMailTemplateSummaryList"),
@@ -1953,6 +1956,9 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/redeemVoucher", new APISimpleHandler(API.redeemVoucher));
         restServer.createContext("/nglm-guimanager/extendVoucherValidity", new APISimpleHandler(API.extendVoucherValidity));
         restServer.createContext("/nglm-guimanager/expireVoucher", new APISimpleHandler(API.expireVoucher));
+        
+        restServer.createContext("/nglm-guimanager/getVoucherCodePatternList", new APISimpleHandler(API.getVoucherCodePatternList));
+        restServer.createContext("/nglm-guimanager/generateVouchers", new APISimpleHandler(API.generateVouchers));
 
         restServer.createContext("/nglm-guimanager/getMailTemplateList", new APISimpleHandler(API.getMailTemplateList));
         restServer.createContext("/nglm-guimanager/getFullMailTemplateList", new APISimpleHandler(API.getFullMailTemplateList));
@@ -3241,6 +3247,10 @@ public class GUIManager
                   jsonResponse = guiManagerGeneral.processGetTokenCodesFormats(userID, jsonRoot);
                   break;
 
+                case getVoucherCodePatternList:
+                  jsonResponse = guiManagerGeneral.processGetVoucherCodePatternList(userID, jsonRoot);
+                  break;
+                  
                 case getVoucherTypeList:
                   jsonResponse = processGetVoucherTypeList(userID, jsonRoot, true, includeArchived);
                   break;

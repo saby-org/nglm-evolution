@@ -7,8 +7,10 @@
 package com.evolving.nglm.evolution;
 
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -72,6 +74,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.sun.net.httpserver.HttpExchange;
@@ -84,6 +87,8 @@ public class GUIManagerGeneral extends GUIManager
   //
   
   private static final Logger log = LoggerFactory.getLogger(GUIManagerGeneral.class);
+
+  private static final int HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE = 100;
   
   //
   //  data
@@ -3393,6 +3398,134 @@ public class GUIManagerGeneral extends GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  /*****************************************
+  *
+  *  processGetVoucherCodePatternList
+  *
+  *****************************************/
+  JSONObject processGetVoucherCodePatternList(String userID, JSONObject jsonRoot)
+  {
+
+    /*****************************************
+    *
+    *  retrieve voucherCodePatternList
+    *
+    *****************************************/
+
+    List<JSONObject> supportedVoucherCodePatternList = new ArrayList<JSONObject>();
+    for (SupportedVoucherCodePattern supportedVoucherCodePattern : Deployment.getSupportedVoucherCodePatternList().values())
+      {
+        JSONObject supportedVoucherCodePatternJSON = supportedVoucherCodePattern.getJSONRepresentation();
+        supportedVoucherCodePatternList.add(supportedVoucherCodePatternJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("supportedVoucherCodePatternList", JSONUtilities.encodeArray(supportedVoucherCodePatternList));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+
+  /*****************************************
+  *
+  *  processGenerateVouchers
+  *
+  *****************************************/
+
+  void processGenerateVouchers(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
+  {
+    
+    String pattern = JSONUtilities.decodeString(jsonRoot, "pattern", true);
+    int quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+    Date date = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "date", true));
+    
+    List<String> currentVoucherCodes = new ArrayList<>();
+    for (int q=0; q<quantity; q++)
+      {
+        String voucherCode = null; 
+        boolean newTokenGenerated = false;
+            for (int i=0; i<HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
+              {
+                voucherCode = TokenUtils.generateFromRegex(pattern);
+                if (!currentVoucherCodes.contains(voucherCode))
+                  {
+                    newTokenGenerated = true;
+                    break;
+                  }
+              }
+              if (!newTokenGenerated)
+                {
+                  log.info("After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
+                  return null;
+                }
+              log.info("TokenUtils.generateTokenCode : " + tokenCode);
+
+      }
+    
+    
+    String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    GUIManagedObject report1 = reportService.getStoredReport(reportID);
+    log.trace("Looking for "+reportID+" and got "+report1);
+    String responseCode = null;
+    
+    if(reportFile != null) {
+      if(reportFile.length() > 0) {
+        try {
+          FileInputStream fis = new FileInputStream(reportFile);
+          exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
+          exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
+          exchange.sendResponseHeaders(200, reportFile.length());
+          OutputStream os = exchange.getResponseBody();
+          byte data[] = new byte[10_000]; // allow some bufferization
+          int length;
+          while ((length = fis.read(data)) != -1) {
+            os.write(data, 0, length);
+          }
+          fis.close();
+          os.flush();
+          os.close();
+        } catch (Exception excp) {
+          StringWriter stackTraceWriter = new StringWriter();
+          excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
+          log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        }
+      }else {
+        responseCode = "Report size is 0, report file is empty";
+      }
+    }else {
+      responseCode = "Report is null, cant find this report";
+    }
+}
+catch (GUIManagerException e)
+{
+  log.info("Exception when building report from "+report1+" : "+e.getLocalizedMessage());
+  responseCode = "internalError";
+}
+}
+if(responseCode != null) {
+try {
+jsonResponse.put("responseCode", responseCode);
+exchange.sendResponseHeaders(200, 0);
+BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+writer.write(jsonResponse.toString());
+writer.close();
+exchange.close();
+}catch(Exception e) {
+StringWriter stackTraceWriter = new StringWriter();
+e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+}
+}
+
+  }
+
+  
   /*****************************************
   *
   *  processGetPaymentMean

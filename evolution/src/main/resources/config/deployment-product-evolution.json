@@ -342,6 +342,15 @@
           { "id" : "c2-5", "display" : "[0123456789abcdef]{5}" },
           { "id" : "c2-6", "display" : "[0123456789abcdef]{6}" }
      ],
+     
+     "supportedVoucherCodePatternList" :
+      [ 
+          { "id" : "vc1", "display" : "[ACDEFGHJKMNPQRTWXY34679]{5}" },
+          { "id" : "vc2", "display" : "[ACDEFGHJKMNPQRTWXY34679]{6}" },
+          { "id" : "vc3", "display" : "[ACDEFGHJKMNPQRTWXY34679]{7}" },
+          { "id" : "vc4", "display" : "[0123456789abcdef]{5}" },
+          { "id" : "vc5", "display" : "[0123456789abcdef]{6}" }
+     ],
         
     "evolutionEngineCoreEvents" :
       [

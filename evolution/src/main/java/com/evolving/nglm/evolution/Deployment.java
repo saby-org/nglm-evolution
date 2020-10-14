@@ -142,6 +142,7 @@ public class Deployment
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
   private static Map<String,SupportedTokenCodesFormat> supportedTokenCodesFormats = new LinkedHashMap<String,SupportedTokenCodesFormat>();
+  private static Map<String,SupportedVoucherCodePattern> supportedVoucherCodePatternList = new LinkedHashMap<String,SupportedVoucherCodePattern>();
   private static Map<String,SupportedRelationship> supportedRelationships = new LinkedHashMap<String,SupportedRelationship>();
   private static Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
   private static Map<String,CatalogCharacteristicUnit> catalogCharacteristicUnits = new LinkedHashMap<String,CatalogCharacteristicUnit>();
@@ -401,6 +402,7 @@ public class Deployment
   public static Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
   public static Map<String,SupportedTokenCodesFormat> getSupportedTokenCodesFormats() { return supportedTokenCodesFormats; }
+  public static Map<String,SupportedVoucherCodePattern> getSupportedVoucherCodePatternList() { return supportedVoucherCodePatternList; }
   public static Map<String,SupportedRelationship> getSupportedRelationships() { return supportedRelationships; }
   public static Map<String,CallingChannelProperty> getCallingChannelProperties() { return callingChannelProperties; }
   public static Map<String,CatalogCharacteristicUnit> getCatalogCharacteristicUnits() { return catalogCharacteristicUnits; }
@@ -2302,6 +2304,28 @@ public class Deployment
           throw new ServerRuntimeException("deployment", e);
         }
 
+      //
+      //  voucherCodePatternList
+      //
+
+      try
+        {
+          JSONArray voucherCodePatternListValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedVoucherCodePatternList", new JSONArray());
+          for (int i=0; i<voucherCodePatternListValues.size(); i++)
+            {
+              JSONObject voucherCodePatternListJSON = (JSONObject) voucherCodePatternListValues.get(i);
+              SupportedVoucherCodePattern voucherCodePattern = new SupportedVoucherCodePattern(voucherCodePatternListJSON);
+              supportedVoucherCodePatternList.put(voucherCodePattern.getID(), voucherCodePattern);
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
+      
+      
+      
       //
       //  supportedRelationships
       //
