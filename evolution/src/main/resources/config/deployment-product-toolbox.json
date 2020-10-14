@@ -790,12 +790,13 @@
       },
       
       {
-        "id"                     : "140",
+        "id"                     : "evolution.voucher.redeem",
         "name"                   : "voucher.redeem",
         "display"                : "Redeem Voucher",
         "icon"                   : "jmr_components/styles/images/objects/opt-out.png",
         "height"                 : 70,
         "width"                  : 70,
+        "allowContextVariables"  : true,
         "outputType"             : "static",
         "outputConnectors"       : 
           [ 
@@ -833,12 +834,13 @@
       },
       
       {
-        "id"                     : "141",
+        "id"                     : "evolution.voucher.validate",
         "name"                   : "voucher.validate",
         "display"                : "Validate Voucher",
         "icon"                   : "jmr_components/styles/images/objects/opt-out.png",
         "height"                 : 70,
         "width"                  : 70,
+        "allowContextVariables"  : true,
         "outputType"             : "static",
         "outputConnectors"       : 
           [ 
@@ -1337,8 +1339,8 @@
             { "id" : "135", "name" : "loyalty.opt-in" },
             { "id" : "139", "name" : "loyalty.opt-out" },
             { "id" : "136", "name" : "purchase.offer" },
-            { "id" : "140", "name" : "voucher.redeem" },
-            { "id" : "141", "name" : "voucher.validate" }
+            { "id" : "evolution.voucher.redeem", "name" : "voucher.redeem" },
+            { "id" : "evolution.voucher.validate", "name" : "voucher.validate" }
           ]
       },
       {
