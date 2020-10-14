@@ -806,12 +806,21 @@
         "parameters" :
           [
             { 
-              "id" : "node.parameter.loyaltyProgramId",
-              "display" : "Loyalty Program", 
+              "id" : "node.parameter.voucher.code",
+              "display" : "Voucher Code", 
               "dataType" : "string", 
               "multiple" : false,
               "mandatory" : true,
-              "availableValues" : [ "#callableLoyaltyPrograms#" ],
+              "availableValues" : [ ],
+              "defaultValue" : null
+            },
+            { 
+              "id" : "node.parameter.supplier",
+              "display" : "Supplier", 
+              "dataType" : "string", 
+              "multiple" : false,
+              "mandatory" : true,
+              "availableValues" : [ ],
               "defaultValue" : null
             }
           ],
@@ -840,12 +849,21 @@
         "parameters" :
           [
             { 
-              "id" : "node.parameter.loyaltyProgramId",
-              "display" : "Loyalty Program", 
+              "id" : "node.parameter.voucher.code",
+              "display" : "Voucher Code", 
               "dataType" : "string", 
               "multiple" : false,
               "mandatory" : true,
-              "availableValues" : [ "#callableLoyaltyPrograms#" ],
+              "availableValues" : [ ],
+              "defaultValue" : null
+            },
+            { 
+              "id" : "node.parameter.supplier",
+              "display" : "Supplier", 
+              "dataType" : "string", 
+              "multiple" : false,
+              "mandatory" : true,
+              "availableValues" : [ ],
               "defaultValue" : null
             }
           ],
