@@ -185,6 +185,10 @@ public abstract class SubscriberMessage
         JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
         log.info("RAJ K parameterJSON {}", parameterJSON);
         String parameterID = JSONUtilities.decodeString(parameterJSON, "templateValue", true);
+        if (CriterionContext.DynamicProfile.getCriterionFields().get(parameterID) != null) continue;
+        
+        
+        
         parameterID = CriterionField.generateTagID(parameterID);
         CriterionField parameter = parameterTagsByID.get(parameterID);
         if (parameter == null) throw new GUIManagerException("unknown parameterTag", parameterID);
