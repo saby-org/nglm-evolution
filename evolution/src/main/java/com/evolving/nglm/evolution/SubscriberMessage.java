@@ -16,6 +16,8 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -25,6 +27,9 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public abstract class SubscriberMessage
 {
+  
+  private static final Logger log = LoggerFactory.getLogger(SubscriberMessage.class);
+  
   /*****************************************
   *
   *  schema
@@ -177,6 +182,7 @@ public abstract class SubscriberMessage
     for (int i=0; i<jsonArray.size(); i++)
       {
         JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
+        log.info("RAJ K parameterJSON {}", parameterJSON);
         String parameterID = JSONUtilities.decodeString(parameterJSON, "templateValue", true);
         parameterID = CriterionField.generateTagID(parameterID);
         CriterionField parameter = parameterTagsByID.get(parameterID);
