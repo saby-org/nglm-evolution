@@ -3527,12 +3527,13 @@ public class GUIManagerGeneral extends GUIManager
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try
     {
-      for (String line : currentVoucherCodes)
+      for (String voucherCode : currentVoucherCodes)
         {
-          baos.write(line.getBytes());
+          baos.write(voucherCode.getBytes());
+          baos.write("\n".getBytes());
         }
     }
-    catch (IOException e)
+    catch (IOException e) // will never happen as we write to memory
     {
       log.info("Issue when converting voucher list to file : " + e.getLocalizedMessage());
       log.debug("Voucher list : " + currentVoucherCodes);
@@ -3542,17 +3543,17 @@ public class GUIManagerGeneral extends GUIManager
 
     // write list to UploadedFile
 
-    long epoch = epochServer.getKey();
     String fileID = uploadedFileService.generateFileID();
     String sourceFilename = "Generated_internally_" + fileID + ".txt";
     
-    GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(fileID);
-    
     JSONObject fileJSON = new JSONObject();
-    
+    fileJSON.put("id", fileID);
     fileJSON.put("applicationID", applicationID);
     fileJSON.put("sourceFilename", sourceFilename);
     fileJSON.put("fileType", ".txt");
+
+    GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(fileID);
+    long epoch = epochServer.getKey();
     
     try
       {
