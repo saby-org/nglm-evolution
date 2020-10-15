@@ -7149,7 +7149,7 @@ public class GUIManager
       }
     for (GUIManagedObject offer : offerObjects)
       {
-        offers.add(offerService.generateResponseJSON(offer, fullDetails, now));
+        offers.add((JSONObject) offerService.generateResponseJSON(offer, fullDetails, now).clone());
       }
     
     if (!fullDetails)
