@@ -171,6 +171,7 @@ public abstract class SubscriberMessage
       {
         parameterTagsByID.put(parameterTag.getID(), parameterTag);
       }
+    log.info("RAJ K parameterTagsByID {}", parameterTagsByID);
 
     /*****************************************
     *
