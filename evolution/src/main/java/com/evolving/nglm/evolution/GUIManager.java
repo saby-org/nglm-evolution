@@ -6356,6 +6356,7 @@ public class GUIManager
     boolean active = JSONUtilities.decodeBoolean(jsonRoot, "active", Boolean.FALSE);
     JSONArray bulkCampaignJourneyObjectives = JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", true);
     JSONObject bulkCampaignStory = JSONUtilities.decodeJSONObject(jsonRoot, "story", true);
+    JSONObject bulkCampaignInfo = JSONUtilities.decodeJSONObject(jsonRoot, "info", false);
     
     JSONArray bulkCampaignTargetCriteria = JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", true);
     
@@ -6454,6 +6455,11 @@ public class GUIManager
         campaignJSONRepresentation.put("active", active);
         campaignJSONRepresentation.put("journeyObjectives", bulkCampaignJourneyObjectives); 
         campaignJSONRepresentation.put("story", bulkCampaignStory);
+        if (bulkCampaignInfo != null)
+          {
+            campaignJSONRepresentation.put("info", bulkCampaignInfo);
+          }
+        
         campaignJSONRepresentation.put("targetingCriteria", bulkCampaignTargetCriteria);
         
         campaignJSONRepresentation.put("recurrence", recurrence);
