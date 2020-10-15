@@ -809,7 +809,7 @@
             { 
               "id" : "node.parameter.voucher.code",
               "display" : "Voucher Code", 
-              "dataType" : "evaluationCriteria", 
+              "dataType" : "string", 
               "multiple" : false,
               "mandatory" : true,
               "availableValues" : [ ],
@@ -853,7 +853,7 @@
             { 
               "id" : "node.parameter.voucher.code",
               "display" : "Voucher Code", 
-              "dataType" : "evaluationCriteria", 
+              "dataType" : "string", 
               "multiple" : false,
               "mandatory" : true,
               "availableValues" : [ ],
