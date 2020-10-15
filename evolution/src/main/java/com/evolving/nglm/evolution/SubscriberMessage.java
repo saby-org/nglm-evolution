@@ -171,6 +171,7 @@ public abstract class SubscriberMessage
       {
         parameterTagsByID.put(parameterTag.getID(), parameterTag);
       }
+    log.info("RAJ K parameterTagsByID {}", parameterTagsByID);
 
     /*****************************************
     *
@@ -182,6 +183,7 @@ public abstract class SubscriberMessage
     for (int i=0; i<jsonArray.size(); i++)
       {
         JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
+        log.info("RAJ K parameterJSON {}", parameterJSON);
         String parameterID = JSONUtilities.decodeString(parameterJSON, "templateValue", true);
         parameterID = CriterionField.generateTagID(parameterID);
         CriterionField parameter = parameterTagsByID.get(parameterID);
