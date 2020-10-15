@@ -4,6 +4,7 @@
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
   <version>release_1.4.5_1-SNAPSHOT</version>
+  <version>release_1.4.5_1-SNAPSHOT</version>
   <version>1.4.5_1-SNAPSHOT</version>
   <version>release_1.4.5_1-SNAPSHOT</version>
   <version>release_1.4.5_1-SNAPSHOT</version>
@@ -12,6 +13,7 @@
   <version>release_1.4.5_1-EVPRO-557-1-SNAPSHOT</version>
   <version>release_1.4.5_1-EVPRO-598-1-SNAPSHOT</version>
   <version>release_1.4.5_1-EVPRO-610-1-SNAPSHOT</version>
+  <version>release_1.4.5_1-EVPRO-619-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
