@@ -4523,15 +4523,10 @@ public class EvolutionEngine
 
                 if (enterJourney)
                   {
-                    switch (journey.getTargetingType())
+                    if (!journey.getAppendUCG() && subscriberState.getSubscriberProfile().getUniversalControlGroup())
                       {
-                        case Target:
-                          if (!journey.getAppendUCG() && subscriberState.getSubscriberProfile().getUniversalControlGroup())
-                            {
-                              enterJourney = false;
-                              context.subscriberTrace("NotEligible: user is UCG {0}", journey.getJourneyID());
-                            }
-                          break;
+                        enterJourney = false;
+                        context.subscriberTrace("NotEligible: user is UCG {0}", journey.getJourneyID());
                       }
                   }
 
@@ -4543,16 +4538,11 @@ public class EvolutionEngine
 
                 if (enterJourney)
                   {
-                    switch (journey.getTargetingType())
+                    if (!journey.getAppendExclusionLists() && exclusionList)
                       {
-                        case Target:
-                          if (!journey.getAppendExclusionLists() && exclusionList)
-                            {
-                              enterJourney = false;
-                              context.subscriberTrace("NotEligible: user is in exclusion list {0}", journey.getJourneyID());
-                            }
-                          break;
-                      }
+                        enterJourney = false;
+                        context.subscriberTrace("NotEligible: user is in exclusion list {0}", journey.getJourneyID());
+                       }
                   }
 
                 /*********************************************
@@ -4592,24 +4582,21 @@ public class EvolutionEngine
                       }
 
                     boolean targeting = subscriberToBeProvisionned && inAnyTarget;
-                    switch (journey.getTargetingType())
-                      {
-                        case Target:
-                          if (!(journey.getAppendInclusionLists() && inclusionList) && ! targeting)
-                            {
-                              enterJourney = false;
-                              context.subscriberTrace("NotEligible: targeting criteria / inclusion list {0}", journey.getJourneyID());
-                            }
-                          break;
 
-                        case Event:
-                        case Manual:
-                          if (! targeting)
-                            {
-                              enterJourney = false;
-                              context.subscriberTrace("NotEligible: targeting criteria {0}", journey.getJourneyID());
-                            }
-                          break;
+                    if(!targeting)
+                      {
+                        if(journey.getAppendInclusionLists() && !inclusionList) 
+                          {
+                            // the journey allows the inclusion list but the subscriber is not in the inclusion list
+                            enterJourney = false;
+                            context.subscriberTrace("NotEligible: targeting criteria / inclusion list {0}", journey.getJourneyID());
+                          }
+                        else if(!journey.getAppendInclusionLists())
+                          {
+                            // whatever if the subscriber is into an inclusion list, those are not allowed for this journey
+                            enterJourney = false;
+                            context.subscriberTrace("NotEligible: targeting criteria {0}", journey.getJourneyID());
+                          }
                       }
                   }
 
