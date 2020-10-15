@@ -14390,10 +14390,10 @@ public class GUIManager
         *
         *****************************************/
 
-        if (mailTemplate.getAllTags().size() > 0)
+        if (mailTemplate.getParameterTags().size() > 0)
           {
             List<JSONObject> parameterTags = new ArrayList<JSONObject>();
-            for (CriterionField parameterTag : mailTemplate.getAllTags())
+            for (CriterionField parameterTag : mailTemplate.getParameterTags())
               {
                 parameterTags.add(parameterTag.getJSONRepresentation());
               }
