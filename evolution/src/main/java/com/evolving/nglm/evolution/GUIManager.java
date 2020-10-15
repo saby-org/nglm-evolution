@@ -24997,23 +24997,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           availableValue.put("id", "InternalID-Reseller");
           availableValue.put("display", "Reseller");
           result.add(JSONUtilities.encodeObject(availableValue));
-          
-          /*
-          for (Supplier supplier : supplierService.getActiveSuppliers(now))
-            {
-              availableValue = new HashMap<String, Object>();
-              availableValue.put("id", "supplier_" + supplier.getGUIManagedObjectID());
-              availableValue.put("display", supplier.getGUIManagedObjectDisplay() + " (partner)");
-              result.add(JSONUtilities.encodeObject(availableValue));
-            }
-          for (Reseller reseller : resellerService.getActiveResellers(now))
-            {
-              availableValue = new HashMap<String, Object>();
-              availableValue.put("id", "reseller_" + reseller.getGUIManagedObjectID());
-              availableValue.put("display", reseller.getGUIManagedObjectDisplay() + " (partner)");
-              result.add(JSONUtilities.encodeObject(availableValue));
-            }
-            */
           break;
 
       default:
