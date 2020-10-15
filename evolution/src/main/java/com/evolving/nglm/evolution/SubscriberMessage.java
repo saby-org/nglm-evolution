@@ -185,7 +185,7 @@ public abstract class SubscriberMessage
         JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
         log.info("RAJ K parameterJSON {}", parameterJSON);
         String parameterID = JSONUtilities.decodeString(parameterJSON, "templateValue", true);
-        parameterID = CriterionField.generateTagID(parameterID);
+        //parameterID = CriterionField.generateTagID(parameterID);
         CriterionField parameter = parameterTagsByID.get(parameterID);
         if (parameter == null) throw new GUIManagerException("unknown parameterTag", parameterID);
         
