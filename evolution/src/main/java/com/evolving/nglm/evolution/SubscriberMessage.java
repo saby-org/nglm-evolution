@@ -119,7 +119,7 @@ public abstract class SubscriberMessage
         //
         //  parameterTags
         //
-        
+        log.info("RAJ K messageJSON {}", messageJSON);
         parameterTags = decodeParameterTags(JSONUtilities.decodeJSONArray(messageJSON, "macros", new JSONArray()), subscriberMessageTemplate, criterionContext);
       }
     
