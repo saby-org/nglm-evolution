@@ -167,11 +167,10 @@ public abstract class SubscriberMessage
     *****************************************/
 
     Map<String,CriterionField> parameterTagsByID = new HashMap<String,CriterionField>();
-    for (CriterionField parameterTag : subscriberMessageTemplate.getAllTags())
+    for (CriterionField parameterTag : subscriberMessageTemplate.getParameterTags())
       {
         parameterTagsByID.put(parameterTag.getID(), parameterTag);
       }
-    log.info("RAJ K parameterTagsByID {}", parameterTagsByID);
 
     /*****************************************
     *
@@ -183,9 +182,8 @@ public abstract class SubscriberMessage
     for (int i=0; i<jsonArray.size(); i++)
       {
         JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
-        log.info("RAJ K parameterJSON {}", parameterJSON);
         String parameterID = JSONUtilities.decodeString(parameterJSON, "templateValue", true);
-        //parameterID = CriterionField.generateTagID(parameterID);
+        parameterID = CriterionField.generateTagID(parameterID);
         CriterionField parameter = parameterTagsByID.get(parameterID);
         if (parameter == null) throw new GUIManagerException("unknown parameterTag", parameterID);
         
