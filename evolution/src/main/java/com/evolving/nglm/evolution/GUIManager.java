@@ -7149,7 +7149,7 @@ public class GUIManager
       }
     for (GUIManagedObject offer : offerObjects)
       {
-        offers.add((JSONObject) offerService.generateResponseJSON(offer, fullDetails, now).clone());
+        offers.add((JSONObject) offerService.generateResponseJSON(offer, fullDetails, now));
       }
     
     if (!fullDetails)
@@ -7162,7 +7162,7 @@ public class GUIManager
                 JSONArray offerObjectivesWithDispaly = new JSONArray();
                 for (int i = 0; i < offerObjectives.size(); i++)
                   {
-                    JSONObject offerObjective = (JSONObject) offerObjectives.get(i);
+                    JSONObject offerObjective = (JSONObject) ((JSONObject) offerObjectives.get(i)).clone();
                     String offerObjectiveID = offerObjective.get("offerObjectiveID").toString();
                     if (offerObjectiveID != null)
                       {
