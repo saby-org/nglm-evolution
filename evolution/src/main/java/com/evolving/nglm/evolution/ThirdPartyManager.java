@@ -5132,7 +5132,7 @@ public class ThirdPartyManager
 
 
         StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
-        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/putSimpleOffer");
+        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/putSimpleOfferThirdParty");
         httpPost.setEntity(stringEntity);
 
         //
@@ -5226,7 +5226,7 @@ public class ThirdPartyManager
         JSONObject result;
 
         StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
-        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/getSimpleOfferList");
+        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/getSimpleOfferListThirdParty");
         httpPost.setEntity(stringEntity);
 
         //
@@ -5327,7 +5327,7 @@ public class ThirdPartyManager
         JSONObject result;
 
         StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
-        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/removeSimpleOffer");
+        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/removeSimpleOfferThirdParty");
         httpPost.setEntity(stringEntity);
 
         //
