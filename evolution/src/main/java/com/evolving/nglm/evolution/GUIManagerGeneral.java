@@ -3461,7 +3461,7 @@ public class GUIManagerGeneral extends GUIManager
     ****************************************/
     String pattern = JSONUtilities.decodeString(jsonRoot, "pattern", true);
     int quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
-    Date date = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "date", true));
+    Date expirationDate = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "expirationDate", true));
     
     // find existing vouchers
     

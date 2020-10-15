@@ -226,7 +226,7 @@ curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/v
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getVoucher; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeVoucher; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1,"pattern":"[0123456789abcdef]{6}","supplierID":"1","quantity":10,"date":"2028-01-01T00:00:00:000+02:00" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/generateVouchers; echo
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1,"pattern":"[0123456789abcdef]{6}","supplierID":"1","quantity":10,"expirationDate":"2028-01-01T00:00:00:000+02:00" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/generateVouchers; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getMailTemplateList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getMailTemplateSummaryList; echo
