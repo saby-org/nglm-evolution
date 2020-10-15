@@ -163,11 +163,20 @@ public class ComplexObjectInstance
         ComplexObjectTypeField fieldType = complexObjectType.getFields().get(fieldValue.getPrivateFieldID());
         if(fieldType != null)
           {
+            if(fieldValue.getValue() == null) {/*no need to serialize*/ continue;}
             switch (fieldType.getCriterionDataType())
-              {
+            {
               case BooleanCriterion:
+                Boolean value = (Boolean)fieldValue.getValue();
+                byte[] result = new byte[5];
+                result[0] = (byte) (fieldType.getPrivateID() & 0xFF00 >> 8);
+                result[1] = (byte) (fieldType.getPrivateID() & 0xFF);
+                result[2] = 0;
+                result[3] = (byte) (value != null ? 1 : 0);
+                result[4] = (byte) (value.booleanValue() ? 1 : 0); 
                 break;
               case IntegerCriterion :
+                int size 
                 break;
               case DoubleCriterion :
                 break;
@@ -186,15 +195,6 @@ public class ComplexObjectInstance
             // the field have disappeared from the config
             // nothing to do
           }
-      }
-    switch (complexObjectType.get)
-      {
-      case value:
-        
-        break;
-
-      default:
-        break;
       }
     
   }
