@@ -159,6 +159,7 @@ public abstract class SubscriberProfile
     schemaBuilder.field("language", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("extendedSubscriberProfile", ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().optionalSchema());
     schemaBuilder.field("subscriberHistory", SubscriberHistory.serde().optionalSchema());
+    schemaBuilder.field("complexObjects", SchemaBuilder.array(Token.commonSerde().schema()).defaultValue(Collections.<Token>emptyList()).schema());
     commonSchema = schemaBuilder.build();
   };
 

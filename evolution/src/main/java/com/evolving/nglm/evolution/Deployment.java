@@ -70,6 +70,7 @@ public class Deployment
   private static String journeyTemplateTopic;
   private static String segmentationDimensionTopic;
   private static String pointTopic;
+  private static String complexObjectTypeTopic;
   private static String pointFulfillmentRequestTopic;
   private static String pointFulfillmentResponseTopic;
   private static String pointFulfillmentRekeyedTopic;
@@ -329,6 +330,7 @@ public class Deployment
   public static String getJourneyTemplateTopic() { return journeyTemplateTopic; }
   public static String getSegmentationDimensionTopic() { return segmentationDimensionTopic; }
   public static String getPointTopic() { return pointTopic; }
+  public static String getComplexObjectTypeTopic() { return complexObjectTypeTopic; }
   public static String getPointFulfillmentRequestTopic() { return pointFulfillmentRequestTopic; }
   public static String getPointFulfillmentResponseTopic() { return pointFulfillmentResponseTopic; }
   public static String getPointFulfillmentRekeyedTopic() { return pointFulfillmentRekeyedTopic; }
@@ -1044,6 +1046,19 @@ public class Deployment
       try
         {
           pointTopic = JSONUtilities.decodeString(jsonRoot, "pointTopic", true);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      
+      //
+      //  pointTopic
+      //
+
+      try
+        {
+          complexObjectTypeTopic = JSONUtilities.decodeString(jsonRoot, "complexObjectTypeTopic", true);
         }
       catch (JSONUtilitiesException e)
         {

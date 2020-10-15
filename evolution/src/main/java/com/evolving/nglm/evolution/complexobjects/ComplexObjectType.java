@@ -15,6 +15,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -76,7 +77,7 @@ public class ComplexObjectType extends GUIManagedObject
   ****************************************/
 
   private List<String> availableNames;
-  private Map<String, CriterionDataType> fields;
+  private Map<Integer, ComplexObjectTypeField> fields;
 
   /****************************************
   *
@@ -91,7 +92,7 @@ public class ComplexObjectType extends GUIManagedObject
   public String getComplexObjectTypeName() { return getGUIManagedObjectName(); }
   public String getDisplay() { return getGUIManagedObjectDisplay(); }
   public List<String> getAvailableNames() { return availableNames; }
-  public Map<String, CriterionDataType> getFields() { return fields; }
+  public Map<Integer, ComplexObjectTypeField> getFields() { return fields; }
   
   /*****************************************
   *
@@ -99,7 +100,7 @@ public class ComplexObjectType extends GUIManagedObject
   *
   *****************************************/
 
-  public ComplexObjectType(SchemaAndValue schemaAndValue, List<String> availableNames, Map<String, CriterionDataType> fields)
+  public ComplexObjectType(SchemaAndValue schemaAndValue, List<String> availableNames, Map<Integer, ComplexObjectTypeField> fields)
   {
     super(schemaAndValue);
     this.availableNames = availableNames;
@@ -152,13 +153,13 @@ public class ComplexObjectType extends GUIManagedObject
   *
   ****************************************/
 
-  private static Map<String,Object> packFields(Map<String,CriterionDataType> fields)
+  private static Map<Integer,Object> packFields(Map<Integer,ComplexObjectTypeField> fields)
   {
-    Map<String,Object> result = new LinkedHashMap<String,Object>();
-    for (String contextVariableName : fields.keySet())
+    Map<Integer,Object> result = new LinkedHashMap<Integer,Object>();
+    for (Integer fieldPrivateKey : fields.keySet())
       {
-        CriterionDataType dataType = fields.get(contextVariableName);
-        result.put(contextVariableName, dataType.getExternalRepresentation());
+        ComplexObjectTypeField field = fields.get(fieldPrivateKey);
+        result.put(fieldPrivateKey, field);
       }
     return result;
   }
@@ -186,7 +187,7 @@ public class ComplexObjectType extends GUIManagedObject
 
     Struct valueStruct = (Struct) value;
     List<String> availableNames = (List<String>) valueStruct.get("availableNames");
-    Map<String, CriterionDataType> fields = unpackFields(schema.field("fields").schema(), (Map<String,Object>) valueStruct.get("fields"));
+    Map<Integer, ComplexObjectTypeField> fields = unpackFields(schema.field("fields").schema(), (Map<Integer,Object>) valueStruct.get("fields"));
     
     //
     //  return
@@ -201,7 +202,7 @@ public class ComplexObjectType extends GUIManagedObject
   *
   *****************************************/
 
-  private static Map<String,CriterionDataType> unpackFields(Schema schema, Map<String,Object> value)
+  private static Map<Integer,ComplexObjectTypeField> unpackFields(Schema schema, Map<Integer,Object> value)
   {
     //
     //  get schema for LoyaltyProgramState
@@ -213,12 +214,12 @@ public class ComplexObjectType extends GUIManagedObject
     //  unpack
     //
 
-    Map<String,CriterionDataType> result = new HashMap<String,CriterionDataType>();
+    Map<Integer,ComplexObjectTypeField> result = new HashMap<Integer,ComplexObjectTypeField>();
     if(value != null)
       {
-        for (String key : value.keySet())
+        for (Integer key : value.keySet())
           {
-            result.put(key, CriterionDataType.fromExternalRepresentation((String)(value.get(key))));
+            result.put(key, (ComplexObjectTypeField) value.get(key));
           }
       }
 
@@ -258,13 +259,27 @@ public class ComplexObjectType extends GUIManagedObject
     *  attributes
     *
     *****************************************/
+    
+    // {
+    //    "availableNames" : [ "A","B"],
+    //    "fields" : [
+    //      
+    //      {
+    //        "fieldName" : "Foo",
+    //        "fieldDataType" : "integer",
+    //        "availableValues" : "["V1", "V2"]
+    //      }
+    //    ]
+    //  }
+    //      
 
-    this.availableNames = JSONUtilities.decodeJSONArray(jsonRoot, "availableNames", true);
-    Map<String, String> f = JSONUtilities.decodeJSONObject(jsonRoot, "fields", true);
+    this.availableNames = JSONUtilities.decodeJSONArray(jsonRoot, "availableNames", true);    
+    JSONArray f = JSONUtilities.decodeJSONArray(jsonRoot, "fields", true);
     this.fields = new HashMap<>();
-    for(Map.Entry<String,String> current : f.entrySet())
+    for(int i=0 ; i<f.size(); i++)
       {
-        this.fields.put(current.getKey(), CriterionDataType.fromExternalRepresentation(current.getValue()));
+        ComplexObjectTypeField field = new ComplexObjectTypeField((JSONObject)f.get(i));
+        this.fields.put(field.getPrivateID(), field);
       }
     
     /*****************************************

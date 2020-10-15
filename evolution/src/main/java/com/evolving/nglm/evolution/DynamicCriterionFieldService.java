@@ -266,24 +266,6 @@ public class DynamicCriterionFieldService extends GUIService
     addPointMetricsCriterionFields(point, newPoint, "expired");
   }
   
-  /*****************************************
-  *
-  *    public void addComplexObjectTypeCriterionFields(Point point, boolean newPoint) throws GUIManagerException
-
-  *
-  *****************************************/
-
-  public void addComplexObjectTypeCriterionFields(ComplexObjectType complexObjectType, boolean newPoint) throws GUIManagerException
-  {
-    addPointCriterionField(point, newPoint, "balance", CriterionDataType.IntegerCriterion, null);
-    addPointCriterionField(point, newPoint, "earliestexpirydate", CriterionDataType.DateCriterion, null);
-    addPointCriterionField(point, newPoint, "earliestexpiryquantity", CriterionDataType.IntegerCriterion, null);
-
-    addPointMetricsCriterionFields(point, newPoint, "earned");
-    addPointMetricsCriterionFields(point, newPoint, "consumed");
-    addPointMetricsCriterionFields(point, newPoint, "expired");
-  }
-  
   private void addPointMetricsCriterionFields(Point point, boolean newPoint, String nature) throws GUIManagerException
   {
     addPointCriterionField(point, newPoint, nature+".yesterday", CriterionDataType.IntegerCriterion, null);
@@ -353,6 +335,89 @@ public class DynamicCriterionFieldService extends GUIService
     removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.last7days", null);
     removeDynamicCriterionField("point" + "." + point.getGUIManagedObjectID() + "." + "expired.last30days", null);
   }
+  
+  /*****************************************
+  *
+  *  addComplexObjectTypeCriterionFields
+  *
+  *****************************************/
+
+  public void addComplexObjectTypeCriterionFields(ComplexObjectType complexObjectType, boolean newComplexObjectType) throws GUIManagerException
+  {
+    
+    for(String currentName : complexObjectType.getAvailableNames())
+      {
+        for(Map.Entry<String, CriterionDataType> current : complexObjectType.getFields().entrySet())
+          {
+            String subFieldName = current.getKey();
+            CriterionDataType subFieldType = current.getValue();
+            switch (subFieldType)
+              {
+              case IntegerCriterion :
+              case DoubleCriterion :
+              case StringCriterion :
+              case StringSetCriterion :
+              case DateCriterion :
+                //
+                //  json constructor
+                //
+      
+                JSONObject criterionFieldJSON = new JSONObject();
+                String id = "complexObject." + "." + complexObjectType.getComplexObjectTypeID() + "." + currentName + "." + subFieldName;
+                criterionFieldJSON.put("id", id);
+                criterionFieldJSON.put("display", complexObjectType.getComplexObjectTypeName() + "." + currentName + "." + subFieldName);
+                criterionFieldJSON.put("epoch", complexObjectType.getEpoch());
+                criterionFieldJSON.put("dataType", subFieldType.getExternalRepresentation());
+                criterionFieldJSON.put("tagFormat", null);
+                criterionFieldJSON.put("tagMaxLength", null);
+                criterionFieldJSON.put("esField", id);
+                criterionFieldJSON.put("retriever", "getComplexObjectFieldValue");
+                criterionFieldJSON.put("minValue", null);
+                criterionFieldJSON.put("maxValue", null);
+    // TODO            criterionFieldJSON.put("availableValues", availableValues);
+                criterionFieldJSON.put("includedOperators", null);
+                criterionFieldJSON.put("excludedOperators", null);
+                criterionFieldJSON.put("includedComparableFields", null); 
+                criterionFieldJSON.put("excludedComparableFields", null);
+                DynamicCriterionField criterionField = new DynamicCriterionField(complexObjectType, criterionFieldJSON);
+      
+                //
+                //  put
+                //
+      
+                putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newComplexObjectType, null);  
+              
+              
+                break;
+    
+              default:
+                log.warn("ComplexObjectType: Unsupported CriterionDataType " + subFieldType);
+                break;
+              }
+          }
+      }
+  }
+
+  /*****************************************
+  *
+  *  removePointCriterionFields
+  *
+  *****************************************/
+
+  public void removeComplexObjectTypeCriterionFields(ComplexObjectType complexObjectType)
+  {
+    
+    for(String currentName : complexObjectType.getAvailableNames())
+      {
+        for(Map.Entry<String, CriterionDataType> current : complexObjectType.getFields().entrySet())
+          {
+            String subFieldName = current.getKey();
+            String id = "complexObject." + "." + complexObjectType.getComplexObjectTypeID() + "." + currentName + "." + subFieldName;
+            removeGUIManagedObject(id, SystemTime.getCurrentTime(), null);
+          }
+      }
+  }
+
   
   /*****************************************
   *

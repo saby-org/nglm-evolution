@@ -85,6 +85,7 @@
   "journeyTemplateTopic"                                 : "${topic.journeytemplate}",
   "segmentationDimensionTopic"                           : "${topic.segmentationdimension}",
   "pointTopic"                                           : "${topic.point}",
+  "complexObjectTypeTopic"                               : "${topic.complexobjecttype}",
   "paymentMeanTopic"                                     : "${topic.paymentMean}",
   "offerTopic"                                           : "${topic.offer}",
   "presentationStrategyTopic"                            : "${topic.presentationstrategy}",

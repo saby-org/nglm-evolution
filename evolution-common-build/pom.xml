@@ -92,6 +92,7 @@
     <topic.journeytemplate>journeytemplate</topic.journeytemplate>
     <topic.segmentationdimension>segmentation-dimension</topic.segmentationdimension>
     <topic.point>point</topic.point>
+    <topic.complexobjecttype>complexobjecttype</topic.complexobjecttype>
     <topic.offer>offer</topic.offer>
     <topic.report>report</topic.report>
     <topic.paymentMean>paymentMean</topic.paymentMean>
