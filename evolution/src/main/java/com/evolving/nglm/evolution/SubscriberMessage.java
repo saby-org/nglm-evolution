@@ -197,7 +197,7 @@ public abstract class SubscriberMessage
         
         
         
-        parameterID = CriterionField.generateTagID(parameterID);
+        //parameterID = CriterionField.generateTagID(parameterID);
         CriterionField parameter = parameterTagsByID.get(parameterID);
         if (parameter == null) throw new GUIManagerException("unknown parameterTag", parameterID);
         
