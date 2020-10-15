@@ -6455,7 +6455,11 @@ public class GUIManager
         campaignJSONRepresentation.put("active", active);
         campaignJSONRepresentation.put("journeyObjectives", bulkCampaignJourneyObjectives); 
         campaignJSONRepresentation.put("story", bulkCampaignStory);
-        campaignJSONRepresentation.put("info", bulkCampaignInfo);
+        if (bulkCampaignInfo != null)
+          {
+            campaignJSONRepresentation.put("info", bulkCampaignInfo);
+          }
+        
         campaignJSONRepresentation.put("targetingCriteria", bulkCampaignTargetCriteria);
         
         campaignJSONRepresentation.put("recurrence", recurrence);
