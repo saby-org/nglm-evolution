@@ -45,7 +45,7 @@
     <gui-opr.version>1.4.3</gui-opr.version>
     <gui-stg.version>1.4.11</gui-stg.version>
     <gui-sbm.version>1.4.24</gui-sbm.version>
-    <gui-lpm.version>1.4.9</gui-lpm.version>
+    <gui-lpm.version>1.4.10</gui-lpm.version>
     <gui-tls.version>1.4.17</gui-tls.version>
     <gui-audit.version>1.0.4</gui-audit.version>
 

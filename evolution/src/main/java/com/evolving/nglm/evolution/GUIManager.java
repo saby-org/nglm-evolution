@@ -3251,6 +3251,10 @@ public class GUIManager
                   jsonResponse = guiManagerGeneral.processGetVoucherCodePatternList(userID, jsonRoot);
                   break;
                   
+                case generateVouchers:
+                  jsonResponse = guiManagerGeneral.processGenerateVouchers(userID, jsonRoot);
+                  break;
+                  
                 case getVoucherTypeList:
                   jsonResponse = processGetVoucherTypeList(userID, jsonRoot, true, includeArchived);
                   break;
@@ -4131,11 +4135,15 @@ public class GUIManager
                 case downloadReport:
                   guiManagerLoyaltyReporting.processDownloadReport(userID, jsonRoot, jsonResponse, exchange);
                   break;
+                  
                 case downloadExtractFile:
                   guiManagerBaseManagement.processDownloadExtract(jsonRoot, jsonResponse, exchange);
                   break;
+                  
                 case launchAndDownloadExtract:
                   guiManagerBaseManagement.processLaunchAndDownloadExtract(jsonRoot,jsonResponse,exchange);
+                  break;
+
               }
           }
         else
