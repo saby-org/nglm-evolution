@@ -8,7 +8,9 @@ package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -179,13 +181,19 @@ public abstract class SubscriberMessage
     *
     *****************************************/
 
+    List<String> contextIDs = subscriberMessageTemplate.getContextTags().stream().map(CriterionField::getID).collect(Collectors.toList());
     SimpleParameterMap parameterTags = new SimpleParameterMap();
     for (int i=0; i<jsonArray.size(); i++)
       {
         JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
         log.info("RAJ K parameterJSON {}", parameterJSON);
         String parameterID = JSONUtilities.decodeString(parameterJSON, "templateValue", true);
-        if (CriterionContext.DynamicProfile.getCriterionFields().get(parameterID) != null) continue;
+        
+        //
+        //  ignore contexts
+        //
+        
+        if (contextIDs.contains(parameterID)) continue;
         
         
         

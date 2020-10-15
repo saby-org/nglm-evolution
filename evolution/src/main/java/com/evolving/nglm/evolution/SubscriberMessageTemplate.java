@@ -387,6 +387,17 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   
   /*****************************************
   *
+  *  getParameterTags
+  *
+  *****************************************/
+
+  public List<CriterionField> getContextTags()
+  {
+    return resolveContextTags(dialogMessages);
+  }
+  
+  /*****************************************
+  *
   *  resolveParameterTags
   *
   *****************************************/
@@ -432,6 +443,30 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
           }
       }
     return allTags;
+  }
+  
+  /*****************************************
+  *
+  *  resolveParameterTags
+  *
+  *****************************************/
+
+  public static List<CriterionField> resolveContextTags(Map<String,DialogMessage> dialogMessages)
+  {
+    List<CriterionField> contextTags = new ArrayList<CriterionField>();
+    Set<String> contextTagIDs = new HashSet<String>();
+    for (DialogMessage dialogMessage : dialogMessages.values())
+      {
+        for (CriterionField contextTag : dialogMessage.getContextTags())
+          {
+            if (! contextTagIDs.contains(contextTag.getID()))
+              {
+                contextTags.add(contextTag);
+                contextTagIDs.add(contextTag.getID());
+              }
+          }
+      }
+    return contextTags;
   }
 
   /*****************************************
