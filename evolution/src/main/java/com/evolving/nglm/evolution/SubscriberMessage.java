@@ -167,7 +167,7 @@ public abstract class SubscriberMessage
     *****************************************/
 
     Map<String,CriterionField> parameterTagsByID = new HashMap<String,CriterionField>();
-    for (CriterionField parameterTag : subscriberMessageTemplate.getParameterTags())
+    for (CriterionField parameterTag : subscriberMessageTemplate.getAllTags())
       {
         parameterTagsByID.put(parameterTag.getID(), parameterTag);
       }
