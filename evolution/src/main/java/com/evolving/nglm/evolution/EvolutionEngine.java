@@ -5092,6 +5092,39 @@ public class EvolutionEngine
                               break;
                           }
                       }
+                    
+                    // special case for Event Selection with OfferDelivery
+                    if (firedLink.getLinkID().equals("121"))
+                      {
+                        try
+                        {
+                          // find event name
+                          JSONObject contextVariableJSON = new JSONObject();
+                          contextVariableJSON.put("name", "node.parameter.eventname");
+                          ContextVariable contextVariable;
+                          contextVariable = new ContextVariable(contextVariableJSON);
+                          SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now);
+                          Object eventName = contextVariable.getExpression().evaluateExpression(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
+                          if (eventName instanceof String)
+                            {
+                              if ("OfferDelivery".equals((String) eventName))
+                                {
+                                  contextVariableJSON.put("name", "event.supplierName");
+                                  contextVariable = new ContextVariable(contextVariableJSON);
+                                  Object supplier = contextVariable.getExpression().evaluateExpression(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
+                                  if (supplier instanceof String)
+                                    {
+                                      journeyState.getJourneyParameters().put("variable.Evol_X_Supplier", supplier);
+                                    }
+                                }
+                            }
+                        }
+                        catch (GUIManagerException e)
+                        {
+                          log.info("unable to process special case for EventDelivery : " + e.getLocalizedMessage());
+                        }
+
+                      }
 
                     //
                     //  abort?
@@ -5199,7 +5232,32 @@ public class EvolutionEngine
 
 
                         String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(entryActionEvaluationRequest, "node.parameter.relationship");
-                        if (hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer"))
+                        if (hierarchyRelationship != null && hierarchyRelationship.trim().equals("InternalID-Supplier"))
+                          {
+                            log.info("MK supplier");
+                            try
+                            {
+                              // evaluate special internal variable, set in the EventDelivery node
+                              JSONObject contextVariableJSON = new JSONObject();
+                              String variableSupplier = "variable.Evol_X_Supplier";
+                              contextVariableJSON.put("name", variableSupplier);
+                              ContextVariable contextVariable = new ContextVariable(contextVariableJSON);
+                              Object supplierName = contextVariable.getExpression().evaluateExpression(entryActionEvaluationRequest, contextVariable.getBaseTimeUnit());
+                              if (supplierName instanceof String)
+                                {
+                                  String customerIDSupplier = (String) supplierName;
+                                  ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(customerIDSupplier, entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
+                                  actions.add(action);
+                                }
+                            } catch (GUIManagerException e) {
+                              log.info("unable to process special case for Evol_X_Supplier : " + e.getLocalizedMessage());
+                            }
+                          }
+                        else if (hierarchyRelationship != null && hierarchyRelationship.trim().equals("InternalID-Reseller"))
+                          {
+                            
+                          }
+                        else if (hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer"))
                           {
                             //
                             // evaluate hierarchy relationship
