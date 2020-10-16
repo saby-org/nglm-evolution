@@ -184,7 +184,7 @@ public abstract class SubscriberMessage
     for (int i=0; i<jsonArray.size(); i++)
       {
         JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
-        log.info("RAJ K parameterJSON {}", parameterJSON);
+        if (log.isTraceEnabled()) log.trace("parameterJSON {}", parameterJSON);
         String parameterID = JSONUtilities.decodeString(parameterJSON, "templateValue", true);
         
         //
@@ -192,8 +192,6 @@ public abstract class SubscriberMessage
         //
         
         if (contextIDs.contains(parameterID)) continue;
-        
-        
         
         //parameterID = CriterionField.generateTagID(parameterID);
         CriterionField parameter = parameterTagsByID.get(parameterID);
