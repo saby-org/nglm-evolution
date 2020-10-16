@@ -30,7 +30,6 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -55,6 +54,7 @@ import com.evolving.nglm.evolution.Expression.ExpressionParseException;
 import com.evolving.nglm.evolution.Expression.ExpressionReader;
 import com.evolving.nglm.evolution.Expression.ExpressionTypeCheckException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class EvaluationCriterion
 {
@@ -1361,7 +1361,7 @@ public class EvaluationCriterion
   //
   // execute query
   //
-  public static long esCountMatchCriteriaExecuteQuery(BoolQueryBuilder query, RestHighLevelClient elasticsearch) throws IOException, ElasticsearchStatusException {
+  public static long esCountMatchCriteriaExecuteQuery(BoolQueryBuilder query, ElasticsearchClientAPI elasticsearch) throws IOException, ElasticsearchStatusException {
     CountRequest countRequest = new CountRequest("subscriberprofile").query(query);
     CountResponse countResponse = elasticsearch.count(countRequest, RequestOptions.DEFAULT);
     return countResponse.getCount();

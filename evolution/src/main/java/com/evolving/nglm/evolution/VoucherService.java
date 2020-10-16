@@ -14,7 +14,6 @@ import com.evolving.nglm.core.JSONUtilities;
 
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -23,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class VoucherService extends GUIService {
 
@@ -73,7 +73,7 @@ public class VoucherService extends GUIService {
   // once bound, we removed it as a choice, but we keep it on file system to process it, then we delete only if ok. (on error we might want reprocess it)
   private static final String usedVoucherFileApplicationId = "used-vouchers";
 
-  public VoucherService(String bootstrapServers, String groupID, String voucherTopic, boolean masterService, VoucherListener voucherListener, boolean notifyOnSignificantChange, RestHighLevelClient elasticsearch, UploadedFileService uploadedFileService) {
+  public VoucherService(String bootstrapServers, String groupID, String voucherTopic, boolean masterService, VoucherListener voucherListener, boolean notifyOnSignificantChange, ElasticsearchClientAPI elasticsearch, UploadedFileService uploadedFileService) {
     super(bootstrapServers, "voucherService", groupID, voucherTopic, masterService, getSuperListener(voucherListener), "putVoucher", "removeVoucher", notifyOnSignificantChange);
     this.voucherPersonalESService = new VoucherPersonalESService(elasticsearch,masterService,com.evolving.nglm.core.Deployment.getElasticsearchLiveVoucherShards(),com.evolving.nglm.core.Deployment.getElasticsearchLiveVoucherReplicas());
     this.uploadedFileService = uploadedFileService;
@@ -86,11 +86,11 @@ public class VoucherService extends GUIService {
     }
   }
 
-  public VoucherService(String bootstrapServers, String groupID, String voucherTopic, boolean masterService, RestHighLevelClient elasticsearch, UploadedFileService uploadedFileService) {
+  public VoucherService(String bootstrapServers, String groupID, String voucherTopic, boolean masterService, ElasticsearchClientAPI elasticsearch, UploadedFileService uploadedFileService) {
     this(bootstrapServers, groupID, voucherTopic, masterService, (VoucherListener) null, true,elasticsearch,uploadedFileService);
   }
 
-  public VoucherService(String bootstrapServers, String groupID, String voucherTopic, RestHighLevelClient elasticsearch) {
+  public VoucherService(String bootstrapServers, String groupID, String voucherTopic, ElasticsearchClientAPI elasticsearch) {
     this(bootstrapServers, groupID, voucherTopic, false,elasticsearch,null);
   }
 

@@ -56,7 +56,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Serializer;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -86,6 +85,7 @@ import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileReques
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
@@ -153,7 +153,7 @@ public class ThirdPartyManager
   private HttpServer restServer;
   private ZookeeperUniqueKeyServer zuks;
   private ZookeeperUniqueKeyServer zuksVoucherChange;
-  private RestHighLevelClient elasticsearch;
+  private ElasticsearchClientAPI elasticsearch;
   private KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
   private KafkaResponseListenerService<StringKey,VoucherChange> voucherChangeResponseListenerService;
   private static Map<String, ThirdPartyMethodAccessLevel> methodPermissionsMapper = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
@@ -282,8 +282,12 @@ public class ThirdPartyManager
     int threadPoolSize = parseInteger("threadPoolSize", args[4]);
     String elasticsearchServerHost = args[5];
     int elasticsearchServerPort = Integer.parseInt(args[6]);
-    String guimanagerHost = args[7];
-    int guimanagerPort = Integer.parseInt(args[8]);
+    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("ThirdPartyManager").getConnectTimeout();
+    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("ThirdPartyManager").getQueryTimeout();
+    String userName = args[7];
+    String userPassword = args[8];
+    String guimanagerHost = args[9];
+    int guimanagerPort = Integer.parseInt(args[10]);
     String nodeID = System.getProperty("nglm.license.nodeid");
     String offerTopic = Deployment.getOfferTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
@@ -344,10 +348,10 @@ public class ThirdPartyManager
     // elasticsearch
     //
 
-    RestHighLevelClient elasticsearch;
+    ElasticsearchClientAPI elasticsearch;
     try
     {
-      elasticsearch = new RestHighLevelClient(RestClient.builder(new HttpHost(elasticsearchServerHost, elasticsearchServerPort, "http")));
+      elasticsearch = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
     }
     catch (ElasticsearchException e)
     {

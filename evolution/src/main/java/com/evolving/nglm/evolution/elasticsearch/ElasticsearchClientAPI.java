@@ -1,11 +1,15 @@
 package com.evolving.nglm.evolution.elasticsearch;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
@@ -17,7 +21,6 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
-import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -28,12 +31,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.Expression;
-import com.evolving.nglm.evolution.SubscriberProfile;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
-import com.evolving.nglm.evolution.Expression.ExpressionDataType;
-
-public class ElasticsearchClientAPI
+public class ElasticsearchClientAPI extends RestHighLevelClient
 {
   /*****************************************
   *
@@ -76,86 +74,41 @@ public class ElasticsearchClientAPI
   
   /*****************************************
   *
-  * Properties
+  * Constructor wrapper (because super() must be the first statement in a constructor)
   *
   *****************************************/
-  private String connectionHost;
-  private int connectionPort;
-  private RestHighLevelClient elasticsearch;
+  private static RestClientBuilder initRestClientBuilder(String serverHost, int serverPort, int connectTimeoutInMs, int queryTimeoutInMs, String userName, String userPassword) {
+    RestClientBuilder restClientBuilder = RestClient.builder(new HttpHost(serverHost, serverPort, "http"));
+    restClientBuilder.setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback()
+    {
+      @Override
+      public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpAsyncClientBuilder)
+      {
+        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(userName, userPassword));
+        return httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+      }
+    });
+    
+    restClientBuilder.setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback()
+    {
+      @Override public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder)
+      {
+        return requestConfigBuilder.setConnectTimeout(connectTimeoutInMs).setSocketTimeout(queryTimeoutInMs);
+      }
+    });
+    
+    return restClientBuilder;
+  }
   
   /*****************************************
   *
   * Constructor
   *
   *****************************************/
-  public ElasticsearchClientAPI(String elasticsearchServerHost, int elasticsearchServerPort) {
-    this.connectionHost = elasticsearchServerHost;
-    this.connectionPort = elasticsearchServerPort;
-    this.elasticsearch = null;
+  public ElasticsearchClientAPI(String serverHost, int serverPort, int connectTimeoutInMs, int queryTimeoutInMs, String userName, String userPassword) throws ElasticsearchStatusException, ElasticsearchException {
+    super(initRestClientBuilder(serverHost, serverPort, connectTimeoutInMs, queryTimeoutInMs, userName, userPassword));
   }
-
-  /*****************************************
-  *
-  * Open & Close connection
-  *
-  *****************************************/
-  public boolean connect() {
-    try {
-      RestClientBuilder restClientBuilder = RestClient.builder(new HttpHost(connectionHost, connectionPort, "http"));
-      restClientBuilder.setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback()
-      {
-        @Override
-        public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder)
-        {
-          return requestConfigBuilder.setConnectTimeout(CONNECTTIMEOUT*1000).setSocketTimeout(QUERYTIMEOUT*1000);
-        }
-      });
-      this.elasticsearch = new RestHighLevelClient(restClientBuilder);
-    }
-    catch (ElasticsearchException e) {
-      log.error("Could not initialize Elasticsearch client.", e);
-      this.elasticsearch = null;
-      return false;
-    }
-    return true;
-  }
-
-  public void close() {
-    try {
-      if(this.elasticsearch != null) {
-        this.elasticsearch.close();
-      }
-    }
-    catch (ElasticsearchException|IOException e) {
-      log.error("Could not close Elasticsearch client properly.", e);
-    }
-    finally {
-      this.elasticsearch = null;
-    }
-  }
-  
-  /**
-   * @rl: This class aim to wrap all Elasticsearch calls in the future.
-   * setConnection is a hack in order to avoid opening several connections while the refactoring is in progress
-   * This function will be deleted later, and once will need to use connect instead.
-   * @param client already opened connection to Elasticsearch
-   */
-  @Deprecated
-  public void setConnection(RestHighLevelClient client) {
-    this.elasticsearch = client;
-  }
-  
-  /*****************************************
-  *
-  * Utility
-  *
-  *****************************************/
-  private void checkConnectionIsEstablished() throws ElasticsearchClientException {
-    if(elasticsearch == null) {
-      throw new ElasticsearchClientException("There is no established connection with Elasticsearch server.");
-    }
-  }
-  
   
   /*****************************************
   *
@@ -164,8 +117,6 @@ public class ElasticsearchClientAPI
   *****************************************/
   public long getJourneySubscriberCount(String journeyID) throws ElasticsearchClientException {
     try {
-      this.checkConnectionIsEstablished();
-        
       //
       // Build Elasticsearch query
       // 
@@ -175,7 +126,7 @@ public class ElasticsearchClientAPI
       //
       // Send request & retrieve response synchronously (blocking call)
       // 
-      CountResponse countResponse = elasticsearch.count(countRequest, RequestOptions.DEFAULT);
+      CountResponse countResponse = this.count(countRequest, RequestOptions.DEFAULT);
       
       //
       // Check search response
@@ -214,8 +165,6 @@ public class ElasticsearchClientAPI
 
   public Map<String, Long> getJourneyNodeCount(String journeyID) throws ElasticsearchClientException {
     try {
-      this.checkConnectionIsEstablished();
-      
       Map<String, Long> result = new HashMap<String, Long>();
   
       //
@@ -232,7 +181,7 @@ public class ElasticsearchClientAPI
       //
       // Send request & retrieve response synchronously (blocking call)
       // 
-      SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+      SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
       
       //
       // Check search response
@@ -285,8 +234,6 @@ public class ElasticsearchClientAPI
   
   public Map<String, Long> getJourneyStatusCount(String journeyID) throws ElasticsearchClientException {
     try {
-      this.checkConnectionIsEstablished();
-      
       Map<String, Long> result = new HashMap<String, Long>();
   
       //
@@ -303,7 +250,7 @@ public class ElasticsearchClientAPI
       //
       // Send request & retrieve response synchronously (blocking call)
       // 
-      SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+      SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
       
       //
       // Check search response
@@ -361,7 +308,6 @@ public class ElasticsearchClientAPI
   public long getLoyaltyProgramCount(String loyaltyProgramID) throws ElasticsearchClientException
   {
     try {
-      this.checkConnectionIsEstablished();
       QueryBuilder queryLoyaltyProgramID = QueryBuilders.termQuery("loyaltyPrograms.programID", loyaltyProgramID);
       QueryBuilder queryEmptyExitDate = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("loyaltyPrograms.loyaltyProgramExitDate"));
       QueryBuilder query = QueryBuilders.nestedQuery("loyaltyPrograms",
@@ -369,7 +315,7 @@ public class ElasticsearchClientAPI
                                                             .filter(queryLoyaltyProgramID)
                                                             .filter(queryEmptyExitDate), ScoreMode.Total);
       CountRequest countRequest = new CountRequest("subscriberprofile").query(query);
-      CountResponse countResponse = elasticsearch.count(countRequest, RequestOptions.DEFAULT);
+      CountResponse countResponse = this.count(countRequest, RequestOptions.DEFAULT);
       if (countResponse.getFailedShards() > 0) {
         throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
       }
@@ -395,6 +341,5 @@ public class ElasticsearchClientAPI
       e.printStackTrace();
       throw new ElasticsearchClientException(e.getMessage());
     }
-
   }
 }

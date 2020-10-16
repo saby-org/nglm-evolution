@@ -20,7 +20,6 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -33,6 +32,7 @@ import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class PurchaseFulfillmentManager extends DeliveryManager implements Runnable, CommodityDeliveryResponseHandler
 {
@@ -134,7 +134,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
   private ArrayList<Thread> threads = new ArrayList<Thread>();
 
-  private RestHighLevelClient elasticsearch;
+  private ElasticsearchClientAPI elasticsearch;
   private SubscriberProfileService subscriberProfileService;
   private DynamicCriterionFieldService dynamicCriterionFieldService;
   private OfferService offerService;
@@ -155,7 +155,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *
   *****************************************/
 
-  public PurchaseFulfillmentManager(String deliveryManagerKey, RestHighLevelClient elasticsearch)
+  public PurchaseFulfillmentManager(String deliveryManagerKey, ElasticsearchClientAPI elasticsearch)
   {
     //
     //  superclass
@@ -1172,7 +1172,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     String deliveryManagerKey = args[0];
     String elasticsearchServerHost = args[1];
     int elasticsearchServerPort = Integer.parseInt(args[2]);
-
+    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("PurchaseFulfillmentManager").getConnectTimeout();
+    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("PurchaseFulfillmentManager").getQueryTimeout();
+    String userName = args[3];
+    String userPassword = args[4];
 
     //
     //  instance  
@@ -1180,10 +1183,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     log.info("PurchaseFulfillmentManager: Configuration " + Deployment.getDeliveryManagers());
 
-    RestHighLevelClient elasticsearch;
+    ElasticsearchClientAPI elasticsearch;
     try
     {
-      elasticsearch = new RestHighLevelClient(RestClient.builder(new HttpHost(elasticsearchServerHost, elasticsearchServerPort, "http")));
+      elasticsearch = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
     }
     catch (ElasticsearchException e)
     {

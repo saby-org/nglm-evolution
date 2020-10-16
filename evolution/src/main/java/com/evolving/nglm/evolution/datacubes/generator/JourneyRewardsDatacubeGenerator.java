@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
@@ -22,6 +21,7 @@ import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneyRewardsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SegmentationDimensionsMap;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
 {
@@ -46,7 +46,7 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public JourneyRewardsDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService)
+  public JourneyRewardsDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService)
   {
     super(datacubeName, elasticsearch);
 
