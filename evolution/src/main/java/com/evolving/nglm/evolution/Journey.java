@@ -2684,7 +2684,7 @@ public class Journey extends GUIManagedObject implements StockableItem
 
       this.contextVariables = nodeType.getAllowContextVariables() ? decodeContextVariables(JSONUtilities.decodeJSONArray(jsonRoot, "contextVariables", false)) : Collections.<ContextVariable>emptyList();
 
-      // add a special internal variable to hold partner
+      // add a special internal variables to hold partner
       
       if ("121".equals(nodeType.getID())) // event.selection nodetype (defined in src/main/resources/config/deployment-product-toolbox.json)
         {

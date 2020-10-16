@@ -124,6 +124,9 @@ public class EvolutionEngine
   static final String INTERNAL_VARIABLE_SUPPLIER = "XXEvolSupplier".toLowerCase();
   static final String INTERNAL_VARIABLE_RESELLER = "XXEvolReseller".toLowerCase();
   
+  static final String INTERNAL_ID_SUPPLIER = "InternalIDSupplier";
+  static final String INTERNAL_ID_RESELLER = "InternalIDReseller";
+
 
   /*****************************************
   *
@@ -5206,11 +5209,10 @@ public class EvolutionEngine
 
 
                         String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(entryActionEvaluationRequest, "node.parameter.relationship");
-                        if (hierarchyRelationship != null && hierarchyRelationship.trim().equals("InternalIDSupplier"))
+                        if (hierarchyRelationship != null && hierarchyRelationship.trim().equals(INTERNAL_ID_SUPPLIER))
                           {
                             String variableID = "variable." + INTERNAL_VARIABLE_SUPPLIER;
                             Object supplierName = (journeyState.getJourneyParameters() != null) ? journeyState.getJourneyParameters().get(variableID) : "unknown";
-                            log.info("MK supplierName : " + supplierName);
                             if (supplierName instanceof String)
                               {
                                 String customerIDSupplier = null;
@@ -5228,7 +5230,7 @@ public class EvolutionEngine
                                         break;
                                       }
                                   }
-                                log.info("MK will do action for " + customerIDSupplier);
+                                log.trace("Will do action for supplier " + customerIDSupplier);
                                 if (customerIDSupplier != null)
                                   {
                                     ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(customerIDSupplier, entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
@@ -5240,11 +5242,10 @@ public class EvolutionEngine
                                 log.info("expecting supplier, found " + supplierName + " " + ((supplierName != null) ? supplierName.getClass().getCanonicalName() : "null"));
                               }
                           }
-                        else if (hierarchyRelationship != null && hierarchyRelationship.trim().equals("InternalID-Reseller"))
+                        else if (hierarchyRelationship != null && hierarchyRelationship.trim().equals(INTERNAL_ID_RESELLER))
                           {
                             String variableID = "variable." + INTERNAL_VARIABLE_RESELLER;
                             Object resellerName = (journeyState.getJourneyParameters() != null) ? journeyState.getJourneyParameters().get(variableID) : "unknown";
-                            log.info("MK resellerName : " + resellerName);
                             if (resellerName instanceof String)
                               {
                                 String customerIDReseller = null;
@@ -5262,7 +5263,7 @@ public class EvolutionEngine
                                         break;
                                       }
                                   }
-                                log.info("MK will do action for " + customerIDReseller);
+                                log.trace("Will do action for reseller " + customerIDReseller);
                                 if (customerIDReseller != null)
                                   {
                                     ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(customerIDReseller, entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
