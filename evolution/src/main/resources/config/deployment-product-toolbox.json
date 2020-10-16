@@ -222,7 +222,7 @@
       },
 
       {
-        "id"                     : "121",
+        "id"                     : "121","EVOL_comment":"DO NOT CHANGE '121' WITHOUT SEARCHING FOR IT IN Journey.java ! (MK)",
         "name"                   : "event.selection",
         "display"                : "Event Selection",
         "icon"                   : "jmr_components/styles/images/objects/event-selection.png",

@@ -2684,6 +2684,14 @@ public class Journey extends GUIManagedObject implements StockableItem
 
       this.contextVariables = nodeType.getAllowContextVariables() ? decodeContextVariables(JSONUtilities.decodeJSONArray(jsonRoot, "contextVariables", false)) : Collections.<ContextVariable>emptyList();
 
+      // add a special internal variable to hold partner
+      
+      if ("121".equals(nodeType.getID())) // event.selection nodetype (defined in src/main/resources/config/deployment-product-toolbox.json)
+        {
+          this.contextVariables.add(new ContextVariable(buildContextVariableJSON("event.supplierName", EvolutionEngine.INTERNAL_VARIABLE_SUPPLIER)));
+          this.contextVariables.add(new ContextVariable(buildContextVariableJSON("event.resellerName", EvolutionEngine.INTERNAL_VARIABLE_RESELLER)));
+        }
+      
       /*****************************************
       *
       *  process these fields only if NOT doing contextVariableProcessing
@@ -2705,6 +2713,22 @@ public class Journey extends GUIManagedObject implements StockableItem
 
           this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), nodeType, nodeOnlyCriterionContext, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
         }
+    }
+    
+    public JSONObject buildContextVariableJSON(String eventField, String internalVariableName)
+    {
+      JSONObject contextVariableJSON;
+      JSONObject valueJSON = new JSONObject();
+      valueJSON.put("expression", eventField);
+      valueJSON.put("value", eventField);
+      valueJSON.put("expressionType", EvaluationCriterion.CriterionDataType.StringCriterion.getExternalRepresentation());
+      valueJSON.put("assignment", ContextVariable.Assignment.Direct.getExternalRepresentation());
+      valueJSON.put("valueType", "complex"); // not sure this is required
+
+      contextVariableJSON = new JSONObject();
+      contextVariableJSON.put("name", internalVariableName);
+      contextVariableJSON.put("value", valueJSON);
+      return contextVariableJSON;
     }
 
     /*****************************************

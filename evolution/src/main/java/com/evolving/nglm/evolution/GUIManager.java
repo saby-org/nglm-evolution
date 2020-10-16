@@ -24953,11 +24953,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             }
           
           availableValue = new HashMap<String, Object>();
-          availableValue.put("id", "InternalID-Supplier");
+          availableValue.put("id", "InternalIDSupplier");
           availableValue.put("display", "Supplier");
           
           result.add(JSONUtilities.encodeObject(availableValue));
-          availableValue.put("id", "InternalID-Reseller");
+          availableValue.put("id", "InternalIDReseller");
           availableValue.put("display", "Reseller");
           result.add(JSONUtilities.encodeObject(availableValue));
           break;

@@ -89,7 +89,9 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Expression.ExpressionContext;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
+import com.evolving.nglm.evolution.Expression.ExpressionReader;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
@@ -118,6 +120,10 @@ import com.sun.net.httpserver.HttpServer;
 
 public class EvolutionEngine
 {
+
+  static final String INTERNAL_VARIABLE_SUPPLIER = "XXEvolSupplier".toLowerCase();
+  static final String INTERNAL_VARIABLE_RESELLER = "XXEvolReseller".toLowerCase();
+  
 
   /*****************************************
   *
@@ -5093,38 +5099,6 @@ public class EvolutionEngine
                           }
                       }
                     
-                    // special case for Event Selection with OfferDelivery
-                    if (firedLink.getLinkID().equals("121"))
-                      {
-                        try
-                        {
-                          // find event name
-                          JSONObject contextVariableJSON = new JSONObject();
-                          contextVariableJSON.put("name", "node.parameter.eventname");
-                          ContextVariable contextVariable;
-                          contextVariable = new ContextVariable(contextVariableJSON);
-                          SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now);
-                          Object eventName = contextVariable.getExpression().evaluateExpression(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
-                          if (eventName instanceof String)
-                            {
-                              if ("OfferDelivery".equals((String) eventName))
-                                {
-                                  contextVariableJSON.put("name", "event.supplierName");
-                                  contextVariable = new ContextVariable(contextVariableJSON);
-                                  Object supplier = contextVariable.getExpression().evaluateExpression(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
-                                  if (supplier instanceof String)
-                                    {
-                                      journeyState.getJourneyParameters().put("variable.Evol_X_Supplier", supplier);
-                                    }
-                                }
-                            }
-                        }
-                        catch (GUIManagerException e)
-                        {
-                          log.info("unable to process special case for EventDelivery : " + e.getLocalizedMessage());
-                        }
-
-                      }
 
                     //
                     //  abort?
@@ -5232,30 +5206,73 @@ public class EvolutionEngine
 
 
                         String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(entryActionEvaluationRequest, "node.parameter.relationship");
-                        if (hierarchyRelationship != null && hierarchyRelationship.trim().equals("InternalID-Supplier"))
+                        if (hierarchyRelationship != null && hierarchyRelationship.trim().equals("InternalIDSupplier"))
                           {
-                            log.info("MK supplier");
-                            try
-                            {
-                              // evaluate special internal variable, set in the EventDelivery node
-                              JSONObject contextVariableJSON = new JSONObject();
-                              String variableSupplier = "variable.Evol_X_Supplier";
-                              contextVariableJSON.put("name", variableSupplier);
-                              ContextVariable contextVariable = new ContextVariable(contextVariableJSON);
-                              Object supplierName = contextVariable.getExpression().evaluateExpression(entryActionEvaluationRequest, contextVariable.getBaseTimeUnit());
-                              if (supplierName instanceof String)
-                                {
-                                  String customerIDSupplier = (String) supplierName;
-                                  ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(customerIDSupplier, entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
-                                  actions.add(action);
-                                }
-                            } catch (GUIManagerException e) {
-                              log.info("unable to process special case for Evol_X_Supplier : " + e.getLocalizedMessage());
-                            }
+                            String variableID = "variable." + INTERNAL_VARIABLE_SUPPLIER;
+                            Object supplierName = (journeyState.getJourneyParameters() != null) ? journeyState.getJourneyParameters().get(variableID) : "unknown";
+                            log.info("MK supplierName : " + supplierName);
+                            if (supplierName instanceof String)
+                              {
+                                String customerIDSupplier = null;
+                                String supplierNameStr = (String) supplierName;
+
+                                // TBD
+                                // Need to convert this to a customerID, using a mapping field
+                                // for now, take "phone" as subscriberID
+
+                                for (Supplier supplier : supplierService.getActiveSuppliers(now))
+                                  {
+                                    if (supplierNameStr.equals(supplier.getGUIManagedObjectDisplay()))
+                                      {
+                                        customerIDSupplier = (String) supplier.getJSONRepresentation().get("phone");
+                                        break;
+                                      }
+                                  }
+                                log.info("MK will do action for " + customerIDSupplier);
+                                if (customerIDSupplier != null)
+                                  {
+                                    ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(customerIDSupplier, entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
+                                    actions.add(action);
+                                  }
+                              }
+                            else
+                              {
+                                log.info("expecting supplier, found " + supplierName + " " + ((supplierName != null) ? supplierName.getClass().getCanonicalName() : "null"));
+                              }
                           }
                         else if (hierarchyRelationship != null && hierarchyRelationship.trim().equals("InternalID-Reseller"))
                           {
-                            
+                            String variableID = "variable." + INTERNAL_VARIABLE_RESELLER;
+                            Object resellerName = (journeyState.getJourneyParameters() != null) ? journeyState.getJourneyParameters().get(variableID) : "unknown";
+                            log.info("MK resellerName : " + resellerName);
+                            if (resellerName instanceof String)
+                              {
+                                String customerIDReseller = null;
+                                String resellerNameStr = (String) resellerName;
+
+                                // TBD
+                                // Need to convert this to a customerID, using a mapping field
+                                // for now, take "phone" as subscriberID
+
+                                for (Reseller reseller : resellerService.getActiveResellers(now))
+                                  {
+                                    if (resellerNameStr.equals(reseller.getGUIManagedObjectDisplay()))
+                                      {
+                                        customerIDReseller = (String) reseller.getJSONRepresentation().get("phone");
+                                        break;
+                                      }
+                                  }
+                                log.info("MK will do action for " + customerIDReseller);
+                                if (customerIDReseller != null)
+                                  {
+                                    ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(customerIDReseller, entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
+                                    actions.add(action);
+                                  }
+                              }
+                            else
+                              {
+                                log.info("expecting reseller, found " + resellerName + " " + ((resellerName != null) ? resellerName.getClass().getCanonicalName() : "null"));
+                              }
                           }
                         else if (hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer"))
                           {
