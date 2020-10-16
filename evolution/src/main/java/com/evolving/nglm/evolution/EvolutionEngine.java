@@ -4508,14 +4508,9 @@ public class EvolutionEngine
                     for (JourneyObjective journeyObjective : allObjectives)
                       {
                         if (permittedJourneys.get(journeyObjective) < 1)
-                          {
-                        	if(journey.getTargetingType().equals(TargetingType.Target)) //EVPRO-530 Only for targetted customers
-                        	{enterJourney = true;
+                          {                      	
                         	currentStatus=SubscriberJourneyStatus.ObjectiveLimitReached;
-                        	   }
-                        	else
-                            enterJourney = false;
-                            context.subscriberTrace("NotEligible: journey {0}, objective {1}", journey.getJourneyID(), journeyObjective.getJourneyObjectiveID());
+                        	context.subscriberTrace("NotEligible: journey {0}, objective {1}", journey.getJourneyID(), journeyObjective.getJourneyObjectiveID());
                             break;
                           }
                       }
@@ -4527,19 +4522,14 @@ public class EvolutionEngine
                 *
                 *****************************************/
 
-                if (enterJourney)
+                if (enterJourney && currentStatus==null)
                   {
-                    switch (journey.getTargetingType())
-                      {
-                        case Target:
-                          if (!journey.getAppendUCG() && subscriberState.getSubscriberProfile().getUniversalControlGroup())
+                    if (!journey.getAppendUCG() && subscriberState.getSubscriberProfile().getUniversalControlGroup())
                             {
-                              enterJourney = true;
                               currentStatus=SubscriberJourneyStatus.UniversalControlGroup;
                               context.subscriberTrace("NotEligible: user is UCG {0}", journey.getJourneyID());
                             }
-                          break;
-                      }
+                      
                   }
 
                 /******************************************
@@ -4548,19 +4538,14 @@ public class EvolutionEngine
                 *
                 *******************************************/
 
-                if (enterJourney)
+                if (enterJourney && currentStatus==null)
                   {
-                    switch (journey.getTargetingType())
-                      {
-                        case Target:
-                         if (!journey.getAppendExclusionLists() && exclusionList)
+                      if (!journey.getAppendExclusionLists() && exclusionList)
                             {
-                              enterJourney = true;
                               currentStatus=SubscriberJourneyStatus.Excluded;
                               context.subscriberTrace("NotEligible: user is in exclusion list {0}", journey.getJourneyID());
                             }
-                          break;
-                      }
+                     
                   }
 
                 /*********************************************
@@ -4569,7 +4554,7 @@ public class EvolutionEngine
                 *
                 **********************************************/
 
-                if (enterJourney)
+                if (enterJourney && currentStatus==null)
                   {
                     SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
                     List<EvaluationCriterion> eligibilityAndTargetting = new ArrayList<>();
@@ -4615,7 +4600,8 @@ public class EvolutionEngine
                         case Manual:
                           if (! targeting)
                             {
-                        	  enterJourney = false;
+                        	  enterJourney = true;
+                              currentStatus=SubscriberJourneyStatus.NotEligible;
                               context.subscriberTrace("NotEligible: targeting criteria {0}", journey.getJourneyID());
                         
                             }
@@ -4629,7 +4615,7 @@ public class EvolutionEngine
                   *
                   **********************************************/
 
-                  if (enterJourney)
+                  if (enterJourney && currentStatus==null)
                     {
                       if (!stockService.reserve(journey,1))
                         {
@@ -4695,7 +4681,13 @@ public class EvolutionEngine
 
 					JourneyHistory journeyHistory = new JourneyHistory(journey.getJourneyID());
 					JourneyState journeyState = new JourneyState(context, journey, journeyRequest, boundParameters,
-							SystemTime.getCurrentTime(), journeyHistory, currentStatus);
+							SystemTime.getCurrentTime(), journeyHistory);
+					if(currentStatus!=null) //EVPRO-530
+			    	{journeyState.setJourneyNodeID(journey.getEndNodeID());
+			    	journeyState.setSpecialExit(true);
+			    	journeyState.setSpecialExitReason(currentStatus);
+			    	journeyState.setJourneyExitDate(SystemTime.getCurrentTime());
+			    	}
 					journeyState.getJourneyHistory().addNodeInformation(null, journeyState.getJourneyNodeID(), null,
 							null);
 					boolean statusUpdated = journeyState.getJourneyHistory()

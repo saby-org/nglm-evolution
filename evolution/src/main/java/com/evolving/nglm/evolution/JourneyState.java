@@ -91,6 +91,8 @@ public class JourneyState implements Cleanable
   private String journeyInstanceID;
   private String journeyID;
   private String journeyNodeID;
+  
+
   private ParameterMap journeyParameters;
   private ParameterMap journeyActionManagerContext;
   private Date journeyEntryDate;
@@ -105,6 +107,23 @@ public class JourneyState implements Cleanable
   private Date journeyEndDate;
   private Boolean specialExit=false;
   private SubscriberJourneyStatus specialExitReason=null;
+
+  public Boolean getSpecialExit() {
+	return specialExit;
+}
+public void setSpecialExit(boolean specialExit) {
+	this.specialExit = specialExit;
+}
+public void setJourneyEndDate(Date journeyEndDate) {
+	this.journeyEndDate = journeyEndDate;
+}
+public void setSpecialExitReason(SubscriberJourneyStatus specialExitReason) {
+	this.specialExitReason = specialExitReason;
+}
+public void setJourneyNodeID(String journeyNodeID) {
+	this.journeyNodeID = journeyNodeID;
+}
+
 
   /*****************************************
   *
@@ -175,34 +194,7 @@ public class JourneyState implements Cleanable
     this.journeyEndDate = journey.getEffectiveEndDate();
   }
   
-  public JourneyState(EvolutionEventContext context, Journey journey, JourneyRequest callingJourneyRequest, Map<String, Object> journeyParameters, Date journeyEntryDate, JourneyHistory journeyHistory,SubscriberJourneyStatus specialcase)
-  {
-    this.callingJourneyRequest = callingJourneyRequest;
-    this.journeyInstanceID = context.getUniqueKey();
-    this.journeyID = journey.getJourneyID();
-    if(specialcase!=null)
-    	{this.journeyNodeID = journey.getEndNodeID();
-    	this.specialExit=true;
-    	this.specialExitReason=specialcase;
-    	this.journeyExitDate=journeyEntryDate;
-    	}
-    else
-    {  this.journeyNodeID = journey.getStartNodeID();
-       this.journeyExitDate = null;
-    }
-    this.journeyParameters = new ParameterMap(journeyParameters);
-    this.journeyActionManagerContext = new ParameterMap();
-    this.journeyEntryDate = journeyEntryDate;
-    
-    this.journeyCloseDate = null;
-    this.journeyMetricsPrior = new HashMap<String,Long>();
-    this.journeyMetricsDuring = new HashMap<String,Long>();
-    this.journeyMetricsPost = new HashMap<String,Long>();
-    this.journeyNodeEntryDate = journeyEntryDate;
-    this.journeyOutstandingDeliveryRequestID = null;    
-    this.journeyHistory = journeyHistory;
-    this.journeyEndDate = journey.getEffectiveEndDate();
-  }
+ 
 
   /*****************************************
   *
