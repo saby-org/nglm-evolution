@@ -380,10 +380,10 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  public List<CriterionField> getAllTags()
-  {
-    return resolveAllTags(dialogMessages);
-  }
+  /*
+   * public List<CriterionField> getAllTags() { return
+   * resolveAllTags(dialogMessages); }
+   */
   
   /*****************************************
   *

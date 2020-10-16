@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-FO*  GUIManager.java
+*  GUIManager.java
 *
 *****************************************************************************/
 
@@ -14860,10 +14860,10 @@ public class GUIManager
         *
         *****************************************/
 
-        if (smsTemplate.getAllTags().size() > 0)
+        if (smsTemplate.getParameterTags().size() > 0)
           {
             List<JSONObject> parameterTags = new ArrayList<JSONObject>();
-            for (CriterionField parameterTag : smsTemplate.getAllTags())
+            for (CriterionField parameterTag : smsTemplate.getParameterTags())
               {
                 parameterTags.add(parameterTag.getJSONRepresentation());
               }
@@ -15343,10 +15343,10 @@ public class GUIManager
         *
         *****************************************/
 
-        if (pushTemplate.getAllTags().size() > 0)
+        if (pushTemplate.getParameterTags().size() > 0)
           {
             List<JSONObject> parameterTags = new ArrayList<JSONObject>();
-            for (CriterionField parameterTag : pushTemplate.getAllTags())
+            for (CriterionField parameterTag : pushTemplate.getParameterTags())
               {
                 parameterTags.add(parameterTag.getJSONRepresentation());
               }
@@ -15826,10 +15826,10 @@ public class GUIManager
         *
         *****************************************/
 
-        if (dialogTemplate.getAllTags().size() > 0)
+        if (dialogTemplate.getParameterTags().size() > 0)
           {
             List<JSONObject> parameterTags = new ArrayList<JSONObject>();
-            for (CriterionField parameterTag : dialogTemplate.getAllTags())
+            for (CriterionField parameterTag : dialogTemplate.getParameterTags())
               {
                 parameterTags.add(parameterTag.getJSONRepresentation());
               }

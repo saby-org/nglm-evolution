@@ -6,7 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,7 +120,7 @@ public abstract class SubscriberMessage
         //
         //  parameterTags
         //
-        log.info("RAJ K messageJSON {}", messageJSON);
+        
         parameterTags = decodeParameterTags(JSONUtilities.decodeJSONArray(messageJSON, "macros", new JSONArray()), subscriberMessageTemplate, criterionContext);
       }
     
@@ -173,7 +172,6 @@ public abstract class SubscriberMessage
       {
         parameterTagsByID.put(parameterTag.getID(), parameterTag);
       }
-    log.info("RAJ K parameterTagsByID {}", parameterTagsByID);
 
     /*****************************************
     *
