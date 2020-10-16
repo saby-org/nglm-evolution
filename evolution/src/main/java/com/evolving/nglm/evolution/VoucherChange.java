@@ -3,12 +3,15 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamOutput;
+import com.evolving.nglm.evolution.ActionManager.Action;
+import com.evolving.nglm.evolution.ActionManager.ActionType;
+
 import org.apache.kafka.connect.data.*;
 
 import java.util.Date;
 
 // main purpose is to trigger request to modify voucher in evolutionEngine, might be used as an event
-public class VoucherChange extends SubscriberStreamOutput implements EvolutionEngineEvent {
+public class VoucherChange extends SubscriberStreamOutput implements EvolutionEngineEvent, Action {
 
   //action
   public enum VoucherChangeAction {
@@ -181,6 +184,11 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
             ", origin='" + origin + '\'' +
             ", returnStatus=" + returnStatus.getGenericResponseMessage() +
             '}';
+  }
+  @Override
+  public ActionType getActionType()
+  {
+    return ActionType.VoucherChange;
   }
 
 }

@@ -104,6 +104,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
+import com.evolving.nglm.evolution.VoucherChange.VoucherChangeAction;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -5566,6 +5567,12 @@ public class EvolutionEngine
               TokenChange tokenChange = (TokenChange) action;
               subscriberState.getTokenChanges().add(tokenChange);
               break;
+              
+            case VoucherChange:
+              VoucherChange voucherChange = (VoucherChange) action;
+              String requestTopic = Deployment.getVoucherChangeRequestTopic();
+              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(requestTopic, StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberState.getSubscriberProfile().getSubscriberID())), VoucherChange.serde().serializer().serialize(requestTopic, voucherChange)));
+              break;
 
             case TriggerEvent:
               JourneyTriggerEventAction triggerEventAction = (JourneyTriggerEventAction) action;
@@ -7732,6 +7739,68 @@ public class EvolutionEngine
     public void setEventToTrigger(EvolutionEngineEvent eventToTrigger)
     {
       this.eventToTrigger = eventToTrigger;
+    }
+  }
+  
+  public static class RedeemVoucherAction extends ActionManager
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+    
+    private String origin;
+    private String moduleID;
+    private String voucherID = "";
+
+
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public RedeemVoucherAction(JSONObject configuration) throws GUIManagerException
+    {
+      super(configuration);
+      this.origin = JSONUtilities.decodeString(configuration, "origin", true);
+      this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
+    }
+
+    /*****************************************
+    *
+    *  execute
+    *
+    *****************************************/
+
+    @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    {
+      
+      /*****************************************
+      *
+      *  request arguments
+      *
+      *****************************************/
+
+      String voucherCode = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.voucher.code");
+      String supplier = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.supplier");
+
+      /*****************************************
+      *
+      *  request
+      *
+      *****************************************/
+
+      VoucherChange request = new VoucherChange(subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), null, "", VoucherChangeAction.Redeem, voucherCode, voucherID, null, moduleID, "1", origin, RESTAPIGenericReturnCodes.UNKNOWN);
+
+      /*****************************************
+      *
+      *  return request
+      *
+      *****************************************/
+
+      return Collections.<Action>singletonList(request);
     }
   }
 }

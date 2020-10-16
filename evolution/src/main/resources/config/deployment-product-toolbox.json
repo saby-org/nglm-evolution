@@ -798,9 +798,10 @@
         "width"                  : 70,
         "allowContextVariables"  : true,
         "outputType"             : "static",
+        "enableCycle"      		 : true,
         "outputConnectors"       : 
           [ 
-            { "name" : "deregistered",  "display" : "Deregistered",  "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
+            { "name" : "redeemed",      "display" : "Redeemed",  	 "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'redeemed' ]" } } ] },
             { "name" : "failed",        "display" : "Failed",        "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
             { "name" : "timeout",       "display" : "Timeout",       "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] } 
           ],
@@ -827,9 +828,9 @@
           ],
         "action" : 
           {
-            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$LoyaltyProgramAction",
+            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$RedeemVoucherAction",
             "moduleID" : "1",
-            "operation" : "opt-out"
+            "origin" : "origin"
           }
       },
       
@@ -844,7 +845,7 @@
         "outputType"             : "static",
         "outputConnectors"       : 
           [ 
-            { "name" : "deregistered",  "display" : "Deregistered",  "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'delivered' ]" } } ] },
+            { "name" : "valid",  		"display" : "Valid",  		 "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'valid' ]" } } ] },
             { "name" : "failed",        "display" : "Failed",        "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
             { "name" : "timeout",       "display" : "Timeout",       "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] } 
           ],
