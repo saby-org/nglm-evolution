@@ -876,18 +876,18 @@
       "permissions"  : ["API-REDEEM-VOUCHER"]
     },
     {
-      "id"           : "putSupplierOffer",
-      "methodName"   : "putSupplierOffer",
+      "id"           : "putSimpleOffer",
+      "methodName"   : "putSimpleOffer",
       "permissions"  : ["API-PUT-SUPPLIER-OFFER"]
     },
     {
-      "id"           : "getSupplierOfferList",
-      "methodName"   : "getSupplierOfferList",
+      "id"           : "getSimpleOfferList",
+      "methodName"   : "getSimpleOfferList",
       "permissions"  : ["API-GET-SUPPLIER-OFFER-LIST"]
     },
     {
-      "id"           : "removeSupplierOffer",
-      "methodName"   : "removeSupplierOffer",
+      "id"           : "removeSimpleOffer",
+      "methodName"   : "removeSimpleOffer",
       "permissions"  : ["API-REMOVE-SUPPLIER-OFFER"]
     },
     {

@@ -199,7 +199,7 @@ public class ContactPolicyService extends GUIService
             JourneyObjective journeyObjective = (JourneyObjective) guiManagedObject;
             if(journeyObjective.getContactPolicyID().equals(contactPolicyID))
               {
-                result.add(journeyObjective.getGUIManagedObjectName());
+                result.add(journeyObjective.getGUIManagedObjectDisplay());
               }
           }
       }

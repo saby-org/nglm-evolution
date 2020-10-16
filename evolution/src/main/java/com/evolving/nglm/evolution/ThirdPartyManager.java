@@ -220,9 +220,9 @@ public class ThirdPartyManager
     validateVoucher(29),
     redeemVoucher(30),
     getCustomerTokenAndNBO(31),
-    putSupplierOffer(32),
-    getSupplierOfferList(33),
-    removeSupplierOffer(34),
+    putSimpleOffer(32),
+    getSimpleOfferList(33),
+    removeSimpleOffer(34),
     getResellerDetails(35);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
@@ -531,9 +531,9 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/loyaltyProgramOptOut", new APIHandler(API.loyaltyProgramOptOut));
       restServer.createContext("/nglm-thirdpartymanager/validateVoucher", new APIHandler(API.validateVoucher));
       restServer.createContext("/nglm-thirdpartymanager/redeemVoucher", new APIHandler(API.redeemVoucher));
-      restServer.createContext("/nglm-thirdpartymanager/putSupplierOffer", new APIHandler(API.putSupplierOffer));
-      restServer.createContext("/nglm-thirdpartymanager/getSupplierOfferList", new APIHandler(API.getSupplierOfferList));
-      restServer.createContext("/nglm-thirdpartymanager/removeSupplierOffer", new APIHandler(API.removeSupplierOffer));
+      restServer.createContext("/nglm-thirdpartymanager/putSimpleOffer", new APIHandler(API.putSimpleOffer));
+      restServer.createContext("/nglm-thirdpartymanager/getSimpleOfferList", new APIHandler(API.getSimpleOfferList));
+      restServer.createContext("/nglm-thirdpartymanager/removeSimpleOffer", new APIHandler(API.removeSimpleOffer));
       restServer.createContext("/nglm-thirdpartymanager/getResellerDetails", new APIHandler(API.getResellerDetails));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
@@ -885,14 +885,14 @@ public class ThirdPartyManager
             case getResellerDetails:
               jsonResponse = processGetResellerDetails(jsonRoot);
               break;
-            case putSupplierOffer:
-              jsonResponse = processPutSupplierOffer(jsonRoot);
+            case putSimpleOffer:
+              jsonResponse = processPutSimpleOffer(jsonRoot);
               break;
-            case getSupplierOfferList:
-              jsonResponse = processGetSupplierOfferList(jsonRoot);
+            case getSimpleOfferList:
+              jsonResponse = processGetSimpleOfferList(jsonRoot);
               break;
-            case removeSupplierOffer:
-              jsonResponse = processRemoveSupplierOffer(jsonRoot);
+            case removeSimpleOffer:
+              jsonResponse = processRemoveSimpleOffer(jsonRoot);
               break;
           }
         }
@@ -5094,11 +5094,11 @@ public class ThirdPartyManager
 
   /*****************************************
   *
-  *  processPutSupplierOffer
+  *  processPutSimpleOffer
   *
   *****************************************/
   
-  private JSONObject processPutSupplierOffer(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
+  private JSONObject processPutSimpleOffer(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
 
   {
     try
@@ -5132,7 +5132,7 @@ public class ThirdPartyManager
 
 
         StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
-        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/putSupplierOffers");
+        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/putSimpleOfferThirdParty");
         httpPost.setEntity(stringEntity);
 
         //
@@ -5190,11 +5190,11 @@ public class ThirdPartyManager
 
   /*****************************************
   *
-  *  processGetSupplierOffers
+  *  processGetSimpleOfferList
   *
   *****************************************/
   
-  private JSONObject processGetSupplierOfferList(JSONObject jsonRoot)  throws ThirdPartyManagerException, ParseException, IOException
+  private JSONObject processGetSimpleOfferList(JSONObject jsonRoot)  throws ThirdPartyManagerException, ParseException, IOException
 
   {
     try 
@@ -5226,7 +5226,7 @@ public class ThirdPartyManager
         JSONObject result;
 
         StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
-        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/getSupplierOfferList");
+        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/getSimpleOfferListThirdParty");
         httpPost.setEntity(stringEntity);
 
         //
@@ -5291,11 +5291,11 @@ public class ThirdPartyManager
 
   /*****************************************
   *
-  *  processRemoveSupplierOffer
+  *  processRemoveSimpleOffer
   *
   *****************************************/
   
-  private JSONObject processRemoveSupplierOffer(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
+  private JSONObject processRemoveSimpleOffer(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
 
   {
     try 
@@ -5327,7 +5327,7 @@ public class ThirdPartyManager
         JSONObject result;
 
         StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
-        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/removeSupplierOffers");
+        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/removeSimpleOfferThirdParty");
         httpPost.setEntity(stringEntity);
 
         //
