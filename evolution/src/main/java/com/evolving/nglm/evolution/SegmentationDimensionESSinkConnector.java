@@ -12,6 +12,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import com.evolving.nglm.core.ChangeLogESSinkTask;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.core.SystemTime;
@@ -37,7 +38,7 @@ public class SegmentationDimensionESSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
   
-  public static class SegmentationDimensionESSinkConnectorTask extends StreamESSinkTask<SegmentationDimension>
+  public static class SegmentationDimensionESSinkConnectorTask extends ChangeLogESSinkTask<SegmentationDimension>
   {
 
     /*****************************************
@@ -136,6 +137,12 @@ public class SegmentationDimensionESSinkConnector extends SimpleESSinkConnector
       documentMap.put("segments",  segments);
       documentMap.put("timestamp", DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime()));
       return documentMap;
+    }
+
+    @Override
+    public String getDocumentID(SegmentationDimension segmentationDimension)
+    {
+      return segmentationDimension.getSegmentationDimensionID();
     }
   }
 }

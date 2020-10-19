@@ -14,6 +14,7 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.json.simple.JSONObject;
 
+import com.evolving.nglm.core.ChangeLogESSinkTask;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
@@ -47,7 +48,7 @@ public class JourneyObjectiveESSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
   
-  public static class JourneyObjectiveESSinkConnectorTask extends StreamESSinkTask<JourneyObjective>
+  public static class JourneyObjectiveESSinkConnectorTask extends ChangeLogESSinkTask<JourneyObjective>
   {
     private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
     private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
@@ -140,6 +141,12 @@ public class JourneyObjectiveESSinkConnector extends SimpleESSinkConnector
       documentMap.put("timestamp",     DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime()));
       
       return documentMap;
+    }
+
+    @Override
+    public String getDocumentID(JourneyObjective journeyObjective)
+    {
+      return journeyObjective.getJourneyObjectiveID();
     }
   }
 }
