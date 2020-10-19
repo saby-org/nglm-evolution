@@ -172,7 +172,6 @@ public abstract class SubscriberMessage
       {
         parameterTagsByID.put(parameterTag.getID(), parameterTag);
       }
-    log.info("RAJ K parameterTagsByID {}", parameterTagsByID);
 
     /*****************************************
     *
@@ -185,7 +184,6 @@ public abstract class SubscriberMessage
     for (int i=0; i<jsonArray.size(); i++)
       {
         JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
-        log.info("RAJ K parameterJSON {}", parameterJSON);
         String parameterID = JSONUtilities.decodeString(parameterJSON, "templateValue", true);
         
         //
@@ -194,7 +192,11 @@ public abstract class SubscriberMessage
         
         if (contextIDs.contains(parameterID)) continue;
         CriterionField parameter = parameterTagsByID.get(parameterID);
-        if (parameter == null) throw new GUIManagerException("unknown parameterTag", parameterID);
+        if (parameter == null)
+          {
+            log.error("parameterID {} not found in parameterTagsByID {} and parameterJSON is {}", parameterID, parameterTagsByID, parameterJSON);
+            throw new GUIManagerException("unknown parameterTag", parameterID);
+          }
         
         if (! Journey.isExpressionValuedParameterValue(parameterJSON))
           {
