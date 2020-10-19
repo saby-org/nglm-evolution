@@ -74,14 +74,9 @@
   "purchaseTimeoutMsComment" : "timeout for completion when calling purchase in sync mode",
   "purchaseTimeoutMs" : 15000,
   
-  "subscriberESIndexes" :
+  "cleanupSubscriberElasticsearchIndexes" :
   [
-    "subscriberprofile",
-    "detailedrecords_bonuses-*",
-    "detailedrecords_offers-*",
-    "detailedrecords_messages-*",
-    "detailedrecords_tokens-*",
-    "journeystatistic*"
+    "subscriberprofile"
   ],
 
   "emptyTopic"                                           : "${topic.empty}",
