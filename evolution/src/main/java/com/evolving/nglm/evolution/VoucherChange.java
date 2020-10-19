@@ -151,6 +151,21 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     this.origin = origin;
     this.returnStatus = returnStatus;
   }
+  
+  public VoucherChange(VoucherChange voucherChange) {
+    this.subscriberID = voucherChange.getSubscriberID();
+    this.eventDate = voucherChange.getEventDate();
+    this.newVoucherExpiryDate = voucherChange.getNewVoucherExpiryDate();
+    this.eventID = voucherChange.getEventID();
+    this.action = voucherChange.getAction();
+    this.voucherCode = voucherChange.getVoucherCode();
+    this.voucherID = voucherChange.getVoucherID();
+    this.fileID = voucherChange.getFileID();
+    this.moduleID = voucherChange.getModuleID();
+    this.featureID = voucherChange.getFeatureID();
+    this.origin = voucherChange.getOrigin();
+    this.returnStatus = voucherChange.getReturnStatus();
+  }
 
   public VoucherChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus) {
     super(schemaAndValue);
