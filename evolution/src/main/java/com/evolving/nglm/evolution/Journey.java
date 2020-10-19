@@ -2561,7 +2561,9 @@ public class Journey extends GUIManagedObject implements StockableItem
 
     if (unvalidatedContextVariables.size() > 0)
       {
-        throw new GUIManagerException("unvalidatedContextVariables", Integer.toString(unvalidatedContextVariables.size()));
+        StringBuilder buffer = new StringBuilder();
+        unvalidatedContextVariables.iterator().forEachRemaining(var -> buffer.append(var.getID()+" "));
+        throw new GUIManagerException("unvalidatedContextVariables "+buffer, Integer.toString(unvalidatedContextVariables.size()));
       }
 
     /*****************************************
@@ -2686,7 +2688,7 @@ public class Journey extends GUIManagedObject implements StockableItem
 
       // add a special internal variables to hold partner
       
-      if ("121".equals(nodeType.getID())) // event.selection nodetype (defined in src/main/resources/config/deployment-product-toolbox.json)
+      if ("121".equals(nodeType.getID()) && "offerDelivery".equals(eventName)) // event.selection nodetype (defined in src/main/resources/config/deployment-product-toolbox.json)
         {
           this.contextVariables.add(new ContextVariable(buildContextVariableJSON("event.supplierName", EvolutionEngine.INTERNAL_VARIABLE_SUPPLIER)));
           this.contextVariables.add(new ContextVariable(buildContextVariableJSON("event.resellerName", EvolutionEngine.INTERNAL_VARIABLE_RESELLER)));
