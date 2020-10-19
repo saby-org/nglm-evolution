@@ -7853,11 +7853,6 @@ public class EvolutionEngine
         }
       log.info("RAJ K voucherChange {}", voucherChange);
       
-      ContextUpdate contextUpdate = new ContextUpdate(ActionType.JourneyContextUpdate);
-      contextUpdate.getParameters().put("node.action.redeemstatus", voucherChange.getReturnStatus().getGenericResponseMessage().toLowerCase());
-      actions.add(contextUpdate);
-      
-      
       /*****************************************
       *
       *  return request
