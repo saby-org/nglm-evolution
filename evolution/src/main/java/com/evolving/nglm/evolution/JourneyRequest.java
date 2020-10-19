@@ -384,4 +384,10 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     //  
     
   }
+  @Override
+  public String toString()
+  {
+    return "JourneyRequest [" + (journeyRequestID != null ? "journeyRequestID=" + journeyRequestID + ", " : "") + (eventDate != null ? "eventDate=" + eventDate + ", " : "") + (journeyID != null ? "journeyID=" + journeyID + ", " : "") + (callingJourneyInstanceID != null ? "callingJourneyInstanceID=" + callingJourneyInstanceID + ", " : "") + (callingJourneyNodeID != null ? "callingJourneyNodeID=" + callingJourneyNodeID + ", " : "") + "waitForCompletion=" + waitForCompletion + ", "
+        + (boundParameters != null ? "boundParameters=" + boundParameters + ", " : "") + (journeyStatus != null ? "journeyStatus=" + journeyStatus + ", " : "") + (journeyResults != null ? "journeyResults=" + journeyResults + ", " : "") + "eligible=" + eligible + "]";
+  }
 }

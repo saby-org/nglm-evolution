@@ -364,6 +364,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     switch (getGUIManagedObjectType())
       {
         case Workflow:
+        case LoyaltyWorkflow:
           result = true;
           break;
         default:
@@ -572,6 +573,8 @@ public class Journey extends GUIManagedObject implements StockableItem
           return "campaign.result." + contextVariable.getID();
         case Workflow:
           return "workflow.result." + contextVariable.getID();
+        case LoyaltyWorkflow:
+          return "loyaltyworkflow.result." + contextVariable.getID();
         default:
           return "journey.result." + contextVariable.getID();
       }
@@ -1123,6 +1126,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           break;
 
         case Workflow:
+        case LoyaltyWorkflow:
           journeyUniversalEligibilityCriteria = new ArrayList<EvaluationCriterion>();
           break;
       }
