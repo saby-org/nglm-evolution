@@ -801,8 +801,8 @@
         "enableCycle"      		 : true,
         "outputConnectors"       : 
           [ 
-            { "name" : "redeemed",      "display" : "Redeemed",  	 "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'redeemed' ]" } } ] },
-            { "name" : "failed",        "display" : "Failed",        "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
+            { "name" : "redeemed",      "display" : "Redeemed",  	 "transitionCriteria" : [ { "criterionField" : "node.action.redeemstatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'redeemed' ]" } } ] },
+            { "name" : "failed",        "display" : "Failed",        "transitionCriteria" : [ { "criterionField" : "node.action.redeemstatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'voucher_not_assigned', 'indeterminate', 'failedTimeout' ]" } } ] },
             { "name" : "timeout",       "display" : "Timeout",       "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] } 
           ],
         "parameters" :

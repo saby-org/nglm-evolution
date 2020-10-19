@@ -2443,7 +2443,6 @@ public class EvolutionEngine
               // redeem
               if(voucherChange.getAction()==VoucherChange.VoucherChangeAction.Redeem){
                 checkRedeemVoucher(voucherStored, voucherChange, true);
-                log.info("RAJ K actual voucherChange {}", voucherChange);
                 if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Redeemed) break;
                 
                 /*
@@ -2508,6 +2507,7 @@ public class EvolutionEngine
       //need to respond
       subscriberState.getVoucherChanges().add(voucherChange);
       subscriberUpdated=true;
+      log.info("RAJ K actual voucherChange {}", voucherChange);
     }
 
     return subscriberUpdated;
@@ -7805,6 +7805,7 @@ public class EvolutionEngine
 
     @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
+      List<Action> actions = new ArrayList<Action>();
       SubscriberProfile subscriberProfile = subscriberEvaluationRequest.getSubscriberProfile();
       
       /*****************************************
@@ -7824,6 +7825,7 @@ public class EvolutionEngine
       *****************************************/
 
       VoucherChange originalVoucherChange = new VoucherChange(subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), null, "", VoucherChangeAction.Redeem, voucherCode, voucherID, null, moduleID, "1", origin, RESTAPIGenericReturnCodes.UNKNOWN);
+      actions.add(originalVoucherChange);
       
       //
       // check redeem status
@@ -7851,13 +7853,18 @@ public class EvolutionEngine
         }
       log.info("RAJ K voucherChange {}", voucherChange);
       
+      ContextUpdate contextUpdate = new ContextUpdate(ActionType.JourneyContextUpdate);
+      contextUpdate.getParameters().put("node.action.redeemstatus", voucherChange.getReturnStatus().getGenericResponseMessage().toLowerCase());
+      actions.add(contextUpdate);
+      
+      
       /*****************************************
       *
       *  return request
       *
       *****************************************/
 
-      return Collections.<Action>singletonList(originalVoucherChange);
+      return actions;
     }
   }
 }
