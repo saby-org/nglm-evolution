@@ -184,16 +184,13 @@ public abstract class SubscriberMessage
     for (int i=0; i<jsonArray.size(); i++)
       {
         JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
-        if (log.isTraceEnabled()) log.trace("parameterJSON {}", parameterJSON);
         String parameterID = JSONUtilities.decodeString(parameterJSON, "templateValue", true);
         
         //
-        //  ignore contexts
+        //  ignore contexts - no need to respect the context tags
         //
         
         if (contextIDs.contains(parameterID)) continue;
-        
-        //parameterID = CriterionField.generateTagID(parameterID);
         CriterionField parameter = parameterTagsByID.get(parameterID);
         if (parameter == null) throw new GUIManagerException("unknown parameterTag", parameterID);
         
