@@ -272,18 +272,21 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
           ParsedSum rewardEarned = statusBucket.getAggregations().get(rewardID + DATA_POINT_EARNED);
           if (rewardEarned == null) {
             log.error("Unable to extract rewards.earned metric for reward: " + rewardID + ", aggregation is missing.");
+            continue;
           }
           metrics.put("rewards.earned", (int) rewardEarned.getValue());
           
           ParsedSum rewardRedeemed = statusBucket.getAggregations().get(rewardID + DATA_POINT_REDEEMED);
           if (rewardRedeemed == null) {
             log.error("Unable to extract rewards.redeemed metric for reward: " + rewardID + ", aggregation is missing.");
+            continue;
           }
           metrics.put("rewards.redeemed", (int) rewardRedeemed.getValue());
           
           ParsedSum rewardExpired = statusBucket.getAggregations().get(rewardID + DATA_POINT_EXPIRED);
           if (rewardExpired == null) {
             log.error("Unable to extract rewards.expired metric for reward: " + rewardID + ", aggregation is missing.");
+            continue;
           }
           metrics.put("rewards.expired", (int) rewardExpired.getValue());
         }
@@ -292,11 +295,14 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
         // Subscriber Metrics
         //
         for(String metricID: customMetrics.keySet()) {
+          SubscriberProfileDatacubeMetric subscriberProfileCustomMetric = customMetrics.get(metricID);
+          
           ParsedSum customMetric = statusBucket.getAggregations().get(DATA_METRIC_PREFIX + metricID);
           if (customMetric == null) {
             log.error("Unable to extract custom." + metricID + ", aggregation is missing.");
+            continue;
           }
-          metrics.put("custom." + metricID, (int) customMetric.getValue());
+          metrics.put("custom." + subscriberProfileCustomMetric.getDisplay(), (int) customMetric.getValue());
         }
         
         //
