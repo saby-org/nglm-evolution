@@ -109,6 +109,8 @@ public class VoucherRedemption implements EvolutionEngineEvent, Action
   *
   *****************************************/
   
+  public void setRedemptionStatus(String redemptionStatus) { this.redemptionStatus = redemptionStatus; }
+  
   /*****************************************
   *
   * constructor

@@ -7858,13 +7858,14 @@ public class EvolutionEngine
       *  operation
       *
       *****************************************/
-      
+      Date now = SystemTime.getCurrentTime();
       if (operation == Operation.Redeem)
         {
+          VoucherRedemption redemptionEvent = new VoucherRedemption(subscriberProfile.getSubscriberID(), now, voucherCode, RESTAPIGenericReturnCodes.UNKNOWN.getGenericResponseMessage());
           try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplier, subscriberProfile);
-              VoucherChange voucherChange = new VoucherChange(subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), null, "", VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFeatureID(), moduleID, voucherProfileStored.getFeatureID(), origin, RESTAPIGenericReturnCodes.UNKNOWN);
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFeatureID(), moduleID, voucherProfileStored.getFeatureID(), origin, RESTAPIGenericReturnCodes.UNKNOWN);
               for (VoucherProfileStored voucherStored : subscriberProfile.getVouchers())
                 {
                   if (voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
@@ -7876,28 +7877,31 @@ public class EvolutionEngine
                 }
               evolutionEventContext.getSubscriberState().getVoucherChanges().add(voucherChange);
               subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
+              redemptionEvent.setRedemptionStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
             } 
           catch (ThirdPartyManagerException e) 
             {
-              //
-              //
-              //
-              
+              redemptionEvent.setRedemptionStatus(e.getMessage());
               if (log.isDebugEnabled()) log.debug("VoucherAction {} failed as voucherCode {} status is {}", operation, voucherCode, e.getMessage());
             }
+          actions.add(redemptionEvent);
         }
       else if (operation == Operation.Validate)
         {
+          VoucherValidation validationEvent = new VoucherValidation(subscriberProfile.getSubscriberID(), now, voucherCode, RESTAPIGenericReturnCodes.UNKNOWN.getGenericResponseMessage());
           try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplier, subscriberProfile);
-              VoucherChange voucherChange = new VoucherChange(subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), null, "", VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFeatureID(), moduleID, voucherProfileStored.getFeatureID(), origin, RESTAPIGenericReturnCodes.SUCCESS);
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFeatureID(), moduleID, voucherProfileStored.getFeatureID(), origin, RESTAPIGenericReturnCodes.SUCCESS);
               subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
+              validationEvent.setValidationStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
             } 
           catch (ThirdPartyManagerException e)
             {
+              validationEvent.setValidationStatus(e.getMessage());
               if (log.isDebugEnabled()) log.debug("VoucherAction {} failed as voucherCode {} status is {}", operation, voucherCode, e.getMessage());
             }
+          actions.add(validationEvent);
         }
       
       if (log.isDebugEnabled()) log.debug("VoucherAction {} subscriberEvaluationRequest.getJourneyState().getVoucherChanges() {}", operation, subscriberEvaluationRequest.getJourneyState().getVoucherChanges());

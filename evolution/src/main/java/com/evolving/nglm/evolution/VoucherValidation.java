@@ -109,6 +109,8 @@ public class VoucherValidation implements EvolutionEngineEvent, Action
   *
   *****************************************/
   
+  public void setValidationStatus(String validationStatus) { this.validationStatus = validationStatus; }
+  
   /*****************************************
   *
   * constructor
