@@ -351,7 +351,7 @@
           "name" : "VoucherRedemption",
           "eventClass" : "com.evolving.nglm.evolution.VoucherRedemption",
           "eventTopic" : "${topic.voucherredemption}",
-          "eventRule"  : "internal",
+          "eventRule"  : "standard",
           "eventCriterionFields" : 
             [
               { "id" : "event.voucherredemption.vouchercode",          "display" : "Voucher Code",       	"dataType" : "string",	 "retriever" : "getVoucherRedemptionVoucherCode",      	"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
@@ -362,7 +362,7 @@
           "name" : "VoucherValidation",
           "eventClass" : "com.evolving.nglm.evolution.VoucherValidation",
           "eventTopic" : "${topic.vouchervalidation}",
-          "eventRule"  : "internal",
+          "eventRule"  : "standard",
           "eventCriterionFields" : 
             [
               { "id" : "event.vouchervalidation.vouchercode",          "display" : "Voucher Code",       	"dataType" : "string", "retriever" : "getVoucherValidationVoucherCode",      	"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
