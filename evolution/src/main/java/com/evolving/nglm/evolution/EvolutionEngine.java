@@ -7845,7 +7845,7 @@ public class EvolutionEngine
                 {
                   voucherFound=true;
                   checkRedeemVoucher(voucherStored, voucherChange, true);
-                  if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Redeemed) break;
+                  if (voucherChange.getReturnStatus() == RESTAPIGenericReturnCodes.SUCCESS) break;
                 }
                 
             }
@@ -7856,7 +7856,15 @@ public class EvolutionEngine
           voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
         }
       evolutionEventContext.getSubscriberState().getVoucherChanges().add(voucherChange);
-      subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
+      if (subscriberEvaluationRequest.getJourneyState().getVoucherChanges() != null) 
+        {
+          //
+          // used only to check the status on same node - clear journey may have more than one such nodes
+          //
+          
+          subscriberEvaluationRequest.getJourneyState().getVoucherChanges().clear();
+          subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
+        }
       log.info("RAJ K subscriberEvaluationRequest.getJourneyState().getVoucherChanges() {}", subscriberEvaluationRequest.getJourneyState().getVoucherChanges());
       
       /*****************************************

@@ -87,7 +87,9 @@ public abstract class CriterionFieldRetriever
   
   public static Object getSubscriberTmpSuccessVouchers(SubscriberEvaluationRequest evaluationRequest, String fieldName)
   {
-    return evaluationRequest.getJourneyState().getVoucherChanges().stream().filter(vc -> vc.getReturnStatus() == RESTAPIGenericReturnCodes.SUCCESS).map(VoucherChange::getVoucherCode).collect(Collectors.toList());
+    Set<String> res = evaluationRequest.getJourneyState().getVoucherChanges().stream().filter(vc -> vc.getReturnStatus() == RESTAPIGenericReturnCodes.SUCCESS).map(VoucherChange::getVoucherCode).collect(Collectors.toSet());
+    log.info("RAJ K getSubscriberTmpSuccessVouchers {}", res);
+    return res;
   }
   public static Object getRandom100(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return ThreadLocalRandom.current().nextInt(100); }
   public static Object getTrue(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return Boolean.TRUE; }
