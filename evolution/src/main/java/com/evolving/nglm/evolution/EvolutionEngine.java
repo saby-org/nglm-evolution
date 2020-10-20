@@ -2209,6 +2209,10 @@ public class EvolutionEngine
 
     if (subscriberState.getVoucherChanges() != null)
     {
+      for (JourneyState journeyState : subscriberState.getJourneyStates())
+        {
+          if (journeyState.getVoucherChanges() != null) journeyState.getVoucherChanges().clear();
+        }
       subscriberState.getVoucherChanges().clear();
       subscriberStateUpdated = true;
     }
@@ -7825,7 +7829,7 @@ public class EvolutionEngine
       *****************************************/
 
       VoucherChange originalVoucherChange = new VoucherChange(subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), null, "", VoucherChangeAction.Redeem, voucherCode, voucherID, null, moduleID, "1", origin, RESTAPIGenericReturnCodes.UNKNOWN);
-      actions.add(originalVoucherChange);
+      //actions.add(originalVoucherChange);
       
       //
       // check redeem status
@@ -7840,7 +7844,7 @@ public class EvolutionEngine
               if(voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
                 {
                   voucherFound=true;
-                  checkRedeemVoucher(voucherStored, voucherChange, false);
+                  checkRedeemVoucher(voucherStored, voucherChange, true);
                   if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Redeemed) break;
                 }
                 
@@ -7851,7 +7855,9 @@ public class EvolutionEngine
         {
           voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
         }
-      log.info("RAJ K voucherChange {}", voucherChange);
+      evolutionEventContext.getSubscriberState().getVoucherChanges().add(voucherChange);
+      subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
+      log.info("RAJ K subscriberEvaluationRequest.getJourneyState().getVoucherChanges() {}", subscriberEvaluationRequest.getJourneyState().getVoucherChanges());
       
       /*****************************************
       *

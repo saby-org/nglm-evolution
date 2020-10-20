@@ -94,6 +94,7 @@ public class CriterionContext
   private static CriterionField unknownRelationship;
   private static CriterionField evaluationEventName;
   private static CriterionField internalRandom100;
+  private static CriterionField subscriberTmpRedeemVouchers;
   private static CriterionField internalFalse;
   private static CriterionField internalTargets;
   static
@@ -314,6 +315,25 @@ public class CriterionContext
         internalTargetsJSON.put("availableValues", JSONUtilities.encodeArray(av));
         
         internalTargets  = new CriterionField(JSONUtilities.encodeObject(internalTargetsJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
+    //
+    //  subscriber.tmp.redeem.vouchers
+    //
+
+    try
+      {
+        Map<String,Object> subscriberTmpRedeemVouchersJSON = new LinkedHashMap<String,Object>();
+        subscriberTmpRedeemVouchersJSON.put("id", "subscriber.tmp.redeem.vouchers");
+        subscriberTmpRedeemVouchersJSON.put("display", "subscriber.tmp.redeem.vouchers");
+        subscriberTmpRedeemVouchersJSON.put("dataType", "stringSet");
+        subscriberTmpRedeemVouchersJSON.put("retriever", "getSubscriberTmpRedeemVouchers");
+        subscriberTmpRedeemVouchersJSON.put("internalOnly", true);
+        subscriberTmpRedeemVouchers  = new CriterionField(JSONUtilities.encodeObject(subscriberTmpRedeemVouchersJSON));
       }
     catch (GUIManagerException e)
       {
