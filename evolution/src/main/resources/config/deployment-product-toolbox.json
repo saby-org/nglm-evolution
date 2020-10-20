@@ -801,7 +801,7 @@
         "enableCycle"      		 : true,
         "outputConnectors"       : 
           [ 
-            { "name" : "redeemed",      "display" : "Redeemed",  	 "evaluationPriority" : "first", 	"transitionCriteria" : [ { "criterionField" : "subscriber.tmp.redeem.vouchers", "criterionOperator" : "contains", "argument" : { "expression" : "node.parameter.voucher.code" } } ] },
+            { "name" : "redeemed",      "display" : "Redeemed",  	 "evaluationPriority" : "first", 	"transitionCriteria" : [ { "criterionField" : "subscriber.tmp.success.vouchers", "criterionOperator" : "contains", "argument" : { "expression" : "node.parameter.voucher.code" } } ] },
             { "name" : "failed",        "display" : "Failed",        "evaluationPriority" : "last", 	 "transitionCriteria" : [ ] }
           ],
         "parameters" :

@@ -94,7 +94,7 @@ public class CriterionContext
   private static CriterionField unknownRelationship;
   private static CriterionField evaluationEventName;
   private static CriterionField internalRandom100;
-  private static CriterionField subscriberTmpRedeemVouchers;
+  private static CriterionField subscriberTmpSuccessVouchers;
   private static CriterionField internalFalse;
   private static CriterionField internalTargets;
   static
@@ -327,13 +327,13 @@ public class CriterionContext
 
     try
       {
-        Map<String,Object> subscriberTmpRedeemVouchersJSON = new LinkedHashMap<String,Object>();
-        subscriberTmpRedeemVouchersJSON.put("id", "subscriber.tmp.redeem.vouchers");
-        subscriberTmpRedeemVouchersJSON.put("display", "subscriber.tmp.redeem.vouchers");
-        subscriberTmpRedeemVouchersJSON.put("dataType", "stringSet");
-        subscriberTmpRedeemVouchersJSON.put("retriever", "getSubscriberTmpRedeemVouchers");
-        subscriberTmpRedeemVouchersJSON.put("internalOnly", true);
-        subscriberTmpRedeemVouchers  = new CriterionField(JSONUtilities.encodeObject(subscriberTmpRedeemVouchersJSON));
+        Map<String,Object> subscriberTmpSuccessVouchersJSON = new LinkedHashMap<String,Object>();
+        subscriberTmpSuccessVouchersJSON.put("id", "subscriber.tmp.success.vouchers");
+        subscriberTmpSuccessVouchersJSON.put("display", "subscriber.tmp.success.vouchers");
+        subscriberTmpSuccessVouchersJSON.put("dataType", "stringSet");
+        subscriberTmpSuccessVouchersJSON.put("retriever", "getSubscriberTmpSuccessVouchers");
+        subscriberTmpSuccessVouchersJSON.put("internalOnly", true);
+        subscriberTmpSuccessVouchers  = new CriterionField(JSONUtilities.encodeObject(subscriberTmpSuccessVouchersJSON));
       }
     catch (GUIManagerException e)
       {
@@ -821,6 +821,7 @@ public class CriterionContext
           result.put(evaluationEventName.getID(), evaluationEventName);
           result.put(unknownRelationship.getID(), unknownRelationship);
           result.put(internalRandom100.getID(), internalRandom100);
+          result.put(subscriberTmpSuccessVouchers.getID(), subscriberTmpSuccessVouchers);
           result.put(internalFalse.getID(), internalFalse);
           result.put(internalTargets.getID(), internalTargets);
           result.put(evaluationDayOfMonth.getID(), evaluationDayOfMonth);

@@ -85,7 +85,7 @@ public abstract class CriterionFieldRetriever
   
   public static Object getEvaluationAniversary(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return getEvaluationDate(evaluationRequest, fieldName);}
   
-  public static Object getSubscriberTmpRedeemVouchers(SubscriberEvaluationRequest evaluationRequest, String fieldName)
+  public static Object getSubscriberTmpSuccessVouchers(SubscriberEvaluationRequest evaluationRequest, String fieldName)
   {
     return evaluationRequest.getJourneyState().getVoucherChanges().stream().filter(vc -> vc.getReturnStatus() == RESTAPIGenericReturnCodes.SUCCESS).map(VoucherChange::getVoucherCode).collect(Collectors.toList());
   }
