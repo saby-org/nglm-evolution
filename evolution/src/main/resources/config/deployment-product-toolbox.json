@@ -845,8 +845,8 @@
         "outputType"             : "static",
         "outputConnectors"       : 
           [ 
-            { "name" : "redeemed",      "display" : "Redeemed",  	 "evaluationPriority" : "first", 	"transitionCriteria" : [ { "criterionField" : "subscriber.tmp.success.vouchers", "criterionOperator" : "contains", "argument" : { "expression" : "node.parameter.voucher.code" } } ] },
-            { "name" : "failed",        "display" : "Failed",        "evaluationPriority" : "last", 	 "transitionCriteria" : [ ] }
+            { "name" : "valid",      	 "display" : "Valid",  	 		"evaluationPriority" : "first", 	"transitionCriteria" : [ { "criterionField" : "subscriber.tmp.success.vouchers", "criterionOperator" : "contains", "argument" : { "expression" : "node.parameter.voucher.code" } } ] },
+            { "name" : "invalid",        "display" : "Invalid",        	"evaluationPriority" : "last", 	 "transitionCriteria" : [ ] }
           ],
         "parameters" :
           [

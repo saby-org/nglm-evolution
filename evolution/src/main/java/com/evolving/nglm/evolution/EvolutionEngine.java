@@ -7869,6 +7869,7 @@ public class EvolutionEngine
               //
               //
               
+              log.info("RAJ K {} failed as voucherCode {} status is {}", operation, e.getMessage());
             }
         }
       else if (operation == Operation.Validate)
@@ -7881,6 +7882,7 @@ public class EvolutionEngine
             } 
           catch (ThirdPartyManagerException e)
             {
+              log.info("RAJ K {} failed as voucherCode {} status is {}", operation, e.getMessage());
             }
         }
       
@@ -7927,7 +7929,6 @@ public class EvolutionEngine
           }
         if (voucherCode.equals(profileVoucher.getVoucherCode()) && supplier.getSupplierID().equals(voucher.getSupplierID()))
           {
-
             if (profileVoucher.getVoucherStatus() == VoucherDelivery.VoucherStatus.Redeemed)
               {
                 errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
