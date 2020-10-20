@@ -830,7 +830,7 @@
             "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$VoucherAction",
             "moduleID" : "1",
             "operation": "redeem",
-            "origin" : "origin"
+            "origin" : "JMR"
           }
       },
       
@@ -874,7 +874,7 @@
             "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$VoucherAction",
             "moduleID" : "1",
             "operation": "validate",
-            "origin" : "origin"
+            "origin" : "JMR"
           }
       },
 

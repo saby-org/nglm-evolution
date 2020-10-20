@@ -7869,7 +7869,7 @@ public class EvolutionEngine
               //
               //
               
-              log.info("RAJ K {} failed as voucherCode {} status is {}", operation, e.getMessage());
+              log.info("RAJ K {} failed as voucherCode {} status is {}", operation, voucherCode, e.getMessage());
             }
         }
       else if (operation == Operation.Validate)
@@ -7877,12 +7877,12 @@ public class EvolutionEngine
           try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplier, subscriberProfile);
-              VoucherChange voucherChange = new VoucherChange(subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), null, "", VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFeatureID(), moduleID, voucherProfileStored.getFeatureID(), origin, RESTAPIGenericReturnCodes.UNKNOWN);
+              VoucherChange voucherChange = new VoucherChange(subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), null, "", VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFeatureID(), moduleID, voucherProfileStored.getFeatureID(), origin, RESTAPIGenericReturnCodes.SUCCESS);
               subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
             } 
           catch (ThirdPartyManagerException e)
             {
-              log.info("RAJ K {} failed as voucherCode {} status is {}", operation, e.getMessage());
+              log.info("RAJ K {} failed as voucherCode {} status is {}", operation, voucherCode, e.getMessage());
             }
         }
       
