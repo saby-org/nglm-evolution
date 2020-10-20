@@ -2522,7 +2522,6 @@ public class EvolutionEngine
       //need to respond
       subscriberState.getVoucherChanges().add(voucherChange);
       subscriberUpdated=true;
-      log.info("RAJ K actual voucherChange {}", voucherChange);
     }
 
     return subscriberUpdated;
@@ -7869,7 +7868,7 @@ public class EvolutionEngine
               //
               //
               
-              log.info("RAJ K {} failed as voucherCode {} status is {}", operation, voucherCode, e.getMessage());
+              if (log.isDebugEnabled()) log.debug("VoucherAction {} failed as voucherCode {} status is {}", operation, voucherCode, e.getMessage());
             }
         }
       else if (operation == Operation.Validate)
@@ -7882,11 +7881,11 @@ public class EvolutionEngine
             } 
           catch (ThirdPartyManagerException e)
             {
-              log.info("RAJ K {} failed as voucherCode {} status is {}", operation, voucherCode, e.getMessage());
+              if (log.isDebugEnabled()) log.debug("VoucherAction {} failed as voucherCode {} status is {}", operation, voucherCode, e.getMessage());
             }
         }
       
-      log.info("RAJ K {} subscriberEvaluationRequest.getJourneyState().getVoucherChanges() {}", operation, subscriberEvaluationRequest.getJourneyState().getVoucherChanges());
+      if (log.isDebugEnabled()) log.debug("VoucherAction {} subscriberEvaluationRequest.getJourneyState().getVoucherChanges() {}", operation, subscriberEvaluationRequest.getJourneyState().getVoucherChanges());
       
       /*****************************************
       *
