@@ -11,7 +11,7 @@ import org.apache.kafka.connect.data.*;
 import java.util.Date;
 
 // main purpose is to trigger request to modify voucher in evolutionEngine, might be used as an event
-public class VoucherChange extends SubscriberStreamOutput implements EvolutionEngineEvent, Action {
+public class VoucherChange extends SubscriberStreamOutput implements EvolutionEngineEvent{
 
   //action
   public enum VoucherChangeAction {
@@ -200,10 +200,4 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
             ", returnStatus=" + returnStatus.getGenericResponseMessage() +
             '}';
   }
-  @Override
-  public ActionType getActionType()
-  {
-    return ActionType.VoucherChange;
-  }
-
 }

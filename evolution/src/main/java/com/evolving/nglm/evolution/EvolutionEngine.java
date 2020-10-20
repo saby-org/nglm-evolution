@@ -5611,6 +5611,21 @@ public class EvolutionEngine
               subscriberState.getTokenChanges().add(tokenChange);
               break;
               
+            case VoucherChange:
+              if (action instanceof VoucherRedemption)
+                {
+                  String eventTopic = Deployment.getVoucherRedemptionTopic();
+                  VoucherRedemption event = (VoucherRedemption) action;
+                  kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventTopic, StringKey.serde().serializer().serialize(eventTopic, new StringKey(event.getSubscriberID())), VoucherRedemption.serde().serializer().serialize(eventTopic, event)));
+                }
+              else if (action instanceof VoucherValidation)
+                {
+                  String eventTopic = Deployment.getVoucherValidationTopic();
+                  VoucherValidation event = (VoucherValidation) action;
+                  kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventTopic, StringKey.serde().serializer().serialize(eventTopic, new StringKey(event.getSubscriberID())), VoucherValidation.serde().serializer().serialize(eventTopic, event)));
+                }
+              break;
+              
             case TriggerEvent:
               JourneyTriggerEventAction triggerEventAction = (JourneyTriggerEventAction) action;
               EvolutionEngineEventDeclaration eventDeclaration =  triggerEventAction.getEventDeclaration();
