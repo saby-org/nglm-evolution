@@ -102,6 +102,8 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
+import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyManagerException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
 import com.evolving.nglm.evolution.VoucherChange.VoucherChangeAction;
@@ -216,6 +218,7 @@ public class EvolutionEngine
   private static StockMonitor stockService;
   private static PropensityService propensityService;
   private static RetentionService retentionService;
+  private static SupplierService supplierService;
 
   private static final int MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES = 5;
   private static Date kafkaSizeErrorLogDate = SystemTime.getCurrentTime();
@@ -538,7 +541,15 @@ public class EvolutionEngine
     //
     // retention service
     //
+    
     retentionService = new RetentionService(journeyService);
+    
+    //
+    // supplierService
+    //
+    
+    supplierService = new SupplierService(Deployment.getBrokerServers(), "evolutionengine-supplierservice-" + evolutionEngineKey, Deployment.getSupplierTopic(), false);
+    supplierService.start();
 
     //
     //  ucgStateReader
@@ -5601,12 +5612,6 @@ public class EvolutionEngine
               subscriberState.getTokenChanges().add(tokenChange);
               break;
               
-            case VoucherChange:
-              VoucherChange voucherChange = (VoucherChange) action;
-              String requestTopic = Deployment.getVoucherChangeRequestTopic();
-              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(requestTopic, StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberState.getSubscriberProfile().getSubscriberID())), VoucherChange.serde().serializer().serialize(requestTopic, voucherChange)));
-              break;
-
             case TriggerEvent:
               JourneyTriggerEventAction triggerEventAction = (JourneyTriggerEventAction) action;
               EvolutionEngineEventDeclaration eventDeclaration =  triggerEventAction.getEventDeclaration();
@@ -7775,8 +7780,19 @@ public class EvolutionEngine
     }
   }
   
-  public static class RedeemVoucherAction extends ActionManager
+  public static class VoucherAction extends ActionManager
   {
+    public enum Operation 
+    {
+      Redeem("redeem"),
+      Validate("validate"),
+      Unknown("(unknown)");
+      private String externalRepresentation;
+      private Operation(String externalRepresentation) { this.externalRepresentation = externalRepresentation;}
+      public String getExternalRepresentation() { return externalRepresentation; }
+      public static Operation fromExternalRepresentation(String externalRepresentation) { for (Operation enumeratedValue : Operation.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+    }
+    
     /*****************************************
     *
     *  data
@@ -7785,7 +7801,7 @@ public class EvolutionEngine
     
     private String origin;
     private String moduleID;
-    private String voucherID = "";
+    private Operation operation;
 
 
     /*****************************************
@@ -7794,11 +7810,12 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    public RedeemVoucherAction(JSONObject configuration) throws GUIManagerException
+    public VoucherAction(JSONObject configuration) throws GUIManagerException
     {
       super(configuration);
       this.origin = JSONUtilities.decodeString(configuration, "origin", true);
       this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
+      this.operation = Operation.fromExternalRepresentation(JSONUtilities.decodeString(configuration, "operation", true));
     }
 
     /*****************************************
@@ -7811,6 +7828,7 @@ public class EvolutionEngine
     {
       List<Action> actions = new ArrayList<Action>();
       SubscriberProfile subscriberProfile = subscriberEvaluationRequest.getSubscriberProfile();
+      subscriberEvaluationRequest.getJourneyState().getVoucherChanges().clear();
       
       /*****************************************
       *
@@ -7820,52 +7838,53 @@ public class EvolutionEngine
 
       String voucherCode = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.voucher.code");
       String supplier = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.supplier");
-      voucherID = supplier;
 
       /*****************************************
       *
-      *  request
+      *  operation
       *
       *****************************************/
-
-      VoucherChange originalVoucherChange = new VoucherChange(subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), null, "", VoucherChangeAction.Redeem, voucherCode, voucherID, null, moduleID, "1", origin, RESTAPIGenericReturnCodes.UNKNOWN);
-      //actions.add(originalVoucherChange);
       
-      //
-      // check redeem status
-      //
-      
-      VoucherChange voucherChange = new VoucherChange(originalVoucherChange);
-      if(subscriberProfile.getVouchers()!=null && !subscriberProfile.getVouchers().isEmpty())
+      if (operation == Operation.Redeem)
         {
-          boolean voucherFound=false;
-          for(VoucherProfileStored voucherStored:subscriberProfile.getVouchers())
+          try
             {
-              if(voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
+              VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplier, subscriberProfile);
+              VoucherChange voucherChange = new VoucherChange(subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), null, "", VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFeatureID(), moduleID, voucherProfileStored.getFeatureID(), origin, RESTAPIGenericReturnCodes.UNKNOWN);
+              for (VoucherProfileStored voucherStored : subscriberProfile.getVouchers())
                 {
-                  voucherFound=true;
-                  checkRedeemVoucher(voucherStored, voucherChange, true);
-                  if (voucherChange.getReturnStatus() == RESTAPIGenericReturnCodes.SUCCESS) break;
+                  if (voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
+                    {
+                      checkRedeemVoucher(voucherStored, voucherChange, true);
+                      if (voucherChange.getReturnStatus() == RESTAPIGenericReturnCodes.SUCCESS) break;
+                    }
+
                 }
-                
+              evolutionEventContext.getSubscriberState().getVoucherChanges().add(voucherChange);
+              subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
+            } 
+          catch (ThirdPartyManagerException e) 
+            {
+              //
+              //
+              //
+              
             }
-          if(!voucherFound) voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
         }
-      else
+      else if (operation == Operation.Validate)
         {
-          voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
+          try
+            {
+              VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplier, subscriberProfile);
+              VoucherChange voucherChange = new VoucherChange(subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(), null, "", VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFeatureID(), moduleID, voucherProfileStored.getFeatureID(), origin, RESTAPIGenericReturnCodes.UNKNOWN);
+              subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
+            } 
+          catch (ThirdPartyManagerException e)
+            {
+            }
         }
-      evolutionEventContext.getSubscriberState().getVoucherChanges().add(voucherChange);
-      if (subscriberEvaluationRequest.getJourneyState().getVoucherChanges() != null) 
-        {
-          //
-          // used only to check the status on same node - clear journey may have more than one such nodes
-          //
-          
-          subscriberEvaluationRequest.getJourneyState().getVoucherChanges().clear();
-          subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
-        }
-      log.info("RAJ K subscriberEvaluationRequest.getJourneyState().getVoucherChanges() {}", subscriberEvaluationRequest.getJourneyState().getVoucherChanges());
+      
+      log.info("RAJ K {} subscriberEvaluationRequest.getJourneyState().getVoucherChanges() {}", operation, subscriberEvaluationRequest.getJourneyState().getVoucherChanges());
       
       /*****************************************
       *
@@ -7875,5 +7894,61 @@ public class EvolutionEngine
 
       return actions;
     }
+  }
+  
+  public static VoucherProfileStored getStoredVoucher(String voucherCode, String supplierDisplay, SubscriberProfile subscriberProfile) throws ThirdPartyManagerException
+  {
+    Date now = SystemTime.getCurrentTime();
+    Supplier supplier = null;
+    for (Supplier supplierConf : supplierService.getActiveSuppliers(now))
+      {
+        if (supplierConf.getGUIManagedObjectDisplay().equals(supplierDisplay))
+          {
+            supplier = supplierConf;
+            break;
+          }
+      }
+    if (supplier == null)
+      {
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.PARTNER_NOT_FOUND);
+      }
+
+    ThirdPartyManagerException errorException = null;
+    VoucherProfileStored voucherStored = null;
+    for (VoucherProfileStored profileVoucher : subscriberProfile.getVouchers())
+      {
+        Voucher voucher = voucherService.getActiveVoucher(profileVoucher.getVoucherID(), now);
+        // a voucher in subscriber profile with no more voucher conf associated, very
+        // likely to happen
+        if (voucher == null)
+          {
+            if (errorException == null) errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
+            continue;
+          }
+        if (voucherCode.equals(profileVoucher.getVoucherCode()) && supplier.getSupplierID().equals(voucher.getSupplierID()))
+          {
+
+            if (profileVoucher.getVoucherStatus() == VoucherDelivery.VoucherStatus.Redeemed)
+              {
+                errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
+              } 
+            else if (profileVoucher.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired || profileVoucher.getVoucherExpiryDate().before(now))
+              {
+                errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
+              } 
+            else
+              {
+                voucherStored = profileVoucher;
+                break;
+              }
+          }
+      }
+
+    if (voucherStored == null)
+      {
+        if (errorException != null) throw errorException;
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
+      }
+    return voucherStored;
   }
 }

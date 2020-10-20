@@ -827,8 +827,9 @@
           ],
         "action" : 
           {
-            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$RedeemVoucherAction",
+            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$VoucherAction",
             "moduleID" : "1",
+            "operation": "redeem",
             "origin" : "origin"
           }
       },
@@ -844,9 +845,8 @@
         "outputType"             : "static",
         "outputConnectors"       : 
           [ 
-            { "name" : "valid",  		"display" : "Valid",  		 "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'valid' ]" } } ] },
-            { "name" : "failed",        "display" : "Failed",        "transitionCriteria" : [ { "criterionField" : "node.action.deliverystatus", "criterionOperator" : "is in set", "argument" : { "expression" : "[ 'failed', 'indeterminate', 'failedTimeout' ]" } } ] },
-            { "name" : "timeout",       "display" : "Timeout",       "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateAdd(node.entryDate, 1, 'minute')" } } ] } 
+            { "name" : "redeemed",      "display" : "Redeemed",  	 "evaluationPriority" : "first", 	"transitionCriteria" : [ { "criterionField" : "subscriber.tmp.success.vouchers", "criterionOperator" : "contains", "argument" : { "expression" : "node.parameter.voucher.code" } } ] },
+            { "name" : "failed",        "display" : "Failed",        "evaluationPriority" : "last", 	 "transitionCriteria" : [ ] }
           ],
         "parameters" :
           [
@@ -871,9 +871,10 @@
           ],
         "action" : 
           {
-            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$LoyaltyProgramAction",
+            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$VoucherAction",
             "moduleID" : "1",
-            "operation" : "opt-out"
+            "operation": "validate",
+            "origin" : "origin"
           }
       },
 
