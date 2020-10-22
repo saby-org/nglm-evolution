@@ -820,8 +820,8 @@
               "dataType" : "string", 
               "multiple" : false,
               "mandatory" : true,
-              "availableValues" : [ ],
-              "expressionValuedParameter" : true,
+              "availableValues" : [ "#suppliersDisplayValues#"],
+              "expressionValuedParameter" : false,
               "defaultValue" : null
             }
           ],
@@ -865,8 +865,8 @@
               "dataType" : "string", 
               "multiple" : false,
               "mandatory" : true,
-              "availableValues" : [ ],
-              "expressionValuedParameter" : true,
+              "availableValues" : [ "#suppliersDisplayValues#"],
+              "expressionValuedParameter" : false,
               "defaultValue" : null
             }
           ],

@@ -24124,6 +24124,24 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     List<JSONObject> result = new ArrayList<JSONObject>();
     switch (reference)
       {
+        
+        case "suppliersDisplayValues":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject supplierUnchecked : supplierService.getStoredSuppliers())
+                {
+                  if (supplierUnchecked.getAccepted())
+                    {
+                      Supplier supplier = (Supplier) supplierUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", supplier.getGUIManagedObjectDisplay());
+                      availableValue.put("display", supplier.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          log.info("RAJ K result {}", result);
+          break;
 
         case "callableCampaigns":
           if (includeDynamic)
