@@ -291,8 +291,10 @@ public abstract class CriterionFieldRetriever
   //  voucher
   //
   
-  public static Object getVoucherValidationVoucherCode(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherValidation) evaluationRequest.getSubscriberStreamEvent()).getVoucherValidationVoucherCode(); }
-  public static Object getVoucherValidationStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherValidation) evaluationRequest.getSubscriberStreamEvent()).getVoucherValidationStatus(); }    
+  public static Object getVoucherValidationVoucherCode(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException 
+  { String result = ((VoucherValidation) evaluationRequest.getSubscriberStreamEvent()).getVoucherValidationVoucherCode(); log.info("RAJ K getVoucherValidationVoucherCode {}", result); return result; }
+  public static Object getVoucherValidationStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException 
+  { String result =  ((VoucherValidation) evaluationRequest.getSubscriberStreamEvent()).getVoucherValidationStatus(); log.info("RAJ K getVoucherValidationStatus {}", result); return result; }    
   public static Object getVoucherRedemptionVoucherCode(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherRedemption) evaluationRequest.getSubscriberStreamEvent()).getVoucherRedemptionVoucherCode(); }
   public static Object getVoucherRedemptionStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherRedemption) evaluationRequest.getSubscriberStreamEvent()).getVoucherRedemptionStatus(); }    
 

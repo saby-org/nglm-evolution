@@ -126,7 +126,7 @@
   "cleanupSubscriberTopic"                               : "${topic.cleanupsubscriber}",
   "subscriberProfileForceUpdateTopic"                    : "${topic.subscriberprofileforceupdate}",
   "executeActionOtherSubscriberTopic"                    : "${topic.executeactionothersubscriber}",
-  "VoucherActionTopic"                               	 : "${topic.voucheraction}",
+  "voucherActionTopic"                               	 : "${topic.voucheraction}",
   "tokenRedeemedTopic"                                   : "${topic.tokenredeemed}",
   "subscriberStateChangeLog"                             : "${changelog.evolutionengine.subscriberstate}",
   "subscriberStateChangeLogTopic"                        : "${changelog.evolutionengine.subscriberstate.topic}",
