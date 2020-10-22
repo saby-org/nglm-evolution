@@ -160,10 +160,18 @@ public class DialogMessage
               String criterionFieldName = m.group(1).trim();
               CriterionField criterionField = criterionContext.getCriterionFields().get(criterionFieldName);
               boolean parameterTag = false;
-              if (criterionField == null && !inlineTemplate /*because in inline template mode, paramameter tags are not allowed !!*/)
+              if (criterionField == null)
                 {
-                  criterionField = new CriterionField(criterionFieldName, messageTextAttribute);
-                  parameterTag = true;
+                  if (!inlineTemplate)
+                    {
+                      criterionField = new CriterionField(criterionFieldName, messageTextAttribute);
+                      parameterTag = true;
+                    }
+                  else
+                    {
+                      /*because in inline template mode, paramameter tags are not allowed !!*/
+                      throw new GUIManagerException("inline template mode paramameter tag are not allowed", criterionFieldName);
+                    }
                 }
 
               //
