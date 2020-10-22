@@ -36,6 +36,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
 {
@@ -112,8 +113,8 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     // Therefore, we filter out those subscribers with missing data by looking for lastUpdateDate
     QueryBuilder query = QueryBuilders.boolQuery().must(QueryBuilders
         .rangeQuery("lastUpdateDate")
-        .gte(DatacubeGenerator.TIMESTAMP_FORMAT.format(metricTargetDayStart))
-        .lt(DatacubeGenerator.TIMESTAMP_FORMAT.format(metricTargetDayAfterStart)));
+        .gte(RLMDateUtils.printTimestamp(metricTargetDayStart))
+        .lt(RLMDateUtils.printTimestamp(metricTargetDayAfterStart)));
     
     //
     // Aggregations
@@ -155,7 +156,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     }
     
     AggregationBuilder aggregation = AggregationBuilders.nested("DATACUBE", "loyaltyPrograms").subAggregation(
-        AggregationBuilders.composite("LOYALTY-COMPOSITE", sources).size(BUCKETS_MAX_NBR).subAggregation(
+        AggregationBuilders.composite("LOYALTY-COMPOSITE", sources).size(ElasticsearchClientAPI.MAX_BUCKETS).subAggregation(
             AggregationBuilders.reverseNested("REVERSE").subAggregation(metrics) // *metrics is STATUS with metrics
         )
     );
