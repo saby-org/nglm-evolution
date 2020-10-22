@@ -5612,17 +5612,11 @@ public class EvolutionEngine
               break;
               
             case VoucherChange:
-              if (action instanceof VoucherRedemption)
+              if (action instanceof VoucherAction)
                 {
-                  String eventTopic = Deployment.getVoucherRedemptionTopic();
-                  VoucherRedemption event = (VoucherRedemption) action;
-                  kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventTopic, StringKey.serde().serializer().serialize(eventTopic, new StringKey(event.getSubscriberID())), VoucherRedemption.serde().serializer().serialize(eventTopic, event)));
-                }
-              else if (action instanceof VoucherValidation)
-                {
-                  String eventTopic = Deployment.getVoucherValidationTopic();
-                  VoucherValidation event = (VoucherValidation) action;
-                  kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventTopic, StringKey.serde().serializer().serialize(eventTopic, new StringKey(event.getSubscriberID())), VoucherValidation.serde().serializer().serialize(eventTopic, event)));
+                  String eventTopic = Deployment.getVoucherActionTopic();
+                  VoucherAction event = (VoucherAction) action;
+                  kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventTopic, StringKey.serde().serializer().serialize(eventTopic, new StringKey(event.getSubscriberID())), VoucherAction.serde().serializer().serialize(eventTopic, event)));
                 }
               break;
               
@@ -7794,7 +7788,7 @@ public class EvolutionEngine
     }
   }
   
-  public static class VoucherAction extends ActionManager
+  public static class VoucherActionManager extends ActionManager
   {
     public enum Operation 
     {
@@ -7824,12 +7818,18 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    public VoucherAction(JSONObject configuration) throws GUIManagerException
+    public VoucherActionManager(JSONObject configuration) throws GUIManagerException
     {
       super(configuration);
       this.origin = JSONUtilities.decodeString(configuration, "origin", true);
       this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
       this.operation = Operation.fromExternalRepresentation(JSONUtilities.decodeString(configuration, "operation", true));
+    }
+
+    public String getSubscriberID()
+    {
+      // TODO Auto-generated method stub
+      return null;
     }
 
     /*****************************************
@@ -7858,10 +7858,12 @@ public class EvolutionEngine
       *  operation
       *
       *****************************************/
+      
       Date now = SystemTime.getCurrentTime();
+      VoucherAction voucherActionEvent = new VoucherAction(subscriberProfile.getSubscriberID(), now, voucherCode, RESTAPIGenericReturnCodes.UNKNOWN.getGenericResponseMessage(), operation.getExternalRepresentation());
+      
       if (operation == Operation.Redeem)
         {
-          VoucherRedemption redemptionEvent = new VoucherRedemption(subscriberProfile.getSubscriberID(), now, voucherCode, RESTAPIGenericReturnCodes.UNKNOWN.getGenericResponseMessage());
           try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplier, subscriberProfile);
@@ -7877,32 +7879,30 @@ public class EvolutionEngine
                 }
               evolutionEventContext.getSubscriberState().getVoucherChanges().add(voucherChange);
               subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
-              redemptionEvent.setRedemptionStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
+              voucherActionEvent.setActionStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
             } 
           catch (ThirdPartyManagerException e) 
             {
-              redemptionEvent.setRedemptionStatus(e.getMessage());
+              voucherActionEvent.setActionStatus(e.getMessage());
               if (log.isDebugEnabled()) log.debug("VoucherAction {} failed as voucherCode {} status is {}", operation, voucherCode, e.getMessage());
             }
-          actions.add(redemptionEvent);
         }
       else if (operation == Operation.Validate)
         {
-          VoucherValidation validationEvent = new VoucherValidation(subscriberProfile.getSubscriberID(), now, voucherCode, RESTAPIGenericReturnCodes.UNKNOWN.getGenericResponseMessage());
           try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplier, subscriberProfile);
               VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFeatureID(), moduleID, voucherProfileStored.getFeatureID(), origin, RESTAPIGenericReturnCodes.SUCCESS);
               subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
-              validationEvent.setValidationStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
+              voucherActionEvent.setActionStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
             } 
           catch (ThirdPartyManagerException e)
             {
-              validationEvent.setValidationStatus(e.getMessage());
+              voucherActionEvent.setActionStatus(e.getMessage());
               if (log.isDebugEnabled()) log.debug("VoucherAction {} failed as voucherCode {} status is {}", operation, voucherCode, e.getMessage());
             }
-          actions.add(validationEvent);
         }
+      actions.add(voucherActionEvent);
       
       if (log.isDebugEnabled()) log.debug("VoucherAction {} subscriberEvaluationRequest.getJourneyState().getVoucherChanges() {}", operation, subscriberEvaluationRequest.getJourneyState().getVoucherChanges());
       

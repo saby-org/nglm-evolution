@@ -122,8 +122,7 @@ public class Deployment
   private static String profileLoyaltyProgramChangeEventTopic;
   private static String profileChangeEventTopic;
   private static String profileSegmentChangeEventTopic;
-  private static String voucherRedemptionTopic;
-  private static String voucherValidationTopic;
+  private static String voucherActionTopic;
   private static String tokenRedeemedTopic;
   private static int propensityInitialisationPresentationThreshold;
   private static int propensityInitialisationDurationInDaysThreshold;
@@ -383,8 +382,7 @@ public class Deployment
   public static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
   public static String getProfileSegmentChangeEventTopic() { return profileSegmentChangeEventTopic;}
   public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
-  public static String getVoucherRedemptionTopic() { return voucherRedemptionTopic; }
-  public static String getVoucherValidationTopic() { return voucherValidationTopic; }
+  public static String getVoucherActionTopic() { return voucherActionTopic; }
   public static String getTokenRedeemedTopic() { return tokenRedeemedTopic; }
   public static int getPropensityInitialisationPresentationThreshold() { return propensityInitialisationPresentationThreshold; }
   public static int getPropensityInitialisationDurationInDaysThreshold() { return propensityInitialisationDurationInDaysThreshold; }
@@ -900,31 +898,18 @@ public class Deployment
         }
       
       //
-      //  voucherRedemptionTopic
+      //  VoucherActionTopic
       //
 
       try
         {
-          voucherRedemptionTopic = JSONUtilities.decodeString(jsonRoot, "voucherRedemptionTopic", true);
+          voucherActionTopic = JSONUtilities.decodeString(jsonRoot, "voucherActionTopic", true);
         }
       catch (JSONUtilitiesException e)
         {
           throw new ServerRuntimeException("deployment", e);
         }
       
-      //
-      //  voucherValidationTopic
-      //
-
-      try
-        {
-          voucherValidationTopic = JSONUtilities.decodeString(jsonRoot, "voucherValidationTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
       //
       //  tokenRedeemedTopic
       //

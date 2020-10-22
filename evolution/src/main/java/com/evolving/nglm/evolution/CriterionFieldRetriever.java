@@ -290,10 +290,11 @@ public abstract class CriterionFieldRetriever
   //
   //  voucher
   //
-  public static Object getVoucherRedemptionVoucherCode(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherRedemption) evaluationRequest.getSubscriberStreamEvent()).getVoucherCode(); }
-  public static Object getVoucherRedemptionRedemptionStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherRedemption) evaluationRequest.getSubscriberStreamEvent()).getRedemptionStatus(); }    
-  public static Object getVoucherValidationVoucherCode(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherValidation) evaluationRequest.getSubscriberStreamEvent()).getVoucherCode(); }
-  public static Object getVoucherValidationValidationStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherValidation) evaluationRequest.getSubscriberStreamEvent()).getValidationStatus(); }    
+  
+  public static Object getVoucherValidationVoucherCode(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherValidation) evaluationRequest.getSubscriberStreamEvent()).getVoucherValidationVoucherCode(); }
+  public static Object getVoucherValidationStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherValidation) evaluationRequest.getSubscriberStreamEvent()).getVoucherValidationStatus(); }    
+  public static Object getVoucherRedemptionVoucherCode(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherRedemption) evaluationRequest.getSubscriberStreamEvent()).getVoucherRedemptionVoucherCode(); }
+  public static Object getVoucherRedemptionStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherRedemption) evaluationRequest.getSubscriberStreamEvent()).getVoucherRedemptionStatus(); }    
 
   
 

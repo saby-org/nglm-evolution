@@ -126,8 +126,7 @@
   "cleanupSubscriberTopic"                               : "${topic.cleanupsubscriber}",
   "subscriberProfileForceUpdateTopic"                    : "${topic.subscriberprofileforceupdate}",
   "executeActionOtherSubscriberTopic"                    : "${topic.executeactionothersubscriber}",
-  "voucherRedemptionTopic"                               : "${topic.voucherredemption}",
-  "voucherValidationTopic"                               : "${topic.vouchervalidation}",
+  "VoucherActionTopic"                               	 : "${topic.voucheraction}",
   "tokenRedeemedTopic"                                   : "${topic.tokenredeemed}",
   "subscriberStateChangeLog"                             : "${changelog.evolutionengine.subscriberstate}",
   "subscriberStateChangeLogTopic"                        : "${changelog.evolutionengine.subscriberstate.topic}",
@@ -348,25 +347,32 @@
     "evolutionEngineCoreEvents" :
       [
         { 
-          "name" : "VoucherRedemption",
-          "eventClass" : "com.evolving.nglm.evolution.VoucherRedemption",
-          "eventTopic" : "${topic.voucherredemption}",
+          "name" : "VoucherAction",
+          "eventClass" : "com.evolving.nglm.evolution.VoucherAction",
+          "eventTopic" : "${topic.voucheraction}",
           "eventRule"  : "standard",
+          "eventCriterionFields" : [ ]
+        },
+        { 
+          "name" : "VoucherValidation",
+          "eventClass" : null,
+          "eventTopic" : null,
+          "eventRule"  : "internal",
           "eventCriterionFields" : 
             [
-              { "id" : "event.voucherredemption.vouchercode",          "display" : "Voucher Code",       	"dataType" : "string",	 "retriever" : "getVoucherRedemptionVoucherCode",      	"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.voucherredemption.redemptionstatus", 	   "display" : "Redemption Status",		"dataType" : "string",	 "retriever" : "getVoucherRedemptionRedemptionStatus",	"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
+              { "id" : "event.vouchervalidation.vouchercode",          	"display" : "Voucher Code",       	"dataType" : "string",	 "retriever" : "getVoucherValidationVoucherCode",      	"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.vouchervalidation.actionstatus", 	   		"display" : "Status",				"dataType" : "string",	 "retriever" : "getVoucherValidationStatus",			"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
             ]
         },
-		{ 
-          "name" : "VoucherValidation",
-          "eventClass" : "com.evolving.nglm.evolution.VoucherValidation",
-          "eventTopic" : "${topic.vouchervalidation}",
-          "eventRule"  : "standard",
+        { 
+          "name" : "VoucherRedemption",
+          "eventClass" : null,
+          "eventTopic" : null,
+          "eventRule"  : "internal",
           "eventCriterionFields" : 
             [
-              { "id" : "event.vouchervalidation.vouchercode",          "display" : "Voucher Code",       	"dataType" : "string", "retriever" : "getVoucherValidationVoucherCode",      	"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.vouchervalidation.validationstatus", 	   "display" : "Validation Status",		"dataType" : "string", "retriever" : "getVoucherValidationValidationStatus",	"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
+              { "id" : "event.voucherredemption.vouchercode",          	"display" : "Voucher Code",       	"dataType" : "string",	 "retriever" : "getVoucherRedemptionVoucherCode",      	"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+              { "id" : "event.voucherredemption.actionstatus", 	   		"display" : "Status",				"dataType" : "string",	 "retriever" : "getVoucherRedemptionStatus",			"minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
             ]
         },
         { 
