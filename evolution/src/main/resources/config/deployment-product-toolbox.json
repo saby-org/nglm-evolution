@@ -796,9 +796,7 @@
         "icon"                   : "jmr_components/styles/images/objects/opt-out.png",
         "height"                 : 70,
         "width"                  : 70,
-        "allowContextVariables"  : true,
         "outputType"             : "static",
-        "enableCycle"      		 : true,
         "outputConnectors"       : 
           [ 
             { "name" : "redeemed",      "display" : "Redeemed",  	 "evaluationPriority" : "first", 	"transitionCriteria" : [ { "criterionField" : "subscriber.tmp.success.vouchers", "criterionOperator" : "contains", "argument" : { "expression" : "node.parameter.voucher.code" } } ] },
@@ -813,6 +811,7 @@
               "multiple" : false,
               "mandatory" : true,
               "availableValues" : [ ],
+              "expressionValuedParameter" : true,
               "defaultValue" : null
             },
             { 
@@ -822,6 +821,7 @@
               "multiple" : false,
               "mandatory" : true,
               "availableValues" : [ ],
+              "expressionValuedParameter" : true,
               "defaultValue" : null
             }
           ],
@@ -841,7 +841,6 @@
         "icon"                   : "jmr_components/styles/images/objects/opt-out.png",
         "height"                 : 70,
         "width"                  : 70,
-        "allowContextVariables"  : true,
         "outputType"             : "static",
         "outputConnectors"       : 
           [ 
@@ -857,6 +856,7 @@
               "multiple" : false,
               "mandatory" : true,
               "availableValues" : [ ],
+              "expressionValuedParameter" : true,
               "defaultValue" : null
             },
             { 
@@ -866,6 +866,7 @@
               "multiple" : false,
               "mandatory" : true,
               "availableValues" : [ ],
+              "expressionValuedParameter" : true,
               "defaultValue" : null
             }
           ],

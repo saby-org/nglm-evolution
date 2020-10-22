@@ -304,6 +304,7 @@ public class EvolutionEngine
     String dnboMatrixServiceTopic = Deployment.getDNBOMatrixTopic();
     String pointFulfillmentRequestTopic = Deployment.getPointFulfillmentRequestTopic();
     String voucherChangeRequestTopic = Deployment.getVoucherChangeRequestTopic();
+    String voucherActionTopic = Deployment.getVoucherActionTopic();
 
     //
     //  sink topics
@@ -722,6 +723,7 @@ public class EvolutionEngine
     final Serde<ExternalAPIOutput> externalAPISerde = ExternalAPIOutput.serde();
     final Serde<TokenChange> tokenChangeSerde = TokenChange.serde();
     final ConnectSerde<VoucherChange> voucherChangeSerde = VoucherChange.serde();
+    final ConnectSerde<VoucherAction> voucherActionSerde = VoucherAction.serde();
 
     //
     //  special serdes
@@ -789,7 +791,8 @@ public class EvolutionEngine
     KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventStream = builder.stream(profileLoyaltyProgramChangeEventTopic, Consumed.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
     KStream<StringKey, PointFulfillmentRequest> pointFulfillmentRequestSourceStream = builder.stream(pointFulfillmentRequestTopic, Consumed.with(stringKeySerde, pointFulfillmentRequestSerde));
     KStream<StringKey, VoucherChange> voucherChangeRequestSourceStream = builder.stream(voucherChangeRequestTopic, Consumed.with(stringKeySerde, voucherChangeSerde));
-
+    KStream<StringKey, VoucherAction> voucherActionSourceStream = builder.stream(voucherActionTopic, Consumed.with(stringKeySerde, voucherActionSerde));
+    
     //
     //  timedEvaluationStreams
     //
@@ -923,6 +926,7 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileLoyaltyProgramChangeEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) pointFulfillmentRequestSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) voucherChangeRequestSourceStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) voucherActionSourceStream);
     evolutionEventStreams.addAll(standardEvolutionEngineEventStreams);
     evolutionEventStreams.addAll(deliveryManagerResponseStreams);
     KStream evolutionEventCompositeStream = null;
