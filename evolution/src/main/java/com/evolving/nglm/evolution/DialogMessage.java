@@ -170,7 +170,7 @@ public class DialogMessage
                   else
                     {
                       /*because in inline template mode, paramameter tags are not allowed !!*/
-                      throw new GUIManagerException("inline template mode paramameter tag are not allowed", criterionFieldName);
+                      throw new GUIManagerException("inline template mode parameter tag are not allowed", criterionFieldName);
                     }
                 }
 
