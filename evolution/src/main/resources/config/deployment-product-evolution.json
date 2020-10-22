@@ -347,6 +347,13 @@
     "evolutionEngineCoreEvents" :
       [
         { 
+          "name" : "VoucherAction",
+          "eventClass" : "com.evolving.nglm.evolution.VoucherAction",
+          "eventTopic" : "${topic.voucheraction}",
+          "eventRule"  : "standard",
+          "eventCriterionFields" : [ ]
+        },
+        { 
           "name" : "VoucherValidation",
           "eventClass" : null,
           "eventTopic" : null,
