@@ -811,7 +811,7 @@
               "multiple" : false,
               "mandatory" : true,
               "availableValues" : [ ],
-              "expressionValuedParameter" : true,
+              "expressionValuedParameter" : false,
               "defaultValue" : null
             },
             { 
@@ -856,7 +856,7 @@
               "multiple" : false,
               "mandatory" : true,
               "availableValues" : [ ],
-              "expressionValuedParameter" : true,
+              "expressionValuedParameter" : false,
               "defaultValue" : null
             },
             { 
