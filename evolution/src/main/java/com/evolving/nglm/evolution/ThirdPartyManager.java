@@ -5022,7 +5022,6 @@ public class ThirdPartyManager
 
     String voucherCode = readString(jsonRoot, "voucherCode", true);
     String supplierDisplay = readString(jsonRoot, "supplier", true);
-    String customerID = readString(jsonRoot, CUSTOMER_ID, false);
 
     Supplier supplier=null;
     for(Supplier supplierConf:supplierService.getActiveSuppliers(now)){
@@ -5036,17 +5035,25 @@ public class ThirdPartyManager
     }
 
     String subscriberID=null;
+    try
+      {
+        subscriberID = resolveSubscriberID(jsonRoot);
+      }
+    catch (ThirdPartyManagerException e)
+      {
+        if (e.getResponseCode() != RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode())
+          {
+            throw e;
+          }
+      }
+
     // OK if "not transferable"
-    if(customerID==null){
+    if(subscriberID == null){
       VoucherPersonalES voucherES = voucherService.getVoucherPersonalESService().getESVoucherFromVoucherCode(supplier.getSupplierID(),voucherCode);
       if(voucherES==null) throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
       subscriberID=voucherES.getSubscriberId();
     }
-
-    if(subscriberID==null&&customerID!=null){
-      subscriberID = resolveSubscriberID(jsonRoot);
-    }
-
+    
     SubscriberProfile subscriberProfile=null;
     try{
       subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
@@ -5071,7 +5078,9 @@ public class ThirdPartyManager
       if(voucherCode.equals(profileVoucher.getVoucherCode()) && supplier.getSupplierID().equals(voucher.getSupplierID())){
 
         if(profileVoucher.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
-          errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
+          Date redeemedDate = profileVoucher.getVoucherRedeemDate();
+          String redeemedSubscriberID = subscriberID;
+          errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseMessage() + " RedeemedDate: "+ redeemedDate +" "+ " CustomerID: "+ redeemedSubscriberID, RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseCode());
         }else if(profileVoucher.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired||profileVoucher.getVoucherExpiryDate().before(now)){
           errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
         }else{
@@ -6113,6 +6122,7 @@ public class ThirdPartyManager
      *****************************************/
 
     private int responseCode;
+    private JSONObject additionalMessage;
 
     /*****************************************
      *
@@ -6121,6 +6131,7 @@ public class ThirdPartyManager
      *****************************************/
 
     public int getResponseCode() { return responseCode; }
+    public JSONObject getAdditionalMessage() { return additionalMessage; }
 
     /*****************************************
      *
