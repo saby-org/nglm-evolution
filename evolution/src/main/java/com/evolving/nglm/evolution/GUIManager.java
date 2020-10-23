@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-FO*  GUIManager.java
+*  GUIManager.java
 *
 *****************************************************************************/
 
@@ -21193,7 +21193,6 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
-    journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? journey : null;
     JSONObject journeyJSON = journeyService.generateResponseJSON(journey, true, SystemTime.getCurrentTime());
 
     //
