@@ -17,6 +17,8 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.evolving.nglm.evolution.propensity.PropensityService;
@@ -86,6 +88,7 @@ import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
@@ -118,6 +121,8 @@ import com.sun.net.httpserver.HttpServer;
 
 public class EvolutionEngine
 {
+
+  public static final String DELIMITER = "-X-";
 
   /*****************************************
   *
@@ -2958,6 +2963,59 @@ public class EvolutionEngine
                 subscriberProfileUpdated = true;
               }
           }
+        
+        if (subscriberProfileForceUpdate.getParameterMap().containsKey("fromJourney"))
+          {
+            for (String attribute : subscriberProfileForceUpdate.getParameterMap().keySet())
+              {
+                if ("fromJourney".equals(attribute)) continue;
+                Pattern attributePattern = Pattern.compile("^([^-]+)" + DELIMITER + "(.+)$"); // name --- dataType
+                Matcher attributeMatcher = attributePattern.matcher(attribute);
+                if (! attributeMatcher.find())
+                  {
+                    log.info("unable to parse id " + attribute);
+                  }
+                else
+                  {
+                    String valueStr = (String) subscriberProfileForceUpdate.getParameterMap().get(attribute);
+                    Object value = null;
+                    String attributeName = attributeMatcher.group(1);
+                    String attributeType = attributeMatcher.group(2);
+                    String methodName = "set" + attributeName.substring(0, 1).toUpperCase() + attributeName.substring(1);
+                    Class<?> parameterType = null;
+                    switch (CriterionDataType.fromExternalRepresentation(attributeType))
+                    {
+                      case StringCriterion:
+                        parameterType = String.class;
+                        value = valueStr;
+                        break;
+                      case IntegerCriterion:
+                        parameterType = Integer.class;
+                        value = Integer.parseInt(valueStr);
+                        break;
+                      case BooleanCriterion:
+                        parameterType = Boolean.class;
+                        value = Boolean.parseBoolean(valueStr);
+                        break;
+                      default:
+                        log.info("unsupported dataType : " + attributeType + " " + CriterionDataType.fromExternalRepresentation(attributeType));
+                    }
+                    if (parameterType != null)
+                      {
+                        try
+                        {
+                          Method setter = subscriberProfile.getClass().getMethod(methodName, parameterType);
+                          setter.invoke(subscriberProfile, value);
+                          subscriberProfileUpdated = true;
+                        }
+                        catch (NoSuchMethodException|SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
+                        {
+                          log.info("unable to set profile attribute " + attributeName + " : " + e.getLocalizedMessage());
+                        }
+                      }
+                  }
+              }
+          }
       }
     
     /*****************************************
@@ -5608,6 +5666,11 @@ public class EvolutionEngine
               kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventDeclaration.getEventTopic(), StringKey.serde().serializer().serialize(eventDeclaration.getEventTopic(), new StringKey(subscriberState.getSubscriberProfile().getSubscriberID())), eventDeclaration.getEventSerde().serializer().serialize(eventDeclaration.getEventTopic(), triggerEventAction.getEventToTrigger())));
               break;
 
+            case UpdateProfile:
+              SubscriberProfileForceUpdate subscriberProfileForceUpdate = (SubscriberProfileForceUpdate) action;
+              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberState.getSubscriberProfile().getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+              break;
+
             default:
               log.error("unsupported action {} on actionManager.executeOnExit", action.getActionType());
               break;
@@ -7564,7 +7627,7 @@ public class EvolutionEngine
 
   /*****************************************
   *
-  *  class OptAction
+  *  class LoyaltyProgramAction
   *
   *****************************************/
 
@@ -7629,6 +7692,70 @@ public class EvolutionEngine
       *****************************************/
 
       return Collections.<Action>singletonList(request);
+    }
+  }
+  
+  /*****************************************
+  *
+  *  class UpdateProfileAction
+  *
+  *****************************************/
+
+  public static class UpdateProfileAction extends ActionManager
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    private String attribute;
+    private CriterionDataType dataType;
+
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public UpdateProfileAction(JSONObject configuration) throws GUIManagerException
+    {
+      super(configuration);
+    }
+
+    /*****************************************
+    *
+    *  execute
+    *
+    *****************************************/
+
+    @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    {
+      
+      /*****************************************
+      *
+      *  request arguments
+      *
+      *****************************************/
+
+      String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      
+      Object value = null;
+      String paramName = null;
+      String attributeName = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.attribute.name");
+      String attributeValue = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.attribute.value");
+      SubscriberProfileForceUpdate update = new SubscriberProfileForceUpdate("dummy", evolutionEventContext.now(), new ParameterMap());
+      update.getParameterMap().put(attributeName, attributeValue);
+      update.getParameterMap().put("fromJourney", true);
+
+      /*****************************************
+      *
+      *  return request
+      *
+      *****************************************/
+
+      return Collections.<Action>singletonList(update);
     }
   }
   

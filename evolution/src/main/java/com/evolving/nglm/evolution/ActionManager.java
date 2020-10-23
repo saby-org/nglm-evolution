@@ -37,7 +37,8 @@ public abstract class ActionManager
     ActionManagerContextUpdate,
     TokenUpdate,
     TokenChange,
-    TriggerEvent;
+    TriggerEvent,
+    UpdateProfile;
   }
 
   /*****************************************

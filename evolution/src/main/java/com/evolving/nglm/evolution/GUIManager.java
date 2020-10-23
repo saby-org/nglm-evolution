@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -106,6 +107,7 @@ import com.evolving.nglm.core.UniqueKeyServer;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryStatus;
+import com.evolving.nglm.evolution.CustomerMetaData.MetaData;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryManagerAccount.Account;
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
@@ -25086,6 +25088,26 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             }
           break;
 
+        case "subscriberAttributes":
+          for (MetaData metaData : Deployment.getCustomerMetaData().getGeneralDetailsMetaData())
+            {
+              Object value = null; // TODO : do we need to select only fields that are not ReadOnly ?
+              switch (metaData.getDataType())
+              {
+                case StringCriterion:
+                case IntegerCriterion:
+                case BooleanCriterion:
+                  // We don't support Double fields, because they are normalized at custo level (and we have no access to this in EvolutionEngine)
+                  availableValue = new HashMap<String, Object>();
+                  availableValue.put("id", metaData.getName() + EvolutionEngine.DELIMITER + metaData.getDataType().getExternalRepresentation()); // name -X- dataType
+                  availableValue.put("display", metaData.getDisplay());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                  break;
+              }
+            }
+          result.sort((m1, m2) -> ((String) m1.get("display")).compareTo((String) m2.get("display")));
+          break;
+          
       default:
           
           if(reference.startsWith("dialog_template_")) {
