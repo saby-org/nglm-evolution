@@ -9,29 +9,29 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 
-public class ComplexObjectTypeField
+public class ComplexObjectTypeSubfield
 {
   
-  private String fieldName;
+  private String subfieldName;
   private CriterionDataType criterionDataType;
   private int privateID;
   private List<String> availableValues;
-
+  
   /*****************************************
   *
   *  constructor for Avro deserialize
   *
   *****************************************/
-  public ComplexObjectTypeField(String fromSerialization) throws Exception
+  public ComplexObjectTypeSubfield(String fromSerialization) throws Exception
   {
     this.fromSerializedString(fromSerialization);
   }
 
-  public ComplexObjectTypeField(JSONObject field)
+  public ComplexObjectTypeSubfield(JSONObject subfield)
   {
-    this.fieldName = JSONUtilities.decodeString(field, "fieldName", true);
-    this.criterionDataType = CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(field, "fieldDataType", true));
-    JSONArray availableValues = JSONUtilities.decodeJSONArray(field, "availableValues", false);
+    this.subfieldName = JSONUtilities.decodeString(subfield, "subfieldName", true);
+    this.criterionDataType = CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(subfield, "subfieldDataType", true));
+    JSONArray availableValues = JSONUtilities.decodeJSONArray(subfield, "availableValues", false);
     if(availableValues != null)
       {
         for(int i=0; i<availableValues.size(); i++)
@@ -40,12 +40,12 @@ public class ComplexObjectTypeField
             this.availableValues.add((String)availableValues.get(i));              
           }
       }
-    this.privateID = fieldName.hashCode() & 0xFFFF;
+    this.privateID = subfieldName.hashCode() & 0x7FFF; // avoid the sign bit to be 1
   }
   
-  public String getFieldName()
+  public String getSubfieldName()
   {
-    return fieldName;
+    return subfieldName;
   }
   public CriterionDataType getCriterionDataType()
   {
@@ -85,7 +85,7 @@ public class ComplexObjectTypeField
     String[] ss = s.split("\\|\\|\\|");
     if(ss.length != 3)
       {
-        throw new Exception("bad number of fields " + ss);
+        throw new Exception("bad number of subfields " + ss);
       }
     criterionDataType = CriterionDataType.fromExternalRepresentation(ss[0]);
     privateID = Integer.parseInt(ss[1]);
@@ -106,8 +106,8 @@ public class ComplexObjectTypeField
   @Override
   public boolean equals(Object f)
   {
-    ComplexObjectTypeField other = (ComplexObjectTypeField)f;
-    if(!fieldName.equals(other.getFieldName())) { return false; }
+    ComplexObjectTypeSubfield other = (ComplexObjectTypeSubfield)f;
+    if(!subfieldName.equals(other.getSubfieldName())) { return false; }
     if(privateID != other.getPrivateID()) { return false; }
     if(!criterionDataType.equals(other.getCriterionDataType())) { return false; }
     if(availableValues == null && other.getAvailableValues() != null) { return false; }

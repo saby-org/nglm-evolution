@@ -24,6 +24,7 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeSubfield;
 
 public class DynamicCriterionFieldService extends GUIService
 {
@@ -345,13 +346,14 @@ public class DynamicCriterionFieldService extends GUIService
   public void addComplexObjectTypeCriterionFields(ComplexObjectType complexObjectType, boolean newComplexObjectType) throws GUIManagerException
   {
     
-    for(String currentName : complexObjectType.getAvailableNames())
+    for(String currentName : complexObjectType.getAvailableElements())
       {
-        for(Map.Entry<String, CriterionDataType> current : complexObjectType.getFields().entrySet())
+        for(Map.Entry<Integer, ComplexObjectTypeSubfield> current : complexObjectType.getSubfields().entrySet())
           {
-            String subFieldName = current.getKey();
-            CriterionDataType subFieldType = current.getValue();
-            switch (subFieldType)
+            Integer subFieldID = current.getKey();
+            String subFieldName = current.getValue().getSubfieldName();
+            ComplexObjectTypeSubfield subField = current.getValue();
+            switch (subField.getCriterionDataType())
               {
               case IntegerCriterion :
               case DoubleCriterion :
@@ -367,7 +369,7 @@ public class DynamicCriterionFieldService extends GUIService
                 criterionFieldJSON.put("id", id);
                 criterionFieldJSON.put("display", complexObjectType.getComplexObjectTypeName() + "." + currentName + "." + subFieldName);
                 criterionFieldJSON.put("epoch", complexObjectType.getEpoch());
-                criterionFieldJSON.put("dataType", subFieldType.getExternalRepresentation());
+                criterionFieldJSON.put("dataType", subField.getCriterionDataType().getExternalRepresentation());
                 criterionFieldJSON.put("tagFormat", null);
                 criterionFieldJSON.put("tagMaxLength", null);
                 criterionFieldJSON.put("esField", id);
@@ -391,7 +393,7 @@ public class DynamicCriterionFieldService extends GUIService
                 break;
     
               default:
-                log.warn("ComplexObjectType: Unsupported CriterionDataType " + subFieldType);
+                log.warn("ComplexObjectType: Unsupported CriterionDataType " + subField.getCriterionDataType());
                 break;
               }
           }
@@ -404,15 +406,16 @@ public class DynamicCriterionFieldService extends GUIService
   *
   *****************************************/
 
-  public void removeComplexObjectTypeCriterionFields(ComplexObjectType complexObjectType)
+  public void removeComplexObjectTypeCriterionFields(GUIManagedObject guiManagedObject)
   {
     
-    for(String currentName : complexObjectType.getAvailableNames())
+    ComplexObjectType complexObjectType = (ComplexObjectType)guiManagedObject;
+    for(String currentName : complexObjectType.getAvailableElements())
       {
-        for(Map.Entry<String, CriterionDataType> current : complexObjectType.getFields().entrySet())
+        for(Map.Entry<Integer, ComplexObjectTypeSubfield> current : complexObjectType.getSubfields().entrySet())
           {
-            String subFieldName = current.getKey();
-            String id = "complexObject." + "." + complexObjectType.getComplexObjectTypeID() + "." + currentName + "." + subFieldName;
+            Integer subFieldID = current.getKey();
+            String id = "complexObject." + "." + complexObjectType.getComplexObjectTypeID() + "." + currentName + "." + subFieldID;
             removeGUIManagedObject(id, SystemTime.getCurrentTime(), null);
           }
       }

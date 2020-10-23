@@ -52,8 +52,8 @@ public class ComplexObjectType extends GUIManagedObject
     schemaBuilder.name("complex_object");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("availableNames", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
-    schemaBuilder.field("fields", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).schema());
+    schemaBuilder.field("availableElements", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
+    schemaBuilder.field("subfields", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).schema());
     schema = schemaBuilder.build();
   };
 
@@ -76,8 +76,8 @@ public class ComplexObjectType extends GUIManagedObject
   *
   ****************************************/
 
-  private List<String> availableNames;
-  private Map<Integer, ComplexObjectTypeField> fields;
+  private List<String> availableElements;
+  private Map<Integer, ComplexObjectTypeSubfield> subfields;
 
   /****************************************
   *
@@ -91,8 +91,8 @@ public class ComplexObjectType extends GUIManagedObject
   public String getComplexObjectTypeID() { return getGUIManagedObjectID(); }
   public String getComplexObjectTypeName() { return getGUIManagedObjectName(); }
   public String getDisplay() { return getGUIManagedObjectDisplay(); }
-  public List<String> getAvailableNames() { return availableNames; }
-  public Map<Integer, ComplexObjectTypeField> getFields() { return fields; }
+  public List<String> getAvailableElements() { return availableElements; }
+  public Map<Integer, ComplexObjectTypeSubfield> getSubfields() { return subfields; }
   
   /*****************************************
   *
@@ -100,11 +100,11 @@ public class ComplexObjectType extends GUIManagedObject
   *
   *****************************************/
 
-  public ComplexObjectType(SchemaAndValue schemaAndValue, List<String> availableNames, Map<Integer, ComplexObjectTypeField> fields)
+  public ComplexObjectType(SchemaAndValue schemaAndValue, List<String> availableElements, Map<Integer, ComplexObjectTypeSubfield> subfields)
   {
     super(schemaAndValue);
-    this.availableNames = availableNames;
-    this.fields = fields;
+    this.availableElements = availableElements;
+    this.subfields = subfields;
   }
 
   /*****************************************
@@ -116,8 +116,8 @@ public class ComplexObjectType extends GUIManagedObject
   private ComplexObjectType(ComplexObjectType type)
   {
     super(type.getJSONRepresentation(), type.getEpoch());
-    this.availableNames = type.getAvailableNames();
-    this.fields = type.getFields();
+    this.availableElements = type.getAvailableElements();
+    this.subfields = type.getSubfields();
   }
 
   /*****************************************
@@ -142,24 +142,24 @@ public class ComplexObjectType extends GUIManagedObject
     ComplexObjectType type = (ComplexObjectType) value;
     Struct struct = new Struct(schema);
     packCommon(struct, type);
-    struct.put("availableNames", type.getAvailableNames());
-    struct.put("fields", packFields(type.getFields()));
+    struct.put("availableElements", type.getAvailableElements());
+    struct.put("subfields", packSubfields(type.getSubfields()));
     return struct;
   }
   
   /****************************************
   *
-  *  packFields
+  *  packSubfields
   *
   ****************************************/
 
-  private static Map<Integer,Object> packFields(Map<Integer,ComplexObjectTypeField> fields)
+  private static Map<Integer,Object> packSubfields(Map<Integer,ComplexObjectTypeSubfield> subfields)
   {
     Map<Integer,Object> result = new LinkedHashMap<Integer,Object>();
-    for (Integer fieldPrivateKey : fields.keySet())
+    for (Integer subfieldPrivateKey : subfields.keySet())
       {
-        ComplexObjectTypeField field = fields.get(fieldPrivateKey);
-        result.put(fieldPrivateKey, field);
+        ComplexObjectTypeSubfield subfield = subfields.get(subfieldPrivateKey);
+        result.put(subfieldPrivateKey, subfield);
       }
     return result;
   }
@@ -186,14 +186,14 @@ public class ComplexObjectType extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    List<String> availableNames = (List<String>) valueStruct.get("availableNames");
-    Map<Integer, ComplexObjectTypeField> fields = unpackFields(schema.field("fields").schema(), (Map<Integer,Object>) valueStruct.get("fields"));
+    List<String> availableElements = (List<String>) valueStruct.get("availableElements");
+    Map<Integer, ComplexObjectTypeSubfield> subfields = unpackSubfields(schema.field("subfields").schema(), (Map<Integer,Object>) valueStruct.get("subfields"));
     
     //
     //  return
     //
 
-    return new ComplexObjectType(schemaAndValue, availableNames, fields);
+    return new ComplexObjectType(schemaAndValue, availableElements, subfields);
   }
   
   /*****************************************
@@ -202,24 +202,24 @@ public class ComplexObjectType extends GUIManagedObject
   *
   *****************************************/
 
-  private static Map<Integer,ComplexObjectTypeField> unpackFields(Schema schema, Map<Integer,Object> value)
+  private static Map<Integer,ComplexObjectTypeSubfield> unpackSubfields(Schema schema, Map<Integer,Object> value)
   {
     //
     //  get schema for LoyaltyProgramState
     //
 
-    Schema fieldsSchema = schema.valueSchema();
+    Schema subfieldsSchema = schema.valueSchema();
 
     //
     //  unpack
     //
 
-    Map<Integer,ComplexObjectTypeField> result = new HashMap<Integer,ComplexObjectTypeField>();
+    Map<Integer,ComplexObjectTypeSubfield> result = new HashMap<Integer,ComplexObjectTypeSubfield>();
     if(value != null)
       {
         for (Integer key : value.keySet())
           {
-            result.put(key, (ComplexObjectTypeField) value.get(key));
+            result.put(key, (ComplexObjectTypeSubfield) value.get(key));
           }
       }
 
@@ -261,25 +261,25 @@ public class ComplexObjectType extends GUIManagedObject
     *****************************************/
     
     // {
-    //    "availableNames" : [ "A","B"],
-    //    "fields" : [
+    //    "availableElements" : [ "A","B"],
+    //    "subfields" : [
     //      
     //      {
-    //        "fieldName" : "Foo",
-    //        "fieldDataType" : "integer",
+    //        "subfieldName" : "Foo",
+    //        "subfieldDataType" : "integer",
     //        "availableValues" : "["V1", "V2"]
     //      }
     //    ]
     //  }
     //      
 
-    this.availableNames = JSONUtilities.decodeJSONArray(jsonRoot, "availableNames", true);    
-    JSONArray f = JSONUtilities.decodeJSONArray(jsonRoot, "fields", true);
-    this.fields = new HashMap<>();
+    this.availableElements = JSONUtilities.decodeJSONArray(jsonRoot, "availableElements", true);    
+    JSONArray f = JSONUtilities.decodeJSONArray(jsonRoot, "subfields", true);
+    this.subfields = new HashMap<>();
     for(int i=0 ; i<f.size(); i++)
       {
-        ComplexObjectTypeField field = new ComplexObjectTypeField((JSONObject)f.get(i));
-        this.fields.put(field.getPrivateID(), field);
+        ComplexObjectTypeSubfield subfield = new ComplexObjectTypeSubfield((JSONObject)f.get(i));
+        this.subfields.put(subfield.getPrivateID(), subfield);
       }
     
     /*****************************************
@@ -305,8 +305,8 @@ public class ComplexObjectType extends GUIManagedObject
     if (complexObjectType != null && complexObjectType.getAccepted())
       {
         boolean epochChanged = false;
-        epochChanged = epochChanged || ! Objects.equals(getAvailableNames(), complexObjectType.getAvailableNames());
-        epochChanged = epochChanged || ! Objects.equals(getFields(), complexObjectType.getFields());
+        epochChanged = epochChanged || ! Objects.equals(getAvailableElements(), complexObjectType.getAvailableElements());
+        epochChanged = epochChanged || ! Objects.equals(getSubfields(), complexObjectType.getSubfields());
         return epochChanged;
       }
     else
