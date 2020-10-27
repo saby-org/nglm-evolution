@@ -5101,8 +5101,8 @@ public class ThirdPartyManager
                     alternateIDs.put(entry.getKey(), criterionFieldValue);
                   }
                 errorException = new ThirdPartyManagerException(
-                    RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseMessage() + " RedeemedDate: "
-                        + redeemedDate + " " + " AlternateIDs: " + alternateIDs,
+                    RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseMessage() + " (RedeemedDate: "
+                        + redeemedDate + " " + " AlternateIDs: "+ redeemedSubscriberID +" AlternateIDs: " + alternateIDs + ")",
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseCode());
               }else if(profileVoucher.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired||profileVoucher.getVoucherExpiryDate().before(now)){
           errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
