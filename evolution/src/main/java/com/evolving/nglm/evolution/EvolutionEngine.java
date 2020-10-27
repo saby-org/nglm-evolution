@@ -3267,7 +3267,7 @@ public class EvolutionEngine
           {
             int maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
             Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getBaseTimeZone());
-            List<Date> newPurchaseHistory = new ArrayList<Date>();
+            List<Date> cleanPurchaseHistory = new ArrayList<Date>();
             Map<String,List<Date>> fullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
             List<Date> purchaseHistory = fullPurchaseHistory.get(offerID);
             if (purchaseHistory != null)
@@ -3277,12 +3277,12 @@ public class EvolutionEngine
                   {
                     if (purchaseDate.after(earliestDateToKeep))
                       {
-                        newPurchaseHistory.add(purchaseDate);
+                        cleanPurchaseHistory.add(purchaseDate);
                       }
                   }
               }
-            newPurchaseHistory.add(now); // add new purchase
-            fullPurchaseHistory.put(offerID, newPurchaseHistory);
+            cleanPurchaseHistory.add(now); // add new purchase
+            fullPurchaseHistory.put(offerID, cleanPurchaseHistory);
             subscriberProfileUpdated = true;
           }
       }
