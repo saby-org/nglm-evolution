@@ -21202,7 +21202,6 @@ public class GUIManager
     journeyJSON.remove("readOnly");
     journeyJSON.remove("accepted");
     journeyJSON.remove("valid");
-    journeyJSON.remove("effectiveEndDate");
     journeyJSON.remove("targetNoOfConversions");
     journeyJSON.remove("targetingEvent");
     journeyJSON.remove("effectiveEntryPeriodEndDate");
@@ -21210,7 +21209,6 @@ public class GUIManager
     journeyJSON.remove("description");
     journeyJSON.remove("nodes");
     journeyJSON.remove("name");
-    journeyJSON.remove("effectiveStartDate");
     journeyJSON.remove("eligibilityCriteria");
     journeyJSON.remove("targetingType");
     journeyJSON.remove("links");
