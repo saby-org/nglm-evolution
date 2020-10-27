@@ -10,6 +10,7 @@ import kafka.zk.AdminZkClient;
 import kafka.zk.KafkaZkClient;
 
 import org.apache.avro.data.Json;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -41,6 +42,8 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.net.HttpHeaders;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -48,6 +51,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -130,7 +134,7 @@ public class EvolutionSetup
           // First check if the item exist
           //
           while(httpResponseCode.getValue() == null || httpResponseCode.getValue() == 409 /* can happen if calls are made too quickly */) {
-            executeCurl(cmd.url, "{}", "-XGET", httpResponseCode, responseBody);
+            executeCurl(cmd.url, "{}", "-XGET", cmd.username, cmd.password, httpResponseCode, responseBody);
           }
 
           JSONObject answer = (JSONObject) (new JSONParser()).parse(responseBody.getValue());
@@ -142,7 +146,7 @@ public class EvolutionSetup
             // Not found in ES, push it
             //
             while(httpResponseCode.getValue() == null || httpResponseCode.getValue() == 409 /* can happen if calls are made too quickly */) {
-              executeCurl(cmd.url, cmd.jsonBody, cmd.verb, httpResponseCode, responseBody);
+              executeCurl(cmd.url, cmd.jsonBody, cmd.verb, cmd.username, cmd.password, httpResponseCode, responseBody);
             }
             
             if(! (httpResponseCode.getValue().intValue() >= 200 && httpResponseCode.getValue().intValue() < 300)) {
@@ -166,7 +170,7 @@ public class EvolutionSetup
           ObjectHolder<Integer> httpResponseCode = new ObjectHolder<Integer>();
           
           while(httpResponseCode.getValue() == null || httpResponseCode.getValue() == 409 /* can happen if calls are made too quickly */) {
-            executeCurl(cmd.url, cmd.jsonBody, cmd.verb, httpResponseCode, responseBody);
+            executeCurl(cmd.url, cmd.jsonBody, cmd.verb, cmd.username, cmd.password, httpResponseCode, responseBody);
           }
           
           if (! (httpResponseCode.getValue().intValue() >= 200 && httpResponseCode.getValue().intValue() < 300)) {
@@ -522,7 +526,7 @@ public class EvolutionSetup
                 try
                   {
                     while(existingConfigHttpResponseCode.getValue() == null || existingConfigHttpResponseCode.getValue() == 409 /* can happen if calls are made too quickly */) {
-                      executeCurl(url + "/" + connectorName, null, "-XGET", existingConfigHttpResponseCode, existingConfigResponseContent);
+                      executeCurl(url + "/" + connectorName, null, "-XGET", null, null, existingConfigHttpResponseCode, existingConfigResponseContent);
                     }
                     if (existingConfigHttpResponseCode.getValue().intValue() >= 200 && existingConfigHttpResponseCode.getValue().intValue() < 300)
                       {
@@ -626,7 +630,7 @@ public class EvolutionSetup
                     ObjectHolder<Integer> createResponseCode = new ObjectHolder<Integer>();
                     try
                       {
-                        executeCurl(url + "/" + connectorName + "/config", com.evolving.nglm.core.JSONUtilities.decodeJSONObject(connectorToSetup, "config").toString(), "-XPUT", createResponseCode, createResponseContent);
+                        executeCurl(url + "/" + connectorName + "/config", com.evolving.nglm.core.JSONUtilities.decodeJSONObject(connectorToSetup, "config").toString(), "-XPUT", null, null, createResponseCode, createResponseContent);
                       }
                     catch (EvolutionSetupException e)
                       {
@@ -668,7 +672,7 @@ public class EvolutionSetup
    *
    ****************************************/
   
-  private static void executeCurl(String url, String jsonRequestEntity, String httpMethod, ObjectHolder<Integer> httpResponseCode, ObjectHolder<String> responseBody) throws EvolutionSetupException
+  private static void executeCurl(String url, String jsonRequestEntity, String httpMethod, String username, String password, ObjectHolder<Integer> httpResponseCode, ObjectHolder<String> responseBody) throws EvolutionSetupException
   {
     HttpResponse httpResponse = null;
     HttpRequestBase httpRequest;
@@ -696,7 +700,14 @@ public class EvolutionSetup
         ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(new StringEntity(jsonRequestEntity, ContentType.create("application/json")));
       }
 
-    httpRequest.setConfig(RequestConfig.custom().setConnectTimeout(20).build());
+    httpRequest.setConfig(RequestConfig.custom().setConnectTimeout(20).build());    
+    if(username != null) {
+      String auth = username + ":" + password;
+      byte[] encodedAuth = Base64.encodeBase64(auth.getBytes(StandardCharsets.ISO_8859_1));
+      String authHeader = "Basic " + new String(encodedAuth);
+      httpRequest.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
+    }
+    
     try
       {
         httpResponse = httpClient.execute(httpRequest);
@@ -748,11 +759,15 @@ public class EvolutionSetup
     public String verb;
     public String url;
     public String jsonBody;
+    public String username;
+    public String password;
 
-    public CurlCommand(String verb, String url, String jsonBody) {
+    public CurlCommand(String verb, String url, String username, String password, String jsonBody) {
       this.verb = verb;
       this.url = url;
       this.jsonBody = jsonBody;
+      this.username = username;
+      this.password = password;
     }
   }
   
@@ -771,18 +786,32 @@ public class EvolutionSetup
             continue;
           }
 
-          System.out.println("DEBUG: Handle CURL line " + line);
+          System.out.println("DEBUG: Handle CURL line " + line); // warning: not prod friendly, log contains password
           String[] params = line.split("\\|\\|\\|");
           
           String verb = null;
           String url = null;
           String jsonBody = null;
+          String username = null;
+          String password = null;
           for (int i = 0; i < params.length; i++) {
             if (params[i].trim().equals("-d")) {
               jsonBody = params[i + 2]; // because i+1 refers to a space separator " "
+              i = i + 2; // forward
             }
             else if (params[i].trim().startsWith("-d")) { // when there is no space between -d and the argument
               jsonBody = params[i].substring(2).trim();
+            }
+            else if (params[i].trim().equals("-u")) {
+              String credentials =  params[i + 2]; // because i+1 refers to a space separator " "
+              String[] split = credentials.split(":", 2);
+              if(split.length == 2) {
+                username = split[0];
+                password = split[1];
+              } else {
+                System.out.println("[DISPLAY] ERROR: Bad format for authentication credentials in CURL command.");
+              }
+              i = i + 2; // forward
             }
             else if (params[i].trim().startsWith("http")) {
               url = params[i];
@@ -792,7 +821,7 @@ public class EvolutionSetup
             }
           }
 
-          System.out.println("DEBUG: VERB="+verb+" URL="+url+" BODY="+jsonBody);
+          System.out.println("DEBUG: VERB="+verb+" URL="+url+" USERNAME="+username+" PASSWORD="+password+" BODY="+jsonBody); // warning: not prod friendly, log contains password
           if (verb == null || url == null || jsonBody == null) {
             System.out.println("[DISPLAY] WARNING: Unable to handle CURL line correctly: " + line);
           } else {
@@ -801,7 +830,7 @@ public class EvolutionSetup
             //
             jsonBody = parseJsonBody(jsonBody);
             
-            result.add(new CurlCommand(verb, url, jsonBody));
+            result.add(new CurlCommand(verb, url, username, password, jsonBody));
           }
 
           line = reader.readLine();
