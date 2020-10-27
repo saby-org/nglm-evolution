@@ -94,19 +94,19 @@ public class SegmentationDimensionESSinkConnector extends SimpleESSinkConnector
       Struct struct = (Struct) ((Struct) segmentationDimensionValue).get("segmentation_dimension_eligibility");
       if (struct != null)
         {
-          result = SegmentationDimensionEligibility.unpack(new SchemaAndValue(SegmentationDimensionEligibility.schema(), struct));
+          result = SegmentationDimensionEligibility.unpack(new SchemaAndValue(segmentationDimensionValueSchema, struct));
         }
       else {
         struct = (Struct) ((Struct) segmentationDimensionValue).get("segmentation_dimension_file_import");
         if (struct != null)
           {
-            result = SegmentationDimensionFileImport.unpack(new SchemaAndValue(SegmentationDimensionFileImport.schema(), struct));
+            result = SegmentationDimensionFileImport.unpack(new SchemaAndValue(segmentationDimensionValueSchema, struct));
           }
         else {
           struct = (Struct) ((Struct) segmentationDimensionValue).get("segmentation_dimension_ranges");
           if (struct != null)
             {
-              result = SegmentationDimensionRanges.unpack(new SchemaAndValue(SegmentationDimensionRanges.schema(), struct));
+              result = SegmentationDimensionRanges.unpack(new SchemaAndValue(segmentationDimensionValueSchema, struct));
             }
         }
       }
