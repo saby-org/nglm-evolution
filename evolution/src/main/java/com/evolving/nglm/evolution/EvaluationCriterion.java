@@ -1121,7 +1121,7 @@ public class EvaluationCriterion
              	for(String singleCriterionFieldValue: criterionFieldValues) {
              		singleCriterionFieldValue=singleCriterionFieldValue.trim();
              		result = traceCondition(evaluationRequest, (singleCriterionFieldValue == null || singleCriterionFieldValue.equalsIgnoreCase("null") ), singleCriterionFieldValue, evaluatedArgument);
-             		if (result)
+             		if (!result)
              		break;
              	}
              }
@@ -1135,7 +1135,7 @@ public class EvaluationCriterion
              	for(String singleCriterionFieldValue: criterionFieldValues) {
              		singleCriterionFieldValue=singleCriterionFieldValue.trim();
              		result = traceCondition(evaluationRequest, !(singleCriterionFieldValue == null || singleCriterionFieldValue.equalsIgnoreCase("null")), singleCriterionFieldValue, evaluatedArgument);
-             		if (!result)
+             		if (result)
              		break;
              	}
              }else {
