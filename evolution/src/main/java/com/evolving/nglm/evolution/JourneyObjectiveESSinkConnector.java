@@ -111,11 +111,18 @@ public class JourneyObjectiveESSinkConnector extends SimpleESSinkConnector
     
     @Override public JourneyObjective unpackRecord(SinkRecord sinkRecord) 
     {
-      Object journeyObjectiveValue = sinkRecord.value();
-      Schema journeyObjectiveValueSchema = sinkRecord.valueSchema();
-      return JourneyObjective.unpack(new SchemaAndValue(JourneyObjective.schema(), ((Struct) journeyObjectiveValue).get("journey_objective"))); 
+      Object guiManagedObjectValue = sinkRecord.value();
+      Schema guiManagedObjectValueSchema = sinkRecord.valueSchema();
+      GUIManagedObject guiManagedObject = GUIManagedObject.commonSerde().unpack(new SchemaAndValue(guiManagedObjectValueSchema, guiManagedObjectValue));
+      if (guiManagedObject instanceof JourneyObjective)
+        {
+          return (JourneyObjective) guiManagedObject;
+        }
+      else
+        {
+          return null;
+        }
     }
-    
     
     /*****************************************
     *
@@ -133,13 +140,15 @@ public class JourneyObjectiveESSinkConnector extends SimpleESSinkConnector
       // because native data in object is sometimes not correct
       
       JSONObject jr = journeyObjective.getJSONRepresentation();
-      documentMap.put("id",      jr.get("id"));
-      documentMap.put("display", jr.get("display"));
-      String contactPolicyID = (String) jr.get("contactPolicyID");
-      ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, now);
-      documentMap.put("contactPolicy", (contactPolicy == null) ? "" : contactPolicy.getGUIManagedObjectDisplay());
-      documentMap.put("timestamp",     DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime()));
-      
+      if (jr != null)
+        {
+          documentMap.put("id",      jr.get("id"));
+          documentMap.put("display", jr.get("display"));
+          String contactPolicyID = (String) jr.get("contactPolicyID");
+          ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, now);
+          documentMap.put("contactPolicy", (contactPolicy == null) ? "" : contactPolicy.getGUIManagedObjectDisplay());
+          documentMap.put("timestamp",     DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime()));
+        }
       return documentMap;
     }
 
