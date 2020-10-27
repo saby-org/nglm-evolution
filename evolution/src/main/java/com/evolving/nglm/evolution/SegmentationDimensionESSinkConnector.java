@@ -88,29 +88,25 @@ public class SegmentationDimensionESSinkConnector extends SimpleESSinkConnector
     
     @Override public SegmentationDimension unpackRecord(SinkRecord sinkRecord) 
     {
-      SegmentationDimension result = null;
-      Object segmentationDimensionValue = sinkRecord.value();
-      Schema segmentationDimensionValueSchema = sinkRecord.valueSchema();
-      Struct struct = (Struct) ((Struct) segmentationDimensionValue).get("segmentation_dimension_eligibility");
-      if (struct != null)
+      Object guiManagedObjectValue = sinkRecord.value();
+      Schema guiManagedObjectValueSchema = sinkRecord.valueSchema();
+      GUIManagedObject guiManagedObject = GUIManagedObject.commonSerde().unpack(new SchemaAndValue(guiManagedObjectValueSchema, guiManagedObjectValue));
+      if (guiManagedObject instanceof SegmentationDimensionEligibility)
         {
-          result = SegmentationDimensionEligibility.unpack(new SchemaAndValue(segmentationDimensionValueSchema, struct));
+          return (SegmentationDimensionEligibility) guiManagedObject;
         }
-      else {
-        struct = (Struct) ((Struct) segmentationDimensionValue).get("segmentation_dimension_file_import");
-        if (struct != null)
-          {
-            result = SegmentationDimensionFileImport.unpack(new SchemaAndValue(segmentationDimensionValueSchema, struct));
-          }
-        else {
-          struct = (Struct) ((Struct) segmentationDimensionValue).get("segmentation_dimension_ranges");
-          if (struct != null)
-            {
-              result = SegmentationDimensionRanges.unpack(new SchemaAndValue(segmentationDimensionValueSchema, struct));
-            }
+      else if (guiManagedObject instanceof SegmentationDimensionFileImport)
+        {
+          return (SegmentationDimensionFileImport) guiManagedObject;
         }
-      }
-      return result;
+      else if (guiManagedObject instanceof SegmentationDimensionRanges)
+        {
+          return (SegmentationDimensionRanges) guiManagedObject;
+        }
+      else
+        {
+          return null;
+        }
     }
     
     /*****************************************
