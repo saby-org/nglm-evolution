@@ -3,7 +3,8 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>1.4.5_2-SNAPSHOT</version>
+  <version>EVPRO-322-145_1-SNAPSHOT</version>
+
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -33,6 +34,7 @@
     <!-- nglm versions -->
     <nglm.core.version>1.4.5_0-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
+    <gui.framework.version>${gui-fwk.version}</gui.framework.version>
 
     <!-- dependencies -->
     <flyway.version>qaveon-dnbo-2.5.0.10.4.6</flyway.version>

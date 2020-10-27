@@ -547,6 +547,8 @@ public class GUIManager
 
 
     getDependencies("getDependencies"),
+    
+    getSoftwareVersions("getSoftwareVersions"),
 
     
     //
@@ -2122,6 +2124,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/loyaltyProgramOptIn", new APISimpleHandler(API.loyaltyProgramOptIn));
         restServer.createContext("/nglm-guimanager/loyaltyProgramOptOut", new APISimpleHandler(API.loyaltyProgramOptOut));
         restServer.createContext("/nglm-guimanager/getDependencies", new APISimpleHandler(API.getDependencies));
+        restServer.createContext("/nglm-guimanager/getSoftwareVersions", new APISimpleHandler(API.getSoftwareVersions));
 
         restServer.createContext("/nglm-guimanager/launchExtract", new APISimpleHandler(API.launchExtract));
         restServer.createContext("/nglm-guimanager/downloadExtractFile", new APIComplexHandler(API.downloadExtractFile));
@@ -3948,6 +3951,11 @@ public class GUIManager
                 case removeSimpleOffer:
                   jsonResponse = processRemoveSimpleOffer(userID, jsonRoot);
                   break;   
+
+
+                case getSoftwareVersions:
+                jsonResponse = processSoftwareVersions(userID, jsonRoot);
+                break;
 
               }
           }
@@ -27066,6 +27074,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     return result;
   }
 
+
   /************************************************************************
    *
    * method to get the active suppler id and parentSupplier ID
@@ -28147,6 +28156,17 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     response.put("removedOfferIDs", JSONUtilities.encodeArray(validIDs));
     return JSONUtilities.encodeObject(response);
 
+  }
+
+  
+  public JSONObject processSoftwareVersions(String userID, JSONObject jsonRoot)
+  {
+    Map<String, Object> response = new LinkedHashMap<String, Object>();
+    response.put("evolutionVersion", com.evolving.nglm.core.Deployment.getEvolutionVersion());
+    response.put("customerVersion", com.evolving.nglm.core.Deployment.getCustomerVersion());
+    
+    return JSONUtilities.encodeObject(response);
+   
   }
 
 }
