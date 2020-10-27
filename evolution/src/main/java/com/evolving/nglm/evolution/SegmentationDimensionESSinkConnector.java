@@ -20,7 +20,8 @@ import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 
 public class SegmentationDimensionESSinkConnector extends SimpleESSinkConnector
 {
-  
+  private static DynamicCriterionFieldService dynamicCriterionFieldService;
+
   /****************************************
   *
   *  taskClass
@@ -54,6 +55,14 @@ public class SegmentationDimensionESSinkConnector extends SimpleESSinkConnector
       //
 
       super.start(taskConfig);
+      
+      //
+      //  services
+      //
+   
+      dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "segmentationdimensionsinkconnector-dynamiccriterionfieldservice-" + getTaskNumber(), Deployment.getDynamicCriterionFieldTopic(), false);
+      CriterionContext.initialize(dynamicCriterionFieldService);
+      dynamicCriterionFieldService.start();      
     }
 
     /*****************************************
