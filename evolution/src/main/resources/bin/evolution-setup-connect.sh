@@ -271,10 +271,12 @@ prepare-curl -XPOST $CONNECT_URL_TOKENCHANGE_ES/connectors -H "Content-Type: app
         "topics"           : "${topic.tokenchange}",
         "connectionHost"   : "'$MASTER_ESROUTER_HOST'",
         "connectionPort"   : "'$MASTER_ESROUTER_PORT'",
+        "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+        "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
         "indexName"        : "detailedrecords_tokens",
         "pipelineName"     : "token-daily",
-     "batchRecordCount" : "'$CONNECT_ES_TOKENCHANGE_BATCHRECORDCOUNT'",
-     "batchSize"        : "'$CONNECT_ES_TOKENCHANGE_BATCHSIZEMB'"
+        "batchRecordCount" : "'$CONNECT_ES_TOKENCHANGE_BATCHRECORDCOUNT'",
+        "batchSize"        : "'$CONNECT_ES_TOKENCHANGE_BATCHSIZEMB'"
       }
   }'
 #
@@ -403,6 +405,8 @@ prepare-curl -XPOST $CONNECT_URL_BASEMANAGEMENT_ES/connectors -H "Content-Type: 
       "topics" : "${topic.segmentationdimension}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+      "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+      "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
       "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
       "indexName" : "mapping_basemanagement",
       "batchRecordCount" : "'$CONNECT_ES_BASEMANAGEMENT_BATCHRECORDCOUNT'",
@@ -428,6 +432,8 @@ prepare-curl -XPOST $CONNECT_URL_JOURNEYOBJECTIVE_ES/connectors -H "Content-Type
       "topics" : "${topic.journeyobjective}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+      "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+      "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
       "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
       "indexName" : "mapping_journeyobjective",
       "batchRecordCount" : "'$CONNECT_ES_JOURNEYOBJECTIVE_BATCHRECORDCOUNT'",

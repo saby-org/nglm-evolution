@@ -93,13 +93,6 @@
   "importVoucherFileBulkSize" : 5000,
   "voucherESCacheCleanerFrequencyInSec" : 300,
   "numberConcurrentVoucherAllocationToES" : 10,
-
-  "ucgEngineESConnectTimeout" : 30000,
-  "ucgEngineESSocketTimeout" : 60000,
-  "ucgEngineESMasRetryTimeout" : 60000,
-  
-  "guiManagerESConnectTimeout" : 30000,
-  "guiManagerESSocketTimeout" : 60000,
   
   "maxPollIntervalMsComment": "Changed to 300s (5 minutes), kafka default is 30 seconds, which causes containers to stop during startup (heavy system load",
   "maxPollIntervalMs"       : 300000,

@@ -156,7 +156,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
   "settings" : {
     "index" : {
       "number_of_shards" : "Deployment.getElasticsearchSnapshotShards()",
-      "number_of_replicas" : "Deployment.getElasticsearchSnapshotReplicas()",
+      "number_of_replicas" : "Deployment.getElasticsearchSnapshotReplicas()"
     },
     "opendistro.index_state_management.policy_id": "subscriberprofile_snapshot_policy"
   }
