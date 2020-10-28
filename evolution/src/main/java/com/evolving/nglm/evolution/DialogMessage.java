@@ -20,6 +20,8 @@ import org.apache.kafka.connect.data.Struct;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.Format;
 import java.text.MessageFormat;
@@ -37,6 +39,13 @@ import java.util.regex.Pattern;
 
 public class DialogMessage
 {
+  
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(DialogMessage.class);
+  
   /*****************************************
   *
   *  schema
@@ -625,6 +634,7 @@ public class DialogMessage
 
   public String resolve(String language, List<String> messageTags)
   {
+    log.info("RAJ K resolve language {} and messageTags {} and messageTextByLanguage {} ", language, messageTags, messageTextByLanguage);
     String text = null;
     if (messageTextByLanguage.get(language) != null)
       {
@@ -632,6 +642,7 @@ public class DialogMessage
         MessageFormat formatter = new MessageFormat(messageTextByLanguage.get(language), messageLocale);
         text = formatter.format(messageTags.toArray());
       }
+    log.info("RAJ K resolve text {} ", text);
     return text;
   }
 

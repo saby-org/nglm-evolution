@@ -688,7 +688,11 @@ public abstract class CriterionFieldRetriever
   //  getEvaluationJourney
   //
 
-  public static Object getEvaluationJourney(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return "evaluation.variable.journey"; }
+  public static Object getEvaluationJourney(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
+  { 
+    log.info("RAJ K getEvaluationJourney");
+    return "evaluation.variable.journey"; 
+  }
 
   //
   //  getEvaluationJourneyStatus
