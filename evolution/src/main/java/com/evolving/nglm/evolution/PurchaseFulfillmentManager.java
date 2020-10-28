@@ -1073,7 +1073,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         
         Map<String, List<Date>> offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
         List<Date> purchaseHistory = offerPurchaseHistory.get(offerID);
-        if (purchaseHistory != null && purchaseHistory.size() > offer.getMaximumAcceptances())
+        int alreadyPurchased = (purchaseHistory != null) ? purchaseHistory.size() : 0;
+        if (alreadyPurchased+purchaseRequest.getQuantity() > offer.getMaximumAcceptances())
           {
             log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
             submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_OFFER_LIMIT_REACHED, "maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");

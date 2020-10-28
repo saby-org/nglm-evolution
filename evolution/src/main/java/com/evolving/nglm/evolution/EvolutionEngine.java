@@ -3281,7 +3281,11 @@ public class EvolutionEngine
                       }
                   }
               }
-            cleanPurchaseHistory.add(now); // add new purchase
+            // TODO : this could be size-optimized by storing date/quantity in a new object
+            for (int n=0; n<purchaseFulfillmentRequest.getQuantity(); n++)
+              {
+                cleanPurchaseHistory.add(now); // add new purchase
+              }
             fullPurchaseHistory.put(offerID, cleanPurchaseHistory);
             subscriberProfileUpdated = true;
           }
