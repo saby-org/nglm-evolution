@@ -6141,7 +6141,6 @@ public class ThirdPartyManager
      *****************************************/
 
     private int responseCode;
-    private JSONObject additionalMessage;
 
     /*****************************************
      *
@@ -6150,7 +6149,6 @@ public class ThirdPartyManager
      *****************************************/
 
     public int getResponseCode() { return responseCode; }
-    public JSONObject getAdditionalMessage() { return additionalMessage; }
 
     /*****************************************
      *
