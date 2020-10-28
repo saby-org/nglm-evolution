@@ -3,28 +3,124 @@ package com.evolving.nglm.evolution.complexobjects;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaAndValue;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 
 public class ComplexObjectTypeSubfield
 {
+
+  /*****************************************
+  *
+  *  schema
+  *
+  *****************************************/
+
+  //
+  //  schema
+  //
+
+  private static Schema schema = null;
+  
+  
+  static
+  {
+    SchemaBuilder schemaBuilder = SchemaBuilder.struct();
+    schemaBuilder.name("ComplexObjectTypeSubfield");
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.field("subfieldName", Schema.STRING_SCHEMA);
+    schemaBuilder.field("criterionDataType", Schema.STRING_SCHEMA);
+    schemaBuilder.field("privateID", Schema.INT32_SCHEMA);
+    schemaBuilder.field("availableValues", SchemaBuilder.array(Schema.STRING_SCHEMA).optional().schema());    
+    schema = schemaBuilder.build();
+  };
+
+  //
+  // serde
+  //
+
+  private static ConnectSerde<ComplexObjectTypeSubfield> serde = new ConnectSerde<ComplexObjectTypeSubfield>(schema, false, ComplexObjectTypeSubfield.class, ComplexObjectTypeSubfield::pack, ComplexObjectTypeSubfield::unpack);
+  
+  //
+  // accessor
+  //
+
+  public static Schema schema() { return schema; }
+  public static ConnectSerde<ComplexObjectTypeSubfield> serde() { return serde; }
+
+  
+  
   
   private String subfieldName;
   private CriterionDataType criterionDataType;
   private int privateID;
   private List<String> availableValues;
   
+  
   /*****************************************
   *
-  *  constructor for Avro deserialize
+  * pack
   *
   *****************************************/
-  public ComplexObjectTypeSubfield(String fromSerialization) throws Exception
+
+  public static Object pack(Object value)
   {
-    this.fromSerializedString(fromSerialization);
+    ComplexObjectTypeSubfield complexObjectTypeSubfield = (ComplexObjectTypeSubfield) value;
+    Struct struct = new Struct(schema);
+
+    struct.put("subfieldName", complexObjectTypeSubfield.getSubfieldName());
+    struct.put("criterionDataType", complexObjectTypeSubfield.getCriterionDataType().getExternalRepresentation());
+    struct.put("privateID", complexObjectTypeSubfield.getPrivateID());
+    struct.put("availableValues", complexObjectTypeSubfield.getAvailableValues());
+    return struct;
+  }
+  
+  /*****************************************
+  *
+  *  unpack
+  *
+  *****************************************/
+
+  public static ComplexObjectTypeSubfield unpack(SchemaAndValue schemaAndValue)
+  {
+    //
+    //  data
+    //
+
+    Schema schema = schemaAndValue.schema();
+    Object value = schemaAndValue.value();
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+
+    //
+    //  unpack
+    //
+
+    Struct valueStruct = (Struct) value;
+    String subfieldName = valueStruct.getString("subfieldName");
+    CriterionDataType criterionDataType = CriterionDataType.fromExternalRepresentation(valueStruct.getString("criterionDataType"));
+    Integer privateID = valueStruct.getInt32("privateID");
+    List<String> availableValues = (List<String>) valueStruct.get("availableValues");
+    //
+    //  return
+    //
+
+    return new ComplexObjectTypeSubfield(subfieldName, criterionDataType, privateID, availableValues);
+  }
+  
+  public ComplexObjectTypeSubfield(String subfieldName, CriterionDataType criterionDataType, Integer privateID, List<String> availableValues)
+  {
+    this.subfieldName = subfieldName;
+    this.criterionDataType = criterionDataType;
+    this.privateID = privateID;
+    this.availableValues = availableValues;
   }
 
   public ComplexObjectTypeSubfield(JSONObject subfield)
@@ -58,49 +154,6 @@ public class ComplexObjectTypeSubfield
   public List<String> getAvailableValues()
   {
     return availableValues;
-  }
-  
-  public String toSerializedString()
-  {
-    String ser = criterionDataType + "|||" + privateID + "|||";
-    if(availableValues != null) {
-      for(int i = 0; i < availableValues.size(); i++)
-        {
-          ser = ser + availableValues.get(i);
-          if(i < availableValues.size() - 1)
-            {
-              ser = ser + "|$|";
-            }
-        }
-    }
-    else 
-      {
-        ser = ser + "noAvailableValues"; 
-      }
-    return ser;
-  }
-  
-  private void fromSerializedString(String s) throws Exception
-  {
-    String[] ss = s.split("\\|\\|\\|");
-    if(ss.length != 3)
-      {
-        throw new Exception("bad number of subfields " + ss);
-      }
-    criterionDataType = CriterionDataType.fromExternalRepresentation(ss[0]);
-    privateID = Integer.parseInt(ss[1]);
-    String availableValues = ss[2];
-    if(!availableValues.equals("noAvailableValues"))
-      {
-        String[] av = availableValues.split("\\|$\\|");
-        for(String currentAv : av) {
-          if(this.availableValues == null)
-            {
-              this.availableValues = new ArrayList<>();
-            }
-          this.availableValues.add(currentAv);
-        }
-      }    
   }
   
   @Override

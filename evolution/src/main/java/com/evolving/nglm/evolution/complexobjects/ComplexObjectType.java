@@ -28,6 +28,7 @@ import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.JourneyObjectiveInstance;
 import com.evolving.nglm.evolution.LoyaltyProgramState;
 import com.evolving.nglm.evolution.ParameterMap;
+import com.evolving.nglm.evolution.SubscriberRelatives;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class ComplexObjectType extends GUIManagedObject
@@ -40,7 +41,7 @@ public class ComplexObjectType extends GUIManagedObject
   *  schema
   *
   *****************************************/
-
+  
   //
   //  schema
   //
@@ -50,10 +51,10 @@ public class ComplexObjectType extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("complex_object");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("availableElements", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
-    schemaBuilder.field("subfields", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).schema());
+    schemaBuilder.field("subfields", SchemaBuilder.map(Schema.INT32_SCHEMA, ComplexObjectTypeSubfield.schema()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -159,7 +160,7 @@ public class ComplexObjectType extends GUIManagedObject
     for (Integer subfieldPrivateKey : subfields.keySet())
       {
         ComplexObjectTypeSubfield subfield = subfields.get(subfieldPrivateKey);
-        result.put(subfieldPrivateKey, subfield);
+        result.put(subfieldPrivateKey, ComplexObjectTypeSubfield.pack(subfield));
       }
     return result;
   }
@@ -215,14 +216,15 @@ public class ComplexObjectType extends GUIManagedObject
     //
 
     Map<Integer,ComplexObjectTypeSubfield> result = new HashMap<Integer,ComplexObjectTypeSubfield>();
+    Map<Integer, Object> valueMap = (Map<Integer, Object>) value;
     if(value != null)
       {
         for (Integer key : value.keySet())
           {
-            result.put(key, (ComplexObjectTypeSubfield) value.get(key));
+            result.put(key, ComplexObjectTypeSubfield.serde().unpack(new SchemaAndValue(subfieldsSchema, valueMap.get(key))));
           }
       }
-
+    
     //
     //  return
     //

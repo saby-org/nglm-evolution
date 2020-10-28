@@ -40,6 +40,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
@@ -159,7 +160,7 @@ public abstract class SubscriberProfile
     schemaBuilder.field("language", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("extendedSubscriberProfile", ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().optionalSchema());
     schemaBuilder.field("subscriberHistory", SubscriberHistory.serde().optionalSchema());
-    schemaBuilder.field("complexObjects", SchemaBuilder.array(Token.commonSerde().schema()).defaultValue(Collections.<Token>emptyList()).schema());
+    schemaBuilder.field("complexObjectInstances", SchemaBuilder.array(ComplexObjectInstance.serde().schema()).defaultValue(Collections.<ComplexObjectInstance>emptyList()).schema());
     commonSchema = schemaBuilder.build();
   };
 
@@ -235,10 +236,12 @@ public abstract class SubscriberProfile
   private ExtendedSubscriberProfile extendedSubscriberProfile;
   private SubscriberHistory subscriberHistory;
   private Map<String,Integer> exclusionInclusionTargets; 
-  
+  private List<ComplexObjectInstance> complexObjectInstances; 
   // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
   // the required relationship does not exist and must go out of the box through a special connector.
-  private List<Pair<String, String>> unknownRelationships = new ArrayList<>();  
+  private List<Pair<String, String>> unknownRelationships = new ArrayList<>();
+  
+ 
 
   /****************************************
   *
@@ -265,6 +268,7 @@ public abstract class SubscriberProfile
   public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
   public SubscriberHistory getSubscriberHistory() { return subscriberHistory; }
   public Map<String, Integer> getExclusionInclusionTargets() { return exclusionInclusionTargets; }
+  public List<ComplexObjectInstance> getComplexObjectInstances() { return complexObjectInstances; }
   
   public List<Pair<String, String>> getUnknownRelationships(){ return unknownRelationships ; }
 
@@ -1038,6 +1042,8 @@ public abstract class SubscriberProfile
 
     return baseProfilePresentation;
   }
+  
+  
 
   //
   //  getProfileMapForThirdPartyPresentation
@@ -1409,6 +1415,7 @@ public abstract class SubscriberProfile
     this.extendedSubscriberProfile = null;
     this.subscriberHistory = null;
     this.exclusionInclusionTargets = new HashMap<String, Integer>();
+    this.complexObjectInstances = new ArrayList<>();
   }
 
   /*****************************************
@@ -1450,7 +1457,8 @@ public abstract class SubscriberProfile
     ExtendedSubscriberProfile extendedSubscriberProfile = (schemaVersion >= 2) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpackOptional(new SchemaAndValue(schema.field("extendedSubscriberProfile").schema(), valueStruct.get("extendedSubscriberProfile"))) : null;
     SubscriberHistory subscriberHistory  = valueStruct.get("subscriberHistory") != null ? SubscriberHistory.unpack(new SchemaAndValue(schema.field("subscriberHistory").schema(), valueStruct.get("subscriberHistory"))) : null;
     Map<String, Integer> exclusionInclusionTargets = (schemaVersion >= 2) ? unpackTargets(valueStruct.get("exclusionInclusionTargets")) : new HashMap<String,Integer>();
-    Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();
+    Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();    
+    List<ComplexObjectInstance> complexObjectInstances = (schema.field("complexObjectInstances") != null) ? unpackComplexObjectInstances(schema.field("complexObjectInstances").schema(), valueStruct.get("complexObjectInstances")) : Collections.<ComplexObjectInstance>emptyList();
 
     //
     //  return
@@ -1475,6 +1483,7 @@ public abstract class SubscriberProfile
     this.extendedSubscriberProfile = extendedSubscriberProfile;
     this.subscriberHistory = subscriberHistory;
     this.exclusionInclusionTargets = exclusionInclusionTargets;
+    this.complexObjectInstances = complexObjectInstances;
   }
 
   /*****************************************
@@ -1729,6 +1738,39 @@ public abstract class SubscriberProfile
 
     return result;
   }
+  
+  /*****************************************
+  *
+  *  unpackComplexObjectInstances
+  *
+  *****************************************/
+
+ private static List<ComplexObjectInstance> unpackComplexObjectInstances(Schema schema, Object value)
+ {
+   //
+   //  get schema for voucher
+   //
+
+   Schema complexObjectInstancesSchema = schema.valueSchema();
+
+   //
+   //  unpack
+   //
+
+   List<ComplexObjectInstance> result = new LinkedList<>();
+   List<Object> valueArray = (List<Object>) value;
+   for (Object complexObjectInstance : valueArray)
+   {
+     result.add(ComplexObjectInstance.unpack(new SchemaAndValue(complexObjectInstancesSchema, complexObjectInstance)));
+   }
+
+   //
+   //  return
+   //
+
+   return result;
+ }
+
 
   /*****************************************
   *
@@ -1788,6 +1830,7 @@ public abstract class SubscriberProfile
     struct.put("extendedSubscriberProfile", (subscriberProfile.getExtendedSubscriberProfile() != null) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().packOptional(subscriberProfile.getExtendedSubscriberProfile()) : null);
     struct.put("subscriberHistory", (subscriberProfile.getSubscriberHistory() != null) ? SubscriberHistory.serde().packOptional(subscriberProfile.getSubscriberHistory()) : null);
     struct.put("exclusionInclusionTargets", packTargets(subscriberProfile.getExclusionInclusionTargets()));
+    struct.put("complexObjectInstances", packComplexObjectInstances(subscriberProfile.getComplexObjectInstances()));
   }
 
   /****************************************
@@ -1942,6 +1985,22 @@ public abstract class SubscriberProfile
     return result;
   }
   
+  
+  /****************************************
+  *
+  *  packComplexObjectInstances
+  *
+  ****************************************/
+
+  private static Object packComplexObjectInstances(List<ComplexObjectInstance> complexObjectInstances)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (ComplexObjectInstance complexObjectInstance : complexObjectInstances)
+      {
+        result.add(ComplexObjectInstance.serde().pack(complexObjectInstance));
+      }
+    return result;
+  }
   /****************************************
   *
   *  getInInclusionList

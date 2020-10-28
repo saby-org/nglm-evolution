@@ -1654,7 +1654,7 @@ public class GUIManagerGeneral extends GUIManager
     if (complexObjectTypeID == null)
       {
         String idString = complexObjectTypeService.generateComplexObjectTypeID();
-        jsonRoot.put("id", complexObjectTypeID);
+        jsonRoot.put("id", idString);
       }
 
     /*****************************************

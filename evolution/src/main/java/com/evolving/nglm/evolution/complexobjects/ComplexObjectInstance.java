@@ -7,7 +7,6 @@
 package com.evolving.nglm.evolution.complexobjects;
 
 import java.nio.ByteBuffer;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,9 +23,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
-import com.evolving.nglm.evolution.EvolutionEngine;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.OfferService;
 
 public class ComplexObjectInstance
 {
@@ -56,9 +53,10 @@ public class ComplexObjectInstance
     complexObjectTypeService.start();
         
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("complexObjectInstance");
+    schemaBuilder.name("complex_object_instance");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("complexObjectTypeID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("elementID", Schema.STRING_SCHEMA);
     schemaBuilder.field("fieldValues", Schema.BYTES_SCHEMA);
     schema = schemaBuilder.build();
   };
@@ -73,8 +71,8 @@ public class ComplexObjectInstance
   // accessor
   //
 
-  public static Schema commonSchema() { return schema; }
-  public static ConnectSerde<ComplexObjectInstance> commonSerde() { return serde; }
+  public static Schema schema() { return schema; }
+  public static ConnectSerde<ComplexObjectInstance> serde() { return serde; }
 
   /*****************************************
   *
@@ -83,7 +81,8 @@ public class ComplexObjectInstance
   *****************************************/
 
   private String complexObjectTypeID;
-  private Map<Integer, ComplexObjectinstanceFieldValue> fieldValues;
+  private String elementID;
+  private Map<String, ComplexObjectinstanceSubfieldValue> fieldValues; // key is the fieldName
 
   /*****************************************
   *
@@ -93,14 +92,16 @@ public class ComplexObjectInstance
 
   
   public String getComplexObjectTypeID() { return complexObjectTypeID; }
-  public Map<Integer, ComplexObjectinstanceFieldValue> getFieldValues() { return fieldValues; }
+  public String getElementID() { return elementID; }
+  public Map<String, ComplexObjectinstanceSubfieldValue> getFieldValues() { return fieldValues; }
 
   //
   //  setters
   //
 
   public void setComplexObjectTypeID(String complexObjectTypeID) { this.complexObjectTypeID = complexObjectTypeID; }
-  public void setFieldValues(Map<Integer, ComplexObjectinstanceFieldValue> fieldValues) { this.fieldValues = fieldValues; }
+  public void setElementID(String elementID) { this.elementID = elementID; }
+  public void setFieldValues(Map<String, ComplexObjectinstanceSubfieldValue> fieldValues) { this.fieldValues = fieldValues; }
 
   /*****************************************
   *
@@ -108,9 +109,10 @@ public class ComplexObjectInstance
   *
   *****************************************/
 
-  public ComplexObjectInstance(String complexObjectTypeID)
+  public ComplexObjectInstance(String complexObjectTypeID, String elementID)
   {
     this.complexObjectTypeID = complexObjectTypeID;
+    this.elementID = elementID;
   }
   
   
@@ -120,9 +122,10 @@ public class ComplexObjectInstance
   *
   *****************************************/
 
-  public ComplexObjectInstance(String complexObjectTypeID, byte[] fieldValues)
+  public ComplexObjectInstance(String complexObjectTypeID, String elementID, byte[] fieldValues)
   {
     this.complexObjectTypeID = complexObjectTypeID;
+    this.elementID = elementID;
     this.fieldValues = unserializeFields(fieldValues);
   }
 
@@ -138,6 +141,7 @@ public class ComplexObjectInstance
     Struct struct = new Struct(schema);
 
     struct.put("complexObjectTypeID", complexObjectInstance.getComplexObjectTypeID());
+    struct.put("elementID", complexObjectInstance.getElementID());
     struct.put("fieldValues", complexObjectInstance.serializeFields());
     return struct;
   }
@@ -164,13 +168,14 @@ public class ComplexObjectInstance
 
     Struct valueStruct = (Struct) value;
     String complexObjectTypeID = valueStruct.getString("complexObjectTypeID");
+    String elementID = valueStruct.getString("elementID");
     byte[] fieldValues = valueStruct.getBytes("fieldValues");
     
     //
     //  return
     //
 
-    return new ComplexObjectInstance(complexObjectTypeID, fieldValues);
+    return new ComplexObjectInstance(complexObjectTypeID, elementID, fieldValues);
   }
 
   /*****************************************
@@ -194,9 +199,9 @@ public class ComplexObjectInstance
   {
     ByteBuffer resultByteBuffer = ByteBuffer.allocate(1000000);  
     
-    for(ComplexObjectinstanceFieldValue fieldValue : this.getFieldValues().values())
+    for(ComplexObjectinstanceSubfieldValue fieldValue : this.getFieldValues().values())
       {
-        ComplexObjectTypeSubfield fieldType = complexObjectTypeFields.get(fieldValue.getPrivateFieldID());
+        ComplexObjectTypeSubfield fieldType = complexObjectTypeFields.get(fieldValue.getPrivateSubfieldID());
         if(fieldType != null)
           {
             if(fieldValue.getValue() == null) {/*no need to serialize*/ continue;}
@@ -310,7 +315,7 @@ public class ComplexObjectInstance
   *
   *****************************************/
 
-  private Map<Integer, ComplexObjectinstanceFieldValue> unserializeFields(byte[] fieldValues)
+  private Map<String, ComplexObjectinstanceSubfieldValue> unserializeFields(byte[] fieldValues)
   {
     
     ComplexObjectType complexObjectType = complexObjectTypeService.getActiveComplexObjectType(complexObjectTypeID, SystemTime.getCurrentTime());
@@ -319,9 +324,9 @@ public class ComplexObjectInstance
     return deserialize(fieldValues, complexObjectType.getSubfields(), this.complexObjectTypeID);
   }
 
-  private static HashMap<Integer, ComplexObjectinstanceFieldValue> deserialize(byte[] fieldValues, Map<Integer, ComplexObjectTypeSubfield> complexObjectTypeFields, String complexObjectTypeID)
+  private static HashMap<String, ComplexObjectinstanceSubfieldValue> deserialize(byte[] fieldValues, Map<Integer, ComplexObjectTypeSubfield> complexObjectTypeFields, String complexObjectTypeID)
   {
-    HashMap<Integer, ComplexObjectinstanceFieldValue> result = new HashMap<Integer, ComplexObjectinstanceFieldValue>();
+    HashMap<String, ComplexObjectinstanceSubfieldValue> result = new HashMap<String, ComplexObjectinstanceSubfieldValue>();
     ByteBuffer buffer = ByteBuffer.wrap(fieldValues);
     
     int maxPosition = fieldValues.length;
@@ -346,13 +351,13 @@ public class ComplexObjectInstance
           case BooleanCriterion:
             if(value[0] == 0) 
               {
-                ComplexObjectinstanceFieldValue cofv = new ComplexObjectinstanceFieldValue(fieldID, Boolean.FALSE);
-                result.put(fieldID, cofv);
+                ComplexObjectinstanceSubfieldValue cofv = new ComplexObjectinstanceSubfieldValue(fieldID, Boolean.FALSE);
+                result.put(fieldType.getSubfieldName(), cofv);
               }
             else if(value[0] == 1)
               {
-                ComplexObjectinstanceFieldValue cofv = new ComplexObjectinstanceFieldValue(fieldID, Boolean.TRUE);
-                result.put(fieldID, cofv);                
+                ComplexObjectinstanceSubfieldValue cofv = new ComplexObjectinstanceSubfieldValue(fieldID, Boolean.TRUE);
+                result.put(fieldType.getSubfieldName(), cofv);                
               }
             else 
               {
@@ -368,14 +373,14 @@ public class ComplexObjectInstance
               {
                 valueLong = (valueLong << 8) | (0xFF & value[i]);
               }
-            ComplexObjectinstanceFieldValue cofv = new ComplexObjectinstanceFieldValue(fieldID, valueLong);
-            result.put(fieldID, cofv);  
+            ComplexObjectinstanceSubfieldValue cofv = new ComplexObjectinstanceSubfieldValue(fieldID, valueLong);
+            result.put(fieldType.getSubfieldName(), cofv);  
            break;                
 
           case StringCriterion :
             String s = new String(value);
-            cofv = new ComplexObjectinstanceFieldValue(fieldID, s);
-            result.put(fieldID, cofv);  
+            cofv = new ComplexObjectinstanceSubfieldValue(fieldID, s);
+            result.put(fieldType.getSubfieldName(), cofv);  
             break;
           case StringSetCriterion :
             // TODO
@@ -425,22 +430,22 @@ public class ComplexObjectInstance
     fieldTypes.put(fieldTypeDate.getPrivateID(), fieldTypeDate);
     System.out.println("date private field " + fieldTypeDate.getPrivateID());
     
-    Map<Integer, ComplexObjectinstanceFieldValue> values = new HashMap<>();
-    ComplexObjectInstance instance = new ComplexObjectInstance("AComplexObjectName");    
+    Map<String, ComplexObjectinstanceSubfieldValue> values = new HashMap<>();
+    ComplexObjectInstance instance = new ComplexObjectInstance("AComplexObjectName", "element1");    
 
-    ComplexObjectinstanceFieldValue value = new ComplexObjectinstanceFieldValue(fieldTypeInteger.getPrivateID(), new Long(1556788992556635323L));
-    values.put(fieldTypeInteger.getPrivateID(), value);
+    ComplexObjectinstanceSubfieldValue value = new ComplexObjectinstanceSubfieldValue(fieldTypeInteger.getPrivateID(), new Long(1556788992556635323L));
+    values.put(fieldTypeInteger.getSubfieldName(), value);
                                                                                                                    
-    value = new ComplexObjectinstanceFieldValue(fieldTypeString.getPrivateID(), "brown");
-    values.put(fieldTypeString.getPrivateID(), value);
+    value = new ComplexObjectinstanceSubfieldValue(fieldTypeString.getPrivateID(), "brown");
+    values.put(fieldTypeString.getSubfieldName(), value);
 
-    value = new ComplexObjectinstanceFieldValue(fieldTypeDate.getPrivateID(), date);
-    values.put(fieldTypeDate.getPrivateID(), value);
+    value = new ComplexObjectinstanceSubfieldValue(fieldTypeDate.getPrivateID(), date);
+    values.put(fieldTypeDate.getSubfieldName(), value);
 
     instance.setFieldValues(values);
     byte[] ser = instance.serialize(fieldTypes);
     
-    HashMap<Integer, ComplexObjectinstanceFieldValue> unserValues = deserialize(ser, fieldTypes, "AComplexObjectName");
+    HashMap<String, ComplexObjectinstanceSubfieldValue> unserValues = deserialize(ser, fieldTypes, "AComplexObjectName");
     
     System.out.println("Integer " + (unserValues.get(fieldTypeInteger.getPrivateID()).equals(values.get(fieldTypeInteger.getPrivateID()))));
     

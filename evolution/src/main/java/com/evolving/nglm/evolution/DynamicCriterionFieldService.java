@@ -356,7 +356,6 @@ public class DynamicCriterionFieldService extends GUIService
             switch (subField.getCriterionDataType())
               {
               case IntegerCriterion :
-              case DoubleCriterion :
               case StringCriterion :
               case StringSetCriterion :
               case DateCriterion :
@@ -365,7 +364,7 @@ public class DynamicCriterionFieldService extends GUIService
                 //
       
                 JSONObject criterionFieldJSON = new JSONObject();
-                String id = "complexObject." + "." + complexObjectType.getComplexObjectTypeID() + "." + currentName + "." + subFieldName;
+                String id = "complexObject." + complexObjectType.getComplexObjectTypeID() + "." + currentName + "." + subFieldName;
                 criterionFieldJSON.put("id", id);
                 criterionFieldJSON.put("display", complexObjectType.getComplexObjectTypeName() + "." + currentName + "." + subFieldName);
                 criterionFieldJSON.put("epoch", complexObjectType.getEpoch());
