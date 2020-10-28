@@ -5089,20 +5089,16 @@ public class ThirdPartyManager
                     AlternateID alternateID = entry.getValue();
                     if (alternateID.getProfileCriterionField() == null)
                       {
-                        log.warn("ProfileCriterionField is not given for alternate ID {} - skiping", entry.getKey());
                         continue;
                       }
                     CriterionField criterionField = Deployment.getProfileCriterionFields()
                         .get(alternateID.getProfileCriterionField());
-                    String criterionFieldValue = (String) criterionField.retrieveNormalized(evaluationRequest);
-                    if (log.isTraceEnabled())
-                      log.trace("adding {} {} for subscriber {}", entry.getKey(), criterionFieldValue,
-                          subscriberProfile.getSubscriberID());
+                    String criterionFieldValue = (String) criterionField.retrieveNormalized(evaluationRequest);                    
                     alternateIDs.put(entry.getKey(), criterionFieldValue);
                   }
                 errorException = new ThirdPartyManagerException(
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseMessage() + " (RedeemedDate: "
-                        + redeemedDate + " " + " CustomerID: "+ redeemedSubscriberID +" AlternateIDs: " + alternateIDs + ")",
+                        + redeemedDate + ", " + " CustomerID: "+ redeemedSubscriberID + ", " +" AlternateIDs: " + alternateIDs + ")",
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseCode());
               }else if(profileVoucher.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired||profileVoucher.getVoucherExpiryDate().before(now)){
           errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
