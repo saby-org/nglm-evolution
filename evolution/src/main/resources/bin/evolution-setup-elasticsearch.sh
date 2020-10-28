@@ -697,7 +697,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_o
 }'
 echo
 
-prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_bdr -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_bdr -u admin:$ELASTICSEARCH_ADMIN_PASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["datacube_bdr"],
   "mappings" : {
@@ -718,7 +718,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_b
 }'
 echo
 
-prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_messages -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_messages -u admin:$ELASTICSEARCH_ADMIN_PASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["datacube_messages"],
   "mappings" : {
@@ -852,7 +852,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_de
 }'
 echo
 
-prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_basemanagement -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_basemanagement -u admin:$ELASTICSEARCH_ADMIN_PASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["mapping_basemanagement"],
   "mappings" : {
@@ -874,7 +874,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_ba
 }'
 echo
 
-prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeyobjective -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeyobjective -u admin:$ELASTICSEARCH_ADMIN_PASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["mapping_journeyobjective"],
   "mappings" : {

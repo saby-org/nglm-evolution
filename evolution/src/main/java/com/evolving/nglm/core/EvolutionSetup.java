@@ -101,17 +101,29 @@ public class EvolutionSetup
     //
     // kafka topics
     //
+    System.out.println("");
+    System.out.println("================================================================================");
+    System.out.println("= KAFKA                                                                        =");
+    System.out.println("================================================================================");
     handleTopicSetup(topicsFolderPath);
     
     //
     // elasticSearch index setup
     //
+    System.out.println("");
+    System.out.println("================================================================================");
+    System.out.println("= ELASTICSEARCH                                                                =");
+    System.out.println("================================================================================");
     handleElasticsearchUpdate(elasticsearchUpdateFilePath); // Override
     handleElasticsearchCreate(elasticsearchCreateFilePath); // New things to push, check if already there
 
     //
     // kafka connect setup (must be last, after topics & indexes setup)
     //
+    System.out.println("");
+    System.out.println("================================================================================");
+    System.out.println("= KAFKA CONNECTORS                                                             =");
+    System.out.println("================================================================================");
     handleConnectors(connectorsFilePath);
 
   }
