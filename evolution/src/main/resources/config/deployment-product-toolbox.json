@@ -814,16 +814,18 @@
               "expressionValuedParameter" : false,
               "defaultValue" : null
             },
-            { 
-              "id" : "node.parameter.supplier",
-              "display" : "Supplier", 
-              "dataType" : "string", 
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : [ "#suppliersDisplayValues#"],
-              "expressionValuedParameter" : false,
-              "defaultValue" : null
-            }
+            {
+			  "id" : "node.parameter.supplier",
+		      "display" : "Supplier",
+			  "dataType" : "string",
+			  "multiple" : false,
+			  "mandatory" : true,
+			  "availableValues" : null,
+			  "expressionFields" : [ "#suppliersDisplayValues#" ],
+			  "expressionValuedParameter" : true,
+			  "defaultValue" : null,
+			  "showContextVariables":true
+			}
           ],
         "action" : 
           {
@@ -859,16 +861,18 @@
               "expressionValuedParameter" : false,
               "defaultValue" : null
             },
-            { 
-              "id" : "node.parameter.supplier",
-              "display" : "Supplier", 
-              "dataType" : "string", 
-              "multiple" : false,
-              "mandatory" : true,
-              "availableValues" : [ "#suppliersDisplayValues#"],
-              "expressionValuedParameter" : false,
-              "defaultValue" : null
-            }
+            {
+			  "id" : "node.parameter.supplier",
+		      "display" : "Supplier",
+			  "dataType" : "string",
+			  "multiple" : false,
+			  "mandatory" : true,
+			  "availableValues" : null,
+			  "expressionFields" : [ "#suppliersDisplayValues#" ],
+			  "expressionValuedParameter" : true,
+			  "defaultValue" : null,
+			  "showContextVariables":true
+			}
           ],
         "action" : 
           {
