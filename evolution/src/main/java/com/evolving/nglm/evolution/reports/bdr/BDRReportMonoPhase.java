@@ -343,7 +343,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   {
     Date tempfromDate = fromDate;
     List<String> esIndexOdrList = new ArrayList<String>();
-    while(tempfromDate.getTime() <= toDate.getTime())
+    while(tempfromDate.getTime() < toDate.getTime())
       {
         esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
         tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
