@@ -7319,9 +7319,8 @@ public class GUIManager
         *  instantiate offer
         *
         ****************************************/
-        jsonRoot.put("simpleOffer", false);
+        jsonRoot.put("simpleOffer", false); // offer not a simpleOffer
         Offer offer = new Offer(jsonRoot, epoch, existingOffer, catalogCharacteristicService);
-        boolean simpleOffer = offer.getSimpleOffer();
 
         /*****************************************
         *
@@ -10998,7 +10997,6 @@ public class GUIManager
         ****************************************/
 
         Product product = new Product(jsonRoot, epoch, existingProduct, deliverableService, catalogCharacteristicService);
-        boolean simpleOffer = product.getSimpleOffer();
         
 
         /*****************************************
