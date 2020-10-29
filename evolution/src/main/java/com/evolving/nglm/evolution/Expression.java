@@ -2492,11 +2492,41 @@ public abstract class Expression
           int hh = Integer.parseInt(args[0]);
           int mm = Integer.parseInt(args[1]);
           int ss = Integer.parseInt(args[2]);
-          Date expectedDate = dateAddDate;
-          expectedDate = RLMDateUtils.setField(expectedDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
-          expectedDate = RLMDateUtils.setField(expectedDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
-          expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
-          watingDates.add(expectedDate);
+          Date now = SystemTime.getCurrentTime();
+          int toDay = RLMDateUtils.getField(now, Calendar.DAY_OF_YEAR, Deployment.getBaseTimeZone());
+          int journeyEntryDay = RLMDateUtils.getField(dateAddDate, Calendar.DAY_OF_YEAR, Deployment.getBaseTimeZone());
+          if (toDay == journeyEntryDay)
+            {
+              //
+              //  expected exit time of today
+              //
+              
+              now = RLMDateUtils.setField(now, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
+              now = RLMDateUtils.setField(now, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
+              now = RLMDateUtils.setField(now, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
+              
+              if (now.before(dateAddDate))
+                {
+                  //
+                  //  go to next day
+                  //
+                  
+                  now = RLMDateUtils.addDays(now, 1, Deployment.getBaseTimeZone());
+                }
+              watingDates.add(now);
+            }
+          else
+            {
+              //
+              //  tomorrow 
+              //
+              
+              Date expectedDate = now;
+              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
+              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
+              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
+              watingDates.add(expectedDate);
+            }
         }
       
       //
