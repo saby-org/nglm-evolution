@@ -73,7 +73,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("offer");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),4));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("initialPropensity", Schema.FLOAT64_SCHEMA);
     schemaBuilder.field("stock", Schema.OPTIONAL_INT32_SCHEMA);
@@ -339,7 +339,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     Set<OfferVoucher> offerVouchers = schemaVersion>1?unpackOfferVouchers(schema.field("offerVouchers").schema(), valueStruct.get("offerVouchers")):null;
     Set<OfferTranslation> offerTranslations = unpackOfferTranslations(schema.field("offerTranslations").schema(), valueStruct.get("offerTranslations"));
     OfferCharacteristics offerCharacteristics = OfferCharacteristics.unpack(new SchemaAndValue(schema.field("offerCharacteristics").schema(), valueStruct.get("offerCharacteristics")));
-    boolean simpleOffer = (schemaVersion >= 3) ? valueStruct.getBoolean("simpleOffer") : false;
+    boolean simpleOffer = (schemaVersion >= 4) ? valueStruct.getBoolean("simpleOffer") : false;
     //
     //  return
     //
