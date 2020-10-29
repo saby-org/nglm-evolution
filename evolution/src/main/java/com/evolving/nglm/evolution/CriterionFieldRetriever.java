@@ -142,7 +142,6 @@ public abstract class CriterionFieldRetriever
     SimpleParameterMap parameterMap = subscriberMessage.getParameterTags();
 
     result = evaluateParameter(evaluationRequest, parameterMap.get(fieldName)); 
-    log.info("RAJ K getSubscriberMessageParameterTag for fieldName {} is {}", fieldName, result);
     return result;
     }
   
@@ -690,7 +689,6 @@ public abstract class CriterionFieldRetriever
 
   public static Object getEvaluationJourney(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
   { 
-    log.info("RAJ K getEvaluationJourney");
     return "evaluation.variable.journey"; 
   }
 

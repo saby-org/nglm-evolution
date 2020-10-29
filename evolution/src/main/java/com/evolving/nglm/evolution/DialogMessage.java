@@ -634,7 +634,6 @@ public class DialogMessage
 
   public String resolve(String language, List<String> messageTags)
   {
-    log.info("RAJ K resolve language {} and messageTags {} and messageTextByLanguage {} ", language, messageTags, messageTextByLanguage);
     String text = null;
     if (messageTextByLanguage.get(language) != null)
       {
@@ -642,7 +641,6 @@ public class DialogMessage
         MessageFormat formatter = new MessageFormat(messageTextByLanguage.get(language), messageLocale);
         text = formatter.format(messageTags.toArray());
       }
-    log.info("RAJ K resolve text {} ", text);
     return text;
   }
 
