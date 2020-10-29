@@ -73,7 +73,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("offer");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("initialPropensity", Schema.FLOAT64_SCHEMA);
     schemaBuilder.field("stock", Schema.OPTIONAL_INT32_SCHEMA);
@@ -85,6 +85,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     schemaBuilder.field("offerVouchers", SchemaBuilder.array(OfferVoucher.schema()).optional().schema());
     schemaBuilder.field("offerTranslations", SchemaBuilder.array(OfferTranslation.schema()).schema());
     schemaBuilder.field("offerCharacteristics", OfferCharacteristics.schema());
+    schemaBuilder.field("simpleOffer", Schema.OPTIONAL_BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -118,6 +119,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   private Set<OfferTranslation> offerTranslations;
   private OfferCharacteristics offerCharacteristics;
   private String description;
+  private boolean simpleOffer;
 
   //
   //  derived
@@ -149,6 +151,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   public OfferCharacteristics getOfferCharacteristics() { return offerCharacteristics; }
   public String getStockableItemID() { return stockableItemID; }
   public String getDescription() { return JSONUtilities.decodeString(getJSONRepresentation(), "description"); }
+  public boolean getSimpleOffer() { return simpleOffer; }
 
   /*****************************************
   *
@@ -167,7 +170,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations)
+  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations, boolean simpleOffer)
   {
     super(schemaAndValue);
     this.initialPropensity = getValidPropensity(initialPropensity);
@@ -181,6 +184,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.offerTranslations = offerTranslations;
     this.stockableItemID = "offer-" + getOfferID();
     this.offerCharacteristics = offerCharacteristics;
+    this.simpleOffer = simpleOffer;
   }
 
   /*****************************************
@@ -204,6 +208,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     if(offer.getOfferVouchers()!=null) struct.put("offerVouchers", packOfferVouchers(offer.getOfferVouchers()));
     struct.put("offerTranslations", packOfferTranslations(offer.getOfferTranslations()));
     struct.put("offerCharacteristics", OfferCharacteristics.pack(offer.getOfferCharacteristics()));
+    struct.put("simpleOffer", offer.getSimpleOffer());
     return struct;
   }
 
@@ -334,12 +339,12 @@ public class Offer extends GUIManagedObject implements StockableItem
     Set<OfferVoucher> offerVouchers = schemaVersion>1?unpackOfferVouchers(schema.field("offerVouchers").schema(), valueStruct.get("offerVouchers")):null;
     Set<OfferTranslation> offerTranslations = unpackOfferTranslations(schema.field("offerTranslations").schema(), valueStruct.get("offerTranslations"));
     OfferCharacteristics offerCharacteristics = OfferCharacteristics.unpack(new SchemaAndValue(schema.field("offerCharacteristics").schema(), valueStruct.get("offerCharacteristics")));
-    
+    boolean simpleOffer = (schemaVersion >= 3) ? valueStruct.getBoolean("simpleOffer") : false;
     //
     //  return
     //
 
-    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerVouchers, offerCharacteristics, offerTranslations);
+    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerVouchers, offerCharacteristics, offerTranslations, simpleOffer);
   }
   
   /*****************************************
@@ -581,7 +586,8 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.offerTranslations = decodeOfferTranslations(JSONUtilities.decodeJSONArray(jsonRoot, "offerTranslations", false));
     this.stockableItemID = "offer-" + getOfferID();
     this.offerCharacteristics = new OfferCharacteristics(JSONUtilities.decodeJSONObject(jsonRoot, "offerCharacteristics", false), catalogCharacteristicService);
-
+    this.simpleOffer = JSONUtilities.decodeBoolean(jsonRoot, "simpleOffer", Boolean.FALSE);
+    
     /*****************************************
     *
     *  epoch
