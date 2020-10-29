@@ -2480,6 +2480,40 @@ public abstract class Expression
               int hh = Integer.parseInt(args[0]);
               int mm = Integer.parseInt(args[1]);
               int ss = Integer.parseInt(args[2]);
+              /*if same logic is required for week day and time
+              if (RLMDateUtils.truncatedEquals(nextDayDate, dateAddDate, Calendar.DATE, Deployment.getBaseTimeZone()))
+                {
+                  //
+                  //  expected exit time of nextDayDate
+                  //
+                  
+                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
+                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
+                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
+                  
+                  if (nextDayDate.before(dateAddDate))
+                    {
+                      //
+                      //  go to next day
+                      //
+                      
+                      nextDayDate = RLMDateUtils.addDays(nextDayDate, 7, Deployment.getBaseTimeZone());
+                    }
+                  watingDates.add(nextDayDate);
+                }
+              else
+                {
+                  //
+                  //  next day 
+                  //
+                  
+                  Date expectedDate = nextDayDate;
+                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
+                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
+                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
+                  watingDates.add(expectedDate);
+                }
+                */
               nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
               nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
               nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
@@ -2493,9 +2527,7 @@ public abstract class Expression
           int mm = Integer.parseInt(args[1]);
           int ss = Integer.parseInt(args[2]);
           Date now = SystemTime.getCurrentTime();
-          int toDay = RLMDateUtils.getField(now, Calendar.DAY_OF_YEAR, Deployment.getBaseTimeZone());
-          int journeyEntryDay = RLMDateUtils.getField(dateAddDate, Calendar.DAY_OF_YEAR, Deployment.getBaseTimeZone());
-          if (toDay == journeyEntryDay)
+          if (RLMDateUtils.truncatedEquals(now, dateAddDate, Calendar.DATE, Deployment.getBaseTimeZone()))
             {
               //
               //  expected exit time of today
@@ -2543,6 +2575,7 @@ public abstract class Expression
       //  return
       //
       
+      if(log.isDebugEnabled()) log.debug("evaluateDateAddOrConstantFunction returning to wait till {}", result);
       return result;
     }
 
