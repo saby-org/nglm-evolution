@@ -2480,7 +2480,6 @@ public abstract class Expression
               int hh = Integer.parseInt(args[0]);
               int mm = Integer.parseInt(args[1]);
               int ss = Integer.parseInt(args[2]);
-              /*if same logic is required for week day and time
               if (RLMDateUtils.truncatedEquals(nextDayDate, dateAddDate, Calendar.DATE, Deployment.getBaseTimeZone()))
                 {
                   //
@@ -2513,11 +2512,6 @@ public abstract class Expression
                   expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
                   watingDates.add(expectedDate);
                 }
-                */
-              nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
-              nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
-              nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
-              watingDates.add(nextDayDate);
             }
         }
       else if (waitTimeString != null)
