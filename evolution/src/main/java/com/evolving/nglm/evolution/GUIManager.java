@@ -23975,7 +23975,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             CriterionField parameter = nodeType.getParameters().get(JSONUtilities.decodeString(parameterJSON, "id", true));
             if (parameter != null && parameter.getExpressionValuedParameter())
               {
-                Pattern enumeratedValuesPattern = Pattern.compile("^#(.*?)#$");
                 JSONArray expressionFieldsArray = JSONUtilities.decodeJSONArray(parameterJSON, "expressionFields", false);
                 if (expressionFieldsArray != null)
                   {
