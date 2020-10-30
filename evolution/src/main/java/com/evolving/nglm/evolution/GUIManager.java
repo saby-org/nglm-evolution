@@ -24140,7 +24140,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     switch (reference)
       {
         
-        case "suppliersDisplayValues":
+        case "suppliersDisplayExp":
           if (includeDynamic)
             {
               for (GUIManagedObject supplierUnchecked : supplierService.getStoredSuppliers())
@@ -24149,7 +24149,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     {
                       Supplier supplier = (Supplier) supplierUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", "'" + supplier.getGUIManagedObjectID() + "'");
+                      availableValue.put("id", "'" + supplier.getGUIManagedObjectDisplay() + "'");
                       availableValue.put("display", supplier.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }

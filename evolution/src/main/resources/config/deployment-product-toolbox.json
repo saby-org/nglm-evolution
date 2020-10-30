@@ -821,7 +821,7 @@
 			  "multiple" : false,
 			  "mandatory" : true,
 			  "availableValues" : null,
-			  "expressionFields" : [ "#suppliersDisplayValues#" ],
+			  "expressionFields" : [ "#suppliersDisplayExp#" ],
 			  "expressionValuedParameter" : true,
 			  "defaultValue" : null,
 			  "showContextVariables":true
@@ -868,7 +868,7 @@
 			  "multiple" : false,
 			  "mandatory" : true,
 			  "availableValues" : null,
-			  "expressionFields" : [ "#suppliersDisplayValues#" ],
+			  "expressionFields" : [ "#suppliersDisplayExp#" ],
 			  "expressionValuedParameter" : true,
 			  "defaultValue" : null,
 			  "showContextVariables":true
