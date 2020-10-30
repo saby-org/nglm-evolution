@@ -7846,6 +7846,7 @@ public class EvolutionEngine
 
       String voucherCode = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.voucher.code");
       String supplier = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.supplier");
+      log.info("RAJ K voucherCode {} and supplier {}", voucherCode, supplier);
 
       /*****************************************
       *

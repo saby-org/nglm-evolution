@@ -23975,26 +23975,40 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             CriterionField parameter = nodeType.getParameters().get(JSONUtilities.decodeString(parameterJSON, "id", true));
             if (parameter != null && parameter.getExpressionValuedParameter())
               {
-                //
-                //  default list of fields for parameter data type
-                //
-
-                CriterionContext criterionContext = new CriterionContext(journeyParameters, contextVariables, nodeType, (EvolutionEngineEventDeclaration) null, (Journey) null);
-                List<CriterionField> defaultFields = new ArrayList<CriterionField>();
-                for (CriterionField criterionField : criterionContext.getCriterionFields().values())
+                Pattern enumeratedValuesPattern = Pattern.compile("^#(.*?)#$");
+                JSONArray expressionFieldsArray = JSONUtilities.decodeJSONArray(parameterJSON, "expressionFields", false);
+                if (expressionFieldsArray != null)
                   {
-                    if (! criterionField.getID().equals(CriterionField.EvaluationDateField) && criterionField.getFieldDataType() == parameter.getFieldDataType())
-                      {
-                        defaultFields.add(criterionField);
-                      }
+                    //
+                    // hard coded fields
+                    //
+                    
+                    List<JSONObject> expressionFields = evaluateAvailableValues(expressionFieldsArray, now);
+                    parameterJSON.put("expressionFields", JSONUtilities.encodeArray(expressionFields));
                   }
+                else
+                  {
+                    //
+                    //  default list of fields for parameter data type
+                    //
 
-                //
-                //  evaluate comparable fields
-                //
+                    CriterionContext criterionContext = new CriterionContext(journeyParameters, contextVariables, nodeType, (EvolutionEngineEventDeclaration) null, (Journey) null);
+                    List<CriterionField> defaultFields = new ArrayList<CriterionField>();
+                    for (CriterionField criterionField : criterionContext.getCriterionFields().values())
+                      {
+                        if (! criterionField.getID().equals(CriterionField.EvaluationDateField) && criterionField.getFieldDataType() == parameter.getFieldDataType())
+                          {
+                            defaultFields.add(criterionField);
+                          }
+                      }
 
-                List<JSONObject> expressionFields = evaluateComparableFields(parameter.getID(), parameter.getJSONRepresentation(), defaultFields, true);
-                parameterJSON.put("expressionFields", JSONUtilities.encodeArray(expressionFields));
+                    //
+                    //  evaluate comparable fields
+                    //
+
+                    List<JSONObject> expressionFields = evaluateComparableFields(parameter.getID(), parameter.getJSONRepresentation(), defaultFields, true);
+                    parameterJSON.put("expressionFields", JSONUtilities.encodeArray(expressionFields));
+                  }
               }
 
             //
