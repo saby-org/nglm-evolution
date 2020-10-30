@@ -24149,7 +24149,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     {
                       Supplier supplier = (Supplier) supplierUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", supplier.getGUIManagedObjectDisplay());
+                      availableValue.put("id", "'" + supplier.getGUIManagedObjectID() + "'");
                       availableValue.put("display", supplier.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
