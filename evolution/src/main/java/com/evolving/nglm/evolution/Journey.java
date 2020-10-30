@@ -2690,8 +2690,8 @@ public class Journey extends GUIManagedObject implements StockableItem
       
       if ("121".equals(nodeType.getID()) && "offerDelivery".equals(eventName)) // event.selection nodetype (defined in src/main/resources/config/deployment-product-toolbox.json)
         {
-          this.contextVariables.add(new ContextVariable(buildContextVariableJSON("event.supplierName", EvolutionEngine.INTERNAL_VARIABLE_SUPPLIER)));
-          this.contextVariables.add(new ContextVariable(buildContextVariableJSON("event.resellerName", EvolutionEngine.INTERNAL_VARIABLE_RESELLER)));
+          this.contextVariables.add(new ContextVariable(buildContextVariableJSON(EvolutionEngine.INTERNAL_VARIABLE_SUPPLIER, "event.supplierName")));
+          this.contextVariables.add(new ContextVariable(buildContextVariableJSON(EvolutionEngine.INTERNAL_VARIABLE_RESELLER, "event.resellerName")));
         }
       
       /*****************************************
@@ -2717,7 +2717,7 @@ public class Journey extends GUIManagedObject implements StockableItem
         }
     }
     
-    public JSONObject buildContextVariableJSON(String eventField, String internalVariableName)
+    public JSONObject buildContextVariableJSON(String internalVariableName, String eventField)
     {
       JSONObject contextVariableJSON;
       JSONObject valueJSON = new JSONObject();

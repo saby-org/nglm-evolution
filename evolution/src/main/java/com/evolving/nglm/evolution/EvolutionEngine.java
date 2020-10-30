@@ -5206,74 +5206,14 @@ public class EvolutionEngine
 
                         List<Action> actions = new ArrayList<>();
                         SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now);
-
-
                         String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(entryActionEvaluationRequest, "node.parameter.relationship");
                         if (hierarchyRelationship != null && hierarchyRelationship.trim().equals(INTERNAL_ID_SUPPLIER))
                           {
-                            String variableID = "variable." + INTERNAL_VARIABLE_SUPPLIER;
-                            Object supplierName = (journeyState.getJourneyParameters() != null) ? journeyState.getJourneyParameters().get(variableID) : "unknown";
-                            if (supplierName instanceof String)
-                              {
-                                String customerIDSupplier = null;
-                                String supplierNameStr = (String) supplierName;
-
-                                // TBD
-                                // Need to convert this to a customerID, using a mapping field
-                                // for now, take "phone" as subscriberID
-
-                                for (Supplier supplier : supplierService.getActiveSuppliers(now))
-                                  {
-                                    if (supplierNameStr.equals(supplier.getGUIManagedObjectDisplay()))
-                                      {
-                                        customerIDSupplier = (String) supplier.getJSONRepresentation().get("phone");
-                                        break;
-                                      }
-                                  }
-                                log.trace("Will do action for supplier " + customerIDSupplier);
-                                if (customerIDSupplier != null)
-                                  {
-                                    ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(customerIDSupplier, entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
-                                    actions.add(action);
-                                  }
-                              }
-                            else
-                              {
-                                log.info("expecting supplier, found " + supplierName + " " + ((supplierName != null) ? supplierName.getClass().getCanonicalName() : "null"));
-                              }
+                            addActionForPartner(context, journeyState, actions, entryActionEvaluationRequest, supplierService, INTERNAL_VARIABLE_SUPPLIER);
                           }
                         else if (hierarchyRelationship != null && hierarchyRelationship.trim().equals(INTERNAL_ID_RESELLER))
                           {
-                            String variableID = "variable." + INTERNAL_VARIABLE_RESELLER;
-                            Object resellerName = (journeyState.getJourneyParameters() != null) ? journeyState.getJourneyParameters().get(variableID) : "unknown";
-                            if (resellerName instanceof String)
-                              {
-                                String customerIDReseller = null;
-                                String resellerNameStr = (String) resellerName;
-
-                                // TBD
-                                // Need to convert this to a customerID, using a mapping field
-                                // for now, take "phone" as subscriberID
-
-                                for (Reseller reseller : resellerService.getActiveResellers(now))
-                                  {
-                                    if (resellerNameStr.equals(reseller.getGUIManagedObjectDisplay()))
-                                      {
-                                        customerIDReseller = (String) reseller.getJSONRepresentation().get("phone");
-                                        break;
-                                      }
-                                  }
-                                log.trace("Will do action for reseller " + customerIDReseller);
-                                if (customerIDReseller != null)
-                                  {
-                                    ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(customerIDReseller, entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
-                                    actions.add(action);
-                                  }
-                              }
-                            else
-                              {
-                                log.info("expecting reseller, found " + resellerName + " " + ((resellerName != null) ? resellerName.getClass().getCanonicalName() : "null"));
-                              }
+                            addActionForPartner(context, journeyState, actions, entryActionEvaluationRequest, resellerService, INTERNAL_VARIABLE_RESELLER);
                           }
                         else if (hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer"))
                           {
@@ -5596,6 +5536,37 @@ public class EvolutionEngine
     *****************************************/
 
     return subscriberStateUpdated;
+  }
+
+
+  private static void addActionForPartner(EvolutionEventContext context, JourneyState journeyState, List<Action> actions, SubscriberEvaluationRequest entryActionEvaluationRequest, GUIService guiService, String variableName)
+  {
+    String variableID = "variable." + variableName;
+    Object partnerName = (journeyState.getJourneyParameters() != null) ? journeyState.getJourneyParameters().get(variableID) : "unknown";
+    if (partnerName instanceof String)
+      {
+        String customerIDPartner = null;
+        String partnerNameStr = (String) partnerName;
+        for (GUIManagedObject partner : guiService.getActiveGUIManagedObjects(context.now()))
+          {
+            if (partnerNameStr.equals(partner.getGUIManagedObjectDisplay()))
+              {
+                // get customerID that was set when creating the partner
+                customerIDPartner = (String) partner.getJSONRepresentation().get("customerIDfromAlternateID");
+                break;
+              }
+          }
+        log.trace("Will do action for partner " + customerIDPartner);
+        if (customerIDPartner != null)
+          {
+            ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(customerIDPartner, entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
+            actions.add(action);
+          }
+      }
+    else
+      {
+        log.info("expecting partner, found " + partnerName + " " + ((partnerName != null) ? partnerName.getClass().getCanonicalName() : "null"));
+      }
   }
 
   private static void handleExecuteOnEntryActions(SubscriberState subscriberState, JourneyState journeyState, Journey journey, List<Action> actions)

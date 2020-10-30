@@ -10432,6 +10432,7 @@ public class GUIManager
     *
     *****************************************/
 
+    processPartnerAlternateID(jsonRoot);
     long epoch = epochServer.getKey();
     try
       {
@@ -10515,6 +10516,25 @@ public class GUIManager
         response.put("responseMessage", e.getMessage());
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  private void processPartnerAlternateID(JSONObject jsonRoot)
+  {
+    // find out the subscriberID, so that we can do the processing in EvolutionEngine
+    String alternateID = JSONUtilities.decodeString(jsonRoot, "alternateID", false);
+    String alternateIDValue = JSONUtilities.decodeString(jsonRoot, "alternateIDValue", false);
+    if (alternateID != null && alternateIDValue != null)
+      {
+        try
+        {
+          String customerID = subscriberIDService.getSubscriberID(alternateID, alternateIDValue);
+          jsonRoot.put("customerIDfromAlternateID", customerID);
+        }
+        catch (SubscriberIDServiceException e)
+        {
+          log.error("SubscriberIDServiceException can not resolve subscriberID for {} = {} error is {}", alternateID, alternateIDValue, e.getMessage());
+        }
       }
   }
 
@@ -19241,8 +19261,6 @@ public class GUIManager
 
     GUIManagedObject existingReseller= resellerService.getStoredGUIManagedObject(resellerID);
     
-    
-    
     /*****************************************
     *
     *  To check if the user is already in another reseller users list
@@ -19292,7 +19310,8 @@ public class GUIManager
     *  process Reseller
     *
     *****************************************/
-
+    
+    processPartnerAlternateID(jsonRoot);
     long epoch = epochServer.getKey();
     try
       {
