@@ -5388,7 +5388,6 @@ public class GUIManager
 
   private JSONObject processPutJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType)
   {
-    log.info("RAJ K processPutJourney jsonRoot {}", jsonRoot);
     /****************************************
     *
     *  response

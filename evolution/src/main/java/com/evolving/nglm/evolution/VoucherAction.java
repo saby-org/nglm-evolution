@@ -200,4 +200,9 @@ public class VoucherAction implements EvolutionEngineEvent, Action, VoucherRedem
    return new VoucherAction(subscriberID, eventDate, voucherCode, actionStatus, operation);
  }
 
+@Override
+public String toString()
+{
+  return "VoucherAction [subscriberID=" + subscriberID + ", eventDate=" + eventDate + ", voucherCode=" + voucherCode + ", actionStatus=" + actionStatus + ", operation=" + operation + "]";
+}
 }

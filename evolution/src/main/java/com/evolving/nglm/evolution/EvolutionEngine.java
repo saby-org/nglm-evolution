@@ -7846,7 +7846,6 @@ public class EvolutionEngine
 
       String voucherCode = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.voucher.code");
       String supplier = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.supplier");
-      log.info("RAJ K voucherCode {} and supplier {}", voucherCode, supplier);
 
       /*****************************************
       *
@@ -7899,7 +7898,7 @@ public class EvolutionEngine
         }
       actions.add(voucherActionEvent);
       
-      if (log.isDebugEnabled()) log.debug("VoucherAction {} subscriberEvaluationRequest.getJourneyState().getVoucherChanges() {}", operation, subscriberEvaluationRequest.getJourneyState().getVoucherChanges());
+      if (log.isDebugEnabled()) log.debug("VoucherAction {} subscriberEvaluationRequest.getJourneyState().getVoucherChanges() {} and voucherActionEvent is {}", operation, subscriberEvaluationRequest.getJourneyState().getVoucherChanges(), voucherActionEvent);
       
       /*****************************************
       *

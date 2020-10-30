@@ -810,9 +810,11 @@
               "dataType" : "string", 
               "multiple" : false,
               "mandatory" : true,
-              "availableValues" : [ ],
-              "expressionValuedParameter" : false,
-              "defaultValue" : null
+              "availableValues" : null,
+              "expressionFields" : [ ],
+			  "expressionValuedParameter" : true,
+			  "defaultValue" : null,
+			  "showContextVariables":true
             },
             {
 			  "id" : "node.parameter.supplier",
@@ -857,9 +859,11 @@
               "dataType" : "string", 
               "multiple" : false,
               "mandatory" : true,
-              "availableValues" : [ ],
-              "expressionValuedParameter" : false,
-              "defaultValue" : null
+              "availableValues" : null,
+              "expressionFields" : [ ],
+			  "expressionValuedParameter" : true,
+			  "defaultValue" : null,
+			  "showContextVariables":true
             },
             {
 			  "id" : "node.parameter.supplier",
