@@ -735,6 +735,7 @@ public class Offer extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! Objects.equals(offerVouchers, existingOffer.getOfferVouchers());
         epochChanged = epochChanged || ! Objects.equals(offerTranslations, existingOffer.getOfferTranslations());
         epochChanged = epochChanged || ! Objects.equals(offerCharacteristics, existingOffer.getOfferCharacteristics());
+        epochChanged = epochChanged || ! Objects.equals(simpleOffer, existingOffer.getSimpleOffer());
         return epochChanged;
       }
     else
