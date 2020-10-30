@@ -88,7 +88,6 @@ public abstract class CriterionFieldRetriever
   public static Object getSubscriberTmpSuccessVouchers(SubscriberEvaluationRequest evaluationRequest, String fieldName)
   {
     Set<String> res = evaluationRequest.getJourneyState().getVoucherChanges().stream().filter(vc -> vc.getReturnStatus() == RESTAPIGenericReturnCodes.SUCCESS).map(VoucherChange::getVoucherCode).collect(Collectors.toSet());
-    log.info("RAJ K getSubscriberTmpSuccessVouchers {}", res);
     return res;
   }
   public static Object getRandom100(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return ThreadLocalRandom.current().nextInt(100); }
@@ -292,9 +291,9 @@ public abstract class CriterionFieldRetriever
   //
   
   public static Object getVoucherValidationVoucherCode(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException 
-  { String result = ((VoucherValidation) evaluationRequest.getSubscriberStreamEvent()).getVoucherValidationVoucherCode(); log.info("RAJ K getVoucherValidationVoucherCode {}", result); return result; }
+  { String result = ((VoucherValidation) evaluationRequest.getSubscriberStreamEvent()).getVoucherValidationVoucherCode(); return result; }
   public static Object getVoucherValidationStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException 
-  { String result =  ((VoucherValidation) evaluationRequest.getSubscriberStreamEvent()).getVoucherValidationStatus(); log.info("RAJ K getVoucherValidationStatus {}", result); return result; }    
+  { String result =  ((VoucherValidation) evaluationRequest.getSubscriberStreamEvent()).getVoucherValidationStatus(); return result; }    
   public static Object getVoucherRedemptionVoucherCode(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherRedemption) evaluationRequest.getSubscriberStreamEvent()).getVoucherRedemptionVoucherCode(); }
   public static Object getVoucherRedemptionStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((VoucherRedemption) evaluationRequest.getSubscriberStreamEvent()).getVoucherRedemptionStatus(); }    
 
