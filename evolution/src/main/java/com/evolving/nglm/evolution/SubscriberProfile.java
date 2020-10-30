@@ -269,6 +269,7 @@ public abstract class SubscriberProfile
   public SubscriberHistory getSubscriberHistory() { return subscriberHistory; }
   public Map<String, Integer> getExclusionInclusionTargets() { return exclusionInclusionTargets; }
   public List<ComplexObjectInstance> getComplexObjectInstances() { return complexObjectInstances; }
+  public void setComplexObjectInstances(List<ComplexObjectInstance> instances) { this.complexObjectInstances = instances; }
   
   public List<Pair<String, String>> getUnknownRelationships(){ return unknownRelationships ; }
 
