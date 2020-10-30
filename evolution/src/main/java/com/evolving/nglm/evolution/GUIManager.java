@@ -5388,6 +5388,7 @@ public class GUIManager
 
   private JSONObject processPutJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType)
   {
+    log.info("RAJ K processPutJourney jsonRoot {}", jsonRoot);
     /****************************************
     *
     *  response
@@ -24154,7 +24155,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                     }
                 }
             }
-          log.info("RAJ K result {}", result);
           break;
 
         case "callableCampaigns":
