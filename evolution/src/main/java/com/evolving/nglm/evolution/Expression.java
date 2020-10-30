@@ -2442,31 +2442,31 @@ public abstract class Expression
           switch (dayOfWeek.toUpperCase())
           {
             case "SUNDAY":
-              nextDayDate = getNextDayDate(dateAddDate, Calendar.SUNDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.SUNDAY);
               break;
               
             case "MONDAY":
-              nextDayDate = getNextDayDate(dateAddDate, Calendar.MONDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.MONDAY);
               break;
               
             case "TUESDAY":
-              nextDayDate = getNextDayDate(dateAddDate, Calendar.TUESDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.TUESDAY);
               break;
               
             case "WEDNESDAY":
-              nextDayDate = getNextDayDate(dateAddDate, Calendar.WEDNESDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.WEDNESDAY);
               break;
               
             case "THURSDAY":
-              nextDayDate = getNextDayDate(dateAddDate, Calendar.THURSDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.THURSDAY);
               break;
               
             case "FRIDAY":
-              nextDayDate = getNextDayDate(dateAddDate, Calendar.FRIDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.FRIDAY);
               break;
               
             case "SATURDAY":
-              nextDayDate = getNextDayDate(dateAddDate, Calendar.SATURDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.SATURDAY);
               break;
 
             default:
@@ -2573,21 +2573,21 @@ public abstract class Expression
       return result;
     }
 
-    private Date getNextDayDate(final Date dateAddDate, int dayOfWeek)
+    private Date getNextDayDate(Date now, int dayOfWeek)
     {
-      Date tempDate = dateAddDate;
-      if (dayOfWeek == RLMDateUtils.getField(dateAddDate, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone())) 
+      Date tempDate = now;
+      if (dayOfWeek == RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone())) 
         {
-          return dateAddDate;
+          return now;
         }
-      else if(dayOfWeek < RLMDateUtils.getField(dateAddDate, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone()))
+      else if(dayOfWeek < RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone()))
         {
-          tempDate = RLMDateUtils.setField(dateAddDate, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getBaseTimeZone());
+          tempDate = RLMDateUtils.setField(now, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getBaseTimeZone());
           tempDate = RLMDateUtils.addDays(tempDate, 7, Deployment.getBaseTimeZone());
         }
       else 
         {
-          tempDate = RLMDateUtils.setField(dateAddDate, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getBaseTimeZone());
+          tempDate = RLMDateUtils.setField(now, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getBaseTimeZone());
         }
       return tempDate;
     }
