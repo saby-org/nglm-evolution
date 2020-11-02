@@ -41,7 +41,7 @@ public class BDRRewardManagerSinkConnector extends SimpleESSinkConnector
   
   public static class BDRRewardManagerSinkConnectorTask extends StreamESSinkTask<RewardManagerRequest>
   {
-    private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+    private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
     private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
     /****************************************

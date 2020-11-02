@@ -1,4 +1,4 @@
-package com.evolving.nglm.evolution.datacubes;
+package com.evolving.nglm.evolution.elasticsearch;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -18,38 +18,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.RLMDateUtils;
 
 public class SnapshotTask
 {
-  /*****************************************
-  *
-  *  configuration
-  *
-  *****************************************/
-
-  //
-  //  logger
-  //
-
   protected static final Logger log = LoggerFactory.getLogger(SnapshotTask.class);
-
-  //
-  //  others
-  //
-  
-  protected static final DateFormat DATE_FORMAT;
-  static
-  {
-    DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-  }
   
   /*****************************************
   *
-  *  Data
+  * Properties
   *
   *****************************************/
-  
   private RestHighLevelClient elasticsearch;
   private String snapshotName;
   private String srcIndex;
@@ -57,10 +36,9 @@ public class SnapshotTask
 
   /*****************************************
   *
-  *  constructor
+  * Constructor
   *
   *****************************************/
-  
   public SnapshotTask(String snapshotName, String srcIndex, String destIndexPrefix, RestHighLevelClient elasticsearch) 
   {
     this.elasticsearch = elasticsearch;
@@ -71,7 +49,7 @@ public class SnapshotTask
 
   /*****************************************
   *
-  *  get
+  * Destination
   *
   *****************************************/
   private String getDestinationIndex(String date) {
@@ -80,13 +58,12 @@ public class SnapshotTask
   
   /*****************************************
   *
-  *  run
+  * Run
   *
   *****************************************/
-  
   public void run(Date snapshotDate) 
   {
-    String requestedDate = DATE_FORMAT.format(snapshotDate);
+    String requestedDate = RLMDateUtils.printDay(snapshotDate);
     
     try
       {

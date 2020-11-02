@@ -38,6 +38,42 @@
     "JourneystatisticCleanUp"        : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" },
     "ExpiredVoucherCleanUp"          : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" }
   },
+  
+  "elasticsearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
+  "elasticsearchScrollSize" : 1000,
+  "elasticsearchConnectTimeout" : 5000,
+  "elasticsearchQueryTimeout" : 7200000,
+  
+  "elasticsearchDefaultShards" : 1,
+  "elasticsearchDefaultReplicas" : 1,
+  "elasticsearchSubscriberprofileShards" : 4,
+  "elasticsearchSubscriberprofileReplicas" : 1,
+  "elasticsearchSnapshotShards" : 1,
+  "elasticsearchSnapshotReplicas" : 0,
+  "elasticsearchLiveVoucherShards" : 1,
+  "elasticsearchLiveVoucherReplicas" : 1,
+  
+  "ESRetentionDaysODR"              : 45,
+  "ESRetentionDaysBDR"              : 45,
+  "ESRetentionDaysMDR"              : 45,
+  "ESRetentionDaysTokens"           : 45,
+  "ESRetentionDaysSnapshots"        : 10,
+  "ESRetentionDaysJourneys"         : 15,
+  "ESRetentionDaysCampaigns"        : 15,
+  "ESRetentionDaysBulkCampaigns"    : 15,
+  "ESRetentionDaysExpiredVouchers"  : 31,
+
+  "subscriberESIndexes" :
+  [
+    "subscriberprofile",
+    "detailedrecords_bonuses-*",
+    "detailedrecords_offers-*",
+    "detailedrecords_messages-*",
+    "detailedrecords_tokens-*",
+    "journeystatistic*",
+    "journeymetric",
+    "regr_criteria"
+  ],
 
   "hourlyReportCronEntryString"   : "0 * * * *",
   "dailyReportCronEntryString"    : "5 2 * * *",
@@ -51,8 +87,6 @@
   "importVoucherFileBulkSize" : 5000,
   "voucherESCacheCleanerFrequencyInSec" : 300,
   "numberConcurrentVoucherAllocationToES" : 10,
-  "liveVoucherIndexNumberOfReplicas" : "1",
-  "liveVoucherIndexNumberOfShards" : "1",
 
   "ucgEngineESConnectTimeout" : 30000,
   "ucgEngineESSocketTimeout" : 60000,
@@ -61,28 +95,11 @@
   "guiManagerESConnectTimeout" : 30000,
   "guiManagerESSocketTimeout" : 60000,
   
-  "elasticSearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
-  
-  "elasticSearchScrollSize" : 1000,
-  
-  "elasticSearchConnectTimeout" : 5000,
-  "elasticSearchQueryTimeout" : 7200000,
-
   "maxPollIntervalMsComment": "Changed to 300s (5 minutes), kafka default is 30 seconds, which causes containers to stop during startup (heavy system load",
   "maxPollIntervalMs"       : 300000,
   
   "purchaseTimeoutMsComment" : "timeout for completion when calling purchase in sync mode",
   "purchaseTimeoutMs" : 15000,
-  
-  "subscriberESIndexes" :
-  [
-    "subscriberprofile",
-    "detailedrecords_bonuses-*",
-    "detailedrecords_offers-*",
-    "detailedrecords_messages-*",
-    "detailedrecords_tokens-*",
-    "journeystatistic*"
-  ],
 
   "emptyTopic"                                           : "${topic.empty}",
   "journeyTopic"                                         : "${topic.journey}",

@@ -56,7 +56,7 @@ import java.util.zip.ZipOutputStream;
 public class ODRReportMonoPhase implements ReportCsvFactory
 {
   private static final Logger log = LoggerFactory.getLogger(ODRReportMonoPhase.class);
-  private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+  private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
   private static final DateFormat DATE_FORMAT;
   
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();

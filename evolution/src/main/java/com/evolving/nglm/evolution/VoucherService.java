@@ -68,10 +68,6 @@ public class VoucherService extends GUIService {
   // we fix a charset to store data in zookeeper just to avoid issue in case different default jvm ones
   private static final Charset ZOOKEEPER_ENCODING_CHARSET = StandardCharsets.UTF_8;
 
-
-  // the scheduler for cleaning voucher in ES
-  private JobScheduler cleanUpExpiredVouchersScheduler;
-
   // this is the UploadedFileService applicationID we use once we don't want the file to appear in GUI anymore for choice, while not deleting it yet
   // we keep the file available in GUI as long as not yet bound to a voucher
   // once bound, we removed it as a choice, but we keep it on file system to process it, then we delete only if ok. (on error we might want reprocess it)
@@ -79,7 +75,7 @@ public class VoucherService extends GUIService {
 
   public VoucherService(String bootstrapServers, String groupID, String voucherTopic, boolean masterService, VoucherListener voucherListener, boolean notifyOnSignificantChange, RestHighLevelClient elasticsearch, UploadedFileService uploadedFileService) {
     super(bootstrapServers, "voucherService", groupID, voucherTopic, masterService, getSuperListener(voucherListener), "putVoucher", "removeVoucher", notifyOnSignificantChange);
-    this.voucherPersonalESService = new VoucherPersonalESService(elasticsearch,masterService,Deployment.getLiveVoucherIndexNumberOfShards(),Deployment.getLiveVoucherIndexNumberOfReplicas());
+    this.voucherPersonalESService = new VoucherPersonalESService(elasticsearch,masterService,com.evolving.nglm.core.Deployment.getElasticsearchLiveVoucherShards(),com.evolving.nglm.core.Deployment.getElasticsearchLiveVoucherReplicas());
     this.uploadedFileService = uploadedFileService;
 
     if(masterService){
@@ -87,40 +83,6 @@ public class VoucherService extends GUIService {
       // a thread job handling "voucher modification" to do in ES
       processVoucherFileThread = new Thread(this::runProcessVoucherfile,"voucherService-processVoucherfile");
       processVoucherFileThread.start();
-
-      // a thread scheduled for clean up expired voucher
-      cleanUpExpiredVouchersScheduler=new JobScheduler("cleanUpExpiredVouchers"); // @rl: TODO: move in Elasticsearch scheduler
-      cleanUpExpiredVouchersScheduler.schedule(new ScheduledJob(0,"cleanUpExpiredVouchers",Deployment.getElasticsearchJobsScheduling().get("ExpiredVoucherCleanUp").getCronEntry(),Deployment.getBaseTimeZone(),false) {
-        @Override
-        protected void run() {
-          log.info("VoucherPersonalESService-cleanUpExpiredVouchers : start execution");
-          Date now = SystemTime.getCurrentTime();
-
-          // we delete the not allocated expired vouchers as soon as expired, per voucherId, fileId, to stored this stats
-          // we delete as well change one, this is one is for now just for stats
-          for(Voucher untypedVoucher:getActiveVouchers(SystemTime.getCurrentTime())){
-            if(!(untypedVoucher instanceof VoucherPersonal)) continue;
-            VoucherPersonal voucher = (VoucherPersonal) untypedVoucher;
-            for(VoucherFile file:voucher.getVoucherFiles()){
-              int nbExpired=voucherPersonalESService.deleteAvailableExpiredVoucher(voucher.getSupplierID(),voucher.getVoucherID(),file.getFileId(),now);
-              log.info("VoucherPersonalESService-cleanUpExpiredVouchers : "+nbExpired+" unallocated expired vouchers deleted for voucher "+voucher.getVoucherID()+" and file "+file.getFileId());
-              updateVoucherFileStatsInZookeeper(voucher.getVoucherID(),file.getFileId(),0,0,0,nbExpired);
-            }
-          }
-
-          // this is a bulk delete of all vouchers a while after expiryDate is past, clean up of ES
-          Date expiryDate=EvolutionUtilities.addTime(now,-1*/*TODO use ES retention policy conf from EVPRO-296:*/Deployment.getKafkaRetentionDaysExpiredVouchers(), EvolutionUtilities.TimeUnit.Day,Deployment.getBaseTimeZone());
-          // safety
-          if(now.before(expiryDate)){
-            log.error("VoucherPersonalESService-cleanUpExpiredVouchers : bug, expiryDate for cleanup is after now !! "+now+" vs "+expiryDate);
-            return;
-          }
-          voucherPersonalESService.deleteExpiredVoucher(expiryDate);
-
-          log.info("VoucherPersonalESService-cleanUpExpiredVouchers : stop execution");
-        }
-      });
-      new Thread(cleanUpExpiredVouchersScheduler::runScheduler).start();
     }
   }
 
@@ -206,6 +168,34 @@ public class VoucherService extends GUIService {
     }
     removeGUIManagedObject(voucherID, SystemTime.getCurrentTime(), userID);
   }
+  
+  public void cleanUpVouchersJob() {
+    log.info("VoucherPersonalESService-cleanUpExpiredVouchers : start execution");
+    Date now = SystemTime.getCurrentTime();
+
+    // we delete the not allocated expired vouchers as soon as expired, per voucherId, fileId, to stored this stats
+    // we delete as well change one, this is one is for now just for stats
+    for(Voucher untypedVoucher : getActiveVouchers(SystemTime.getCurrentTime())){
+      if(!(untypedVoucher instanceof VoucherPersonal)) continue;
+      VoucherPersonal voucher = (VoucherPersonal) untypedVoucher;
+      for(VoucherFile file:voucher.getVoucherFiles()){
+        int nbExpired=voucherPersonalESService.deleteAvailableExpiredVoucher(voucher.getSupplierID(),voucher.getVoucherID(),file.getFileId(),now);
+        log.info("VoucherPersonalESService-cleanUpExpiredVouchers : "+nbExpired+" unallocated expired vouchers deleted for voucher "+voucher.getVoucherID()+" and file "+file.getFileId());
+        updateVoucherFileStatsInZookeeper(voucher.getVoucherID(),file.getFileId(),0,0,0,nbExpired);
+      }
+    }
+
+    // this is a bulk delete of all vouchers a while after expiryDate is past, clean up of ES
+    Date expiryDate=EvolutionUtilities.addTime(now,-1*com.evolving.nglm.core.Deployment.getElasticsearchRetentionDaysExpiredVouchers(), EvolutionUtilities.TimeUnit.Day,Deployment.getBaseTimeZone());
+    // safety
+    if(now.before(expiryDate)){
+      log.error("VoucherPersonalESService-cleanUpExpiredVouchers : bug, expiryDate for cleanup is after now !! "+now+" vs "+expiryDate);
+      return;
+    }
+    voucherPersonalESService.deleteExpiredVoucher(expiryDate);
+
+    log.info("VoucherPersonalESService-cleanUpExpiredVouchers : stop execution");
+  }
 
  @Override
  protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject) {
@@ -228,7 +218,6 @@ public class VoucherService extends GUIService {
       this.stopRequested=true;
       if(processVoucherFileThread!=null) processVoucherFileThread.interrupt();
       if(voucherPersonalESService!=null) voucherPersonalESService.close();
-      if(cleanUpExpiredVouchersScheduler!=null) cleanUpExpiredVouchersScheduler.stop();
     }
     // continue stop()
     super.stop();

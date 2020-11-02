@@ -34,6 +34,7 @@ import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
 {
@@ -120,7 +121,7 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
         .addRange(targetPeriodStartIncluded, targetPeriodStartIncluded + targetPeriod); // Reminder: from is included, to is excluded
     
     AggregationBuilder aggregation = AggregationBuilders.nested("DATACUBE", "loyaltyPrograms").subAggregation(
-        AggregationBuilders.composite("LOYALTY-COMPOSITE", sources).size(BUCKETS_MAX_NBR).subAggregation(dateAgg)
+        AggregationBuilders.composite("LOYALTY-COMPOSITE", sources).size(ElasticsearchClientAPI.MAX_BUCKETS).subAggregation(dateAgg)
     );
     
     //
@@ -269,12 +270,12 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
     this.targetPeriodStartIncluded = beginningOfYesterday.getTime();
 
     this.previewMode = false;
-    this.targetDay = DAY_FORMAT.format(yesterday);
+    this.targetDay = RLMDateUtils.printDay(yesterday);
 
     //
     // Timestamp & period
     //
-    String timestamp = TIMESTAMP_FORMAT.format(endOfYesterday);
+    String timestamp = RLMDateUtils.printTimestamp(endOfYesterday);
     
     this.run(timestamp, targetPeriod);
   }
@@ -292,12 +293,12 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
     this.targetPeriodStartIncluded = beginningOfToday.getTime();
 
     this.previewMode = true;
-    this.targetDay = DAY_FORMAT.format(now);
+    this.targetDay = RLMDateUtils.printDay(now);
 
     //
     // Timestamp & period
     //
-    String timestamp = TIMESTAMP_FORMAT.format(now);
+    String timestamp = RLMDateUtils.printTimestamp(now);
     
     this.run(timestamp, targetPeriod);
   }

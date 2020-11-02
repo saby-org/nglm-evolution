@@ -16,6 +16,7 @@ import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ChangeLogESSinkTask;
 import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.core.SystemTime;
@@ -50,7 +51,7 @@ public class JourneyObjectiveESSinkConnector extends SimpleESSinkConnector
   
   public static class JourneyObjectiveESSinkConnectorTask extends ChangeLogESSinkTask<JourneyObjective>
   {
-    private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+    private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
     private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
     /*****************************************
@@ -147,7 +148,7 @@ public class JourneyObjectiveESSinkConnector extends SimpleESSinkConnector
           String contactPolicyID = (String) jr.get("contactPolicyID");
           ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, now);
           documentMap.put("contactPolicy", (contactPolicy == null) ? "" : contactPolicy.getGUIManagedObjectDisplay());
-          documentMap.put("timestamp",     DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime()));
+          documentMap.put("timestamp",     RLMDateUtils.printTimestamp(SystemTime.getCurrentTime()));
         }
       return documentMap;
     }

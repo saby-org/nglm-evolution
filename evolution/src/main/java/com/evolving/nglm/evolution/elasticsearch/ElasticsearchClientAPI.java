@@ -54,7 +54,7 @@ public class ElasticsearchClientAPI
    */
   public static final int MAX_BUCKETS = 10000;
   
-  // TODO factorize with SimpleESSinkConnector ? 
+  // TODO factorize with SimpleESSinkConnector ?  // TODO retrieve from Deployment.json
   private static final int CONNECTTIMEOUT = 5; // in seconds
   private static final int QUERYTIMEOUT = 60;  // in seconds
   

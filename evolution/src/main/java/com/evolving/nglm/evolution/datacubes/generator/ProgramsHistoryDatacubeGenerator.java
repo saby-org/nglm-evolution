@@ -36,6 +36,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
 {
@@ -112,8 +113,8 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     // Therefore, we filter out those subscribers with missing data by looking for lastUpdateDate
     QueryBuilder query = QueryBuilders.boolQuery().must(QueryBuilders
         .rangeQuery("lastUpdateDate")
-        .gte(DatacubeGenerator.TIMESTAMP_FORMAT.format(metricTargetDayStart))
-        .lt(DatacubeGenerator.TIMESTAMP_FORMAT.format(metricTargetDayAfterStart)));
+        .gte(RLMDateUtils.printTimestamp(metricTargetDayStart))
+        .lt(RLMDateUtils.printTimestamp(metricTargetDayAfterStart)));
     
     //
     // Aggregations
@@ -155,7 +156,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     }
     
     AggregationBuilder aggregation = AggregationBuilders.nested("DATACUBE", "loyaltyPrograms").subAggregation(
-        AggregationBuilders.composite("LOYALTY-COMPOSITE", sources).size(BUCKETS_MAX_NBR).subAggregation(
+        AggregationBuilders.composite("LOYALTY-COMPOSITE", sources).size(ElasticsearchClientAPI.MAX_BUCKETS).subAggregation(
             AggregationBuilders.reverseNested("REVERSE").subAggregation(metrics) // *metrics is STATUS with metrics
         )
     );
@@ -366,7 +367,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
 
     this.previewMode = false;
-    this.metricTargetDay = DAY_FORMAT.format(yesterday);
+    this.metricTargetDay = RLMDateUtils.printDay(yesterday);
     this.metricTargetDayStart = beginningOfYesterday;
     this.metricTargetDayAfterStart = beginningOfToday;
 
@@ -374,7 +375,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     // Timestamp & period
     //
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
-    String timestamp = TIMESTAMP_FORMAT.format(endOfYesterday);
+    String timestamp = RLMDateUtils.printTimestamp(endOfYesterday);
     long targetPeriod = beginningOfToday.getTime() - beginningOfYesterday.getTime();    // most of the time 86400000ms (24 hours)
     
     this.run(timestamp, targetPeriod);
@@ -395,14 +396,14 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getBaseTimeZone());
     
     this.previewMode = true;
-    this.metricTargetDay = DAY_FORMAT.format(now);
+    this.metricTargetDay = RLMDateUtils.printDay(now);
     this.metricTargetDayStart = beginningOfToday;
     this.metricTargetDayAfterStart = beginningOfTomorrow;
 
     //
     // Timestamp & period
     //
-    String timestamp = TIMESTAMP_FORMAT.format(now);
+    String timestamp = RLMDateUtils.printTimestamp(now);
     long targetPeriod = now.getTime() - beginningOfToday.getTime() + 1; // +1 !
     
     this.run(timestamp, targetPeriod);
