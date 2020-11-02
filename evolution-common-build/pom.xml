@@ -3,9 +3,11 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
+  <version>1.4.5_1-SNAPSHOT</version>
   <version>release_1.4.5_1-SNAPSHOT</version>
   <version>1.4.5_1-SNAPSHOT</version>
   <version>EVPRO-567-SNAPSHOT</version>
+  <version>1.4.5_1-524-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
