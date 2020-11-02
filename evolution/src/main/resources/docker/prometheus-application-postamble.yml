@@ -17,7 +17,7 @@
     - source: prometheus-application-config
       target: /etc/prometheus/prometheus.yml.temp
     - source: prometheus-application-alert-rules
-      target: /etc/prometheus/prometheus-alert.rules.temp
+      target: /etc/prometheus/prometheus-application-alert.rules.temp
 
   networks:
     - outside

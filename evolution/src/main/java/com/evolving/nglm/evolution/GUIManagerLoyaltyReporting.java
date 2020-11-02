@@ -817,6 +817,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("journeyCount", journeyCount(GUIManagedObjectType.Journey));
     response.put("campaignCount", journeyCount(GUIManagedObjectType.Campaign));
     response.put("workflowCount", journeyCount(GUIManagedObjectType.Workflow));
+    response.put("loyaltyWorkflowCount", journeyCount(GUIManagedObjectType.LoyaltyWorkflow));
     response.put("bulkCampaignCount", journeyCount(GUIManagedObjectType.BulkCampaign));
     response.put("segmentationDimensionCount", segmentationDimensionService.getStoredSegmentationDimensions(includeArchived).size());
     response.put("pointCount", pointService.getStoredPoints(includeArchived).size());

@@ -364,6 +364,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     switch (getGUIManagedObjectType())
       {
         case Workflow:
+        case LoyaltyWorkflow:
           result = true;
           break;
         default:
@@ -572,6 +573,8 @@ public class Journey extends GUIManagedObject implements StockableItem
           return "campaign.result." + contextVariable.getID();
         case Workflow:
           return "workflow.result." + contextVariable.getID();
+        case LoyaltyWorkflow:
+          return "loyaltyworkflow.result." + contextVariable.getID();
         default:
           return "journey.result." + contextVariable.getID();
       }
@@ -1123,6 +1126,7 @@ public class Journey extends GUIManagedObject implements StockableItem
           break;
 
         case Workflow:
+        case LoyaltyWorkflow:
           journeyUniversalEligibilityCriteria = new ArrayList<EvaluationCriterion>();
           break;
       }
@@ -2875,49 +2879,52 @@ public class Journey extends GUIManagedObject implements StockableItem
                     dialogMessageFieldsMandatory.put(param.getID(), param.getMandatoryParameter());
                   }
                 }
-                JSONObject value = (JSONObject)parameterJSON.get("value");
-                JSONArray message = JSONUtilities.decodeJSONArray(value, "message");
-                // in case of TemplateID reference:
-                //{
-                //  "parameterName": "node.parameter.dialog_template",
-                //  "value": {
-                //      "macros": [
-                //          {
-                //              "campaignValue": "subscriber.email",
-                //              "templateValue": "emailAddress"
-                //          }
-                //      ],
-                //      "templateID": "17"
-                //  }
-                // 
-                // In case of InLine template:
-                // {
-                //  "parameterName": "node.parameter.dialog_template",
-                //  "value": {
-                //      "message": [
-                //          {
-                //              "node.parameter.subject": "subj",
-                //              "languageID": "1",
-                //              "node.parameter.body": "<!DOCTYPE html>\n<html>\n<head>\n</head>\n<body>\n<p>html 2{Campaign Name}</p>\n<p>si inca unu {mama}&nbsp;nu are mere</p>\n</body>\n</html>"
-                //          },
-                //          {
-                //              "node.parameter.subject": "sagsgsa",
-                //              "languageID": "3",
-                //              "node.parameter.body": "<!DOCTYPE html>\n<html>\n<head>\n</head>\n<body>\n<p>html 2{Campaign Name}</p>\n<p>si inca unu {mama}&nbsp;nu are mere</p>\n</body>\n</html>"
-                //          }
-                //      ]
-                //   }
-                // }
-                if(message != null) {                
-                  // case InLine Template
-                  NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
-                  nodeParameters.put(parameterName, templateParameters);
-                }
-                else {
-                  // case referenced Template
-                  NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(value, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
-                  nodeParameters.put(parameterName, templateParameters);
-                }
+                JSONObject value = JSONUtilities.decodeJSONObject(parameterJSON, "value", false); //(JSONObject)parameterJSON.get("value");
+                if (value != null)
+                  {
+                    JSONArray message = JSONUtilities.decodeJSONArray(value, "message");
+                    // in case of TemplateID reference:
+                    //{
+                    //  "parameterName": "node.parameter.dialog_template",
+                    //  "value": {
+                    //      "macros": [
+                    //          {
+                    //              "campaignValue": "subscriber.email",
+                    //              "templateValue": "emailAddress"
+                    //          }
+                    //      ],
+                    //      "templateID": "17"
+                    //  }
+                    // 
+                    // In case of InLine template:
+                    // {
+                    //  "parameterName": "node.parameter.dialog_template",
+                    //  "value": {
+                    //      "message": [
+                    //          {
+                    //              "node.parameter.subject": "subj",
+                    //              "languageID": "1",
+                    //              "node.parameter.body": "<!DOCTYPE html>\n<html>\n<head>\n</head>\n<body>\n<p>html 2{Campaign Name}</p>\n<p>si inca unu {mama}&nbsp;nu are mere</p>\n</body>\n</html>"
+                    //          },
+                    //          {
+                    //              "node.parameter.subject": "sagsgsa",
+                    //              "languageID": "3",
+                    //              "node.parameter.body": "<!DOCTYPE html>\n<html>\n<head>\n</head>\n<body>\n<p>html 2{Campaign Name}</p>\n<p>si inca unu {mama}&nbsp;nu are mere</p>\n</body>\n</html>"
+                    //          }
+                    //      ]
+                    //   }
+                    // }
+                    if(message != null) {                
+                      // case InLine Template
+                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
+                      nodeParameters.put(parameterName, templateParameters);
+                    }
+                    else {
+                      // case referenced Template
+                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(value, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
+                      nodeParameters.put(parameterName, templateParameters);
+                    }
+                  }
                 break;
 
               case WorkflowParameter:

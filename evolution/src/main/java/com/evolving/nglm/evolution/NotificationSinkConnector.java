@@ -45,7 +45,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
   
   public static class NotificationSinkConnectorTask extends StreamESSinkTask<MessageDelivery>
   {
-    private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+    private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
     private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
     /*****************************************

@@ -42,7 +42,7 @@ public class TokenChangeESSinkConnector extends SimpleESSinkConnector
   public static class TokenChangeESSinkTask extends StreamESSinkTask<TokenChange>
   {
 
-    private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+    private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
     private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
     public static final String ES_FIELD_SUBSCRIBER_ID = "subscriberID";

@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-FO*  GUIManager.java
+*  GUIManager.java
 *
 *****************************************************************************/
 
@@ -133,6 +133,7 @@ import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileSer
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchManager;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
@@ -210,6 +211,14 @@ public class GUIManager
     putWorkflow("putWorkflow"),
     removeWorkflow("removeWorkflow"),
     setStatusWorkflow("setStatusWorkflow"),
+    
+    getLoyaltyWorkflowList("getLoyaltyWorkflowList"),
+    getLoyaltyWorkflowSummaryList("getLoyaltyWorkflowSummaryList"),
+    getLoyaltyWorkflow("getLoyaltyWorkflow"),
+    putLoyaltyWorkflow("putLoyaltyWorkflow"),
+    removeLoyaltyWorkflow("removeLoyaltyWorkflow"),
+    getLoyaltyWorkflowToolbox("getLoyaltyWorkflowToolbox"),
+    
     getBulkCampaignList("getBulkCampaignList"),
     getBulkCampaignSummaryList("getBulkCampaignSummaryList"),
     getBulkCampaign("getBulkCampaign"),
@@ -646,6 +655,7 @@ public class GUIManager
   protected SharedIDService subscriberGroupSharedIDService;
   protected DynamicEventDeclarationsService dynamicEventDeclarationsService;
   protected CriterionFieldAvailableValuesService criterionFieldAvailableValuesService;
+  protected ElasticsearchManager elasticsearchManager;
   protected static Method externalAPIMethodJourneyActivated;
   protected static Method externalAPIMethodJourneyDeactivated;
   
@@ -990,6 +1000,7 @@ public class GUIManager
     segmentContactPolicyService = new SegmentContactPolicyService(bootstrapServers, "guimanager-segmentcontactpolicyservice-"+apiProcessKey, segmentContactPolicyTopic, true);
     subscriberGroupSharedIDService = new SharedIDService(segmentationDimensionService, targetService, exclusionInclusionTargetService);
     criterionFieldAvailableValuesService = new CriterionFieldAvailableValuesService(bootstrapServers, "guimanager-criterionfieldavailablevaluesservice-"+apiProcessKey, criterionFieldAvailableValuesTopic, true);
+    elasticsearchManager = new ElasticsearchManager(elasticsearch, voucherService, journeyService);
     
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
     purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(),StringKey.serde(),PurchaseFulfillmentRequest.serde());
@@ -1739,6 +1750,7 @@ public class GUIManager
     dynamicEventDeclarationsService.refreshSegmentationChangeEvent(segmentationDimensionService);
     dynamicEventDeclarationsService.refreshLoyaltyProgramChangeEvent(loyaltyProgramService);
     criterionFieldAvailableValuesService.start();
+    elasticsearchManager.start();
     
     /*****************************************
     *
@@ -1804,6 +1816,14 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putWorkflow", new APISimpleHandler(API.putWorkflow));
         restServer.createContext("/nglm-guimanager/removeWorkflow", new APISimpleHandler(API.removeWorkflow));
         restServer.createContext("/nglm-guimanager/setStatusWorkflow", new APISimpleHandler(API.setStatusWorkflow));
+        
+        restServer.createContext("/nglm-guimanager/getLoyaltyWorkflowList", new APISimpleHandler(API.getLoyaltyWorkflowList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyWorkflowSummaryList", new APISimpleHandler(API.getLoyaltyWorkflowSummaryList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyWorkflow", new APISimpleHandler(API.getLoyaltyWorkflow));
+        restServer.createContext("/nglm-guimanager/putLoyaltyWorkflow", new APISimpleHandler(API.putLoyaltyWorkflow));
+        restServer.createContext("/nglm-guimanager/removeLoyaltyWorkflow", new APISimpleHandler(API.removeLoyaltyWorkflow));
+        restServer.createContext("/nglm-guimanager/getLoyaltyWorkflowToolbox", new APISimpleHandler(API.getLoyaltyWorkflowToolbox));
+        
         restServer.createContext("/nglm-guimanager/getBulkCampaignList", new APISimpleHandler(API.getBulkCampaignList));
         restServer.createContext("/nglm-guimanager/getBulkCampaignSummaryList", new APISimpleHandler(API.getBulkCampaignSummaryList));
         restServer.createContext("/nglm-guimanager/getBulkCampaign", new APISimpleHandler(API.getBulkCampaign));
@@ -2156,7 +2176,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService, elasticsearchManager));
 
     /*****************************************
     *
@@ -2240,12 +2260,13 @@ public class GUIManager
     private ResellerService resellerService;
     private SegmentContactPolicyService segmentContactPolicyService;
     private CriterionFieldAvailableValuesService criterionFieldAvailableValuesService;
-
+    private ElasticsearchManager elasticsearchManager;
+    
     //
     //  constructor
     //
     
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, ElasticsearchManager elasticsearchManager)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -2288,6 +2309,7 @@ public class GUIManager
       this.dnboMatrixService = dnboMatrixService;
       this.segmentContactPolicyService = segmentContactPolicyService;
       this.criterionFieldAvailableValuesService = criterionFieldAvailableValuesService;
+      this.elasticsearchManager = elasticsearchManager;
     }
 
     //
@@ -2303,6 +2325,10 @@ public class GUIManager
       if (subscriberGroupEpochReader != null) subscriberGroupEpochReader.close();
       if (journeyTrafficReader != null) journeyTrafficReader.close();
       if (renamedProfileCriterionFieldReader != null) renamedProfileCriterionFieldReader.close();
+      
+      
+      if (elasticsearchManager != null) elasticsearchManager.stop();
+      
       //
       //  services 
       //
@@ -2703,6 +2729,30 @@ public class GUIManager
                   
                 case setStatusWorkflow:
                   jsonResponse = processSetStatusJourney(userID, jsonRoot, GUIManagedObjectType.Workflow);
+                  break;
+                  
+                case getLoyaltyWorkflowList:
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow, true, true, includeArchived);
+                  break;
+
+                case getLoyaltyWorkflowSummaryList:
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow, false, true, includeArchived);
+                  break;
+                  
+                case getLoyaltyWorkflow:
+                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow, true, includeArchived);
+                  break;
+
+                case putLoyaltyWorkflow:
+                  jsonResponse = processPutJourney(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow);
+                  break;
+
+                case removeLoyaltyWorkflow:
+                  jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.LoyaltyWorkflow);
+                  break;
+                  
+                case getLoyaltyWorkflowToolbox:
+                  jsonResponse = processGetLoyaltyWorkflowToolbox(userID, jsonRoot);
                   break;
 
                 case getBulkCampaignList:
@@ -5331,6 +5381,10 @@ public class GUIManager
       case Workflow:
         response.put("workflows", JSONUtilities.encodeArray(journeys));
         break;
+        
+      case LoyaltyWorkflow:
+        response.put("loyaltyWorkflows", JSONUtilities.encodeArray(journeys));
+        break;
 
       case BulkCampaign:
         response.put("bulkCampaigns", JSONUtilities.encodeArray(journeys));
@@ -5398,6 +5452,11 @@ public class GUIManager
         case Workflow:
           response.put("responseCode", (journey != null) ? "ok" : "workflowNotFound");
           if (journey != null) response.put("workflow", journeyJSON);
+          break;
+
+        case LoyaltyWorkflow:
+          response.put("responseCode", (journey != null) ? "ok" : "loyaltyWorkflowNotFound");
+          if (journey != null) response.put("loyaltyWorkflow", journeyJSON);
           break;
 
         case BulkCampaign:
@@ -5520,7 +5579,7 @@ public class GUIManager
         ****************************************/
 
         Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, approval);
-        if(GUIManagedObjectType.Workflow.equals(objectType)) {
+        if(GUIManagedObjectType.Workflow.equals(objectType) || GUIManagedObjectType.LoyaltyWorkflow.equals(objectType)) {
           journey.setApproval(JourneyStatus.StartedApproved);
         }
         
@@ -5657,12 +5716,16 @@ public class GUIManager
               response.put("responseCode", "workflowNotValid");
               break;
 
+            case LoyaltyWorkflow:
+              response.put("responseCode", "loyaltyWorkflowNotValid");
+              break;
+
             case BulkCampaign:
               response.put("responseCode", "bulkCampaignNotValid");
               break;
 
             default:
-              response.put("responseCode", "notValid");
+              response.put("responseCode", "NotValid");
               break;
           }
         response.put("responseMessage", e.getMessage());
@@ -6241,6 +6304,39 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  /*****************************************
+  *
+  *  processGetLoyaltyWorkflowToolbox
+  *
+  *****************************************/
+
+  private JSONObject processGetLoyaltyWorkflowToolbox(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve loyaltyWorkflowToolboxSections
+    *
+    *****************************************/
+
+    List<JSONObject> loyaltyWorkflowToolboxSections = new ArrayList<JSONObject>();
+    for (ToolboxSection loyaltyWorkflowToolboxSection : Deployment.getLoyaltyWorkflowToolbox().values())
+      {
+        JSONObject workflowToolboxSectionJSON = loyaltyWorkflowToolboxSection.getJSONRepresentation();
+        loyaltyWorkflowToolboxSections.add(workflowToolboxSectionJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("loyaltyWorkflowToolbox", JSONUtilities.encodeArray(loyaltyWorkflowToolboxSections));
+    return JSONUtilities.encodeObject(response);
+  }
+  
   /*****************************************
   *
   *  processGetBulkCampaignCapacity
@@ -21107,7 +21203,6 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
-    journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? journey : null;
     JSONObject journeyJSON = journeyService.generateResponseJSON(journey, true, SystemTime.getCurrentTime());
 
     //
@@ -21117,7 +21212,6 @@ public class GUIManager
     journeyJSON.remove("readOnly");
     journeyJSON.remove("accepted");
     journeyJSON.remove("valid");
-    journeyJSON.remove("effectiveEndDate");
     journeyJSON.remove("targetNoOfConversions");
     journeyJSON.remove("targetingEvent");
     journeyJSON.remove("effectiveEntryPeriodEndDate");
@@ -21125,7 +21219,6 @@ public class GUIManager
     journeyJSON.remove("description");
     journeyJSON.remove("nodes");
     journeyJSON.remove("name");
-    journeyJSON.remove("effectiveStartDate");
     journeyJSON.remove("eligibilityCriteria");
     journeyJSON.remove("targetingType");
     journeyJSON.remove("links");
@@ -21635,9 +21728,23 @@ public class GUIManager
      *
      ****************************************/
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
+    String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);    
     Boolean viewOffersOnly = JSONUtilities.decodeBoolean(jsonRoot, "viewOffersOnly", Boolean.FALSE);
-
+    String supplierID = JSONUtilities.decodeString(jsonRoot, "supplier", false);
+    Supplier supplier = null;
+    
+    /*****************************************
+    *
+    *  getSupplier
+    *
+    *****************************************/
+    if (supplierID != null) {
+      GUIManagedObject supplierObject = supplierService.getStoredSupplier(supplierID);
+      if (supplierObject instanceof Supplier) {
+        supplier = (Supplier) supplierObject;
+      }
+    }
+    
     /*****************************************
      *
      *  resolve subscriberID
@@ -21735,7 +21842,7 @@ public class GUIManager
                   catalogCharacteristicService,
                   scoringStrategyService,
                   subscriberGroupEpochReader,
-                  segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
+                  segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, supplier
                   );
 
               if (presentedOffers.isEmpty())
@@ -24538,6 +24645,23 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                             result.add(JSONUtilities.encodeObject(availableValue));
                             break;
                         }
+                    }
+                }
+            }
+          break;
+          
+        case "suppliers":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject supplierUnchecked : supplierService.getStoredSuppliers())
+                {
+                  if (supplierUnchecked.getAccepted())
+                    {
+                      Supplier supplier = (Supplier) supplierUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", supplier.getSupplierID());
+                      availableValue.put("display", supplier.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
             }

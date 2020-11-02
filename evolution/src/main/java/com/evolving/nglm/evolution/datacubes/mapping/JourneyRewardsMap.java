@@ -25,6 +25,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 
@@ -126,7 +127,7 @@ public class JourneyRewardsMap
   }
   
   private void pushInMapping(String journeyID) throws ElasticsearchException, IOException {
-    String timestamp = DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime());      // @rl: TODO timestamp in more generic class ? Elasticsearch client ?
+    String timestamp = RLMDateUtils.printTimestamp(SystemTime.getCurrentTime());
     for(String reward: this.rewards) {
       Map<String,Object> mappingRow = new HashMap<String,Object>();
       mappingRow.put("timestamp", timestamp);

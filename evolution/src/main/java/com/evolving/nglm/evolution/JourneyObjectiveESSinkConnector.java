@@ -14,7 +14,9 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.json.simple.JSONObject;
 
+import com.evolving.nglm.core.ChangeLogESSinkTask;
 import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.core.SystemTime;
@@ -47,9 +49,9 @@ public class JourneyObjectiveESSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
   
-  public static class JourneyObjectiveESSinkConnectorTask extends StreamESSinkTask<JourneyObjective>
+  public static class JourneyObjectiveESSinkConnectorTask extends ChangeLogESSinkTask<JourneyObjective>
   {
-    private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+    private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
     private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
     /*****************************************
@@ -110,11 +112,18 @@ public class JourneyObjectiveESSinkConnector extends SimpleESSinkConnector
     
     @Override public JourneyObjective unpackRecord(SinkRecord sinkRecord) 
     {
-      Object journeyObjectiveValue = sinkRecord.value();
-      Schema journeyObjectiveValueSchema = sinkRecord.valueSchema();
-      return JourneyObjective.unpack(new SchemaAndValue(JourneyObjective.schema(), ((Struct) journeyObjectiveValue).get("journey_objective"))); 
+      Object guiManagedObjectValue = sinkRecord.value();
+      Schema guiManagedObjectValueSchema = sinkRecord.valueSchema();
+      GUIManagedObject guiManagedObject = GUIManagedObject.commonSerde().unpack(new SchemaAndValue(guiManagedObjectValueSchema, guiManagedObjectValue));
+      if (guiManagedObject instanceof JourneyObjective)
+        {
+          return (JourneyObjective) guiManagedObject;
+        }
+      else
+        {
+          return null;
+        }
     }
-    
     
     /*****************************************
     *
@@ -132,14 +141,22 @@ public class JourneyObjectiveESSinkConnector extends SimpleESSinkConnector
       // because native data in object is sometimes not correct
       
       JSONObject jr = journeyObjective.getJSONRepresentation();
-      documentMap.put("id",      jr.get("id"));
-      documentMap.put("display", jr.get("display"));
-      String contactPolicyID = (String) jr.get("contactPolicyID");
-      ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, now);
-      documentMap.put("contactPolicy", (contactPolicy == null) ? "" : contactPolicy.getGUIManagedObjectDisplay());
-      documentMap.put("timestamp",     DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime()));
-      
+      if (jr != null)
+        {
+          documentMap.put("id",      jr.get("id"));
+          documentMap.put("display", jr.get("display"));
+          String contactPolicyID = (String) jr.get("contactPolicyID");
+          ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(contactPolicyID, now);
+          documentMap.put("contactPolicy", (contactPolicy == null) ? "" : contactPolicy.getGUIManagedObjectDisplay());
+          documentMap.put("timestamp",     RLMDateUtils.printTimestamp(SystemTime.getCurrentTime()));
+        }
       return documentMap;
+    }
+
+    @Override
+    public String getDocumentID(JourneyObjective journeyObjective)
+    {
+      return journeyObjective.getJourneyObjectiveID();
     }
   }
 }

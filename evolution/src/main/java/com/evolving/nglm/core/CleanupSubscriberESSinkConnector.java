@@ -546,7 +546,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
       *
       ****************************************/
 
-      if (Deployment.getSubscriberESIndexes().size() > 0)
+      if (Deployment.getCleanupSubscriberElasticsearchIndexes().size() > 0)
         {
           int processed = 0;
           while (processed < subscriberIDs.size())
@@ -570,7 +570,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
                   //  delete
                   //
 
-                  DeleteByQueryRequest deleteByQueryRequest = new DeleteByQueryRequest(Deployment.getSubscriberESIndexes().toArray(new String[0]));
+                  DeleteByQueryRequest deleteByQueryRequest = new DeleteByQueryRequest(Deployment.getCleanupSubscriberElasticsearchIndexes().toArray(new String[0]));
                   deleteByQueryRequest.setQuery(QueryBuilders.termsQuery("subscriberID", currentSubscriberIDs));
                   deleteByQueryRequest.setConflicts("proceed");
                   deleteByQueryRequest.setSlices(DeleteByQueryRequest.AUTO_SLICES);

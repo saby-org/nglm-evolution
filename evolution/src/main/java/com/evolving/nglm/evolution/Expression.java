@@ -2442,31 +2442,31 @@ public abstract class Expression
           switch (dayOfWeek.toUpperCase())
           {
             case "SUNDAY":
-              nextDayDate = getNextDayDate(dateAddDate, Calendar.SUNDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.SUNDAY);
               break;
               
             case "MONDAY":
-              nextDayDate = getNextDayDate(dateAddDate, Calendar.MONDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.MONDAY);
               break;
               
             case "TUESDAY":
-              nextDayDate = getNextDayDate(dateAddDate, Calendar.TUESDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.TUESDAY);
               break;
               
             case "WEDNESDAY":
-              nextDayDate = getNextDayDate(dateAddDate, Calendar.WEDNESDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.WEDNESDAY);
               break;
               
             case "THURSDAY":
-              nextDayDate = getNextDayDate(dateAddDate, Calendar.THURSDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.THURSDAY);
               break;
               
             case "FRIDAY":
-              nextDayDate = getNextDayDate(dateAddDate, Calendar.FRIDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.FRIDAY);
               break;
               
             case "SATURDAY":
-              nextDayDate = getNextDayDate(dateAddDate, Calendar.SATURDAY);
+              nextDayDate = getNextDayDate(SystemTime.getCurrentTime(), Calendar.SATURDAY);
               break;
 
             default:
@@ -2480,10 +2480,38 @@ public abstract class Expression
               int hh = Integer.parseInt(args[0]);
               int mm = Integer.parseInt(args[1]);
               int ss = Integer.parseInt(args[2]);
-              nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
-              nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
-              nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
-              watingDates.add(nextDayDate);
+              if (RLMDateUtils.truncatedEquals(nextDayDate, dateAddDate, Calendar.DATE, Deployment.getBaseTimeZone()))
+                {
+                  //
+                  //  expected exit time of nextDayDate
+                  //
+                  
+                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
+                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
+                  nextDayDate = RLMDateUtils.setField(nextDayDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
+                  
+                  if (nextDayDate.before(dateAddDate))
+                    {
+                      //
+                      //  go to next day
+                      //
+                      
+                      nextDayDate = RLMDateUtils.addDays(nextDayDate, 7, Deployment.getBaseTimeZone());
+                    }
+                  watingDates.add(nextDayDate);
+                }
+              else
+                {
+                  //
+                  //  next day 
+                  //
+                  
+                  Date expectedDate = nextDayDate;
+                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
+                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
+                  expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
+                  watingDates.add(expectedDate);
+                }
             }
         }
       else if (waitTimeString != null)
@@ -2492,11 +2520,39 @@ public abstract class Expression
           int hh = Integer.parseInt(args[0]);
           int mm = Integer.parseInt(args[1]);
           int ss = Integer.parseInt(args[2]);
-          Date expectedDate = dateAddDate;
-          expectedDate = RLMDateUtils.setField(expectedDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
-          expectedDate = RLMDateUtils.setField(expectedDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
-          expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
-          watingDates.add(expectedDate);
+          Date now = SystemTime.getCurrentTime();
+          if (RLMDateUtils.truncatedEquals(now, dateAddDate, Calendar.DATE, Deployment.getBaseTimeZone()))
+            {
+              //
+              //  expected exit time of today
+              //
+              
+              now = RLMDateUtils.setField(now, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
+              now = RLMDateUtils.setField(now, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
+              now = RLMDateUtils.setField(now, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
+              
+              if (now.before(dateAddDate))
+                {
+                  //
+                  //  go to next day
+                  //
+                  
+                  now = RLMDateUtils.addDays(now, 1, Deployment.getBaseTimeZone());
+                }
+              watingDates.add(now);
+            }
+          else
+            {
+              //
+              //  tomorrow 
+              //
+              
+              Date expectedDate = now;
+              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.HOUR_OF_DAY, hh, Deployment.getBaseTimeZone());
+              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.MINUTE, mm, Deployment.getBaseTimeZone());
+              expectedDate = RLMDateUtils.setField(expectedDate, Calendar.SECOND, ss, Deployment.getBaseTimeZone());
+              watingDates.add(expectedDate);
+            }
         }
       
       //
@@ -2513,24 +2569,25 @@ public abstract class Expression
       //  return
       //
       
+      if(log.isDebugEnabled()) log.debug("evaluateDateAddOrConstantFunction returning to wait till {}", result);
       return result;
     }
 
-    private Date getNextDayDate(final Date dateAddDate, int dayOfWeek)
+    private Date getNextDayDate(Date now, int dayOfWeek)
     {
-      Date tempDate = dateAddDate;
-      if (dayOfWeek == RLMDateUtils.getField(dateAddDate, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone())) 
+      Date tempDate = now;
+      if (dayOfWeek == RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone())) 
         {
-          return dateAddDate;
+          return now;
         }
-      else if(dayOfWeek < RLMDateUtils.getField(dateAddDate, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone()))
+      else if(dayOfWeek < RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone()))
         {
-          tempDate = RLMDateUtils.setField(dateAddDate, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getBaseTimeZone());
+          tempDate = RLMDateUtils.setField(now, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getBaseTimeZone());
           tempDate = RLMDateUtils.addDays(tempDate, 7, Deployment.getBaseTimeZone());
         }
       else 
         {
-          tempDate = RLMDateUtils.setField(dateAddDate, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getBaseTimeZone());
+          tempDate = RLMDateUtils.setField(now, Calendar.DAY_OF_WEEK, dayOfWeek, Deployment.getBaseTimeZone());
         }
       return tempDate;
     }

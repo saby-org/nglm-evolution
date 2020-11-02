@@ -188,6 +188,7 @@ public class Deployment
   private static Map<String,ToolboxSection> journeyToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ToolboxSection> campaignToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ToolboxSection> workflowToolbox = new LinkedHashMap<String,ToolboxSection>();
+  private static Map<String,ToolboxSection> loyaltyWorkflowToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private static CommunicationChannelTimeWindow defaultNotificationTimeWindowsMap;
   private static Integer authResponseCacheLifetimeInMinutes = null;
@@ -223,10 +224,6 @@ public class Deployment
   private static String segmentContactPolicyTopic;
   private static String dynamicEventDeclarationsTopic;
   private static String dynamicCriterionFieldsTopic;
-  private static String elasticSearchDateFormat;
-  private static int elasticSearchScrollSize;
-  private static int elasticSearchConnectTimeout;
-  private static int elasticSearchQueryTimeout;
   private static int maxPollIntervalMs;
   private static String criterionFieldAvailableValuesTopic;
   private static String sourceAddressTopic;
@@ -244,8 +241,6 @@ public class Deployment
   private static int importVoucherFileBulkSize;
   private static int voucherESCacheCleanerFrequencyInSec;
   private static int numberConcurrentVoucherAllocationToES;
-  private static int liveVoucherIndexNumberOfReplicas;
-  private static int liveVoucherIndexNumberOfShards;
   private static int propensityReaderRefreshPeriodMs;
   private static int propensityWriterRefreshPeriodMs;
   private static int kafkaRetentionDaysExpiredTokens;
@@ -445,6 +440,7 @@ public class Deployment
   public static Map<String,ToolboxSection> getJourneyToolbox() { return journeyToolbox; }
   public static Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
   public static Map<String,ToolboxSection> getWorkflowToolbox() { return workflowToolbox; }
+  public static Map<String,ToolboxSection> getLoyaltyWorkflowToolbox() { return loyaltyWorkflowToolbox; }
   public static Map<String,ThirdPartyMethodAccessLevel> getThirdPartyMethodPermissionsMap() { return thirdPartyMethodPermissionsMap; }
   public static Integer getAuthResponseCacheLifetimeInMinutes() { return authResponseCacheLifetimeInMinutes; }
   public static Integer getReportManagerMaxMessageLength() { return reportManagerMaxMessageLength; }
@@ -482,10 +478,6 @@ public class Deployment
   public static String getDynamicCriterionFieldTopic() { return dynamicCriterionFieldsTopic; }
   public static Map<String,PartnerType> getPartnerTypes() { return partnerTypes; }
   public static Map<String,BillingMode> getBillingModes() { return billingModes; }
-  public static String getElasticSearchDateFormat() { return elasticSearchDateFormat; }
-  public static int getElasticSearchScrollSize() {return elasticSearchScrollSize; }
-  public static int getElasticSearchConnectTimeout() { return elasticSearchConnectTimeout; }
-  public static int getElasticSearchQueryTimeout() { return elasticSearchQueryTimeout; }
   public static int getMaxPollIntervalMs() {return maxPollIntervalMs; }
   public static int getPurchaseTimeoutMs() {return purchaseTimeoutMs; }
   public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
@@ -499,8 +491,6 @@ public class Deployment
   public static int getImportVoucherFileBulkSize() { return importVoucherFileBulkSize; }
   public static int getNumberConcurrentVoucherAllocationToES() { return numberConcurrentVoucherAllocationToES; }
   public static int getVoucherESCacheCleanerFrequencyInSec() { return voucherESCacheCleanerFrequencyInSec; }
-  public static int getLiveVoucherIndexNumberOfReplicas() { return liveVoucherIndexNumberOfReplicas; }
-  public static int getLiveVoucherIndexNumberOfShards() { return liveVoucherIndexNumberOfShards; }
   public static String getHourlyReportCronEntryString() { return hourlyReportCronEntryString; }
   public static String getDailyReportCronEntryString() { return dailyReportCronEntryString; }
   public static String getWeeklyReportCronEntryString() { return weeklyReportCronEntryString; }
@@ -1070,58 +1060,6 @@ public class Deployment
       try
         {
           pointFulfillmentResponseTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentResponseTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  elasticSearchDateFormat
-      //
-
-      try
-        {
-          elasticSearchDateFormat = JSONUtilities.decodeString(jsonRoot, "elasticSearchDateFormat", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  elasticSearchScrollSize
-      //
-
-      try
-        {
-          elasticSearchScrollSize = JSONUtilities.decodeInteger(jsonRoot, "elasticSearchScrollSize", 0);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  elasticSearchConnectTimeout
-      //
-
-      try
-        {
-          elasticSearchConnectTimeout = JSONUtilities.decodeInteger(jsonRoot, "elasticSearchConnectTimeout", 0);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  elasticSearchQueryTimeout
-      //
-
-      try
-        {
-          elasticSearchQueryTimeout = JSONUtilities.decodeInteger(jsonRoot, "elasticSearchQueryTimeout", 0);
         }
       catch (JSONUtilitiesException e)
         {
@@ -3003,6 +2941,53 @@ public class Deployment
         }
 
       //
+      //  loyaltyWorkflowToolboxSections
+      //
+
+      try
+        {
+          JSONArray loyaltyWorkflowToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "loyaltyWorkflowToolbox", new JSONArray());
+          for (int i=0; i<loyaltyWorkflowToolboxSectionValues.size(); i++)
+            {
+              JSONObject workflowToolboxSectionValueJSON = (JSONObject) loyaltyWorkflowToolboxSectionValues.get(i);
+              ToolboxSection loyaltyWorkflowToolboxSection = new ToolboxSection(workflowToolboxSectionValueJSON);
+              loyaltyWorkflowToolbox.put(loyaltyWorkflowToolboxSection.getID(), loyaltyWorkflowToolboxSection);
+            }
+
+          // Iterate over the communication channels and, for generic ones, let enrich, if needed the workflow toolbox
+          for(CommunicationChannel cc : getCommunicationChannels().values())
+            {
+              if(cc.isGeneric() && cc.getWorkflowGUINodeSectionID() != null)
+                {
+                  ToolboxSection section = loyaltyWorkflowToolbox.get(cc.getWorkflowGUINodeSectionID());
+                  if(section == null) {
+                    log.warn("Deployment: Can't retrieve ToolBoxSection for " + cc.getWorkflowGUINodeSectionID() + " for communicationChannel " + cc.getID());
+                  }
+                  else {
+                    JSONArray items = JSONUtilities.decodeJSONArray(section.getJSONRepresentation(), "items");
+                    if(items != null) {
+                      JSONObject item = new JSONObject();
+                      item.put("id", cc.getToolboxID());
+                      item.put("name", cc.getName());
+                      // ensure this box effectively exists
+                      if(getNodeTypes().get(cc.getToolboxID()) != null) {
+                        items.add(item);
+                      }
+                      else {
+                        log.warn("Deployment: Can't retrieve NodeType for " + cc.getToolboxID() + " for communicationChannel " + cc.getID());
+                      }
+                    }
+                    section.getJSONRepresentation().put("items", items);
+                  }
+                }
+            }
+        }
+      catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
       //  thirdPartyMethodPermissions
       //
 
@@ -3322,7 +3307,7 @@ public class Deployment
         }
 
       //
-      // conf for voucher
+      // conf for elasticsearch & voucher
       //
 
       try
@@ -3335,10 +3320,6 @@ public class Deployment
           voucherESCacheCleanerFrequencyInSec = JSONUtilities.decodeInteger(jsonRoot, "voucherESCacheCleanerFrequencyInSec",300);
           // an approximation of number of total concurrent process tyring to allocate Voucher in // to ES, but should not need to configure, algo should auto-adjust this
           numberConcurrentVoucherAllocationToES = JSONUtilities.decodeInteger(jsonRoot, "numberConcurrentVoucherAllocationToES",10);
-          // the default number of replicas for voucher ES indices
-          liveVoucherIndexNumberOfReplicas = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "liveVoucherIndexNumberOfReplicas","1"));
-          // the default number of shards for voucher ES indices
-          liveVoucherIndexNumberOfShards = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "liveVoucherIndexNumberOfShards","1"));
         }
       catch (JSONUtilitiesException|NumberFormatException e)
         {
