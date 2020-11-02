@@ -60,6 +60,7 @@ public class Deployment
   private static String autoProvisionedSubscriberChangeLogTopic;
   private static String rekeyedAutoProvisionedAssignSubscriberIDsStreamTopic;
   private static String cleanupSubscriberTopic;
+  private static Set<String> cleanupSubscriberElasticsearchIndexes = new HashSet<String>();
   private static String externalSubscriberID;
   private static String subscriberTraceControlAlternateID;
   private static boolean subscriberTraceControlAutoProvision;
@@ -68,7 +69,6 @@ public class Deployment
   private static String subscriberTraceTopic;
   private static String simulatedTimeTopic;
   private static Map<String,AutoProvisionEvent> autoProvisionEvents = new LinkedHashMap<String,AutoProvisionEvent>();
-  private static Set<String> subscriberESIndexes = new HashSet<String>();
   // ELASTICSEARCH
   private static int elasticsearchConnectTimeout;
   private static int elasticsearchQueryTimeout;
@@ -124,6 +124,7 @@ public class Deployment
   public static String getSubscriberTraceTopic() { return subscriberTraceTopic; }
   public static String getSimulatedTimeTopic() { return simulatedTimeTopic; }
   public static Map<String,AutoProvisionEvent> getAutoProvisionEvents() { return autoProvisionEvents; }
+
   public static Set<String> getSubscriberESIndexes() { return subscriberESIndexes; }
   // ELASTICSEARCH 
   public static String getElasticsearchDateFormat() { return elasticsearchDateFormat; }
@@ -147,6 +148,7 @@ public class Deployment
   public static int getElasticsearchRetentionDaysCampaigns() { return elasticsearchRetentionDaysCampaigns; }
   public static int getElasticsearchRetentionDaysBulkCampaigns() { return elasticsearchRetentionDaysBulkCampaigns; }
   public static int getElasticsearchRetentionDaysExpiredVouchers() { return elasticsearchRetentionDaysExpiredVouchers; }  
+  public static Set<String> getCleanupSubscriberElasticsearchIndexes() { return cleanupSubscriberElasticsearchIndexes; }
   
   /*****************************************
   *
@@ -779,29 +781,29 @@ public class Deployment
       }
 
     //
-    //  subscriberESIndexes
+    //  cleanupSubscriberElasticsearchIndexes
     //
 
     try
       {
         //
-        //  subscriberESIndexes (evolution)
+        //  cleanupSubscriberElasticsearchIndexes (evolution)
         //
 
-        JSONArray subscriberESIndexesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "subscriberESIndexes", new JSONArray());
+        JSONArray subscriberESIndexesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "cleanupSubscriberElasticsearchIndexes", new JSONArray());
         for (int i=0; i<subscriberESIndexesJSON.size(); i++)
           {
-            subscriberESIndexes.add((String) subscriberESIndexesJSON.get(i));
+            cleanupSubscriberElasticsearchIndexes.add((String) subscriberESIndexesJSON.get(i));
           }
 
         //
-        //  deploymentSubscriberESIndexes (deployment)
+        //  deploymentCleanupSubscriberElasticsearchIndexes (deployment)
         //
 
-        JSONArray deploymentSubscriberESIndexesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "deploymentSubscriberESIndexes", new JSONArray());
+        JSONArray deploymentSubscriberESIndexesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "deploymentCleanupSubscriberElasticsearchIndexes", new JSONArray());
         for (int i=0; i<deploymentSubscriberESIndexesJSON.size(); i++)
           {
-            subscriberESIndexes.add((String) deploymentSubscriberESIndexesJSON.get(i));
+            cleanupSubscriberElasticsearchIndexes.add((String) deploymentSubscriberESIndexesJSON.get(i));
           }            
       }
     catch (JSONUtilitiesException e)

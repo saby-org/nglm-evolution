@@ -100,6 +100,11 @@
   
   "purchaseTimeoutMsComment" : "timeout for completion when calling purchase in sync mode",
   "purchaseTimeoutMs" : 15000,
+  
+  "cleanupSubscriberElasticsearchIndexes" :
+  [
+    "subscriberprofile"
+  ],
 
   "emptyTopic"                                           : "${topic.empty}",
   "journeyTopic"                                         : "${topic.journey}",
