@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -222,6 +223,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   //
 
   private static ConnectSerde<Journey> serde = new ConnectSerde<Journey>(schema, false, Journey.class, Journey::pack, Journey::unpack);
+  private static Collection<Object> p2;
 
   //
   //  accessor
@@ -1269,7 +1271,23 @@ public class Journey extends GUIManagedObject implements StockableItem
                 break;
 
               case BulkCampaign:
-                if (this.journeyParameters.size() > 0 && this.journeyParameters.size() != this.boundParameters.size()) throw new GUIManagerException("autoTargeted Journey may not have parameters", this.getJourneyID());
+                if (this.journeyParameters.size() > 0 && this.journeyParameters.size() != this.boundParameters.size())
+                  {
+                    if (log.isTraceEnabled())
+                      {
+                        log.trace("journeyParameters : " + journeyParameters.size() + " values :");
+                        for (CriterionField p1 : this.journeyParameters.values())
+                          {
+                            log.trace("  " + p1.getID()+ " " + p1.getDisplay() + " " + p1.toString());
+                          }
+                        log.trace("boundParameters : " + boundParameters.size() + " values :");
+                        for (Object p2 : this.boundParameters.values())
+                          {
+                            log.trace("  " + p2.getClass().getCanonicalName() + " : " + p2.toString());
+                          }
+                      }
+                    throw new GUIManagerException("autoTargeted Journey may not have parameters", this.getJourneyID());
+                  }
                 break;
             }
           break;
