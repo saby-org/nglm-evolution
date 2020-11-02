@@ -125,7 +125,6 @@ public class Deployment
   public static String getSimulatedTimeTopic() { return simulatedTimeTopic; }
   public static Map<String,AutoProvisionEvent> getAutoProvisionEvents() { return autoProvisionEvents; }
 
-  public static Set<String> getSubscriberESIndexes() { return subscriberESIndexes; }
   // ELASTICSEARCH 
   public static String getElasticsearchDateFormat() { return elasticsearchDateFormat; }
   public static int getElasticsearchScrollSize() {return elasticsearchScrollSize; }
