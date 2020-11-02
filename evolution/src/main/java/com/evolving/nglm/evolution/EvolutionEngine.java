@@ -7895,7 +7895,7 @@ public class EvolutionEngine
             }
         }
       actions.add(voucherActionEvent);
-      if (log.isDebugEnabled()) log.debug("VoucherAction {}, voucherActionEvent is {} and supplier is {}", operation, voucherActionEvent, supplier);
+      if (log.isDebugEnabled()) log.debug("VoucherActionManager - VoucherAction {}, voucherActionEvent is {} and supplier is {}", operation, voucherActionEvent, supplier);
       
       /*****************************************
       *
