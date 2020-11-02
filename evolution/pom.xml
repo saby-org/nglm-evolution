@@ -3,21 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>1.4.5_1-SNAPSHOT</version>
-  <version>1.4.5_2-SNAPSHOT</version>
-  <version>1.4.5_1-SNAPSHOT</version>
-  <version>release_1.4.5_0-SNAPSHOT</version>
-  <version>1.4.5_1-SNAPSHOT</version>
-  <version>1.4.5_1-SNAPSHOT</version>
-  <version>release_1.4.5_1-SNAPSHOT</version>
-  <version>1.4.5_1-SNAPSHOT</version>
-  <version>EVPRO-567-SNAPSHOT</version>
-  <version>1.4.5_1-524-SNAPSHOT</version>
-  <version>1.4.5_1-577-SNAPSHOT</version>
-  <version>release_1.4.5_0-EVPRO-556-1-SNAPSHOT</version>
-  <version>release_1.4.5_1-EVPRO-617-SNAPSHOT</version>
-  <version>EVPRO-646-SNAPSHOT</version>
-  <version>EVPRO-433-SNAPSHOT</version>
+  <version>1.4.5_3-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -41,13 +27,13 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.5_0-SNAPSHOT</version>
+    <version>1.4.5_3-SNAPSHOT</version>
   </parent>
 
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>1.4.5_0-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.4.5_3-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.4.26</gui-fwk.version>
