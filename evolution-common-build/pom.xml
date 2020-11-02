@@ -36,8 +36,6 @@
 
     <!-- dependencies -->
     <flyway.version>qaveon-dnbo-2.5.0.10.4.6</flyway.version>
-    <flyway.gui.version>1.0.55</flyway.gui.version>
-    <flyway.gui.version>1.0.57</flyway.gui.version>
     <flyway.gui.version>1.0.58</flyway.gui.version>
     
     <!-- evolution-common-build -->
