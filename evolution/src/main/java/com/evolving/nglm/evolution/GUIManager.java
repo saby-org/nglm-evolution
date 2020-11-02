@@ -21728,9 +21728,23 @@ public class GUIManager
      *
      ****************************************/
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
+    String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);    
     Boolean viewOffersOnly = JSONUtilities.decodeBoolean(jsonRoot, "viewOffersOnly", Boolean.FALSE);
-
+    String supplierID = JSONUtilities.decodeString(jsonRoot, "supplier", false);
+    Supplier supplier = null;
+    
+    /*****************************************
+    *
+    *  getSupplier
+    *
+    *****************************************/
+    if (supplierID != null) {
+      GUIManagedObject supplierObject = supplierService.getStoredSupplier(supplierID);
+      if (supplierObject instanceof Supplier) {
+        supplier = (Supplier) supplierObject;
+      }
+    }
+    
     /*****************************************
      *
      *  resolve subscriberID
@@ -21828,7 +21842,7 @@ public class GUIManager
                   catalogCharacteristicService,
                   scoringStrategyService,
                   subscriberGroupEpochReader,
-                  segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
+                  segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, supplier
                   );
 
               if (presentedOffers.isEmpty())
@@ -24631,6 +24645,23 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                             result.add(JSONUtilities.encodeObject(availableValue));
                             break;
                         }
+                    }
+                }
+            }
+          break;
+          
+        case "suppliers":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject supplierUnchecked : supplierService.getStoredSuppliers())
+                {
+                  if (supplierUnchecked.getAccepted())
+                    {
+                      Supplier supplier = (Supplier) supplierUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", supplier.getSupplierID());
+                      availableValue.put("display", supplier.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
             }

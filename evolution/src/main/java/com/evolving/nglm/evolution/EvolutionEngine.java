@@ -174,6 +174,7 @@ public class EvolutionEngine
   private static JourneyObjectiveService journeyObjectiveService;
   private static SegmentationDimensionService segmentationDimensionService;
   private static PresentationStrategyService presentationStrategyService;
+  private static SupplierService supplierService;
   private static ScoringStrategyService scoringStrategyService;
   private static OfferService offerService;
   private static SalesChannelService salesChannelService;
@@ -401,6 +402,13 @@ public class EvolutionEngine
 
     presentationStrategyService = new PresentationStrategyService(bootstrapServers, "evolutionengine-presentationstrategyservice-" + evolutionEngineKey, Deployment.getPresentationStrategyTopic(), false);
     presentationStrategyService.start();
+    
+    //
+    //  presentationStrategyService
+    //
+
+    supplierService = new SupplierService(bootstrapServers, "evolutionengine-supplierservice-" + evolutionEngineKey, Deployment.getSupplierTopic(), false);
+    supplierService.start();
 
     //
     //  scoringStrategyService
@@ -1355,7 +1363,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, subscriberProfileServer, internalServer, stockService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, supplierService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, subscriberProfileServer, internalServer, stockService));
 
     /*****************************************
     *
@@ -1657,6 +1665,7 @@ public class EvolutionEngine
     private JourneyObjectiveService journeyObjectiveService;
     private SegmentationDimensionService segmentationDimensionService;
     private PresentationStrategyService presentationStrategyService;
+    private SupplierService supplierService;
     private ScoringStrategyService scoringStrategyService;
     private OfferService offerService;
     private SalesChannelService salesChannelService;
@@ -1682,7 +1691,7 @@ public class EvolutionEngine
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, HttpServer subscriberProfileServer, HttpServer internalServer, StockMonitor stockService)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, SupplierService supplierService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, HttpServer subscriberProfileServer, HttpServer internalServer, StockMonitor stockService)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
@@ -1694,6 +1703,7 @@ public class EvolutionEngine
       this.journeyObjectiveService = journeyObjectiveService;
       this.segmentationDimensionService = segmentationDimensionService;
       this.presentationStrategyService = presentationStrategyService;
+      this.supplierService = supplierService;
       this.scoringStrategyService = scoringStrategyService;
       this.offerService = offerService;
       this.salesChannelService = salesChannelService;
@@ -1741,6 +1751,7 @@ public class EvolutionEngine
       journeyObjectiveService.stop();
       segmentationDimensionService.stop();
       presentationStrategyService.stop();
+      supplierService.stop();
       scoringStrategyService.stop();
       offerService.stop();
       salesChannelService.stop();
@@ -1811,7 +1822,7 @@ public class EvolutionEngine
     SubscriberState subscriberState = (currentSubscriberState != null) ? new SubscriberState(currentSubscriberState) : new SubscriberState(evolutionEvent.getSubscriberID());
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
-    EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, uniqueKeyServer, SystemTime.getCurrentTime());
+    EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, supplierService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, uniqueKeyServer, SystemTime.getCurrentTime());
     boolean subscriberStateUpdated = (currentSubscriberState != null) ? false : true;
 
     if(log.isTraceEnabled()) log.trace("updateSubscriberState on event "+evolutionEvent.getClass().getSimpleName()+ " for "+evolutionEvent.getSubscriberID());
@@ -6477,6 +6488,7 @@ public class EvolutionEngine
     private DeliverableService deliverableService;
     private SegmentationDimensionService segmentationDimensionService;
     private PresentationStrategyService presentationStrategyService;
+    private SupplierService supplierService;
     private ScoringStrategyService scoringStrategyService;
     private OfferService offerService;
     private SalesChannelService salesChannelService;
@@ -6501,7 +6513,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    public EvolutionEventContext(SubscriberState subscriberState, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
+    public EvolutionEventContext(SubscriberState subscriberState, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, SupplierService supplierService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
     {
       this.subscriberState = subscriberState;
       this.extendedSubscriberProfile = extendedSubscriberProfile;
@@ -6511,6 +6523,7 @@ public class EvolutionEngine
       this.deliverableService = deliverableService;
       this.segmentationDimensionService = segmentationDimensionService;
       this.presentationStrategyService = presentationStrategyService;
+      this.supplierService = supplierService;
       this.scoringStrategyService = scoringStrategyService;
       this.offerService = offerService;
       this.salesChannelService = salesChannelService;
@@ -6544,6 +6557,7 @@ public class EvolutionEngine
     public DeliverableService getDeliverableService() { return deliverableService; }
     public SegmentationDimensionService getSegmentationDimensionService() { return segmentationDimensionService; }
     public PresentationStrategyService getPresentationStrategyService() { return presentationStrategyService; }
+    public SupplierService getSupplierService() { return supplierService; }
     public ScoringStrategyService getScoringStrategyService() { return scoringStrategyService; }
     public OfferService getOfferService() { return offerService; }
     public SalesChannelService getSalesChannelService() { return salesChannelService; }

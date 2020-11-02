@@ -3,6 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
+  <version>release_1.4.5_0-SNAPSHOT</version>
   <version>1.4.5_1-SNAPSHOT</version>
   <version>1.4.5_1-SNAPSHOT</version>
   <version>release_1.4.5_1-SNAPSHOT</version>
@@ -10,6 +11,7 @@
   <version>EVPRO-567-SNAPSHOT</version>
   <version>1.4.5_1-524-SNAPSHOT</version>
   <version>1.4.5_1-577-SNAPSHOT</version>
+  <version>release_1.4.5_0-EVPRO-556-1-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -42,7 +44,9 @@
 
     <!-- dependencies -->
     <flyway.version>qaveon-dnbo-2.5.0.10.4.6</flyway.version>
+    <flyway.gui.version>1.0.55</flyway.gui.version>
     <flyway.gui.version>1.0.57</flyway.gui.version>
+    <flyway.gui.version>1.0.58</flyway.gui.version>
     
     <!-- evolution-common-build -->
     <common.build.phase.generate-evolution-scripts>none</common.build.phase.generate-evolution-scripts>

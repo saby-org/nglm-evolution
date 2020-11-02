@@ -2887,6 +2887,7 @@ public class ThirdPartyManager
     String startDateString = readString(jsonRoot, "startDate", false);
     String endDateString = readString(jsonRoot, "endDate", false);
     String offerObjective = readString(jsonRoot, "objective", false);
+    String supplier = readString(jsonRoot, "supplier", false);
     //String userID = readString(jsonRoot, "loginName", true);
     String parentResellerID = "";
     Date now = SystemTime.getCurrentTime();
@@ -3012,6 +3013,86 @@ public class ThirdPartyManager
                 offers = offers.stream().filter(offer -> (offer.getOfferObjectives() != null && (offer.getOfferObjectives().stream().filter(obj -> obj.getOfferObjectiveID().equals(exactOfferObjectives.getOfferObjectiveID())).count() > 0L))).collect(Collectors.toList());
 
             }
+          
+          //
+          //filter using supplier
+          //
+          
+          List<String> filteredBySupplierOfferIDs = new ArrayList<>();
+          if (supplier != null && !supplier.isEmpty())
+            {
+              for (Offer offer : offers)
+                {                    
+                  Set<OfferProduct> offerProducts = offer.getOfferProducts();
+                  Set<OfferVoucher> offerVouchers = offer.getOfferVouchers();
+                  if (offerProducts != null && offerProducts.size() != 0)
+                    {
+                      for (OfferProduct offerproduct : offerProducts)
+                        {
+                          String productID = offerproduct.getProductID();
+                          GUIManagedObject productObject = productService.getStoredProduct(productID);
+                          if (productObject != null && productObject instanceof Product)
+                            {
+                              Product product = (Product) productObject;
+                              GUIManagedObject SupplierObject = supplierService
+                                  .getStoredSupplier(product.getSupplierID());
+                              if (SupplierObject != null && SupplierObject instanceof Supplier)
+                                {
+                                  String supplierDisplay = ((Supplier) SupplierObject).getGUIManagedObjectDisplay();
+
+                                  if (supplierDisplay.equals(supplier))
+                                    {
+                                      filteredBySupplierOfferIDs.add(offer.getOfferID());
+                                      break;
+                                    }
+
+                                  else
+                                    {
+                                      if (log.isDebugEnabled())
+                                        log.debug(productObject + "is not a complete product");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                  if (offerVouchers != null && offerVouchers.size() != 0)
+                    {
+                      for (OfferVoucher offerVoucher : offerVouchers)
+                        {
+                          String voucherID = offerVoucher.getVoucherID();
+                          GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherID);
+                          if (voucherObject != null && voucherObject instanceof Voucher)
+                            {
+                              Voucher voucher = (Voucher) voucherObject;
+                              GUIManagedObject SupplierObject = supplierService
+                                  .getStoredSupplier(voucher.getSupplierID());
+                              if (SupplierObject != null && SupplierObject instanceof Supplier)
+                                {
+                                  String supplierDisplay = ((Supplier) SupplierObject).getGUIManagedObjectDisplay();
+
+                                  if (supplierDisplay.equals(supplier))
+                                    {
+                                      filteredBySupplierOfferIDs.add(offer.getOfferID());
+                                      break;
+                                    }
+
+                                  else
+                                    {
+                                      if (log.isDebugEnabled())
+                                        log.debug(voucherObject + "is not a complete voucher");
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                }
+              offers = offers.stream()
+                  .filter(offer -> (offer.getOfferID() != null) && (filteredBySupplierOfferIDs.contains(offer.getOfferID())))
+                  .collect(Collectors.toList());
+
+            }
+
           if (activeResellerAndSalesChannelIDs.containsKey("salesChannelIDsList") && (activeResellerAndSalesChannelIDs.get("salesChannelIDsList")).size() != 0)
             {
               List salesChannelIDList = activeResellerAndSalesChannelIDs.get("salesChannelIDsList");
@@ -3537,6 +3618,24 @@ public class ThirdPartyManager
    String callingChannelDisplay = JSONUtilities.decodeString(jsonRoot, "inboundChannel", false);
    
    Date now = SystemTime.getCurrentTime();
+   String supplier = JSONUtilities.decodeString(jsonRoot, "supplier", false);
+   Supplier supplierFilter = null;
+
+   /*****************************************
+    *
+    * getSupplier
+    *
+    *****************************************/
+   if (supplier != null)
+     {
+       Collection<Supplier> suppliers = supplierService.getActiveSuppliers(SystemTime.getCurrentTime());
+       for (Supplier supplierObject : suppliers) {
+         if (supplierObject.getGUIManagedObjectDisplay().equals(supplier)) {
+           supplierFilter = supplierObject;
+           break;
+         }
+       }
+     }
    
    /*****************************************
     *
@@ -3703,7 +3802,7 @@ public class ThirdPartyManager
          catalogCharacteristicService,
          scoringStrategyService,
          subscriberGroupEpochReader,
-         segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
+         segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, supplierFilter
          );
      String tokenCode = newToken.getTokenCode();
      if (presentedOffers.isEmpty())
@@ -3835,6 +3934,24 @@ public class ThirdPartyManager
    String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
    Boolean viewOffersOnly = JSONUtilities.decodeBoolean(jsonRoot, "viewOffersOnly", Boolean.FALSE);
    Date now = SystemTime.getCurrentTime();
+   String supplier = JSONUtilities.decodeString(jsonRoot, "supplier", false);
+   Supplier supplierFilter = null;
+
+   /*****************************************
+    *
+    * getSupplier
+    *
+    *****************************************/
+   if (supplier != null)
+     {
+       Collection<Supplier> suppliers = supplierService.getActiveSuppliers(SystemTime.getCurrentTime());
+       for (Supplier supplierObject : suppliers) {
+         if (supplierObject.getGUIManagedObjectDisplay().equals(supplier)) {
+           supplierFilter = supplierObject;
+           break;
+         }
+       }
+     }
    
    /*****************************************
     *
@@ -3923,7 +4040,7 @@ public class ThirdPartyManager
               catalogCharacteristicService,
               scoringStrategyService,
               subscriberGroupEpochReader,
-              segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
+              segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, supplierFilter
               );
 
           if (presentedOffers.isEmpty())

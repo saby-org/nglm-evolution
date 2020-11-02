@@ -889,7 +889,7 @@
             "mandatory": true,
             "availableValues": [ "#presentationStrategies#" ],
             "defaultValue": null
-          },
+          },              
           {
             "id": "node.parameter.tokentype",
             "display": "Token Type",
@@ -926,6 +926,16 @@
               { "id" : "month",  "display" : "Months" }
             ],
             "defaultValue" : null
+          },
+          {
+            "id": "node.parameter.supplier",
+            "display": "Supplier Filter",
+            "dataType": "string",
+            "width": "100%",
+            "multiple": false,
+            "mandatory": false,
+            "availableValues": [ "#suppliers#" ],
+            "defaultValue": null
           }
         ],
         "action":
@@ -968,7 +978,7 @@
             "mandatory": true,
             "availableValues": [ "#presentationStrategies#" ],
             "defaultValue": null
-          },
+          },          
           {
             "id": "node.parameter.tokentype",
             "display": "Token Type",
@@ -1005,7 +1015,17 @@
               { "id" : "month",  "display" : "Months" }
             ],
             "defaultValue" : null
-          }
+          },
+          {
+            "id": "node.parameter.supplier",
+            "display": "Supplier Filter",
+            "dataType": "string",
+            "width": "100%",
+            "multiple": false,
+            "mandatory": false,
+            "availableValues": [ "#suppliers#" ],
+            "defaultValue": null
+          } 
         ],
         "action":
         {
