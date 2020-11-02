@@ -124,7 +124,7 @@ public abstract class CriterionFieldRetriever
   //
 
   public static Object getSubscriberMessageParameterTag(SubscriberEvaluationRequest evaluationRequest, String fieldName) {
-    
+    Object result = null;
     String tagJourneyNodeParameterName = evaluationRequest.getMiscData().get("tagJourneyNodeParameterName");
     if(tagJourneyNodeParameterName == null) {
       tagJourneyNodeParameterName = "node.parameter.message"; // compatibility with OLD SMS
@@ -141,7 +141,8 @@ public abstract class CriterionFieldRetriever
     }
     SimpleParameterMap parameterMap = subscriberMessage.getParameterTags();
 
-    return evaluateParameter(evaluationRequest, parameterMap.get(fieldName)); 
+    result = evaluateParameter(evaluationRequest, parameterMap.get(fieldName)); 
+    return result;
     }
   
   //
@@ -680,7 +681,10 @@ public abstract class CriterionFieldRetriever
   //  getEvaluationJourney
   //
 
-  public static Object getEvaluationJourney(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return "evaluation.variable.journey"; }
+  public static Object getEvaluationJourney(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
+  { 
+    return "evaluation.variable.journey"; 
+  }
 
   //
   //  getEvaluationJourneyStatus
