@@ -87,6 +87,7 @@ import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
@@ -225,6 +226,18 @@ public class EvolutionEngine
 
   private String evolutionEngineKey;
   public String getEvolutionEngineKey(){return evolutionEngineKey;}
+  private static EvolutionEngineEventDeclaration voucherActionEventDeclaration = null;
+  static
+    {
+      try
+        {
+          voucherActionEventDeclaration = new EvolutionEngineEventDeclaration("VoucherAction", "com.evolving.nglm.evolution.VoucherAction", Deployment.getVoucherActionTopic(), EventRule.Standard, null);
+        } 
+      catch (GUIManagerException e)
+        {
+          e.printStackTrace();
+        }
+    }
   
 
   /****************************************
@@ -664,7 +677,9 @@ public class EvolutionEngine
 
     Map<EvolutionEngineEventDeclaration,String> evolutionEngineEventTopics = new HashMap<EvolutionEngineEventDeclaration,String>();
     Map<EvolutionEngineEventDeclaration,ConnectSerde<? extends SubscriberStreamEvent>> evolutionEngineEventSerdes = new HashMap<EvolutionEngineEventDeclaration,ConnectSerde<? extends SubscriberStreamEvent>>();
-    for (EvolutionEngineEventDeclaration evolutionEngineEvent : Deployment.getEvolutionEngineEvents().values())
+    Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents = Deployment.getEvolutionEngineEvents();
+    evolutionEngineEvents.put(voucherActionEventDeclaration.getName(), voucherActionEventDeclaration);
+    for (EvolutionEngineEventDeclaration evolutionEngineEvent : evolutionEngineEvents.values())
       {
         switch (evolutionEngineEvent.getEventRule())
           {
@@ -804,7 +819,9 @@ public class EvolutionEngine
 
     List<KStream<StringKey, ? extends SubscriberStreamEvent>> standardEvolutionEngineEventStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
     List<KStream<StringKey, ? extends SubscriberStreamEvent>> extendedProfileEvolutionEngineEventStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
-    for (EvolutionEngineEventDeclaration evolutionEngineEventDeclaration : Deployment.getEvolutionEngineEvents().values())
+    Map<String,EvolutionEngineEventDeclaration> evolutionEngineEventsDeclr = Deployment.getEvolutionEngineEvents();
+    evolutionEngineEventsDeclr.put(voucherActionEventDeclaration.getName(), voucherActionEventDeclaration);
+    for (EvolutionEngineEventDeclaration evolutionEngineEventDeclaration : evolutionEngineEventsDeclr.values())
       {
         KStream<StringKey, ? extends SubscriberStreamEvent> evolutionEngineEventStream;
         if (evolutionEngineEventTopics.get(evolutionEngineEventDeclaration) != null)
