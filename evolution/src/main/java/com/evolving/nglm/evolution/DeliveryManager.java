@@ -475,23 +475,23 @@ public abstract class DeliveryManager
       public void run() {
         long startTime = System.currentTimeMillis();
         log.info("start execution");
-        int removed=0;
+        int nbTimeOut=0;
         try{
           if(waitingForCorrelatorUpdate!=null){
-            Set<String> toRemove = new HashSet<>();
+            List<DeliveryRequest> toSendBackTimeout = new ArrayList<>();
             // concurrent scan non locking (no clue if this is risky)
-            waitingForCorrelatorUpdate.entrySet().forEach(entry->{if(entry.getValue().getTimeout().before(SystemTime.getCurrentTime())) toRemove.add(entry.getKey());});
-            synchronized (this){
-              for(String key:toRemove){
-                waitingForCorrelatorUpdate.remove(key);
-                removed++;
-              }
+            waitingForCorrelatorUpdate.entrySet().forEach(entry->{if(entry.getValue().getTimeout().before(SystemTime.getCurrentTime())) toSendBackTimeout.add(entry.getValue());});
+            for(DeliveryRequest deliveryRequest:toSendBackTimeout){
+              deliveryRequest.setDeliveryStatus(DeliveryStatus.FailedTimeout);
+              // note there is no synchronisation so the request response might have been sent in the mean time, which should be OK and just throw then an info log
+              completeRequest(deliveryRequest);
+              nbTimeOut++;
             }
           }
         }catch (Exception ex){
           log.error("error during cleaning",ex);
         }
-        log.info("finish execution removing {} entries in {} ms",removed,System.currentTimeMillis()-startTime);
+        log.info("finish execution, sent {} timeout request in {} ms",nbTimeOut,System.currentTimeMillis()-startTime);
       }
     }, correlatorCleanerFrequencyMilliSeconds, correlatorCleanerFrequencyMilliSeconds);
 
