@@ -7878,7 +7878,6 @@ public class EvolutionEngine
           catch (ThirdPartyManagerException e) 
             {
               voucherActionEvent.setActionStatus(e.getMessage());
-              if (log.isDebugEnabled()) log.debug("VoucherAction {} failed as voucherCode {} status is {}", operation, voucherCode, e.getMessage());
             }
         }
       else if (operation == Operation.Validate)
@@ -7893,12 +7892,10 @@ public class EvolutionEngine
           catch (ThirdPartyManagerException e)
             {
               voucherActionEvent.setActionStatus(e.getMessage());
-              if (log.isDebugEnabled()) log.debug("VoucherAction {} failed as voucherCode {} status is {}", operation, voucherCode, e.getMessage());
             }
         }
       actions.add(voucherActionEvent);
-      
-      if (log.isDebugEnabled()) log.debug("VoucherAction {} subscriberEvaluationRequest.getJourneyState().getVoucherChanges() {} and voucherActionEvent is {}", operation, subscriberEvaluationRequest.getJourneyState().getVoucherChanges(), voucherActionEvent);
+      if (log.isDebugEnabled()) log.debug("VoucherAction {}, voucherActionEvent is {} and supplier is {}", operation, voucherActionEvent, supplier);
       
       /*****************************************
       *
