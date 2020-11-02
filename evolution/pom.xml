@@ -30,6 +30,12 @@
     <version>1.4.5_3-SNAPSHOT</version>
   </parent>
 
+  <scm>
+    <connection>scm:git:https://foo@git.lumata.int/scm/evcor/nglm-evolution.git</connection>
+    <developerConnection>scm:git:https://foo@git.lumata.int/scm/evcor/nglm-evolution.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
+
   <properties>
 
     <!-- core version -->
@@ -171,6 +177,24 @@
       </plugin>
 
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>buildnumber-maven-plugin</artifactId>
+        <version>1.3</version>
+        <executions>
+          <execution>
+            <phase>validate</phase>
+            <goals>
+              <goal>create</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <doCheck>false</doCheck>
+          <doUpdate>false</doUpdate>
+        </configuration>
+      </plugin>
+
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <version>3.0.2</version>
         <artifactId>maven-jar-plugin</artifactId>
@@ -179,6 +203,11 @@
             <manifest>
               <addClasspath>true</addClasspath>
             </manifest>
+            <manifestEntries>
+              <Commit>${buildNumber}</Commit>
+              <Branch>${scmBranch}</Branch>
+              <Build-Time>${maven.build.timestamp}</Build-Time>
+            </manifestEntries> 
           </archive>
         </configuration>
       </plugin>
