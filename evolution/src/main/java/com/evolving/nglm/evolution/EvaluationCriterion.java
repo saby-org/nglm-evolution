@@ -47,6 +47,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionContext;
 import com.evolving.nglm.evolution.Expression.ExpressionDataType;
@@ -2132,28 +2133,57 @@ public class EvaluationCriterion
     String pointID = fieldNameMatcher.group(1);
     String criterionFieldBaseName = fieldNameMatcher.group(2);
     QueryBuilder queryPointID = QueryBuilders.termQuery("pointBalances.pointID", pointID);
+    QueryBuilder queryPointFluctuations = null;
     QueryBuilder queryInternal = null;
     switch (criterionFieldBaseName)
     {
-      case "balance":
+      case "balance": // point.POINT_ID.balance
         queryInternal = buildCompareQuery("pointBalances." + SubscriberProfile.CURRENT_BALANCE, ExpressionDataType.IntegerExpression);
         break;
 
-      case "earliestexpirydate":
+      case "earliestexpirydate": // point.POINT_ID.earliestexpirydate
         queryInternal = buildCompareQuery("pointBalances." + SubscriberProfile.EARLIEST_EXPIRATION_DATE, ExpressionDataType.DateExpression);
         break;
 
-      case "earliestexpiryquantity":
+      case "earliestexpiryquantity": // point.POINT_ID.earliestexpiryquantity
         queryInternal = buildCompareQuery("pointBalances." + SubscriberProfile.EARLIEST_EXPIRATION_QUANTITY, ExpressionDataType.IntegerExpression);
         break;
         
-      default:
-        throw new CriterionException("Internal error, unsupported criterion field : " + esField);
+      default:  // point.POINT_ID.expired.last7days
+        String searchStringForPointFluctuations = "pointFluctuations." + pointID + ".";
+        fieldNamePattern = Pattern.compile("^([^.]+)\\.([^.]+)$");
+        fieldNameMatcher = fieldNamePattern.matcher(criterionFieldBaseName);
+        if (! fieldNameMatcher.find()) throw new CriterionException("invalid criterionFieldBaseName field " + criterionFieldBaseName);
+        String nature = fieldNameMatcher.group(1); // earned, consumed, expired
+        String interval = fieldNameMatcher.group(2); // yesterday, last7days, last30days
+        switch (interval)
+        {
+          case "yesterday":
+          case "last7days":
+          case "last30days":
+            searchStringForPointFluctuations += interval + "."; // pointFluctuations.POINT_ID.yesterday.earned
+            break;
+          default: throw new CriterionException("invalid criterionField interval " + interval + " (should be yesterday, last7days, last30days)");
+        }
+        switch (nature)
+        {
+          case "earned"   :
+          case "expired"  :
+            searchStringForPointFluctuations += nature;
+            break;
+
+          case "consumed" :
+            searchStringForPointFluctuations += "redeemed";  // different name in criteria and in ElasticSearch, don't know why (??)
+            break;
+
+          default: throw new CriterionException("invalid criterionField nature " + nature + " (should be earned, consumed, expired)");
+        }
+        return buildCompareQuery(searchStringForPointFluctuations, ExpressionDataType.IntegerExpression);
     }
     QueryBuilder query = QueryBuilders.nestedQuery("pointBalances",
-                                          QueryBuilders.boolQuery()
-                                                          .filter(queryPointID)
-                                                          .filter(queryInternal), ScoreMode.Total);
+            QueryBuilders.boolQuery()
+            .filter(queryPointID)
+            .filter(queryInternal), ScoreMode.Total);
     return query;
   }
 
@@ -2184,6 +2214,22 @@ public class EvaluationCriterion
 
       case "rewardpoint.balance":
         query = handleLoyaltyProgramField("loyaltyPrograms.rewardPointBalance", esField, queryLPID, ExpressionDataType.IntegerExpression);
+        break;
+        
+      case "tierupdatedate":
+        query = handleLoyaltyProgramField("loyaltyPrograms.tierUpdateDate", esField, queryLPID, ExpressionDataType.DateExpression);
+        break;
+
+      case "optindate":
+        query = handleLoyaltyProgramField("loyaltyPrograms.loyaltyProgramEnrollmentDate", esField, queryLPID, ExpressionDataType.DateExpression);
+        break;
+
+      case "optoutdate":
+        query = handleLoyaltyProgramField("loyaltyPrograms.loyaltyProgramExitDate", esField, queryLPID, ExpressionDataType.DateExpression);
+        break;
+
+      case "tierupdatetype":
+        query = handleLoyaltyProgramField("loyaltyPrograms.tierChangeType", esField, queryLPID, ExpressionDataType.StringExpression);
         break;
 
       default:

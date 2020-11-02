@@ -4,10 +4,12 @@
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
   <version>1.4.5_1-SNAPSHOT</version>
+  <version>1.4.5_1-SNAPSHOT</version>
   <version>release_1.4.5_1-SNAPSHOT</version>
   <version>1.4.5_1-SNAPSHOT</version>
   <version>EVPRO-567-SNAPSHOT</version>
   <version>1.4.5_1-524-SNAPSHOT</version>
+  <version>1.4.5_1-577-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
