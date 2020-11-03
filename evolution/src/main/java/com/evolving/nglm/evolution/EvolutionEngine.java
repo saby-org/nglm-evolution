@@ -220,7 +220,6 @@ public class EvolutionEngine
   private static StockMonitor stockService;
   private static PropensityService propensityService;
   private static RetentionService retentionService;
-  private static SupplierService supplierService;
 
   private static final int MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES = 5;
   private static Date kafkaSizeErrorLogDate = SystemTime.getCurrentTime();
