@@ -27273,6 +27273,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       if(log.isDebugEnabled()) log.debug("recurrentJourneys {}", recurrentJourneys);
       for (Journey recurrentJourney : recurrentJourneys)
         {
+          if (!recurrentJourney.getRecurrenceActive())
+            {
+              log.debug("recurrence is not active for {} - child will not be created", recurrentJourney.getGUIManagedObjectDisplay());
+              continue;
+            }
+          
           List<Date> journeyCreationDates = new ArrayList<Date>();
           JourneyScheduler journeyScheduler = recurrentJourney.getJourneyScheduler();
           int limitCount = journeyScheduler.getNumberOfOccurrences() - recurrentJourney.getLastCreatedOccurrenceNumber();

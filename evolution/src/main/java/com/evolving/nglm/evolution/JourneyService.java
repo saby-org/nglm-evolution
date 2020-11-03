@@ -100,6 +100,20 @@ public class JourneyService extends GUIService
   @Override protected JSONObject getJSONRepresentation(GUIManagedObject guiManagedObject)
   {
     JSONObject result = super.getJSONRepresentation(guiManagedObject);
+    boolean recurrence = JSONUtilities.decodeBoolean(result, "recurrence", Boolean.FALSE);
+    Integer lastCompletedOccurrenceNumber =  null;
+    if (recurrence)
+      {
+        Collection<Journey> allRecs = getAllRecurrentJourneysByID(guiManagedObject.getGUIManagedObjectID(), true);
+        
+        //
+        //  filter completed
+        //
+        
+        allRecs = allRecs.stream().filter(journey -> JourneyStatus.Complete == getJourneyStatus(journey)).collect(Collectors.toList());
+        lastCompletedOccurrenceNumber =  allRecs.size();
+      }
+    result.put("lastCompletedOccurrenceNumber", lastCompletedOccurrenceNumber);
     result.put("status", getJourneyStatus(guiManagedObject).getExternalRepresentation());
     return result;
   }
@@ -121,20 +135,13 @@ public class JourneyService extends GUIService
     boolean recurrence = JSONUtilities.decodeBoolean(fullJSON, "recurrence", Boolean.FALSE);
     Integer occurrenceNumber =  JSONUtilities.decodeInteger(fullJSON, "occurrenceNumber", recurrence);
     JSONObject scheduler = JSONUtilities.decodeJSONObject(fullJSON, "scheduler", recurrence);
-    Integer numberOfOccurrences =  null;
-    Integer lastCompletedOccurrenceNumber =  null;
-    if (recurrence)
-      {
-        Collection<Journey> allRecs = getAllRecurrentJourneysByID(guiManagedObject.getGUIManagedObjectID(), true);
-        
-        //
-        //  filter completed
-        //
-        
-        allRecs = allRecs.stream().filter(journey -> JourneyStatus.Complete == getJourneyStatus(journey)).collect(Collectors.toList());
-        numberOfOccurrences =  JSONUtilities.decodeInteger(scheduler, "numberOfOccurrences", recurrence);
-        lastCompletedOccurrenceNumber =  allRecs.size();
-      }
+    Integer numberOfOccurrences = JSONUtilities.decodeInteger(scheduler, "numberOfOccurrences", recurrence);
+    Integer lastCompletedOccurrenceNumber = JSONUtilities.decodeInteger(scheduler, "lastCompletedOccurrenceNumber", false);
+    boolean recurrenceActive = JSONUtilities.decodeBoolean(fullJSON, "recurrenceActive", Boolean.FALSE);
+    
+    //
+    //  result
+    //
     
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("status", getJourneyStatus(guiManagedObject).getExternalRepresentation());
@@ -142,6 +149,7 @@ public class JourneyService extends GUIService
     result.put("occurrenceNumber", occurrenceNumber);
     result.put("numberOfOccurrences", numberOfOccurrences);
     result.put("lastCompletedOccurrenceNumber", lastCompletedOccurrenceNumber);
+    result.put("recurrenceActive", recurrenceActive);
     
     if (guiManagedObject.getGUIManagedObjectType().equals(GUIManagedObjectType.BulkCampaign))
       {
