@@ -6500,6 +6500,7 @@ public class GUIManager
     JSONObject journeyScheduler = JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence);
     Integer lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false);
     if (recurrence && lastCreatedOccurrenceNumber == null) lastCreatedOccurrenceNumber = 1;
+    boolean recurrenceActive = JSONUtilities.decodeBoolean(jsonRoot, "recurrenceActive", Boolean.FALSE);
     
     /*****************************************
     *
@@ -6596,6 +6597,7 @@ public class GUIManager
         campaignJSONRepresentation.put("occurrenceNumber", occurrenceNumber);
         if (journeyScheduler != null)campaignJSONRepresentation.put("scheduler", JSONUtilities.encodeObject(journeyScheduler));
         campaignJSONRepresentation.put("lastCreatedOccurrenceNumber", lastCreatedOccurrenceNumber);
+        campaignJSONRepresentation.put("recurrenceActive", recurrenceActive);
 
         //
         //  campaignJSON
