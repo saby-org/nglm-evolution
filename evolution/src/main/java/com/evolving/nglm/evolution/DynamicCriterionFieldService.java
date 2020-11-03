@@ -48,6 +48,7 @@ public class DynamicCriterionFieldService extends GUIService
   *
   *****************************************/
 
+  @Deprecated // groupID not needed
   public DynamicCriterionFieldService(String bootstrapServers, String groupID, String dynamicCriterionFieldTopic, boolean masterService, DynamicCriterionFieldListener dynamicCriterionFieldListener, boolean notifyOnSignificantChange)
   {
     super(bootstrapServers, "DynamicCriterionFieldService", groupID, dynamicCriterionFieldTopic, masterService, getSuperListener(dynamicCriterionFieldListener), "putDynamicCriterionField", "removeDynamicCriterionField", notifyOnSignificantChange);
@@ -57,6 +58,7 @@ public class DynamicCriterionFieldService extends GUIService
   //  constructor
   //
 
+  @Deprecated // groupID not needed
   public DynamicCriterionFieldService(String bootstrapServers, String groupID, String dynamicCriterionFieldTopic, boolean masterService, DynamicCriterionFieldListener dynamicCriterionFieldListener)
   {
     this(bootstrapServers, groupID, dynamicCriterionFieldTopic, masterService, dynamicCriterionFieldListener, true);
@@ -66,6 +68,7 @@ public class DynamicCriterionFieldService extends GUIService
   //  constructor
   //
 
+  @Deprecated // groupID not needed
   public DynamicCriterionFieldService(String bootstrapServers, String groupID, String dynamicCriterionFieldTopic, boolean masterService)
   {
     this(bootstrapServers, groupID, dynamicCriterionFieldTopic, masterService, (DynamicCriterionFieldListener) null, true);

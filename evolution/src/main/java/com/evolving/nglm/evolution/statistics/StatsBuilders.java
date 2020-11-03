@@ -13,7 +13,8 @@ public class StatsBuilders {
     commoditytype,
 	operation,
     module,
-    channel
+    channel,
+    priority
   }
   // keep different status used at one place
   public enum STATUS{

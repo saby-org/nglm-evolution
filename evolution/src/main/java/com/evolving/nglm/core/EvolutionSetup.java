@@ -6,6 +6,9 @@
 
 package com.evolving.nglm.core;
 
+import com.evolving.nglm.evolution.*;
+import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.kafka.Topic;
 import kafka.zk.AdminZkClient;
 import kafka.zk.KafkaZkClient;
 
@@ -35,6 +38,7 @@ import org.apache.kafka.clients.admin.TopicListing;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.utils.Time;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -48,15 +52,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -73,7 +69,7 @@ public class EvolutionSetup
    * @throws InterruptedException
    *
    ****************************************/
-  public static void main(String[] args) throws InterruptedException, ExecutionException 
+  public static void main(String[] args) throws InterruptedException, ExecutionException
   {
     //
     // extracts files from args
@@ -83,7 +79,7 @@ public class EvolutionSetup
     String elasticsearchCreateFilePath = rootPath + "elasticsearch/create";
     String elasticsearchUpdateFilePath = rootPath + "elasticsearch/update";
     String connectorsFilePath = rootPath + "connectors/connectors";
-    
+
     //
     // init utilities
     //
@@ -93,12 +89,12 @@ public class EvolutionSetup
     HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
     httpClientBuilder.setConnectionManager(httpClientConnectionManager);
     httpClient = httpClientBuilder.build();
-    
+
     //
     // kafka topics
     //
     handleTopicSetup(topicsFolderPath);
-    
+
     //
     // elasticSearch index setup
     //
@@ -125,7 +121,7 @@ public class EvolutionSetup
         {
           ObjectHolder<String> responseBody = new ObjectHolder<String>();
           ObjectHolder<Integer> httpResponseCode = new ObjectHolder<Integer>();
-          
+
           //
           // First check if the item exist
           //
@@ -137,26 +133,26 @@ public class EvolutionSetup
           if(answer.get("found") == null || !(boolean) answer.get("found")) { // can also be null
             responseBody.setValue(null);
             httpResponseCode.setValue(null);
-            
+
             //
             // Not found in ES, push it
             //
             while(httpResponseCode.getValue() == null || httpResponseCode.getValue() == 409 /* can happen if calls are made too quickly */) {
               executeCurl(cmd.url, cmd.jsonBody, cmd.verb, httpResponseCode, responseBody);
             }
-            
+
             if(! (httpResponseCode.getValue().intValue() >= 200 && httpResponseCode.getValue().intValue() < 300)) {
               System.out.println("[DISPLAY] WARNING: Unable to populate Elasticsearch on " + cmd.url);
             }
           }
-        } 
+        }
       catch (ParseException|EvolutionSetupException e)
         {
           System.out.println("[DISPLAY] ERROR: Something wrong happened while executing curl command. " + e.getMessage());
         }
     }
   }
-  
+
   private static void handleElasticsearchUpdate(String elasticsearchUpdateFilePath) {
     List<CurlCommand> curls = handleCurlFile(elasticsearchUpdateFilePath);
     for(CurlCommand cmd : curls) {
@@ -164,25 +160,25 @@ public class EvolutionSetup
         {
           ObjectHolder<String> responseBody = new ObjectHolder<String>();
           ObjectHolder<Integer> httpResponseCode = new ObjectHolder<Integer>();
-          
+
           while(httpResponseCode.getValue() == null || httpResponseCode.getValue() == 409 /* can happen if calls are made too quickly */) {
             executeCurl(cmd.url, cmd.jsonBody, cmd.verb, httpResponseCode, responseBody);
           }
-          
+
           if (! (httpResponseCode.getValue().intValue() >= 200 && httpResponseCode.getValue().intValue() < 300)) {
             System.out.println("[DISPLAY] WARNING: Unable to update Elasticsearch on " + cmd.url + ". " + responseBody.getValue());
           }
-        } 
+        }
       catch (EvolutionSetupException e)
         {
           System.out.println("[DISPLAY] ERROR: Something wrong happened while executing curl command. " + e.getMessage());
         }
     }
   }
-  
+
   /****************************************
    *
-   * Kafka Topics 
+   * Kafka Topics
    *
    ****************************************/
 
@@ -276,6 +272,10 @@ public class EvolutionSetup
     //
 
     Map<String, NewTopic> topicsToSetup = new HashMap<>();
+
+    // start by auto create ones (then would be override by file if specified in file)
+    Deployment.getAllTopics().forEach(topic->topicsToSetup.put(topic.getName(),topic.getNewTopic()));
+
     File setupRep = new File(topicsFolderPath);
     for(File current : setupRep.listFiles()) {
       if(current.getName().startsWith("topics-")) {
@@ -458,15 +458,16 @@ public class EvolutionSetup
       }
     return null;
   }
-  
+
   /****************************************
    *
-   * Kafka Connectors 
+   * Kafka Connectors
    *
    ****************************************/
-  
+
   private static void handleConnectors(String connectorsFilePath)
   {
+    HashMap<String,Set<String>> allFromConf = new HashMap<>();//this will register <url,connectorsName> from conf file, to list what might need to be deleted at the end
     BufferedReader reader = null;
     String line = null;
     try
@@ -516,6 +517,49 @@ public class EvolutionSetup
               {
                 JSONObject connectorToSetup = (JSONObject) (new JSONParser()).parse(jsonConnectorToSetupConfig);
                 String connectorName = com.evolving.nglm.core.JSONUtilities.decodeString(connectorToSetup, "name");
+                Set<String> fromConf = allFromConf.get(url)!=null?allFromConf.get(url):new HashSet<>();
+                fromConf.add(connectorName);
+                allFromConf.put(url,fromConf);
+
+                // connectors on dynamic topics special case (dirty, no real easy way..., the quickest I found)
+                List<String> toAdd = new ArrayList<>();
+                if(connectorName.equals("notification_es_sink_connector")){
+                  for(CommunicationChannel cc:Deployment.getCommunicationChannels().values()){
+                    if(cc.getDeliveryManagerDeclaration()!=null){
+                      for(Topic topic:cc.getDeliveryManagerDeclaration().getResponseTopics()){
+                        toAdd.add(topic.getName());
+                      }
+                    }
+                  }
+                }else if(connectorName.equals("bdr_es_sink_connector")){
+                  DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE);
+                  if(deliveryManagerDeclaration!=null){
+                    for(Topic topic:deliveryManagerDeclaration.getResponseTopics()){
+                      toAdd.add(topic.getName());
+                    }
+                  }
+                }else if(connectorName.equals("odr_es_sink_connector")){
+                  DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get(PurchaseFulfillmentManager.PURCHASEFULFILLMENT_DELIVERY_TYPE);
+                  if(deliveryManagerDeclaration!=null){
+                    for(Topic topic:deliveryManagerDeclaration.getResponseTopics()){
+                      toAdd.add(topic.getName());
+                    }
+                  }
+                }
+                // need to put some dynamic topic ?
+                if(!toAdd.isEmpty()){
+                  JSONObject config = (JSONObject)connectorToSetup.get("config");
+                  String topicToAdd = String.join(",",toAdd);
+                  String topicsConf = (String)config.get("topics");
+                  if(topicsConf==null){
+                    config.put("topics",topicToAdd);
+                  }else{
+                    topicsConf=topicsConf+","+topicToAdd;
+                    config.put("topics",topicsConf);
+                    System.out.println("[DISPLAY] INFO: Connector " + connectorName + " seems to be a mixed on provided static conf and dynamic one, final topics result : "+topicsConf);
+                  }
+                }
+
                 ObjectHolder<String> existingConfigResponseContent = new ObjectHolder<String>();
                 ObjectHolder<Integer> existingConfigHttpResponseCode = new ObjectHolder<Integer>();
                 boolean alreadyExist = false;
@@ -585,30 +629,30 @@ public class EvolutionSetup
                       }
                     if (identical == false)
                       {
-                        System.out.println("[DISPLAY] MANDATORY: must update connector config from " + existingConfigResponseContent.getValue() + " to " + jsonConnectorToSetupConfig);
+                        System.out.println("[DISPLAY] INFO: updating connector config from " + existingConfigResponseContent.getValue() + " to config " + connectorToSetup);
 
-//                        //
-//                        // update existing connector with new configuration
-//                        //
-//                        try
-//                          {
-//                            ObjectHolder<String> updateResponseContent = new ObjectHolder<String>();
-//                            ObjectHolder<Integer> updateResponseCode = new ObjectHolder<Integer>();
-//                            executeCurl(url + "/" + connectorName + "/config", JSONUtilities.decodeJSONObject(connectorToSetup, "config").toString(), "-XPUT", updateResponseCode, updateResponseContent);
-//                            if (updateResponseCode.getValue().intValue() >= 200 && updateResponseCode.getValue().intValue() < 300)
-//                              {
-//                                System.out.println("INFO: upgrade of connector " + connectorName + " well executed");
-//                              }
-//                            else
-//                              {
-//                                System.out.println("WARNING: Problem while updating connector " + connectorName + " response code " + updateResponseCode.getValue().intValue());
-//                              }
-//                          }
-//                        catch (EvolutionSetupException e)
-//                          {
-//                            System.out.println("WARNING: Problem while updating connector " + connectorName + " due to Exception " + e.getMessage());
-//                            e.printStackTrace();
-//                          }
+                        //
+                        // update existing connector with new configuration
+                        //
+                        try
+                          {
+                            ObjectHolder<String> updateResponseContent = new ObjectHolder<String>();
+                            ObjectHolder<Integer> updateResponseCode = new ObjectHolder<Integer>();
+                            executeCurl(url + "/" + connectorName + "/config", JSONUtilities.decodeJSONObject(connectorToSetup, "config").toString(), "-XPUT", updateResponseCode, updateResponseContent);
+                            if (updateResponseCode.getValue().intValue() >= 200 && updateResponseCode.getValue().intValue() < 300)
+                              {
+                                System.out.println("INFO: upgrade of connector " + connectorName + " well executed");
+                              }
+                            else
+                              {
+                                System.out.println("WARNING: Problem while updating connector " + connectorName + " response code " + updateResponseCode.getValue().intValue());
+                              }
+                          }
+                        catch (EvolutionSetupException e)
+                          {
+                            System.out.println("WARNING: Problem while updating connector " + connectorName + " due to Exception " + e.getMessage());
+                            e.printStackTrace();
+                          }
                       }
                     else
                       {
@@ -642,6 +686,33 @@ public class EvolutionSetup
               }
 
           }
+
+          // log some to delete ?
+          for(Map.Entry<String,Set<String>> entry:allFromConf.entrySet()){
+            String url = entry.getKey();
+            Set<String> connectors = entry.getValue();
+            ObjectHolder<String> existingConnectorsResponseContent = new ObjectHolder<String>();
+            ObjectHolder<Integer> existingConnectorsHttpResponseCode = new ObjectHolder<Integer>();
+            try{
+              while(existingConnectorsHttpResponseCode.getValue() == null || existingConnectorsHttpResponseCode.getValue() == 409 /* can happen if calls are made too quickly */) {
+                executeCurl(url, null, "-XGET", existingConnectorsHttpResponseCode, existingConnectorsResponseContent);
+              }
+              if (existingConnectorsHttpResponseCode.getValue().intValue() == 200){
+                Object[] existingConnectors = ((JSONArray)(new JSONParser()).parse(existingConnectorsResponseContent.getValue())).toArray();
+                for(Object existingConnector:existingConnectors){
+                  if(!connectors.contains(existingConnector)){
+                    System.out.println("[DISPLAY] INFO: need to delete connector \""+existingConnector+"\" from "+url);
+                  }
+                }
+              }else{
+                System.out.println("[DISPLAY] WARN: could not check connectors to delete "+existingConnectorsHttpResponseCode.getValue().intValue());
+              }
+            }catch (Exception e){
+              System.out.println("[DISPLAY] WARNING: Problem while getting connectors list to " + url + " due to Exception " + e.getMessage());
+              e.printStackTrace();
+            }
+          }
+
       }
     catch (IOException e)
       {
@@ -661,13 +732,13 @@ public class EvolutionSetup
           }
       }
   }
-  
+
   /****************************************
    *
    * Utils
    *
    ****************************************/
-  
+
   private static void executeCurl(String url, String jsonRequestEntity, String httpMethod, ObjectHolder<Integer> httpResponseCode, ObjectHolder<String> responseBody) throws EvolutionSetupException
   {
     HttpResponse httpResponse = null;
@@ -755,8 +826,8 @@ public class EvolutionSetup
       this.jsonBody = jsonBody;
     }
   }
-  
-  private static List<CurlCommand> handleCurlFile(String curlFilePath) 
+
+  private static List<CurlCommand> handleCurlFile(String curlFilePath)
   {
     BufferedReader reader = null;
     String line = null;
@@ -764,7 +835,7 @@ public class EvolutionSetup
     try
       {
         reader = new BufferedReader(new FileReader(new File(curlFilePath)));
-        
+
         line = reader.readLine();
         while (line != null) {
           if (line.trim().equals("")) {
@@ -773,7 +844,7 @@ public class EvolutionSetup
 
           System.out.println("DEBUG: Handle CURL line " + line);
           String[] params = line.split("\\|\\|\\|");
-          
+
           String verb = null;
           String url = null;
           String jsonBody = null;
@@ -800,7 +871,7 @@ public class EvolutionSetup
             // parse Deployment calls
             //
             jsonBody = parseJsonBody(jsonBody);
-            
+
             result.add(new CurlCommand(verb, url, jsonBody));
           }
 
@@ -824,38 +895,38 @@ public class EvolutionSetup
             System.out.println("[DISPLAY] WARNING: Problem while closing the reader " + curlFilePath);
           }
       }
-    
+
     return result;
   }
-  
-  private static String parseJsonBody(String jsonBody) 
+
+  private static String parseJsonBody(String jsonBody)
   {
     Pattern deploymentGetterCall = Pattern.compile("Deployment\\.(\\w*)\\(\\)");
     Matcher matcher = deploymentGetterCall.matcher(jsonBody);
     String result = jsonBody;
-    
+
     Set<String> calls = new HashSet<String>(); // We use a set to keep only one occurrence for each call.
     while(matcher.find()) {
       calls.add(matcher.group(1)); // First parenthesis catch of regex
     }
-    
+
     for(String call : calls) {
-      try 
+      try
         {
           java.lang.reflect.Method getter = Deployment.class.getMethod(call);
           String replace = getter.invoke(null).toString();
           result = result.replaceAll(Pattern.compile("Deployment\\."+call+"\\(\\)").pattern(), replace);
         }
-      catch(InvocationTargetException| NoSuchMethodException| IllegalAccessException e)
+      catch(InvocationTargetException | NoSuchMethodException| IllegalAccessException e)
         {
           System.out.println("[DISPLAY] ERROR: Unable to call Deployment." + call);
           System.out.println(e.getMessage());
         }
     }
-    
+
     System.out.println("DEBUG: JSONBODY="+ result);
-    
+
     return result;
   }
-  
+
 }

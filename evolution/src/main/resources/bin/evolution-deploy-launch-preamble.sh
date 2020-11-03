@@ -38,10 +38,6 @@ if [ "${INFULFILLMENTMANAGER_ENABLED}" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-infulfillmentmanager.yml ${DOCKER_STACK}-infulfillmentmanager
 fi
 
-if [ "${EMPTYFULFILLMENTMANAGER_ENABLED}" = "true" ]; then
-  docker stack deploy -c $DEPLOY_ROOT/stack/stack-emptyfulfillmentmanager.yml ${DOCKER_STACK}-emptyfulfillmentmanager
-fi
-
 if [ "${COMMODITYDELIVERYMANAGER_ENABLED}" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-commoditydeliverymanager.yml ${DOCKER_STACK}-commoditydeliverymanager
 fi

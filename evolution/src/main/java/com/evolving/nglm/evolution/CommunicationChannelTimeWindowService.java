@@ -44,7 +44,8 @@ public class CommunicationChannelTimeWindowService extends GUIService
   *  constructor
   *
   *****************************************/
-  
+
+  @Deprecated // groupID not used
   public CommunicationChannelTimeWindowService(String bootstrapServers, String groupID, String catalogObjectiveTopic, boolean masterService, CommunicationChannelTimeWindowListener communicationChannelListener, boolean notifyOnSignificantChange)
   {
     super(bootstrapServers, "CommunicationChannelTimeWindowService", groupID, catalogObjectiveTopic, masterService, getSuperListener(communicationChannelListener), "getCommunicationChannelTimeWindow", "putCommunicationChannelTimeWindow", notifyOnSignificantChange);
@@ -52,7 +53,8 @@ public class CommunicationChannelTimeWindowService extends GUIService
   //
   //  constructor
   //
-  
+
+  @Deprecated // groupID not used
   public CommunicationChannelTimeWindowService(String bootstrapServers, String groupID, String communicationChannelTopic, boolean masterService, CommunicationChannelTimeWindowListener communicationChannelListener)
   {
     this(bootstrapServers, groupID, communicationChannelTopic, masterService, communicationChannelListener, true);
@@ -62,6 +64,7 @@ public class CommunicationChannelTimeWindowService extends GUIService
   //  constructor
   //
 
+  @Deprecated // groupID not used
   public CommunicationChannelTimeWindowService(String bootstrapServers, String groupID, String communicationChannelTopic, boolean masterService)
   {
     this(bootstrapServers, groupID, communicationChannelTopic, masterService, (CommunicationChannelTimeWindowListener) null, true);

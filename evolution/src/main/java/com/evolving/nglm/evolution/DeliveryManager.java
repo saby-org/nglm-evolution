@@ -73,21 +73,6 @@ public abstract class DeliveryManager
   }
 
   //
-  //  DeliveryGuarantee
-  //
-
-  public enum DeliveryGuarantee
-  {
-    AtLeastOnce("atLeastOnce"),
-    AtMostOnce("atMostOnce"),
-    Unknown("(unknown)");
-    private String externalRepresentation;
-    private DeliveryGuarantee(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public static DeliveryGuarantee fromExternalRepresentation(String externalRepresentation) { for (DeliveryGuarantee enumeratedValue : DeliveryGuarantee.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
-  }
-
-  //
   //  ManagerStatus
   //
 
@@ -137,9 +122,8 @@ public abstract class DeliveryManager
   private volatile static DeliveryRequest hackyDeliveryRequestInstance;
   private static CountDownLatch hackyDeliveryRequestInstanceReady = new CountDownLatch(1);
 
-  private List<String> requestTopics;
-  private String responseTopic;
-  private String routingTopic;
+  private DeliveryManagerDeclaration deliveryManagerDeclaration;
+
   private int deliveryRatePerMinute;
   private int correlatorUpdateTimeoutSeconds;
   private long correlatorCleanerFrequencyMilliSeconds;
@@ -196,7 +180,7 @@ public abstract class DeliveryManager
   //
   //  internal processing
   //
-  private ContactPolicyProcessor contactPolicyProcessor = null;
+  private static ContactPolicyProcessor contactPolicyProcessor = null;
 
   /*****************************************
   *
@@ -205,17 +189,8 @@ public abstract class DeliveryManager
   *****************************************/
 
   public String getDeliveryManagerKey() { return deliveryManagerKey; }
-  public List<String> getRequestTopics() { return requestTopics; }
-  public String getResponseTopic() { return responseTopic; }
-  public String getRoutingTopic() { return routingTopic; }
   public int getDeliveryRatePerMinute() { return deliveryRatePerMinute; }
   public int getCorrelatorUpdateTimeoutSeconds() { return correlatorUpdateTimeoutSeconds; }
-
-  //
-  //  derived
-  //
-
-  private String getDefaultRequestTopic() { return requestTopics.get(0); }
 
   /*****************************************
   *
@@ -349,12 +324,6 @@ public abstract class DeliveryManager
 
     NGLMRuntime.initialize(true);
 
-    /*****************************************
-    *
-    *  validate -- TEMPORARY, DeliveryManagers dervied from DeliveryManager.java doe NOT support priority
-    *
-    *****************************************/
-
     if (deliveryManagerDeclaration == null) throw new RuntimeException("invalid delivery manager (no such delivery manager)");
     if (deliveryManagerDeclaration.getRequestTopics().size() == 0) throw new RuntimeException("invalid delivery manager (no request topic)");
 
@@ -376,9 +345,7 @@ public abstract class DeliveryManager
     this.deliveryManagerKey = deliveryManagerKey;
     this.bootstrapServers = bootstrapServers;
     this.requestSerde = (ConnectSerde<DeliveryRequest>) requestSerde;
-    this.requestTopics = deliveryManagerDeclaration.getRequestTopics();
-    this.responseTopic = deliveryManagerDeclaration.getResponseTopic();
-    this.routingTopic = deliveryManagerDeclaration.getRoutingTopic();
+    this.deliveryManagerDeclaration = deliveryManagerDeclaration;
     this.deliveryRatePerMinute = deliveryManagerDeclaration.getDeliveryRatePerMinute();
     this.correlatorUpdateTimeoutSeconds = deliveryManagerDeclaration.getCorrelatorUpdateTimeoutSeconds();
     this.correlatorCleanerFrequencyMilliSeconds = deliveryManagerDeclaration.getCorrelatorCleanerFrequencyMilliSeconds();
@@ -389,8 +356,8 @@ public abstract class DeliveryManager
     *
     *****************************************/
 
-    millisecondsPerDelivery = (int) Math.ceil(1.0 / ((double) deliveryRatePerMinute / (60.0 * 1000.0)));
-    maxOutstandingRequests = Math.min((int) Math.ceil((double) deliveryRatePerMinute / 60.0), 100);
+    millisecondsPerDelivery = (int) Math.ceil(1.0 / ((double) getDeliveryRatePerMinute() / (60.0 * 1000.0)));
+    maxOutstandingRequests = Math.min((int) Math.ceil((double) getDeliveryRatePerMinute() / 60.0), 100);
 
     /*****************************************
     *
@@ -460,9 +427,13 @@ public abstract class DeliveryManager
     *
     *****************************************/
 
-    Runnable receiveCorrelatorUpdateWorker = new Runnable() { @Override public void run() { runReceiveCorrelatorWorker(); } };
-    receiveCorrelatorUpdateWorkerThread = new Thread(receiveCorrelatorUpdateWorker, applicationID + "-ReceiveCorrelatorWorker");
-    receiveCorrelatorUpdateWorkerThread.start();
+    if(deliveryManagerDeclaration.getRoutingTopic()!=null){
+      Runnable receiveCorrelatorUpdateWorker = new Runnable() { @Override public void run() { runReceiveCorrelatorWorker(); } };
+      receiveCorrelatorUpdateWorkerThread = new Thread(receiveCorrelatorUpdateWorker, applicationID + "-ReceiveCorrelatorWorker");
+      receiveCorrelatorUpdateWorkerThread.start();
+    }else{
+      log.info("no routing topic declaration, no correlator update consumer");
+    }
 
     /*****************************************
     *
@@ -501,11 +472,17 @@ public abstract class DeliveryManager
      *
      *****************************************/
 
-    // skip if not needed
-    if(deliveryManagerDeclaration.getDeliveryType().equals(CommodityDeliveryManager.COMMODITY_DELIVERY_MANAGER_NAME)){
+    // skip if not needed TODO: move to DeliveryManagerForNotifications if not common
+    if(deliveryManagerDeclaration.getDeliveryType().equals(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE)){
       log.info("skipping contactPolicyProcessor init for "+deliveryManagerDeclaration.getDeliveryType());
     }else{
-      contactPolicyProcessor = new ContactPolicyProcessor("deliveryManager-communicationchannel", deliveryManagerKey);
+      if(contactPolicyProcessor==null){
+        synchronized (this){
+          if(contactPolicyProcessor==null){
+            contactPolicyProcessor = new ContactPolicyProcessor();
+          }
+        }
+      }
     }
   }
 
@@ -527,7 +504,7 @@ public abstract class DeliveryManager
         } catch (InterruptedException e){}
       }
     }
-    log.info("runSubmitRequestWorker: starting delivery");
+    log.info("runSubmitRequestWorker: starting {} delivery from {} inputs",deliveryManagerDeclaration.getDeliveryType(),deliveryManagerDeclaration.getRequestTopicsList());
 
     ConsumerRebalanceListener listener = new ConsumerRebalanceListener()
     {
@@ -542,7 +519,7 @@ public abstract class DeliveryManager
       @Override public void onPartitionsAssigned(Collection<TopicPartition> partitions) { log.info("requestConsumer partitions assigned: {}", partitions); }
     };
 
-    requestConsumer.subscribe(requestTopics,listener);
+    requestConsumer.subscribe(deliveryManagerDeclaration.getRequestTopicsList(),listener);
     while (managerStatus.isRunning())
     {
       /****************************************
@@ -803,7 +780,10 @@ public abstract class DeliveryManager
         *****************************************/
 
         // forward the deliveryRequest to the instance that will received correlator response
-        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(routingTopic, stringKeySerde.serializer().serialize(routingTopic, new StringKey(deliveryRequest.getCorrelator())), requestSerde.optionalSerializer().serialize(routingTopic, deliveryRequest)));
+        if(deliveryManagerDeclaration.getRoutingTopic()!=null){
+          String routingTopic = deliveryManagerDeclaration.getRoutingTopic().getName();
+          kafkaProducer.send(new ProducerRecord<byte[], byte[]>(routingTopic, stringKeySerde.serializer().serialize(routingTopic, new StringKey(deliveryRequest.getCorrelator())), requestSerde.optionalSerializer().serialize(routingTopic, deliveryRequest)));
+        }
 
         /*****************************************
         *
@@ -917,7 +897,8 @@ public abstract class DeliveryManager
         *  retry required?
         *
         *****************************************/
-        
+
+        String responseTopic = deliveryManagerDeclaration.getResponseTopic(deliveryRequest.getDeliveryPriority());
         if(deliveryRequest.getOriginatingRequest()) 
           {
             // response to be sent indexed by subscriber ID
@@ -977,7 +958,12 @@ public abstract class DeliveryManager
     }
     DeliveryRequest deliveryRequestForCorrelatorUpdate = hackyDeliveryRequestInstance.copy();
     deliveryRequestForCorrelatorUpdate.getDiplomaticBriefcase().put(CORRELATOR_UPDATE_KEY,correlatorUpdate.toJSONString());
-    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(routingTopic, stringKeySerde.serializer().serialize(routingTopic, new StringKey(correlator)), requestSerde.serializer().serialize(routingTopic, deliveryRequestForCorrelatorUpdate)));
+    if(deliveryManagerDeclaration.getRoutingTopic()!=null){
+      String routingTopic = deliveryManagerDeclaration.getRoutingTopic().getName();
+      kafkaProducer.send(new ProducerRecord<byte[], byte[]>(routingTopic, stringKeySerde.serializer().serialize(routingTopic, new StringKey(correlator)), requestSerde.serializer().serialize(routingTopic, deliveryRequestForCorrelatorUpdate)));
+    }else{
+      log.error("DeliveryManager processSubmitCorrelatorUpdate on declaration without routing topic!");
+    }
 
   }
 
@@ -1030,7 +1016,7 @@ public abstract class DeliveryManager
     Set<TopicPartition> routingProgressConsumerPartitions = new HashSet<TopicPartition>();
     for (TopicPartition topicPartition : partitions)
     {
-      routingProgressConsumerPartitions.add(new TopicPartition(routingTopic, topicPartition.partition()));
+      routingProgressConsumerPartitions.add(new TopicPartition(topicPartition.topic(), topicPartition.partition()));
     }
     routingProgressConsumer.assign(routingProgressConsumerPartitions);
 
@@ -1167,7 +1153,7 @@ public abstract class DeliveryManager
       @Override public void onPartitionsRevoked(Collection<TopicPartition> partitions) {  revokeRoutingConsumerPartitions(partitions); }
       @Override public void onPartitionsAssigned(Collection<TopicPartition> partitions) { assignRoutingConsumerPartitions(partitions); }
     };
-    routingConsumer.subscribe(Arrays.asList(routingTopic), listener);
+    routingConsumer.subscribe(Collections.singleton(deliveryManagerDeclaration.getRoutingTopic().getName()), listener);
 
     // wait start
     synchronized (this){
@@ -1212,10 +1198,10 @@ public abstract class DeliveryManager
         //  deserialize
         //
 
-        String correlator = stringKeySerde.deserializer().deserialize(routingTopic, correlatorUpdateRecord.key()).getKey();
+        String correlator = stringKeySerde.deserializer().deserialize(correlatorUpdateRecord.topic(), correlatorUpdateRecord.key()).getKey();
         DeliveryRequest deliveryRequest;
         try{
-          deliveryRequest = requestSerde.deserializer().deserialize(routingTopic, correlatorUpdateRecord.value());
+          deliveryRequest = requestSerde.deserializer().deserialize(correlatorUpdateRecord.topic(), correlatorUpdateRecord.value());
         }catch (ClassCastException ex){
           log.info("DeliveryManager correlatorUpdate: old routing format message, skipping");
           continue;

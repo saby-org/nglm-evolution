@@ -5,6 +5,13 @@
   "generateNumericIDs"                       : true,
   "APIresponseDateFormat"                    : "yyyy-MM-dd'T'HH:mm:ssZZZZ",
 
+  "topicSubscriberPartitions" : "<_SUBSCRIBER_PARTITIONS_>",
+  "topicReplication"          : "<_KAFKA_REPLICATION_FACTOR_>",
+  "topicMinInSyncReplicas"    : "<_KAFKA_MIN_INSYNC_REPLICAS_>",
+  "topicRetentionShortHour"   : 24,
+  "topicRetentionDay"         : 4,
+  "topicRetentionLongDay"     : 31,
+
   "journeyTrafficArchivePeriodInSeconds"     : 3600,
   "journeyTrafficArchiveMaxNumberOfPeriods"  : 168,
 
@@ -38,12 +45,12 @@
     "JourneystatisticCleanUp"        : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" },
     "ExpiredVoucherCleanUp"          : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" }
   },
-  
+
   "elasticsearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
   "elasticsearchScrollSize" : 1000,
   "elasticsearchConnectTimeout" : 5000,
   "elasticsearchQueryTimeout" : 7200000,
-  
+
   "elasticsearchDefaultShards" : 1,
   "elasticsearchDefaultReplicas" : 1,
   "elasticsearchSubscriberprofileShards" : 4,
@@ -52,7 +59,7 @@
   "elasticsearchSnapshotReplicas" : 0,
   "elasticsearchLiveVoucherShards" : 1,
   "elasticsearchLiveVoucherReplicas" : 1,
-  
+
   "ESRetentionDaysODR"              : 45,
   "ESRetentionDaysBDR"              : 45,
   "ESRetentionDaysMDR"              : 45,
@@ -94,7 +101,7 @@
   
   "guiManagerESConnectTimeout" : 30000,
   "guiManagerESSocketTimeout" : 60000,
-  
+
   "maxPollIntervalMsComment": "Changed to 300s (5 minutes), kafka default is 30 seconds, which causes containers to stop during startup (heavy system load",
   "maxPollIntervalMs"       : 300000,
   
@@ -106,7 +113,6 @@
     "subscriberprofile"
   ],
 
-  "emptyTopic"                                           : "${topic.empty}",
   "journeyTopic"                                         : "${topic.journey}",
   "journeyTemplateTopic"                                 : "${topic.journeytemplate}",
   "segmentationDimensionTopic"                           : "${topic.segmentationdimension}",
@@ -166,21 +172,14 @@
   "subscriberTraceControlAssignSubscriberIDTopic"        : "${topic.subscribertracecontrol.assignsubscriberid}",
   "subscriberTraceTopic"                                 : "${topic.subscribertrace}",
   "simulatedTimeTopic"                                   : "${topic.simulatedtime}",
-  "journeyRequestTopic"                                  : "${topic.journeyrequest}",
-  "journeyResponseTopic"                                 : "${topic.journeyresponse}",
   "journeyStatisticTopic"                                : "${topic.journeystatistic}",
   "journeyMetricTopic"                                   : "${topic.journeymetric}",
-  "loyaltyProgramRequestTopic"                           : "${topic.loyaltyprogramrequest}",
-  "loyaltyProgramResponseTopic"                          : "${topic.loyaltyprogramresponse}",
   "deliverableSourceTopic"                               : "${topic.deliverable.source}",
   "presentationLogTopic"                                 : "${topic.presentationlog}",
   "acceptanceLogTopic"                                   : "${topic.acceptancelog}",
   "subscriberMessageTemplateTopic"                       : "${topic.template.subscribermessage}",
   "uploadedFileTopic"                                    : "${topic.uploadedfile}",
   "targetTopic"                                          : "${topic.target}",
-  "pointFulfillmentRequestTopic"                         : "${topic.pointfulfillment.request}",
-  "pointFulfillmentResponseTopic"                        : "${topic.pointfulfillment.response}",
-  "pointFulfillmentRekeyedTopic"                         : "${topic.pointfulfillment.rekeyed}",
   "communicationChannelTopic"                            : "${topic.communicationchannel}",
   "communicationChannelBlackoutTopic"                    : "${topic.blackoutperiod}",
   "communicationChannelTimeWindowTopic"                  : "${topic.timewindowperiod}",
@@ -602,8 +601,6 @@
       "id"                        : "pointFulfillment",
       "deliveryType"              : "pointFulfillment",
       "requestClass"              : "com.evolving.nglm.evolution.PointFulfillmentRequest",
-      "requestTopic"              : "${topic.pointfulfillment.request}",
-      "responseTopic"             : "${topic.pointfulfillment.response}",
       "providerID"                : "provider_Point",
       "providerName"              : "Points provider"
     },
@@ -611,8 +608,6 @@
       "id"                        : "journeyFulfillment",
       "deliveryType"              : "journeyFulfillment",
       "requestClass"              : "com.evolving.nglm.evolution.JourneyRequest",
-      "requestTopic"              : "${topic.journeyrequest}",
-      "responseTopic"             : "${topic.journeyresponse}",
       "providerID"                : "provider_Journey",
       "providerName"              : "Journeys provider"
     },
@@ -620,8 +615,6 @@
       "id"                        : "loyaltyProgramFulfillment",
       "deliveryType"              : "loyaltyProgramFulfillment",
       "requestClass"              : "com.evolving.nglm.evolution.LoyaltyProgramRequest",
-      "requestTopic"              : "${topic.loyaltyprogramrequest}",
-      "responseTopic"             : "${topic.loyaltyprogramresponse}",
       "providerID"                : "provider_Loyalty_Program",
       "providerName"              : "Loyalty Programs provider"
     },
@@ -629,22 +622,12 @@
       "id"                             : "purchaseFulfillment",
       "deliveryType"                   : "purchaseFulfillment",
       "requestClass"                   : "com.evolving.nglm.evolution.PurchaseFulfillmentManager$PurchaseFulfillmentRequest",
-      "requestTopic"                   : "${topic.fulfillment.purchasefulfillment.request}",
-      "responseTopic"                  : "${topic.fulfillment.purchasefulfillment.response}",
-      "internalTopic"                  : "${topic.fulfillment.purchasefulfillment.internal}",
-      "routingTopic"                   : "${topic.fulfillment.purchasefulfillment.routing}",
-      "deliveryGuarantee"              : "atLeastOnce",
       "correlatorUpdateTimeoutSeconds" : 90000
     },
     {
       "id"                                : "commodityDelivery",
       "deliveryType"                      : "commodityDelivery",
       "requestClass"                      : "com.evolving.nglm.evolution.CommodityDeliveryManager$CommodityDeliveryRequest",
-      "requestTopic"                      : "${topic.commoditydelivery.request}",
-      "responseTopic"                     : "${topic.commoditydelivery.response}",
-      "internalTopic"                     : "${topic.commoditydelivery.internal}",
-      "routingTopic"                      : "${topic.commoditydelivery.routing}",
-      "deliveryGuarantee"                 : "atLeastOnce",
       "correlatorCleanerFrequencySeconds" : 1200
     }
   ],
@@ -1184,10 +1167,6 @@
     "enableProfileSegmentChange" : true,
     "enableEvaluateTargetRandomness" : false,
     "enableContactPolicyProcessing" : true,
-    
-    --
-    -- recurrentCampaignCreationDaysRange default value is 3 - creates child campaigns before x days and creates missing child campaigns whose start date with in now-x days
-    --
     
     "recurrentCampaignCreationDaysRange" : 3
 }

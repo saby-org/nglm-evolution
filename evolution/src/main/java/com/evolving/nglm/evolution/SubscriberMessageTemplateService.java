@@ -55,6 +55,7 @@ public class SubscriberMessageTemplateService extends GUIService
   *
   *****************************************/
 
+  @Deprecated // groupID not used
   public SubscriberMessageTemplateService(String bootstrapServers, String groupID, String templateTopic, boolean masterService, TemplateListener templateListener, boolean notifyOnSignificantChange)
   {
     super(bootstrapServers, "SubscriberMessageTemplateService", groupID, templateTopic, masterService, getSuperListener(templateListener), "putTemplate", "removeTemplate", notifyOnSignificantChange);
@@ -63,7 +64,8 @@ public class SubscriberMessageTemplateService extends GUIService
   //
   //  constructor
   //
-  
+
+  @Deprecated // groupID not used
   public SubscriberMessageTemplateService(String bootstrapServers, String groupID, String templateTopic, boolean masterService, TemplateListener templateListener)
   {
     this(bootstrapServers, groupID, templateTopic, masterService, templateListener, true);
@@ -73,6 +75,7 @@ public class SubscriberMessageTemplateService extends GUIService
   //  constructor
   //
 
+  @Deprecated // groupID not used
   public SubscriberMessageTemplateService(String bootstrapServers, String groupID, String templateTopic, boolean masterService)
   {
     this(bootstrapServers, groupID, templateTopic, masterService, (TemplateListener) null, true);

@@ -50,6 +50,7 @@ public class JourneyService extends GUIService
   *
   *****************************************/
 
+  @Deprecated // groupID not needed
   public JourneyService(String bootstrapServers, String groupID, String journeyTopic, boolean masterService, JourneyListener journeyListener, boolean notifyOnSignificantChange)
   {
     super(bootstrapServers, "JourneyService", groupID, journeyTopic, masterService, getSuperListener(journeyListener), "putJourney", "removeJourney", notifyOnSignificantChange);
@@ -59,6 +60,7 @@ public class JourneyService extends GUIService
   //  constructor
   //
 
+  @Deprecated // groupID not needed
   public JourneyService(String bootstrapServers, String groupID, String journeyTopic, boolean masterService, JourneyListener journeyListener)
   {
     this(bootstrapServers, groupID, journeyTopic, masterService, journeyListener, true);
@@ -68,6 +70,7 @@ public class JourneyService extends GUIService
   //  constructor
   //
 
+  @Deprecated // groupID not needed
   public JourneyService(String bootstrapServers, String groupID, String journeyTopic, boolean masterService)
   {
     this(bootstrapServers, groupID, journeyTopic, masterService, (JourneyListener) null, true);
