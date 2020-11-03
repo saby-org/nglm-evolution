@@ -12,12 +12,12 @@
       }
     ]
   },
-  "description": "Story EVPRO-524",
+  "description": "",
   "editable": true,
   "gnetId": null,
-  "graphTooltip": 0,
-  "id": 11,
-  "iteration": 1602746128712,
+  "graphTooltip": 2,
+  "id": 5,
+  "iteration": 1604392196390,
   "links": [],
   "panels": [
     {
@@ -73,7 +73,7 @@
       "description": "",
       "fontSize": "100%",
       "gridPos": {
-        "h": 3,
+        "h": 2,
         "w": 24,
         "x": 0,
         "y": 1
@@ -233,7 +233,7 @@
                 }
               ],
               "settings": {
-                "size": 500
+                "size": 1
               },
               "type": "raw_document"
             }
@@ -256,7 +256,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 4
+        "y": 3
       },
       "id": 35,
       "panels": [],
@@ -268,10 +268,10 @@
       "datasource": "AllJourneyTraffic",
       "fontSize": "100%",
       "gridPos": {
-        "h": 3,
+        "h": 2,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 4
       },
       "id": 29,
       "options": {},
@@ -921,11 +921,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 6
       },
       "id": 14,
       "panels": [],
-      "title": "Customers and Metrics",
+      "title": "Customers and Ratios",
       "type": "row"
     },
     {
@@ -940,7 +940,7 @@
         "h": 9,
         "w": 8,
         "x": 0,
-        "y": 9
+        "y": 7
       },
       "hiddenSeries": false,
       "id": 41,
@@ -999,7 +999,6 @@
             },
             {
               "field": "1",
-              "hide": true,
               "id": "3",
               "meta": {},
               "pipelineAgg": "1",
@@ -1008,12 +1007,13 @@
             },
             {
               "field": "select field",
+              "hide": true,
               "id": "4",
               "meta": {},
               "pipelineVariables": [
                 {
                   "name": "var1",
-                  "pipelineAgg": "1"
+                  "pipelineAgg": "3"
                 }
               ],
               "settings": {
@@ -1056,7 +1056,6 @@
             },
             {
               "field": "1",
-              "hide": true,
               "id": "3",
               "meta": {},
               "pipelineAgg": "1",
@@ -1065,6 +1064,7 @@
             },
             {
               "field": "select field",
+              "hide": true,
               "id": "4",
               "meta": {},
               "pipelineVariables": [
@@ -1113,7 +1113,6 @@
             },
             {
               "field": "1",
-              "hide": true,
               "id": "3",
               "meta": {},
               "pipelineAgg": "1",
@@ -1122,6 +1121,7 @@
             },
             {
               "field": "select field",
+              "hide": true,
               "id": "4",
               "meta": {},
               "pipelineVariables": [
@@ -1170,7 +1170,6 @@
             },
             {
               "field": "1",
-              "hide": true,
               "id": "3",
               "meta": {},
               "pipelineAgg": "1",
@@ -1179,6 +1178,7 @@
             },
             {
               "field": "select field",
+              "hide": true,
               "id": "4",
               "meta": {},
               "pipelineVariables": [
@@ -1227,7 +1227,6 @@
             },
             {
               "field": "1",
-              "hide": true,
               "id": "3",
               "meta": {},
               "pipelineAgg": "1",
@@ -1236,6 +1235,7 @@
             },
             {
               "field": "select field",
+              "hide": true,
               "id": "4",
               "meta": {},
               "pipelineVariables": [
@@ -1284,7 +1284,6 @@
             },
             {
               "field": "1",
-              "hide": true,
               "id": "3",
               "meta": {},
               "pipelineAgg": "1",
@@ -1293,6 +1292,7 @@
             },
             {
               "field": "select field",
+              "hide": true,
               "id": "4",
               "meta": {},
               "pipelineVariables": [
@@ -1333,7 +1333,7 @@
       "yaxes": [
         {
           "format": "short",
-          "label": null,
+          "label": "",
           "logBase": 1,
           "max": null,
           "min": null,
@@ -1365,7 +1365,7 @@
         "h": 9,
         "w": 8,
         "x": 8,
-        "y": 9
+        "y": 7
       },
       "hiddenSeries": false,
       "id": 31,
@@ -1610,7 +1610,7 @@
       "yaxes": [
         {
           "format": "short",
-          "label": null,
+          "label": "",
           "logBase": 1,
           "max": null,
           "min": null,
@@ -1642,7 +1642,7 @@
         "h": 9,
         "w": 8,
         "x": 16,
-        "y": 9
+        "y": 7
       },
       "hiddenSeries": false,
       "id": 15,
@@ -1859,7 +1859,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 16
       },
       "id": 43,
       "panels": [],
@@ -1878,7 +1878,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 19
+        "y": 17
       },
       "hiddenSeries": false,
       "id": 39,
@@ -2027,7 +2027,7 @@
       "yaxes": [
         {
           "format": "short",
-          "label": "Channel",
+          "label": "# Messages",
           "logBase": 1,
           "max": null,
           "min": null,
@@ -2054,7 +2054,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 29
+        "y": 27
       },
       "id": 45,
       "panels": [],
@@ -2073,7 +2073,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 30
+        "y": 28
       },
       "hiddenSeries": false,
       "id": 47,
@@ -2131,15 +2131,17 @@
             },
             {
               "field": "1",
-              "hide": true,
               "id": "3",
               "meta": {},
               "pipelineAgg": "1",
-              "settings": {},
+              "settings": {
+                "unit": "1d"
+              },
               "type": "derivative"
             },
             {
               "field": "select field",
+              "hide": true,
               "id": "4",
               "meta": {},
               "pipelineVariables": [
@@ -2179,11 +2181,11 @@
       },
       "yaxes": [
         {
-          "format": "short",
-          "label": null,
+          "format": "locale",
+          "label": "# Rewards",
           "logBase": 1,
           "max": null,
-          "min": null,
+          "min": "0",
           "show": true
         },
         {
@@ -2212,7 +2214,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 30
+        "y": 28
       },
       "hiddenSeries": false,
       "id": 17,
@@ -2298,7 +2300,7 @@
       "yaxes": [
         {
           "format": "locale",
-          "label": "Quantity of Rewards",
+          "label": "# Rewards",
           "logBase": 1,
           "max": null,
           "min": "0",
@@ -2567,7 +2569,7 @@
     ]
   },
   "timezone": "",
-  "title": "Improvements Campaign Dashboard___TEST",
+  "title": "Campaign Dashboard",
   "uid": "X5gK27KMk",
-  "version": 46
+  "version": 11
 }
