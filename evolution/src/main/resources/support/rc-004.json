@@ -1,0 +1,97 @@
+
+--
+--  putCampaign
+--
+
+{
+   "id":"rc-004",
+   "recurrenceId":"rc-004",
+   "occurrenceNumber":1,
+   "recurrence":true,
+   "apiVersion":1,
+   "name":"rc-daily(2)-total-5-active",
+   "display":"rc-daily(2)-total-5-active",
+   "valid":true,
+   "active":false,
+   "recurrenceActive" : true,
+   "effectiveStartDate":"2020-08-12T00:00:00+00:00",
+   "effectiveEndDate":"2099-06-30T00:00:00+00:00",
+   "effectiveEntryPeriodEndDate":null,
+   "status":"Pending",
+   "scheduler" : {       
+       "numberOfOccurrences":5,
+       "runEveryDuration":2,
+       "runEveryUnit":"day"
+   },
+   "nodes":[
+      {
+         "nodeTypeName":"start",
+         "display":"Start",
+         "outputConnectors":[
+            {
+               "display":"Start",
+               "evaluateContextVariables":true,
+               "name":"start",
+               "transitionCriteria":[
+
+               ]
+            }
+         ],
+         "guiDetails":{
+            "color":"#c72285",
+            "icon":"jmr_components\/styles\/images\/objects\/1-1-start.png",
+            "width":90,
+            "x":93,
+            "y":62,
+            "height":90
+         },
+         "name":"Start",
+         "id":"1",
+         "nodeTypeID":"101",
+         "parameters":[
+
+         ]
+      },
+      {
+         "nodeTypeName":"end",
+         "display":"End",
+         "outputConnectors":[
+
+         ],
+         "guiDetails":{
+            "color":"#B63482",
+            "icon":"jmr_components\/styles\/images\/objects\/1-4-stop.png",
+            "width":90,
+            "x":471,
+            "y":26,
+            "height":90
+         },
+         "name":"End",
+         "id":"2",
+         "nodeTypeID":"102",
+         "parameters":[
+
+         ]
+      }
+   ],
+   "links":[
+      {
+         "destinationNodeID":"2",
+         "sourceConnectionPoint":0,
+         "sourceNodeID":"1",
+         "display":""
+      }
+   ],
+   "story":{
+      "targeting":"All subscribers",
+      "eligibility":"No eligibility",
+      "objectives":"No objectives",
+      "targetCount":"All subscribers"
+   },
+   "appendInclusionLists":true,
+   "targetingType":null,
+   "targetingEvent":null,
+   "journeyParameters":[
+
+   ]
+}
