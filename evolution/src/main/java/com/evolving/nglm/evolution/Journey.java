@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -35,8 +34,6 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.core.CountRequest;
-import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -49,15 +46,15 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
-import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
-import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
+import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 
 @GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "campaign", "journeyobjective" , "target"})
 public class Journey extends GUIManagedObject implements StockableItem
@@ -223,7 +220,6 @@ public class Journey extends GUIManagedObject implements StockableItem
   //
 
   private static ConnectSerde<Journey> serde = new ConnectSerde<Journey>(schema, false, Journey.class, Journey::pack, Journey::unpack);
-  private static Collection<Object> p2;
 
   //
   //  accessor
@@ -2056,13 +2052,40 @@ public class Journey extends GUIManagedObject implements StockableItem
                 boundParameters.put(parameterName, pushMessageValue);
                 break;
               
-              /** The case with Dialog as boundParameters should never happen (and if, we will need to retrieve the communicationChannelID)
               case Dialog:
-                NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
-                boundParameters.put(parameterName, templateParameters);
-                break; 
-              **/
-
+                String templateID = JSONUtilities.decodeString(parameterJSON, "value", false);
+                GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+                if (template instanceof SubscriberMessageTemplate)
+                  {
+                    JSONObject templateObject = template.getJSONRepresentation();
+                    if (templateObject != null)
+                      {
+                        // in case of TemplateID reference:
+                        //{
+                        //  "parameterName": "node.parameter.dialog_template",
+                        //  "value": {
+                        //      "macros": [
+                        //          {
+                        //              "campaignValue": "subscriber.email",
+                        //              "templateValue": "emailAddress"
+                        //          }
+                        //      ],
+                        //      "templateID": "17"
+                        //  }
+                        JSONObject value = new JSONObject();
+                        value.put("templateID", templateID);
+                        // value.put("macros", new JSONArray()); // optional
+                        HashMap<String,Boolean> dialogMessageFieldsMandatory = new HashMap<String, Boolean>();
+                        NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(value, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
+                        boundParameters.put(parameterName, templateParameters);
+                      }
+                  }
+                else
+                  {
+                    log.trace("template is not a SubscriberMessageTemplate : " + template.getClass().getCanonicalName());
+                  }
+                break;
+                
               case WorkflowParameter:
                 WorkflowParameter workflowParameterValue = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);
                 boundParameters.put(parameterName, workflowParameterValue);
