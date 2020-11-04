@@ -532,8 +532,6 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexNotifList.toString(), QueryBuilders.matchAllQuery());
-    ReportCsvFactory reportFactory = new NotificationReportMonoPhase();
-
 
     String journeyTopic = Deployment.getJourneyTopic();
     String offerTopic = Deployment.getOfferTopic();
@@ -553,7 +551,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
         esIndexWithQuery,
-        reportFactory,
+        this,
         csvfile
     );
 

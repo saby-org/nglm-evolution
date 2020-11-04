@@ -263,7 +263,6 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
     String csvfile         = args[3];
 
 	  log.info("Reading data from ES in "+esIndexCustomer+"  index and writing to "+csvfile+" file.");	
-    ReportCsvFactory reportFactory = new SubscriberReportMonoPhase();
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
@@ -271,7 +270,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
         esIndexWithQuery,
-        reportFactory,
+        this,
         csvfile
         );
 

@@ -262,14 +262,13 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
     }
     subscriberFields.add("loyaltyPrograms");
     
-    ReportCsvFactory reportFactory = new LoyaltyProgramCustomerStatesMonoPhase();
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "loyaltyprogramcustomerstatereport-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getLoyaltyProgramTopic(), false);
     loyaltyProgramService.start();
 
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
         esIndexWithQuery,
-        reportFactory,
+        this,
         csvfile, true, true, subscriberFields
     );
 

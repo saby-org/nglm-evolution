@@ -373,7 +373,6 @@ public class ODRReportMonoPhase implements ReportCsvFactory
         esIndexOdrList.append(indexName);
         firstEntry = false;
       }
-    ReportCsvFactory reportFactory = new ODRReportMonoPhase();
     log.info("Reading data from ES in (" + esIndexOdrList.toString() + ")  index and writing to " + csvfile);
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexOdrList.toString(), QueryBuilders.matchAllQuery());
@@ -399,7 +398,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
         esIndexWithQuery,
-        reportFactory,
+        this,
         csvfile
     );
 

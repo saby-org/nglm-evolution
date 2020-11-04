@@ -279,7 +279,6 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
     String csvfile         = args[2];
 
     log.info("Reading data from ES in "+esIndexCustomer+"  index and writing to "+csvfile+" file.");  
-    ReportCsvFactory reportFactory = new TokenOfferReportMonoPhase();
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
@@ -287,7 +286,7 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
               esNode,
               esIndexWithQuery,
-              reportFactory,
+              this,
               csvfile
           );
 

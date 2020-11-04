@@ -178,14 +178,13 @@ public class JourneyImpactReportMonoPhase implements ReportCsvFactory
     
     journeyTrafficReader = ReferenceDataReader.<String, JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", "journeysreportcsvwriter-journeytrafficservice-JourneyImpactReportMonoPhase" , Deployment.getBrokerServers(), Deployment.getJourneyTrafficChangeLogTopic(), JourneyTrafficHistory::unpack);
 
-    ReportCsvFactory reportFactory = new JourneyImpactReportMonoPhase();
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(activeJourneyEsIndex.toString(), QueryBuilders.matchAllQuery());
     
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
         esIndexWithQuery,
-        reportFactory,
+        this,
         csvfile
     );
 
