@@ -6,8 +6,8 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -35,7 +35,7 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
   private static final Logger log = LoggerFactory.getLogger(CustomerPointDetailsMonoPhase.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
   List<String> headerFieldsOrder = new ArrayList<String>();
-  private static PointService pointService;
+  private PointService pointService;
 
   @Override
   public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
@@ -152,7 +152,14 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
     return addHeaders;
   }
 
-  public static void main(String[] args, final Date reportGenerationDate) {
+  public static void main(String[] args, final Date reportGenerationDate)
+  {
+    CustomerPointDetailsMonoPhase customerPointDetailsMonoPhase = new CustomerPointDetailsMonoPhase();
+    customerPointDetailsMonoPhase.start(args, reportGenerationDate);
+  }
+  
+  private void start(String[] args, final Date reportGenerationDate)
+  {
     log.info("received " + args.length + " args");
     for(String arg : args){
       log.info("CustomerPointDetailsMonoPhase: arg " + arg);
@@ -168,8 +175,6 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
     String csvfile            = args[2];
     // Other arguments are ignored in original report
 
-    ReportCsvFactory reportFactory = new CustomerPointDetailsMonoPhase();
-    
     log.info("Reading data from "+esIndexSubscriber + " producing "+csvfile+" with '"+CSV_SEPARATOR+"' separator");
 
     pointService = new PointService(Deployment.getBrokerServers(), "customerpointdetailsreport-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getPointTopic(), false);
@@ -189,7 +194,7 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
         esIndexWithQuery,
-        reportFactory,
+        this,
         csvfile,
         true,
         true,
@@ -201,7 +206,7 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
         log.warn("An error occured, the report might be corrupted");
         return;
       }
-    
+    pointService.stop();
   }
 
   private void addHeaders(ZipOutputStream writer, Map<String,Object> values, int offset) throws IOException {
