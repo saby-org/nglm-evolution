@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>kd201104-kaz</version>
+  <version>1.4.5_1-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
