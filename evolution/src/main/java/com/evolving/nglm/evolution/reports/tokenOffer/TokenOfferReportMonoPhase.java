@@ -41,8 +41,8 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
   private final static String subscriberID = "subscriberID";
   private final static String customerID = "customerID";
 
-  private static SalesChannelService salesChannelService;
-  private static OfferService offerService = null;
+  private SalesChannelService salesChannelService;
+  private OfferService offerService = null;
 
   public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
@@ -255,12 +255,18 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
    *
    ****************************************/
 
-  public static void main(String[] args)
+  public static void main(String[] args, final Date reportGenerationDate)
+  {
+    TokenOfferReportMonoPhase tokenOfferReportMonoPhase = new TokenOfferReportMonoPhase();
+    tokenOfferReportMonoPhase.start(args, reportGenerationDate);
+  }
+  
+  private void start(String[] args, final Date reportGenerationDate)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
       {
-        log.info("TokenOfferReportCsvWriter: arg " + arg);
+        log.info("TokenOfferReportMonoPhase: arg " + arg);
       }
 
     if (args.length < 3)
@@ -286,9 +292,9 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
           );
 
     offerService = new OfferService(Deployment.getBrokerServers(), "tokenOfferReportDriver-offerService-tokenOfferReportMonoPhase", Deployment.getOfferTopic(), false);
-    offerService.start();
-
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "tokenOfferReportDriver-saleschannelservice-tokenOfferReportMonoPhase", Deployment.getSalesChannelTopic(), false);
+
+    offerService.start();
     salesChannelService.start();
 
     if (!reportMonoPhase.startOneToOne())
@@ -296,7 +302,9 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
         log.warn("An error occured, the report might be corrupted");
         return;
       }
-    
+    offerService.stop();
+    salesChannelService.stop();
+
   }
 
 }

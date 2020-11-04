@@ -24,6 +24,7 @@ import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
+import com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportMonoPhase;
 
 public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
 {
@@ -35,7 +36,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
 
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
   List<String> headerFieldsOrder = new ArrayList<String>();
-  private static LoyaltyProgramService loyaltyProgramService;
+  private LoyaltyProgramService loyaltyProgramService;
   private final static String customerID = "customerID";
 
   @Override
@@ -226,7 +227,14 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
   }
   
   
-  public static void main(String[] args, final Date reportGenerationDate) {
+  public static void main(String[] args, final Date reportGenerationDate)
+  {
+    LoyaltyProgramCustomerStatesMonoPhase loyaltyProgramCustomerStatesMonoPhase = new LoyaltyProgramCustomerStatesMonoPhase();
+    loyaltyProgramCustomerStatesMonoPhase.start(args, reportGenerationDate);
+  }
+  
+  private void start(String[] args, final Date reportGenerationDate)
+  {
     log.info("received " + args.length + " args");
     for(String arg : args){
       log.info("LoyaltyProgramESReader: arg " + arg);
@@ -270,7 +278,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
         log.warn("An error occured, the report might be corrupted");
         return;
       }
-    
+    loyaltyProgramService.stop();
     log.info("Finished LoyaltyProgramESReader");
   }
 }
