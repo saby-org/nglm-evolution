@@ -20,7 +20,7 @@ import java.util.TimeZone;
 public class ReportsCommonCode
 {
   
-  public static List<SimpleDateFormat> standardDateFormats = null;
+  public static List<SimpleDateFormat> standardDateFormats = new ArrayList<SimpleDateFormat>();
   public static final ThreadLocal<SimpleDateFormat> deploymentDateFormat = ThreadLocal.withInitial(
       () -> {
         SimpleDateFormat sdf = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
@@ -38,15 +38,20 @@ public class ReportsCommonCode
   
   public static void initializeDateFormats()
   {
-    standardDateFormats = new ArrayList<SimpleDateFormat>();
-    standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSSXXX"));
-    standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"));
-    standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX"));
-    standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX"));
-    for (SimpleDateFormat standardDateFormat : standardDateFormats)
-      {
-        standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-      }
+    synchronized (standardDateFormats)
+    {
+      if (standardDateFormats.isEmpty())
+        {
+          standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSSXXX"));
+          standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"));
+          standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX"));
+          standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX"));
+          for (SimpleDateFormat standardDateFormat : standardDateFormats)
+            {
+              standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+            }
+        }
+    }
   }
 
   /****************************************
