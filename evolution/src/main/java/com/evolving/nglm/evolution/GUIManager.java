@@ -7449,7 +7449,7 @@ public class GUIManager
         *  instantiate offer
         *
         ****************************************/
-
+        jsonRoot.put("simpleOffer", false); // offer not a simpleOffer
         Offer offer = new Offer(jsonRoot, epoch, existingOffer, catalogCharacteristicService);
 
         /*****************************************
@@ -11101,6 +11101,15 @@ public class GUIManager
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
       }
+    
+    /*****************************************
+    *
+    *  Normal product creation. Not created from simpleOffer
+    *
+    *****************************************/
+    jsonRoot.put("simpleOffer", false);
+    
+    
 
     /*****************************************
     *
@@ -11118,6 +11127,7 @@ public class GUIManager
         ****************************************/
 
         Product product = new Product(jsonRoot, epoch, existingProduct, deliverableService, catalogCharacteristicService);
+        
 
         /*****************************************
         *
@@ -13998,6 +14008,14 @@ public class GUIManager
         return JSONUtilities.encodeObject(response);
       }
 
+    /*****************************************
+    *
+    *  Normal voucher creation. Not created from simpleOffer
+    *
+    *****************************************/
+    jsonRoot.put("simpleOffer", false);
+    
+    
     /*****************************************
     *
     *  process voucher
@@ -23139,6 +23157,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 JSONArray newProductJSONArray = new JSONArray();
                 newProductJSONArray.add(newProductJSONObject);                
                 jsonRoot.replace("products", newProductJSONArray);
+                jsonRoot.put("simpleOffer", true);
 
                 Offer productOffer = new Offer(jsonRoot, epoch, existingOffer, catalogCharacteristicService);
 
@@ -23242,6 +23261,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 JSONArray newVoucherJSONArray = new JSONArray();
                 newVoucherJSONArray.add(newVoucherJSONObject);
                 jsonRoot.replace("vouchers", newVoucherJSONArray);
+                jsonRoot.put("simpleOffer", true);
 
                 Offer voucherOffer = new Offer(jsonRoot, epoch, existingOffer, catalogCharacteristicService);
 
@@ -23423,7 +23443,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 offerObjectiveService, productService, voucherService, salesChannelService))
             .collect(Collectors.toList());
 
-        response.put("offers", JSONUtilities.encodeArray(offersJson));
+        response.put("simpleOffers", JSONUtilities.encodeArray(offersJson));
         response.put("responseCode", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
         response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
 
@@ -27103,6 +27123,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         productJSON.put("effectiveStartDate", JSONUtilities.decodeString(jsonRoot, "effectiveStartDate"));
         productJSON.put("effectiveEndDate", JSONUtilities.decodeString(jsonRoot, "effectiveEndDate"));
         productJSON.put("imageURL", JSONUtilities.decodeString(jsonRoot, "imageURL"));
+        productJSON.put("simpleOffer", true);
        
       }
     if (voucherJSONArray != null && !(voucherJSONArray.isEmpty()))
@@ -27126,6 +27147,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         voucherJSON.put("effectiveStartDate", JSONUtilities.decodeString(jsonRoot, "effectiveStartDate"));
         voucherJSON.put("effectiveEndDate", JSONUtilities.decodeString(jsonRoot, "effectiveEndDate"));
         voucherJSON.put("imageURL", JSONUtilities.decodeString(jsonRoot, "imageURL"));
+        voucherJSON.put("simpleOffer", true);
         
       }
     
@@ -27733,6 +27755,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             JSONArray newProductJSONArray = new JSONArray();
             newProductJSONArray.add(newProductJSONObject);
             jsonRoot.replace("products", newProductJSONArray);
+            jsonRoot.put("simpleOffer", true);
 
             Offer productOffer = new Offer(jsonRoot, epoch, existingOffer, catalogCharacteristicService);
 
@@ -27841,6 +27864,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             JSONArray newVoucherJSONArray = new JSONArray();
             newVoucherJSONArray.add(newVoucherJSONObject);
             jsonRoot.replace("vouchers", newVoucherJSONArray);
+            jsonRoot.put("simpleOffer", true);
 
             Offer voucherOffer = new Offer(jsonRoot, epoch, existingOffer, catalogCharacteristicService);
 
@@ -27999,7 +28023,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     *
     *****************************************/
     response.put("responseCode", (offerObject != null) ? "ok" : "offerNotFound");
-    if (offerObject != null) response.put("offer", offerJSON);
+    if (offerObject != null) response.put("simpleOffer", offerJSON);
     return JSONUtilities.encodeObject(response);
    
   }
@@ -28096,7 +28120,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
      *
      *****************************************/
     response.put("responseCode", "ok");
-    response.put("offers", JSONUtilities.encodeArray(offers));
+    response.put("simpleOffers", JSONUtilities.encodeArray(offers));
     return JSONUtilities.encodeObject(response);
   }
   
