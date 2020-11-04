@@ -23302,7 +23302,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 offerObjectiveService, productService, voucherService, salesChannelService))
             .collect(Collectors.toList());
 
-        response.put("offers", JSONUtilities.encodeArray(offersJson));
+        response.put("simpleOffers", JSONUtilities.encodeArray(offersJson));
         response.put("responseCode", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
         response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
 
@@ -27865,7 +27865,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     *
     *****************************************/
     response.put("responseCode", (offerObject != null) ? "ok" : "offerNotFound");
-    if (offerObject != null) response.put("offer", offerJSON);
+    if (offerObject != null) response.put("simpleOffer", offerJSON);
     return JSONUtilities.encodeObject(response);
    
   }
@@ -27962,7 +27962,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
      *
      *****************************************/
     response.put("responseCode", "ok");
-    response.put("offers", JSONUtilities.encodeArray(offers));
+    response.put("simpleOffers", JSONUtilities.encodeArray(offers));
     return JSONUtilities.encodeObject(response);
   }
   
