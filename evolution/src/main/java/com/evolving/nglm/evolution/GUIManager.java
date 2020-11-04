@@ -1546,6 +1546,26 @@ public class GUIManager
             throw new ServerRuntimeException("deployment", e);
           }
       }
+    
+    //
+    //  complexObject
+    //
+    if (complexObjectTypeService.getStoredComplexObjectTypes().size() == 0)
+      {
+        try
+          {
+            JSONArray initialComplexObjectJSONArray = Deployment.getInitialComplexObjectJSONArray();
+            for (int i=0; i<initialComplexObjectJSONArray.size(); i++)
+              {
+                JSONObject initialComplexObjectJSON = (JSONObject) initialComplexObjectJSONArray.get(i);
+                guiManagerGeneral.processPutComplexObjectType("0", initialComplexObjectJSON);
+              }
+          }
+        catch (JSONUtilitiesException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
+      }
 
     /*****************************************
     *
