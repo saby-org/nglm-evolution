@@ -49,10 +49,10 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   }
 
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private static DeliverableService deliverableService;
-  private static JourneyService journeyService;
-  private static OfferService offerService;
-  private static LoyaltyProgramService loyaltyProgramService;
+  private DeliverableService deliverableService;
+  private JourneyService journeyService;
+  private OfferService offerService;
+  private LoyaltyProgramService loyaltyProgramService;
 
   private static final String moduleId = "moduleID";
   private static final String featureId = "featureID";
@@ -384,6 +384,12 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   
   public static void main(String[] args, final Date reportGenerationDate)
   {
+    BDRReportMonoPhase bdrReportMonoPhase = new BDRReportMonoPhase();
+    bdrReportMonoPhase.start(args, reportGenerationDate);
+  }
+  
+  private void start(String[] args, final Date reportGenerationDate)
+  {
     log.info("received " + args.length + " args");
     for (String arg : args)
       {
@@ -421,7 +427,6 @@ public class BDRReportMonoPhase implements ReportCsvFactory
       }
 
     log.info("Reading data from ES in (" + esIndexBdrList.toString() + ") and writing to " + csvfile);
-    ReportCsvFactory reportFactory = new BDRReportMonoPhase();
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexBdrList.toString(), QueryBuilders.matchAllQuery());
@@ -435,6 +440,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     journeyService        = new JourneyService(Deployment.getBrokerServers(), "bdrreportcsvwriter-journeyservice-BDRReportMonoPhase", journeyTopic, false);
     offerService          = new OfferService(Deployment.getBrokerServers(), "bdrreportcsvwriter-offerservice-BDRReportMonoPhase", offerTopic, false);
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "bdrreportcsvwriter-loyaltyprogramservice-BDRReportMonoPhase", loyaltyProgramTopic, false);
+
     deliverableService.start();
     journeyService.start();
     offerService.start();
@@ -443,7 +449,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
         esIndexWithQuery,
-        reportFactory,
+        this,
         csvfile
     );
 
@@ -452,6 +458,10 @@ public class BDRReportMonoPhase implements ReportCsvFactory
         log.warn("An error occured, the report might be corrupted");
         return;
       }
+    deliverableService.stop();
+    journeyService.stop();
+    offerService.stop();
+    loyaltyProgramService.stop();
     
     log.info("Finished BDRReport");
   }

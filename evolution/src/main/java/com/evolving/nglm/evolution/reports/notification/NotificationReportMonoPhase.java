@@ -27,6 +27,7 @@ import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
+import com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate.LoyaltyProgramCustomerStatesMonoPhase;
 import com.evolving.nglm.evolution.reports.odr.ODRReportMonoPhase;
 
 import org.elasticsearch.index.query.QueryBuilder;
@@ -56,10 +57,10 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
   private static final DateFormat DATE_FORMAT;
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
 
-  private static JourneyService journeyService;
-  private static OfferService offerService;
-  private static LoyaltyProgramService loyaltyProgramService;
-  private static SubscriberMessageTemplateService subscriberMessageTemplateService;
+  private JourneyService journeyService;
+  private OfferService offerService;
+  private LoyaltyProgramService loyaltyProgramService;
+  private SubscriberMessageTemplateService subscriberMessageTemplateService;
 
   private static final String moduleId = "moduleID";
   private static final String featureId = "featureID";
@@ -484,6 +485,12 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
 
   public static void main(String[] args, final Date reportGenerationDate)
   {
+    NotificationReportMonoPhase notificationReportMonoPhase = new NotificationReportMonoPhase();
+    notificationReportMonoPhase.start(args, reportGenerationDate);
+  }
+  
+  private void start(String[] args, final Date reportGenerationDate)
+  {
     log.info("received " + args.length + " args");
     for (String arg : args)
       {
@@ -525,8 +532,6 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexNotifList.toString(), QueryBuilders.matchAllQuery());
-    ReportCsvFactory reportFactory = new NotificationReportMonoPhase();
-
 
     String journeyTopic = Deployment.getJourneyTopic();
     String offerTopic = Deployment.getOfferTopic();
@@ -546,7 +551,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
         esIndexWithQuery,
-        reportFactory,
+        this,
         csvfile
     );
 
@@ -555,6 +560,10 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
         log.warn("An error occured, the report might be corrupted");
         return;
       }
+    offerService.stop();
+    journeyService.stop();
+    loyaltyProgramService.stop();
+    subscriberMessageTemplateService.stop();
     log.info("Finished NotificationReport");
   }
   
