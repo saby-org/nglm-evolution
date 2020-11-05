@@ -672,15 +672,15 @@ public class ReportService extends GUIService
   private Date getReportDate(String reportFileName, String fileNameInitial)
   {
     Date result = null;
-    String reportDateString = reportFileName.split(fileNameInitial + "_")[1].split("." + Deployment.getReportManagerFileExtension())[0];
     try
       {
+        String reportDateString = reportFileName.split(fileNameInitial + "_")[1].split("." + Deployment.getReportManagerFileExtension())[0];
         SimpleDateFormat sdf = new SimpleDateFormat(Deployment.getReportManagerDateFormat());
         sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
         result = sdf.parse(reportDateString);
         result = RLMDateUtils.truncate(result, Calendar.DATE, Deployment.getBaseTimeZone());
       } 
-    catch (ParseException e)
+    catch (Exception e)
       {
         log.error(e.getMessage());
       }
