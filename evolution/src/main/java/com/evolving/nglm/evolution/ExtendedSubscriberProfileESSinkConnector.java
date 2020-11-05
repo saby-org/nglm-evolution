@@ -47,7 +47,7 @@ public abstract class ExtendedSubscriberProfileESSinkConnector extends SimpleESS
     @Override public void start(Map<String, String> taskConfig)
     {
       super.start(taskConfig);
-      this.subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("extendedProfileSinkConnector-subscriberGroupEpoch", Integer.toHexString(getTaskNumber()), Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
+      this.subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("extendedProfileSinkConnector-subscriberGroupEpoch", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
       SubscriberState.forceClassLoad();
     }
 
@@ -59,11 +59,6 @@ public abstract class ExtendedSubscriberProfileESSinkConnector extends SimpleESS
 
     @Override public void stop()
     {
-      //
-      //  reference reader
-      //
-
-      if (subscriberGroupEpochReader != null) subscriberGroupEpochReader.close();
       
       //
       //  super

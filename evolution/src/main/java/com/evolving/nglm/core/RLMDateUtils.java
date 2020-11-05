@@ -556,16 +556,15 @@ public class RLMDateUtils
   *
   *****************************************/
 
-  // TimeZone.getTimeZone(timeZone) is a synchronized method, which seems with contention on it
-  private static ThreadLocal<Map<String,TimeZone>> timezones = ThreadLocal.withInitial(HashMap::new);
+  private static ThreadLocal<Map<String,Calendar>> calendars = ThreadLocal.withInitial(HashMap::new);
   private static Calendar getCalendar(String timeZone)
   {
-    TimeZone toRetTimezone = timezones.get().get(timeZone);
-    if(toRetTimezone==null){
-      toRetTimezone = TimeZone.getTimeZone(timeZone);
-      timezones.get().put(timeZone,toRetTimezone);
+    Calendar calendar = calendars.get().get(timeZone);
+    if(calendar==null){
+      calendar = Calendar.getInstance(TimeZone.getTimeZone(timeZone));
+      calendars.get().put(timeZone,calendar);
     }
-    return Calendar.getInstance(toRetTimezone);
+    return calendar;
   }
 
 }

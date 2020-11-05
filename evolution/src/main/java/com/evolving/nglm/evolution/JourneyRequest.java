@@ -122,7 +122,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   //  structure
   //
 
-  @Override public ActivityType getActivityType() { return ActivityType.BDR; }
+  @Override public ActivityType getActivityType() { return ActivityType.Journey; }
   @Override public String getEventName() { return isPending() ? "journeyRequest" : "journeyComplete"; }
 
   //

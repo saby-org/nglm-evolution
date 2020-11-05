@@ -49,7 +49,6 @@ public class Deployment
   private static ZoneId baseZoneId;
   private static String baseLanguage;
   private static String baseCountry;
-  private static boolean generateNumericIDs;
   private static Map<String,AlternateID> alternateIDs = new LinkedHashMap<String,AlternateID>();
   private static String assignSubscriberIDsTopic;
   private static String assignExternalSubscriberIDsTopic;
@@ -104,7 +103,6 @@ public class Deployment
   public static ZoneId getBaseZoneId() { return baseZoneId; }
   public static String getBaseLanguage() { return baseLanguage; }
   public static String getBaseCountry() { return baseCountry; }
-  public static boolean getGenerateNumericIDs() { return generateNumericIDs; }
   public static String getRedisSentinels() { return System.getProperty("redis.sentinels",""); }
   public static Map<String,AlternateID> getAlternateIDs() { return alternateIDs; }
   public static String getAssignSubscriberIDsTopic() { return assignSubscriberIDsTopic; }
@@ -498,21 +496,6 @@ public class Deployment
     try
       {
         baseCountry = JSONUtilities.decodeString(jsonRoot, "baseCountry", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new RuntimeException("deployment", e);
-      }
-
-    /*****************************************
-    *
-    *  generateNumericIDs
-    *
-    *****************************************/
-
-    try
-      {
-        generateNumericIDs = JSONUtilities.decodeBoolean(jsonRoot, "generateNumericIDs", Boolean.FALSE);
       }
     catch (JSONUtilitiesException e)
       {

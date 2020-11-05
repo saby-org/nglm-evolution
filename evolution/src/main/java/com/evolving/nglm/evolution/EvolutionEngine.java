@@ -111,7 +111,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.Sets;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -534,7 +533,7 @@ public class EvolutionEngine
     //  subscriberGroupEpochReader
     //
 
-    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("evolutionengine-subscribergroupepoch", evolutionEngineKey, Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
+    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("evolutionengine-subscribergroupepoch", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
 
     //
     // propensity service
@@ -551,7 +550,7 @@ public class EvolutionEngine
     //  ucgStateReader
     //
 
-    ucgStateReader = ReferenceDataReader.<String,UCGState>startReader("evolutionengine-ucgstate", evolutionEngineKey, Deployment.getBrokerServers(), Deployment.getUCGStateTopic(), UCGState::unpack);
+    ucgStateReader = ReferenceDataReader.<String,UCGState>startReader("evolutionengine-ucgstate", Deployment.getBrokerServers(), Deployment.getUCGStateTopic(), UCGState::unpack);
 
     //
     //  create monitoring object
@@ -943,7 +942,8 @@ public class EvolutionEngine
     //  get outputs
     //
 
-    KStream<StringKey, SubscriberStreamOutput> evolutionEngineOutputs = forOutputsStream.filter((key,value)->value.getSubscriberState()!=null).flatMapValues(EvolutionEngine::getEvolutionEngineOutputs);
+    KStream<StringKey, SubscriberStateOutputWrapper> evolutionEngineOutputsWithSubscriberState = forOutputsStream.filter((key,value)->value.getSubscriberState()!=null);
+    KStream<StringKey, SubscriberStreamOutput> evolutionEngineOutputs = evolutionEngineOutputsWithSubscriberState.flatMapValues(EvolutionEngine::getEvolutionEngineOutputs);
 
     //
     //  branch output streams
@@ -1054,26 +1054,13 @@ public class EvolutionEngine
     *****************************************/
 
     //
-    //  merge source streams -- subscriberHistoryStream
-    //
-
-    KStream subscriberHistoryCompositeStream = journeyStatisticStream;
-    subscriberHistoryCompositeStream = subscriberHistoryCompositeStream.merge(periodicTimedEvaluationStream);
-    subscriberHistoryCompositeStream = subscriberHistoryCompositeStream.merge(cleanupSubscriberSourceStream);
-    for (KStream<StringKey, ? extends DeliveryRequest> eventStream : deliveryManagerResponseStreams)
-      {
-        subscriberHistoryCompositeStream = (subscriberHistoryCompositeStream == null) ? eventStream : subscriberHistoryCompositeStream.merge(eventStream.filter((key,value)->value.isToStoreInHistoryStateStore()));
-      }
-    KStream<StringKey, SubscriberStreamEvent> subscriberHistoryStream = (KStream<StringKey, SubscriberStreamEvent>) subscriberHistoryCompositeStream;
-
-    //
     //  aggregate
     //
 
     //KeyValueBytesStoreSupplier subscriberHistorySupplier = Stores.persistentKeyValueStore(subscriberHistoryChangeLog);
     KeyValueBytesStoreSupplier subscriberHistorySupplier = isInMemoryStateStores?Stores.inMemoryKeyValueStore(subscriberHistoryChangeLog):Stores.persistentKeyValueStore(subscriberHistoryChangeLog);
     Materialized subscriberHistoryStoreSchema = Materialized.<StringKey, SubscriberHistory>as(subscriberHistorySupplier).withKeySerde(stringKeySerde).withValueSerde(subscriberHistorySerde);
-    KTable<StringKey, SubscriberHistory> subscriberHistory = subscriberHistoryStream.groupByKey(Serialized.with(stringKeySerde, evolutionEventSerde)).aggregate(EvolutionEngine::nullSubscriberHistory, EvolutionEngine::updateSubscriberHistory, subscriberHistoryStoreSchema);
+    KTable<StringKey, SubscriberHistory> subscriberHistory = evolutionEngineOutputsWithSubscriberState.filter(EvolutionEngine::filterForHistoryStateStore).groupByKey().aggregate(EvolutionEngine::nullSubscriberHistory, EvolutionEngine::updateSubscriberHistory, subscriberHistoryStoreSchema);
 
     /*****************************************
     *
@@ -1200,6 +1187,10 @@ public class EvolutionEngine
     {
       @Override public void onChange(KafkaStreams.State newState, KafkaStreams.State oldState)
       {
+
+        // need to re-run unique key prefix computation
+        if(newState==KafkaStreams.State.RUNNING) KStreamsUniqueKeyServer.streamRebalanced();
+
         //
         //  streams state
         //
@@ -1734,13 +1725,6 @@ public class EvolutionEngine
     {
 
       //
-      //  close reference data readers
-      //
-
-      subscriberGroupEpochReader.close();
-      ucgStateReader.close();
-
-      //
       //  stop services
       //
 
@@ -1981,6 +1965,17 @@ public class EvolutionEngine
     *****************************************/
 
     updateScheduledEvaluations((currentSubscriberState != null) ? currentSubscriberState.getScheduledEvaluations() : Collections.<TimedEvaluation>emptySet(), subscriberState.getScheduledEvaluations());
+
+    /*****************************************
+    *
+    *  to forward DelireryRequest "response" to history state store
+    *
+    *****************************************/
+    if (evolutionEvent instanceof DeliveryRequest)
+      {
+        DeliveryRequest deliveryResponse = (DeliveryRequest)evolutionEvent;
+        if (deliveryResponse.isToStoreInHistoryStateStore()) subscriberState.setDeliveryResponse(deliveryResponse);
+      }
 
     /*****************************************
     *
@@ -2431,7 +2426,7 @@ public class EvolutionEngine
       }
 
     }else{
-      if(log.isDebugEnabled()) log.debug("no vouchers stored in profile for "+subscriberProfile.getSubscriberID());
+      if(log.isTraceEnabled()) log.trace("no vouchers stored in profile for "+subscriberProfile.getSubscriberID());
     }
 
     // check if we have update request
@@ -5831,15 +5826,15 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  public static SubscriberHistory updateSubscriberHistory(StringKey aggKey, SubscriberStreamEvent evolutionEvent, SubscriberHistory currentSubscriberHistory)
+  public static SubscriberHistory updateSubscriberHistory(StringKey aggKey, SubscriberStateOutputWrapper subscriberStateOutputWrapper, SubscriberHistory currentSubscriberHistory)
   {
 
-    if(log.isDebugEnabled()) log.debug("updateSubscriberHistory on event "+evolutionEvent.getClass().getSimpleName()+" for "+evolutionEvent.getSubscriberID());
+    if(log.isTraceEnabled()) log.trace("updateSubscriberHistory for "+subscriberStateOutputWrapper.getSubscriberState().getSubscriberID()+" on event "+subscriberStateOutputWrapper.getOriginalEvent().getClass().getSimpleName());
 
-    SubscriberHistory subscriberHistory = (currentSubscriberHistory != null) ? new SubscriberHistory(currentSubscriberHistory) : new SubscriberHistory(evolutionEvent.getSubscriberID());
-    boolean subscriberHistoryUpdated = (currentSubscriberHistory != null) ? false : true;
+    SubscriberHistory subscriberHistory = (currentSubscriberHistory != null) ? new SubscriberHistory(currentSubscriberHistory) : new SubscriberHistory(subscriberStateOutputWrapper.getSubscriberState().getSubscriberID());
+    boolean subscriberHistoryUpdated = currentSubscriberHistory==null;
 
-    switch (evolutionEvent.getSubscriberAction())
+    switch (subscriberStateOutputWrapper.getOriginalEvent().getSubscriberAction())
       {
         case Cleanup:
           return null;
@@ -5849,19 +5844,25 @@ public class EvolutionEngine
           return currentSubscriberHistory;
       }
 
-    if (evolutionEvent instanceof TimedEvaluation && ((TimedEvaluation)evolutionEvent).getPeriodicEvaluation())
+    if (subscriberStateOutputWrapper.getOriginalEvent() instanceof TimedEvaluation && ((TimedEvaluation)subscriberStateOutputWrapper.getOriginalEvent()).getPeriodicEvaluation())
       {
         subscriberHistoryUpdated = retentionService.cleanSubscriberHistory(subscriberHistory) || subscriberHistoryUpdated;
       }
 
-    if (evolutionEvent instanceof DeliveryRequest)
+    if (subscriberStateOutputWrapper.getSubscriberState().getDeliveryResponse()!=null)
       {
-        subscriberHistoryUpdated = updateSubscriberHistoryDeliveryRequests((DeliveryRequest) evolutionEvent, subscriberHistory) || subscriberHistoryUpdated;
+        subscriberHistoryUpdated = updateSubscriberHistoryDeliveryRequests(subscriberStateOutputWrapper.getSubscriberState().getDeliveryResponse(), subscriberHistory) || subscriberHistoryUpdated;
       }
 
-    if (evolutionEvent instanceof JourneyStatistic)
+    if (subscriberStateOutputWrapper.getSubscriberState().getJourneyStatisticWrappers()!=null)
       {
-        subscriberHistoryUpdated = updateSubscriberHistoryJourneyStatistics((JourneyStatistic) evolutionEvent, subscriberHistory) || subscriberHistoryUpdated;
+        for(JourneyStatisticWrapper journeyStatisticWrapper:subscriberStateOutputWrapper.getSubscriberState().getJourneyStatisticWrappers())
+          {
+            if(journeyStatisticWrapper.getJourneyStatistic()!=null)
+              {
+                subscriberHistoryUpdated = updateSubscriberHistoryJourneyStatistics(journeyStatisticWrapper.getJourneyStatistic(), subscriberHistory) || subscriberHistoryUpdated;
+              }
+          }
       }
 
 
@@ -5873,12 +5874,12 @@ public class EvolutionEngine
           {
             if (SystemTime.getCurrentTime().after(kafkaSizeErrorLogDate))
               {
-                log.error("HistoryStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberHistory.toString());
+                log.error("HistoryStore size error, ignoring event {} for subscriber {}: {}", subscriberStateOutputWrapper.getOriginalEvent().getClass().toString(), subscriberStateOutputWrapper.getOriginalEvent().getSubscriberID(), subscriberHistory.toString());
                 kafkaSizeErrorLogDate = RLMDateUtils.addMinutes(SystemTime.getCurrentTime(), MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES);
               }
             else
               {
-                log.error("HistoryStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberHistory.getKafkaRepresentation().length);
+                log.error("HistoryStore size error, ignoring event {} for subscriber {}: {}", subscriberStateOutputWrapper.getOriginalEvent().getClass().toString(), subscriberStateOutputWrapper.getOriginalEvent().getSubscriberID(), subscriberHistory.getKafkaRepresentation().length);
               }
             SubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), currentSubscriberHistory);
             subscriberHistoryUpdated = false;
@@ -5896,17 +5897,6 @@ public class EvolutionEngine
 
   private static boolean updateSubscriberHistoryDeliveryRequests(DeliveryRequest deliveryRequest, SubscriberHistory subscriberHistory)
   {
-    
-    /*****************************************
-    *
-    *  ignore journeyRequests
-    *
-    *****************************************/
-
-    if (deliveryRequest instanceof JourneyRequest)
-      {
-        return false;
-      }
 
     /*****************************************
     *
@@ -6160,6 +6150,21 @@ public class EvolutionEngine
   {
     StringKey rekey = value.getOriginatingRequest() ? new StringKey(value.getSubscriberID()) : new StringKey(value.getDeliveryRequestID());
     return new KeyValue<StringKey, PointFulfillmentRequest>(rekey, value);
+  }
+
+  private static boolean filterForHistoryStateStore(StringKey key, SubscriberStateOutputWrapper value)
+  {
+	  if(log.isTraceEnabled()) log.trace("filterForHistoryStateStore("+key+") called on "+value.getOriginalEvent().getClass().getSimpleName());
+    // to store DeliveryRequest "reponse"
+    if(value.getSubscriberState().getDeliveryResponse()!=null) return true;
+    // to store journeyStatistic
+    if(value.getSubscriberState().getJourneyStatisticWrappers()!=null && value.getSubscriberState().getJourneyStatisticWrappers().size()>0) return true;
+    // to let periodic go in history state store for data retention
+    if(value.getOriginalEvent() instanceof TimedEvaluation && ((TimedEvaluation)value.getOriginalEvent()).getPeriodicEvaluation()) return true;
+    // for the cleanup
+    if(value.getOriginalEvent() instanceof CleanupSubscriber) return true;
+    // else filtered out
+    return false;
   }
 
   /*****************************************
@@ -6586,7 +6591,7 @@ public class EvolutionEngine
 
     public String getUniqueKey()
     {
-      return String.format("%020d", uniqueKeyServer.getKey());
+      return uniqueKeyServer.getKey();
     }
 
     /*****************************************
@@ -6660,7 +6665,7 @@ public class EvolutionEngine
 
     public String getUniqueKey()
     {
-      return String.format("%020d", uniqueKeyServer.getKey());
+      return uniqueKeyServer.getKey();
     }
 
     /*****************************************

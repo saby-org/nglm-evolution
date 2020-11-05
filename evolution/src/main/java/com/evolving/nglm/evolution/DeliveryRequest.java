@@ -152,6 +152,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     ODR(2),
     Messages(3),
     LoyaltyProgram(4),
+    Journey(5),
     Unknown(-1);
     private Integer externalRepresentation;
     private ActivityType(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -383,8 +384,10 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
 
   // if false, not going in SubscriberHistoryStateStore
   public boolean isToStoreInHistoryStateStore(){
+    // store only response
+    boolean toStore = !getDeliveryStatus().equals(DeliveryStatus.Pending);
     // store only those types
-    boolean toStore = getActivityType()==ActivityType.BDR || getActivityType()==ActivityType.ODR || getActivityType()==ActivityType.Messages;
+    toStore = toStore && (getActivityType()==ActivityType.BDR || getActivityType()==ActivityType.ODR || getActivityType()==ActivityType.Messages);
     // filter DeliveryRequest response that are related to a parent... keep history only if we are for the parent here...
     toStore = toStore && (getOriginatingSubscriberID() == null || getOriginatingSubscriberID().startsWith(ORIGIN));
     return toStore;
