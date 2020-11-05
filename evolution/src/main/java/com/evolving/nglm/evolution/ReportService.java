@@ -10,10 +10,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -22,7 +18,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -68,7 +63,7 @@ public class ReportService extends GUIService
   public static final DateFormat TIMESTAMP_PRINT_FORMAT;
   static
   {
-    TIMESTAMP_PRINT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    TIMESTAMP_PRINT_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
     TIMESTAMP_PRINT_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
   }
   
@@ -231,8 +226,8 @@ public class ReportService extends GUIService
     pendingReportsForDates.add(now);
     
     StringBuilder dateRAJKString = new StringBuilder();
-    pendingReportsForDates.forEach(dt -> dateRAJKString.append(" " + printDate(dt)));
-    if(log.isDebugEnabled()) log.debug("generating reoports for dates {}", dateRAJKString);
+    pendingReportsForDates.forEach(dt -> dateRAJKString.append("," + printDate(dt)));
+    if(log.isInfoEnabled()) log.info("generating reoports of {} for dates {}", report.getName(), dateRAJKString);
     
     for (Date date : pendingReportsForDates)
       {
@@ -409,46 +404,14 @@ public class ReportService extends GUIService
     //  filter by name
     //
     
-    //FileFilter filter = new FileFilter() { public boolean accept(File file) { return file.getName().startsWith(report.getName()); } };
-    DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() { @Override public boolean accept(Path entry) throws IOException { return entry.getFileName().toString().startsWith(report.getName()); } };
+    FileFilter filter = new FileFilter() { public boolean accept(File file) { return file.getName().startsWith(report.getName()); } };
     
     //
     //  generatedReports
     //
     
     Set<Date> generatedDates = new HashSet<Date>();
-    final Path dir = Paths.get(Deployment.getReportManagerOutputPath());
-    try
-      {
-        final DirectoryStream<Path> dirStream = Files.newDirectoryStream(dir, filter);
-        Iterator<Path> iterator = dirStream.iterator();
-        while (iterator.hasNext())
-          {
-            Path generatedReportFilePath = iterator.next();
-            String fileName = generatedReportFilePath.getFileName().toString();
-            Date reportDate = getReportDate(fileName, report.getName());
-            if (reportDate != null) generatedDates.add(reportDate);
-          }
-        dirStream.close();
-      } 
-    catch (IOException e) { e.printStackTrace(); }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    /*   listFiles is not believable
+    int doLs = 0;
     while(doLs < 3)
       {
         File[] generatedReports = this.reportDirectory.listFiles(filter);
@@ -472,21 +435,21 @@ public class ReportService extends GUIService
               }
           }
         doLs ++;
-      }*/
+      }
     
     //
     //  pendingDates
     //
     
     StringBuilder generatedDatesRAJKString = new StringBuilder();
-    generatedDates.forEach(dt -> generatedDatesRAJKString.append(" " + printDate(dt)));
-    if(log.isDebugEnabled()) log.debug("getPendingReportsForDates generatedDates {}", generatedDatesRAJKString);
+    generatedDates.forEach(dt -> generatedDatesRAJKString.append("," + printDate(dt)));
+    if(log.isInfoEnabled()) log.info("{} already generatedDates {}", report.getName(), generatedDatesRAJKString);
     
     pendingDates = compareAndGetDates(report, generatedDates);
     
     StringBuilder pendingDatesDatesRAJKString = new StringBuilder();
-    pendingDates.forEach(dt -> pendingDatesDatesRAJKString.append(" " + printDate(dt)));
-    if(log.isDebugEnabled()) log.debug("getPendingReportsForDates pendingDates {}", pendingDatesDatesRAJKString);
+    pendingDates.forEach(dt -> pendingDatesDatesRAJKString.append("," + printDate(dt)));
+    if(log.isInfoEnabled()) log.info("{} has pendingDates {} for EffectiveScheduling {}", report.getName(), pendingDatesDatesRAJKString, report.getEffectiveScheduling());
     
     //
     //  filterIfUpdated
@@ -566,7 +529,7 @@ public class ReportService extends GUIService
           }
         
         StringBuilder datesToCheckRAJKString = new StringBuilder();
-        datesToCheck.forEach(dt -> datesToCheckRAJKString.append(" " + printDate(dt)));
+        datesToCheck.forEach(dt -> datesToCheckRAJKString.append("," + printDate(dt)));
         if(log.isDebugEnabled()) log.debug("compareAndGetDates datesToCheck {}", datesToCheckRAJKString);
         
         //
