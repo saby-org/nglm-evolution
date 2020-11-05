@@ -9,6 +9,8 @@ package com.evolving.nglm.evolution;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -682,7 +684,9 @@ public class ReportService extends GUIService
       } 
     catch (Exception e)
       {
-        log.error(e.getMessage());
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error(stackTraceWriter.toString());
       }
     return result;
   }
