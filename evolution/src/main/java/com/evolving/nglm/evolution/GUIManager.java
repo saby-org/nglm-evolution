@@ -28084,7 +28084,20 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
                 if (offerName.equals(productName))
                   {
-                    offers.add(offerService.generateResponseJSON(offer, fullDetails, now));
+                    JSONObject offerJSON = offerService.generateResponseJSON(offer, fullDetails, now);
+                    if (!fullDetails)
+                      {
+                        if (offerObject.getJSONRepresentation().get("simpleOffer") != null)
+                          {
+                            offerJSON.put("simpleOffer", offerObject.getJSONRepresentation().get("simpleOffer"));
+                          }
+                        else
+                          {
+                            offerJSON.put("simpleOffer", "");
+                          }
+                      }
+
+                    offers.add(offerJSON);
                   }
                 else
                   {
@@ -28099,8 +28112,20 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
                 if (offerName.equals(voucherName))
                   {
+                    JSONObject offerJSON = offerService.generateResponseJSON(offer, fullDetails, now);
+                    if (!fullDetails)
+                      {
+                        if (offerObject.getJSONRepresentation().get("simpleOffer") != null)
+                          {
+                            offerJSON.put("simpleOffer", offerObject.getJSONRepresentation().get("simpleOffer"));
+                          }
+                        else
+                          {
+                            offerJSON.put("simpleOffer", "");
+                          }
+                      }
 
-                    offers.add(offerService.generateResponseJSON(offer, fullDetails, now));
+                    offers.add(offerJSON);
                   }
                 else
                   {
