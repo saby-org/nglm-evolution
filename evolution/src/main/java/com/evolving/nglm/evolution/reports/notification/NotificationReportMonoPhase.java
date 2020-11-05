@@ -550,7 +550,12 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
         csvfile
     );
 
-    if (!reportMonoPhase.startOneToOne(true))
+    // check if multiple reports of several dates are required to be in the same zipped file 
+    boolean isMultiDates = false;
+    if (reportPeriodQuantity > 1)
+    	isMultiDates = true;
+    
+    if (!reportMonoPhase.startOneToOne(isMultiDates))
       {
         log.warn("An error occured, the report might be corrupted");
         return;
@@ -562,7 +567,8 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
   {
     Date tempfromDate = fromDate;
     List<String> esIndexOdrList = new ArrayList<String>();
-    while(tempfromDate.getTime() <= toDate.getTime())
+ // to get the reports with yesterday's date only
+    while(tempfromDate.getTime() < toDate.getTime())	
       {
         esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
         tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
