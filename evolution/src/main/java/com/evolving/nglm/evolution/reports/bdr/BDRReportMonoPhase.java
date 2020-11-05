@@ -446,8 +446,13 @@ public class BDRReportMonoPhase implements ReportCsvFactory
         reportFactory,
         csvfile
     );
-
-    if (!reportMonoPhase.startOneToOne(true))
+    
+    // check if multiple reports of several dates are required in the zipped file 
+    boolean isMultiDates = false;
+    if (reportPeriodQuantity > 1)
+    	isMultiDates = true;
+    
+    if (!reportMonoPhase.startOneToOne(isMultiDates))
       {
         log.warn("An error occured, the report might be corrupted");
         return;
