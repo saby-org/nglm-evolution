@@ -103,6 +103,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramPointsEven
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
 import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.VoucherChange.VoucherChangeAction;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -2401,7 +2402,26 @@ public class EvolutionEngine
               purchaseFulfillmentRequest.getFeatureID(),
               purchaseFulfillmentRequest.getOrigin()
             );
+            int returnCode = purchaseFulfillmentRequest.getReturnCode();
+         // storing the voucherChange
+            VoucherChange voucherChange = new VoucherChange(
+                purchaseFulfillmentRequest.getSubscriberID(),
+                purchaseFulfillmentRequest.getEventDate(),
+                null,
+                purchaseFulfillmentRequest.getEventID(),
+                VoucherChangeAction.Deliver,
+                voucherDelivery.getVoucherCode(),
+                voucherDelivery.getVoucherID(),
+                voucherDelivery.getFileID(),
+                purchaseFulfillmentRequest.getModuleID(),
+                purchaseFulfillmentRequest.getFeatureID(),
+                purchaseFulfillmentRequest.getOrigin(),
+                RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode)         
+                
+                
+            );
             subscriberProfile.getVouchers().add(voucherToStore);
+            subscriberState.getVoucherChanges().add(voucherChange);
             // we keep voucher ordered by expiry data, this is important when we will apply change
             sortVouchersPerExpiryDate(subscriberProfile);
             subscriberUpdated = true;
@@ -2424,7 +2444,24 @@ public class EvolutionEngine
         if(voucherStored.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Expired
                 && voucherStored.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Redeemed
                 && retentionService.isExpired(voucherStored)){
-          voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
+          voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired); 
+          VoucherChange voucherChange = new VoucherChange(
+              subscriberProfile.getSubscriberID(),              
+              SystemTime.getCurrentTime(),
+              null,
+              voucherStored.getEventID(),
+              VoucherChangeAction.Expire,
+              voucherStored.getVoucherCode(),
+              voucherStored.getVoucherID(),
+              voucherStored.getFileID(),
+              voucherStored.getModuleID(),
+              voucherStored.getFeatureID(),
+              voucherStored.getOrigin(),
+              RESTAPIGenericReturnCodes.SUCCESS  
+              
+              
+          );
+          subscriberState.getVoucherChanges().add(voucherChange);
           subscriberUpdated=true;
         }
 

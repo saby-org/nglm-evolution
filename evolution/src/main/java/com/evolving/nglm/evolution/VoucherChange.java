@@ -16,6 +16,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     Resend("resend"),
     Extend("extend"),
     Expire("expire"),
+    Deliver("deliver"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private VoucherChangeAction(String externalRepresentation) { this.externalRepresentation = externalRepresentation;}

@@ -441,5 +441,30 @@ prepare-curl -XPOST $CONNECT_URL_JOURNEY_ES/connectors -H "Content-Type: applica
       "batchSize" : "'$CONNECT_ES_JOURNEY_BATCHSIZEMB'"
       }
   }' 
+ 
+#
+#  sink connector -- VDR (elasticsearch)
+#
+
+export CONNECT_URL_VDR_ES=${CONNECT_URL_VDR_ES:-$DEFAULT_CONNECT_URL}
+export CONNECT_ES_VDR_SINK_TASKS=${CONNECT_ES_VDR_SINK_TASKS:-$CONNECT_ES_DEFAULT_SINK_TASKS}
+export CONNECT_ES_VDR_BATCHRECORDCOUNT=${CONNECT_ES_VDR_BATCHRECORDCOUNT:-$CONNECT_ES_DEFAULT_BATCHRECORDCOUNT}
+export CONNECT_ES_VDR_BATCHSIZEMB=${CONNECT_ES_VDR_BATCHSIZEMB:-$CONNECT_ES_DEFAULT_BATCHSIZEMB}
+prepare-curl -XPOST $CONNECT_URL_VDR_ES/connectors -H "Content-Type: application/json" -d '
+   {
+     "name" : "vdr_es_sink_connector",
+     "config" :
+       {
+       "connector.class" : "com.evolving.nglm.evolution.VDRSinkConnector",
+       "tasks.max" : '$CONNECT_ES_VDR_SINK_TASKS',
+       "topics" : "${topic.voucherchange.response}",
+       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+       "indexName" : "detailedrecords_vouchers",
+       "pipelineName" : "vdr-daily",
+       "batchRecordCount" : "'$CONNECT_ES_VDR_BATCHRECORDCOUNT'",
+       "batchSize" : "'$CONNECT_ES_VDR_BATCHSIZEMB'"
+       }
+   }'
 
 wait

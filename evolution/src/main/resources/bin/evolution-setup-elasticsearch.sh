@@ -90,7 +90,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
       },
       "vouchers"                            : { "type" : "nested",
       	   "properties" : {
-              "vouchers"        : { "type": "nested", "properties": { "voucherExpiryDate" : { "type" : "date" } } }
+              "vouchers"        : { "type": "nested", "properties": { "voucherExpiryDate" : { "type" : "date" }, "voucherDeliveryDate" : { "type" : "date" } } }
            }
       },
       "loyaltyPrograms"                     : { "type" : "nested",
@@ -345,6 +345,71 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/odr
       "date_index_name" : {
         "field" : "eventDatetime",
         "index_name_prefix" : "detailedrecords_offers-",
+        "index_name_format" : "yyyy-MM-dd",
+        "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
+        "timezone" : "'$DEPLOYMENT_TIMEZONE'",
+        "date_rounding" : "d"
+      }
+    }
+  ]
+}'
+echo
+
+#
+#  create a cleaning policy for VDR
+#
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/vdr_policy -H'Content-Type: application/json' -d'
+{
+  "policy": {
+    "phases": {
+      "delete": {
+         "min_age": "Deployment.getElasticsearchRetentionDaysVDR()d",
+         "actions": { "delete": {} }
+      }
+    }
+  }
+}'
+echo
+#
+#  manually create vdr template
+#
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/vdr -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["detailedrecords_vouchers-*"],
+  "settings" : {
+    "index" : {
+      "lifecycle.name": "vdr_policy"
+    }
+  },
+  "mappings" : {
+    "properties" : {
+      "subscriberID" : { "type" : "keyword" },
+      "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
+      "eventID" : { "type" : "keyword" },     
+      "moduleID" : { "type" : "keyword" },
+      "featureID" : { "type" : "keyword" },
+      "origin" : { "type" : "keyword", "index" : "false" },
+      "returnStatus" : { "type" : "keyword" },
+      "voucherCode" : { "type" : "keyword" },
+      "voucherID" : { "type" : "keyword" },
+      "opertaion" : { "type" : "keyword" },
+      "expiryDate" : { "type" : "keyword" }
+    }
+  }
+}'
+echo
+
+#
+#  manually create vdr pipeline
+#
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/vdr-daily -H 'Content-Type: application/json' -d'
+{
+  "description": "daily vdr index naming",
+  "processors" : [
+    {
+      "date_index_name" : {
+        "field" : "eventDatetime",
+        "index_name_prefix" : "detailedrecords_vouchers-",
         "index_name_format" : "yyyy-MM-dd",
         "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
         "timezone" : "'$DEPLOYMENT_TIMEZONE'",
