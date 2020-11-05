@@ -447,7 +447,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
         csvfile
     );
     
-    // check if multiple reports of several dates are required in the zipped file 
+    // check if multiple reports of several dates are required to be in the same zipped file 
     boolean isMultiDates = false;
     if (reportPeriodQuantity > 1)
     	isMultiDates = true;
