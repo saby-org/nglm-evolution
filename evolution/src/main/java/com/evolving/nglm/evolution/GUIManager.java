@@ -7180,8 +7180,20 @@ public class GUIManager
         offerObjects = offerService.getStoredOffers(includeArchived);
       }
     for (GUIManagedObject offer : offerObjects)
-      {
-        offers.add(offerService.generateResponseJSON(offer, fullDetails, now));
+      {        
+        JSONObject offerJSON = offerService.generateResponseJSON(offer, fullDetails, now);
+        if (!fullDetails)
+          {
+            if (offer.getJSONRepresentation().get("simpleOffer") != null)
+              {
+                offerJSON.put("simpleOffer", offer.getJSONRepresentation().get("simpleOffer"));
+              }
+            else
+              {
+                offerJSON.put("simpleOffer", "");
+              }
+          }
+        offers.add(offerJSON);
       }
 
     /*****************************************
@@ -22846,7 +22858,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String, Object> response = new HashMap<String, Object>(); 
-    String user = JSONUtilities.decodeString(jsonRoot, "userID", false);
+    String user = JSONUtilities.decodeString(jsonRoot, "loginID", false);
    
     String activeSupplier = activeSupplierAndParentSupplierIDs(user).get("activeSupplierID");
     boolean offerCanBeModified = true;
@@ -23213,7 +23225,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     List<Offer> offers = new ArrayList<>();
     List<OfferProduct> products = new ArrayList<>();
     List<OfferVoucher> vouchers = new ArrayList<>();
-    String user = JSONUtilities.decodeString(jsonRoot, "userID", false);
+    String user = JSONUtilities.decodeString(jsonRoot, "loginID", false);
     Date now = SystemTime.getCurrentTime();
     String activeSupplier = activeSupplierAndParentSupplierIDs(user).get("activeSupplierID");
  
@@ -23344,7 +23356,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     String offerID = JSONUtilities.decodeString(jsonRoot, "id", false);
     String offerDisplay = JSONUtilities.decodeString(jsonRoot, "offerName", false);
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
-    String user = JSONUtilities.decodeString(jsonRoot, "userID", false);
+    String user = JSONUtilities.decodeString(jsonRoot, "loginID", false);
     String activeSupplier = activeSupplierAndParentSupplierIDs(user).get("activeSupplierID");
     Date now = SystemTime.getCurrentTime();
     Offer offer = null;
@@ -26939,9 +26951,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     JSONObject productJSON = new JSONObject();
     JSONObject voucherJSON = new JSONObject();
     String activeSupplier = null;
-    if (jsonRoot.containsKey("userID"))
+    if (jsonRoot.containsKey("loginID"))
       {
-        String userID = JSONUtilities.decodeString(jsonRoot, "userID", true);
+        String userID = JSONUtilities.decodeString(jsonRoot, "loginID", true);
         activeSupplier = activeSupplierAndParentSupplierIDs(userID).get("activeSupplierID");
       }
     if (productJSONArray != null &&!(productJSONArray.isEmpty()))
@@ -26950,7 +26962,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         productJSON = JSONUtilities.decodeJSONObject(productJSONObject, "product", false);
         String productID = productService.generateProductID();
         productJSON.put("id", productID);
-        if (jsonRoot.containsKey("userID"))
+        if (jsonRoot.containsKey("loginID"))
           {
             productJSON.put("supplierID", activeSupplier);
           }
@@ -26974,7 +26986,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         voucherJSON = JSONUtilities.decodeJSONObject(voucherJSONObject, "voucher", false); 
         String voucherID = voucherService.generateVoucherID();
         voucherJSON.put("id", voucherID);
-        if (jsonRoot.containsKey("userID"))
+        if (jsonRoot.containsKey("loginID"))
           {
             voucherJSON.put("supplierID", activeSupplier);
           }
@@ -27007,12 +27019,15 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
   *  merge product and voucher  from offer json and 
   *
   ************************************************************************/
-   public JSONArray mergeOfferProductAndVoucher (String id, String object) {
+   public JSONArray mergeOfferProductAndVoucher (String id, String object, JSONObject offer) {
      JSONArray response = new JSONArray();
      JSONArray productJSONArray = new JSONArray();
      JSONArray voucherJSONArray = new JSONArray();
+     JSONObject product = new JSONObject();     
      String activeSupplier = null;
      if (id != null && object.equals("product")) {
+       JSONArray productOfferArray = (JSONArray) offer.get("products");
+       JSONObject productOffer = (JSONObject) productOfferArray.get(0);
        JSONObject productJSONObject = new JSONObject();
        Product productObject = (Product) productService.getStoredProduct(id);
        productJSONObject.put("supplierID", productObject.getSupplierID());
@@ -27021,12 +27036,17 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
        productJSONObject.put("unitaryCost", productObject.getJSONRepresentation().get("unitaryCost"));
        productJSONObject.put("recommendedPrice", productObject.getJSONRepresentation().get("recommendedPrice"));
        productJSONObject.put("productTypes", productObject.getProductTypes());
-       productJSONObject.put("termsAndConditions", productObject.getJSONRepresentation().get("termsAndConditions"));
-       productJSONArray.add(productJSONObject);
+       productJSONObject.put("termsAndConditions", productObject.getJSONRepresentation().get("termsAndConditions"));       
+       product.put("quantity", productOffer.get("quantity"));
+       product.put("product", productJSONObject);
+       productJSONArray.add(product);
        response = productJSONArray;
      }
      if (id != null && object.equals("voucher")) {
+       JSONArray voucherOfferArray = (JSONArray) offer.get("vouchers");
+       JSONObject voucherOffer = (JSONObject) voucherOfferArray.get(0);
        JSONObject voucherJSONObject = new JSONObject();
+       JSONObject voucher = new JSONObject();
        Voucher voucherObject = (Voucher) voucherService.getStoredVoucher(id);
        voucherJSONObject.put("supplierID", voucherObject.getSupplierID());
        voucherJSONObject.put("voucherTypeId", voucherObject.getVoucherTypeId());
@@ -27034,7 +27054,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
        voucherJSONObject.put("stock", voucherObject.getJSONRepresentation().get("stock"));
        voucherJSONObject.put("recommendedPrice", voucherObject.getRecommendedPrice());
        voucherJSONObject.put("sharedCode", voucherObject.getJSONRepresentation().get("sharedCode"));
-       voucherJSONArray.add(voucherJSONObject);
+       voucher.put("quantity", voucherOffer.get("quantity"));
+       voucher.put("voucher", voucherJSONObject);
+       voucherJSONArray.add(voucher);
        response = voucherJSONArray;
      }
      return response;
@@ -27865,7 +27887,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             if (offerName.equals(productName))
               {
                 offerJSON = offerService.generateResponseJSON(offerObject, true, SystemTime.getCurrentTime());                
-                JSONArray productJSONArray = mergeOfferProductAndVoucher(productID, "product"); 
+                JSONArray productJSONArray = mergeOfferProductAndVoucher(productID, "product",offerJSON); 
                 offerJSON.put("products", productJSONArray);               
                 
               }
@@ -27886,7 +27908,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             if (offerName.equals(voucherName))
               {
                 offerJSON = offerService.generateResponseJSON(offerObject, true, SystemTime.getCurrentTime());
-                JSONArray voucherJSONArray = mergeOfferProductAndVoucher(voucherID, "voucher");                 
+                JSONArray voucherJSONArray = mergeOfferProductAndVoucher(voucherID, "voucher", offerJSON);                 
                 offerJSON.put("vouchers", voucherJSONArray); 
               }
             else
@@ -27982,7 +28004,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                             offerJSON.put("simpleOffer", "");
                           }
                       } 
-                    JSONArray productJSONArray = mergeOfferProductAndVoucher(productID, "product");                    
+                    JSONArray productJSONArray = mergeOfferProductAndVoucher(productID, "product", offerJSON);                    
                     offerJSON.put("products", productJSONArray);
                     offers.add(offerJSON);
                   }
@@ -28011,7 +28033,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                             offerJSON.put("simpleOffer", "");
                           }
                       }
-                    JSONArray voucherJSONArray = mergeOfferProductAndVoucher(voucherID, "voucher");
+                    JSONArray voucherJSONArray = mergeOfferProductAndVoucher(voucherID, "voucher",offerJSON);
                     offerJSON.put("vouchers", voucherJSONArray); 
 
                     offers.add(offerJSON);
