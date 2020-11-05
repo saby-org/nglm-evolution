@@ -343,6 +343,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   {
     Date tempfromDate = fromDate;
     List<String> esIndexOdrList = new ArrayList<String>();
+    // to get the reports with yesterday's date only
     while(tempfromDate.getTime() < toDate.getTime())
       {
         esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
