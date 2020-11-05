@@ -21,12 +21,10 @@ public class VoucherUploadedReportDriver extends ReportDriver
     log.debug("Processing Journey Customer States Report with " + report + " and " + params);
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-    String Voucher_ES_INDEX = "voucher_live_";
-    VoucherService voucherService = new VoucherService(kafka, "voucherUploadedReport-voucherservice-voucherUploadedReportMonoDriver", Deployment.getVoucherTopic());
-    voucherService.start();
+    String Voucher_ES_INDEX = "voucher_live_";    
     log.debug("PHASE 1 : read ElasticSearch");
-    VoucherUploadedStatesReportMonoPhase.main(new String[] { elasticSearch, Voucher_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, voucherService, reportGenerationDate);
-    voucherService.stop();
+    VoucherUploadedReportMonoPhase.main(new String[] { elasticSearch, Voucher_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
+   
     log.debug("Finished with Journey Customer States Report");
 
   }

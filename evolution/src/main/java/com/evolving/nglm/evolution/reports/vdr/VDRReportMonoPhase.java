@@ -21,6 +21,7 @@ import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -45,14 +46,14 @@ public class VDRReportMonoPhase implements ReportCsvFactory
   private static final DateFormat DATE_FORMAT;
 
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private static JourneyService journeyService;
-  private static OfferService offerService;
-  private static SalesChannelService salesChannelService;
-  private static LoyaltyProgramService loyaltyProgramService;
-  private static ProductService productService;
-  private static SupplierService supplierService;
-  private static VoucherTypeService voucherTypeService;
-  private static VoucherService voucherService;
+  private JourneyService journeyService;
+  private OfferService offerService;
+  private SalesChannelService salesChannelService;
+  private LoyaltyProgramService loyaltyProgramService;
+  private ProductService productService;
+  private SupplierService supplierService;
+  private VoucherTypeService voucherTypeService;
+  private VoucherService voucherService;
 
   private final static String moduleId = "moduleID";
   private final static String featureId = "featureID";
@@ -326,6 +327,12 @@ public class VDRReportMonoPhase implements ReportCsvFactory
 
   public static void main(String[] args, final Date reportGenerationDate)
   {
+    VDRReportMonoPhase vdrReportMonoPhase = new VDRReportMonoPhase();
+    vdrReportMonoPhase.start(args, reportGenerationDate);
+  }
+  
+  private void start(String[] args, final Date reportGenerationDate)
+  {
     if (log.isInfoEnabled())
       log.info("received " + args.length + " args");
     for (String arg : args)
@@ -382,31 +389,45 @@ public class VDRReportMonoPhase implements ReportCsvFactory
 
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(),
         "vdrreportcsvwriter-saleschannelservice-VDRReportMonoPhase", salesChannelTopic, false);
-    salesChannelService.start();
+    
     offerService = new OfferService(Deployment.getBrokerServers(), "vdrreportcsvwriter-offerservice-VDRReportMonoPhase",
         offerTopic, false);
-    offerService.start();
+    
     journeyService = new JourneyService(Deployment.getBrokerServers(),
         "vdrreportcsvwriter-journeyservice-VDRReportMonoPhase", journeyTopic, false);
-    journeyService.start();
+    
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(),
         "vdrreportcsvwriter-loyaltyprogramservice-VDRReportMonoPhase", loyaltyProgramTopic, false);
-    loyaltyProgramService.start();
+    
     productService = new ProductService(Deployment.getBrokerServers(),
         "vdrreportcsvwriter-productService-VDRReportMonoPhase", productTopic, false);
-    productService.start();
+    
     supplierService = new SupplierService(Deployment.getBrokerServers(),
         "vdrreportcsvwriter-productService-VDRReportMonoPhase", supplierTopic, false);
-    supplierService.start();
+   
     voucherTypeService = new VoucherTypeService(Deployment.getBrokerServers(),
         "vdrreportcsvwriter-productService-VDRReportMonoPhase", voucherTypeTopic, false);
-    voucherTypeService.start();
+    
 
     voucherService = new VoucherService(Deployment.getBrokerServers(),
         "report-voucherService-voucherCustomerReportMonoPhase", Deployment.getVoucherTopic());
-    voucherService.start();
+    
 
-    ReportMonoPhase reportMonoPhase = new ReportMonoPhase(esNode, esIndexWithQuery, reportFactory, csvfile);
+    salesChannelService.start();
+    offerService.start();
+    journeyService.start();
+    loyaltyProgramService.start();
+    productService.start();
+    supplierService.start();
+    voucherTypeService.start();
+    voucherService.start();
+    
+    ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
+        esNode,
+        esIndexWithQuery,
+        this,
+        csvfile
+    );
 
     if (!reportMonoPhase.startOneToOne(true))
       {
@@ -414,6 +435,16 @@ public class VDRReportMonoPhase implements ReportCsvFactory
           log.warn("An error occured, the report might be corrupted");
         return;
       }
+    
+    salesChannelService.stop();
+    offerService.stop();
+    journeyService.stop();
+    loyaltyProgramService.stop();
+    productService.stop();
+    supplierService.stop();
+    voucherTypeService.stop();
+    voucherService.stop();
+    
     if (log.isInfoEnabled())
       log.info("Finished VDRReport");
   }

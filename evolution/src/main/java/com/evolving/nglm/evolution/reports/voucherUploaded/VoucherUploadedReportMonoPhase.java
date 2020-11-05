@@ -41,20 +41,21 @@ import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
+import com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportMonoPhase;
 
 
-public class VoucherUploadedStatesReportMonoPhase implements ReportCsvFactory
+public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
 {
 
   //
   // logger
   //
 
-  private static final Logger log = LoggerFactory.getLogger(VoucherUploadedStatesReportMonoPhase.class);
+  private static final Logger log = LoggerFactory.getLogger(VoucherUploadedReportMonoPhase.class);
   final private static String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private static VoucherService voucherServicePersonal;
-  private static SupplierService supplierService;
-  private static VoucherTypeService voucherTypeService;
+  private VoucherService voucherService;
+  private SupplierService supplierService;
+  private VoucherTypeService voucherTypeService;
   List<String> headerFieldsOrder = new ArrayList<String>();
 
   public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
@@ -85,7 +86,7 @@ public class VoucherUploadedStatesReportMonoPhase implements ReportCsvFactory
     
     if (voucherPersonal != null && !voucherPersonal.isEmpty())
       {
-        Voucher voucher = voucherServicePersonal.getActiveVoucher(voucherPersonal.get("voucherId").toString(), SystemTime.getCurrentTime());
+        Voucher voucher = voucherService.getActiveVoucher(voucherPersonal.get("voucherId").toString(), SystemTime.getCurrentTime());
 
         if (voucherPersonal.get("_id") != null)
           {
@@ -214,7 +215,14 @@ public class VoucherUploadedStatesReportMonoPhase implements ReportCsvFactory
           }
       }
   }
-  public static void main(String[] args, VoucherService voucherService, final Date reportGenerationDate)
+  
+  public static void main(String[] args, Date reportGenerationDate)
+  {
+    VoucherUploadedReportMonoPhase voucherUploadedReportMonoPhase = new VoucherUploadedReportMonoPhase();
+    voucherUploadedReportMonoPhase.start(args, reportGenerationDate);
+  }
+  
+  private void start(String[] args, final Date reportGenerationDate)
   {
     if(log.isInfoEnabled())
     log.info("received " + args.length + " args");
@@ -232,9 +240,22 @@ public class VoucherUploadedStatesReportMonoPhase implements ReportCsvFactory
     String esNode          = args[0];
     String esIndexVoucher  = args[1];
     String csvfile         = args[2];
+    
+    
+    String supplierTopic = Deployment.getSupplierTopic();
+    String voucherTypeTopic = Deployment.getVoucherTypeTopic();
 
-    ReportCsvFactory reportFactory = new VoucherUploadedStatesReportMonoPhase();
-    voucherServicePersonal = voucherService;
+    supplierService = new SupplierService(Deployment.getBrokerServers(), "vdrreportcsvwriter-productService-VDRReportMonoPhase", supplierTopic, false);
+    
+    voucherTypeService = new VoucherTypeService(Deployment.getBrokerServers(), "vdrreportcsvwriter-productService-VDRReportMonoPhase", voucherTypeTopic, false);
+    
+    voucherService = new VoucherService(Deployment.getBrokerServers(), "voucherUploadedReport-voucherservice-voucherUploadedReportMonoDriver", Deployment.getVoucherTopic());
+   
+    
+    supplierService.start();
+    voucherTypeService.start();
+    voucherService.start();
+
 
     Collection<Voucher> activeVouchers = voucherService.getActiveVouchers(reportGenerationDate);
     StringBuilder activeVoucherEsIndex = new StringBuilder();
@@ -250,19 +271,12 @@ public class VoucherUploadedStatesReportMonoPhase implements ReportCsvFactory
     log.info("Reading data from ES in (" + activeVoucherEsIndex.toString() + ") and writing to " + csvfile);
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(activeVoucherEsIndex.toString(), QueryBuilders.matchAllQuery());
-    
-    String supplierTopic = Deployment.getSupplierTopic();
-    String voucherTypeTopic = Deployment.getVoucherTypeTopic();
 
-    supplierService = new SupplierService(Deployment.getBrokerServers(), "vdrreportcsvwriter-productService-VDRReportMonoPhase", supplierTopic, false);
-    supplierService.start();
-    voucherTypeService = new VoucherTypeService(Deployment.getBrokerServers(), "vdrreportcsvwriter-productService-VDRReportMonoPhase", voucherTypeTopic, false);
-    voucherTypeService.start();
 
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
         esIndexWithQuery,
-        reportFactory,
+        this,
         csvfile
     );
 
@@ -272,6 +286,10 @@ public class VoucherUploadedStatesReportMonoPhase implements ReportCsvFactory
         log.warn("An error occured, the report might be corrupted");
         return;
       }
+    supplierService.stop();
+    voucherTypeService.stop();
+    voucherService.stop();
+    
     if(log.isInfoEnabled())
     log.info("Finished VoucherUploadedReportESReader");
   }

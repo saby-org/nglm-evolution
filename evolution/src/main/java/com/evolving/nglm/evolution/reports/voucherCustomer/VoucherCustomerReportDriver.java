@@ -37,7 +37,7 @@ public class VoucherCustomerReportDriver extends ReportDriver{
 
       VoucherCustomerReportMonoPhase.main(new String[]{
           elasticSearch, esIndexSubscriber, csvFilename
-      });     
+      }, reportGenerationDate);        
   
 	  log.debug("Finished with voucherCustomer Report");
 	}

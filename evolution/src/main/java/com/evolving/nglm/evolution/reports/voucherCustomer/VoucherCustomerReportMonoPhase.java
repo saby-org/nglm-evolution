@@ -35,6 +35,7 @@ import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
+import com.evolving.nglm.evolution.reports.tokenOffer.TokenOfferReportMonoPhase;
 
 public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
 {
@@ -44,9 +45,9 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
   private final static String subscriberID = "subscriberID";
   private final static String customerID = "customerID";
 
-  private static VoucherService voucherService = null;
-  private static SupplierService supplierService = null;
-  private static VoucherTypeService voucherTypeService = null;
+  private VoucherService voucherService = null;
+  private SupplierService supplierService = null;
+  private VoucherTypeService voucherTypeService = null;
 
 
   /****************************************
@@ -199,8 +200,13 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
    * main
    *
    ****************************************/
-
-  public static void main(String[] args)
+  public static void main(String[] args, final Date reportGenerationDate)
+  {
+    VoucherCustomerReportMonoPhase voucherCustomerReportMonoPhase = new VoucherCustomerReportMonoPhase();
+    voucherCustomerReportMonoPhase.start(args, reportGenerationDate);
+  }
+  
+  private void start(String[] args, final Date reportGenerationDate)
   {
     if(log.isInfoEnabled())
     log.info("received " + args.length + " args");
@@ -227,21 +233,22 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
     esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
       
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
-              esNode,
-              esIndexWithQuery,
-              reportFactory,
-              csvfile
-          );
+        esNode,
+        esIndexWithQuery,
+        this,
+        csvfile
+    );
 
     voucherService = new VoucherService(Deployment.getBrokerServers(), "report-voucherService-voucherCustomerReportMonoPhase", Deployment.getVoucherTopic());
-    voucherService.start();
-
+    
     voucherTypeService = new VoucherTypeService(Deployment.getBrokerServers(), "report-voucherTypeService-voucherCustomerReportMonoPhase", Deployment.getVoucherTypeTopic(), false);
-    voucherTypeService.start();
-
+    
     supplierService = new SupplierService(Deployment.getBrokerServers(), "report-supplierService-voucherCustomerReportMonoPhase", Deployment.getSupplierTopic(), false);
-    supplierService.start();
+   
 
+    voucherService.start();
+    voucherTypeService.start();
+    supplierService.start();
     
     if (!reportMonoPhase.startOneToOne())
       {
@@ -249,6 +256,9 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
         log.warn("An error occured, the report might be corrupted");
         return;
       }
+    voucherService.stop();
+    voucherTypeService.stop();
+    supplierService.stop();
     
   }
 
