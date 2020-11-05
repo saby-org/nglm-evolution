@@ -687,6 +687,7 @@ public class ReportService extends GUIService
         StringWriter stackTraceWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stackTraceWriter, true));
         log.error(stackTraceWriter.toString());
+        log.error("skipping as badfile {}", reportFileName);
       }
     return result;
   }
