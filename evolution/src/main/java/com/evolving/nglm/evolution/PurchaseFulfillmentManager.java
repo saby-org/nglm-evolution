@@ -1610,7 +1610,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     if(purchaseStatus.getPaymentDebited() != null && !purchaseStatus.getPaymentDebited().isEmpty()){
       OfferPrice offerPrice = purchaseStatus.getPaymentDebited().remove(0);
-      if(offerPrice == null){// => offer is free
+      if(offerPrice == null || offerPrice.getAmount() <= 0){// => offer is free
         purchaseStatus.addPaymentRollbacked(offerPrice);
       }else{
         purchaseStatus.setPaymentBeingRollbacked(offerPrice);
