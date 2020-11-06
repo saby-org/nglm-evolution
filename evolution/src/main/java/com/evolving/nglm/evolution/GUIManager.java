@@ -242,6 +242,7 @@ public class GUIManager
     removeSegmentationDimension("removeSegmentationDimension"),
     setStatusSegmentationDimension("setStatusSegmentationDimension"),
     getCountBySegmentationRanges("getCountBySegmentationRanges"),
+    getCountBySegmentationRangesBySegmentID("getCountBySegmentationRangesBySegmentID"),
     getCountBySegmentationEligibility("getCountBySegmentationEligibility"),
     evaluateProfileCriteria("evaluateProfileCriteria"),
     getUCGDimensionSummaryList("getUCGDimensionSummaryList"),
@@ -1847,6 +1848,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeSegmentationDimension", new APISimpleHandler(API.removeSegmentationDimension));
         restServer.createContext("/nglm-guimanager/setStatusSegmentationDimension", new APISimpleHandler(API.setStatusSegmentationDimension));
         restServer.createContext("/nglm-guimanager/getCountBySegmentationRanges", new APISimpleHandler(API.getCountBySegmentationRanges));
+        restServer.createContext("/nglm-guimanager/getCountBySegmentationRangesBySegmentID", new APISimpleHandler(API.getCountBySegmentationRangesBySegmentID));
         restServer.createContext("/nglm-guimanager/getCountBySegmentationEligibility", new APISimpleHandler(API.getCountBySegmentationEligibility));
         restServer.createContext("/nglm-guimanager/evaluateProfileCriteria", new APISimpleHandler(API.evaluateProfileCriteria));
         restServer.createContext("/nglm-guimanager/getUCGDimensionSummaryList", new APISimpleHandler(API.getUCGDimensionSummaryList));
@@ -2845,6 +2847,10 @@ public class GUIManager
 
                 case getCountBySegmentationRanges:
                   jsonResponse = guiManagerGeneral.processGetCountBySegmentationRanges(userID, jsonRoot);
+                  break;
+
+                case getCountBySegmentationRangesBySegmentID:
+                  jsonResponse = guiManagerGeneral.processGetCountBySegmentationRangesBySegmentId(userID, jsonRoot);
                   break;
 
                 case getCountBySegmentationEligibility:
