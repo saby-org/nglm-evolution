@@ -1066,10 +1066,21 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_APPLICABLE, "criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
           continue mainLoop;
         }
-        
-        //TODO : still to be done :
-        //    - checkSubscriberLimit (decrement subscriber offer remaining counter)
 
+        //
+        // check offer purchase limit for this subscriber
+        //
+        
+        Map<String, List<Date>> offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
+        List<Date> purchaseHistory = offerPurchaseHistory.get(offerID);
+        int alreadyPurchased = (purchaseHistory != null) ? purchaseHistory.size() : 0;
+        if (alreadyPurchased+purchaseRequest.getQuantity() > offer.getMaximumAcceptances())
+          {
+            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
+            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_OFFER_LIMIT_REACHED, "maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
+            continue mainLoop;
+          }
+        
         /*****************************************
         *
         *  Proceed with the purchase
