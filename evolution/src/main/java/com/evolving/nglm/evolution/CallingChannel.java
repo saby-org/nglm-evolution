@@ -6,6 +6,10 @@
 
 package com.evolving.nglm.evolution;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
@@ -13,13 +17,16 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+@GUIDependencyDef(objectType = "callingChannel", serviceClass = CallingChannelService.class, dependencies = { "catalogcharacteristic" })
 public class CallingChannel extends GUIManagedObject
 {
   /*****************************************
@@ -37,8 +44,9 @@ public class CallingChannel extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("calling_channel");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+    schemaBuilder.field("catalogCharacteristics", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schema = schemaBuilder.build();
   };
 
@@ -54,6 +62,7 @@ public class CallingChannel extends GUIManagedObject
 
   public static Schema schema() { return schema; }
   public static ConnectSerde<CallingChannel> serde() { return serde; }
+  private List<String> catalogCharacteristics;
 
   /****************************************
   *
@@ -71,6 +80,9 @@ public class CallingChannel extends GUIManagedObject
 
   public String getCallingChannelID() { return getGUIManagedObjectID(); }
   public String getDisplay() { return getGUIManagedObjectDisplay(); }
+  public List<String> getCatalogCharacteristics() { return catalogCharacteristics; }
+  
+  
 
   /*****************************************
   *
@@ -78,9 +90,10 @@ public class CallingChannel extends GUIManagedObject
   *
   *****************************************/
 
-  public CallingChannel(SchemaAndValue schemaAndValue)
+  public CallingChannel(SchemaAndValue schemaAndValue, List<String> catalogCharacteristics)
   {
     super(schemaAndValue);
+    this.catalogCharacteristics = catalogCharacteristics;
   }
 
   /*****************************************
@@ -94,6 +107,7 @@ public class CallingChannel extends GUIManagedObject
     CallingChannel callingChannel = (CallingChannel) value;
     Struct struct = new Struct(schema);
     packCommon(struct, callingChannel);
+    struct.put("catalogCharacteristics", callingChannel.getCatalogCharacteristics());
     return struct;
   }
   
@@ -118,12 +132,13 @@ public class CallingChannel extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    
+    List<String> catalogCharacteristics = schemaVersion >= 3 ? (List<String>) valueStruct.get("catalogCharacteristics"):new ArrayList<String>();
+     
     //
     //  return
     //
 
-    return new CallingChannel(schemaAndValue);
+    return new CallingChannel(schemaAndValue,catalogCharacteristics);
   }
 
   /*****************************************
@@ -167,6 +182,9 @@ public class CallingChannel extends GUIManagedObject
     if (getRawEffectiveStartDate() != null) throw new GUIManagerException("unsupported start date", JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false));
     if (getRawEffectiveEndDate() != null) throw new GUIManagerException("unsupported end date", JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false));
 
+    this.catalogCharacteristics = decodeCatalogCharacteristics(JSONUtilities.decodeJSONArray(jsonRoot, "catalogCharacteristics", true));
+
+
     /*****************************************
     *
     *  epoch
@@ -178,7 +196,17 @@ public class CallingChannel extends GUIManagedObject
         this.setEpoch(epoch);
       }
   }
-
+  
+  private List<String> decodeCatalogCharacteristics(JSONArray jsonArray) throws GUIManagerException
+  {
+    List<String> catalogCharacteristics = new ArrayList<String>();
+    for (int i=0; i<jsonArray.size(); i++)
+      {
+        JSONObject catalogCharacteristicJSON = (JSONObject) jsonArray.get(i);
+        catalogCharacteristics.add(JSONUtilities.decodeString(catalogCharacteristicJSON, "catalogCharacteristicID", true));
+      }
+    return catalogCharacteristics;
+  }
   /*****************************************
   *
   *  epochChanged
@@ -197,5 +225,12 @@ public class CallingChannel extends GUIManagedObject
       {
         return true;
       }
+  }
+  
+  @Override public Map<String, List<String>> getGUIDependencies()
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    result.put("catalogcharacteristic".toLowerCase(), getCatalogCharacteristics());
+    return result;
   }
 }

@@ -23,6 +23,10 @@
   "datacubeJobsScheduling" : {
     "ODR-preview"                    : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
     "ODR-definitive"                 : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
+    "BDR-preview"                    : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
+    "BDR-definitive"                 : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
+    "MDR-preview"                    : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
+    "MDR-definitive"                 : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 1 * * *" },
     "LoyaltyPrograms-preview"        : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
     "LoyaltyPrograms-definitive"     : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 0 * * *" },
     "SubscriberProfile-preview"      : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" },
@@ -34,6 +38,42 @@
     "JourneystatisticCleanUp"        : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" },
     "ExpiredVoucherCleanUp"          : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" }
   },
+  
+  "elasticsearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
+  "elasticsearchScrollSize" : 1000,
+  "elasticsearchConnectTimeout" : 5000,
+  "elasticsearchQueryTimeout" : 7200000,
+  
+  "elasticsearchDefaultShards" : 1,
+  "elasticsearchDefaultReplicas" : 1,
+  "elasticsearchSubscriberprofileShards" : 4,
+  "elasticsearchSubscriberprofileReplicas" : 1,
+  "elasticsearchSnapshotShards" : 1,
+  "elasticsearchSnapshotReplicas" : 0,
+  "elasticsearchLiveVoucherShards" : 1,
+  "elasticsearchLiveVoucherReplicas" : 1,
+  
+  "ESRetentionDaysODR"              : 45,
+  "ESRetentionDaysBDR"              : 45,
+  "ESRetentionDaysMDR"              : 45,
+  "ESRetentionDaysTokens"           : 45,
+  "ESRetentionDaysSnapshots"        : 10,
+  "ESRetentionDaysJourneys"         : 15,
+  "ESRetentionDaysCampaigns"        : 15,
+  "ESRetentionDaysBulkCampaigns"    : 15,
+  "ESRetentionDaysExpiredVouchers"  : 31,
+
+  "subscriberESIndexes" :
+  [
+    "subscriberprofile",
+    "detailedrecords_bonuses-*",
+    "detailedrecords_offers-*",
+    "detailedrecords_messages-*",
+    "detailedrecords_tokens-*",
+    "journeystatistic*",
+    "journeymetric",
+    "regr_criteria"
+  ],
 
   "hourlyReportCronEntryString"   : "0 * * * *",
   "dailyReportCronEntryString"    : "5 2 * * *",
@@ -47,8 +87,6 @@
   "importVoucherFileBulkSize" : 5000,
   "voucherESCacheCleanerFrequencyInSec" : 300,
   "numberConcurrentVoucherAllocationToES" : 10,
-  "liveVoucherIndexNumberOfReplicas" : "1",
-  "liveVoucherIndexNumberOfShards" : "1",
 
   "ucgEngineESConnectTimeout" : 30000,
   "ucgEngineESSocketTimeout" : 60000,
@@ -57,27 +95,15 @@
   "guiManagerESConnectTimeout" : 30000,
   "guiManagerESSocketTimeout" : 60000,
   
-  "elasticSearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
-  
-  "elasticSearchScrollSize" : 1000,
-  
-  "elasticSearchConnectTimeout" : 5000,
-  "elasticSearchQueryTimeout" : 7200000,
-
   "maxPollIntervalMsComment": "Changed to 300s (5 minutes), kafka default is 30 seconds, which causes containers to stop during startup (heavy system load",
   "maxPollIntervalMs"       : 300000,
   
   "purchaseTimeoutMsComment" : "timeout for completion when calling purchase in sync mode",
   "purchaseTimeoutMs" : 15000,
   
-  "subscriberESIndexes" :
+  "cleanupSubscriberElasticsearchIndexes" :
   [
-    "subscriberprofile",
-    "detailedrecords_bonuses-*",
-    "detailedrecords_offers-*",
-    "detailedrecords_messages-*",
-    "detailedrecords_tokens-*",
-    "journeystatistic*"
+    "subscriberprofile"
   ],
 
   "emptyTopic"                                           : "${topic.empty}",
@@ -438,9 +464,9 @@
       { "id" : "journey.name",                 "display" : "Journey Name",                 "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionJourney",            "retriever" : "getEvaluationJourney",       "minValue" : null, "maxValue" : null, "includedOperators" : [ "is in set" ], "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#historicalJourneys#" ],      "evaluationVariable" : true },
       { "id" : "campaign.name",                "display" : "Campaign Name",                "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionCampaign",           "retriever" : "getEvaluationJourney",       "minValue" : null, "maxValue" : null, "includedOperators" : [ "is in set" ], "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#historicalCampaigns#" ],     "evaluationVariable" : true },
       { "id" : "bulkcampaign.name",            "display" : "BulkCampaign Name",            "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionBulkcampaign",       "retriever" : "getEvaluationJourney",       "minValue" : null, "maxValue" : null, "includedOperators" : [ "is in set" ], "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#historicalBulkCampaigns#" ], "evaluationVariable" : true },
-      { "id" : "journey.customer.status",      "display" : "Journey Customer Status",      "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionJourneyStatus",      "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] },
-      { "id" : "campaign.customer.status",     "display" : "Campaign Customer Status",     "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionCampaignStatus",     "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] },
-      { "id" : "bulkcampaign.customer.status", "display" : "BulkCampaign Customer Status", "dataType" : "string",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionBulkcampaignStatus", "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] }
+      { "id" : "journey.customer.status",      "display" : "Journey Customer Status",      "dataType" : "stringSet",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionJourneyStatus",      "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] },
+      { "id" : "campaign.customer.status",     "display" : "Campaign Customer Status",     "dataType" : "stringSet",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionCampaignStatus",     "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] },
+      { "id" : "bulkcampaign.customer.status", "display" : "BulkCampaign Customer Status", "dataType" : "stringSet",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionBulkcampaignStatus", "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] }
     ],
 
   "offerOptimizationAlgorithmsCommon": 
@@ -574,6 +600,7 @@
   "deliveryManagers":
   [
     {
+      "id"                        : "pointFulfillment",
       "deliveryType"              : "pointFulfillment",
       "requestClass"              : "com.evolving.nglm.evolution.PointFulfillmentRequest",
       "requestTopic"              : "${topic.pointfulfillment.request}",
@@ -582,6 +609,7 @@
       "providerName"              : "Points provider"
     },
     {
+      "id"                        : "journeyFulfillment",
       "deliveryType"              : "journeyFulfillment",
       "requestClass"              : "com.evolving.nglm.evolution.JourneyRequest",
       "requestTopic"              : "${topic.journeyrequest}",
@@ -590,6 +618,7 @@
       "providerName"              : "Journeys provider"
     },
     {
+      "id"                        : "loyaltyProgramFulfillment",
       "deliveryType"              : "loyaltyProgramFulfillment",
       "requestClass"              : "com.evolving.nglm.evolution.LoyaltyProgramRequest",
       "requestTopic"              : "${topic.loyaltyprogramrequest}",
@@ -598,22 +627,26 @@
       "providerName"              : "Loyalty Programs provider"
     },
     {
-      "deliveryType"              : "purchaseFulfillment",
-      "requestClass"              : "com.evolving.nglm.evolution.PurchaseFulfillmentManager$PurchaseFulfillmentRequest",
-      "requestTopic"              : "${topic.fulfillment.purchasefulfillment.request}",
-      "responseTopic"             : "${topic.fulfillment.purchasefulfillment.response}",
-      "internalTopic"             : "${topic.fulfillment.purchasefulfillment.internal}",
-      "routingTopic"              : "${topic.fulfillment.purchasefulfillment.routing}",
-      "deliveryGuarantee"         : "atLeastOnce"
+      "id"                             : "purchaseFulfillment",
+      "deliveryType"                   : "purchaseFulfillment",
+      "requestClass"                   : "com.evolving.nglm.evolution.PurchaseFulfillmentManager$PurchaseFulfillmentRequest",
+      "requestTopic"                   : "${topic.fulfillment.purchasefulfillment.request}",
+      "responseTopic"                  : "${topic.fulfillment.purchasefulfillment.response}",
+      "internalTopic"                  : "${topic.fulfillment.purchasefulfillment.internal}",
+      "routingTopic"                   : "${topic.fulfillment.purchasefulfillment.routing}",
+      "deliveryGuarantee"              : "atLeastOnce",
+      "correlatorUpdateTimeoutSeconds" : 90000
     },
     {
-      "deliveryType"              : "commodityDelivery",
-      "requestClass"              : "com.evolving.nglm.evolution.CommodityDeliveryManager$CommodityDeliveryRequest",
-      "requestTopic"              : "${topic.commoditydelivery.request}",
-      "responseTopic"             : "${topic.commoditydelivery.response}",
-      "internalTopic"             : "${topic.commoditydelivery.internal}",
-      "routingTopic"              : "${topic.commoditydelivery.routing}",
-      "deliveryGuarantee"         : "atLeastOnce"
+      "id"                                : "commodityDelivery",
+      "deliveryType"                      : "commodityDelivery",
+      "requestClass"                      : "com.evolving.nglm.evolution.CommodityDeliveryManager$CommodityDeliveryRequest",
+      "requestTopic"                      : "${topic.commoditydelivery.request}",
+      "responseTopic"                     : "${topic.commoditydelivery.response}",
+      "internalTopic"                     : "${topic.commoditydelivery.internal}",
+      "routingTopic"                      : "${topic.commoditydelivery.routing}",
+      "deliveryGuarantee"                 : "atLeastOnce",
+      "correlatorCleanerFrequencySeconds" : 1200
     }
   ],
 
@@ -765,12 +798,12 @@
     {
       "id"           : "getActiveOffer",
       "methodName"   : "getActiveOffer",
-      "permissions"  : ["?????"]
+      "permissions"  : ["API-GET-ACTIVE-OFFER"]
     },
     {
       "id"           : "getActiveOffers",
       "methodName"   : "getActiveOffers",
-      "permissions"  : ["??????"]
+      "permissions"  : ["API-GET-ACTIVE-OFFERS"]
     },
     {
       "id"           : "getCustomerJourneys",
@@ -873,18 +906,18 @@
       "permissions"  : ["API-REDEEM-VOUCHER"]
     },
     {
-      "id"           : "putSupplierOffer",
-      "methodName"   : "putSupplierOffer",
+      "id"           : "putSimpleOffer",
+      "methodName"   : "putSimpleOffer",
       "permissions"  : ["API-PUT-SUPPLIER-OFFER"]
     },
     {
-      "id"           : "getSupplierOfferList",
-      "methodName"   : "getSupplierOfferList",
+      "id"           : "getSimpleOfferList",
+      "methodName"   : "getSimpleOfferList",
       "permissions"  : ["API-GET-SUPPLIER-OFFER-LIST"]
     },
     {
-      "id"           : "removeSupplierOffer",
-      "methodName"   : "removeSupplierOffer",
+      "id"           : "removeSimpleOffer",
+      "methodName"   : "removeSimpleOffer",
       "permissions"  : ["API-REMOVE-SUPPLIER-OFFER"]
     },
     {
@@ -917,28 +950,28 @@
       "display"             : "Journey Customer States Report",
       "description"         : "Description of the Journey Customer States Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none", "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "customerReport",
       "display"             : "Customer Report",
       "description"         : "Description of the Customer Report",
       "class"               : "com.evolving.nglm.evolution.reports.subscriber.SubscriberReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none", "daily", "weekly", "monthly" ]
     },
     {
       "name"                : "BDRReport",
       "display"             : "BDR Report",
       "description"         : "Description of the BDR Report",
       "class"               : "com.evolving.nglm.evolution.reports.bdr.BDRReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily" ]
     },
     {
       "name"                : "ODRReport",
       "display"             : "ODR Report",
       "description"         : "Description of the ODR Report",
       "class"               : "com.evolving.nglm.evolution.reports.odr.ODRReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ],
+      "availableScheduling" : [ "none","daily" ],
       "defaultReportPeriodQuantity" : 1,
       "defaultReportPeriodUnit"     : "DAYS"
     },
@@ -947,70 +980,70 @@
       "display"             : "Notification Report",
       "description"         : "Description of the Notification Report",
       "class"               : "com.evolving.nglm.evolution.reports.notification.NotificationReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily" ]
     },
     {
       "name"                : "journeysReport",
       "display"             : "Journeys Report",
       "description"         : "Description of the Journeys Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeys.JourneysReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
       "name"                : "productReport",
       "display"             : "Product Report",
       "description"         : "Description of the Product Report",
       "class"               : "com.evolving.nglm.evolution.reports.product.ProductReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
       "name"                : "offerReport",
       "display"             : "Offer Report",
       "description"         : "Description of the Offer Report",
       "class"               : "com.evolving.nglm.evolution.reports.offer.OfferReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
       "name"                : "journeyImpactReport",
       "display"             : "Journey Impact Report",
       "description"         : "Description of the Journey Impact Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
       "name"                : "journeyCustomerStatisticsReport",
       "display"             : "Journey Customer Statistics Report",
       "description"         : "Description of the Journey Customer Statistics Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
       "name"                : "contactPolicyConfiguration",
       "display"             : "Contact Policy Configuration",
       "description"         : "Description of the Contact Policy Configuration Report",
       "class"               : "com.evolving.nglm.evolution.reports.contactpolicyconfig.ContactPolicyConfigurationReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
       "name"                : "loyaltyProgramCustomerStates",
       "display"             : "Loyalty Program Customer States",
       "description"         : "Description of the Loyalty Program Customer States Report",
       "class"               : "com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate.LoyaltyProgramCustomerStatesDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
       "name"                : "customerPointsDetails",
       "display"             : "Customer Points Details",
       "description"         : "Description of the Customer Points Details Report",
       "class"               : "com.evolving.nglm.evolution.reports.customerpointdetails.CustomerPointDetailsDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
       "name"                : "tokenReport",
       "display"             : "Token Report",
       "description"         : "Description of the characteristics of the token",
       "class"               : "com.evolving.nglm.evolution.reports.token.TokenReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ],
+      "availableScheduling" : [ "none","daily","monthly"],
       "effectiveScheduling" : [ "monthly" ]
     },
     {
@@ -1018,7 +1051,7 @@
       "display"             : "Token Offer Report",
       "description"         : "Description offer details of the tokens",
       "class"               : "com.evolving.nglm.evolution.reports.tokenOffer.TokenOfferReportDriver",
-      "availableScheduling" : [ "daily", "weekly", "monthly" ]
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     }
   ],
 

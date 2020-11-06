@@ -1148,7 +1148,7 @@ public class GUIManagerGeneral extends GUIManager
             if (providerID != null && point.getCreditable())
               {
                 Map<String, Object> deliverableMap = new HashMap<String, Object>();
-                deliverableMap.put("id", "point-" + point.getPointID());
+                deliverableMap.put("id", CommodityDeliveryManager.POINT_PREFIX + point.getPointID());
                 deliverableMap.put("fulfillmentProviderID", providerID);
                 deliverableMap.put("externalAccountID", point.getPointID());
                 deliverableMap.put("name", point.getPointName());

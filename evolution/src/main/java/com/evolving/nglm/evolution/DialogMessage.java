@@ -20,6 +20,8 @@ import org.apache.kafka.connect.data.Struct;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.Format;
 import java.text.MessageFormat;
@@ -37,6 +39,13 @@ import java.util.regex.Pattern;
 
 public class DialogMessage
 {
+  
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(DialogMessage.class);
+  
   /*****************************************
   *
   *  schema
@@ -160,10 +169,18 @@ public class DialogMessage
               String criterionFieldName = m.group(1).trim();
               CriterionField criterionField = criterionContext.getCriterionFields().get(criterionFieldName);
               boolean parameterTag = false;
-              if (criterionField == null && !inlineTemplate /*because in inline template mode, paramameter tags are not allowed !!*/)
+              if (criterionField == null)
                 {
-                  criterionField = new CriterionField(criterionFieldName, messageTextAttribute);
-                  parameterTag = true;
+                  if (!inlineTemplate)
+                    {
+                      criterionField = new CriterionField(criterionFieldName, messageTextAttribute);
+                      parameterTag = true;
+                    }
+                  else
+                    {
+                      /*because in inline template mode, paramameter tags are not allowed !!*/
+                      throw new GUIManagerException("inline template mode parameter tag are not allowed", criterionFieldName);
+                    }
                 }
 
               //

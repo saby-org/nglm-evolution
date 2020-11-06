@@ -8,6 +8,7 @@
 
 package com.evolving.nglm.core;
 
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,8 +22,39 @@ import java.util.TimeZone;
 
 import org.apache.commons.lang3.time.DateUtils;
 
+import com.evolving.nglm.evolution.Deployment;
+
 public class RLMDateUtils
 {
+  /*****************************************
+  *
+  *  display methods
+  *
+  *****************************************/
+  
+  // SimpleDateFormat is not threadsafe. 
+  // In order to avoid instantiating the same object again an again we use a ThreadLocal static variable
+  
+  public static final ThreadLocal<DateFormat> TIMESTAMP_FORMAT = ThreadLocal.withInitial(()->{
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
+    sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+    return sdf;
+  });
+  
+  public static final String printTimestamp(Date date) {
+    return TIMESTAMP_FORMAT.get().format(date);
+  }
+  
+  public static final ThreadLocal<DateFormat> DAY_FORMAT = ThreadLocal.withInitial(()->{
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+    sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+    return sdf;
+  });
+  
+  public static final String printDay(Date date) {
+    return DAY_FORMAT.get().format(date);
+  }
+  
   /*****************************************
   *
   *  utility methods

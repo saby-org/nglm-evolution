@@ -63,7 +63,7 @@ public class ReportService extends GUIService
   public static final DateFormat TIMESTAMP_PRINT_FORMAT;
   static
   {
-    TIMESTAMP_PRINT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    TIMESTAMP_PRINT_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
     TIMESTAMP_PRINT_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
   }
   
@@ -226,8 +226,8 @@ public class ReportService extends GUIService
     pendingReportsForDates.add(now);
     
     StringBuilder dateRAJKString = new StringBuilder();
-    pendingReportsForDates.forEach(dt -> dateRAJKString.append(" " + printDate(dt)));
-    if(log.isDebugEnabled()) log.debug("generating reoports for dates {}", dateRAJKString);
+    pendingReportsForDates.forEach(dt -> dateRAJKString.append("," + printDate(dt)));
+    if(log.isInfoEnabled()) log.info("generating reoports of {} for dates {}", report.getName(), dateRAJKString);
     
     for (Date date : pendingReportsForDates)
       {
@@ -442,14 +442,14 @@ public class ReportService extends GUIService
     //
     
     StringBuilder generatedDatesRAJKString = new StringBuilder();
-    generatedDates.forEach(dt -> generatedDatesRAJKString.append(" " + printDate(dt)));
-    if(log.isDebugEnabled()) log.debug("getPendingReportsForDates generatedDates {}", generatedDatesRAJKString);
+    generatedDates.forEach(dt -> generatedDatesRAJKString.append("," + printDate(dt)));
+    if(log.isInfoEnabled()) log.info("{} already generatedDates {}", report.getName(), generatedDatesRAJKString);
     
     pendingDates = compareAndGetDates(report, generatedDates);
     
     StringBuilder pendingDatesDatesRAJKString = new StringBuilder();
-    pendingDates.forEach(dt -> pendingDatesDatesRAJKString.append(" " + printDate(dt)));
-    if(log.isDebugEnabled()) log.debug("getPendingReportsForDates pendingDates {}", pendingDatesDatesRAJKString);
+    pendingDates.forEach(dt -> pendingDatesDatesRAJKString.append("," + printDate(dt)));
+    if(log.isInfoEnabled()) log.info("{} has pendingDates {} for EffectiveScheduling {}", report.getName(), pendingDatesDatesRAJKString, report.getEffectiveScheduling());
     
     //
     //  filterIfUpdated
@@ -529,7 +529,7 @@ public class ReportService extends GUIService
           }
         
         StringBuilder datesToCheckRAJKString = new StringBuilder();
-        datesToCheck.forEach(dt -> datesToCheckRAJKString.append(" " + printDate(dt)));
+        datesToCheck.forEach(dt -> datesToCheckRAJKString.append("," + printDate(dt)));
         if(log.isDebugEnabled()) log.debug("compareAndGetDates datesToCheck {}", datesToCheckRAJKString);
         
         //

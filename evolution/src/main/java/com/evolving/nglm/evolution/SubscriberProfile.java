@@ -463,7 +463,6 @@ public abstract class SubscriberProfile
                     Tier tier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getTierName());
                     Tier previousTier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getPreviousTierName());
                     loyalty.put("tierChangeType", Tier.changeFromTierToTier(previousTier, tier).getExternalRepresentation());
-                  
                     if(this.pointBalances != null && !this.pointBalances.isEmpty()) 
                       { 
                         String rewardPointsID = loyaltyProgramPoints.getRewardPointsID();
@@ -511,24 +510,35 @@ public abstract class SubscriberProfile
     JSONObject result = new JSONObject();
     if(this.pointBalances != null)
       {
-        Date todayDate = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-        Date yesterdayDate = RLMDateUtils.addDays(todayDate, -1, Deployment.getBaseTimeZone());
+        Date evaluationDate = SystemTime.getCurrentTime();
         
         for(Entry<String, PointBalance> point : pointBalances.entrySet())
           {
             JSONObject fluctuations = new JSONObject();
             JSONObject todayFluctuations = new JSONObject();
             JSONObject yesterdayFluctuations = new JSONObject();
+            JSONObject last7daysFluctuations = new JSONObject();
+            JSONObject last30daysFluctuations = new JSONObject();
             
-            todayFluctuations.put("earned", point.getValue().getEarnedHistory().getValue(todayDate, todayDate));
-            todayFluctuations.put("redeemed", point.getValue().getConsumedHistory().getValue(todayDate, todayDate));
-            todayFluctuations.put("expired", point.getValue().getExpiredHistory().getValue(todayDate, todayDate));
+            todayFluctuations.put("earned", point.getValue().getEarnedHistory().getToday(evaluationDate));
+            todayFluctuations.put("redeemed", point.getValue().getConsumedHistory().getToday(evaluationDate));
+            todayFluctuations.put("expired", point.getValue().getExpiredHistory().getToday(evaluationDate));
             fluctuations.put("today", todayFluctuations);
             
-            yesterdayFluctuations.put("earned", point.getValue().getEarnedHistory().getValue(yesterdayDate, yesterdayDate));
-            yesterdayFluctuations.put("redeemed", point.getValue().getConsumedHistory().getValue(yesterdayDate, yesterdayDate));
-            yesterdayFluctuations.put("expired", point.getValue().getExpiredHistory().getValue(yesterdayDate, yesterdayDate));
+            yesterdayFluctuations.put("earned", point.getValue().getEarnedHistory().getYesterday(evaluationDate));
+            yesterdayFluctuations.put("redeemed", point.getValue().getConsumedHistory().getYesterday(evaluationDate));
+            yesterdayFluctuations.put("expired", point.getValue().getExpiredHistory().getYesterday(evaluationDate));
             fluctuations.put("yesterday", yesterdayFluctuations);
+            
+            last7daysFluctuations.put("earned", point.getValue().getEarnedHistory().getPrevious7Days(evaluationDate));
+            last7daysFluctuations.put("redeemed", point.getValue().getConsumedHistory().getPrevious7Days(evaluationDate));
+            last7daysFluctuations.put("expired", point.getValue().getExpiredHistory().getPrevious7Days(evaluationDate));
+            fluctuations.put("last7days", last7daysFluctuations);
+            
+            last30daysFluctuations.put("earned", point.getValue().getEarnedHistory().getPrevious30Days(evaluationDate));
+            last30daysFluctuations.put("redeemed", point.getValue().getConsumedHistory().getPrevious30Days(evaluationDate));
+            last30daysFluctuations.put("expired", point.getValue().getExpiredHistory().getPrevious30Days(evaluationDate));
+            fluctuations.put("last30days", last30daysFluctuations);
             
             result.put(point.getKey(), fluctuations);
           }
@@ -928,6 +938,7 @@ public abstract class SubscriberProfile
               //
               
               LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+
               String statusPointID = loyaltyProgramPoints.getStatusPointsID();
               PointBalance pointBalance = pointBalances.get(statusPointID);
               if(pointBalance != null)
@@ -1120,7 +1131,7 @@ public abstract class SubscriberProfile
   //  getToday
   //
 
-  protected Long getToday(MetricHistory metricHistory, Date evaluationDate)
+  @Deprecated protected Long getToday(MetricHistory metricHistory, Date evaluationDate)
   {
     Date today = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     return metricHistory.getValue(today, today);
@@ -1130,7 +1141,7 @@ public abstract class SubscriberProfile
   //  getYesterday
   //
 
-  protected Long getYesterday(MetricHistory metricHistory, Date evaluationDate)
+  @Deprecated protected Long getYesterday(MetricHistory metricHistory, Date evaluationDate)
   {
     Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
@@ -1142,7 +1153,7 @@ public abstract class SubscriberProfile
   //  getPrevious7Days
   //
 
-  protected Long getPrevious7Days(MetricHistory metricHistory, Date evaluationDate)
+  @Deprecated protected Long getPrevious7Days(MetricHistory metricHistory, Date evaluationDate)
   {
     Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -7, Deployment.getBaseTimeZone());
@@ -1154,7 +1165,7 @@ public abstract class SubscriberProfile
   //  getPrevious14Days
   //
 
-  protected Long getPrevious14Days(MetricHistory metricHistory, Date evaluationDate)
+  @Deprecated protected Long getPrevious14Days(MetricHistory metricHistory, Date evaluationDate)
   {
     Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -14, Deployment.getBaseTimeZone());
@@ -1166,7 +1177,7 @@ public abstract class SubscriberProfile
   //  getPreviousMonth
   //
 
-  protected Long getPreviousMonth(MetricHistory metricHistory, Date evaluationDate)
+  @Deprecated protected Long getPreviousMonth(MetricHistory metricHistory, Date evaluationDate)
   {
     Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
@@ -1179,7 +1190,7 @@ public abstract class SubscriberProfile
   //  getPrevious90Days
   //
 
-  protected Long getPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
+  @Deprecated protected Long getPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
   {
     Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
@@ -1191,7 +1202,7 @@ public abstract class SubscriberProfile
   //  getCountIfZeroPrevious90Days
   //
 
-  protected Long getCountIfZeroPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
+  @Deprecated protected Long getCountIfZeroPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
   {
     Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
@@ -1203,7 +1214,7 @@ public abstract class SubscriberProfile
   //  getCountIfNonZeroPrevious90Days
   //
 
-  protected Long getCountIfNonZeroPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
+  @Deprecated protected Long getCountIfNonZeroPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
   {
     Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
@@ -1215,7 +1226,7 @@ public abstract class SubscriberProfile
   //  getAggregateIfZeroPrevious90Days
   //
 
-  protected Long getAggregateIfZeroPrevious90Days(MetricHistory metricHistory, MetricHistory criteriaMetricHistory, Date evaluationDate)
+  @Deprecated protected Long getAggregateIfZeroPrevious90Days(MetricHistory metricHistory, MetricHistory criteriaMetricHistory, Date evaluationDate)
   {
     Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
@@ -1227,7 +1238,7 @@ public abstract class SubscriberProfile
   //  getAggregateIfNonZeroPrevious90Days
   //
 
-  protected Long getAggregateIfNonZeroPrevious90Days(MetricHistory metricHistory, MetricHistory criteriaMetricHistory, Date evaluationDate)
+  @Deprecated protected Long getAggregateIfNonZeroPrevious90Days(MetricHistory metricHistory, MetricHistory criteriaMetricHistory, Date evaluationDate)
   {
     Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
@@ -1239,7 +1250,7 @@ public abstract class SubscriberProfile
   //  getThreeMonthAverage
   //
 
-  protected Long getThreeMonthAverage(MetricHistory metricHistory, Date evaluationDate)
+  @Deprecated protected Long getThreeMonthAverage(MetricHistory metricHistory, Date evaluationDate)
   {
     //
     //  undefined

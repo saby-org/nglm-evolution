@@ -112,6 +112,9 @@ public class ReportScheduler {
     for (SchedulingInterval scheduling : report.getEffectiveScheduling())
       {
         log.info("processing "+report.getName()+" with scheduling "+scheduling.getExternalRepresentation()+" cron "+scheduling.getCron());
+        if(scheduling.equals(SchedulingInterval.NONE))
+    		continue;
+        
         ScheduledJob reportJob = new ReportJob(uniqueID++, report, scheduling, reportService);
         if(reportJob.isProperlyConfigured())
           {

@@ -828,7 +828,7 @@ public class GUIService
               }
             catch (SerializationException e)
               {
-                log.info("error reading guiManagedObject: {}", e.getMessage());
+                log.info("error reading guiManagedObject on " + guiManagedObjectTopic + " : {}", e.getMessage());
                 guiManagedObject = incompleteObjectSerde.optionalDeserializer().deserialize(guiManagedObjectRecord.topic(), guiManagedObjectRecord.value());
               }
 
@@ -1073,6 +1073,7 @@ public class GUIService
     result.put("groupID", guiManagedObject.getJSONRepresentation().get("groupID"));
     result.put("createdDate", guiManagedObject.getJSONRepresentation().get("createdDate"));
     result.put("updatedDate", guiManagedObject.getJSONRepresentation().get("updatedDate"));
+    result.put("info", guiManagedObject.getJSONRepresentation().get("info"));
     result.put("deleted", guiManagedObject.getJSONRepresentation().get("deleted") != null ? guiManagedObject.getJSONRepresentation().get("deleted") : false);
     return result;
   }

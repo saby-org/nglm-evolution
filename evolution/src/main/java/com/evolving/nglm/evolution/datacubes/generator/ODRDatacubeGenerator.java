@@ -28,6 +28,7 @@ import com.evolving.nglm.evolution.OfferObjectiveService;
 import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.PaymentMeanService;
 import com.evolving.nglm.evolution.SalesChannelService;
+import com.evolving.nglm.evolution.datacubes.DatacubeUtils;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.DeliverablesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
@@ -90,6 +91,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     this.filterFields.add("featureID");
     this.filterFields.add("salesChannelID");
     this.filterFields.add("meanOfPayment");
+    this.filterFields.add("returnCode");
     
     //
     // Data Aggregations
@@ -129,6 +131,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     modulesMap.updateFromElasticsearch(elasticsearch);
     salesChannelsMap.update();
     paymentMeansMap.update();
+    offerObjectivesMap.update();
     loyaltyProgramsMap.update();
     deliverablesMap.updateFromElasticsearch(elasticsearch);
     journeysMap.update();
@@ -145,27 +148,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     String moduleID = (String) filters.remove("moduleID");
     filters.put("module", modulesMap.getDisplay(moduleID, "module"));
 
-    String featureID = (String) filters.remove("featureID");
-    String featureDisplay = featureID; // default
-    switch(modulesMap.getFeature(moduleID, "feature"))
-      {
-        case JourneyID:
-          featureDisplay = journeysMap.getDisplay(featureID, "feature");
-          break;
-        case LoyaltyProgramID:
-          featureDisplay = loyaltyProgramsMap.getDisplay(featureID, "feature");
-          break;
-        case OfferID:
-          featureDisplay = offersMap.getDisplay(featureID, "feature");
-          break;
-        case DeliverableID:
-          featureDisplay = deliverablesMap.getDisplay(featureID, "feature");
-          break;
-        default:
-          // For None feature we let the featureID as a display (it is usually a string)
-          break;
-      }
-    filters.put("feature", featureDisplay);
+    DatacubeUtils.embelishFeature(filters, moduleID, modulesMap, loyaltyProgramsMap, deliverablesMap, offersMap, journeysMap);
 
     String salesChannelID = (String) filters.remove("salesChannelID");
     filters.put("salesChannel", salesChannelsMap.getDisplay(salesChannelID, "salesChannel"));
@@ -177,6 +160,8 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     // Offer objectives are directly put as a Set<String> (because there is a 1-1 linked with the offer)
     Set<String> offerObjectivesID = offersMap.getOfferObjectivesID(offerID, "offer");
     filters.put("offerObjectives", offerObjectivesMap.getOfferObjectiveDisplaySet(offerObjectivesID, "offerObjective") );
+    
+    DatacubeUtils.embelishReturnCode(filters);
   }
 
   /*****************************************
@@ -255,12 +240,12 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
 
     this.previewMode = false;
-    this.targetDay = DAY_FORMAT.format(yesterday);
+    this.targetDay = RLMDateUtils.printDay(yesterday);
 
     //
     // Timestamp & period
     //
-    String timestamp = TIMESTAMP_FORMAT.format(endOfYesterday);
+    String timestamp = RLMDateUtils.printTimestamp(endOfYesterday);
     long targetPeriod = beginningOfToday.getTime() - beginningOfYesterday.getTime();    // most of the time 86400000ms (24 hours)
     
     this.run(timestamp, targetPeriod);
@@ -277,12 +262,12 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
 
     this.previewMode = true;
-    this.targetDay = DAY_FORMAT.format(now);
+    this.targetDay = RLMDateUtils.printDay(now);
 
     //
     // Timestamp & period
     //
-    String timestamp = TIMESTAMP_FORMAT.format(now);
+    String timestamp = RLMDateUtils.printTimestamp(now);
     long targetPeriod = now.getTime() - beginningOfToday.getTime() + 1; // +1 !
     
     this.run(timestamp, targetPeriod);

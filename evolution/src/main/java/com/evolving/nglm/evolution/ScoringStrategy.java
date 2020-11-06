@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -35,13 +36,16 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
+@GUIDependencyDef(objectType = "scoringStrategy", serviceClass = ScoringStrategyService.class, dependencies = { "segmentationdimension", "offerobjective"})
 public class ScoringStrategy extends GUIManagedObject
 {
   /*****************************************
@@ -369,5 +373,21 @@ public class ScoringStrategy extends GUIManagedObject
       }
     // TODO : validate segments
     
+  }
+  
+  @Override public Map<String, List<String>> getGUIDependencies()
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    List<String> segmentationDimensionIDs = new ArrayList<>();
+    List<String> allOfferObjectivesID = new ArrayList<>();
+    segmentationDimensionIDs.add(getDimensionID());
+    for (ScoringSegment scoringSegments : scoringSegments)
+    {     
+      allOfferObjectivesID.addAll(scoringSegments.getOfferObjectiveIDs());
+    }
+      result.put("segmentationdimension", segmentationDimensionIDs);
+      result.put("offerobjective", allOfferObjectivesID);
+    
+    return result;
   }
 }

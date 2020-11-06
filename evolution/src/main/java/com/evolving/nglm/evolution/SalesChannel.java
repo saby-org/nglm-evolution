@@ -31,7 +31,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@GUIDependencyDef(objectType = "saleschannel", serviceClass = SalesChannelService.class, dependencies = { "reseller" })
+@GUIDependencyDef(objectType = "saleschannel", serviceClass = SalesChannelService.class, dependencies = { "reseller" , "callingchannel"})
 public class SalesChannel extends GUIManagedObject
 {
   /*****************************************
@@ -302,6 +302,7 @@ public class SalesChannel extends GUIManagedObject
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     result.put("reseller", getResellerIDs());
+    result.put("callingchannel", getCallingChannelIDs());
     return result;
   }
 }

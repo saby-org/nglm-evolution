@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>1.4.5_0-EVPRO-351-SNAPSHOT</version>
+  <version>1.4.5_3-EVPRO-351-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -27,31 +27,36 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.5_0-SNAPSHOT</version>
+    <version>1.4.5_3-SNAPSHOT</version>
   </parent>
+
+  <scm>
+    <connection>scm:git:https://foo@git.lumata.int/scm/evcor/nglm-evolution.git</connection>
+    <developerConnection>scm:git:https://foo@git.lumata.int/scm/evcor/nglm-evolution.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
 
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>1.4.5_0-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.4.5_3-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
-    <gui-fwk.version>1.4.23</gui-fwk.version>
-    <gui-csr.version>1.4.23</gui-csr.version>
+    <gui-fwk.version>1.4.27</gui-fwk.version>
+    <gui-csr.version>1.4.27</gui-csr.version>
     <gui-itm.version>1.4.3</gui-itm.version>
-    <gui-jmr.version>1.4.47</gui-jmr.version>
-    <gui-opc.version>1.4.11</gui-opc.version>
+    <gui-jmr.version>1.4.56</gui-jmr.version>
+    <gui-opc.version>1.4.16</gui-opc.version>
     <gui-iar.version>1.4.6</gui-iar.version>
-    <gui-opr.version>1.4.3</gui-opr.version>
-    <gui-stg.version>1.4.10</gui-stg.version>
-    <gui-sbm.version>1.4.21</gui-sbm.version>
-    <gui-lpm.version>1.4.6</gui-lpm.version>
+    <gui-opr.version>1.4.4</gui-opr.version>
+    <gui-stg.version>1.4.13</gui-stg.version>
+    <gui-sbm.version>1.4.26</gui-sbm.version>
+    <gui-lpm.version>1.4.11</gui-lpm.version>
     <gui-tls.version>1.4.17</gui-tls.version>
     <gui-audit.version>1.0.4</gui-audit.version>
 
     <!-- dependencies - mysql -->
-    <mysql.gui.version>8.0.13</mysql.gui.version>
-    
+    <mysql.gui.version>8.0.13</mysql.gui.version>    
     <!-- dependencies - fake components -->
     <fake.smsc.version>0.0.7</fake.smsc.version>
 
@@ -172,6 +177,24 @@
       </plugin>
 
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>buildnumber-maven-plugin</artifactId>
+        <version>1.3</version>
+        <executions>
+          <execution>
+            <phase>validate</phase>
+            <goals>
+              <goal>create</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <doCheck>false</doCheck>
+          <doUpdate>false</doUpdate>
+        </configuration>
+      </plugin>
+
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <version>3.0.2</version>
         <artifactId>maven-jar-plugin</artifactId>
@@ -180,6 +203,11 @@
             <manifest>
               <addClasspath>true</addClasspath>
             </manifest>
+            <manifestEntries>
+              <Commit>${buildNumber}</Commit>
+              <Branch>${scmBranch}</Branch>
+              <Build-Time>${maven.build.timestamp}</Build-Time>
+            </manifestEntries> 
           </archive>
         </configuration>
       </plugin>
@@ -256,6 +284,9 @@
                     <include>bin/upgrade-run-postamble.sh</include>
                     <include>bin/fakein-run.sh</include>
                     <include>bin/kafka-lag-exporter-run.sh</include>
+                    <include>bin/kafka-multiple-topics.sh</include>
+                    <include>bin/java-evolution-setup.sh</include>
+                    <include>bin/prepare-curl.sh</include>
                     <include>config/deployment-*.json</include>
                     <include>config/grafana-*.json</include>
                     <include>config/grafana-*.yml</include>

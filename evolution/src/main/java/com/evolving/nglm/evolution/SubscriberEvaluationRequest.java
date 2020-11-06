@@ -81,6 +81,15 @@ public class SubscriberEvaluationRequest
   {
     this(subscriberProfile, (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, evaluationDate);
   }
+  
+  //
+  //  constructor -- for targetting based on Trigger event
+  //
+
+  public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberStreamEvent subscriberStreamEvent, Date evaluationDate)
+  {
+    this(subscriberProfile, null, subscriberGroupEpochReader, null, null, null, subscriberStreamEvent, evaluationDate);
+  }
 
   /*****************************************
   *

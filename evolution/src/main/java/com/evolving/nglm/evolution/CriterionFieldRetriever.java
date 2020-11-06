@@ -126,7 +126,7 @@ public abstract class CriterionFieldRetriever
   //
 
   public static Object getSubscriberMessageParameterTag(SubscriberEvaluationRequest evaluationRequest, String fieldName) {
-    
+    Object result = null;
     String tagJourneyNodeParameterName = evaluationRequest.getMiscData().get("tagJourneyNodeParameterName");
     if(tagJourneyNodeParameterName == null) {
       tagJourneyNodeParameterName = "node.parameter.message"; // compatibility with OLD SMS
@@ -143,7 +143,8 @@ public abstract class CriterionFieldRetriever
     }
     SimpleParameterMap parameterMap = subscriberMessage.getParameterTags();
 
-    return evaluateParameter(evaluationRequest, parameterMap.get(fieldName)); 
+    result = evaluateParameter(evaluationRequest, parameterMap.get(fieldName)); 
+    return result;
     }
   
   //
@@ -446,14 +447,14 @@ public abstract class CriterionFieldRetriever
 
               if (pointBalances == null)
                 {
-                  log.info("invalid point balances, using default value");
+                  log.info("Error evaluating " + fieldName + " no pointBalances for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " on LP " + loyaltyProgramPointsState.getLoyaltyProgramName() + " in tier " + loyaltyProgramPointsState.getTierName());
                 }
               else
                 {
                   PointBalance pointBalance = pointBalances.get(pointID);
                   if (pointBalance == null)
                     {
-                      log.info("invalid point balance, using default value");
+                      log.info("Error evaluating " + fieldName + " no pointBalance for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " for point " + pointID + " on LP " + loyaltyProgramPointsState.getLoyaltyProgramName() + " in tier " + loyaltyProgramPointsState.getTierName());
                     }
                   else
                     {
@@ -473,7 +474,7 @@ public abstract class CriterionFieldRetriever
                     break;
 
                   default:
-                    throw new CriterionException("invalid request " + criterionFieldBaseName + " " + request);
+                    throw new CriterionException("Invalid criteria " + criterionFieldBaseName + " " + request + " for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " for point " + pointID + " on LP " + loyaltyProgramPointsState.getLoyaltyProgramName() + " in tier " + loyaltyProgramPointsState.getTierName());
                 }
           }
       }
@@ -510,14 +511,14 @@ public abstract class CriterionFieldRetriever
     PointBalance pointBalance = null;
     if (pointBalances == null)
       {
-        log.info("invalid point balances, using default value");
+        log.info("Error evaluating " + fieldName + " no pointBalances for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID());
       }
     else
       {
         pointBalance = pointBalances.get(pointID);
         if (pointBalance == null)
           {
-            log.info("invalid point balance, using default value");
+            log.info("Error evaluating " + fieldName + " no pointBalance for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " for point " + pointID);
           }
         else
           {
@@ -549,16 +550,7 @@ public abstract class CriterionFieldRetriever
             String interval = fieldNameMatcher.group(2); // yesterday, last7days, last30days
             if (pointBalance != null)
               {
-                Date intervalBegin;
                 MetricHistory metric;
-                switch (interval)
-                {
-                  case "yesterday"  : intervalBegin = RLMDateUtils.addDays(evaluationDate, -1, Deployment.getBaseTimeZone()); break;
-                  case "last7days"  : intervalBegin = RLMDateUtils.addDays(evaluationDate, -7, Deployment.getBaseTimeZone()); break;
-                  case "last30days" : intervalBegin = RLMDateUtils.addDays(evaluationDate, -30, Deployment.getBaseTimeZone()); break;
-                  default: throw new CriterionException("invalid criterionField interval " + interval + " (should be yesterday, last7days, last30days)");
-
-                }
                 switch (nature)
                 {
                   case "earned"   : metric = pointBalance.getEarnedHistory(); break;
@@ -568,18 +560,21 @@ public abstract class CriterionFieldRetriever
                 }
                 if (metric == null)
                   {
-                    log.info("invalid metric, returning default value 0");
+                    log.info("null metric evaluating " + fieldName + " and " + criterionFieldBaseName + "for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " returning default value " + result);
                   }
                 else
                   {
-                    evaluationDate = evaluationRequest.getEvaluationDate();
-                    Date beginningOfNow = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getBaseTimeZone());        // 00:00:00.000
-                    Date beginningOfIntervalBegin = RLMDateUtils.truncate(intervalBegin, Calendar.DATE, Deployment.getBaseTimeZone());
-
-                    Long value = metric.getValue(beginningOfIntervalBegin, beginningOfNow);
+                    Long value = 0L;
+                    switch (interval)
+                    {
+                      case "yesterday"  : value = metric.getYesterday(evaluationDate); break;
+                      case "last7days"  : value = metric.getPrevious7Days(evaluationDate); break;
+                      case "last30days" : value = metric.getPrevious30Days(evaluationDate); break;
+                      default: throw new CriterionException("invalid criterionField interval " + interval + " (should be yesterday, last7days, last30days)");
+                    }
                     if (value > Integer.MAX_VALUE && value < Integer.MIN_VALUE)
                       {
-                        log.info("Value for " + fieldName + " is outside of integer range : " + value + ", truncating");
+                        log.debug("Value for " + fieldName + " is outside of integer range : " + value + ", truncating");
                         result = ((value > 0) ? Integer.MAX_VALUE : Integer.MIN_VALUE);
                       }
                     else
@@ -688,7 +683,10 @@ public abstract class CriterionFieldRetriever
   //  getEvaluationJourney
   //
 
-  public static Object getEvaluationJourney(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return "evaluation.variable.journey"; }
+  public static Object getEvaluationJourney(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
+  { 
+    return "evaluation.variable.journey"; 
+  }
 
   //
   //  getEvaluationJourneyStatus
@@ -698,24 +696,23 @@ public abstract class CriterionFieldRetriever
   {
     Set<String> journeyIDs = ( Set<String>) evaluationRequest.getEvaluationVariables().get("evaluation.variable.journey");
     Set<String> status=new HashSet<String>();
-    String comma_seperated_status=new String();
-    if(journeyIDs!=null && !journeyIDs.isEmpty())
-      { 
-        for(String journeyID:journeyIDs) {
-   	  if (journeyID == null) throw new CriterionException("invalid journey status request");
-   	  status.add((evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID) != null) ? evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID).getExternalRepresentation() : null);
-   	}
-      }
-    else 
+    if (journeyIDs != null && !journeyIDs.isEmpty())
       {
-        if(evaluationRequest.getJourneyState() != null) 
+        for (String journeyID : journeyIDs)
+          {
+            if (journeyID == null) throw new CriterionException("invalid journey status request");
+            SubscriberJourneyStatus currentStatus = evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID);
+            if(currentStatus != null) { status.add(currentStatus.getExternalRepresentation()); };
+          }
+      }
+    else
+      {
+        if (evaluationRequest.getJourneyState() != null)
           {
             status.add(evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(evaluationRequest.getJourneyState().getJourneyID()).getExternalRepresentation());
           }
       }
-    comma_seperated_status=String.join(", ", status);
-    if(status.isEmpty()) throw new CriterionException("invalid journey status request");
-     return comma_seperated_status;
+     return status;
   }
   
   public static Object getComplexObjectFieldValue(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException

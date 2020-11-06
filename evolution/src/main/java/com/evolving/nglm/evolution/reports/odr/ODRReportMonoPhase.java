@@ -1,13 +1,30 @@
 package com.evolving.nglm.evolution.reports.odr;
 
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.zip.ZipOutputStream;
+
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryManager;
 import com.evolving.nglm.evolution.DeliveryRequest;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.GUIManagedObject;
-import com.evolving.nglm.evolution.Journey;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.Offer;
@@ -16,55 +33,27 @@ import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.Product;
 import com.evolving.nglm.evolution.ProductService;
 import com.evolving.nglm.evolution.RESTAPIGenericReturnCodes;
-import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.SalesChannel;
 import com.evolving.nglm.evolution.SalesChannelService;
-import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
-import com.evolving.nglm.evolution.reports.ReportCsvWriter;
-import com.evolving.nglm.evolution.reports.ReportEsReader;
+import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
+import com.evolving.nglm.evolution.reports.notification.NotificationReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
-import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
-import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
-import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
-
-import org.apache.http.HttpHost;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
-import java.util.TimeZone;
-import java.util.zip.ZipOutputStream;
 
 public class ODRReportMonoPhase implements ReportCsvFactory
 {
   private static final Logger log = LoggerFactory.getLogger(ODRReportMonoPhase.class);
-  private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+  private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
   private static final DateFormat DATE_FORMAT;
   
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private static JourneyService journeyService;
-  private static OfferService offerService;
-  private static SalesChannelService salesChannelService;
-  private static LoyaltyProgramService loyaltyProgramService;
-  private static ProductService productService;
+  private JourneyService journeyService;
+  private OfferService offerService;
+  private SalesChannelService salesChannelService;
+  private LoyaltyProgramService loyaltyProgramService;
+  private ProductService productService;
 
   private final static String moduleId = "moduleID";
   private final static String featureId = "featureID";
@@ -343,6 +332,12 @@ public class ODRReportMonoPhase implements ReportCsvFactory
 
   public static void main(String[] args, final Date reportGenerationDate)
   {
+    ODRReportMonoPhase odrReportMonoPhase = new ODRReportMonoPhase();
+    odrReportMonoPhase.start(args, reportGenerationDate);
+  }
+  
+  private void start(String[] args, final Date reportGenerationDate)
+  {
     log.info("received " + args.length + " args");
     for (String arg : args)
       {
@@ -378,7 +373,6 @@ public class ODRReportMonoPhase implements ReportCsvFactory
         esIndexOdrList.append(indexName);
         firstEntry = false;
       }
-    ReportCsvFactory reportFactory = new ODRReportMonoPhase();
     log.info("Reading data from ES in (" + esIndexOdrList.toString() + ")  index and writing to " + csvfile);
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexOdrList.toString(), QueryBuilders.matchAllQuery());
@@ -390,20 +384,21 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     String productTopic = Deployment.getProductTopic();
 
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "odrreportcsvwriter-saleschannelservice-ODRReportMonoPhase", salesChannelTopic, false);
-    salesChannelService.start();
     offerService = new OfferService(Deployment.getBrokerServers(), "odrreportcsvwriter-offerservice-ODRReportMonoPhase", offerTopic, false);
-    offerService.start();
     journeyService = new JourneyService(Deployment.getBrokerServers(), "odrreportcsvwriter-journeyservice-ODRReportMonoPhase", journeyTopic, false);
-    journeyService.start();
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "odrreportcsvwriter-loyaltyprogramservice-ODRReportMonoPhase", loyaltyProgramTopic, false);
-    loyaltyProgramService.start();
     productService = new ProductService(Deployment.getBrokerServers(), "odrreportcsvwriter-productService-ODRReportMonoPhase", productTopic, false);
+
+    salesChannelService.start();
+    offerService.start();
+    journeyService.start();
+    loyaltyProgramService.start();
     productService.start();
 
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
         esIndexWithQuery,
-        reportFactory,
+        this,
         csvfile
     );
 
@@ -412,7 +407,11 @@ public class ODRReportMonoPhase implements ReportCsvFactory
         log.warn("An error occured, the report might be corrupted");
         return;
       }
-    
+    salesChannelService.stop();
+    offerService.stop();
+    journeyService.stop();
+    loyaltyProgramService.stop();
+    productService.stop();
     log.info("Finished ODRReport");
   }
   

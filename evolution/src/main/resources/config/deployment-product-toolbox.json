@@ -889,7 +889,7 @@
             "mandatory": true,
             "availableValues": [ "#presentationStrategies#" ],
             "defaultValue": null
-          },
+          },              
           {
             "id": "node.parameter.tokentype",
             "display": "Token Type",
@@ -926,6 +926,16 @@
               { "id" : "month",  "display" : "Months" }
             ],
             "defaultValue" : null
+          },
+          {
+            "id": "node.parameter.supplier",
+            "display": "Supplier Filter",
+            "dataType": "string",
+            "width": "100%",
+            "multiple": false,
+            "mandatory": false,
+            "availableValues": [ "#suppliers#" ],
+            "defaultValue": null
           }
         ],
         "action":
@@ -968,7 +978,7 @@
             "mandatory": true,
             "availableValues": [ "#presentationStrategies#" ],
             "defaultValue": null
-          },
+          },          
           {
             "id": "node.parameter.tokentype",
             "display": "Token Type",
@@ -1005,7 +1015,17 @@
               { "id" : "month",  "display" : "Months" }
             ],
             "defaultValue" : null
-          }
+          },
+          {
+            "id": "node.parameter.supplier",
+            "display": "Supplier Filter",
+            "dataType": "string",
+            "width": "100%",
+            "multiple": false,
+            "mandatory": false,
+            "availableValues": [ "#suppliers#" ],
+            "defaultValue": null
+          } 
         ],
         "action":
         {
@@ -1246,6 +1266,74 @@
           [
             { "id" : "137", "name" : "journey.status" },
             { "id" : "301", "name" : "workflow" },
+            { "id" : "133", "name" : "bonus.point.credit" },
+            { "id" : "138", "name" : "bonus.point.debit" },
+            { "id" : "135", "name" : "loyalty.opt-in" },
+            { "id" : "139", "name" : "loyalty.opt-out" },
+            { "id" : "136", "name" : "purchase.offer" }
+          ]
+      },
+      {
+        "id"  : "2005",
+        "name"  : "Dialogues",
+        "color" : "#A2A18D",
+        "items" :
+          [
+          ]
+      },
+      {
+        "id"  : "2006",
+        "name"  : "DNBO",
+        "color" : "#A2A08C",
+        "items" :
+          [
+            { "id" : "150", "name" : "next.best.offer.token" },
+            { "id" : "151", "name" : "next.best.offer.allocate" },
+            { "id" : "152", "name" : "next.best.offer.purchase" },
+            { "id" : "153", "name" : "next.best.offer.accept" }
+          ]
+      }
+    ],
+
+  "loyaltyWorkflowToolbox" :
+    [
+      {
+        "id"  : "2001",
+        "name"  : "Execution",
+        "color" : "#B63482", 
+        "items" :
+          [
+            { "id" : "101", "name" : "start" },
+            { "id" : "102", "name" : "end" },
+            { "id" : "103", "name" : "wait" },
+            { "id" : "104", "name" : "schedule" }
+          ]
+      },
+      {
+        "id"  : "2002",
+        "name"  : "Target",
+        "color" : "#366CAB",
+        "items" :
+          [
+            { "id" : "122", "name" : "profile.selection" }
+          ]
+      },
+      {
+        "id"  : "2003",
+        "name"  : "Conditions",
+        "color" : "#F2A83C",
+        "items" :
+          [
+            { "id" : "121", "name" : "event.selection" },
+            { "id" : "125", "name" : "event.multi.selection" }
+          ]
+      },
+      {
+        "id"  : "2004",
+        "name"  : "Actions",
+        "color" : "#549D9F",
+        "items" :
+          [
             { "id" : "133", "name" : "bonus.point.credit" },
             { "id" : "138", "name" : "bonus.point.debit" },
             { "id" : "135", "name" : "loyalty.opt-in" },

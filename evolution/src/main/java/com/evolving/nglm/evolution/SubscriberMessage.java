@@ -6,9 +6,10 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -16,6 +17,8 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -25,6 +28,9 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public abstract class SubscriberMessage
 {
+  
+  private static final Logger log = LoggerFactory.getLogger(SubscriberMessage.class);
+  
   /*****************************************
   *
   *  schema
@@ -173,14 +179,24 @@ public abstract class SubscriberMessage
     *
     *****************************************/
 
+    List<String> contextIDs = subscriberMessageTemplate.getContextTags().stream().map(CriterionField::getID).collect(Collectors.toList());
     SimpleParameterMap parameterTags = new SimpleParameterMap();
     for (int i=0; i<jsonArray.size(); i++)
       {
         JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
         String parameterID = JSONUtilities.decodeString(parameterJSON, "templateValue", true);
-        parameterID = CriterionField.generateTagID(parameterID);
+        
+        //
+        //  ignore contexts - no need to respect the context tags
+        //
+        
+        if (contextIDs.contains(parameterID)) continue;
         CriterionField parameter = parameterTagsByID.get(parameterID);
-        if (parameter == null) throw new GUIManagerException("unknown parameterTag", parameterID);
+        if (parameter == null)
+          {
+            log.error("parameterID {} not found in parameterTagsByID {} and parameterJSON is {}", parameterID, parameterTagsByID, parameterJSON);
+            throw new GUIManagerException("unknown parameterTag", parameterID);
+          }
         
         if (! Journey.isExpressionValuedParameterValue(parameterJSON))
           {

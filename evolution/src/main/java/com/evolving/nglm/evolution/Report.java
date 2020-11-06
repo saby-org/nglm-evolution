@@ -43,7 +43,8 @@ public class Report extends GUIManagedObject
     WEEKLY("weekly", Deployment.getWeeklyReportCronEntryString()),
     DAILY("daily", Deployment.getDailyReportCronEntryString()),
     HOURLY("hourly", Deployment.getHourlyReportCronEntryString()),
-    UNKNOWN("(unknown)", "");
+    UNKNOWN("(unknown)", ""),
+	NONE("none", "");
     private String externalRepresentation;
     private String cron;
     private SchedulingInterval(String externalRepresentation, String cron) { this.externalRepresentation = externalRepresentation; this.cron = cron; }
@@ -187,8 +188,12 @@ public class Report extends GUIManagedObject
     JSONArray effectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, EFFECTIVE_SCHEDULING, false);
     if (effectiveSchedulingJSONArray != null) {
       for (int i=0; i<effectiveSchedulingJSONArray.size(); i++) {
+    	  
         String schedulingIntervalStr = (String) effectiveSchedulingJSONArray.get(i);
-        this.effectiveScheduling.add(SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr));
+    	if(SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr).equals(SchedulingInterval.NONE)) {
+    	 		continue;
+    	}
+    	this.effectiveScheduling.add(SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr));
       }
     }
 

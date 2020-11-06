@@ -373,7 +373,29 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   {
     return resolveParameterTags(dialogMessages);
   }
+  
+  /*****************************************
+  *
+  *  getAllTags
+  *
+  *****************************************/
 
+  /*
+   * public List<CriterionField> getAllTags() { return
+   * resolveAllTags(dialogMessages); }
+   */
+  
+  /*****************************************
+  *
+  *  getParameterTags
+  *
+  *****************************************/
+
+  public List<CriterionField> getContextTags()
+  {
+    return resolveContextTags(dialogMessages);
+  }
+  
   /*****************************************
   *
   *  resolveParameterTags
@@ -396,6 +418,55 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
           }
       }
     return parameterTags;
+  }
+
+  /*****************************************
+  *
+  *  resolveAllTags
+  *
+  *****************************************/
+
+  public static List<CriterionField> resolveAllTags(Map<String,DialogMessage> dialogMessages)
+  {
+    List<CriterionField> allTags = new ArrayList<CriterionField>();
+    Set<String> allTagIDs = new HashSet<String>();
+    for (DialogMessage dialogMessage : dialogMessages.values())
+      {
+        for (CriterionField parameterTag : dialogMessage.getAllTags())
+          {
+            if (! allTagIDs.contains(parameterTag.getID()))
+              {
+                allTags.add(parameterTag);
+                allTagIDs.add(parameterTag.getID());
+
+              }
+          }
+      }
+    return allTags;
+  }
+  
+  /*****************************************
+  *
+  *  resolveParameterTags
+  *
+  *****************************************/
+
+  public static List<CriterionField> resolveContextTags(Map<String,DialogMessage> dialogMessages)
+  {
+    List<CriterionField> contextTags = new ArrayList<CriterionField>();
+    Set<String> contextTagIDs = new HashSet<String>();
+    for (DialogMessage dialogMessage : dialogMessages.values())
+      {
+        for (CriterionField contextTag : dialogMessage.getContextTags())
+          {
+            if (! contextTagIDs.contains(contextTag.getID()))
+              {
+                contextTags.add(contextTag);
+                contextTagIDs.add(contextTag.getID());
+              }
+          }
+      }
+    return contextTags;
   }
 
   /*****************************************

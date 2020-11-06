@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -17,6 +18,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
+@GUIDependencyDef(objectType = "voucher", serviceClass = VoucherService.class, dependencies = {"supplier" })
 public class VoucherPersonal extends Voucher {
 
   private static Schema schema = null;

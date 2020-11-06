@@ -14,14 +14,14 @@
 # Those settings will be applied by default to all indexes
 # Order is intentionally set to -10 (to be taken into account before every other templates).
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/root -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/root -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["*"],
   "order": -10,
   "settings" : {
     "index" : {
-      "number_of_shards" : "'$ELASTICSEARCH_SHARDS_DEFAULT'",
-      "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS_DEFAULT'",
+      "number_of_shards" : "Deployment.getElasticsearchDefaultShards()",
+      "number_of_replicas" : "Deployment.getElasticsearchDefaultReplicas()",
       "refresh_interval" : "30s",
       "translog" : { 
         "durability" : "async", 
@@ -56,14 +56,14 @@ echo
 #   - this template will be used by the subscriberprofile index, and also subscriberprofile snapshots
 #  Order is set to -1 to be taken into account before subscriberprofile_snapshot
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["subscriberprofile*"],
   "order": -1,
   "settings" : {
     "index" : {
-      "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SUBSCRIBERPROFILE'",
-      "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS_SUBSCRIBERPROFILE'"
+      "number_of_shards" : "Deployment.getElasticsearchSubscriberprofileShards()",
+      "number_of_replicas" : "Deployment.getElasticsearchSubscriberprofileReplicas()"
     }
   },
   "mappings" : {
@@ -115,12 +115,12 @@ echo
 #
 #  create a cleaning policy for subscriberprofile snapshots
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/subscriberprofile_snapshot_policy -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/subscriberprofile_snapshot_policy -H'Content-Type: application/json' -d'
 {
   "policy": {
     "phases": {
       "delete": {
-        "min_age": "'$ELASTICSEARCH_SUBSCRIBERPROFILE_SNAPSHOT_CLEANING'",
+        "min_age": "Deployment.getElasticsearchRetentionDaysSnapshots()d",
         "actions": { "delete": {} }
       }
     }
@@ -131,13 +131,13 @@ echo
 #
 #  override subscriberprofile template for snapshots ONLY with cleaning policy
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile_snapshot -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile_snapshot -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["subscriberprofile_snapshot-*"],
   "settings" : {
     "index" : {
-      "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SNAPSHOT'",
-      "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS_SNAPSHOT'",
+      "number_of_shards" : "Deployment.getElasticsearchSnapshotShards()",
+      "number_of_replicas" : "Deployment.getElasticsearchSnapshotReplicas()",
       "lifecycle.name": "subscriberprofile_snapshot_policy"
     }
   }
@@ -152,12 +152,12 @@ echo
 #
 #  create a cleaning policy for bdr
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/bdr_policy -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/bdr_policy -H'Content-Type: application/json' -d'
 {
   "policy": {
     "phases": {
       "delete": {
-         "min_age": "'$ELASTICSEARCH_BDR_CLEANING'",
+         "min_age": "Deployment.getElasticsearchRetentionDaysBDR()d",
          "actions": { "delete": {} }
       }
     }
@@ -168,7 +168,7 @@ echo
 #
 #  manually create bdr template
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/bdr -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/bdr -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["detailedrecords_bonuses-*"],
   "settings" : {
@@ -201,7 +201,7 @@ echo
 #
 #  manually create bdr pipeline
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/bdr-daily -H 'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/bdr-daily -H 'Content-Type: application/json' -d'
 {
   "description": "daily bdr index naming",
   "processors" : [
@@ -222,12 +222,12 @@ echo
 #
 #  create a cleaning policy for tokens
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/token_policy -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/token_policy -H'Content-Type: application/json' -d'
 {
   "policy": {
     "phases": {
       "delete": {
-         "min_age": "'$ELASTICSEARCH_TOKEN_CLEANING'",
+         "min_age": "Deployment.getElasticsearchRetentionDaysTokens()d",
          "actions": { "delete": {} }
       }
     }
@@ -238,7 +238,7 @@ echo
 #
 #  manually create token template
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/token -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/token -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["detailedrecords_tokens-*"],
   "settings" : {
@@ -263,7 +263,7 @@ echo
 #
 #  manually create token pipeline
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/token-daily -H 'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/token-daily -H 'Content-Type: application/json' -d'
 {
   "description": "daily token index naming",
   "processors" : [
@@ -284,12 +284,12 @@ echo
 #
 #  create a cleaning policy for odr
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/odr_policy -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/odr_policy -H'Content-Type: application/json' -d'
 {
   "policy": {
     "phases": {
       "delete": {
-         "min_age": "'$ELASTICSEARCH_ODR_CLEANING'",
+         "min_age": "Deployment.getElasticsearchRetentionDaysODR()d",
          "actions": { "delete": {} }
       }
     }
@@ -300,7 +300,7 @@ echo
 #
 #  manually create odr template
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/odr -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/odr -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["detailedrecords_offers-*"],
   "settings" : {
@@ -337,7 +337,7 @@ echo
 #
 #  manually create odr pipeline
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/odr-daily -H 'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/odr-daily -H 'Content-Type: application/json' -d'
 {
   "description": "daily odr index naming",
   "processors" : [
@@ -358,12 +358,12 @@ echo
 #
 #  create a cleaning policy for mdr
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/mdr_policy -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/mdr_policy -H'Content-Type: application/json' -d'
 {
   "policy": {
     "phases": {
       "delete": {
-         "min_age": "'$ELASTICSEARCH_MDR_CLEANING'",
+         "min_age": "Deployment.getElasticsearchRetentionDaysMDR()d",
          "actions": { "delete": {} }
       }
     }
@@ -374,7 +374,7 @@ echo
 #
 #  manually create mdr template
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mdr -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mdr -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["detailedrecords_messages-*"],
   "settings" : {
@@ -404,7 +404,7 @@ echo
 #
 #  manually create mdr pipeline
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/mdr-daily -H 'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/mdr-daily -H 'Content-Type: application/json' -d'
 {
   "description": "daily mdr index naming",
   "processors" : [
@@ -430,7 +430,7 @@ echo
 #
 #  manually create journeystatistic index
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/journeystatistic -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/journeystatistic -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["journeystatistic*"],
   "mappings" : {
@@ -470,7 +470,7 @@ then
   #
   #  manually create regr_criteria index
   #
-  curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/regr_criteria -H'Content-Type: application/json' -d'
+  prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/regr_criteria -H'Content-Type: application/json' -d'
   {
     "index_patterns": ["regr_criteria"],
     "mappings" : {
@@ -487,7 +487,7 @@ then
   #
   #  manually create regr_counter index
   #
-  curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/regr_counter -H'Content-Type: application/json' -d'
+  prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/regr_counter -H'Content-Type: application/json' -d'
   {
     "index_patterns": ["regr_counter"],
     "mappings" : {
@@ -497,7 +497,7 @@ then
     }
   }'
 
-  curl -XPUT http://$MASTER_ESROUTER_SERVER/regr_counter/_create/1 -H'Content-Type: application/json' -d'
+  prepare-es-create-curl -XPUT http://$MASTER_ESROUTER_SERVER/regr_counter/_doc/1 -H'Content-Type: application/json' -d'
   {
     "count" : 100
   }'
@@ -509,7 +509,7 @@ fi
 # datacubes
 #
 # -------------------------------------------------------------------------------
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_subscriberprofile -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_subscriberprofile -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["datacube_subscriberprofile"],
   "mappings" : {
@@ -522,7 +522,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_subscriberprofile -
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_loyaltyprogramshistory -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_loyaltyprogramshistory -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["datacube_loyaltyprogramshistory"],
   "mappings" : {
@@ -542,7 +542,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_loyaltyprogramshist
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_loyaltyprogramschanges -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_loyaltyprogramschanges -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["datacube_loyaltyprogramschanges"],
   "mappings" : {
@@ -559,7 +559,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_loyaltyprogramschan
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeytraffic- -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeytraffic- -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["datacube_journeytraffic-*"],
   "mappings" : {
@@ -575,7 +575,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeytraffic- -H'
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeyrewards- -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeyrewards- -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["datacube_journeyrewards-*"],
   "mappings" : {
@@ -589,7 +589,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeyrewards- -H'
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_odr -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_odr -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["datacube_odr"],
   "mappings" : {
@@ -610,6 +610,47 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_odr -H'Content-Type
 }'
 echo
 
+curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_bdr -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["datacube_bdr"],
+  "mappings" : {
+    "properties" : {
+      "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+      "period" : { "type" : "long" },
+      "filter.module" : { "type" : "keyword" },
+      "filter.feature" : { "type" : "keyword" },
+      "filter.provider" : { "type" : "keyword" },
+      "filter.operation" : { "type" : "keyword" },
+      "filter.salesChannel" : { "type" : "keyword" },
+      "filter.deliverable" : { "type" : "keyword" },
+      "filter.returnCode" : { "type" : "keyword" },
+      "count" : { "type" : "integer" },
+      "metric.totalQty" : { "type" : "integer" }
+    }
+  }
+}'
+echo
+
+curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_messages -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["datacube_messages"],
+  "mappings" : {
+    "properties" : {
+      "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+      "period" : { "type" : "long" },
+      "filter.module" : { "type" : "keyword" },
+      "filter.feature" : { "type" : "keyword" },
+      "filter.provider" : { "type" : "keyword" },
+      "filter.language" : { "type" : "keyword" },
+      "filter.template" : { "type" : "keyword" },
+      "filter.channel" : { "type" : "keyword" },
+      "filter.returnCode" : { "type" : "keyword" },
+      "count" : { "type" : "integer" },
+      "metric.totalQty" : { "type" : "integer" }
+    }
+  }
+}'
+echo
 # -------------------------------------------------------------------------------
 #
 # mappings
@@ -619,7 +660,7 @@ echo
 # mapping_modules is a static index, filled at deployment.
 # Rows are manually insert below.
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_modules -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_modules -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["mapping_modules"],
   "mappings" : {
@@ -633,49 +674,49 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_modules -H'Content-T
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/1 -H'Content-Type: application/json' -d'
+prepare-es-create-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/1 -H'Content-Type: application/json' -d'
 {
   "moduleID" : "1", "moduleName": "Journey_Manager", "moduleDisplay" : "Journey Manager", "moduleFeature" : "journeyID"
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/2 -H'Content-Type: application/json' -d'
+prepare-es-create-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/2 -H'Content-Type: application/json' -d'
 {
   "moduleID" : "2", "moduleName": "Loyalty_Program", "moduleDisplay" : "Loyalty Program", "moduleFeature" : "loyaltyProgramID"
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/3 -H'Content-Type: application/json' -d'
+prepare-es-create-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/3 -H'Content-Type: application/json' -d'
 {
   "moduleID" : "3", "moduleName": "Offer_Catalog", "moduleDisplay" : "Offer Catalog", "moduleFeature" : "offerID"
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/4 -H'Content-Type: application/json' -d'
+prepare-es-create-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/4 -H'Content-Type: application/json' -d'
 {
   "moduleID" : "4", "moduleName": "Delivery_Manager", "moduleDisplay" : "Delivery Manager", "moduleFeature" : "deliverableID"
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/5 -H'Content-Type: application/json' -d'
+prepare-es-create-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/5 -H'Content-Type: application/json' -d'
 {
   "moduleID" : "5", "moduleName": "Customer_Care", "moduleDisplay" : "Customer Care", "moduleFeature" : "none"
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/6 -H'Content-Type: application/json' -d'
+prepare-es-create-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/6 -H'Content-Type: application/json' -d'
 {
   "moduleID" : "6", "moduleName": "REST_API", "moduleDisplay" : "REST API", "moduleFeature" : "none"
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/999 -H'Content-Type: application/json' -d'
+prepare-es-create-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/999 -H'Content-Type: application/json' -d'
 {
   "moduleID" : "999", "moduleName": "Unknown", "moduleDisplay" : "Unknown", "moduleFeature" : "none"
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeys -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeys -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["mapping_journeys"],
   "mappings" : {
@@ -697,7 +738,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeys -H'Content-
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeyrewards -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeyrewards -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["mapping_journeyrewards"],
   "mappings" : {
@@ -710,7 +751,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeyrewards -H'Co
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_deliverables -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_deliverables -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["mapping_deliverables"],
   "mappings" : {
@@ -723,3 +764,40 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_deliverables -H'Cont
   }
 }'
 echo
+
+curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_basemanagement -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["mapping_basemanagement"],
+  "mappings" : {
+    "properties" : {
+      "id"            : { "type" : "keyword" },
+      "display"       : { "type" : "keyword" },
+      "active"        : { "type" : "boolean" },
+      "targetingType" : { "type" : "keyword" },
+      "segments"      : { "type" : "nested",
+      	   "properties" : {
+              "id"    : { "type" : "keyword" },
+              "name"  : { "type" : "keyword" }
+           }
+      },
+      "createdDate"   : { "type" : "date" },
+      "timestamp"     : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
+    }
+  }
+}'
+echo
+
+curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeyobjective -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["mapping_journeyobjective"],
+  "mappings" : {
+    "properties" : {
+      "id"            : { "type" : "keyword" },
+      "display"       : { "type" : "keyword" },
+      "contactPolicy" : { "type" : "keyword" },
+      "timestamp"     : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
+    }
+  }
+}'
+echo
+

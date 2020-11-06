@@ -503,7 +503,7 @@ public class ReportEsReader
 
   private int getScrollSize()
   {
-    int scrollSize = Deployment.getElasticSearchScrollSize();
+    int scrollSize = com.evolving.nglm.core.Deployment.getElasticsearchScrollSize();
     if (scrollSize == 0)
       {
         scrollSize = ReportUtils.DEFAULT_ELASTIC_SEARCH_SCROLL_SIZE;

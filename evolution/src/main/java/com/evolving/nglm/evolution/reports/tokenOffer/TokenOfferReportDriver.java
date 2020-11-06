@@ -37,7 +37,7 @@ public class TokenOfferReportDriver extends ReportDriver{
 
       TokenOfferReportMonoPhase.main(new String[]{
           elasticSearch, esIndexSubscriber, csvFilename
-      });     
+      }, reportGenerationDate);     
   
 	  log.debug("Finished with Token Report");
 	}

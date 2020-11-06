@@ -60,6 +60,7 @@ public abstract class GUIManagedObject
     Journey("journey"),
     Campaign("campaign"),
     Workflow("workflow"),
+    LoyaltyWorkflow("loyaltyWorkflow"),
     BulkCampaign("bulkCampaign"),
     SMSMessageTemplate("smsMessageTemplate"),
     MailMessageTemplate("mailMessageTemplate"),
@@ -265,11 +266,16 @@ public abstract class GUIManagedObject
   //  package protected
   //
 
-  boolean getReadOnly() { return readOnly; }
-  boolean getInternalOnly() { return internalOnly; }
-  boolean getActive() { return active; }
-  boolean getDeleted() { return deleted; }
-  String getGroupID() { return groupID; }
+  /**
+   * @rl 2020-10-07: Those fields were package protected in order to be hidden from nglm-{project} 
+   * and more generally outside nglm-evolution. We cannot retrieve the reason behind this mechanism.
+   * We need them for mapping, see EVPRO-594. We put them back to public for the moment. 
+   */
+  public boolean getReadOnly() { return readOnly; }
+  public boolean getInternalOnly() { return internalOnly; }
+  public boolean getActive() { return active; }
+  public boolean getDeleted() { return deleted; }
+  public String getGroupID() { return groupID; }
 
   //
   //  private
@@ -538,6 +544,19 @@ public abstract class GUIManagedObject
     return (date != null) ? standardDateFormats.get(0).format(date) : null;
   }
 
+  public Date parseWithStandardDateFormat(String str)
+  {
+    try
+      {
+        return standardDateFormats.get(0).parse(str);
+      }
+    catch (ParseException e)
+      {
+        if (log.isDebugEnabled()) log.debug("unable to parse " + str + " as a date with format : " + standardDateFormats.get(0));
+        return null;
+      }
+  }
+  
   /*****************************************
   *
   *  equals

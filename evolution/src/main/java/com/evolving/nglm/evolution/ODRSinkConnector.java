@@ -44,7 +44,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
   
   public static class ODRSinkConnectorTask extends StreamESSinkTask<PurchaseFulfillmentRequest>
   {
-    private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+    private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
     private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
     /*****************************************

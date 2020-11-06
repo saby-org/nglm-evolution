@@ -35,15 +35,11 @@ public class JourneyImpactReportDriver extends ReportDriver
 
       log.debug("data for report : "+JOURNEY_STATS_ES_INDEX);
       
-      JourneyService journeyService = new JourneyService(kafka, "JourneyImpactReport-journeyservice-JourneyImpactReportMonoDriver", Deployment.getJourneyTopic(), false);
-      journeyService.start();
-
       JourneyImpactReportMonoPhase.main(new String[]{
           elasticSearch, JOURNEY_STATS_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit
-      }, journeyService, reportGenerationDate);         
+      }, reportGenerationDate);         
       try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) {}      
       
-      journeyService.stop();
       log.debug("Finished with Journey Impact Report");
       
   }
