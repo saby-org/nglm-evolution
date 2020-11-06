@@ -12,5 +12,6 @@ public interface VoucherValidation
   default public Date getVoucherValidationEventDate() { return ((VoucherAction) this).getEventDate(); }
   default public String getVoucherValidationVoucherCode() { return ((VoucherAction) this).getVoucherCode(); }
   default public String getVoucherValidationStatus() { return ((VoucherAction) this).getActionStatus(); }
+  default public Integer getVoucherValidationStatusCode() { return ((VoucherAction) this).getActionStatusCode(); };
 
 }

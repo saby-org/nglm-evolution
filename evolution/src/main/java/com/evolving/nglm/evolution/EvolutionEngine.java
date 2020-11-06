@@ -7919,7 +7919,7 @@ public class EvolutionEngine
       *****************************************/
       
       Date now = SystemTime.getCurrentTime();
-      VoucherAction voucherActionEvent = new VoucherAction(subscriberProfile.getSubscriberID(), now, voucherCode, RESTAPIGenericReturnCodes.UNKNOWN.getGenericResponseMessage(), operation.getExternalRepresentation());
+      VoucherAction voucherActionEvent = new VoucherAction(subscriberProfile.getSubscriberID(), now, voucherCode, RESTAPIGenericReturnCodes.UNKNOWN.getGenericResponseMessage(), RESTAPIGenericReturnCodes.UNKNOWN.getGenericResponseCode(), operation.getExternalRepresentation());
       
       if (operation == Operation.Redeem)
         {
@@ -7939,10 +7939,12 @@ public class EvolutionEngine
               evolutionEventContext.getSubscriberState().getVoucherChanges().add(voucherChange);
               subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
               voucherActionEvent.setActionStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
+              voucherActionEvent.setActionStatusCode(voucherChange.getReturnStatus().getGenericResponseCode());
             } 
           catch (ThirdPartyManagerException e) 
             {
               voucherActionEvent.setActionStatus(e.getMessage());
+              voucherActionEvent.setActionStatusCode(e.getResponseCode());
             }
         }
       else if (operation == Operation.Validate)
@@ -7953,10 +7955,12 @@ public class EvolutionEngine
               VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Unknown, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFeatureID(), moduleID, voucherProfileStored.getFeatureID(), origin, RESTAPIGenericReturnCodes.SUCCESS);
               subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
               voucherActionEvent.setActionStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
+              voucherActionEvent.setActionStatusCode(voucherChange.getReturnStatus().getGenericResponseCode());
             } 
           catch (ThirdPartyManagerException e)
             {
               voucherActionEvent.setActionStatus(e.getMessage());
+              voucherActionEvent.setActionStatusCode(e.getResponseCode());
             }
         }
       actions.add(voucherActionEvent);

@@ -46,6 +46,7 @@ public class VoucherAction implements EvolutionEngineEvent, Action, VoucherRedem
       schemaBuilder.field("eventDate", Timestamp.SCHEMA);
       schemaBuilder.field("voucherCode", Schema.STRING_SCHEMA);
       schemaBuilder.field("actionStatus", Schema.STRING_SCHEMA);
+      schemaBuilder.field("actionStatusCode", Schema.INT32_SCHEMA);
       schemaBuilder.field("operation", Schema.STRING_SCHEMA);
       schema = schemaBuilder.build();
     };
@@ -91,6 +92,7 @@ public class VoucherAction implements EvolutionEngineEvent, Action, VoucherRedem
   private Date eventDate;
   private String voucherCode;
   private String actionStatus;
+  private Integer actionStatusCode;
   private String operation;
   
   /*****************************************
@@ -115,6 +117,7 @@ public class VoucherAction implements EvolutionEngineEvent, Action, VoucherRedem
   @Override public Date getEventDate() { return eventDate; }
   public String getVoucherCode() { return voucherCode; };
   public String getActionStatus() { return actionStatus; }
+  public Integer getActionStatusCode() { return actionStatusCode; }
   public String getOperation() { return operation; }
   @Override public ActionType getActionType() { return ActionType.VoucherChange; }
   
@@ -125,6 +128,7 @@ public class VoucherAction implements EvolutionEngineEvent, Action, VoucherRedem
   *****************************************/
   
   public void setActionStatus(String actionStatus) { this.actionStatus = actionStatus; }
+  public void setActionStatusCode(Integer actionStatusCode) { this.actionStatusCode = actionStatusCode; }
   
   /*****************************************
   *
@@ -132,13 +136,14 @@ public class VoucherAction implements EvolutionEngineEvent, Action, VoucherRedem
   *
   *****************************************/
   
-  public VoucherAction(String subscriberID, Date eventDate, String voucherCode, String actionStatus, String operation)
+  public VoucherAction(String subscriberID, Date eventDate, String voucherCode, String actionStatus, Integer actionStatusCode, String operation)
   {
     super();
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
     this.voucherCode = voucherCode;
     this.actionStatus = actionStatus;
+    this.actionStatusCode = actionStatusCode;
     this.operation = operation;
   }
   
@@ -156,6 +161,7 @@ public class VoucherAction implements EvolutionEngineEvent, Action, VoucherRedem
    struct.put("eventDate", event.getEventDate());
    struct.put("voucherCode", event.getVoucherCode());
    struct.put("actionStatus", event.getActionStatus());
+   struct.put("actionStatusCode", event.getActionStatusCode());
    struct.put("operation", event.getOperation());
    return struct;
  }
@@ -191,13 +197,14 @@ public class VoucherAction implements EvolutionEngineEvent, Action, VoucherRedem
    Date eventDate = (Date) valueStruct.get("eventDate");
    String voucherCode = valueStruct.getString("voucherCode");
    String actionStatus = valueStruct.getString("actionStatus");
+   Integer actionStatusCode = valueStruct.getInt32("actionStatusCode");
    String operation = valueStruct.getString("operation");
 
    //
    // return
    //
 
-   return new VoucherAction(subscriberID, eventDate, voucherCode, actionStatus, operation);
+   return new VoucherAction(subscriberID, eventDate, voucherCode, actionStatus, actionStatusCode, operation);
  }
 
 @Override
@@ -205,4 +212,5 @@ public String toString()
 {
   return "VoucherAction [subscriberID=" + subscriberID + ", eventDate=" + eventDate + ", voucherCode=" + voucherCode + ", actionStatus=" + actionStatus + ", operation=" + operation + "]";
 }
+
 }

@@ -12,5 +12,6 @@ public interface VoucherRedemption
   default public Date getVoucherRedemptionEventDate() { return ((VoucherAction) this).getEventDate(); }
   default public String getVoucherRedemptionVoucherCode() { return ((VoucherAction) this).getVoucherCode(); }
   default public String getVoucherRedemptionStatus() { return ((VoucherAction) this).getActionStatus(); }
+  default public Integer getVoucherRedemptionStatusCode() { return ((VoucherAction) this).getActionStatusCode(); }
 
 }
