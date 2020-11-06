@@ -20,9 +20,14 @@ import java.util.TimeZone;
 public class ReportsCommonCode
 {
   
-  public static List<SimpleDateFormat> standardDateFormats = null;
-  public static SimpleDateFormat deploymentDateFormat = null;
-      
+  public static List<SimpleDateFormat> standardDateFormats = new ArrayList<SimpleDateFormat>();
+  public static final ThreadLocal<SimpleDateFormat> deploymentDateFormat = ThreadLocal.withInitial(
+      () -> {
+        SimpleDateFormat sdf = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
+        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        return sdf;
+      });
+
   public static final Logger log = LoggerFactory.getLogger(ReportsCommonCode.class);
 
   /****************************************
@@ -33,19 +38,20 @@ public class ReportsCommonCode
   
   public static void initializeDateFormats()
   {
-    standardDateFormats = new ArrayList<SimpleDateFormat>();
-    standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSSXXX"));
-    standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"));
-    standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX"));
-    standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX"));
-    for (SimpleDateFormat standardDateFormat : standardDateFormats)
-      {
-        standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-      }
-
-    deploymentDateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-    deploymentDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-
+    synchronized (standardDateFormats)
+    {
+      if (standardDateFormats.isEmpty())
+        {
+          standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSSXXX"));
+          standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"));
+          standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX"));
+          standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX"));
+          for (SimpleDateFormat standardDateFormat : standardDateFormats)
+            {
+              standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+            }
+        }
+    }
   }
 
   /****************************************
@@ -67,7 +73,7 @@ public class ReportsCommonCode
                 try
                   {
                     Date date = standardDateFormat.parse(dateString.trim());
-                    result = deploymentDateFormat.format(date);
+                    result = deploymentDateFormat.get().format(date);
                     ableToParse = true;
                     break;
                   }
@@ -101,7 +107,7 @@ public class ReportsCommonCode
    if (date == null) return result;
    try
    {
-     result = deploymentDateFormat.format(date);
+     result = deploymentDateFormat.get().format(date);
    }
    catch (Exception e)
    {

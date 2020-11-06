@@ -37,6 +37,7 @@ import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
+import com.evolving.nglm.evolution.reports.subscriber.SubscriberReportMonoPhase;
 
 public class TokenReportMonoPhase implements ReportCsvFactory
 {
@@ -46,13 +47,12 @@ public class TokenReportMonoPhase implements ReportCsvFactory
   private final static String subscriberID = "subscriberID";
   private final static String customerID = "customerID";
 
-  private static OfferService offerService = null;
-  private static TokenTypeService tokenTypeservice = null;
-  private static PresentationStrategyService presentationStrategyService = null;
-  private static ScoringStrategyService scoringStrategyService = null;
-  private static JourneyService journeyService = null;
-  private static LoyaltyProgramService loyaltyProgramService = null;
-
+  private OfferService offerService = null;
+  private TokenTypeService tokenTypeService = null;
+  private PresentationStrategyService presentationStrategyService = null;
+  private ScoringStrategyService scoringStrategyService = null;
+  private JourneyService journeyService = null;
+  private LoyaltyProgramService loyaltyProgramService = null;
 
   /****************************************
    *
@@ -225,7 +225,13 @@ public class TokenReportMonoPhase implements ReportCsvFactory
    *
    ****************************************/
 
-  public static void main(String[] args)
+  public static void main(String[] args, final Date reportGenerationDate)
+  {
+    TokenReportMonoPhase tokenReportMonoPhase = new TokenReportMonoPhase();
+    tokenReportMonoPhase.start(args, reportGenerationDate);
+  }
+  
+  private void start(String[] args, final Date reportGenerationDate)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -243,7 +249,6 @@ public class TokenReportMonoPhase implements ReportCsvFactory
     String csvfile         = args[2];
 
     log.info("Reading data from ES in "+esIndexCustomer+"  index and writing to "+csvfile+" file.");  
-    ReportCsvFactory reportFactory = new TokenReportMonoPhase();
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
@@ -251,26 +256,22 @@ public class TokenReportMonoPhase implements ReportCsvFactory
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
               esNode,
               esIndexWithQuery,
-              reportFactory,
+              this,
               csvfile
           );
 
     offerService = new OfferService(Deployment.getBrokerServers(), "report-offerService-tokenReportMonoPhase", Deployment.getOfferTopic(), false);
-    offerService.start();
-
     scoringStrategyService = new ScoringStrategyService(Deployment.getBrokerServers(), "report-scoringstrategyservice-tokenReportMonoPhase", Deployment.getScoringStrategyTopic(), false);
-    scoringStrategyService.start();
-
     presentationStrategyService = new PresentationStrategyService(Deployment.getBrokerServers(), "report-presentationstrategyservice-tokenReportMonoPhase", Deployment.getPresentationStrategyTopic(), false);
-    presentationStrategyService.start();
-
-    tokenTypeservice = new TokenTypeService(Deployment.getBrokerServers(), "report-tokentypeservice-tokenReportMonoPhase", Deployment.getTokenTypeTopic(), false);
-    tokenTypeservice.start();
-    
+    tokenTypeService = new TokenTypeService(Deployment.getBrokerServers(), "report-tokentypeservice-tokenReportMonoPhase", Deployment.getTokenTypeTopic(), false);
     journeyService = new JourneyService(Deployment.getBrokerServers(), "report-journeyservice-tokenReportMonoPhase",Deployment.getJourneyTopic(), false);
-    journeyService.start();
-
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "report-loyaltyprogramservice-tokenReportMonoPhase", Deployment.getLoyaltyProgramTopic(), false);
+
+    offerService.start();
+    scoringStrategyService.start();
+    presentationStrategyService.start();
+    tokenTypeService.start();
+    journeyService.start();
     loyaltyProgramService.start();
     
     if (!reportMonoPhase.startOneToOne())
@@ -278,6 +279,12 @@ public class TokenReportMonoPhase implements ReportCsvFactory
         log.warn("An error occured, the report might be corrupted");
         return;
       }
+    offerService.stop();
+    scoringStrategyService.stop();
+    presentationStrategyService.stop();
+    tokenTypeService.stop();
+    journeyService.stop();
+    loyaltyProgramService.stop();
     
   }
 

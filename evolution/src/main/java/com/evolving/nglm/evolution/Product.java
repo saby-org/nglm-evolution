@@ -51,12 +51,13 @@ public class Product extends GUIManagedObject implements StockableItem
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("product");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("supplierID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliverableID", Schema.STRING_SCHEMA);
     schemaBuilder.field("stock", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("productTypes", SchemaBuilder.array(ProductTypeInstance.schema()).schema());
+    schemaBuilder.field("simpleOffer", Schema.OPTIONAL_BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -83,6 +84,7 @@ public class Product extends GUIManagedObject implements StockableItem
   private String deliverableID;
   private Integer stock;
   private Set<ProductTypeInstance> productTypes;
+  private boolean simpleOffer;
 
   //
   //  derived
@@ -103,6 +105,7 @@ public class Product extends GUIManagedObject implements StockableItem
   public Integer getStock() { return stock; }
   public Set<ProductTypeInstance> getProductTypes() { return productTypes;  }
   public String getStockableItemID() { return stockableItemID; }
+  public boolean getSimpleOffer() { return simpleOffer; }
 
   /*****************************************
   *
@@ -110,7 +113,7 @@ public class Product extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Integer stock, Set<ProductTypeInstance> productTypes)
+  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Integer stock, Set<ProductTypeInstance> productTypes, boolean simpleOffer)
   {
     super(schemaAndValue);
     this.supplierID = supplierID;
@@ -118,6 +121,7 @@ public class Product extends GUIManagedObject implements StockableItem
     this.stock = stock;
     this.productTypes = productTypes;
     this.stockableItemID = "product-" + getProductID();
+    this.simpleOffer = simpleOffer;
   }
 
   /*****************************************
@@ -135,6 +139,7 @@ public class Product extends GUIManagedObject implements StockableItem
     struct.put("deliverableID", product.getDeliverableID());
     struct.put("stock", product.getStock());
     struct.put("productTypes", packProductTypes(product.getProductTypes()));
+    struct.put("simpleOffer", product.getSimpleOffer());
     return struct;
   }
   
@@ -179,12 +184,12 @@ public class Product extends GUIManagedObject implements StockableItem
     String deliverableID = valueStruct.getString("deliverableID");
     Integer stock = valueStruct.getInt32("stock");
     Set<ProductTypeInstance> productTypes = unpackProductTypes(schema.field("productTypes").schema(), valueStruct.get("productTypes"));
-    
+    boolean simpleOffer = (schemaVersion >= 2) ? valueStruct.getBoolean("simpleOffer") : false;
     //
     //  return
     //
 
-    return new Product(schemaAndValue, supplierID, deliverableID, stock, productTypes);
+    return new Product(schemaAndValue, supplierID, deliverableID, stock, productTypes, simpleOffer);
   }
   
   /*****************************************
@@ -253,6 +258,7 @@ public class Product extends GUIManagedObject implements StockableItem
     this.stock = JSONUtilities.decodeInteger(jsonRoot, "stock", false);
     this.productTypes = decodeProductTypes(JSONUtilities.decodeJSONArray(jsonRoot, "productTypes", true), catalogCharacteristicService);
     this.stockableItemID = "product-" + getProductID();
+    this.simpleOffer = JSONUtilities.decodeBoolean(jsonRoot, "simpleOffer", Boolean.FALSE);
 
     //
     //  deliverable
@@ -296,6 +302,7 @@ public class Product extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! Objects.equals(deliverableID, existingProduct.getDeliverableID());
         epochChanged = epochChanged || ! Objects.equals(stock, existingProduct.getStock());
         epochChanged = epochChanged || ! Objects.equals(productTypes, existingProduct.getProductTypes());
+        epochChanged = epochChanged || ! Objects.equals(simpleOffer, existingProduct.getSimpleOffer());
         return epochChanged;
       }
     else

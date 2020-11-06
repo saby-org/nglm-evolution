@@ -28,6 +28,7 @@ import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
+import com.evolving.nglm.evolution.reports.customerpointdetails.CustomerPointDetailsMonoPhase;
 import com.evolving.nglm.evolution.reports.subscriber.SubscriberReportMonoPhase;
 
 
@@ -40,7 +41,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
 
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatesReportMonoPhase.class);
   final private static String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private static JourneyService journeyServiceStatic;
+  private JourneyService journeyService;
   List<String> headerFieldsOrder = new ArrayList<String>();
   private final String subscriberID = "subscriberID";
   private final String customerID = "customerID";
@@ -69,7 +70,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
     Map<String, Object> journeyStats = map;
     if (journeyStats != null && !journeyStats.isEmpty())
       {
-        Journey journey = journeyServiceStatic.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
+        Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
         if (journey != null)
           {
             Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
@@ -265,7 +266,13 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
     return Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
   }
   
-  public static void main(String[] args, JourneyService journeyService, final Date reportGenerationDate)
+  public static void main(String[] args, final Date reportGenerationDate)
+  {
+    JourneyCustomerStatesReportMonoPhase journeyCustomerStatesReportMonoPhase = new JourneyCustomerStatesReportMonoPhase();
+    journeyCustomerStatesReportMonoPhase.start(args, reportGenerationDate);
+  }
+  
+  private void start(String[] args, final Date reportGenerationDate)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -282,9 +289,9 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
     String esIndexJourney  = args[1];
     String csvfile         = args[2];
 
-    ReportCsvFactory reportFactory = new JourneyCustomerStatesReportMonoPhase();
-    journeyServiceStatic = journeyService;
-
+    journeyService = new JourneyService(Deployment.getBrokerServers(), "journeycustomerstatesreport-journeyservice-JourneyCustomerStatesReportMonoPhase", Deployment.getJourneyTopic(), false);
+    journeyService.start();
+    
     Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate);
     StringBuilder activeJourneyEsIndex = new StringBuilder();
     boolean firstEntry = true;
@@ -303,7 +310,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
         esIndexWithQuery,
-        reportFactory,
+        this,
         csvfile
     );
 
@@ -313,6 +320,7 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
         return;
       }
     
+    journeyService.stop();
     log.info("Finished JourneyCustomerStatesReportESReader");
   }
 
