@@ -7946,6 +7946,7 @@ public class EvolutionEngine
               voucherActionEvent.setActionStatus(e.getMessage());
               voucherActionEvent.setActionStatusCode(e.getResponseCode());
             }
+          actions.add(voucherActionEvent);
         }
       else if (operation == Operation.Validate)
         {
@@ -7962,8 +7963,9 @@ public class EvolutionEngine
               voucherActionEvent.setActionStatus(e.getMessage());
               voucherActionEvent.setActionStatusCode(e.getResponseCode());
             }
+          actions.add(voucherActionEvent);
         }
-      actions.add(voucherActionEvent);
+      
       if (log.isDebugEnabled()) log.debug("VoucherActionManager - VoucherAction {}, voucherActionEvent is {} and supplier is {}", operation, voucherActionEvent, supplier);
       
       /*****************************************
