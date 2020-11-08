@@ -298,7 +298,9 @@ public class ReportMonoPhase
   
   public boolean startOneToOneSingleFile ()
   {
-	        if (csvfile == null)
+	  log.info("startOneToOneSingleFile : singleFile case");      
+	  
+	  if (csvfile == null)
 	          {
 	            log.info("csvfile is null !");
 	            return false;
@@ -500,7 +502,7 @@ public class ReportMonoPhase
             log.info("csvfile is null !");
             return false;
           }
-
+        log.info("startOneToOne : multipleFile case");
         File file = new File(csvfile + ReportUtils.ZIP_EXTENSION);
         if (file.exists())
           {
