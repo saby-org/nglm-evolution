@@ -412,7 +412,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     if (reportPeriodQuantity > 1)
     	isMultiDates = true;
     
-    if (!reportMonoPhase.startOneToOne(isMultiDates))
+    if (!reportMonoPhase.startOneToOne(true))
       {
         log.warn("An error occured, the report might be corrupted");
         return;
