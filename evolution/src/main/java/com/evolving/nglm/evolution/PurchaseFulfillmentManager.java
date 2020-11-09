@@ -403,10 +403,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     {
       
       // resellerDisplay
-      
-      Reseller reseller = resellerService.getActiveReseller(resellerID, now);
-      String resellerDisplay = (reseller == null || reseller.getGUIManagedObjectDisplay() == null) ? "" : reseller.getGUIManagedObjectDisplay();
-      this.resellerDisplay = resellerDisplay;
+      if (resellerID != null)
+        {
+          Reseller reseller = resellerService.getActiveReseller(resellerID, now);
+          this.resellerDisplay = (reseller == null || reseller.getGUIManagedObjectDisplay() == null) ? "" : reseller.getGUIManagedObjectDisplay();
+        }
 
       //
       // offerDisplay
