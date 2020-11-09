@@ -616,7 +616,7 @@ public class ReportMonoPhase
 				  for (SearchHit searchHit : searchHits)
 				  {
 					  Map<String, Object> sourceMap = searchHit.getSourceAsMap();
-					  String key;
+					  //String key;
 					  Map<String, Object> miniSourceMap = sourceMap;
 					  if (onlyKeepAlternateIDs && (i == (esIndex.size()-1))) // subscriber index is always last
 					  {
@@ -678,25 +678,25 @@ public class ReportMonoPhase
 							  //  ZIP
 							  //
 
-							  for (String key1 : records.keySet())
+							  for (String key : records.keySet())
 							  {
 
-								  String tmpFileName=file+"."+key1+".tmp";
+								  String tmpFileName=file+"."+key+".tmp";
 								  //boolean addHeader = false;
 								  ZipOutputStream writerMulti = tmpZipFiles.get(tmpFileName);
 								  if(writerMulti==null){
 									  addHeader = true;
-									  FileOutputStream fos = new FileOutputStream(tmpFileName);
-									  writerMulti = new ZipOutputStream(fos);
+									  FileOutputStream fosMulti = new FileOutputStream(tmpFileName);
+									  writerMulti = new ZipOutputStream(fosMulti);
 									  String dataFile[] = csvfile.split("[.]");
-									  String dataFileName = dataFile[0] + "_" + key1;
+									  String dataFileName = dataFile[0] + "_" + key;
 									  String zipEntryName = new File(dataFileName + "." + dataFile[1]).getName();
 									  ZipEntry entry = new ZipEntry(zipEntryName);
 									  writerMulti.putNextEntry(entry);
 									  writerMulti.setLevel(Deflater.BEST_SPEED);
 									  tmpZipFiles.put(tmpFileName,writerMulti);
 								  }
-								  for (Map<String, Object> lineMap : records.get(key1))
+								  for (Map<String, Object> lineMap : records.get(key))
 								  {
 									  reportFactory.dumpLineToCsv(lineMap, writerMulti, addHeader);
 									  addHeader = false;
@@ -717,8 +717,8 @@ public class ReportMonoPhase
 				  scrollId = searchResponse.getScrollId();
 				  searchHits = searchResponse.getHits().getHits();
 
-				  log.debug("Finished with index " + i);
-			  }             
+			  }  
+			  log.debug("Finished with index " + i);
 			  if (scrollId != null)
 			  {
 				  ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
@@ -775,6 +775,9 @@ public class ReportMonoPhase
 				  reader.close();
 				  new File(tmpFile).delete();
 			  }
+	          writer.flush();
+	          writer.closeEntry();
+	          writer.close();
 		  } catch (IOException e) {
 				  log.error("Error while concatenating tmp files", e);
 		  }
@@ -790,7 +793,7 @@ public class ReportMonoPhase
 		  }
 	  }
 
-	  log.info("Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION);
+	  log.info("** FNB ** - Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION);
 	  return true;
   }
 
