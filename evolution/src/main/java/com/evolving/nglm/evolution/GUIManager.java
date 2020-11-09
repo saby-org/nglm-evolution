@@ -28141,69 +28141,76 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     for (int i = 0; i < offers.size(); i++)
       {
         GUIManagedObject offerObject = offers.get(i);
-        if (offerObject != null && offerObject instanceof Offer)
+        if (offerObject != null)
           {
-            Offer offer = (Offer) offerObject;
-            String offerName = offerObject.getGUIManagedObjectName();
-            Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(offer);
-            OfferProduct product = (OfferProduct) OfferProductVoucherAndSupplierIDs.get("offerProduct");
-            OfferVoucher voucher = (OfferVoucher) OfferProductVoucherAndSupplierIDs.get("offerVoucher");
-
-            if (product != null)
+            if (offerObject instanceof Offer)
               {
-                String productID = product.getProductID();
-                String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
-                if (offerName.equals(productName))
+                Offer offer = (Offer) offerObject;
+                String offerName = offerObject.getGUIManagedObjectName();
+                Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(offer);
+                OfferProduct product = (OfferProduct) OfferProductVoucherAndSupplierIDs.get("offerProduct");
+                OfferVoucher voucher = (OfferVoucher) OfferProductVoucherAndSupplierIDs.get("offerVoucher");
+
+                if (product != null)
                   {
-                    String productId = product.getProductID();
-                    productService.removeProduct(productId, userID);
-                    offerService.removeOffer(offer.getOfferID(), userID);
-                    validIDs.add(offer.getOfferID());
-                  }
-                else if (!(offerName.equals(productName)) && jsonRoot.containsKey("id"))
-                  {
-                    response.put("responseCode", RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseCode());
-                    response.put("responseMessage",
-                        RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseMessage());
-                    return JSONUtilities.encodeObject(response);
-                  }
-                else
-                  {
-                    if (log.isDebugEnabled())
+                    String productID = product.getProductID();
+                    String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
+                    if (offerName.equals(productName))
                       {
-                        log.debug(offer + "is not a simple offer");
+                        String productId = product.getProductID();
+                        productService.removeProduct(productId, userID);
+                        offerService.removeOffer(offer.getOfferID(), userID);
+                        validIDs.add(offer.getOfferID());
+                      }
+                    else if (!(offerName.equals(productName)) && jsonRoot.containsKey("id"))
+                      {
+                        response.put("responseCode", RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseCode());
+                        response.put("responseMessage",
+                            RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseMessage());
+                        return JSONUtilities.encodeObject(response);
+                      }
+                    else
+                      {
+                        if (log.isDebugEnabled())
+                          {
+                            log.debug(offer + "is not a simple offer");
+                          }
                       }
                   }
-              }
-            if (voucher != null)
-              {
-                String voucherID = voucher.getVoucherID();
-                String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
+                if (voucher != null)
+                  {
+                    String voucherID = voucher.getVoucherID();
+                    String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
-                if (offerName.equals(voucherName))
-                  {
-                    String voucherId = voucher.getVoucherID();
-                    voucherService.removeVoucher(voucherId, userID, uploadedFileService);
-                    offerService.removeOffer(offer.getOfferID(), userID);
-                    validIDs.add(offer.getOfferID());
-                  }
-
-                else if (!(offerName.equals(voucherName)) && jsonRoot.containsKey("id"))
-                  {
-                    response.put("responseCode", RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseCode());
-                    response.put("responseMessage",
-                        RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseMessage());
-                    return JSONUtilities.encodeObject(response);
-                  }
-                else
-                  {
-                    if (log.isDebugEnabled())
+                    if (offerName.equals(voucherName))
                       {
-                        log.debug(offer + "is not a simple offer");
+                        String voucherId = voucher.getVoucherID();
+                        voucherService.removeVoucher(voucherId, userID, uploadedFileService);
+                        offerService.removeOffer(offer.getOfferID(), userID);
+                        validIDs.add(offer.getOfferID());
                       }
-                  }
 
+                    else if (!(offerName.equals(voucherName)) && jsonRoot.containsKey("id"))
+                      {
+                        response.put("responseCode", RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseCode());
+                        response.put("responseMessage",
+                            RESTAPIGenericReturnCodes.OFFER_UNKNOWN.getGenericResponseMessage());
+                        return JSONUtilities.encodeObject(response);
+                      }
+                    else
+                      {
+                        if (log.isDebugEnabled())
+                          {
+                            log.debug(offer + "is not a simple offer");
+                          }
+                      }
+
+                  }
               }
+            else {
+
+              offerService.removeOffer(offerObject.getGUIManagedObjectID(), userID);
+            }
           }
       }
     /*****************************************
