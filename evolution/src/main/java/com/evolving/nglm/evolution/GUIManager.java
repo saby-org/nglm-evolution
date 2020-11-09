@@ -27404,6 +27404,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     {
       log.info("createingJourneys of {}, for {}", recurrentJourney.getJourneyID(), journeyCreationDates);
       String timeZone = Deployment.getBaseTimeZone();
+      Date rawEffectiveEntryPeriodEndDate = recurrentJourney.getRawEffectiveEntryPeriodEndDate();
       int daysBetween = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(recurrentJourney.getEffectiveEndDate(), Calendar.DATE, timeZone), Deployment.getBaseTimeZone());
       int occurrenceNumber = lastCreatedOccurrenceNumber;
       for (Date startDate : journeyCreationDates)
@@ -27420,6 +27421,20 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           startDate = RLMDateUtils.setField(startDate, Calendar.HOUR_OF_DAY, RLMDateUtils.getField(recurrentJourney.getEffectiveStartDate(), Calendar.HOUR_OF_DAY, timeZone), timeZone);
           startDate = RLMDateUtils.setField(startDate, Calendar.MINUTE, RLMDateUtils.getField(recurrentJourney.getEffectiveStartDate(), Calendar.MINUTE, timeZone), timeZone);
           startDate = RLMDateUtils.setField(startDate, Calendar.SECOND, RLMDateUtils.getField(recurrentJourney.getEffectiveStartDate(), Calendar.SECOND, timeZone), timeZone);
+          
+          //
+          //  prepare effectiveEntryPeriodEndDate
+          //
+          
+          Date recRawEffectiveEntryPeriodEndDate = null;
+          if (rawEffectiveEntryPeriodEndDate != null)
+            {
+              int daysBetweenEntryPeriodEndDateAndStartDate = RLMDateUtils.daysBetween(RLMDateUtils.truncate(recurrentJourney.getEffectiveStartDate(), Calendar.DATE, timeZone), RLMDateUtils.truncate(rawEffectiveEntryPeriodEndDate, Calendar.DATE, timeZone), Deployment.getBaseTimeZone());
+              recRawEffectiveEntryPeriodEndDate = RLMDateUtils.addDays(startDate, daysBetweenEntryPeriodEndDateAndStartDate, timeZone);
+              recRawEffectiveEntryPeriodEndDate = RLMDateUtils.setField(recRawEffectiveEntryPeriodEndDate, Calendar.HOUR_OF_DAY, RLMDateUtils.getField(rawEffectiveEntryPeriodEndDate, Calendar.HOUR_OF_DAY, timeZone), timeZone);
+              recRawEffectiveEntryPeriodEndDate = RLMDateUtils.setField(recRawEffectiveEntryPeriodEndDate, Calendar.MINUTE, RLMDateUtils.getField(rawEffectiveEntryPeriodEndDate, Calendar.MINUTE, timeZone), timeZone);
+              recRawEffectiveEntryPeriodEndDate = RLMDateUtils.setField(recRawEffectiveEntryPeriodEndDate, Calendar.SECOND, RLMDateUtils.getField(rawEffectiveEntryPeriodEndDate, Calendar.SECOND, timeZone), timeZone);
+            }
           
           //
           //  journeyJSON
@@ -27448,6 +27463,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + " - " + occurrenceNumber);
           journeyJSON.put("effectiveStartDate", recurrentJourney.formatDateField(startDate));
           journeyJSON.put("effectiveEndDate", recurrentJourney.formatDateField(endDate));
+          journeyJSON.put("effectiveEntryPeriodEndDate", recurrentJourney.formatDateField(recRawEffectiveEntryPeriodEndDate));
           
           //
           //  create and activate
