@@ -458,7 +458,6 @@ public class BDRReportMonoPhase implements ReportCsvFactory
         log.warn("An error occured, the report might be corrupted");
         return;
       }
-    log.info("=========Test========");
-    log.info("FNR Finished BDRReport");
+    log.info("Finished BDRReport");
   }
 }
