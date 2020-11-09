@@ -25,8 +25,10 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 
@@ -545,8 +547,15 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       *
       *****************************************/
 
-      String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
+      String newModuleID = moduleID;
+      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
+        {
+          newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+        }
+      
+      String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
       
       String msisdn = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getMSISDN();
       String language = subscriberEvaluationRequest.getLanguage();
@@ -567,7 +576,8 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       if (template != null && msisdn != null)
         {
           request = new SMSNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, msisdn, source, language, template.getSMSTemplateID(), messageTags);
-          request.setModuleID(moduleID);
+          
+          request.setModuleID(newModuleID);
           request.setFeatureID(deliveryRequestSource);
           request.setConfirmationExpected(confirmationExpected);
           request.setRestricted(restricted);

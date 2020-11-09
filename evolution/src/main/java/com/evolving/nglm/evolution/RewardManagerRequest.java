@@ -9,9 +9,11 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.*;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityType;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -451,11 +453,18 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
       *
       *****************************************/
 
+      String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
+      String newModuleID = moduleID;
+      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
+        {
+          newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+        }
+
       // retrieve the featureID that is the origin of this delivery request:
       // - If the Journey related to JourneyState is not a Workflow, then featureID = JourneyState.getID
       // - if the Journey related to JourneyState is a Workflown then we must extract the original featureID from the origial delivery Request that created the workflow instance
-      String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
 
       // if external accountID needed (really for veon rewardManager here so far, but might worth having something generic for IN)
       String externalSubscriberID = null;
@@ -540,7 +549,7 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
       rewardRequestData.put("originatingRequest", true);
       rewardRequestData.put("subscriberID", evolutionEventContext.getSubscriberState().getSubscriberID());
       rewardRequestData.put("eventID", rewardRequestData.get("deliveryRequestID")); // sure of that ??
-      rewardRequestData.put("moduleID", this.moduleID);
+      rewardRequestData.put("moduleID", newModuleID);
       rewardRequestData.put("featureID", deliveryRequestSource);
       rewardRequestData.put("deliveryType", deliveryType);
       rewardRequestData.put("diplomaticBriefcase", new HashMap<String, String>());
@@ -560,7 +569,7 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
       if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.REWARD+" request DONE");
 
       RewardManagerRequest rewardRequest = new RewardManagerRequest(evolutionEventContext.getSubscriberState().getSubscriberProfile(),evolutionEventContext.getSubscriberGroupEpochReader(),JSONUtilities.encodeObject(rewardRequestData), Deployment.getDeliveryManagers().get(deliveryType));
-      rewardRequest.setModuleID(moduleID);
+      rewardRequest.setModuleID(newModuleID);
       rewardRequest.setFeatureID(deliveryRequestSource);
 
       // XL: manual hack, the only purpose of this is campaign request not going into same topic as purchase request

@@ -29,7 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
@@ -2684,9 +2686,15 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *  request arguments
       *
       *****************************************/
-
-      String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
+      String newModuleID = moduleID;
+      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
+        {
+          newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+        }
+      
+      String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
 
       /*****************************************
       *
@@ -2695,7 +2703,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *****************************************/
 
       PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "", "");
-      request.setModuleID(moduleID);
+      request.setModuleID(newModuleID);
       request.setFeatureID(deliveryRequestSource);
 
       /*****************************************
