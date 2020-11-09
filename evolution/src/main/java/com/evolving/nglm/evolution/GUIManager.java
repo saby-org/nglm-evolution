@@ -26998,7 +26998,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         productJSON.put("display", JSONUtilities.decodeString(jsonRoot, "display"));
         productJSON.put("processing", JSONUtilities.decodeBoolean(jsonRoot, "processing"));
         productJSON.put("accepted", JSONUtilities.decodeBoolean(jsonRoot, "accepted"));
-        productJSON.put("active", JSONUtilities.decodeBoolean(jsonRoot, "active"));
+        productJSON.put("active", true);
         productJSON.put("readOnly", JSONUtilities.decodeBoolean(jsonRoot, "readonly"));
         productJSON.put("valid", JSONUtilities.decodeBoolean(jsonRoot, "valid"));
         productJSON.put("effectiveStartDate", JSONUtilities.decodeString(jsonRoot, "effectiveStartDate"));
@@ -27022,7 +27022,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         voucherJSON.put("display", JSONUtilities.decodeString(jsonRoot, "display"));
         voucherJSON.put("processing", JSONUtilities.decodeBoolean(jsonRoot, "processing"));
         voucherJSON.put("accepted", JSONUtilities.decodeBoolean(jsonRoot, "accepted"));
-        voucherJSON.put("active", JSONUtilities.decodeBoolean(jsonRoot, "active"));
+        voucherJSON.put("active", true);
         voucherJSON.put("readOnly", JSONUtilities.decodeBoolean(jsonRoot, "readonly"));
         voucherJSON.put("valid", JSONUtilities.decodeBoolean(jsonRoot, "valid"));
         voucherJSON.put("effectiveStartDate", JSONUtilities.decodeString(jsonRoot, "effectiveStartDate"));
@@ -28002,7 +28002,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     
     for (GUIManagedObject offerObject : offerObjects)
       {
-        if (offerObject != null && offerObject instanceof Offer)
+        if (offerObject != null)
           {
 
             Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(
@@ -28168,7 +28168,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     for (int i = 0; i < offers.size(); i++)
       {
         GUIManagedObject offerObject = offers.get(i);
-        if (offerObject != null && offerObject instanceof Offer)
+        if (offerObject != null)
           {
             Offer offer = (Offer) offerObject;
             String offerName = offerObject.getGUIManagedObjectName();
