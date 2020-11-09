@@ -7195,6 +7195,33 @@ public class GUIManager
           }
         offers.add(offerJSON);
       }
+    
+    if (!fullDetails)
+      {
+        for (JSONObject offer : offers)
+          {
+            if (offer.get("offerObjectives") != null)
+              {
+                JSONArray offerObjectives = (JSONArray) offer.get("offerObjectives");
+                JSONArray offerObjectivesWithDispaly = new JSONArray();
+                for (int i = 0; i < offerObjectives.size(); i++)
+                  {
+                    JSONObject offerObjective = (JSONObject) ((JSONObject) offerObjectives.get(i)).clone();
+                    String offerObjectiveID = offerObjective.get("offerObjectiveID").toString();
+                    if (offerObjectiveID != null)
+                      {
+                        GUIManagedObject offerObjectiveObject = offerObjectiveService
+                            .getStoredOfferObjective(offerObjectiveID);
+                        String offerObjectiveDisplay = ((OfferObjective) offerObjectiveObject).getDisplay();
+                        offerObjective.put("offerObjectiveDisplay", offerObjectiveDisplay);
+                        offerObjectivesWithDispaly.add(offerObjective);
+                      }
+                    offer.put("offerObjectives", offerObjectivesWithDispaly);
+                  }
+              }
+
+          }
+      }
 
     /*****************************************
     *
