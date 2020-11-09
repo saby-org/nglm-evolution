@@ -546,11 +546,11 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
       int numberOfStatusPointsPerUnit = valueStruct.getInt32("numberOfStatusPointsPerUnit");
       String rewardEventName = valueStruct.getString("rewardEventName");
       int numberOfRewardPointsPerUnit = valueStruct.getInt32("numberOfRewardPointsPerUnit");
-      String workflowEnter = (schemaVersion >=2) ? valueStruct.getString("workflowEnter") : null;
-      String workflowExit = (schemaVersion >=2) ? valueStruct.getString("workflowExit") : null;
-      String workflowReward = (schemaVersion >=2) ? valueStruct.getString("workflowReward") : null;
-      String workflowStatus = (schemaVersion >=2) ? valueStruct.getString("workflowStatus") : null;
-      String workflowDaily = (schemaVersion >=2) ? valueStruct.getString("workflowDaily") : null;
+      
+      String workflowChange = schema.field("workflowChange") != null ? valueStruct.getString("workflowChange") : null;
+      String workflowReward = schema.field("workflowReward") != null ? valueStruct.getString("workflowReward") : null;
+      String workflowStatus = schema.field("workflowStatus") != null ? valueStruct.getString("workflowStatus") : null;
+      String workflowDaily = schema.field("workflowDaily") != null ? valueStruct.getString("workflowDaily") : null;
 
       //
       //  return
