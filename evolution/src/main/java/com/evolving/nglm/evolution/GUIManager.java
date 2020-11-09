@@ -7208,15 +7208,12 @@ public class GUIManager
                   {
                     JSONObject offerObjective = (JSONObject) ((JSONObject) offerObjectives.get(i)).clone();
                     String offerObjectiveID = offerObjective.get("offerObjectiveID").toString();
-                    if (offerObjectiveID != null)
-                      {
                         GUIManagedObject offerObjectiveObject = offerObjectiveService
                             .getStoredOfferObjective(offerObjectiveID);
                         String offerObjectiveDisplay = ((OfferObjective) offerObjectiveObject).getDisplay();
                         offerObjective.put("offerObjectiveDisplay", offerObjectiveDisplay);
                         offerObjectivesWithDispaly.add(offerObjective);
-                      }
-                    offer.put("offerObjectives", offerObjectivesWithDispaly);
+                        offer.put("offerObjectives", offerObjectivesWithDispaly);                      
                   }
               }
 
