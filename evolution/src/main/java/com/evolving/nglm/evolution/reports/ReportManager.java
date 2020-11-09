@@ -59,7 +59,7 @@ public class ReportManager implements Watcher
   private static final Logger log = LoggerFactory.getLogger(ReportManager.class);
   protected static final String CONTROL_SUBDIR = "control"; // used in ReportScheduler
   protected static final String LOCK_SUBDIR = "lock";
-  protected static final int sessionTimeout = 60*1000; // 60 seconds
+  protected static final int sessionTimeout = 30*1000; // 30 seconds
   protected ZooKeeper zk = null;
   protected static String zkHostList;
   protected static String brokerServers;
