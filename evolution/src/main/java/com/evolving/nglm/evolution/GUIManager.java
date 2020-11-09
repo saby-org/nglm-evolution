@@ -28002,7 +28002,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     
     for (GUIManagedObject offerObject : offerObjects)
       {
-        if (offerObject != null)
+        if (offerObject != null && offerObject instanceof Offer)
           {
 
             Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(
@@ -28168,7 +28168,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     for (int i = 0; i < offers.size(); i++)
       {
         GUIManagedObject offerObject = offers.get(i);
-        if (offerObject != null)
+        if (offerObject != null && offerObject instanceof Offer)
           {
             Offer offer = (Offer) offerObject;
             String offerName = offerObject.getGUIManagedObjectName();
