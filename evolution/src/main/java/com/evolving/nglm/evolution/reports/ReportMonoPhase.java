@@ -294,551 +294,579 @@ public class ReportMonoPhase
     return true;
   }
   
+  //=================================================================================
   // Manage the case of single file/report
   
-  public boolean startOneToOneSingleFile ()
-  {
-	  log.info("startOneToOneSingleFile : singleFile case");      
-	  
-	  if (csvfile == null)
-	          {
-	            log.info("csvfile is null !");
-	            return false;
-	          }
-
-	        File file = new File(csvfile + ReportUtils.ZIP_EXTENSION);
-	        if (file.exists())
-	          {
-	            log.info(csvfile + " already exists, do nothing");
-	            return false;
-	          }
-
-	        FileOutputStream fos;
-	        ZipOutputStream writer;
-	            
-	try
-	   {
-	          fos = new FileOutputStream(file);
-	          writer = new ZipOutputStream(fos);
-	          ZipEntry entry = new ZipEntry(new File(csvfile).getName());
-	          writer.putNextEntry(entry);
-	          writer.setLevel(Deflater.BEST_SPEED);
-	        
-	        String node = null;
-	        int port = 0;
-	        if (esNode.contains(","))
-	          {
-	            String[] split = esNode.split(",");
-	            if (split[0] != null)
-	              {
-	                Scanner s = new Scanner(split[0]);
-	                s.useDelimiter(":");
-	                node = s.next();
-	                port = s.nextInt();
-	                s.close();
-	              }
-	          }
-	        else
-	          {
-	            Scanner s = new Scanner(esNode);
-	            s.useDelimiter(":");
-	            node = s.next();
-	            port = s.nextInt();
-	            s.close();
-	          }
-
-	        elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
-
-	        int i = 0;
-	        boolean addHeader = true;
-	        
-	        for (Entry<String, QueryBuilder> index : esIndex.entrySet())
-	          {
-
-	            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(index.getValue());
-	            if (subscriberFields != null && (i == (esIndex.size()-1))) // subscriber index is always last
-	              {
-	                String[] subscriberFieldsArray = subscriberFields.toArray(new String[0]);
-	                log.debug("Only get these fields from " + index.getKey() + " : " + Arrays.toString(subscriberFieldsArray));
-	                searchSourceBuilder = searchSourceBuilder.fetchSource(subscriberFieldsArray, null); // only get those fields
-	              }
-	            SearchRequest searchRequest = new SearchRequest().source(searchSourceBuilder).allowPartialSearchResults(false);
-
-	            try
-	            {
-	              // Read all docs from ES, on esIndex[i]
-	              // Write to topic, one message per document
-
-	              Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
-	              String[] indicesToRead = getIndices(index.getKey());
-
-	              //
-	              //  indicesToRead is blank?
-	              //
-
-	              if (indicesToRead == null || indicesToRead.length == 0)
-	                {
-	                  i++;
-	                  continue;
-	                }
-
-	              searchRequest.indices(indicesToRead);
-	              searchRequest.source().size(getScrollSize());
-	              searchRequest.scroll(scroll);
-	              SearchResponse searchResponse;
-	              searchResponse = elasticsearchReaderClient.search(searchRequest, RequestOptions.DEFAULT);
-
-	              String scrollId = searchResponse.getScrollId(); // always null
-	              SearchHit[] searchHits = searchResponse.getHits().getHits();
-	              if (log.isTraceEnabled()) log.trace("searchHits = " + Arrays.toString(searchHits));
-	              if (searchHits != null)
-	                {
-	                  if (log.isTraceEnabled()) 
-	                    {
-	                      log.trace("getFailedShards = " + searchResponse.getFailedShards());
-	                      log.trace("getSkippedShards = " + searchResponse.getSkippedShards());
-	                      log.trace("getTotalShards = " + searchResponse.getTotalShards());
-	                      log.trace("getTook = " + searchResponse.getTook());
-	                    }
-	                  log.info("for " + Arrays.toString(indicesToRead) + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
-	                }
-	              boolean alreadyTraced = false;
-	              while (searchHits != null && searchHits.length > 0)
-	                {
-
-	                  Map<String, List<Map<String, Object>>> records = new HashMap<String, List<Map<String, Object>>>();
-
-	                  if (log.isDebugEnabled()) log.debug("got " + searchHits.length + " hits");
-	                  for (SearchHit searchHit : searchHits)
-	                    {
-	                      Map<String, Object> sourceMap = searchHit.getSourceAsMap();
-	                      String key;
-	                      Map<String, Object> miniSourceMap = sourceMap;
-	                      if (onlyKeepAlternateIDs && (i == (esIndex.size()-1))) // subscriber index is always last
-	                        {
-	                          // size optimize : only keep what is needed for the join later
-	                          if (!alreadyTraced)
-	                            {
-	                              log.info("Keeping only alternate IDs");
-	                              alreadyTraced = true;
-	                            }
-	                          miniSourceMap = new HashMap<>();
-	                          miniSourceMap.put("subscriberID", sourceMap.get("subscriberID")); // always get "subscriberID"
-	                          for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-	                            {
-	                              String name = alternateID.getName();
-	                              if (log.isTraceEnabled())log.trace("Only keep alternateID " + name);
-	                              if (sourceMap.get(name) == null)
-	                                {
-	                                  if (log.isTraceEnabled())log.trace("Unexpected : no value for alternateID " + name);
-	                                }
-	                              else
-	                                {
-	                                  miniSourceMap.put(name, sourceMap.get(name));
-	                                }
-	                            }
-	                          if (onlyKeepAlternateIDsExtended)
-	                            {
-	                              miniSourceMap.put("pointBalances", sourceMap.get("pointBalances")); // keep this (for Customer Point Details report)
-	                              miniSourceMap.put("loyaltyPrograms", sourceMap.get("loyaltyPrograms")); // keep this (for Loyalty Program Customer States report)
-	                            }
-	                          sourceMap = null; // to help GC do its job
-	                        }
-
-	                   // We have in miniSourceMap the maping for this ES line, now write it to csv
-	                      reportFactory.dumpLineToCsv(miniSourceMap, writer, addHeader);
-	                      addHeader = false; 
-	                      
-	                    }
-	                  SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
-	                  scrollRequest.scroll(scroll);
-	                  searchResponse = elasticsearchReaderClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
-	                  scrollId = searchResponse.getScrollId();
-	                  searchHits = searchResponse.getHits().getHits();
-
-	                }
-	              log.debug("Finished with index " + i);
-	              if (scrollId != null)
-	                {
-	                  ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
-	                  clearScrollRequest.addScrollId(scrollId);
-	                  elasticsearchReaderClient.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
-	                }
-	          } catch (IOException e) { e.printStackTrace(); }
-	          i++;
-
-	        }
-	        
-	        try
-	          {
-	            elasticsearchReaderClient.close();
-	          }
-	        catch (IOException e)
-	          {
-	            log.info("Exception while closing ElasticSearch client " + e.getLocalizedMessage());
-	          }
-	          writer.flush();
-	          writer.closeEntry();
-	          writer.close();
-
-	        } catch (IOException e1) {
-	        	log.info("Error when creating " + csvfile + " : " + e1.getLocalizedMessage());
-	            return false;
-	        }
-	    log.info("Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION);
-	    return true;
-  }
-  
+//  public boolean startOneToOneSingleFile ()
+//  {
+//	  log.info("startOneToOneSingleFile : singleFile case");      
+//	  
+//	  if (csvfile == null)
+//	          {
+//	            log.info("csvfile is null !");
+//	            return false;
+//	          }
+//
+//	        File file = new File(csvfile + ReportUtils.ZIP_EXTENSION);
+//	        if (file.exists())
+//	          {
+//	            log.info(csvfile + " already exists, do nothing");
+//	            return false;
+//	          }
+//
+//	        FileOutputStream fos;
+//	        ZipOutputStream writer;
+//	            
+//	try
+//	   {
+//	          fos = new FileOutputStream(file);
+//	          writer = new ZipOutputStream(fos);
+//	          ZipEntry entry = new ZipEntry(new File(csvfile).getName());
+//	          writer.putNextEntry(entry);
+//	          writer.setLevel(Deflater.BEST_SPEED);
+//	        
+//	        String node = null;
+//	        int port = 0;
+//	        if (esNode.contains(","))
+//	          {
+//	            String[] split = esNode.split(",");
+//	            if (split[0] != null)
+//	              {
+//	                Scanner s = new Scanner(split[0]);
+//	                s.useDelimiter(":");
+//	                node = s.next();
+//	                port = s.nextInt();
+//	                s.close();
+//	              }
+//	          }
+//	        else
+//	          {
+//	            Scanner s = new Scanner(esNode);
+//	            s.useDelimiter(":");
+//	            node = s.next();
+//	            port = s.nextInt();
+//	            s.close();
+//	          }
+//
+//	        elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
+//
+//	        int i = 0;
+//	        boolean addHeader = true;
+//	        
+//	        for (Entry<String, QueryBuilder> index : esIndex.entrySet())
+//	          {
+//
+//	            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(index.getValue());
+//	            if (subscriberFields != null && (i == (esIndex.size()-1))) // subscriber index is always last
+//	              {
+//	                String[] subscriberFieldsArray = subscriberFields.toArray(new String[0]);
+//	                log.debug("Only get these fields from " + index.getKey() + " : " + Arrays.toString(subscriberFieldsArray));
+//	                searchSourceBuilder = searchSourceBuilder.fetchSource(subscriberFieldsArray, null); // only get those fields
+//	              }
+//	            SearchRequest searchRequest = new SearchRequest().source(searchSourceBuilder).allowPartialSearchResults(false);
+//
+//	            try
+//	            {
+//	              // Read all docs from ES, on esIndex[i]
+//	              // Write to topic, one message per document
+//
+//	              Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
+//	              String[] indicesToRead = getIndices(index.getKey());
+//
+//	              //
+//	              //  indicesToRead is blank?
+//	              //
+//
+//	              if (indicesToRead == null || indicesToRead.length == 0)
+//	                {
+//	                  i++;
+//	                  continue;
+//	                }
+//
+//	              searchRequest.indices(indicesToRead);
+//	              searchRequest.source().size(getScrollSize());
+//	              searchRequest.scroll(scroll);
+//	              SearchResponse searchResponse;
+//	              searchResponse = elasticsearchReaderClient.search(searchRequest, RequestOptions.DEFAULT);
+//
+//	              String scrollId = searchResponse.getScrollId(); // always null
+//	              SearchHit[] searchHits = searchResponse.getHits().getHits();
+//	              if (log.isTraceEnabled()) log.trace("searchHits = " + Arrays.toString(searchHits));
+//	              if (searchHits != null)
+//	                {
+//	                  if (log.isTraceEnabled()) 
+//	                    {
+//	                      log.trace("getFailedShards = " + searchResponse.getFailedShards());
+//	                      log.trace("getSkippedShards = " + searchResponse.getSkippedShards());
+//	                      log.trace("getTotalShards = " + searchResponse.getTotalShards());
+//	                      log.trace("getTook = " + searchResponse.getTook());
+//	                    }
+//	                  log.info("for " + Arrays.toString(indicesToRead) + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
+//	                }
+//	              boolean alreadyTraced = false;
+//	              while (searchHits != null && searchHits.length > 0)
+//	                {
+//
+//	                  Map<String, List<Map<String, Object>>> records = new HashMap<String, List<Map<String, Object>>>();
+//
+//	                  if (log.isDebugEnabled()) log.debug("got " + searchHits.length + " hits");
+//	                  for (SearchHit searchHit : searchHits)
+//	                    {
+//	                      Map<String, Object> sourceMap = searchHit.getSourceAsMap();
+//	                      String key;
+//	                      Map<String, Object> miniSourceMap = sourceMap;
+//	                      if (onlyKeepAlternateIDs && (i == (esIndex.size()-1))) // subscriber index is always last
+//	                        {
+//	                          // size optimize : only keep what is needed for the join later
+//	                          if (!alreadyTraced)
+//	                            {
+//	                              log.info("Keeping only alternate IDs");
+//	                              alreadyTraced = true;
+//	                            }
+//	                          miniSourceMap = new HashMap<>();
+//	                          miniSourceMap.put("subscriberID", sourceMap.get("subscriberID")); // always get "subscriberID"
+//	                          for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+//	                            {
+//	                              String name = alternateID.getName();
+//	                              if (log.isTraceEnabled())log.trace("Only keep alternateID " + name);
+//	                              if (sourceMap.get(name) == null)
+//	                                {
+//	                                  if (log.isTraceEnabled())log.trace("Unexpected : no value for alternateID " + name);
+//	                                }
+//	                              else
+//	                                {
+//	                                  miniSourceMap.put(name, sourceMap.get(name));
+//	                                }
+//	                            }
+//	                          if (onlyKeepAlternateIDsExtended)
+//	                            {
+//	                              miniSourceMap.put("pointBalances", sourceMap.get("pointBalances")); // keep this (for Customer Point Details report)
+//	                              miniSourceMap.put("loyaltyPrograms", sourceMap.get("loyaltyPrograms")); // keep this (for Loyalty Program Customer States report)
+//	                            }
+//	                          sourceMap = null; // to help GC do its job
+//	                        }
+//
+//	                   // We have in miniSourceMap the maping for this ES line, now write it to csv
+//	                      reportFactory.dumpLineToCsv(miniSourceMap, writer, addHeader);
+//	                      addHeader = false; 
+//	                      
+//	                    }
+//	                  SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+//	                  scrollRequest.scroll(scroll);
+//	                  searchResponse = elasticsearchReaderClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
+//	                  scrollId = searchResponse.getScrollId();
+//	                  searchHits = searchResponse.getHits().getHits();
+//
+//	                }
+//	              log.debug("Finished with index " + i);
+//	              if (scrollId != null)
+//	                {
+//	                  ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+//	                  clearScrollRequest.addScrollId(scrollId);
+//	                  elasticsearchReaderClient.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+//	                }
+//	          } catch (IOException e) { e.printStackTrace(); }
+//	          i++;
+//
+//	        }
+//	        
+//	        try
+//	          {
+//	            elasticsearchReaderClient.close();
+//	          }
+//	        catch (IOException e)
+//	          {
+//	            log.info("Exception while closing ElasticSearch client " + e.getLocalizedMessage());
+//	          }
+//	          writer.flush();
+//	          writer.closeEntry();
+//	          writer.close();
+//
+//	        } catch (IOException e1) {
+//	        	log.info("Error when creating " + csvfile + " : " + e1.getLocalizedMessage());
+//	            return false;
+//	        }
+//	    log.info("Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION);
+//	    return true;
+//  }
+  //=================================================================================
   public final boolean startOneToOne(boolean multipleFile)
   {
-    if (!multipleFile)
-      {
-        return startOneToOneSingleFile();
-      }
-    else
-      {
-        if (csvfile == null)
-          {
-            log.info("csvfile is null !");
-            return false;
-          }
-        log.info("startOneToOne : multipleFile case");
-        File file = new File(csvfile + ReportUtils.ZIP_EXTENSION);
-        if (file.exists())
-          {
-            log.info(csvfile + " already exists, do nothing");
-            return false;
-          }
 
-        // holding the zip writers of tmp files
-        Map<String,ZipOutputStream> tmpZipFiles = new HashMap<>();
-        
-        // ESROUTER can have two access points
-        // need to cut the string to get at least one
-        String node = null;
-        int port = 0;
-        if (esNode.contains(","))
-          {
-            String[] split = esNode.split(",");
-            if (split[0] != null)
-              {
-                Scanner s = new Scanner(split[0]);
-                s.useDelimiter(":");
-                node = s.next();
-                port = s.nextInt();
-                s.close();
-              }
-          }
-        else
-          {
-            Scanner s = new Scanner(esNode);
-            s.useDelimiter(":");
-            node = s.next();
-            port = s.nextInt();
-            s.close();
-          }
+	  if (csvfile == null)
+	  {
+		  log.info("csvfile is null !");
+		  return false;
+	  }
 
-        elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
+	  File file = new File(csvfile + ReportUtils.ZIP_EXTENSION);
+	  if (file.exists())
+	  {
+		  log.info(csvfile + " already exists, do nothing");
+		  return false;
+	  }
 
-        int i = 0;
+	  FileOutputStream fosSingle;
+	  ZipOutputStream writerSingle = null;
 
-        for (Entry<String, QueryBuilder> index : esIndex.entrySet())
-          {
+	  if (!multipleFile)
+	  {
+		  try
+		  {
+			  fosSingle = new FileOutputStream(file);
+			  writerSingle = new ZipOutputStream(fosSingle);
+			  ZipEntry entrySingle = new ZipEntry(new File(csvfile).getName());
+			  writerSingle.putNextEntry(entrySingle);
+			  writerSingle.setLevel(Deflater.BEST_SPEED);
+		  } catch (IOException e1) {
+			  log.info("Singlefile case: Error when creating " + csvfile + " : " + e1.getLocalizedMessage());
+			  return false;
+		  }
+	  }
+	  // holding the zip writers of tmp files
+	  Map<String,ZipOutputStream> tmpZipFiles = new HashMap<>();
 
-            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(index.getValue());
-            if (subscriberFields != null && (i == (esIndex.size()-1))) // subscriber index is always last
-              {
-                String[] subscriberFieldsArray = subscriberFields.toArray(new String[0]);
-                log.debug("Only get these fields from " + index.getKey() + " : " + Arrays.toString(subscriberFieldsArray));
-                searchSourceBuilder = searchSourceBuilder.fetchSource(subscriberFieldsArray, null); // only get those fields
-              }
-            SearchRequest searchRequest = new SearchRequest().source(searchSourceBuilder).allowPartialSearchResults(false);
+	  // ESROUTER can have two access points
+	  // need to cut the string to get at least one
+	  String node = null;
+	  int port = 0;
+	  if (esNode.contains(","))
+	  {
+		  String[] split = esNode.split(",");
+		  if (split[0] != null)
+		  {
+			  Scanner s = new Scanner(split[0]);
+			  s.useDelimiter(":");
+			  node = s.next();
+			  port = s.nextInt();
+			  s.close();
+		  }
+	  }
+	  else
+	  {
+		  Scanner s = new Scanner(esNode);
+		  s.useDelimiter(":");
+		  node = s.next();
+		  port = s.nextInt();
+		  s.close();
+	  }
 
-            try
-            {
-              // Read all docs from ES, on esIndex[i]
-              // Write to topic, one message per document
+	  elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
 
-              Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
-              String[] indicesToRead = getIndices(index.getKey());
+	  int i = 0;
+	  boolean addHeader = true;
 
-              //
-              //  indicesToRead is blank?
-              //
+	  for (Entry<String, QueryBuilder> index : esIndex.entrySet())
+	  {
 
-              if (indicesToRead == null || indicesToRead.length == 0)
-                {
-                  i++;
-                  continue;
-                }
+		  SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(index.getValue());
+		  if (subscriberFields != null && (i == (esIndex.size()-1))) // subscriber index is always last
+		  {
+			  String[] subscriberFieldsArray = subscriberFields.toArray(new String[0]);
+			  log.debug("Only get these fields from " + index.getKey() + " : " + Arrays.toString(subscriberFieldsArray));
+			  searchSourceBuilder = searchSourceBuilder.fetchSource(subscriberFieldsArray, null); // only get those fields
+		  }
+		  SearchRequest searchRequest = new SearchRequest().source(searchSourceBuilder).allowPartialSearchResults(false);
 
-              searchRequest.indices(indicesToRead);
-              searchRequest.source().size(getScrollSize());
-              searchRequest.scroll(scroll);
-              SearchResponse searchResponse;
-              searchResponse = elasticsearchReaderClient.search(searchRequest, RequestOptions.DEFAULT);
+		  try
+		  {
+			  // Read all docs from ES, on esIndex[i]
+			  // Write to topic, one message per document
 
-              String scrollId = searchResponse.getScrollId(); // always null
-              SearchHit[] searchHits = searchResponse.getHits().getHits();
-              if (log.isTraceEnabled()) log.trace("searchHits = " + Arrays.toString(searchHits));
-              if (searchHits != null)
-                {
-                  if (log.isTraceEnabled()) 
-                    {
-                      log.trace("getFailedShards = " + searchResponse.getFailedShards());
-                      log.trace("getSkippedShards = " + searchResponse.getSkippedShards());
-                      log.trace("getTotalShards = " + searchResponse.getTotalShards());
-                      log.trace("getTook = " + searchResponse.getTook());
-                    }
-                  log.info("for " + Arrays.toString(indicesToRead) + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
-                }
-              boolean alreadyTraced = false;
-              while (searchHits != null && searchHits.length > 0)
-                {
+			  Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
+			  String[] indicesToRead = getIndices(index.getKey());
 
-                  Map<String, List<Map<String, Object>>> records = new HashMap<String, List<Map<String, Object>>>();
+			  //
+			  //  indicesToRead is blank?
+			  //
 
-                  if (log.isDebugEnabled()) log.debug("got " + searchHits.length + " hits");
-                  for (SearchHit searchHit : searchHits)
-                    {
-                      Map<String, Object> sourceMap = searchHit.getSourceAsMap();
-                      String key;
-                      Map<String, Object> miniSourceMap = sourceMap;
-                      if (onlyKeepAlternateIDs && (i == (esIndex.size()-1))) // subscriber index is always last
-                        {
-                          // size optimize : only keep what is needed for the join later
-                          if (!alreadyTraced)
-                            {
-                              log.info("Keeping only alternate IDs");
-                              alreadyTraced = true;
-                            }
-                          miniSourceMap = new HashMap<>();
-                          miniSourceMap.put("subscriberID", sourceMap.get("subscriberID")); // always get "subscriberID"
-                          for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-                            {
-                              String name = alternateID.getName();
-                              if (log.isTraceEnabled())log.trace("Only keep alternateID " + name);
-                              if (sourceMap.get(name) == null)
-                                {
-                                  if (log.isTraceEnabled())log.trace("Unexpected : no value for alternateID " + name);
-                                }
-                              else
-                                {
-                                  miniSourceMap.put(name, sourceMap.get(name));
-                                }
-                            }
-                          if (onlyKeepAlternateIDsExtended)
-                            {
-                              miniSourceMap.put("pointBalances", sourceMap.get("pointBalances")); // keep this (for Customer Point Details report)
-                              miniSourceMap.put("loyaltyPrograms", sourceMap.get("loyaltyPrograms")); // keep this (for Loyalty Program Customer States report)
-                            }
-                          sourceMap = null; // to help GC do its job
-                        }
+			  if (indicesToRead == null || indicesToRead.length == 0)
+			  {
+				  i++;
+				  continue;
+			  }
 
-                      // We have in miniSourceMap the maping for this ES line, now write it to csv
-                      Map<String, List<Map<String, Object>>> splittedReportElements = reportFactory.getSplittedReportElementsForFileMono(miniSourceMap);
-                      for (String fileKey : splittedReportElements.keySet())
-                        {
-                          if (records.containsKey(fileKey))
-                            {
-                              records.get(fileKey).addAll(splittedReportElements.get(fileKey));
-                            }
-                          else
-                            {
-                              List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
-                              elements.addAll(splittedReportElements.get(fileKey));
-                              records.put(fileKey, elements);
-                            }
-                        }
-                    }
-                  SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
-                  scrollRequest.scroll(scroll);
-                  searchResponse = elasticsearchReaderClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
-                  scrollId = searchResponse.getScrollId();
-                  searchHits = searchResponse.getHits().getHits();
+			  searchRequest.indices(indicesToRead);
+			  searchRequest.source().size(getScrollSize());
+			  searchRequest.scroll(scroll);
+			  SearchResponse searchResponse;
+			  searchResponse = elasticsearchReaderClient.search(searchRequest, RequestOptions.DEFAULT);
 
-                  // write each final archive zip entry into tmp files first (will be put in 1 archive at the end
-                  try
-                  {
-                    //
-                    //  ZIP
-                    //
+			  String scrollId = searchResponse.getScrollId(); // always null
+			  SearchHit[] searchHits = searchResponse.getHits().getHits();
+			  if (log.isTraceEnabled()) log.trace("searchHits = " + Arrays.toString(searchHits));
+			  if (searchHits != null)
+			  {
+				  if (log.isTraceEnabled()) 
+				  {
+					  log.trace("getFailedShards = " + searchResponse.getFailedShards());
+					  log.trace("getSkippedShards = " + searchResponse.getSkippedShards());
+					  log.trace("getTotalShards = " + searchResponse.getTotalShards());
+					  log.trace("getTook = " + searchResponse.getTook());
+				  }
+				  log.info("for " + Arrays.toString(indicesToRead) + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
+			  }
+			  boolean alreadyTraced = false;
+			  while (searchHits != null && searchHits.length > 0)
+			  {
 
-                    for (String key : records.keySet())
-                    {
+				  Map<String, List<Map<String, Object>>> records = new HashMap<String, List<Map<String, Object>>>();
 
-                      String tmpFileName=file+"."+key+".tmp";
-                      boolean addHeader = false;
-                      ZipOutputStream writer = tmpZipFiles.get(tmpFileName);
-                      if(writer==null){
-                        addHeader = true;
-                        FileOutputStream fos = new FileOutputStream(tmpFileName);
-                        writer = new ZipOutputStream(fos);
-                        String dataFile[] = csvfile.split("[.]");
-                        String dataFileName = dataFile[0] + "_" + key;
-                        String zipEntryName = new File(dataFileName + "." + dataFile[1]).getName();
-                        ZipEntry entry = new ZipEntry(zipEntryName);
-                        writer.putNextEntry(entry);
-                        writer.setLevel(Deflater.BEST_SPEED);
-                        tmpZipFiles.put(tmpFileName,writer);
-                      }
-                      for (Map<String, Object> lineMap : records.get(key))
-                      {
-                        reportFactory.dumpLineToCsv(lineMap, writer, addHeader);
-                        addHeader = false;
-                      }
-                    }
+				  if (log.isDebugEnabled()) log.debug("got " + searchHits.length + " hits");
+				  for (SearchHit searchHit : searchHits)
+				  {
+					  Map<String, Object> sourceMap = searchHit.getSourceAsMap();
+					  String key;
+					  Map<String, Object> miniSourceMap = sourceMap;
+					  if (onlyKeepAlternateIDs && (i == (esIndex.size()-1))) // subscriber index is always last
+					  {
+						  // size optimize : only keep what is needed for the join later
+						  if (!alreadyTraced)
+						  {
+							  log.info("Keeping only alternate IDs");
+							  alreadyTraced = true;
+						  }
+						  miniSourceMap = new HashMap<>();
+						  miniSourceMap.put("subscriberID", sourceMap.get("subscriberID")); // always get "subscriberID"
+						  for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+						  {
+							  String name = alternateID.getName();
+							  if (log.isTraceEnabled())log.trace("Only keep alternateID " + name);
+							  if (sourceMap.get(name) == null)
+							  {
+								  if (log.isTraceEnabled())log.trace("Unexpected : no value for alternateID " + name);
+							  }
+							  else
+							  {
+								  miniSourceMap.put(name, sourceMap.get(name));
+							  }
+						  }
+						  if (onlyKeepAlternateIDsExtended)
+						  {
+							  miniSourceMap.put("pointBalances", sourceMap.get("pointBalances")); // keep this (for Customer Point Details report)
+							  miniSourceMap.put("loyaltyPrograms", sourceMap.get("loyaltyPrograms")); // keep this (for Loyalty Program Customer States report)
+						  }
+						  sourceMap = null; // to help GC do its job
+					  }
+					  if (!multipleFile)
+					  {
+						  // We have in miniSourceMap the maping for this ES line, now write it to csv
+						  reportFactory.dumpLineToCsv(miniSourceMap, writerSingle, addHeader);
+						  addHeader = false; 
+					  }
+					  else
+					  {
+						  Map<String, List<Map<String, Object>>> splittedReportElements = reportFactory.getSplittedReportElementsForFileMono(miniSourceMap);
+						  for (String fileKey : splittedReportElements.keySet())
+						  {
+							  if (records.containsKey(fileKey))
+							  {
+								  records.get(fileKey).addAll(splittedReportElements.get(fileKey));
+							  }
+							  else
+							  {
+								  List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
+								  elements.addAll(splittedReportElements.get(fileKey));
+								  records.put(fileKey, elements);
+							  }
+						  }
 
-                  }
-                  catch (Exception e)
-                  {
-                    log.error("Error in file {} ", e);
-                  }
+						  // write each final archive zip entry into tmp files first (will be put in 1 archive at the end
+						  try
+						  {
+							  //
+							  //  ZIP
+							  //
 
-                }
-              log.debug("Finished with index " + i);
-              if (scrollId != null)
-                {
-                  ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
-                  clearScrollRequest.addScrollId(scrollId);
-                  elasticsearchReaderClient.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
-                }
-          } catch (IOException e) { e.printStackTrace(); }
-          i++;
+							  for (String key1 : records.keySet())
+							  {
 
-        }
-        
-        try
-          {
-            elasticsearchReaderClient.close();
-          }
-        catch (IOException e)
-          {
-            log.info("Exception while closing ElasticSearch client " + e.getLocalizedMessage());
-          }
-        
-        // close all open tmp writer
-        for(Entry<String,ZipOutputStream> tmpWriter : tmpZipFiles.entrySet()){
-          try {
-            tmpWriter.getValue().flush();
-            tmpWriter.getValue().close();
-          } catch (IOException e) {
-            log.warn("Error while closing tmp file {} ", tmpWriter.getKey());
-          }
-        }
+								  String tmpFileName=file+"."+key1+".tmp";
+								  //boolean addHeader = false;
+								  ZipOutputStream writerMulti = tmpZipFiles.get(tmpFileName);
+								  if(writerMulti==null){
+									  addHeader = true;
+									  FileOutputStream fos = new FileOutputStream(tmpFileName);
+									  writerMulti = new ZipOutputStream(fos);
+									  String dataFile[] = csvfile.split("[.]");
+									  String dataFileName = dataFile[0] + "_" + key1;
+									  String zipEntryName = new File(dataFileName + "." + dataFile[1]).getName();
+									  ZipEntry entry = new ZipEntry(zipEntryName);
+									  writerMulti.putNextEntry(entry);
+									  writerMulti.setLevel(Deflater.BEST_SPEED);
+									  tmpZipFiles.put(tmpFileName,writerMulti);
+								  }
+								  for (Map<String, Object> lineMap : records.get(key1))
+								  {
+									  reportFactory.dumpLineToCsv(lineMap, writerMulti, addHeader);
+									  addHeader = false;
+								  }
+							  }
 
-        // write final file from tmp
+						  }
+						  catch (Exception e)
+						  {
+							  log.error("Error in file {} ", e);
+						  }
 
-        try {
+					  }
+				  }
+				  SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+				  scrollRequest.scroll(scroll);
+				  searchResponse = elasticsearchReaderClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
+				  scrollId = searchResponse.getScrollId();
+				  searchHits = searchResponse.getHits().getHits();
 
-          FileOutputStream fos = new FileOutputStream(file);
-          ZipOutputStream writer = new ZipOutputStream(fos);
+				  log.debug("Finished with index " + i);
+			  }             
+			  if (scrollId != null)
+			  {
+				  ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+				  clearScrollRequest.addScrollId(scrollId);
+				  elasticsearchReaderClient.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+			  }
+		  } catch (IOException e) { e.printStackTrace(); }
+		  i++;
+	  }
 
-          for(String tmpFile:tmpZipFiles.keySet()){
+	  try
+	  {
+		  elasticsearchReaderClient.close();
+	  }
+	  catch (IOException e)
+	  {
+		  log.info("Exception while closing ElasticSearch client " + e.getLocalizedMessage());
+	  }
 
-            // open tmp file
-            FileInputStream fis = new FileInputStream(tmpFile);
-            ZipInputStream reader = new ZipInputStream(fis);
+	  // close all open tmp writer
+	  if(multipleFile) {
+		  for(Entry<String,ZipOutputStream> tmpWriter : tmpZipFiles.entrySet()){
+			  try {
+				  tmpWriter.getValue().flush();
+				  tmpWriter.getValue().close();
+			  } catch (IOException e) {
+				  log.warn("Error while closing tmp file {} ", tmpWriter.getKey());
+			  }
+		  }
 
-            writer.putNextEntry(reader.getNextEntry());
-            writer.setLevel(Deflater.BEST_SPEED);
+		  // write final file from tmp
 
-            // copy to final file
-            int length;
-            byte[] bytes = new byte[5*1024*1024];//5M buffer
-            while ((length=reader.read(bytes))!=-1) writer.write(bytes,0,length);
+		  try {
 
-            // close and delete tmp
-            reader.closeEntry();
-            reader.close();
-            new File(tmpFile).delete();
-          }
-          writer.flush();
-          writer.closeEntry();
-          writer.close();
+			  FileOutputStream fos = new FileOutputStream(file);
+			  ZipOutputStream writer = new ZipOutputStream(fos);
 
-        } catch (IOException e) {
-          log.error("Error while concatenating tmp files", e);
-        }
+			  for(String tmpFile:tmpZipFiles.keySet()){
 
-      }
-    log.info("Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION);
-    return true;
+				  // open tmp file
+				  FileInputStream fis = new FileInputStream(tmpFile);
+				  ZipInputStream reader = new ZipInputStream(fis);
+
+				  writer.putNextEntry(reader.getNextEntry());
+				  writer.setLevel(Deflater.BEST_SPEED);
+
+				  // copy to final file
+				  int length;
+				  byte[] bytes = new byte[5*1024*1024];//5M buffer
+				  while ((length=reader.read(bytes))!=-1) writer.write(bytes,0,length);
+
+				  // close and delete tmp
+				  reader.closeEntry();
+				  reader.close();
+				  new File(tmpFile).delete();
+			  }
+		  } catch (IOException e) {
+				  log.error("Error while concatenating tmp files", e);
+		  }
+	  }
+	  else {
+		  try { 
+			  writerSingle.flush();
+			  writerSingle.closeEntry();
+			  writerSingle.close();
+
+		  } catch (IOException e) {
+			  log.error("Error while writing the file", e);
+		  }
+	  }
+
+	  log.info("Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION);
+	  return true;
   }
 
   private String[] getIndices(String key)
   {
-    StringBuilder existingIndexes = new StringBuilder();
-    boolean firstEntry = true;
-    
-    //
-    // blank key 
-    //
-    
-    if (key == null || key.isEmpty()) return null;
-    
-    for (String index : key.split(","))
-      {
-        
-        //
-        //  wildcard
-        //
-        
-        if(index.endsWith("*")) 
-          {
-            if (!firstEntry) existingIndexes.append(",");
-            existingIndexes.append(index); 
-            firstEntry = false;
-            continue;
-          }
-        
-        //
-        //  indices-exists
-        //
-        
-        GetIndexRequest request = new GetIndexRequest(index);
-        request.local(false); 
-        request.humanReadable(true); 
-        request.includeDefaults(false); 
-        try
-          {
-            boolean exists = elasticsearchReaderClient.indices().exists(request, RequestOptions.DEFAULT);
-            if (exists) 
-              {
-                if (!firstEntry) existingIndexes.append(",");
-                existingIndexes.append(index);
-                firstEntry = false;
-              }
-            else
-              {
-                log.debug("{} index does not exists - record will not be in report", index);
-              }
-          } 
-        catch (IOException e)
-          {
-            e.printStackTrace();
-          }
-      }
-    log.debug("index to be read {}", existingIndexes.toString());
-    if (firstEntry) // nothing got added
-      {
-        return null;
-      }
-    else
-      {
-        return existingIndexes.toString().split(",");
-      }
+	  StringBuilder existingIndexes = new StringBuilder();
+	  boolean firstEntry = true;
+
+	  //
+	  // blank key 
+	  //
+
+	  if (key == null || key.isEmpty()) return null;
+
+	  for (String index : key.split(","))
+	  {
+
+		  //
+		  //  wildcard
+		  //
+
+		  if(index.endsWith("*")) 
+		  {
+			  if (!firstEntry) existingIndexes.append(",");
+			  existingIndexes.append(index); 
+			  firstEntry = false;
+			  continue;
+		  }
+
+		  //
+		  //  indices-exists
+		  //
+
+		  GetIndexRequest request = new GetIndexRequest(index);
+		  request.local(false); 
+		  request.humanReadable(true); 
+		  request.includeDefaults(false); 
+		  try
+		  {
+			  boolean exists = elasticsearchReaderClient.indices().exists(request, RequestOptions.DEFAULT);
+			  if (exists) 
+			  {
+				  if (!firstEntry) existingIndexes.append(",");
+				  existingIndexes.append(index);
+				  firstEntry = false;
+			  }
+			  else
+			  {
+				  log.debug("{} index does not exists - record will not be in report", index);
+			  }
+		  } 
+		  catch (IOException e)
+		  {
+			  e.printStackTrace();
+		  }
+	  }
+	  log.debug("index to be read {}", existingIndexes.toString());
+	  if (firstEntry) // nothing got added
+	  {
+		  return null;
+	  }
+	  else
+	  {
+		  return existingIndexes.toString().split(",");
+	  }
   }
 
   private int getScrollSize()
   {
-    int scrollSize = Deployment.getElasticSearchScrollSize();
-    if (scrollSize == 0)
-      {
-        scrollSize = ReportUtils.DEFAULT_ELASTIC_SEARCH_SCROLL_SIZE;
-      }
-    log.trace("Using " + scrollSize + " as scroll size in Elastic Search");
-    return scrollSize;
+	  int scrollSize = Deployment.getElasticSearchScrollSize();
+	  if (scrollSize == 0)
+	  {
+		  scrollSize = ReportUtils.DEFAULT_ELASTIC_SEARCH_SCROLL_SIZE;
+	  }
+	  log.trace("Using " + scrollSize + " as scroll size in Elastic Search");
+	  return scrollSize;
   }
 
 
