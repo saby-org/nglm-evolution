@@ -37,6 +37,7 @@ public abstract class ActionManager
     ActionManagerContextUpdate,
     TokenUpdate,
     TokenChange,
+    VoucherChange,
     TriggerEvent;
   }
 

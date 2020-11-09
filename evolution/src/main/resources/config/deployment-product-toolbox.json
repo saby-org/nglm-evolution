@@ -788,6 +788,104 @@
             "operation" : "opt-out"
           }
       },
+      
+      {
+        "id"                     : "evolution.voucher.redeem",
+        "name"                   : "voucher.redeem",
+        "display"                : "Redeem Voucher",
+        "icon"                   : "jmr_components/styles/images/objects/redeem-voucher.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "outputType"             : "static",
+        "outputConnectors"       : 
+          [ 
+            { "name" : "redeemed",      "display" : "Redeemed",  	 "evaluationPriority" : "first", 	"transitionCriteria" : [ { "criterionField" : "subscriber.tmp.success.vouchers", "criterionOperator" : "contains", "argument" : { "expression" : "node.parameter.voucher.code" } } ] },
+            { "name" : "failed",        "display" : "Failed",        "evaluationPriority" : "last", 	 "transitionCriteria" : [ ] }
+          ],
+        "parameters" :
+          [
+            { 
+              "id" : "node.parameter.voucher.code",
+              "display" : "Voucher Code", 
+              "dataType" : "string", 
+              "multiple" : false,
+              "mandatory" : true,
+              "availableValues" : null,
+              "expressionFields" : [ ],
+			  "expressionValuedParameter" : true,
+			  "defaultValue" : null,
+			  "showContextVariables":true
+            },
+            {
+			  "id" : "node.parameter.supplier",
+		      "display" : "Supplier",
+			  "dataType" : "string",
+			  "multiple" : false,
+			  "mandatory" : true,
+			  "availableValues" : null,
+			  "expressionFields" : [ "#suppliersDisplayExp#" ],
+			  "expressionValuedParameter" : true,
+			  "defaultValue" : null,
+			  "showContextVariables":true
+			}
+          ],
+        "action" : 
+          {
+            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$VoucherActionManager",
+            "moduleID" : "1",
+            "operation": "redeem",
+            "origin" : "JMR"
+          }
+      },
+      
+      {
+        "id"                     : "evolution.voucher.validate",
+        "name"                   : "voucher.validate",
+        "display"                : "Validate Voucher",
+        "icon"                   : "jmr_components/styles/images/objects/validate-voucher.png",
+        "height"                 : 70,
+        "width"                  : 70,
+        "outputType"             : "static",
+        "outputConnectors"       : 
+          [ 
+            { "name" : "valid",      	 "display" : "Valid",  	 		"evaluationPriority" : "first", 	"transitionCriteria" : [ { "criterionField" : "subscriber.tmp.success.vouchers", "criterionOperator" : "contains", "argument" : { "expression" : "node.parameter.voucher.code" } } ] },
+            { "name" : "invalid",        "display" : "Invalid",        	"evaluationPriority" : "last", 	 "transitionCriteria" : [ ] }
+          ],
+        "parameters" :
+          [
+            { 
+              "id" : "node.parameter.voucher.code",
+              "display" : "Voucher Code", 
+              "dataType" : "string", 
+              "multiple" : false,
+              "mandatory" : true,
+              "availableValues" : null,
+              "expressionFields" : [ ],
+			  "expressionValuedParameter" : true,
+			  "defaultValue" : null,
+			  "showContextVariables":true
+            },
+            {
+			  "id" : "node.parameter.supplier",
+		      "display" : "Supplier",
+			  "dataType" : "string",
+			  "multiple" : false,
+			  "mandatory" : true,
+			  "availableValues" : null,
+			  "expressionFields" : [ "#suppliersDisplayExp#" ],
+			  "expressionValuedParameter" : true,
+			  "defaultValue" : null,
+			  "showContextVariables":true
+			}
+          ],
+        "action" : 
+          {
+            "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$VoucherActionManager",
+            "moduleID" : "1",
+            "operation": "validate",
+            "origin" : "JMR"
+          }
+      },
 
 
       {
@@ -1217,7 +1315,9 @@
             { "id" : "132", "name" : "subjourney" },
             { "id" : "301", "name" : "workflow" },
             { "id" : "135", "name" : "loyalty.opt-in" },
-            { "id" : "139", "name" : "loyalty.opt-out" }
+            { "id" : "139", "name" : "loyalty.opt-out" },
+            { "id" : "evolution.voucher.redeem", "name" : "voucher.redeem" },
+            { "id" : "evolution.voucher.validate", "name" : "voucher.validate" }
           ]
        }
     ],
@@ -1270,7 +1370,9 @@
             { "id" : "138", "name" : "bonus.point.debit" },
             { "id" : "135", "name" : "loyalty.opt-in" },
             { "id" : "139", "name" : "loyalty.opt-out" },
-            { "id" : "136", "name" : "purchase.offer" }
+            { "id" : "136", "name" : "purchase.offer" },
+            { "id" : "evolution.voucher.redeem", "name" : "voucher.redeem" },
+            { "id" : "evolution.voucher.validate", "name" : "voucher.validate" }
           ]
       },
       {
@@ -1410,7 +1512,9 @@
             { "id" : "138", "name" : "bonus.point.debit" },
             { "id" : "135", "name" : "loyalty.opt-in" },
             { "id" : "139", "name" : "loyalty.opt-out" },
-            { "id" : "136", "name" : "purchase.offer" }
+            { "id" : "136", "name" : "purchase.offer" },
+            { "id" : "evolution.voucher.redeem", "name" : "voucher.redeem" },
+            { "id" : "evolution.voucher.validate", "name" : "voucher.validate" }
           ]
       },
       {
