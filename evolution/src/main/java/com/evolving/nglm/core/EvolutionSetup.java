@@ -913,7 +913,7 @@ public class EvolutionSetup
     for(String call : calls) {
       try
         {
-          java.lang.reflect.Method getter = Deployment.class.getMethod(call);
+          java.lang.reflect.Method getter = com.evolving.nglm.core.Deployment.class.getMethod(call);
           String replace = getter.invoke(null).toString();
           result = result.replaceAll(Pattern.compile("Deployment\\."+call+"\\(\\)").pattern(), replace);
         }
