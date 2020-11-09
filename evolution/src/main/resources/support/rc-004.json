@@ -16,7 +16,7 @@
    "recurrenceActive" : true,
    "effectiveStartDate":"2020-08-12T00:00:00+00:00",
    "effectiveEndDate":"2099-06-30T00:00:00+00:00",
-   "effectiveEntryPeriodEndDate":null,
+   "effectiveEntryPeriodEndDate":"2020-09-12T00:00:00+00:00",
    "status":"Pending",
    "scheduler" : {       
        "numberOfOccurrences":5,
