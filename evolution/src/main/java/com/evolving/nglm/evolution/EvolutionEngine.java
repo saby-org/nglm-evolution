@@ -3543,11 +3543,11 @@ public class EvolutionEngine
     
     // Exit tier workflow
     Tier oldTier = loyaltyProgramPoints.getTier(oldTierName);
-    if (oldTier != null) triggerLoyaltyWorflow(subscriberState, subscriberProfile, oldTier.getWorkflowExit());
+    if (oldTier != null) triggerLoyaltyWorflow(subscriberState, subscriberProfile, oldTier.getWorkflowChange());
     
     // Enter tier workflow
     Tier newTier = loyaltyProgramPoints.getTier(newTierName);
-    if (newTier != null) triggerLoyaltyWorflow(subscriberState, subscriberProfile, newTier.getWorkflowEnter());
+    if (newTier != null) triggerLoyaltyWorflow(subscriberState, subscriberProfile, newTier.getWorkflowChange());
   }
 
 
