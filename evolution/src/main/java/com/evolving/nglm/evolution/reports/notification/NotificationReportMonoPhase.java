@@ -549,7 +549,8 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
         reportFactory,
         csvfile
     );
-
+    reportPeriodQuantity = 3;
+    log.info("====multidate==== NotificationReport "+reportPeriodQuantity);
     // check if multiple reports of several dates are required to be in the same zipped file 
     boolean isMultiDates = false;
     if (reportPeriodQuantity > 1)
