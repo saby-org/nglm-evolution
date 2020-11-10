@@ -22865,6 +22865,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     String existingproductID = null;
     String existingVoucherID = null;
     String existingSupplierID = null;
+    String existingProductOrVoucherID = null;
     
     /*****************************************
      *
@@ -22906,10 +22907,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             if (product != null)
               {
                 existingproductID = product.getProductID();
+                existingProductOrVoucherID = existingproductID;
               }
             if (voucher != null)
               {
                 existingVoucherID = voucher.getVoucherID();
+                existingProductOrVoucherID = existingproductID;
               }
           }
       }
@@ -22973,7 +22976,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             JSONArray voucherJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "vouchers", false); // to separate the voucher from the input json
             
             Map<String, JSONObject> OfferProductAndVoucher = splitOfferProductAndVoucher(productJSONArray, voucherJSONArray,
-                jsonRoot);
+                jsonRoot, existingproductID);
             
             JSONObject productJSON = OfferProductAndVoucher.get("productJSON"); // JSONObject to create a new product with offer name
             JSONObject voucherJSON = OfferProductAndVoucher.get("voucherJSON"); // JSONObject to create a new voucher with offer name
@@ -26944,7 +26947,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
  *  form a new json to create new product and new voucher with offer name.
  *
  ************************************************************************/
-  public Map<String, JSONObject> splitOfferProductAndVoucher (JSONArray productJSONArray, JSONArray voucherJSONArray, JSONObject jsonRoot) {
+  public Map<String, JSONObject> splitOfferProductAndVoucher (JSONArray productJSONArray, JSONArray voucherJSONArray, JSONObject jsonRoot, String existingProductOrVoucherID) {
     HashMap<String, JSONObject> response = new HashMap<String,JSONObject>();
     JSONObject productJSONObject = new JSONObject();
     JSONObject voucherJSONObject = new JSONObject();
@@ -26960,8 +26963,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       {
         productJSONObject = ((JSONObject) productJSONArray.get(0));
         productJSON = JSONUtilities.decodeJSONObject(productJSONObject, "product", false);
+        if (existingProductOrVoucherID == null) {
         String productID = productService.generateProductID();
-        productJSON.put("id", productID);
+        existingProductOrVoucherID = productID;
+        }
+        productJSON.put("id", existingProductOrVoucherID);
         if (jsonRoot.containsKey("loginID"))
           {
             productJSON.put("supplierID", activeSupplier);
@@ -26984,8 +26990,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
       {
         voucherJSONObject = ((JSONObject) voucherJSONArray.get(0));
         voucherJSON = JSONUtilities.decodeJSONObject(voucherJSONObject, "voucher", false); 
+        if (existingProductOrVoucherID == null) {
         String voucherID = voucherService.generateVoucherID();
-        voucherJSON.put("id", voucherID);
+        existingProductOrVoucherID = voucherID;
+        }
+        voucherJSON.put("id", existingProductOrVoucherID);
         if (jsonRoot.containsKey("loginID"))
           {
             voucherJSON.put("supplierID", activeSupplier);
@@ -27509,7 +27518,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     String existingVoucherID = null;
     String existingSupplierID = null;
     Boolean dryRun = false;
-    
+    String existingProductOrVoucherID = null;
 
     /*****************************************
     *
@@ -27561,10 +27570,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             if (product != null)
               {
                 existingproductID = product.getProductID();
+                existingProductOrVoucherID = existingproductID;
               }
             if (voucher != null)
               {
                 existingVoucherID = voucher.getVoucherID();
+                existingProductOrVoucherID = existingVoucherID;
               }
           }
       }
@@ -27600,7 +27611,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         JSONArray voucherJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "vouchers", false); // to separate the voucher from the input json
 
         Map<String, JSONObject> OfferProductAndVoucher = splitOfferProductAndVoucher(productJSONArray, voucherJSONArray,
-            jsonRoot);
+            jsonRoot, existingProductOrVoucherID);
 
         JSONObject productJSON = OfferProductAndVoucher.get("productJSON"); // JSONObject to create a new product with offer name
         JSONObject voucherJSON = OfferProductAndVoucher.get("voucherJSON"); // JSONObject to create a new voucher with offer name
