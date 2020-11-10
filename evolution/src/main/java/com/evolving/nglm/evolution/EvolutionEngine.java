@@ -4535,14 +4535,22 @@ public class EvolutionEngine
               {
                 String[] elements = currentWFToTrigger.split(":");
                 String eventClass = elements[0];
-                if(eventClass.equals(evolutionEvent.getClass().getName())
-                  {
-                      
-                  }
-              }
-          }
-        
-        //
+                if(eventClass.equals(evolutionEvent.getClass().getName()))
+				          {
+				            String eventDateLong = elements[1];
+				            if(eventDateLong.equals("" + evolutionEvent.getEventDate().getTime())) 
+				              {
+				                // let compare the workflowID:
+				                String workflowID = elements[2];
+				                if(workflowID.equals(journey.getJourneyID()))
+				                  {
+				                    // this is the workflow to trig (good event, good date, good required workflow
+				                    calledJourney = true;
+				                  }               
+				              }
+				          }
+			        }
+           }
         //  enter journey?
         //
 
