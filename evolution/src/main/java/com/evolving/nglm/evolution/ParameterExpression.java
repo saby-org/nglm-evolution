@@ -121,7 +121,6 @@ public class ParameterExpression
     this.criterionContext = criterionContext;
     this.expressionString = JSONUtilities.decodeString(jsonRoot, "expression", false);
     this.baseTimeUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "timeUnit", "(unknown)"));
-    log.info("RAJ K expressionString is {} and criterionContextFields {}", expressionString, criterionContext.getCriterionFields().keySet());
 
     //
     //  parse
