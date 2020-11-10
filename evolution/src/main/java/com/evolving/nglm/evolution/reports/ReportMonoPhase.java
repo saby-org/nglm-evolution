@@ -793,7 +793,7 @@ public class ReportMonoPhase
 		  }
 	  }
 
-	  log.info("** FNB ** - Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION);
+	  log.info("Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION);
 	  return true;
   }
 

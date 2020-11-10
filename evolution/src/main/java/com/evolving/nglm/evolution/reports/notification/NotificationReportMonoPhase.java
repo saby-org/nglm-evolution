@@ -553,7 +553,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     boolean isMultiDates = false;
     if (reportPeriodQuantity > 1)
     	isMultiDates = true;
-    log.info("====multidate==== NotificationReport " + reportPeriodQuantity);
+
     if (!reportMonoPhase.startOneToOne(isMultiDates))
       {
         log.warn("An error occured, the report might be corrupted");
@@ -577,7 +577,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
   
   private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit, Integer reportPeriodQuantity)
   { 
-    reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(3) : reportPeriodQuantity;
+    reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(1) : reportPeriodQuantity;
     if (reportPeriodUnit == null) reportPeriodUnit = PERIOD.DAYS.getExternalRepresentation();
 
     //
