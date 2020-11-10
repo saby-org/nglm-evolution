@@ -65,6 +65,19 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
             if (journey != null)
               {
                 Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
+                if (journeyStats.get(subscriberID) != null)
+                  {
+                    Object subscriberIDField = journeyStats.get(subscriberID);
+                    journeyInfo.put(customerID, subscriberIDField);
+                  }
+                for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+                  {
+                    if (journeyStats.get(alternateID.getID()) != null)
+                      {
+                        Object alternateId = journeyStats.get(alternateID.getID());
+                        journeyInfo.put(alternateID.getID(), alternateId);
+                      }
+                  }
                 journeyInfo.put("journeyID", journey.getJourneyID());
                 journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
                 journeyInfo.put("journeyType", journey.getTargetingType());
@@ -93,20 +106,7 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
                     journeyInfo.put(journeyMetricDeclaration.getESFieldDuring(), journeyMetric.get(journeyMetricDeclaration.getESFieldDuring()));
                     journeyInfo.put(journeyMetricDeclaration.getESFieldPost(), journeyMetric.get(journeyMetricDeclaration.getESFieldPost()));
                   }
-
-                if (journeyStats.get(subscriberID) != null)
-                  {
-                    Object subscriberIDField = journeyStats.get(subscriberID);
-                    journeyInfo.put(customerID, subscriberIDField);
-                  }
-                for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-                  {
-                    if (journeyStats.get(alternateID.getID()) != null)
-                      {
-                        Object alternateId = journeyStats.get(alternateID.getID());
-                        journeyInfo.put(alternateID.getID(), alternateId);
-                      }
-                  }
+                
 
                 /*
                  * if (addHeaders) { headerFieldsOrder.clear(); addHeaders(writer,
