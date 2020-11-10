@@ -7331,7 +7331,57 @@ public class GUIManager
         *  instantiate offer
         *
         ****************************************/
+        Boolean simpleOffer = JSONUtilities.decodeBoolean(jsonRoot, "simpleOffer", Boolean.FALSE);
+        if (existingOffer == null || simpleOffer == false) {
         jsonRoot.put("simpleOffer", false); // offer not a simpleOffer
+        }
+        
+        if (existingOffer != null && simpleOffer == true) {
+          if (existingOffer instanceof Offer) {
+            String display = ((Offer) existingOffer).getGUIManagedObjectDisplay();
+            String jsonRootDisplay = JSONUtilities.decodeString(jsonRoot, "display", false);
+            if (!(jsonRootDisplay.equals(display))) {
+              response.put("responseCode", "The display cannot be changed for the existing simpleOffer");
+              return JSONUtilities.encodeObject(response);
+            }
+            Set<OfferProduct> offerProducts = ((Offer) existingOffer).getOfferProducts();
+                if (offerProducts != null && !(offerProducts).isEmpty())
+                  {
+                    OfferProduct offerProduct = offerProducts.stream().findFirst().get();
+                    OfferProduct jsonRootOfferProduct = null;
+                    JSONArray jsonRootOfferProducts = JSONUtilities.decodeJSONArray(jsonRoot, "products", false);
+                    JSONObject jsonRootofferProduct = new JSONObject();
+                    if (jsonRootOfferProducts != null) {
+                      jsonRootofferProduct = (JSONObject) jsonRootOfferProducts.get(0);
+                    }
+                    if (jsonRootOfferProducts == null || (jsonRootOfferProducts != null && (!(offerProduct.getProductID().equals(jsonRootofferProduct.get("productID").toString())) || (offerProduct.getQuantity() != ((Number)jsonRootofferProduct.get("quantity")).intValue()))))
+                      {
+                        response.put("responseCode", "The product cannot be changed for the existing simpleOffer");
+                        return JSONUtilities.encodeObject(response);
+                      }
+                  }
+                Set<OfferVoucher> offerVouchers = ((Offer) existingOffer).getOfferVouchers();
+                if (offerVouchers != null && !(offerVouchers).isEmpty())
+                  {
+                    OfferVoucher offerVoucher = offerVouchers.stream().findFirst().get();
+                    JSONArray jsonRootOfferVouchers = JSONUtilities.decodeJSONArray(jsonRoot, "vouchers", false);                    
+                    JSONObject jsonRootofferVoucher = new JSONObject();
+                    if (jsonRootOfferVouchers != null) {
+                      jsonRootofferVoucher = (JSONObject) jsonRootOfferVouchers.get(0);
+                    }
+                    if (jsonRootOfferVouchers == null || (jsonRootOfferVouchers != null && (!(offerVoucher.getVoucherID().equals(jsonRootofferVoucher.get("voucherID").toString())) || (offerVoucher.getQuantity() != ((Number)jsonRootofferVoucher.get("quantity")).intValue()))))
+                      {
+                        response.put("responseCode", "The voucher cannot be changed for the existing simpleOffer");
+                        return JSONUtilities.encodeObject(response);
+                      }
+                  }
+            
+            
+            
+          }
+          
+        
+        }
         Offer offer = new Offer(jsonRoot, epoch, existingOffer, catalogCharacteristicService);
 
         /*****************************************
@@ -27895,7 +27945,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             String productID = product.getProductID();
             String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
 
-            if (offerName.equals(productName))
+            if (offer.getSimpleOffer() == true && offerName.equals(productName))
               {
                 offerJSON = offerService.generateResponseJSON(offerObject, true, SystemTime.getCurrentTime());                
                 JSONArray productJSONArray = mergeOfferProductAndVoucher(productID, "product",offerJSON); 
@@ -27916,7 +27966,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             Voucher voucherObject = (Voucher) voucherService.getStoredVoucher(voucherID);
             String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
-            if (offerName.equals(voucherName))
+            if (offer.getSimpleOffer() == true && offerName.equals(voucherName))
               {
                 offerJSON = offerService.generateResponseJSON(offerObject, true, SystemTime.getCurrentTime());
                 JSONArray voucherJSONArray = mergeOfferProductAndVoucher(voucherID, "voucher", offerJSON);                 
@@ -28001,7 +28051,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 String productID = product.getProductID();               
                 String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
 
-                if (offerName.equals(productName))
+                if (offer.getSimpleOffer() == true && offerName.equals(productName))
                   {
                     JSONObject offerJSON = offerService.generateResponseJSON(offer, fullDetails, now);
                     if (!fullDetails)
@@ -28033,7 +28083,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 String voucherID = voucher.getVoucherID();                
                 String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
-                if (offerName.equals(voucherName))
+                if (offer.getSimpleOffer() == true && offerName.equals(voucherName))
                   {
                     JSONObject offerJSON = offerService.generateResponseJSON(offer, fullDetails, now);
                     if (!fullDetails)
