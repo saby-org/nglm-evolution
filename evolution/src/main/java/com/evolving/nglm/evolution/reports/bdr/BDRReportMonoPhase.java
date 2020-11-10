@@ -491,6 +491,6 @@ public class BDRReportMonoPhase implements ReportCsvFactory
         log.warn("An error occured, the report might be corrupted");
         return;
       }
-    log.info("** Finished BDRReport **");
+    log.info("** === FNB === Finished BDRReport **");
   }
 }
