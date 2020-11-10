@@ -20,6 +20,8 @@ import com.evolving.nglm.evolution.Expression.ExpressionReader;
 import com.evolving.nglm.evolution.Expression.ExpressionTypeCheckException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+import kafka.log.Log;
+
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -28,9 +30,18 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ParameterExpression
 {
+  
+  //
+  //  logger
+  //
+
+  protected static final Logger log = LoggerFactory.getLogger(ParameterExpression.class);
+  
   /*****************************************
   *
   *  schema
@@ -110,6 +121,7 @@ public class ParameterExpression
     this.criterionContext = criterionContext;
     this.expressionString = JSONUtilities.decodeString(jsonRoot, "expression", false);
     this.baseTimeUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "timeUnit", "(unknown)"));
+    log.info("RAJ K expressionString is {} and criterionContextFields {}", expressionString, criterionContext.getCriterionFields().keySet());
 
     //
     //  parse
