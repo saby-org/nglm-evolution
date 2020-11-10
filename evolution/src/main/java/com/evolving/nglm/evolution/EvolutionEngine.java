@@ -4528,12 +4528,18 @@ public class EvolutionEngine
         //
         
         List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
+        List<String> toBeRemoved = new ArrayList<>();
         if(journey.isWorkflow())
           {
             // check if this workflow has to be triggered
             for(String currentWFToTrigger : workflowTriggering)
               {
-                sdf
+                String[] elements = currentWFToTrigger.split(":");
+                String eventClass = elements[0];
+                if(eventClass.equals(evolutionEvent.getClass().getName())
+                  {
+                      
+                  }
               }
           }
         
