@@ -55,7 +55,6 @@ public class ReportMonoPhase
   private ReportCsvFactory reportFactory;
   private String csvfile;
   private RestHighLevelClient elasticsearchReaderClient;
-  private boolean isMethodExternalCall = true;
 
   public ReportMonoPhase(String esNode, LinkedHashMap<String, QueryBuilder> esIndex, ReportCsvFactory factory, String csvfile, boolean onlyKeepAlternateIDs, boolean onlyKeepAlternateIDsExtended)
   {
@@ -119,8 +118,7 @@ public class ReportMonoPhase
 
   public boolean startOneToOne()
   {
-	log.info("** startOneToOne() **" + isMethodExternalCall);
-	  String indexes = "";
+	String indexes = "";
     for (String s : esIndex.keySet())
       indexes += s + " ";
     log.info("Reading data from ES in \"" + indexes + "\" indexes");
@@ -265,15 +263,7 @@ public class ReportMonoPhase
 
                   // We have in miniSourceMap the maping for this ES line, now write it to csv
                   
-                  if (isMethodExternalCall)
-                  {
                 	  addHeader &= reportFactory.dumpElementToCsvMono(miniSourceMap, writer, addHeader);
-                  }
-                  else
-                  {
-                	  reportFactory.dumpLineToCsv(miniSourceMap, writer, addHeader);
-                	  addHeader = false;
-                  }
                 }
 
               SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
@@ -310,7 +300,6 @@ public class ReportMonoPhase
   {
     if (!multipleFile)
       {
-        isMethodExternalCall = false;
 		return startOneToOne();
       }
     else
