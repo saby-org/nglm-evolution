@@ -28004,8 +28004,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                             offerJSON.put("simpleOffer", "");
                           }
                       } 
-                    JSONArray productJSONArray = mergeOfferProductAndVoucher(productID, "product", offerJSON);                    
-                    offerJSON.put("products", productJSONArray);
+                    if (fullDetails)
+                      {
+                        JSONArray productJSONArray = mergeOfferProductAndVoucher(productID, "product", offerJSON);
+                        offerJSON.put("products", productJSONArray);
+                      }
                     offers.add(offerJSON);
                   }
                 else
@@ -28031,10 +28034,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                         else
                           {
                             offerJSON.put("simpleOffer", "");
-                          }
+                          }                        
                       }
-                    JSONArray voucherJSONArray = mergeOfferProductAndVoucher(voucherID, "voucher",offerJSON);
-                    offerJSON.put("vouchers", voucherJSONArray); 
+                    if (fullDetails)
+                      {
+                        JSONArray voucherJSONArray = mergeOfferProductAndVoucher(voucherID, "voucher", offerJSON);
+                        offerJSON.put("vouchers", voucherJSONArray);
+                      }
 
                     offers.add(offerJSON);
                   }
