@@ -66,19 +66,21 @@ public class SubscriberState implements StateStore
 
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("subscriber_state");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(10));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(11));
       schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
       schemaBuilder.field("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().schema());
       schemaBuilder.field("journeyStates", SchemaBuilder.array(JourneyState.schema()).schema());
       schemaBuilder.field("recentJourneyStates", SchemaBuilder.array(JourneyState.schema()).schema());
       schemaBuilder.field("scheduledEvaluations", SchemaBuilder.array(TimedEvaluation.schema()).optional());
       schemaBuilder.field("reScheduledDeliveryRequests", SchemaBuilder.array(ReScheduledDeliveryRequest.schema()).defaultValue(Collections.<ReScheduledDeliveryRequest>emptyList()).schema());
+      schemaBuilder.field("workflowTriggering", SchemaBuilder.array(Schema.STRING_SCHEMA).optional().schema());
       schemaBuilder.field("ucgRuleID", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("ucgEpoch", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("ucgRefreshDay", Timestamp.builder().optional().schema());
       schemaBuilder.field("lastEvaluationDate", Timestamp.builder().optional().schema());
       schemaBuilder.field("trackingID", Schema.OPTIONAL_BYTES_SCHEMA);
       schemaBuilder.field("notificationHistory",SchemaBuilder.array(notificationHistorySchema).optional());
+
       schema = schemaBuilder.build();
     };
 
@@ -109,11 +111,13 @@ public class SubscriberState implements StateStore
   private Set<JourneyState> recentJourneyStates;
   private SortedSet<TimedEvaluation> scheduledEvaluations;
   private Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests;
+  private List<String> workflowTriggering; // List of workflow to trigger on some event: <EventClassName>:<long eventDate>:<WorkflowID>
   private String ucgRuleID;
   private Integer ucgEpoch;
   private Date ucgRefreshDay;
   private Date lastEvaluationDate;
   private List<UUID> trackingIDs;
+
   
   //
   // temporary lists for SubscriberStreamOutput extraction (see getEvolutionEngineOutputs)
@@ -153,6 +157,7 @@ public class SubscriberState implements StateStore
   public Set<JourneyState> getRecentJourneyStates() { return recentJourneyStates; }
   public SortedSet<TimedEvaluation> getScheduledEvaluations() { return scheduledEvaluations; }
   public Set<ReScheduledDeliveryRequest> getReScheduledDeliveryRequests() { return reScheduledDeliveryRequests; }
+  public List<String> getWorkflowTriggering() { return workflowTriggering; }
   public String getUCGRuleID() { return ucgRuleID; }
   public Integer getUCGEpoch() { return ucgEpoch; }
   public Date getUCGRefreshDay() { return ucgRefreshDay; }
@@ -248,6 +253,7 @@ public class SubscriberState implements StateStore
         this.recentJourneyStates = new HashSet<JourneyState>();
         this.scheduledEvaluations = new TreeSet<TimedEvaluation>();
         this.reScheduledDeliveryRequests = new HashSet<ReScheduledDeliveryRequest>();
+        this.workflowTriggering = new ArrayList<>();
         this.ucgRuleID = null;
         this.ucgEpoch = null;
         this.ucgRefreshDay = null;
@@ -289,7 +295,7 @@ public class SubscriberState implements StateStore
    *
    *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<ExecuteActionOtherSubscriber> executeActionsOtherSubscriber, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput, List<UUID> trackingIDs, List<TokenChange> tokenChanges, List<Pair<String,MetricHistory>> notificationHistory, List<VoucherChange> voucherChanges)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, List<String> workflowTriggering, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<ExecuteActionOtherSubscriber> executeActionsOtherSubscriber, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput, List<UUID> trackingIDs, List<TokenChange> tokenChanges, List<Pair<String,MetricHistory>> notificationHistory, List<VoucherChange> voucherChanges)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
@@ -297,6 +303,7 @@ public class SubscriberState implements StateStore
     this.recentJourneyStates = recentJourneyStates;
     this.scheduledEvaluations = scheduledEvaluations;
     this.reScheduledDeliveryRequests = reScheduledDeliveryRequests;
+    this.workflowTriggering = workflowTriggering;
     this.ucgRuleID = ucgRuleID;
     this.ucgEpoch = ucgEpoch;
     this.ucgRefreshDay = ucgRefreshDay;
@@ -340,6 +347,7 @@ public class SubscriberState implements StateStore
         this.recentJourneyStates = new HashSet<JourneyState>(subscriberState.getRecentJourneyStates());
         this.scheduledEvaluations = new TreeSet<TimedEvaluation>(subscriberState.getScheduledEvaluations());
         this.reScheduledDeliveryRequests = new HashSet<ReScheduledDeliveryRequest>(subscriberState.getReScheduledDeliveryRequests());
+        this.workflowTriggering = new ArrayList<>(subscriberState.getWorkflowTriggering());
         this.ucgRuleID = subscriberState.getUCGRuleID();
         this.ucgEpoch = subscriberState.getUCGEpoch();
         this.ucgRefreshDay = subscriberState.getUCGRefreshDay();
@@ -405,6 +413,7 @@ public class SubscriberState implements StateStore
     struct.put("recentJourneyStates", packJourneyStates(subscriberState.getRecentJourneyStates()));
     struct.put("scheduledEvaluations", packScheduledEvaluations(subscriberState.getScheduledEvaluations()));
     struct.put("reScheduledDeliveryRequests", packReScheduledDeliveryRequests(subscriberState.getReScheduledDeliveryRequests()));
+    struct.put("workflowTriggering", subscriberState.getWorkflowTriggering() != null ? subscriberState.getWorkflowTriggering() : new ArrayList<>());
     struct.put("ucgRuleID", subscriberState.getUCGRuleID());
     struct.put("ucgEpoch", subscriberState.getUCGEpoch());
     struct.put("ucgRefreshDay", subscriberState.getUCGRefreshDay());
@@ -513,6 +522,7 @@ public class SubscriberState implements StateStore
     Set<JourneyState> recentJourneyStates = unpackJourneyStates(schema.field("recentJourneyStates").schema(), valueStruct.get("recentJourneyStates"));
     SortedSet<TimedEvaluation> scheduledEvaluations = (schemaVersion >= 10) ? unpackScheduledEvaluations(schema.field("scheduledEvaluations").schema(), valueStruct.get("scheduledEvaluations")) : new TreeSet<>();
     Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequest = (schemaVersion >= 7) ? unpackReScheduledDeliveryRequests(schema.field("reScheduledDeliveryRequests").schema(), valueStruct.get("reScheduledDeliveryRequests")) : new HashSet<ReScheduledDeliveryRequest>();
+    List<String> workflowTriggering = schema.field("workflowTriggering") != null ? (ArrayList<String>) valueStruct.get("workflowTriggering") : new ArrayList<>();
     String ucgRuleID = valueStruct.getString("ucgRuleID");
     Integer ucgEpoch = valueStruct.getInt32("ucgEpoch");
     Date ucgRefreshDay = (Date) valueStruct.get("ucgRefreshDay");
@@ -540,7 +550,7 @@ public class SubscriberState implements StateStore
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, reScheduledDeliveryRequest, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, executeActionsOtherSubscriber, journeyStatisticWrappers, journeyMetrics, profileChangeEvents, profileSegmentChangeEvents, profileLoyaltyProgramChangeEvents, subscriberTrace, externalAPIOutput, trackingIDs, tokenChanges, notificationHistory, voucherChanges);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, reScheduledDeliveryRequest, workflowTriggering, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, executeActionsOtherSubscriber, journeyStatisticWrappers, journeyMetrics, profileChangeEvents, profileSegmentChangeEvents, profileLoyaltyProgramChangeEvents, subscriberTrace, externalAPIOutput, trackingIDs, tokenChanges, notificationHistory, voucherChanges);
   }
 
   /*****************************************
@@ -673,7 +683,7 @@ public class SubscriberState implements StateStore
   public String toString()
   {
     return "SubscriberState [" + (subscriberID != null ? "subscriberID=" + subscriberID + ", " : "") + (subscriberProfile != null ? "subscriberProfile=" + subscriberProfile + ", " : "") + (journeyStates != null ? "journeyStates=" + journeyStates + ", " : "") + (recentJourneyStates != null ? "recentJourneyStates=" + recentJourneyStates + ", " : "") + (scheduledEvaluations != null ? "scheduledEvaluations=" + scheduledEvaluations + ", " : "")
-        + (reScheduledDeliveryRequests != null ? "reScheduledDeliveryRequests=" + reScheduledDeliveryRequests + ", " : "") + (ucgRuleID != null ? "ucgRuleID=" + ucgRuleID + ", " : "") + (ucgEpoch != null ? "ucgEpoch=" + ucgEpoch + ", " : "") + (ucgRefreshDay != null ? "ucgRefreshDay=" + ucgRefreshDay + ", " : "") + (lastEvaluationDate != null ? "lastEvaluationDate=" + lastEvaluationDate + ", " : "") + (trackingIDs != null ? "trackingIDs=" + trackingIDs + ", " : "")
+        + (reScheduledDeliveryRequests != null ? "reScheduledDeliveryRequests=" + reScheduledDeliveryRequests + ", " : "") + (workflowTriggering != null ? "workflowTriggering=" + workflowTriggering + ", " : "") + (ucgRuleID != null ? "ucgRuleID=" + ucgRuleID + ", " : "") + (ucgEpoch != null ? "ucgEpoch=" + ucgEpoch + ", " : "") + (ucgRefreshDay != null ? "ucgRefreshDay=" + ucgRefreshDay + ", " : "") + (lastEvaluationDate != null ? "lastEvaluationDate=" + lastEvaluationDate + ", " : "") + (trackingIDs != null ? "trackingIDs=" + trackingIDs + ", " : "")
         + (journeyRequests != null ? "journeyRequests=" + journeyRequests + ", " : "") + (journeyResponses != null ? "journeyResponses=" + journeyResponses + ", " : "") + (loyaltyProgramRequests != null ? "loyaltyProgramRequests=" + loyaltyProgramRequests + ", " : "") + (loyaltyProgramResponses != null ? "loyaltyProgramResponses=" + loyaltyProgramResponses + ", " : "") + (pointFulfillmentResponses != null ? "pointFulfillmentResponses=" + pointFulfillmentResponses + ", " : "")
         + (deliveryRequests != null ? "deliveryRequests=" + deliveryRequests + ", " : "") + (journeyStatisticWrappers != null ? "journeyStatisticWrappers=" + journeyStatisticWrappers + ", " : "") + (journeyMetrics != null ? "journeyMetrics=" + journeyMetrics + ", " : "") + (profileChangeEvents != null ? "profileChangeEvents=" + profileChangeEvents + ", " : "") + (profileSegmentChangeEvents != null ? "profileSegmentChangeEvents=" + profileSegmentChangeEvents + ", " : "")
         + (profileLoyaltyProgramChangeEvents != null ? "profileLoyaltyProgramChangeEvents=" + profileLoyaltyProgramChangeEvents + ", " : "") + (subscriberTrace != null ? "subscriberTrace=" + subscriberTrace + ", " : "") + (externalAPIOutput != null ? "externalAPIOutput=" + externalAPIOutput + ", " : "") + (tokenChanges != null ? "tokenChanges=" + tokenChanges + ", " : "") + (notificationHistory != null ? "notificationHistory=" + notificationHistory + ", " : "")
