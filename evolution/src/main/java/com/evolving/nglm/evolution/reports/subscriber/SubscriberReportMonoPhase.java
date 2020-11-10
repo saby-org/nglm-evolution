@@ -35,13 +35,14 @@ import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
+import com.evolving.nglm.evolution.reports.odr.ODRReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 
 public class SubscriberReportMonoPhase implements ReportCsvFactory {
 
 	private static final Logger log = LoggerFactory.getLogger(SubscriberReportMonoPhase.class);
   final private static String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private static SegmentationDimensionService segmentationDimensionService = null;
+  private SegmentationDimensionService segmentationDimensionService = null;
   private final static String subscriberID = "subscriberID";
   private final static String customerID = "customerID";
   private final static String segments = "segments";
@@ -49,12 +50,11 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
   private static Map<String, String[]> segmentsNames = new HashMap<>(); // segmentID -> [dimensionName, segmentName]
   private final static int INDEX_DIMENSION_NAME = 0;
   private final static int INDEX_SEGMENT_NAME = 1;
-  //private static List<String> allDimensions = new ArrayList<>();
-  private static Map<String, String> allDimensionsMap = new HashMap<>();
-  private static List<String> allProfileFields = new ArrayList<>();
+  private Map<String, String> allDimensionsMap = new HashMap<>();
+  private List<String> allProfileFields = new ArrayList<>();
   private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
   private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
-  private static Map<String, String> dimNameDisplayMapping = new HashMap<String, String>();
+  private Map<String, String> dimNameDisplayMapping = new HashMap<String, String>();
 
   /****************************************
   *
@@ -214,7 +214,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
   *
   ****************************************/
   
-  private static void initSegmentationData()
+  private void initSegmentationData()
   {
     // segmentID -> [dimensionName, segmentName]
     for (GUIManagedObject dimension : segmentationDimensionService.getStoredSegmentationDimensions())
@@ -239,7 +239,14 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
       }
   }
 
-	public static void main(String[] args, final Date reportGenerationDate) {
+	public static void main(String[] args, final Date reportGenerationDate)
+	{
+    SubscriberReportMonoPhase subscriberReportMonoPhase = new SubscriberReportMonoPhase();
+    subscriberReportMonoPhase.start(args, reportGenerationDate);
+  }
+  
+  private void start(String[] args, final Date reportGenerationDate)
+  {
 	  log.info("received " + args.length + " args");
 	  for(String arg : args){
 	    log.info("SubscriberReportMonoPhase: arg " + arg);
@@ -256,17 +263,16 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
     String csvfile         = args[3];
 
 	  log.info("Reading data from ES in "+esIndexCustomer+"  index and writing to "+csvfile+" file.");	
-    ReportCsvFactory reportFactory = new SubscriberReportMonoPhase();
 
-	  LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-      esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
-      
-      ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
-              esNode,
-              esIndexWithQuery,
-              reportFactory,
-              csvfile
-          );
+    LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
+    esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
+
+    ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
+        esNode,
+        esIndexWithQuery,
+        this,
+        csvfile
+        );
 
       segmentationDimensionService = new SegmentationDimensionService(kafkaNodeList, "report-segmentationDimensionservice-subscriberReportMonoPhase", Deployment.getSegmentationDimensionTopic(), false);
       segmentationDimensionService.start();
@@ -300,11 +306,11 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
           log.warn("An error occured, the report might be corrupted");
           return;
         }
-
+    segmentationDimensionService.stop();
 	  log.info("Finished SubscriberReportESReader");
 	}
 	
-  private static void initProfileFields()
+  private void initProfileFields()
   {
     for (CriterionField field : Deployment.getBaseProfileCriterionFields().values())
       {

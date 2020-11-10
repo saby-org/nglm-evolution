@@ -3131,6 +3131,43 @@ public class EvolutionEngine
           }
         }
     }
+    
+    if (evolutionEvent instanceof PurchaseFulfillmentRequest)
+      {
+        PurchaseFulfillmentRequest purchaseFulfillmentRequest = (PurchaseFulfillmentRequest) evolutionEvent;
+        String offerID = purchaseFulfillmentRequest.getOfferID();
+        Offer offer = offerService.getActiveOffer(offerID, now);
+        if (offer == null)
+          {
+            log.info("Got a purchase for inexistent offer " + offerID);
+          }
+        else
+          {
+            int maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
+            Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getBaseTimeZone());
+            List<Date> cleanPurchaseHistory = new ArrayList<Date>();
+            Map<String,List<Date>> fullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
+            List<Date> purchaseHistory = fullPurchaseHistory.get(offerID);
+            if (purchaseHistory != null)
+              {
+                // clean list : only keep relevant purchase dates
+                for (Date purchaseDate : purchaseHistory)
+                  {
+                    if (purchaseDate.after(earliestDateToKeep))
+                      {
+                        cleanPurchaseHistory.add(purchaseDate);
+                      }
+                  }
+              }
+            // TODO : this could be size-optimized by storing date/quantity in a new object
+            for (int n=0; n<purchaseFulfillmentRequest.getQuantity(); n++)
+              {
+                cleanPurchaseHistory.add(now); // add new purchase
+              }
+            fullPurchaseHistory.put(offerID, cleanPurchaseHistory);
+            subscriberProfileUpdated = true;
+          }
+      }
 
     /*****************************************
     *
@@ -3373,11 +3410,11 @@ public class EvolutionEngine
     
     // Exit tier workflow
     Tier oldTier = loyaltyProgramPoints.getTier(oldTierName);
-    if (oldTier != null) triggerLoyaltyWorflow(subscriberState, subscriberProfile, oldTier.getWorkflowExit());
+    if (oldTier != null) triggerLoyaltyWorflow(subscriberState, subscriberProfile, oldTier.getWorkflowChange());
     
     // Enter tier workflow
     Tier newTier = loyaltyProgramPoints.getTier(newTierName);
-    if (newTier != null) triggerLoyaltyWorflow(subscriberState, subscriberProfile, newTier.getWorkflowEnter());
+    if (newTier != null) triggerLoyaltyWorflow(subscriberState, subscriberProfile, newTier.getWorkflowChange());
   }
 
 

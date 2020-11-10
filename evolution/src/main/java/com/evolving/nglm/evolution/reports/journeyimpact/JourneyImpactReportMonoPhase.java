@@ -27,6 +27,7 @@ import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
+import com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportMonoPhase;
 
 /**
  * This implements the phase 3 for the Journey report.
@@ -36,9 +37,9 @@ public class JourneyImpactReportMonoPhase implements ReportCsvFactory
 {
   private static final Logger log = LoggerFactory.getLogger(JourneyImpactReportMonoPhase.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private static JourneyService journeyServiceStatic;
+  private JourneyService journeyService;
   List<String> headerFieldsOrder = new ArrayList<String>();
-  private static ReferenceDataReader<String, JourneyTrafficHistory> journeyTrafficReader;
+  private ReferenceDataReader<String, JourneyTrafficHistory> journeyTrafficReader;
   
   public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
@@ -65,7 +66,7 @@ public class JourneyImpactReportMonoPhase implements ReportCsvFactory
     Map<String, Object> journeyMetric = map;
     if (journeyStats != null && !journeyStats.isEmpty() && journeyMetric != null && !journeyMetric.isEmpty())
       {
-        Journey journey = journeyServiceStatic.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
+        Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
         JourneyTrafficHistory journeyTrafficHistory = null;
         Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
         if (journey != null)
@@ -136,7 +137,13 @@ public class JourneyImpactReportMonoPhase implements ReportCsvFactory
     return result;
   }
 
-  public static void main(String[] args, JourneyService journeyService, final Date reportGenerationDate)
+  public static void main(String[] args, final Date reportGenerationDate)
+  {
+    JourneyImpactReportMonoPhase journeyImpactReportMonoPhase = new JourneyImpactReportMonoPhase();
+    journeyImpactReportMonoPhase.start(args, reportGenerationDate);
+  }
+  
+  private void start(String[] args, final Date reportGenerationDate)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -153,6 +160,9 @@ public class JourneyImpactReportMonoPhase implements ReportCsvFactory
     String esIndexJourney = args[1];
     String csvfile = args[2];
     
+    journeyService = new JourneyService(Deployment.getBrokerServers(), "JourneyImpactReport-journeyservice-JourneyImpactReportMonoDriver", Deployment.getJourneyTopic(), false);
+    journeyService.start();
+    
     Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate);
     StringBuilder activeJourneyEsIndex = new StringBuilder();
     boolean firstEntry = true;
@@ -166,17 +176,15 @@ public class JourneyImpactReportMonoPhase implements ReportCsvFactory
 
     log.info("Reading data from ES in (" + activeJourneyEsIndex.toString() + ") and " + esIndexJourney + " index on " + esNode + " producing " + csvfile + " with '" + CSV_SEPARATOR + "' separator");
     
-    journeyServiceStatic = journeyService;
     journeyTrafficReader = ReferenceDataReader.<String, JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", "journeysreportcsvwriter-journeytrafficservice-JourneyImpactReportMonoPhase" , Deployment.getBrokerServers(), Deployment.getJourneyTrafficChangeLogTopic(), JourneyTrafficHistory::unpack);
 
-    ReportCsvFactory reportFactory = new JourneyImpactReportMonoPhase();
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(activeJourneyEsIndex.toString(), QueryBuilders.matchAllQuery());
     
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
         esIndexWithQuery,
-        reportFactory,
+        this,
         csvfile
     );
 
@@ -185,7 +193,8 @@ public class JourneyImpactReportMonoPhase implements ReportCsvFactory
         log.warn("An error occured, the report might be corrupted");
         return;
       }
-    
+    journeyService.stop();
+    log.info("Finished JourneyImpactReport");
   }
 
   private void addHeaders(ZipOutputStream writer, Map<String, Object> values, int offset) throws IOException

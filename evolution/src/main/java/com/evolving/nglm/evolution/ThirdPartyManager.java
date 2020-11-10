@@ -5276,7 +5276,7 @@ public class ThirdPartyManager
           }
         int user = (authResponse.getUserId());
         String userID = Integer.toString(user);
-        jsonRoot.put("userID", userID);
+        jsonRoot.put("loginID", userID);
         
         JSONObject result;
 
@@ -5372,7 +5372,7 @@ public class ThirdPartyManager
           } 
         int user = (authResponse.getUserId());
         String userID = Integer.toString(user);
-        jsonRoot.put("userID", userID);
+        jsonRoot.put("loginID", userID);
         JSONObject result;
 
         StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
@@ -5473,7 +5473,7 @@ public class ThirdPartyManager
           }
         int user = (authResponse.getUserId());
         String userID = Integer.toString(user);
-        jsonRoot.put("userID", userID);
+        jsonRoot.put("loginID", userID);
         JSONObject result;
 
         StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
