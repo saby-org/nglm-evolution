@@ -5196,10 +5196,7 @@ public class ThirdPartyManager
 
             if (profileVoucher.getVoucherStatus() == VoucherDelivery.VoucherStatus.Redeemed)
               {
-                Date redeemedDateToBeFormatted = profileVoucher.getVoucherRedeemDate();
-                SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
-                dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-                String redeemedDate = dateFormat.format(redeemedDateToBeFormatted);
+                Date redeemedDate = profileVoucher.getVoucherRedeemDate();
                 String redeemedSubscriberID = subscriberID;
                 Map<String, String> alternateIDs = new LinkedHashMap<>();
                 SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile,
@@ -5216,22 +5213,9 @@ public class ThirdPartyManager
                     String criterionFieldValue = (String) criterionField.retrieveNormalized(evaluationRequest);                    
                     alternateIDs.put(entry.getKey(), criterionFieldValue);
                   }
-                String msisdn = "";
-                String contractID = "";
-                if (alternateIDs != null && !(alternateIDs.isEmpty()))
-                  {
-                    if (alternateIDs.containsKey("msisdn") && alternateIDs.get("msisdn") != null)
-                      {
-                        msisdn = alternateIDs.get("msisdn").toString();
-                      }
-                    if (alternateIDs.containsKey("contractID") && alternateIDs.get("contractID") != null)
-                      {
-                        contractID = alternateIDs.get("contractID").toString();
-                      }
-                  }
                 errorException = new ThirdPartyManagerException(
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseMessage() + " (RedeemedDate: "
-                        + redeemedDate + ", " + " CustomerID: "+ redeemedSubscriberID + ", " +" msisdn: " + msisdn +" contactID: " + contractID + ")",
+                        + redeemedDate + ", " + " CustomerID: "+ redeemedSubscriberID + ", " +" AlternateIDs: " + alternateIDs + ")",
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseCode());
               }else if(profileVoucher.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired||profileVoucher.getVoucherExpiryDate().before(now)){
           errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
