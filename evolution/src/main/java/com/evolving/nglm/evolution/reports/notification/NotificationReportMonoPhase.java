@@ -549,8 +549,6 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
         reportFactory,
         csvfile
     );
-    reportPeriodQuantity = 3;
-    log.info("====multidate==== NotificationReport "+reportPeriodQuantity);
     // check if multiple reports of several dates are required to be in the same zipped file 
     boolean isMultiDates = false;
     if (reportPeriodQuantity > 1)
@@ -576,10 +574,10 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
       }
     return esIndexOdrList;
   }
-  
+  log.info("====multidate==== NotificationReport "+reportPeriodQuantity);
   private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit, Integer reportPeriodQuantity)
   {
-    reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(1) : reportPeriodQuantity;
+    reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(3) : reportPeriodQuantity;
     if (reportPeriodUnit == null) reportPeriodUnit = PERIOD.DAYS.getExternalRepresentation();
 
     //
