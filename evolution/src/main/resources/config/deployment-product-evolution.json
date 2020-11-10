@@ -1069,8 +1069,8 @@
       "availableScheduling" : [ "none","daily" ]
     },
     {
-      "name"                : "voucherUploadedReport",
-      "display"             : "Voucher Uploaded Report",
+      "name"                : "voucherStockReport",
+      "display"             : "Voucher Stock Report",
       "description"         : "Description of personal vouchers uploaded into solutions",
       "class"               : "com.evolving.nglm.evolution.reports.voucherUploaded.VoucherUploadedReportDriver",
       "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
