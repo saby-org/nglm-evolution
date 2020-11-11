@@ -7341,7 +7341,8 @@ public class GUIManager
             String display = ((Offer) existingOffer).getGUIManagedObjectDisplay();
             String jsonRootDisplay = JSONUtilities.decodeString(jsonRoot, "display", false);
             if (!(jsonRootDisplay.equals(display))) {
-              response.put("responseCode", "The display cannot be changed for the existing simpleOffer");
+              response.put("responseCode", "offerNotValid");
+              response.put("responseMessage", "The display cannot be changed for the existing simpleOffer");
               return JSONUtilities.encodeObject(response);
             }
             Set<OfferProduct> offerProducts = ((Offer) existingOffer).getOfferProducts();
@@ -7356,7 +7357,8 @@ public class GUIManager
                     }
                     if (jsonRootOfferProducts == null || (jsonRootOfferProducts != null && (!(offerProduct.getProductID().equals(jsonRootofferProduct.get("productID").toString())) || (offerProduct.getQuantity() != ((Number)jsonRootofferProduct.get("quantity")).intValue()))))
                       {
-                        response.put("responseCode", "The product cannot be changed for the existing simpleOffer");
+                        response.put("responseCode", "offerNotValid");
+                        response.put("responseMessage", "The product cannot be changed for the existing simpleOffer");
                         return JSONUtilities.encodeObject(response);
                       }
                   }
@@ -7371,7 +7373,8 @@ public class GUIManager
                     }
                     if (jsonRootOfferVouchers == null || (jsonRootOfferVouchers != null && (!(offerVoucher.getVoucherID().equals(jsonRootofferVoucher.get("voucherID").toString())) || (offerVoucher.getQuantity() != ((Number)jsonRootofferVoucher.get("quantity")).intValue()))))
                       {
-                        response.put("responseCode", "The voucher cannot be changed for the existing simpleOffer");
+                        response.put("responseCode", "offerNotValid");
+                        response.put("responseMessage", "The voucher cannot be changed for the existing simpleOffer");
                         return JSONUtilities.encodeObject(response);
                       }
                   }
