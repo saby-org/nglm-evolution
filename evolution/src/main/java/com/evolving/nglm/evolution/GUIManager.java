@@ -7348,12 +7348,12 @@ public class GUIManager
             Set<OfferProduct> offerProducts = ((Offer) existingOffer).getOfferProducts();
                 if (offerProducts != null && !(offerProducts).isEmpty())
                   {
-                    OfferProduct offerProduct = offerProducts.stream().findFirst().get();
+                    OfferProduct offerProduct = offerProducts.stream().findFirst().get(); //simple offer can have only one product
                     OfferProduct jsonRootOfferProduct = null;
                     JSONArray jsonRootOfferProducts = JSONUtilities.decodeJSONArray(jsonRoot, "products", false);
                     JSONObject jsonRootofferProduct = new JSONObject();
                     if (jsonRootOfferProducts != null) {
-                      jsonRootofferProduct = (JSONObject) jsonRootOfferProducts.get(0);
+                      jsonRootofferProduct = (JSONObject) jsonRootOfferProducts.get(0); //simple offer can have only one product
                     }
                     if (jsonRootOfferProducts == null || (jsonRootOfferProducts != null && (!(offerProduct.getProductID().equals(jsonRootofferProduct.get("productID").toString())) || (offerProduct.getQuantity() != ((Number)jsonRootofferProduct.get("quantity")).intValue()))))
                       {
@@ -7365,11 +7365,11 @@ public class GUIManager
                 Set<OfferVoucher> offerVouchers = ((Offer) existingOffer).getOfferVouchers();
                 if (offerVouchers != null && !(offerVouchers).isEmpty())
                   {
-                    OfferVoucher offerVoucher = offerVouchers.stream().findFirst().get();
+                    OfferVoucher offerVoucher = offerVouchers.stream().findFirst().get(); //simple offer can have only one voucher
                     JSONArray jsonRootOfferVouchers = JSONUtilities.decodeJSONArray(jsonRoot, "vouchers", false);                    
                     JSONObject jsonRootofferVoucher = new JSONObject();
                     if (jsonRootOfferVouchers != null) {
-                      jsonRootofferVoucher = (JSONObject) jsonRootOfferVouchers.get(0);
+                      jsonRootofferVoucher = (JSONObject) jsonRootOfferVouchers.get(0); //simple offer can have only one voucher
                     }
                     if (jsonRootOfferVouchers == null || (jsonRootOfferVouchers != null && (!(offerVoucher.getVoucherID().equals(jsonRootofferVoucher.get("voucherID").toString())) || (offerVoucher.getQuantity() != ((Number)jsonRootofferVoucher.get("quantity")).intValue()))))
                       {
