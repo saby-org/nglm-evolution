@@ -170,14 +170,27 @@ public class VDRReportMonoPhase implements ReportCsvFactory
           }
 
         // Compute featureName and ModuleName from ID
-        if (VDRFields.containsKey(moduleId) && VDRFields.containsKey(featureId))
+        if (VDRFields.containsKey(moduleId) && VDRFields.get(moduleId) != null)
+          {
+            Module module = Module.fromExternalRepresentation(String.valueOf(VDRFields.get(moduleId)));           
+            vdrRecs.put(moduleName, module.toString());
+          }
+        else
+          {
+            vdrRecs.put(moduleName, "");
+          }
+        if (VDRFields.containsKey(moduleId) && VDRFields.get(moduleId) != null && VDRFields.containsKey(featureId)
+            && VDRFields.get(featureId) != null)
           {
             Module module = Module.fromExternalRepresentation(String.valueOf(VDRFields.get(moduleId)));
             String feature = DeliveryRequest.getFeatureDisplay(module,
                 String.valueOf(VDRFields.get(featureId).toString()), journeyService, offerService,
                 loyaltyProgramService);
             vdrRecs.put(featureName, feature);
-            vdrRecs.put(moduleName, module.toString());
+          }
+        else
+          {
+            vdrRecs.put(featureName, "");
           }
 
         if (VDRFields.containsKey(origin) && VDRFields.get(origin) != null)
@@ -227,13 +240,23 @@ public class VDRReportMonoPhase implements ReportCsvFactory
         if (VDRFields.containsKey("voucherID") &&  VDRFields.get("voucherID") != null)
           {
             String voucherID = VDRFields.get("voucherID").toString();
-            Voucher voucher = (Voucher) voucherService.getStoredVoucher(voucherID);
-            String supplierID = voucher.getSupplierID();
-            String voucherTypeID = voucher.getVoucherTypeId();
+            Voucher voucher = null;
+            String voucherTypeID = null;
+            if (voucherID != null)
+              {
+                voucher = (Voucher) voucherService.getStoredVoucher(voucherID);
+              }
+            String supplierID = null;
+            if (voucher != null && voucher instanceof Voucher)
+              {
+                supplierID = voucher.getSupplierID();
+                voucherTypeID = voucher.getVoucherTypeId();
+              }
+            
             if (supplierID != null && !(supplierID.isEmpty()))
               {
                 Supplier currentSupplier = (Supplier) (supplierService.getStoredSupplier(supplierID));
-                if (currentSupplier != null)
+                if (currentSupplier != null && currentSupplier instanceof Supplier)
                   {
                     vdrRecs.put(supplier, currentSupplier.getGUIManagedObjectDisplay());
                   }
@@ -245,7 +268,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
             if (voucherTypeID != null && !(voucherTypeID.isEmpty()))
               {
                 VoucherType currentVoucherType = (VoucherType) (voucherTypeService.getStoredVoucherType(voucherTypeID));
-                if (currentVoucherType != null)
+                if (currentVoucherType != null && currentVoucherType instanceof VoucherType)
                   {
                     vdrRecs.put(voucherType, currentVoucherType.getGUIManagedObjectDisplay());
                   }

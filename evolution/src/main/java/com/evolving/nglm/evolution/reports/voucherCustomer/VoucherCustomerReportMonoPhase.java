@@ -91,7 +91,7 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                         result.clear();
                         result.putAll(commonFields);
                         Map<String, Object> voucher = (Map<String, Object>) vouchersArray.get(i);
-                        if (voucher.get("voucherCode") != null)
+                        if (voucher.containsKey("voucherCode") && voucher.get("voucherCode") != null)
                           {
                             result.put("voucherCode", voucher.get("voucherCode"));
                           }
@@ -99,14 +99,33 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                           {
                             result.put("voucherCode", "");
                           }
-                        GUIManagedObject voucherObject = voucherService.getStoredVoucher((String)voucher.get("voucherID"));
-                        Voucher currentVoucher = (Voucher) voucherObject;
-                        String supplierID = currentVoucher.getSupplierID();
-                        GUIManagedObject supplierObject = supplierService.getStoredSupplier(supplierID);
-                        
-                        if (supplierObject != null)
+                        String supplierID = null;
+                        Voucher currentVoucher = null;
+                        if (voucher.containsKey("voucherID") && voucher.get("voucherID") != null)
                           {
-                            result.put("supplier", ((Supplier) supplierObject).getGUIManagedObjectDisplay());
+                            GUIManagedObject voucherObject = voucherService
+                                .getStoredVoucher((String) voucher.get("voucherID"));
+                            if (voucherObject != null && voucherObject instanceof Voucher)
+                              {
+                                currentVoucher = (Voucher) voucherObject;
+                                if (currentVoucher != null && currentVoucher instanceof Voucher)
+                                  {
+                                    supplierID = currentVoucher.getSupplierID();
+                                  }
+                              }
+                          }
+                        if (supplierID != null)
+                          {
+                            GUIManagedObject supplierObject = supplierService.getStoredSupplier(supplierID);
+
+                            if (supplierObject != null && supplierObject instanceof Supplier)
+                              {
+                                result.put("supplier", ((Supplier) supplierObject).getGUIManagedObjectDisplay());
+                              }
+                            else
+                              {
+                                result.put("supplier", "");
+                              }
                           }
                         else
                           {
@@ -136,11 +155,19 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                           {
                             result.put("voucherStatus", "");
                           }
-                         
-                        GUIManagedObject voucherTypeObject = voucherTypeService.getStoredVoucherType(currentVoucher.getVoucherTypeId());
-                        if (voucherTypeObject != null)
+                        if (currentVoucher != null && currentVoucher instanceof Voucher)
                           {
-                            result.put("voucherType", ((VoucherType) voucherTypeObject).getGUIManagedObjectDisplay());
+                            GUIManagedObject voucherTypeObject = voucherTypeService
+                                .getStoredVoucherType(currentVoucher.getVoucherTypeId());
+                            if (voucherTypeObject != null && voucherTypeObject instanceof VoucherType)
+                              {
+                                result.put("voucherType",
+                                    ((VoucherType) voucherTypeObject).getGUIManagedObjectDisplay());
+                              }
+                            else
+                              {
+                                result.put("voucherType", "");
+                              }
                           }
                         else
                           {
