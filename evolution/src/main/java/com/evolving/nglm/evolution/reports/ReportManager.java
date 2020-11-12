@@ -574,8 +574,16 @@ public class ReportManager implements Watcher
               }
             catch (IOException e1)
               {
-                log.info("issue when deleting partial report " + csvFilename + " : " + e1.getLocalizedMessage());
-                // if unable to delete report, do not restart it (allOK = true)
+                if (e1 instanceof java.nio.file.NoSuchFileException)
+                  {
+                    log.debug("Report file was not created yet");
+                    allOK = false; // need to restart this report
+                  }
+                else
+                  {
+                    log.info("issue when deleting partial report " + csvFilename + " : " + e1.getClass().getCanonicalName()+ " " + e1.getLocalizedMessage());
+                    // if unable to delete report, do not restart it (allOK = true)
+                  }
               }
           }
         log.trace("---> Finished report " + reportName + " in " + csvFilename);
