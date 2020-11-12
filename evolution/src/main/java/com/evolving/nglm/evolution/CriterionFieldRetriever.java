@@ -196,7 +196,12 @@ public abstract class CriterionFieldRetriever
   //
   
   public static Object getProfilePointLoyaltyProgramChangeTierOldValue(SubscriberEvaluationRequest evaluationRequest, String fieldName) {
+    
+    // Check if this is for the good loyalty program...
     ProfileLoyaltyProgramChangeEvent event = (ProfileLoyaltyProgramChangeEvent)(evaluationRequest.getSubscriberStreamEvent());
+    String[] fields = fieldName.split("\\.");
+    if(! fields[2].equals(event.getLoyaltyProgramID())) { return null; }
+    
     if(event.getInfos().get(LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos.ENTERING.getExternalRepresentation()) != null)
       {
         return LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos.ENTERING.name();
@@ -209,7 +214,11 @@ public abstract class CriterionFieldRetriever
   
   public static Object getProfilePointLoyaltyProgramChangeTierNewValue(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
     {
+      // Check if this is for the good loyalty program...
       ProfileLoyaltyProgramChangeEvent event = (ProfileLoyaltyProgramChangeEvent)(evaluationRequest.getSubscriberStreamEvent());
+      String[] fields = fieldName.split("\\.");
+      if(! fields[2].equals(event.getLoyaltyProgramID())) { return null; }
+      
       if(event.getInfos().get(LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos.LEAVING.getExternalRepresentation()) != null)
         {
           return LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos.LEAVING.name();
@@ -222,7 +231,10 @@ public abstract class CriterionFieldRetriever
   
   public static Object getProfilePointLoyaltyProgramUpdated(SubscriberEvaluationRequest evaluationRequest, String fieldName) 
     {
+      // Check if this is for the good loyalty program...
       ProfileLoyaltyProgramChangeEvent event = (ProfileLoyaltyProgramChangeEvent)(evaluationRequest.getSubscriberStreamEvent());
+      String[] fields = fieldName.split("\\.");
+      if(! fields[2].equals(event.getLoyaltyProgramID())) { return null; }
       return event.getLoyaltyProgramID().equals(fieldName.substring(LoyaltyProgramPoints.CRITERION_FIELD_NAME_IS_UPDATED_PREFIX.length()));
     }
 

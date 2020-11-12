@@ -254,7 +254,7 @@ public class DynamicEventDeclarationsService extends GUIService
             availableValues.add(v);
             
             criterionFieldOLDJSON.put("id", LoyaltyProgramPoints.CRITERION_FIELD_NAME_OLD_PREFIX + loyaltyProgramPoints.getLoyaltyProgramID());
-            criterionFieldOLDJSON.put("display", "Old " + loyaltyProgramPoints.getLoyaltyProgramName() + " tier");
+            criterionFieldOLDJSON.put("display", "Old " + loyaltyProgramPoints.getGUIManagedObjectDisplay() + " tier");
             criterionFieldOLDJSON.put("dataType", "string");
             criterionFieldOLDJSON.put("retriever", "getProfilePointLoyaltyProgramChangeTierOldValue");
             
@@ -280,7 +280,7 @@ public class DynamicEventDeclarationsService extends GUIService
             availableValues.add(v);
             
             criterionFieldNEWJSON.put("id", LoyaltyProgramPoints.CRITERION_FIELD_NAME_NEW_PREFIX + loyaltyProgramPoints.getLoyaltyProgramID());
-            criterionFieldNEWJSON.put("display", "New " + loyaltyProgramPoints.getLoyaltyProgramName() + " tier");
+            criterionFieldNEWJSON.put("display", "New " + loyaltyProgramPoints.getGUIManagedObjectDisplay() + " tier");
             criterionFieldNEWJSON.put("dataType", "string");
             criterionFieldNEWJSON.put("retriever", "getProfilePointLoyaltyProgramChangeTierNewValue");
             
@@ -293,7 +293,7 @@ public class DynamicEventDeclarationsService extends GUIService
             
             JSONObject criterionFielUpdatedJSON = new JSONObject();
             criterionFielUpdatedJSON.put("id", LoyaltyProgramPoints.CRITERION_FIELD_NAME_IS_UPDATED_PREFIX + loyaltyProgramPoints.getLoyaltyProgramID());
-            criterionFielUpdatedJSON.put("display", "Is " + loyaltyProgramPoints.getLoyaltyProgramName() + " updated");
+            criterionFielUpdatedJSON.put("display", "Is " + loyaltyProgramPoints.getGUIManagedObjectDisplay() + " updated");
             criterionFielUpdatedJSON.put("dataType", "boolean");
             criterionFielUpdatedJSON.put("retriever", "getProfilePointLoyaltyProgramUpdated");
             CriterionField criterionFieldUpdated = new CriterionField(criterionFielUpdatedJSON);

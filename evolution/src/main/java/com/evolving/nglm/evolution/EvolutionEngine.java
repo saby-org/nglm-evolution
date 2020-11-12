@@ -3556,6 +3556,8 @@ public class EvolutionEngine
     // Tag the subscriber state with the event's information, log a warn if a conflict appears (is the date enough to segregate 2 
     //
     
+    if(loyaltyWorflowID == null) { return false; }
+    
     String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + loyaltyWorflowID;
     List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
     if(workflowTriggering.contains(toBeAdded))
@@ -4546,11 +4548,14 @@ public class EvolutionEngine
 				                  {
 				                    // this is the workflow to trig (good event, good date, good required workflow
 				                    calledJourney = true;
+				                    toBeRemoved.add(currentWFToTrigger);
 				                  }               
 				              }
 				          }
 			        }
            }
+        subscriberStateUpdated = subscriberStateUpdated || workflowTriggering.removeAll(toBeRemoved);
+        
         //  enter journey?
         //
 
@@ -4772,7 +4777,7 @@ public class EvolutionEngine
 
                 JourneyRequest journeyRequest;
                 ParameterMap boundParameters;
-                if (calledJourney)
+                if (calledJourney && evolutionEvent instanceof JourneyRequest)
                   {
                     journeyRequest = (JourneyRequest) evolutionEvent;
                     boundParameters = new ParameterMap(journey.getBoundParameters());
@@ -4839,7 +4844,7 @@ public class EvolutionEngine
                 *
                 *****************************************/
 
-                if (calledJourney)
+                if (calledJourney && journeyRequest != null) // calledJourney can be true and journeyRequest null in case of LoyaltyProgram workflow 
                   {
                     journeyRequest.setEligible(true);
                   }
@@ -4863,7 +4868,7 @@ public class EvolutionEngine
             *
             *****************************************/
             
-            if (calledJourney)
+            if (calledJourney && evolutionEvent instanceof JourneyRequest)
               {
                 JourneyRequest journeyRequest = (JourneyRequest) evolutionEvent;
                 if (journeyRequest.isPending())
