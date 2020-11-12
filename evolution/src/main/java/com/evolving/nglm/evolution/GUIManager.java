@@ -7331,57 +7331,81 @@ public class GUIManager
         *  instantiate offer
         *
         ****************************************/
-        Boolean simpleOffer = JSONUtilities.decodeBoolean(jsonRoot, "simpleOffer", Boolean.FALSE);
-        if (existingOffer == null || simpleOffer == false) {
+        if (existingOffer == null) {
         jsonRoot.put("simpleOffer", false); // offer not a simpleOffer
         }
         
-        if (existingOffer != null && simpleOffer == true) {
-          if (existingOffer instanceof Offer) {
-            String display = ((Offer) existingOffer).getGUIManagedObjectDisplay();
-            String jsonRootDisplay = JSONUtilities.decodeString(jsonRoot, "display", false);
-            if (!(jsonRootDisplay.equals(display))) {
-              response.put("responseCode", "offerNotValid");
-              response.put("responseMessage", "The display cannot be changed for the existing simpleOffer");
-              return JSONUtilities.encodeObject(response);
-            }
-            Set<OfferProduct> offerProducts = ((Offer) existingOffer).getOfferProducts();
-                if (offerProducts != null && !(offerProducts).isEmpty())
+        if (existingOffer != null) {
+            if (existingOffer instanceof Offer)
+              {
+                if (((Offer) existingOffer).getSimpleOffer() == true)
                   {
-                    OfferProduct offerProduct = offerProducts.stream().findFirst().get(); //simple offer can have only one product
-                    OfferProduct jsonRootOfferProduct = null;
-                    JSONArray jsonRootOfferProducts = JSONUtilities.decodeJSONArray(jsonRoot, "products", false);
-                    JSONObject jsonRootofferProduct = new JSONObject();
-                    if (jsonRootOfferProducts != null) {
-                      jsonRootofferProduct = (JSONObject) jsonRootOfferProducts.get(0); //simple offer can have only one product
-                    }
-                    if (jsonRootOfferProducts == null || (jsonRootOfferProducts != null && (!(offerProduct.getProductID().equals(jsonRootofferProduct.get("productID").toString())) || (offerProduct.getQuantity() != ((Number)jsonRootofferProduct.get("quantity")).intValue()))))
+                    String display = ((Offer) existingOffer).getGUIManagedObjectDisplay();
+                    Set<OfferProduct> offerProducts = ((Offer) existingOffer).getOfferProducts();
+                    Set<OfferVoucher> offerVouchers = ((Offer) existingOffer).getOfferVouchers();
+                    String jsonRootDisplay = JSONUtilities.decodeString(jsonRoot, "display", false);
+                    if (!(jsonRootDisplay.equals(display)))
                       {
                         response.put("responseCode", "offerNotValid");
-                        response.put("responseMessage", "The product cannot be changed for the existing simpleOffer");
+                        response.put("responseMessage", "The display cannot be changed for the existing simpleOffer");
                         return JSONUtilities.encodeObject(response);
                       }
-                  }
-                Set<OfferVoucher> offerVouchers = ((Offer) existingOffer).getOfferVouchers();
-                if (offerVouchers != null && !(offerVouchers).isEmpty())
-                  {
-                    OfferVoucher offerVoucher = offerVouchers.stream().findFirst().get(); //simple offer can have only one voucher
-                    JSONArray jsonRootOfferVouchers = JSONUtilities.decodeJSONArray(jsonRoot, "vouchers", false);                    
-                    JSONObject jsonRootofferVoucher = new JSONObject();
-                    if (jsonRootOfferVouchers != null) {
-                      jsonRootofferVoucher = (JSONObject) jsonRootOfferVouchers.get(0); //simple offer can have only one voucher
-                    }
-                    if (jsonRootOfferVouchers == null || (jsonRootOfferVouchers != null && (!(offerVoucher.getVoucherID().equals(jsonRootofferVoucher.get("voucherID").toString())) || (offerVoucher.getQuantity() != ((Number)jsonRootofferVoucher.get("quantity")).intValue()))))
+                    else if (offerProducts != null && !(offerProducts).isEmpty())
                       {
-                        response.put("responseCode", "offerNotValid");
-                        response.put("responseMessage", "The voucher cannot be changed for the existing simpleOffer");
-                        return JSONUtilities.encodeObject(response);
+                        OfferProduct offerProduct = offerProducts.stream().findFirst().get(); // simple offer can have only one product
+                                                                                              
+                        OfferProduct jsonRootOfferProduct = null;
+                        JSONArray jsonRootOfferProducts = JSONUtilities.decodeJSONArray(jsonRoot, "products", false);
+                        JSONObject jsonRootofferProduct = new JSONObject();
+                        if (jsonRootOfferProducts != null)
+                          {
+                            jsonRootofferProduct = (JSONObject) jsonRootOfferProducts.get(0); // simple offer can have only one product
+                                                                                              
+                          }
+                        if (jsonRootOfferProducts == null || (jsonRootOfferProducts != null
+                            && (!(offerProduct.getProductID().equals(jsonRootofferProduct.get("productID").toString()))
+                                || (offerProduct.getQuantity() != ((Number) jsonRootofferProduct.get("quantity"))
+                                    .intValue()))))
+                          {
+                            response.put("responseCode", "offerNotValid");
+                            response.put("responseMessage",
+                                "The product cannot be changed for the existing simpleOffer");
+                            return JSONUtilities.encodeObject(response);
+                          }
                       }
+                    else if (offerVouchers != null && !(offerVouchers).isEmpty())
+                      {
+                        OfferVoucher offerVoucher = offerVouchers.stream().findFirst().get(); // simple offer can have only one voucher
+                                                                                             
+                        JSONArray jsonRootOfferVouchers = JSONUtilities.decodeJSONArray(jsonRoot, "vouchers", false);
+                        JSONObject jsonRootofferVoucher = new JSONObject();
+                        if (jsonRootOfferVouchers != null)
+                          {
+                            jsonRootofferVoucher = (JSONObject) jsonRootOfferVouchers.get(0); //simple offer can have only one vouche
+                          }
+                        if (jsonRootOfferVouchers == null || (jsonRootOfferVouchers != null
+                            && (!(offerVoucher.getVoucherID().equals(jsonRootofferVoucher.get("voucherID").toString()))
+                                || (offerVoucher.getQuantity() != ((Number) jsonRootofferVoucher.get("quantity"))
+                                    .intValue()))))
+                          {
+                            response.put("responseCode", "offerNotValid");
+                            response.put("responseMessage",
+                                "The voucher cannot be changed for the existing simpleOffer");
+                            return JSONUtilities.encodeObject(response);
+                          }
+                      }
+                    else
+                      {
+                        jsonRoot.put("simpleOffer", true);
+                      }
+
                   }
-            
-            
-            
-          }
+                else
+                  {
+                    jsonRoot.put("simpleOffer", false);
+                  }
+
+              }
           
         
         }
@@ -10913,7 +10937,20 @@ public class GUIManager
       }
     for (GUIManagedObject product : productsObjects)
       {
-        products.add(productService.generateResponseJSON(product, fullDetails, now));
+        JSONObject productJSON = productService.generateResponseJSON(product, fullDetails, now);
+        if (!fullDetails)
+          {
+            if (product.getJSONRepresentation().get("simpleOffer") != null)
+              {
+                productJSON.put("simpleOffer", product.getJSONRepresentation().get("simpleOffer"));
+              }
+            else
+              {
+                productJSON.put("simpleOffer", "");
+              }
+          }
+        products.add(productJSON);
+        
       }
 
     /*****************************************
@@ -11039,10 +11076,40 @@ public class GUIManager
     
     /*****************************************
     *
-    *  Normal product creation. Not created from simpleOffer
+    * check if product is created by simpleOffer
     *
     *****************************************/
-    jsonRoot.put("simpleOffer", false);
+    if (existingProduct == null)
+      {
+        jsonRoot.put("simpleOffer", false); // offer not a simpleOffer
+      }
+
+    if (existingProduct != null)
+      {
+        if (existingProduct instanceof Product)
+          {
+            if (((Product) existingProduct).getSimpleOffer() == true)
+              {
+                String display = ((Product) existingProduct).getGUIManagedObjectDisplay();
+                String jsonRootDisplay = JSONUtilities.decodeString(jsonRoot, "display", false);
+                if (!(jsonRootDisplay.equals(display)))
+                  {
+                    response.put("responseCode", "productNotValid");
+                    response.put("responseMessage", "The display cannot be changed for the existing product");
+                    return JSONUtilities.encodeObject(response);
+                  }
+                else
+                  {
+                    jsonRoot.put("simpleOffer", true);
+                  }
+
+              }
+            else
+              {
+                jsonRoot.put("simpleOffer", false);
+              }
+          }
+      }
     
     
 
@@ -13818,7 +13885,19 @@ public class GUIManager
       }
     for (GUIManagedObject voucher : voucherObjects)
       {
-        vouchers.add(voucherService.generateResponseJSON(voucher, fullDetails, now));
+        JSONObject voucherJSON = voucherService.generateResponseJSON(voucher, fullDetails, now);
+        if (!fullDetails)
+          {
+            if (voucher.getJSONRepresentation().get("simpleOffer") != null)
+              {
+                voucherJSON.put("simpleOffer", voucher.getJSONRepresentation().get("simpleOffer"));
+              }
+            else
+              {
+                voucherJSON.put("simpleOffer", "");
+              }
+          }
+        vouchers.add(voucherJSON);
       }
 
     /*****************************************
@@ -13945,10 +14024,40 @@ public class GUIManager
 
     /*****************************************
     *
-    *  Normal voucher creation. Not created from simpleOffer
+    *  check if voucher created by simple offer or standard voucher
     *
     *****************************************/
-    jsonRoot.put("simpleOffer", false);
+    if (existingVoucher == null)
+      {
+        jsonRoot.put("simpleOffer", false); // offer not a simpleOffer
+      }
+    
+    if (existingVoucher != null)
+      {
+        if (existingVoucher instanceof Voucher)
+          {
+            if (((Voucher) existingVoucher).getSimpleOffer() == true)
+              {
+                String display = ((Voucher) existingVoucher).getGUIManagedObjectDisplay();
+                String jsonRootDisplay = JSONUtilities.decodeString(jsonRoot, "display", false);
+                if (!(jsonRootDisplay.equals(display)))
+                  {
+                    response.put("responseCode", "voucherNotValid");
+                    response.put("responseMessage", "The display cannot be changed for the existing voucher");
+                    return JSONUtilities.encodeObject(response);
+                  }
+                else
+                  {
+                    jsonRoot.put("simpleOffer", true);
+                  }
+              }
+            else
+              {
+                jsonRoot.put("simpleOffer", false);
+              }
+
+          }
+      }
     
     
     /*****************************************
