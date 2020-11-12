@@ -7,10 +7,16 @@
 package com.evolving.nglm.evolution.reports;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
@@ -255,7 +261,7 @@ public class ReportManager implements Watcher
               // We don't care about SessionExpired, because we just connected, and we would not know what to do in this case (we're already restarting)  
               if (e.code() == KeeperException.Code.CONNECTIONLOSS)
                 {
-                  synchronized (this) { try { wait(5000L); } catch (InterruptedException ie) {} }
+                  try { Thread.sleep(5000); } catch (InterruptedException ie) {}
                   continue;
                 }
             }
@@ -321,7 +327,7 @@ public class ReportManager implements Watcher
     // Wait some random time (30-60 sec), so that when ReportManager starts with a big backlog, all threads do not start simultaneously
     long waitTimeSec = 30L + (long) (new java.util.Random().nextInt(30));
     log.trace("Wait " + waitTimeSec + " seconds");
-    synchronized (this) { try { wait(waitTimeSec*1000L); } catch (InterruptedException ie) {} }
+    try { Thread.sleep(waitTimeSec*1000L); } catch (InterruptedException ie) {}
     log.trace("Finished Wait " + waitTimeSec + " seconds");
   }
 
@@ -379,9 +385,26 @@ public class ReportManager implements Watcher
                 } 
               else
                 {
-                  log.debug("report = "+report);
-                  handleReport(reportName, reportGenerationDate, report, restOfLine);
-                  reportManagerStatistics.incrementReportCount();
+                  boolean allOK = false;
+                  int safeguardCount = 0;
+                  while (!allOK)
+                    {
+                      log.debug("report = "+report);
+                      allOK = handleReport(reportName, reportGenerationDate, report, restOfLine);
+                      reportManagerStatistics.incrementReportCount();
+                      if (!allOK)
+                        {
+                          log.info("There was an issue producing " + reportName + " restarting it for the " + safeguardCount++ + " time");
+                          if (safeguardCount > 3)
+                            {
+                              allOK = true; // after a while, stop, this should stay exceptional
+                            }
+                          else
+                            {
+                              try { Thread.sleep(60*1000L); } catch (InterruptedException ie) {} // wait 1 minute
+                            }
+                        }
+                    }
                 }
             }
             catch (KeeperException e) { handleSessionExpired(e, "Issue while reading from control node "+controlFile); }
@@ -488,9 +511,10 @@ public class ReportManager implements Watcher
   *
   *****************************************/
   
-  private void handleReport(String reportName, final Date reportGenerationDate, Report report, String restOfLine)
+  private boolean handleReport(String reportName, final Date reportGenerationDate, Report report, String restOfLine)
   {
     log.trace("---> Starting report " + reportName + " " + restOfLine);
+    boolean allOK = true;
     String[] params = null;
     if (!"".equals(restOfLine))
       {
@@ -536,11 +560,33 @@ public class ReportManager implements Watcher
           } 
         catch (Exception e)
           {
-            // handle any kind of exception that can happen during generating the report,
-            // and do not crash the container
-            log.error("Exception processing report " + reportName + " : " + e);
+            // handle any kind of exception that can happen during generating the report, and do not crash the container
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.error("Exception processing report " + reportName + " in " + csvFilename + " : {}", stackTraceWriter.toString());
+            // the report may have been partially generated. We need to remove it and restart
+            Path path = FileSystems.getDefault().getPath(csvFilename);
+            try
+              {
+                log.info("Removing partial report " + csvFilename);
+                Files.delete(path);
+                allOK = false; // need to restart this report
+              }
+            catch (IOException e1)
+              {
+                if (e1 instanceof java.nio.file.NoSuchFileException)
+                  {
+                    log.debug("Report file was not created yet");
+                    allOK = false; // need to restart this report
+                  }
+                else
+                  {
+                    log.info("issue when deleting partial report " + csvFilename + " : " + e1.getClass().getCanonicalName()+ " " + e1.getLocalizedMessage());
+                    // if unable to delete report, do not restart it (allOK = true)
+                  }
+              }
           }
-        log.trace("---> Finished report " + reportName);
+        log.trace("---> Finished report " + reportName + " in " + csvFilename);
       } 
     catch (ClassNotFoundException e)
       {
@@ -557,6 +603,7 @@ public class ReportManager implements Watcher
         log.error("Error : " + e.getLocalizedMessage(), e);
         reportManagerStatistics.incrementFailureCount();
       }
+    return allOK;
   }
 
   /*****************************************
