@@ -108,7 +108,7 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                             if (voucherObject != null && voucherObject instanceof Voucher)
                               {
                                 currentVoucher = (Voucher) voucherObject;
-                                if (currentVoucher != null && currentVoucher instanceof Voucher)
+                                if (currentVoucher != null)
                                   {
                                     supplierID = currentVoucher.getSupplierID();
                                   }
@@ -131,7 +131,7 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                           {
                             result.put("supplier", "");
                           }
-                        if (voucher.get("voucherDeliveryDate") != null)
+                        if (voucher.containsKey("voucherDeliveryDate") && voucher.get("voucherDeliveryDate") != null)
                           {
                             result.put("deliveryDate", dateOrEmptyString(voucher.get("voucherDeliveryDate")));
                           }
@@ -139,7 +139,7 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                           {
                             result.put("deliveryDate", "");
                           }
-                        if (voucher.get("voucherExpiryDate") != null)
+                        if (voucher.containsKey("voucherExpiryDate") && voucher.get("voucherExpiryDate") != null)
                           {
                             result.put("expiryDate", dateOrEmptyString(voucher.get("voucherExpiryDate")));
                           }
@@ -147,7 +147,7 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                           {
                             result.put("expiryDate", "");
                           }
-                        if (voucher.get("voucherStatus") != null)
+                        if (voucher.containsKey("voucherStatus") && voucher.get("voucherStatus") != null)
                           {
                             result.put("voucherStatus", voucher.get("voucherStatus"));
                           }

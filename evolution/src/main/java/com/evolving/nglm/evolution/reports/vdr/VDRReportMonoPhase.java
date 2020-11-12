@@ -144,7 +144,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
           {
             vdrRecs.put(eventID, "");
           }
-        
+
         if (VDRFields.containsKey(eventDatetime) && VDRFields.get(eventDatetime) != null)
           {
             Object eventDatetimeObj = VDRFields.get(eventDatetime);
@@ -172,7 +172,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
         // Compute featureName and ModuleName from ID
         if (VDRFields.containsKey(moduleId) && VDRFields.get(moduleId) != null)
           {
-            Module module = Module.fromExternalRepresentation(String.valueOf(VDRFields.get(moduleId)));           
+            Module module = Module.fromExternalRepresentation(String.valueOf(VDRFields.get(moduleId)));
             vdrRecs.put(moduleName, module.toString());
           }
         else
@@ -228,7 +228,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
           {
             vdrRecs.put(expiryDate, "");
           }
-         
+
         if (VDRFields.containsKey("action") && VDRFields.get("action") != null)
           {
             vdrRecs.put(operation, VDRFields.get("action"));
@@ -237,47 +237,57 @@ public class VDRReportMonoPhase implements ReportCsvFactory
           {
             vdrRecs.put(operation, "");
           }
-        if (VDRFields.containsKey("voucherID") &&  VDRFields.get("voucherID") != null)
+        String voucherID = null;
+        if (VDRFields.containsKey("voucherID") && VDRFields.get("voucherID") != null)
           {
-            String voucherID = VDRFields.get("voucherID").toString();
-            Voucher voucher = null;
-            String voucherTypeID = null;
-            if (voucherID != null)
+            voucherID = VDRFields.get("voucherID").toString();
+          }
+        Voucher voucher = null;
+        String voucherTypeID = null;
+        if (voucherID != null)
+          {
+            voucher = (Voucher) voucherService.getStoredVoucher(voucherID);
+          }
+        String supplierID = null;
+        if (voucher != null && voucher instanceof Voucher)
+          {
+            supplierID = voucher.getSupplierID();
+            voucherTypeID = voucher.getVoucherTypeId();
+          }
+
+        if (supplierID != null && !(supplierID.isEmpty()))
+          {
+            Supplier currentSupplier = (Supplier) (supplierService.getStoredSupplier(supplierID));
+            if (currentSupplier != null && currentSupplier instanceof Supplier)
               {
-                voucher = (Voucher) voucherService.getStoredVoucher(voucherID);
+                vdrRecs.put(supplier, currentSupplier.getGUIManagedObjectDisplay());
               }
-            String supplierID = null;
-            if (voucher != null && voucher instanceof Voucher)
+            else
               {
-                supplierID = voucher.getSupplierID();
-                voucherTypeID = voucher.getVoucherTypeId();
-              }
-            
-            if (supplierID != null && !(supplierID.isEmpty()))
-              {
-                Supplier currentSupplier = (Supplier) (supplierService.getStoredSupplier(supplierID));
-                if (currentSupplier != null && currentSupplier instanceof Supplier)
-                  {
-                    vdrRecs.put(supplier, currentSupplier.getGUIManagedObjectDisplay());
-                  }
-                else
-                  {
-                    vdrRecs.put(supplier, "");
-                  }
-              }
-            if (voucherTypeID != null && !(voucherTypeID.isEmpty()))
-              {
-                VoucherType currentVoucherType = (VoucherType) (voucherTypeService.getStoredVoucherType(voucherTypeID));
-                if (currentVoucherType != null && currentVoucherType instanceof VoucherType)
-                  {
-                    vdrRecs.put(voucherType, currentVoucherType.getGUIManagedObjectDisplay());
-                  }
-                else
-                  {
-                    vdrRecs.put(voucherType, "");
-                  }
+                vdrRecs.put(supplier, "");
               }
           }
+        else
+          {
+            vdrRecs.put(supplier, "");
+          }
+        if (voucherTypeID != null && !(voucherTypeID.isEmpty()))
+          {
+            VoucherType currentVoucherType = (VoucherType) (voucherTypeService.getStoredVoucherType(voucherTypeID));
+            if (currentVoucherType != null && currentVoucherType instanceof VoucherType)
+              {
+                vdrRecs.put(voucherType, currentVoucherType.getGUIManagedObjectDisplay());
+              }
+            else
+              {
+                vdrRecs.put(voucherType, "");
+              }
+          }
+        else
+          {
+            vdrRecs.put(voucherType, "");
+          }
+
         if (VDRFields.containsKey(returnCode) && VDRFields.get(returnCode) != null)
           {
             Object code = VDRFields.get(returnCode);
