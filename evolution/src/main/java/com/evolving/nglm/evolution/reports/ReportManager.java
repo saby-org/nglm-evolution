@@ -7,6 +7,8 @@
 package com.evolving.nglm.evolution.reports;
 
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
@@ -538,7 +540,10 @@ public class ReportManager implements Watcher
           {
             // handle any kind of exception that can happen during generating the report,
             // and do not crash the container
-            log.error("Exception processing report " + reportName + " : " + e);
+            
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.error("Exception processing report " + reportName+ " : {}", stackTraceWriter.toString());
           }
         log.trace("---> Finished report " + reportName);
       } 
