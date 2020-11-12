@@ -7,12 +7,16 @@
 package com.evolving.nglm.evolution.reports;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
@@ -381,9 +385,21 @@ public class ReportManager implements Watcher
                 } 
               else
                 {
-                  log.debug("report = "+report);
-                  handleReport(reportName, reportGenerationDate, report, restOfLine);
-                  reportManagerStatistics.incrementReportCount();
+                  boolean allOK = false;
+                  int safeguardCount = 0;
+                  while (!allOK)
+                    {
+                      log.debug("report = "+report);
+                      allOK = handleReport(reportName, reportGenerationDate, report, restOfLine);
+                      reportManagerStatistics.incrementReportCount();
+                      if (!allOK)
+                        {
+                          log.info("There was an issue producing " + reportName + " restarting it for the " + safeguardCount++ + " time");
+                          if (safeguardCount > 3)
+                            break; // after a while, stop, this should stay exceptional
+                          synchronized (this) { try { wait(60*1000L); } catch (InterruptedException ie) {} } // wait 1 minute
+                        }
+                    }
                 }
             }
             catch (KeeperException e) { handleSessionExpired(e, "Issue while reading from control node "+controlFile); }
@@ -490,9 +506,10 @@ public class ReportManager implements Watcher
   *
   *****************************************/
   
-  private void handleReport(String reportName, final Date reportGenerationDate, Report report, String restOfLine)
+  private boolean handleReport(String reportName, final Date reportGenerationDate, Report report, String restOfLine)
   {
     log.trace("---> Starting report " + reportName + " " + restOfLine);
+    boolean allOK = true;
     String[] params = null;
     if (!"".equals(restOfLine))
       {
@@ -538,14 +555,25 @@ public class ReportManager implements Watcher
           } 
         catch (Exception e)
           {
-            // handle any kind of exception that can happen during generating the report,
-            // and do not crash the container
-            
+            // handle any kind of exception that can happen during generating the report, and do not crash the container
             StringWriter stackTraceWriter = new StringWriter();
             e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-            log.error("Exception processing report " + reportName+ " : {}", stackTraceWriter.toString());
+            log.error("Exception processing report " + reportName + " in " + csvFilename + " : {}", stackTraceWriter.toString());
+            // the report may have been partially generated. We need to remove it and restart
+            Path path = FileSystems.getDefault().getPath(csvFilename);
+            try
+              {
+                log.info("Removing partial report " + csvFilename);
+                Files.delete(path);
+                allOK = false; // need to restart this report
+              }
+            catch (IOException e1)
+              {
+                log.info("issue when deleting partial report " + csvFilename + " : " + e1.getLocalizedMessage());
+                // if unable to delete report, do not restart it (allOK = true)
+              }
           }
-        log.trace("---> Finished report " + reportName);
+        log.trace("---> Finished report " + reportName + " in " + csvFilename);
       } 
     catch (ClassNotFoundException e)
       {
@@ -562,6 +590,7 @@ public class ReportManager implements Watcher
         log.error("Error : " + e.getLocalizedMessage(), e);
         reportManagerStatistics.incrementFailureCount();
       }
+    return allOK;
   }
 
   /*****************************************
