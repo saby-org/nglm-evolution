@@ -261,7 +261,7 @@ public class ReportManager implements Watcher
               // We don't care about SessionExpired, because we just connected, and we would not know what to do in this case (we're already restarting)  
               if (e.code() == KeeperException.Code.CONNECTIONLOSS)
                 {
-                  synchronized (this) { try { wait(5000L); } catch (InterruptedException ie) {} }
+                  try { Thread.sleep(5000); } catch (InterruptedException ie) {}
                   continue;
                 }
             }
@@ -327,7 +327,7 @@ public class ReportManager implements Watcher
     // Wait some random time (30-60 sec), so that when ReportManager starts with a big backlog, all threads do not start simultaneously
     long waitTimeSec = 30L + (long) (new java.util.Random().nextInt(30));
     log.trace("Wait " + waitTimeSec + " seconds");
-    synchronized (this) { try { wait(waitTimeSec*1000L); } catch (InterruptedException ie) {} }
+    try { Thread.sleep(waitTimeSec*1000L); } catch (InterruptedException ie) {}
     log.trace("Finished Wait " + waitTimeSec + " seconds");
   }
 
@@ -396,8 +396,13 @@ public class ReportManager implements Watcher
                         {
                           log.info("There was an issue producing " + reportName + " restarting it for the " + safeguardCount++ + " time");
                           if (safeguardCount > 3)
-                            break; // after a while, stop, this should stay exceptional
-                          synchronized (this) { try { wait(60*1000L); } catch (InterruptedException ie) {} } // wait 1 minute
+                            {
+                              allOK = true; // after a while, stop, this should stay exceptional
+                            }
+                          else
+                            {
+                              try { Thread.sleep(60*1000L); } catch (InterruptedException ie) {} // wait 1 minute
+                            }
                         }
                     }
                 }
