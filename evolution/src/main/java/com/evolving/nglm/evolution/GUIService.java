@@ -833,7 +833,7 @@ public class GUIService
               }
 
             if (guiManagedObject != null)
-              log.info("read {} {}", guiManagedObject.getClass().getSimpleName(), guiManagedObjectID);
+              log.debug("read {} {}", guiManagedObject.getClass().getSimpleName(), guiManagedObjectID);
             else
               log.info("clearing {}", guiManagedObjectID);
 
