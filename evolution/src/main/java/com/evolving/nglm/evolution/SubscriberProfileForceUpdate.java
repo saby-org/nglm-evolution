@@ -34,7 +34,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-public class SubscriberProfileForceUpdate implements SubscriberStreamEvent
+public class SubscriberProfileForceUpdate implements SubscriberStreamEvent, Action
 {
   /*****************************************
   *
@@ -234,5 +234,11 @@ public class SubscriberProfileForceUpdate implements SubscriberStreamEvent
     //
 
     return new SubscriberProfileForceUpdate(subscriberID, eventDate, parameterMap);
+  }
+  
+  @Override
+  public ActionType getActionType()
+  {
+    return ActionType.UpdateProfile;
   }
 }
