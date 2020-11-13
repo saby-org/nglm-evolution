@@ -159,7 +159,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   public boolean getSimpleOffer() { return simpleOffer; }
   public Integer getMaximumAcceptances() { return maximumAcceptances; }
   public Integer getMaximumAcceptancesPeriodDays() { return maximumAcceptancesPeriodDays; }
-  
+ 
   /*****************************************
   *
   *  evaluateProfileCriteria

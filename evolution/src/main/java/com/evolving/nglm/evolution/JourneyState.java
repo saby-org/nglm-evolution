@@ -22,9 +22,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class JourneyState implements Cleanable
@@ -102,6 +104,7 @@ public class JourneyState implements Cleanable
   private String journeyOutstandingDeliveryRequestID;
   private JourneyHistory journeyHistory;
   private Date journeyEndDate;
+  private List<VoucherChange> voucherChanges;
 
   /*****************************************
   *
@@ -125,6 +128,7 @@ public class JourneyState implements Cleanable
   public String getJourneyOutstandingDeliveryRequestID() { return journeyOutstandingDeliveryRequestID; }
   public JourneyHistory getJourneyHistory() { return journeyHistory; }
   public Date getJourneyEndDate() { return journeyEndDate; }
+  public List<VoucherChange> getVoucherChanges() { return voucherChanges; }
   
 
   /*****************************************
@@ -170,6 +174,7 @@ public class JourneyState implements Cleanable
     this.journeyOutstandingDeliveryRequestID = null;    
     this.journeyHistory = journeyHistory;
     this.journeyEndDate = journey.getEffectiveEndDate();
+    this.voucherChanges = new ArrayList<VoucherChange>();
   }
 
   /*****************************************
@@ -178,7 +183,7 @@ public class JourneyState implements Cleanable
   *
   *****************************************/
 
-  public JourneyState(String journeyInstanceID, JourneyRequest callingJourneyRequest, String journeyID, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, JourneyHistory journeyHistory, Date journeyEndDate)
+  public JourneyState(String journeyInstanceID, JourneyRequest callingJourneyRequest, String journeyID, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, JourneyHistory journeyHistory, Date journeyEndDate, List<VoucherChange> voucherChanges)
   {
     this.callingJourneyRequest = callingJourneyRequest;
     this.journeyInstanceID = journeyInstanceID;
@@ -196,6 +201,7 @@ public class JourneyState implements Cleanable
     this.journeyOutstandingDeliveryRequestID = journeyOutstandingDeliveryRequestID;
     this.journeyHistory = journeyHistory;
     this.journeyEndDate = journeyEndDate;
+    this.voucherChanges = voucherChanges;
   }
 
   /*****************************************
@@ -222,6 +228,7 @@ public class JourneyState implements Cleanable
     this.journeyOutstandingDeliveryRequestID = journeyState.getJourneyOutstandingDeliveryRequestID();
     this.journeyHistory = journeyState.getJourneyHistory();
     this.journeyEndDate = journeyState.getJourneyEndDate();
+    this.voucherChanges = journeyState.getVoucherChanges();
   }
 
   /*****************************************
@@ -290,12 +297,13 @@ public class JourneyState implements Cleanable
     String journeyOutstandingDeliveryRequestID = valueStruct.getString("journeyOutstandingDeliveryRequestID");
     JourneyHistory journeyHistory = JourneyHistory.serde().unpack(new SchemaAndValue(schema.field("journeyHistory").schema(), valueStruct.get("journeyHistory")));
     Date journeyEndDate = (schemaVersion >= 5) ? (Date) valueStruct.get("journeyEndDate") : new Date();
+    List<VoucherChange> voucherChanges = new ArrayList<VoucherChange>();
     
     //
     //  return
     //
 
-    return new JourneyState(journeyInstanceID, callingJourneyRequest, journeyID, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, journeyHistory, journeyEndDate);
+    return new JourneyState(journeyInstanceID, callingJourneyRequest, journeyID, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, journeyHistory, journeyEndDate, voucherChanges);
   }
   @Override
   public String toString()
