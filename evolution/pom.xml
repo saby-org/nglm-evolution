@@ -3,23 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>1.4.5_4-SNAPSHOT</version>
-  <version>1.4.5_3-SNAPSHOT</version>
-  <version>1.4.5_1-SNAPSHOT</version>
-  <version>1.4.5_1-SNAPSHOT</version>
-  <version>1.4.5_1-SNAPSHOT</version>
-  <version>1.4.5_4-SNAPSHOT</version>
-  <version>1.4.5_1-SNAPSHOT</version>
-  <version>1.4.5_3-SNAPSHOT</version>
-  <version>1.4.5_5-SNAPSHOT</version>
-  <version>1.4.5_1-SNAPSHOT</version>
-  <version>1.4.5_1-576-SNAPSHOT</version>
-  <version>1.4.5_4-EVPRO-665-SNAPSHOT</version>
-  <version>1.4.5_1-606-297-SNAPSHOT</version>
-  <version>1.4.5_1-581-SNAPSHOT</version>
-  <version>EVPRO-608-SNAPSHOT</version>
-  <version>release_1.4.5_3-EVPRO-191-0511-SNAPSHOT</version>
-  <version>EVPRO-564-SNAPSHOT</version>
+  <version>1.5.0_0-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -43,7 +27,7 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.5_3-SNAPSHOT</version>
+    <version>1.5.0_0-SNAPSHOT</version>
   </parent>
 
   <scm>
@@ -69,10 +53,10 @@
     <gui-jmr.version>1.4.58</gui-jmr.version>
     <gui-opc.version>1.4.16</gui-opc.version>
     <gui-iar.version>1.4.6</gui-iar.version>
-    <gui-opr.version>1.4.4</gui-opr.version>
-    <gui-stg.version>1.4.13</gui-stg.version>
-    <gui-sbm.version>1.4.27</gui-sbm.version>
-    <gui-lpm.version>1.4.12</gui-lpm.version>
+    <gui-opr.version>1.4.3</gui-opr.version>
+    <gui-stg.version>1.4.11</gui-stg.version>
+    <gui-sbm.version>1.4.24</gui-sbm.version>
+    <gui-lpm.version>1.4.10</gui-lpm.version>
     <gui-tls.version>1.4.17</gui-tls.version>
     <gui-audit.version>1.0.4</gui-audit.version>
 

@@ -3,23 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>1.4.5_4-SNAPSHOT</version>
-  <version>1.4.5_3-SNAPSHOT</version>
-  <version>1.4.5_1-SNAPSHOT</version>
-  <version>1.4.5_1-SNAPSHOT</version>
-  <version>1.4.5_1-SNAPSHOT</version>
-  <version>1.4.5_4-SNAPSHOT</version>
-  <version>1.4.5_1-SNAPSHOT</version>
-  <version>1.4.5_3-SNAPSHOT</version>
-  <version>1.4.5_5-SNAPSHOT</version>
-  <version>1.4.5_1-SNAPSHOT</version>
-  <version>1.4.5_1-576-SNAPSHOT</version>
-  <version>1.4.5_4-EVPRO-665-SNAPSHOT</version>
-  <version>1.4.5_1-606-297-SNAPSHOT</version>
-  <version>1.4.5_1-581-SNAPSHOT</version>
-  <version>EVPRO-608-SNAPSHOT</version>
-  <version>release_1.4.5_3-EVPRO-191-0511-SNAPSHOT</version>
-  <version>EVPRO-564-SNAPSHOT</version>
+  <version>1.5.0_0-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -41,13 +25,13 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>1.4.5_3-SNAPSHOT</version>
+    <version>1.5.0_0-SNAPSHOT</version>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>1.4.5_3-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>1.5.0_0-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->

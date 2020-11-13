@@ -6,9 +6,17 @@
 
 package com.evolving.nglm.evolution;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -74,6 +82,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.sun.net.httpserver.HttpExchange;
@@ -86,6 +95,8 @@ public class GUIManagerGeneral extends GUIManager
   //
   
   private static final Logger log = LoggerFactory.getLogger(GUIManagerGeneral.class);
+
+  private static final int HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE = 100;
   
   //
   //  data
@@ -3577,6 +3588,179 @@ public class GUIManagerGeneral extends GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  /*****************************************
+  *
+  *  processGetVoucherCodePatternList
+  *
+  *****************************************/
+  JSONObject processGetVoucherCodePatternList(String userID, JSONObject jsonRoot)
+  {
+
+    /*****************************************
+    *
+    *  retrieve voucherCodePatternList
+    *
+    *****************************************/
+
+    List<JSONObject> supportedVoucherCodePatternList = new ArrayList<JSONObject>();
+    for (SupportedVoucherCodePattern supportedVoucherCodePattern : Deployment.getSupportedVoucherCodePatternList().values())
+      {
+        JSONObject supportedVoucherCodePatternJSON = supportedVoucherCodePattern.getJSONRepresentation();
+        supportedVoucherCodePatternList.add(supportedVoucherCodePatternJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("supportedVoucherCodePatternList", JSONUtilities.encodeArray(supportedVoucherCodePatternList));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+
+  /*****************************************
+  *
+  *  processGenerateVouchers
+  *
+  *****************************************/
+
+  JSONObject processGenerateVouchers(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    String pattern = JSONUtilities.decodeString(jsonRoot, "pattern", true);
+    int quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+    Date expirationDate = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "expirationDate", true));
+    
+    // find existing vouchers
+    
+    List<String> existingVoucherCodes = new ArrayList<>();
+    Collection<GUIManagedObject> uploadedFileObjects = uploadedFileService.getStoredGUIManagedObjects(true);
+
+    String supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
+
+    String applicationID = "vouchers_" + supplierID; // TODO CHECK THIS MK
+    
+    for (GUIManagedObject uploaded : uploadedFileObjects)
+      {
+        String fileApplicationID = JSONUtilities.decodeString(uploaded.getJSONRepresentation(), "applicationID", false);
+        if (Objects.equals(applicationID, fileApplicationID))
+          {
+            if (uploaded instanceof UploadedFile)
+              {
+                UploadedFile uploadedFile = (UploadedFile) uploaded;
+                BufferedReader reader;
+                String filename = UploadedFile.OUTPUT_FOLDER + uploadedFile.getDestinationFilename();
+                try
+                {
+                  reader = new BufferedReader(new FileReader(filename));
+                  for (String line; (line = reader.readLine()) != null;)
+                    {
+                      if (line.trim().isEmpty()) continue;
+                      existingVoucherCodes.add(line.trim());
+                    }
+                }
+                catch (IOException e)
+                {
+                  log.info("Unable to read voucher file " + filename);
+                }
+              }
+          }
+      }
+        
+    List<String> currentVoucherCodes = new ArrayList<>();
+    for (int q=0; q<quantity; q++)
+      {
+        String voucherCode = null; 
+        boolean newVoucherGenerated = false;
+        for (int i=0; i<HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
+          {
+            voucherCode = TokenUtils.generateFromRegex(pattern);
+            if (!currentVoucherCodes.contains(voucherCode) && !existingVoucherCodes.contains(voucherCode))
+              {
+                newVoucherGenerated = true;
+                break;
+              }
+          }
+        if (!newVoucherGenerated)
+          {
+            log.info("After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
+            break;
+          }
+        log.debug("voucherCode  generated : " + voucherCode);
+        currentVoucherCodes.add(voucherCode);
+      }
+
+    // convert list to InputStream
+    
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    try
+    {
+      for (String voucherCode : currentVoucherCodes)
+        {
+          baos.write(voucherCode.getBytes());
+          baos.write("\n".getBytes());
+        }
+    }
+    catch (IOException e) // will never happen as we write to memory
+    {
+      log.info("Issue when converting voucher list to file : " + e.getLocalizedMessage());
+      log.debug("Voucher list : " + currentVoucherCodes);
+    }
+    byte[] bytes = baos.toByteArray();
+    InputStream vouchersStream = new ByteArrayInputStream(bytes);
+
+    // write list to UploadedFile
+
+    String fileID = uploadedFileService.generateFileID();
+    String sourceFilename = "Generated_internally_" + fileID + ".txt";
+    
+    JSONObject fileJSON = new JSONObject();
+    fileJSON.put("id", fileID);
+    fileJSON.put("applicationID", applicationID);
+    fileJSON.put("sourceFilename", sourceFilename);
+    fileJSON.put("fileType", ".txt");
+
+    GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(fileID);
+    long epoch = epochServer.getKey();
+    
+    try
+      {
+        UploadedFile uploadedFile = new UploadedFile(fileJSON, epoch, existingFileUpload);
+        uploadedFileService.putUploadedFile(uploadedFile, vouchersStream, uploadedFile.getDestinationFilename(), (uploadedFile == null), userID);
+      }
+    catch (GUIManagerException|IOException e)
+      {
+        log.info("Issue when creating uploaded voucher file : " + e.getLocalizedMessage());
+      }
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("id", fileID);
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+
+  
   /*****************************************
   *
   *  processGetPaymentMean
