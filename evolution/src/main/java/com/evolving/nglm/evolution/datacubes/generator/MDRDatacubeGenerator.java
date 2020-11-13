@@ -3,19 +3,13 @@ package com.evolving.nglm.evolution.datacubes.generator;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
@@ -27,7 +21,6 @@ import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.OfferObjectiveService;
 import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.PaymentMeanService;
-import com.evolving.nglm.evolution.RESTAPIGenericReturnCodes;
 import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.SubscriberMessageTemplateService;
 import com.evolving.nglm.evolution.datacubes.DatacubeUtils;
@@ -36,11 +29,11 @@ import com.evolving.nglm.evolution.datacubes.mapping.DeliverablesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.ModulesMap;
-import com.evolving.nglm.evolution.datacubes.mapping.OfferObjectivesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.OffersMap;
 import com.evolving.nglm.evolution.datacubes.mapping.PaymentMeansMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SalesChannelsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SubscriberMessageTemplatesMap;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
 {
@@ -59,7 +52,6 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   private ModulesMap modulesMap;
   private SalesChannelsMap salesChannelsMap;
   private PaymentMeansMap paymentMeansMap;
-  private OfferObjectivesMap offerObjectivesMap;
   private LoyaltyProgramsMap loyaltyProgramsMap;
   private DeliverablesMap deliverablesMap;
   private JourneysMap journeysMap;
@@ -73,7 +65,7 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public MDRDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService)  
+  public MDRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService)  
   {
     super(datacubeName, elasticsearch);
 
@@ -81,7 +73,6 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.modulesMap = new ModulesMap();
     this.salesChannelsMap = new SalesChannelsMap(salesChannelService);
     this.paymentMeansMap = new PaymentMeansMap(paymentMeanService);
-    this.offerObjectivesMap = new OfferObjectivesMap(offerObjectiveService);
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
     this.deliverablesMap = new DeliverablesMap();
     this.journeysMap = new JourneysMap(journeyService);

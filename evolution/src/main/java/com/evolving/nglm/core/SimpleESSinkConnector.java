@@ -42,6 +42,8 @@ public abstract class SimpleESSinkConnector extends SinkConnector
   private String connectorName = null;
   private String connectionHost = null;
   private String connectionPort = null;
+  private String connectionUserName = null;
+  private String connectionUserPassword = null;
   private String indexName = null;
   private String pipelineName = null;  
   private String batchRecordCount = null;
@@ -123,6 +125,20 @@ public abstract class SimpleESSinkConnector extends SinkConnector
 
     connectionPort = properties.get("connectionPort");
     if (! validIntegerConfig(connectionPort, true)) throw new ConnectException("SimpleESSinkConnector configuration field 'connectionPort' is a required integer");    
+    
+    //
+    //  configuration -- connectionUserName
+    //
+
+    connectionUserName = properties.get("connectionUserName");
+    if (connectionUserName == null || connectionUserName.trim().length() == 0) throw new ConnectException("SimpleESSinkConnector configuration must specify 'connectionUserName'");
+    
+    //
+    //  configuration -- connectionUserPassword
+    //
+
+    connectionUserPassword = properties.get("connectionUserPassword");
+    if (connectionUserPassword == null || connectionUserPassword.trim().length() == 0) throw new ConnectException("SimpleESSinkConnector configuration must specify 'connectionUserPassword'");
 
     //
     //  configuration -- indexName
@@ -224,6 +240,8 @@ public abstract class SimpleESSinkConnector extends SinkConnector
         taskConfig.put("connectorName", connectorName);
         taskConfig.put("connectionHost", connectionHost);
         taskConfig.put("connectionPort", connectionPort);
+        taskConfig.put("connectionUserName", connectionUserName);
+        taskConfig.put("connectionUserPassword", connectionUserPassword);
         taskConfig.put("indexName", indexName);
         taskConfig.put("pipelineName", pipelineName);
         taskConfig.put("batchRecordCount", batchRecordCount);
@@ -274,6 +292,8 @@ public abstract class SimpleESSinkConnector extends SinkConnector
     ConfigDef result = new ConfigDef();
     result.define("connectionHost", Type.STRING, Importance.HIGH, "elastic search hostname");
     result.define("connectionPort", Type.STRING, Importance.HIGH, "elastic search http port");
+    result.define("connectionUserName", Type.STRING, Importance.HIGH, "elastic search username for authentication");
+    result.define("connectionUserPassword", Type.STRING, Importance.HIGH, "elastic search password for authentication");
     result.define("indexName", Type.STRING, Importance.HIGH, "index name");
     result.define("pipelineName", Type.STRING, DEFAULT_PIPELINENAME, Importance.MEDIUM, "pipeline name");        
     result.define("batchRecordCount", Type.STRING, DEFAULT_BATCHRECORDCOUNT, Importance.MEDIUM, "number of records to trigger a batch");

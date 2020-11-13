@@ -25,7 +25,6 @@ import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
@@ -33,6 +32,8 @@ import org.elasticsearch.index.reindex.BulkByScrollResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
@@ -67,6 +68,8 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
   private String connectorName = null;
   private String connectionHost = null;
   private String connectionPort = null;
+  private String connectionUserName = null;
+  private String connectionUserPassword = null;
   private String maxSubscribersPerRequest = null;
   private String connectTimeout = null;
   private String queryTimeout = null;
@@ -143,6 +146,20 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
 
     connectionPort = properties.get("connectionPort");
     if (! validIntegerConfig(connectionPort)) throw new ConnectException("CleanupSubscriberESSinkConnector configuration field 'connectionPort' is a required integer");    
+    
+    //
+    //  configuration -- connectionUserName
+    //
+
+    connectionUserName = properties.get("connectionUserName");
+    if (connectionUserName == null || connectionUserName.trim().length() == 0) throw new ConnectException("SimpleESSinkConnector configuration must specify 'connectionUserName'");
+    
+    //
+    //  configuration -- connectionUserPassword
+    //
+
+    connectionUserPassword = properties.get("connectionUserPassword");
+    if (connectionUserPassword == null || connectionUserPassword.trim().length() == 0) throw new ConnectException("SimpleESSinkConnector configuration must specify 'connectionUserPassword'");
 
     //
     //  configuration -- maxSubscribersPerRequest
@@ -226,6 +243,8 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
         taskConfig.put("connectorName", connectorName);
         taskConfig.put("connectionHost", connectionHost);
         taskConfig.put("connectionPort", connectionPort);
+        taskConfig.put("connectionUserName", connectionUserName);
+        taskConfig.put("connectionUserPassword", connectionUserPassword);
         taskConfig.put("maxSubscribersPerRequest", maxSubscribersPerRequest);
         taskConfig.put("connectTimeout", connectTimeout);
         taskConfig.put("queryTimeout", queryTimeout);
@@ -273,6 +292,8 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
     ConfigDef result = new ConfigDef();
     result.define("connectionHost", Type.STRING, Importance.HIGH, "elastic search hostname");
     result.define("connectionPort", Type.STRING, Importance.HIGH, "elastic search http port");
+    result.define("connectionUserName", Type.STRING, Importance.HIGH, "elastic search username for authentication");
+    result.define("connectionUserPassword", Type.STRING, Importance.HIGH, "elastic search password for authentication");
     result.define("maxSubscribersPerRequest", Type.STRING, DEFAULT_MAXSUBSCRIBERSPERREQUEST, Importance.LOW, "number of subscriber ids to submit in a single request");
     result.define("connectTimeout", Type.STRING, DEFAULT_CONNECTTIMEOUT, Importance.MEDIUM, "timeout to wait for connection, in seconds");
     result.define("queryTimeout", Type.STRING, DEFAULT_QUERYTIMEOUT, Importance.MEDIUM, "timeout to wait for query, in seconds");
@@ -411,6 +432,8 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
     private String connectorName = null;
     private String connectionHost = null;
     private int connectionPort;
+    private String connectionUserName = null;
+    private String connectionUserPassword = null;
     private int maxSubscribersPerRequest;
     private int connectTimeout;
     private int queryTimeout;
@@ -431,7 +454,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
     *
     ****************************************/
 
-    private RestHighLevelClient client = null;
+    private ElasticsearchClientAPI client = null;
 
     /*****************************************
     *
@@ -468,6 +491,8 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
 
       connectorName = taskConfig.get("connectorName");
       connectionHost = taskConfig.get("connectionHost");
+      connectionUserName = taskConfig.get("connectionUserName");
+      connectionUserPassword = taskConfig.get("connectionUserPassword");
       connectionPort = CleanupSubscriberESSinkConnector.parseIntegerConfig(taskConfig.get("connectionPort"));
       maxSubscribersPerRequest = CleanupSubscriberESSinkConnector.parseIntegerConfig(taskConfig.get("maxSubscribersPerRequest"));
       connectTimeout = CleanupSubscriberESSinkConnector.parseIntegerConfig(taskConfig.get("connectTimeout"));
@@ -484,24 +509,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
 
       try
         {
-          //
-          //  restClientBuilder
-          //
-
-          RestClientBuilder restClientBuilder = RestClient.builder(new HttpHost(connectionHost, connectionPort, "http"));
-          restClientBuilder.setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback()
-          {
-            @Override public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder)
-            {
-              return requestConfigBuilder.setConnectTimeout(connectTimeout*1000).setSocketTimeout(queryTimeout*1000);
-            }
-          });
-
-          //
-          //  client
-          //
-
-          client = new RestHighLevelClient(restClientBuilder);
+          client = new ElasticsearchClientAPI(connectionHost, connectionPort, connectTimeout*1000, queryTimeout*1000, connectionUserName, connectionUserPassword);
         }
       catch (ElasticsearchException e)
         {

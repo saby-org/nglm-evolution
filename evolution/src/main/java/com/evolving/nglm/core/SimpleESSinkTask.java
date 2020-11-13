@@ -26,12 +26,13 @@ import org.elasticsearch.action.support.replication.ReplicationResponse;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -65,6 +66,8 @@ public abstract class SimpleESSinkTask extends SinkTask
   private String connectorName = null;
   private String connectionHost = null;
   private int connectionPort;
+  private String connectionUserName = null;
+  private String connectionUserPassword = null;
   private String indexName = null;
   private String pipelineName = null;    
   private int batchRecordCount;
@@ -90,7 +93,7 @@ public abstract class SimpleESSinkTask extends SinkTask
   *
   ****************************************/
 
-  private RestHighLevelClient client = null;
+  private ElasticsearchClientAPI client = null;
   private BulkProcessor bulkProcessor = null;
   private Throwable bulkFailure = null;
   private int consecutiveRetriableExceptionCount = 0;
@@ -139,6 +142,8 @@ public abstract class SimpleESSinkTask extends SinkTask
     connectorName = taskConfig.get("connectorName");
     connectionHost = taskConfig.get("connectionHost");
     connectionPort = SimpleESSinkConnector.parseIntegerConfig(taskConfig.get("connectionPort"));
+    connectionUserName = taskConfig.get("connectionUserName");
+    connectionUserPassword = taskConfig.get("connectionUserPassword");
     indexName = taskConfig.get("indexName");
     pipelineName = taskConfig.get("pipelineName");    
     batchRecordCount = SimpleESSinkConnector.parseIntegerConfig(taskConfig.get("batchRecordCount"));
@@ -147,7 +152,7 @@ public abstract class SimpleESSinkTask extends SinkTask
     queryTimeout = SimpleESSinkConnector.parseIntegerConfig(taskConfig.get("queryTimeout"));
     closeTimeout = SimpleESSinkConnector.parseLongConfig(taskConfig.get("closeTimeout"));
     taskNumber = SimpleESSinkConnector.parseIntegerConfig(taskConfig.get("taskNumber"));
-    log.info("{} -- indexName: {}, connectionHost: {}, connectionPort: {}, batchRecordCount: {}, batchSize: {}, connectTimeout: {}, queryTimeout {}, closeTimeout: {}", connectorName, indexName, pipelineName, connectionHost, connectionPort, batchRecordCount, batchSize, connectTimeout, queryTimeout, closeTimeout);
+    log.info("{} -- indexName: {}, connectionHost: {}, connectionPort: {}, connectionUserName: {}, connectionUserPassword: ********, batchRecordCount: {}, batchSize: {}, connectTimeout: {}, queryTimeout {}, closeTimeout: {}", connectorName, indexName, pipelineName, connectionHost, connectionPort, connectionUserName, batchRecordCount, batchSize, connectTimeout, queryTimeout, closeTimeout);
 
     /*****************************************
     *
@@ -157,25 +162,7 @@ public abstract class SimpleESSinkTask extends SinkTask
 
     try
       {
-        //
-        //  restClientBuilder
-        //
-        
-        RestClientBuilder restClientBuilder = RestClient.builder(new HttpHost(connectionHost, connectionPort, "http"));
-        restClientBuilder.setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback()
-          {
-            @Override
-            public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder)
-            {
-              return requestConfigBuilder.setConnectTimeout(connectTimeout*1000).setSocketTimeout(queryTimeout*1000);
-            }
-          });
-
-        //
-        //  client
-        //
-        
-        client = new RestHighLevelClient(restClientBuilder);
+        client = new ElasticsearchClientAPI(connectionHost, connectionPort, connectTimeout*1000, queryTimeout*1000, connectionUserName, connectionUserPassword);
 
         //
         //  bulkProcessor

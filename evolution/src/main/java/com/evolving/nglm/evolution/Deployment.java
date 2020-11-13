@@ -28,6 +28,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchConnectionSettings;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -215,16 +216,12 @@ public class Deployment
   public static String communicationChannelBlackoutTopic;
   public static String communicationChannelTimeWindowTopic;
   public static String loyaltyProgramTopic;
-  private static int ucgEngineESConnectTimeout;
-  private static int ucgEngineESSocketTimeout;
-  private static int ucgEngineESMasRetryTimeout;
-  private static int guiManagerESConnectTimeout;
-  private static int guiManagerESSocketTimeout;
   private static String exclusionInclusionTargetTopic;
   private static String dnboMatrixTopic;
   private static String segmentContactPolicyTopic;
   private static String dynamicEventDeclarationsTopic;
   private static String dynamicCriterionFieldsTopic;
+  private static Map<String,ElasticsearchConnectionSettings> elasticsearchConnectionSettings = new LinkedHashMap<String,ElasticsearchConnectionSettings>();
   private static int maxPollIntervalMs;
   private static String criterionFieldAvailableValuesTopic;
   private static String sourceAddressTopic;
@@ -469,11 +466,6 @@ public class Deployment
   public static String getCommunicationChannelBlackoutTopic() { return communicationChannelBlackoutTopic; }
   public static String getCommunicationChannelTimeWindowTopic() { return communicationChannelTimeWindowTopic; }
   public static String getLoyaltyProgramTopic() { return loyaltyProgramTopic; }
-  public static int getUcgEngineESConnectTimeout() { return ucgEngineESConnectTimeout; }
-  public static int getUcgEngineESSocketTimeout(){ return ucgEngineESSocketTimeout; }
-  public static int getUcgEngineESMasRetryTimeout() { return ucgEngineESMasRetryTimeout; }
-  public static int getGUIManagerESConnectTimeout() { return guiManagerESConnectTimeout; }
-  public static int getGUIManagerESSocketTimeout(){ return guiManagerESSocketTimeout; }
   public static String getExclusionInclusionTargetTopic() { return exclusionInclusionTargetTopic; }
   public static String getDNBOMatrixTopic() { return dnboMatrixTopic; }
   public static String getSegmentContactPolicyTopic() { return segmentContactPolicyTopic; }
@@ -481,6 +473,7 @@ public class Deployment
   public static String getDynamicCriterionFieldTopic() { return dynamicCriterionFieldsTopic; }
   public static Map<String,PartnerType> getPartnerTypes() { return partnerTypes; }
   public static Map<String,BillingMode> getBillingModes() { return billingModes; }
+  public static Map<String,ElasticsearchConnectionSettings> getElasticsearchConnectionSettings() { return elasticsearchConnectionSettings; }
   public static int getMaxPollIntervalMs() {return maxPollIntervalMs; }
   public static int getPurchaseTimeoutMs() {return purchaseTimeoutMs; }
   public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
@@ -1935,7 +1928,7 @@ public class Deployment
         }
 
       //
-      //  datacubeJobsScheduling & elasticsearchJobsScheduling
+      //  datacubeJobsScheduling & elasticsearchJobsScheduling & others...
       //
 
       try
@@ -1951,6 +1944,13 @@ public class Deployment
           for (Object key : elasticsearchJobsSchedulingJSON.keySet()) {
             elasticsearchJobsScheduling.put((String) key, new ScheduledJobConfiguration((JSONObject) elasticsearchJobsSchedulingJSON.get(key)));
           }
+          
+          // elasticsearchConnectionSettings
+          JSONObject elasticsearchConnectionSettingsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "elasticsearchConnectionSettings", true);
+          for (Object key : elasticsearchConnectionSettingsJSON.keySet()) {
+            elasticsearchConnectionSettings.put((String) key, new ElasticsearchConnectionSettings((JSONObject) elasticsearchConnectionSettingsJSON.get(key)));
+          }
+          
         }
       catch (JSONUtilitiesException e)
         {
@@ -3091,76 +3091,6 @@ public class Deployment
       catch (JSONUtilitiesException e)
         {
           throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  ucgEngineESConnectTimeout
-      //
-
-      try
-        {
-          Integer ucgEngineESConnectTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESConnectTimeout",false);
-          ucgEngineESConnectTimeout = ucgEngineESConnectTimeoutJSON == null ? 30000:ucgEngineESConnectTimeoutJSON;
-        }
-      catch(JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment",e);
-        }
-
-      //
-      //  ucgEngineESSocketTimeout
-      //
-
-      try
-        {
-          Integer ucgEngineESSocketTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESSocketTimeout",false);
-          ucgEngineESSocketTimeout = ucgEngineESSocketTimeoutJSON == null ? 60000:ucgEngineESSocketTimeoutJSON;
-        }
-      catch(JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment",e);
-        }
-
-      //
-      //  ucgEngineESMasRetryTimeout
-      //
-
-      try
-        {
-          Integer ucgEngineESMasRetryTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESMasRetryTimeout",false);
-          ucgEngineESMasRetryTimeout = ucgEngineESMasRetryTimeoutJSON == null ? 60000:ucgEngineESMasRetryTimeoutJSON;
-        }
-      catch(JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment",e);
-        }
-
-      //
-      //  guiManagerESConnectTimeout
-      //
-
-      try
-        {
-          Integer guiManagerESConnectTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"guiManagerESConnectTimeout",false);
-          guiManagerESConnectTimeout = guiManagerESConnectTimeoutJSON == null ? 30000:guiManagerESConnectTimeoutJSON;
-        }
-      catch(JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment",e);
-        }
-
-      //
-      //  guiManagerESSocketTimeout
-      //
-
-      try
-        {
-          Integer guiManagerESSocketTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"guiManagerESSocketTimeout",false);
-          guiManagerESSocketTimeout = guiManagerESSocketTimeoutJSON == null ? 60000:guiManagerESSocketTimeoutJSON;
-        }
-      catch(JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment",e);
         }
 
       //

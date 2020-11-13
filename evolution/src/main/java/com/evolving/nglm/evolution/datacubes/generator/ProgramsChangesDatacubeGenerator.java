@@ -11,7 +11,6 @@ import java.util.Map;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -21,7 +20,6 @@ import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSou
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite;
 import org.elasticsearch.search.aggregations.bucket.composite.TermsValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.nested.ParsedNested;
-import org.elasticsearch.search.aggregations.bucket.nested.ParsedReverseNested;
 import org.elasticsearch.search.aggregations.bucket.range.ParsedRange;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -58,7 +56,7 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public ProgramsChangesDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, LoyaltyProgramService loyaltyProgramService)
+  public ProgramsChangesDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, LoyaltyProgramService loyaltyProgramService)
   {
     super(datacubeName, elasticsearch);
     

@@ -68,7 +68,7 @@ public class Deployment
   private static String subscriberTraceTopic;
   private static String simulatedTimeTopic;
   private static Map<String,AutoProvisionEvent> autoProvisionEvents = new LinkedHashMap<String,AutoProvisionEvent>();
-  // ELASTICSEARCH
+  // ELASTICSEARCH (moved in core because it's needed for setup/upgrade process)
   private static int elasticsearchConnectTimeout;
   private static int elasticsearchQueryTimeout;
   private static int elasticsearchScrollSize;
@@ -127,8 +127,6 @@ public class Deployment
   // ELASTICSEARCH 
   public static String getElasticsearchDateFormat() { return elasticsearchDateFormat; }
   public static int getElasticsearchScrollSize() {return elasticsearchScrollSize; }
-  public static int getElasticsearchConnectTimeout() { return elasticsearchConnectTimeout; }
-  public static int getElasticsearchQueryTimeout() { return elasticsearchQueryTimeout; }
   public static int getElasticsearchDefaultShards() { return elasticsearchDefaultShards; }
   public static int getElasticsearchDefaultReplicas() { return elasticsearchDefaultReplicas; }
   public static int getElasticsearchSubscriberprofileShards() { return elasticsearchSubscriberprofileShards; }
@@ -803,8 +801,6 @@ public class Deployment
         // Elasticsearch settings
         elasticsearchDateFormat = JSONUtilities.decodeString(jsonRoot, "elasticsearchDateFormat", true);
         elasticsearchScrollSize = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchScrollSize", true);
-        elasticsearchConnectTimeout = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchConnectTimeout", true);
-        elasticsearchQueryTimeout = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchQueryTimeout", true);
         
         // Elasticsearch shards & replicas
         elasticsearchDefaultShards = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchDefaultShards", true);

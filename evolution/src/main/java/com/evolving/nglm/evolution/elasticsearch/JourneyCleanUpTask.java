@@ -14,7 +14,6 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.GetIndexResponse;
 import org.elasticsearch.rest.RestStatus;
@@ -39,14 +38,14 @@ public class JourneyCleanUpTask
   *
   *****************************************/
   private JourneyService journeyService;
-  private RestHighLevelClient elasticsearchClient;
+  private ElasticsearchClientAPI elasticsearchClient;
   
   /*****************************************
   *
   * Constructor
   *
   *****************************************/
-  public JourneyCleanUpTask(JourneyService journeyService, RestHighLevelClient elasticsearchClient) 
+  public JourneyCleanUpTask(JourneyService journeyService, ElasticsearchClientAPI elasticsearchClient) 
   {
     this.journeyService = journeyService;
     this.elasticsearchClient = elasticsearchClient;

@@ -70,7 +70,6 @@ import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -616,7 +615,7 @@ public class GUIManager
 
   protected KafkaProducer<byte[], byte[]> kafkaProducer;
   private HttpServer restServer;
-  protected RestHighLevelClient elasticsearch;
+  protected ElasticsearchClientAPI elasticsearch;
   
   protected DynamicCriterionFieldService dynamicCriterionFieldService;
   protected JourneyService journeyService;
@@ -672,9 +671,6 @@ public class GUIManager
   protected KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
   protected KafkaResponseListenerService<StringKey,VoucherChange> voucherChangeResponseListenerService;
   protected int httpTimeout = Deployment.getPurchaseTimeoutMs();
-  
-  private static final int connectTimeout = Deployment.getGUIManagerESConnectTimeout();
-  private static final int socketTimeout = Deployment.getGUIManagerESSocketTimeout();
 
   protected static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   protected static final String FILE_REQUEST = "file"; 
@@ -756,6 +752,11 @@ public class GUIManager
     int apiRestPort = parseInteger("apiRestPort", args[2]);
     String elasticsearchServerHost = args[3];
     int elasticsearchServerPort = parseInteger("elasticsearchServerPort", args[4]);
+    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("GUIManager").getConnectTimeout();
+    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("GUIManager").getQueryTimeout();
+    String userName = args[5];
+    String userPassword = args[6];
+    
     String nodeID = System.getProperty("nglm.license.nodeid");
 
     String dynamicCriterionFieldTopic = Deployment.getDynamicCriterionFieldTopic();
@@ -853,12 +854,12 @@ public class GUIManager
     zuksVoucherChange = new ZookeeperUniqueKeyServer("voucherchange");
 
     //
-    // RestHighLevelClient
+    // ElasticsearchClientAPI
     //
 
     try
     {
-      elasticsearch = new RestHighLevelClient(RestClient.builder(new HttpHost(elasticsearchServerHost, elasticsearchServerPort, "http")).setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() { @Override public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder builder) { return builder.setConnectTimeout(connectTimeout).setSocketTimeout(socketTimeout); } } ));
+      elasticsearch = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
     }
     catch (ElasticsearchException e)
     {
@@ -5355,9 +5356,7 @@ public class GUIManager
               {
                 try
                   {
-                    ElasticsearchClientAPI client = new ElasticsearchClientAPI("", 0); // @rl deprecated use, change
-                    client.setConnection(this.elasticsearch);
-                    Long count = client.getJourneySubscriberCount(journeyID);
+                    Long count = this.elasticsearch.getJourneySubscriberCount(journeyID);
                     subscriberCount = (count != null) ? count : 0;
                   } 
                 catch (ElasticsearchClientException e)
@@ -7210,9 +7209,7 @@ public class GUIManager
         
         if(bypassJourneyTrafficEngine) {
           try {
-            ElasticsearchClientAPI client = new ElasticsearchClientAPI("",0); // @rl deprecated use, change later
-            client.setConnection(this.elasticsearch);
-            Map<String, Long> esMap = client.getJourneyNodeCount(journeyID);
+            Map<String, Long> esMap = this.elasticsearch.getJourneyNodeCount(journeyID);
             for (String key : nodeIDs) {
               Long count = esMap.get(key);
               result.put(key, (count != null)? count : 0);
