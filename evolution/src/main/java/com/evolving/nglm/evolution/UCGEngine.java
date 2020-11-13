@@ -163,7 +163,7 @@ public class UCGEngine
     *
     *****************************************/
 
-    ucgStateReader = ReferenceDataReader.<String,UCGState>startReader("ucgengine-ucgstate", "001", Deployment.getBrokerServers(), Deployment.getUCGStateTopic(), UCGState::unpack);
+    ucgStateReader = ReferenceDataReader.<String,UCGState>startReader("ucgengine-ucgstate", Deployment.getBrokerServers(), Deployment.getUCGStateTopic(), UCGState::unpack);
 
     /*****************************************
     *
@@ -686,7 +686,6 @@ public class UCGEngine
     if (ucgRuleService != null) ucgRuleService.stop();
     if (segmentationDimensionService != null) segmentationDimensionService.stop();
     if (dynamicCriterionFieldService != null) dynamicCriterionFieldService.stop();
-    if (ucgStateReader != null) ucgStateReader.close();
     if (kafkaProducer != null) kafkaProducer.close();
 
     /*****************************************

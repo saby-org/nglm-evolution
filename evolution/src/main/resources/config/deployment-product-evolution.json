@@ -2,7 +2,6 @@
   "baseTimeZone"                             : "<_DEPLOYMENT_TIMEZONE_>",
   "baseLanguage"                             : "<_DEPLOYMENT_LOCALE_LANGUAGE_>",
   "baseCountry"                              : "<_DEPLOYMENT_LOCALE_COUNTRY_>",
-  "generateNumericIDs"                       : true,
   "APIresponseDateFormat"                    : "yyyy-MM-dd'T'HH:mm:ssZZZZ",
 
   "journeyTrafficArchivePeriodInSeconds"     : 3600,

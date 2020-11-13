@@ -1,20 +1,4 @@
-/****************************************************************************
-*
-*  EvolutionEngineStatisticsMBean.java
-*
-****************************************************************************/
-
 package com.evolving.nglm.evolution;
-
-import com.evolving.nglm.core.NGLMMonitoringObject;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.ServerException;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.SubscriberStreamEvent;
-
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 
 public class EvolutionEngineStatistics
 {
@@ -33,17 +17,17 @@ public class EvolutionEngineStatistics
     this.extendedProfileSize = new Histogram("extendedProfileSize", 10, 20, 1000, "KB");
   }
 
-  synchronized void updateSubscriberStateSize(byte[] kafkaRepresentation)
+  void updateSubscriberStateSize(byte[] kafkaRepresentation)
   {
     subscriberStateSize.logData(kafkaRepresentation.length);
   }
 
-  synchronized void updateSubscriberHistorySize(byte[] kafkaRepresentation)
+  void updateSubscriberHistorySize(byte[] kafkaRepresentation)
   {
     subscriberHistorySize.logData(kafkaRepresentation.length);
   }
 
-  synchronized void updateExtendedProfileSize(byte[] kafkaRepresentation)
+  void updateExtendedProfileSize(byte[] kafkaRepresentation)
   {
     extendedProfileSize.logData(kafkaRepresentation.length);
   }

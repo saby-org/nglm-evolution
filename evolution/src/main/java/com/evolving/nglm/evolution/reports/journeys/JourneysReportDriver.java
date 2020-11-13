@@ -79,7 +79,7 @@ public class JourneysReportDriver extends ReportDriver
     journeyObjectiveService = new JourneyObjectiveService(kafkaNode, "journeysreportcsvwriter-journeyObjectiveService-" + apiProcessKey, journeyObjectiveTopic, false);
     journeyObjectiveService.start();
     
-    journeyTrafficReader = ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", "journeysreportcsvwriter-journeytrafficservice-" + apiProcessKey, kafkaNode, Deployment.getJourneyTrafficChangeLogTopic(), JourneyTrafficHistory::unpack);
+    journeyTrafficReader = ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", kafkaNode, Deployment.getJourneyTrafficChangeLogTopic(), JourneyTrafficHistory::unpack);
     
     ReportsCommonCode.initializeDateFormats();
     

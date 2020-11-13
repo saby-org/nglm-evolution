@@ -135,6 +135,7 @@ public class SubscriberState implements StateStore
   private List<TokenChange> tokenChanges;
   private List<Pair<String,MetricHistory>> notificationHistory;
   private List<VoucherChange> voucherChanges;
+  private DeliveryRequest deliveryResponse;
   //
   //  in memory only
   //
@@ -174,6 +175,7 @@ public class SubscriberState implements StateStore
   public List<TokenChange> getTokenChanges() { return tokenChanges; }
   public List<Pair<String,MetricHistory>> getNotificationHistory() { return notificationHistory; }
   public List<VoucherChange> getVoucherChanges() { return voucherChanges; }
+  public DeliveryRequest getDeliveryResponse() { return deliveryResponse; }
 
   //
   //  kafkaRepresentation
@@ -192,6 +194,7 @@ public class SubscriberState implements StateStore
   public void setSubscriberTrace(SubscriberTrace subscriberTrace) { this.subscriberTrace = subscriberTrace; }
   public void setExternalAPIOutput(ExternalAPIOutput externalAPIOutput) { this.externalAPIOutput = externalAPIOutput; }
   public void setTokenChanges(List<TokenChange> tokenChanges) { this.tokenChanges = tokenChanges; }
+  public void setDeliveryResponse(DeliveryRequest deliveryResponse) { this.deliveryResponse = deliveryResponse; }
   public void setTrackingID(UUID trackingID)
   {
     if(trackingID == null)

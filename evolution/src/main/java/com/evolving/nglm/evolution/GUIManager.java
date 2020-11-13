@@ -986,9 +986,9 @@ public class GUIManager
     subscriberMessageTemplateService = new SubscriberMessageTemplateService(bootstrapServers, "guimanager-subscribermessagetemplateservice-" + apiProcessKey, subscriberMessageTemplateTopic, true);
     subscriberProfileService = new EngineSubscriberProfileService(subscriberProfileEndpoints);
     subscriberIDService = new SubscriberIDService(redisServer, "guimanager-" + apiProcessKey);
-    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
-    journeyTrafficReader = (bypassJourneyTrafficEngine)? null : ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", apiProcessKey, bootstrapServers, journeyTrafficChangeLogTopic, JourneyTrafficHistory::unpack);
-    renamedProfileCriterionFieldReader = ReferenceDataReader.<String,RenamedProfileCriterionField>startReader("guimanager-renamedprofilecriterionfield", apiProcessKey, bootstrapServers, renamedProfileCriterionFieldTopic, RenamedProfileCriterionField::unpack);
+    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
+    journeyTrafficReader = (bypassJourneyTrafficEngine)? null : ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", bootstrapServers, journeyTrafficChangeLogTopic, JourneyTrafficHistory::unpack);
+    renamedProfileCriterionFieldReader = ReferenceDataReader.<String,RenamedProfileCriterionField>startReader("guimanager-renamedprofilecriterionfield", bootstrapServers, renamedProfileCriterionFieldTopic, RenamedProfileCriterionField::unpack);
     deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice-" + apiProcessKey, deliverableSourceTopic);
     uploadedFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
     targetService = new TargetService(bootstrapServers, "guimanager-targetservice-" + apiProcessKey, targetTopic, true);
@@ -1002,7 +1002,7 @@ public class GUIManager
     subscriberGroupSharedIDService = new SharedIDService(segmentationDimensionService, targetService, exclusionInclusionTargetService);
     criterionFieldAvailableValuesService = new CriterionFieldAvailableValuesService(bootstrapServers, "guimanager-criterionfieldavailablevaluesservice-"+apiProcessKey, criterionFieldAvailableValuesTopic, true);
     elasticsearchManager = new ElasticsearchManager(elasticsearch, voucherService, journeyService);
-    
+
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
     purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(),StringKey.serde(),PurchaseFulfillmentRequest.serde());
     purchaseResponseListenerService.start();
@@ -1752,7 +1752,7 @@ public class GUIManager
     dynamicEventDeclarationsService.refreshLoyaltyProgramChangeEvent(loyaltyProgramService);
     criterionFieldAvailableValuesService.start();
     elasticsearchManager.start();
-    
+
     /*****************************************
     *
     *  REST interface -- server and handlers
@@ -2263,7 +2263,7 @@ public class GUIManager
     private SegmentContactPolicyService segmentContactPolicyService;
     private CriterionFieldAvailableValuesService criterionFieldAvailableValuesService;
     private ElasticsearchManager elasticsearchManager;
-    
+
     //
     //  constructor
     //
@@ -2320,17 +2320,9 @@ public class GUIManager
 
     @Override public void shutdown(boolean normalShutdown)
     {
-      //
-      //  reference data readers
-      //
 
-      if (subscriberGroupEpochReader != null) subscriberGroupEpochReader.close();
-      if (journeyTrafficReader != null) journeyTrafficReader.close();
-      if (renamedProfileCriterionFieldReader != null) renamedProfileCriterionFieldReader.close();
-      
-      
       if (elasticsearchManager != null) elasticsearchManager.stop();
-      
+
       //
       //  services 
       //
@@ -11119,15 +11111,15 @@ public class GUIManager
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
       }
-    
+
     /*****************************************
     *
     *  Normal product creation. Not created from simpleOffer
     *
     *****************************************/
     jsonRoot.put("simpleOffer", false);
-    
-    
+
+
 
     /*****************************************
     *
@@ -11145,7 +11137,7 @@ public class GUIManager
         ****************************************/
 
         Product product = new Product(jsonRoot, epoch, existingProduct, deliverableService, catalogCharacteristicService);
-        
+
 
         /*****************************************
         *
@@ -14032,8 +14024,8 @@ public class GUIManager
     *
     *****************************************/
     jsonRoot.put("simpleOffer", false);
-    
-    
+
+
     /*****************************************
     *
     *  process voucher
@@ -21765,11 +21757,11 @@ public class GUIManager
      *
      ****************************************/
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);    
+    String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
     Boolean viewOffersOnly = JSONUtilities.decodeBoolean(jsonRoot, "viewOffersOnly", Boolean.FALSE);
     String supplierID = JSONUtilities.decodeString(jsonRoot, "supplier", false);
     Supplier supplier = null;
-    
+
     /*****************************************
     *
     *  getSupplier
@@ -21781,7 +21773,7 @@ public class GUIManager
         supplier = (Supplier) supplierObject;
       }
     }
-    
+
     /*****************************************
      *
      *  resolve subscriberID
@@ -24688,7 +24680,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 }
             }
           break;
-          
+
         case "suppliers":
           if (includeDynamic)
             {
@@ -26474,7 +26466,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           //
 
           lastGeneratedObjectID += 1;
-          return String.format(Deployment.getGenerateNumericIDs() ? "%d" : "%03d", lastGeneratedObjectID);
+          return Long.toString(lastGeneratedObjectID);
         }
     }
   }
@@ -27143,7 +27135,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         productJSON.put("effectiveEndDate", JSONUtilities.decodeString(jsonRoot, "effectiveEndDate"));
         productJSON.put("imageURL", JSONUtilities.decodeString(jsonRoot, "imageURL"));
         productJSON.put("simpleOffer", true);
-       
+
       }
     if (voucherJSONArray != null && !(voucherJSONArray.isEmpty()))
       {
@@ -27167,7 +27159,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         voucherJSON.put("effectiveEndDate", JSONUtilities.decodeString(jsonRoot, "effectiveEndDate"));
         voucherJSON.put("imageURL", JSONUtilities.decodeString(jsonRoot, "imageURL"));
         voucherJSON.put("simpleOffer", true);
-        
+
       }
     
     response.put("productJSONObject", productJSONObject);
