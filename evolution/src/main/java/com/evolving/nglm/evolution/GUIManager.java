@@ -16740,7 +16740,7 @@ public class GUIManager
 
                     if (moduleID != null)
                       {
-                        BDRs = BDRs.stream().filter(activity -> activity.getModuleID().equals(moduleID)).collect(Collectors.toList());
+                        BDRs = BDRs.stream().filter(activity -> moduleID.equals(activity.getModuleID())).collect(Collectors.toList());
                       }
                     
                     //
@@ -16749,7 +16749,7 @@ public class GUIManager
 
                     if (featureID != null)
                       {
-                        BDRs = BDRs.stream().filter(activity -> activity.getFeatureID().equals(featureID)).collect(Collectors.toList());
+                        BDRs = BDRs.stream().filter(activity -> featureID.equals(activity.getFeatureID())).collect(Collectors.toList());
                       }
                     
                     //
@@ -16927,7 +16927,7 @@ public class GUIManager
 
                     if (moduleID != null)
                       {
-                        ODRs = ODRs.stream().filter(activity -> activity.getModuleID().equals(moduleID)).collect(Collectors.toList());
+                        ODRs = ODRs.stream().filter(activity -> moduleID.equals(activity.getModuleID())).collect(Collectors.toList());
                       }
                     
                     //
@@ -16936,7 +16936,7 @@ public class GUIManager
 
                     if (featureID != null)
                       {
-                        ODRs = ODRs.stream().filter(activity -> activity.getFeatureID().equals(featureID)).collect(Collectors.toList());
+                        ODRs = ODRs.stream().filter(activity -> featureID.equals(activity.getFeatureID())).collect(Collectors.toList());
                       }
                     
                     //
@@ -16950,7 +16950,7 @@ public class GUIManager
                           {
                             if(request instanceof PurchaseFulfillmentRequest)
                               {
-                                if(((PurchaseFulfillmentRequest)request).getOfferID().equals(offerID))
+                                if(offerID.equals(((PurchaseFulfillmentRequest)request).getOfferID()))
                                   {
                                     result.add(request);
                                   }
@@ -16970,7 +16970,7 @@ public class GUIManager
                           {
                             if(request instanceof PurchaseFulfillmentRequest)
                               {
-                                if(((PurchaseFulfillmentRequest)request).getSalesChannelID().equals(salesChannelID))
+                                if (salesChannelID.equals(((PurchaseFulfillmentRequest)request).getSalesChannelID()))
                                   {
                                     result.add(request);
                                   }
@@ -16998,7 +16998,7 @@ public class GUIManager
                                       {
                                         for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
                                           {
-                                            if(channel.getPrice() != null && channel.getPrice().getPaymentMeanID().equals(paymentMeanID))
+                                            if(channel.getPrice() != null && paymentMeanID.equals(channel.getPrice().getPaymentMeanID()))
                                               {
                                                 result.add(request);
                                               }
@@ -17137,7 +17137,8 @@ public class GUIManager
 
                     if (moduleID != null)
                       {
-                        messages = messages.stream().filter(activity -> activity.getModuleID().equals(moduleID)).collect(Collectors.toList());
+                        messages = messages.stream().filter(activity -> moduleID.equals(activity.getModuleID())).collect(Collectors.toList());
+
                       }
                     
                     //
@@ -17146,7 +17147,7 @@ public class GUIManager
 
                     if (featureID != null)
                       {
-                        messages = messages.stream().filter(activity -> activity.getFeatureID().equals(featureID)).collect(Collectors.toList());
+                        messages = messages.stream().filter(activity -> featureID.equals(activity.getFeatureID())).collect(Collectors.toList());
                       }
 
                     //
@@ -17323,7 +17324,7 @@ public class GUIManager
                     
                     if (journeyState != null)
                       {
-                        storeJourneys = storeJourneys.stream().filter(journey -> journeyService.getJourneyStatus(journey).getExternalRepresentation().equalsIgnoreCase(journeyState)).collect(Collectors.toList()); 
+                        storeJourneys = storeJourneys.stream().filter(journey -> journeyState.equalsIgnoreCase(journeyService.getJourneyStatus(journey).getExternalRepresentation())).collect(Collectors.toList()); 
                       }
 
                     //
