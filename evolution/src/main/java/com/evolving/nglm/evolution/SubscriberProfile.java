@@ -620,6 +620,7 @@ public abstract class SubscriberProfile
         obj.put("voucherCode",voucher.getVoucherCode());
         obj.put("voucherStatus",voucher.getVoucherStatus().getExternalRepresentation());
         obj.put("voucherExpiryDate",voucher.getVoucherExpiryDate().getTime());
+        obj.put("voucherDeliveryDate",voucher.getVoucherDeliveryDate().getTime());
         array.add(obj);
       }
       result.put("vouchers", array);
@@ -818,7 +819,7 @@ public abstract class SubscriberProfile
     //
     //  prepare points
     //
-
+    
     ArrayList<JSONObject> pointsPresentation = new ArrayList<JSONObject>();
     for (String pointID : pointBalances.keySet())
       {

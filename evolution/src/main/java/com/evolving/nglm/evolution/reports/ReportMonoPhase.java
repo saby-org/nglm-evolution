@@ -408,7 +408,7 @@ public class ReportMonoPhase
                   if (log.isDebugEnabled()) log.debug("got " + searchHits.length + " hits");
                   for (SearchHit searchHit : searchHits)
                     {
-                      Map<String, Object> sourceMap = searchHit.getSourceAsMap();
+                      Map<String, Object> sourceMap = searchHit.getSourceAsMap();                      
                       String key;
                       Map<String, Object> miniSourceMap = sourceMap;
                       if (onlyKeepAlternateIDs && (i == (esIndex.size()-1))) // subscriber index is always last
@@ -443,6 +443,11 @@ public class ReportMonoPhase
                         }
 
                       // We have in miniSourceMap the maping for this ES line, now write it to csv
+
+                        String _id = searchHit.getId();
+
+                        miniSourceMap.put("_id", _id);
+                        
                       Map<String, List<Map<String, Object>>> splittedReportElements = reportFactory.getSplittedReportElementsForFileMono(miniSourceMap);
                       for (String fileKey : splittedReportElements.keySet())
                         {

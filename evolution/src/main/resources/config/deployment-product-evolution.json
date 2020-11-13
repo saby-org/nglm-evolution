@@ -68,6 +68,7 @@
   "ESRetentionDaysCampaigns"        : 15,
   "ESRetentionDaysBulkCampaigns"    : 15,
   "ESRetentionDaysExpiredVouchers"  : 31,
+  "ESRetentionDaysVDR"              : 45,
 
   "subscriberESIndexes" :
   [
@@ -78,7 +79,8 @@
     "detailedrecords_tokens-*",
     "journeystatistic*",
     "journeymetric",
-    "regr_criteria"
+    "regr_criteria",
+    "detailedrecords_vouchers-*"
   ],
 
   "hourlyReportCronEntryString"   : "0 * * * *",
@@ -1034,6 +1036,27 @@
       "display"             : "Token Offer Report",
       "description"         : "Description offer details of the tokens",
       "class"               : "com.evolving.nglm.evolution.reports.tokenOffer.TokenOfferReportDriver",
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
+    },
+    {
+      "name"                : "voucherCustomerReport",
+      "display"             : "Voucher Customer Report",
+      "description"         : "Description of status of vouchers delivered to customers",
+      "class"               : "com.evolving.nglm.evolution.reports.voucherCustomer.VoucherCustomerReportDriver",
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
+    },
+    {
+      "name"                : "VDRReport",
+      "display"             : "VDR Report",
+      "description"         : "Description of the VDR Report",
+      "class"               : "com.evolving.nglm.evolution.reports.vdr.VDRReportDriver",
+      "availableScheduling" : [ "none","daily" ]
+    },
+    {
+      "name"                : "voucherStockReport",
+      "display"             : "Voucher Stock Report",
+      "description"         : "Description of personal vouchers uploaded into solutions",
+      "class"               : "com.evolving.nglm.evolution.reports.voucherUploaded.VoucherUploadedReportDriver",
       "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     }
   ],
