@@ -118,7 +118,7 @@ public class ReportMonoPhase
 
   public boolean startOneToOne()
   {
-    String indexes = "";
+	String indexes = "";
     for (String s : esIndex.keySet())
       indexes += s + " ";
     log.info("Reading data from ES in \"" + indexes + "\" indexes");
@@ -262,8 +262,10 @@ public class ReportMonoPhase
                     }
 
                   // We have in miniSourceMap the maping for this ES line, now write it to csv
-                  addHeader &= reportFactory.dumpElementToCsvMono(miniSourceMap, writer, addHeader);
+                  
+                	  addHeader &= reportFactory.dumpElementToCsvMono(miniSourceMap, writer, addHeader);
                 }
+
               SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
               scrollRequest.scroll(scroll);
               searchResponse = elasticsearchReaderClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
@@ -279,11 +281,11 @@ public class ReportMonoPhase
             }
           i++;
         }
-      
-      elasticsearchReaderClient.close();
-      writer.flush();
-      writer.closeEntry();
-      writer.close();
+    
+    	elasticsearchReaderClient.close();
+    	writer.flush();
+    	writer.closeEntry();
+    	writer.close();
     }
     catch (IOException e1)
     {
@@ -298,7 +300,7 @@ public class ReportMonoPhase
   {
     if (!multipleFile)
       {
-        return startOneToOne();
+		return startOneToOne();
       }
     else
       {

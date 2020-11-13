@@ -356,7 +356,7 @@ public class OfferReportDriver extends ReportDriver
 
   private void writeCompleted(ZipOutputStream writer) throws IOException, InterruptedException
   {
-    log.info(" writeCompleted ");
+    log.info(" writeCompleted ...");
     log.info("offerService {}", offerService.toString());
 
     writer.flush();
