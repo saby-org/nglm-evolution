@@ -127,13 +127,13 @@ public class BDRReportMonoPhase implements ReportCsvFactory
 	   else {
 		   Set<Entry<String, List<Map<String, Object>>>> setLocal = mapLocal.entrySet();
 		   if(setLocal.size() != 1) {
-			   log.debug(" ___ ");
+			   log.debug("We have multiple dates in this report " + setLocal.size());
 		   } else {
 			   for (Entry<String, List<Map<String, Object>>> entry : setLocal) {
 				   List<Map<String, Object>> list = entry.getValue();
 
 				   if(list.size() != 1) {
-					   log.debug("___");
+					   log.debug("We have multiple reports in this folder " + list.size());
 				   } else {
 					   Map<String, Object> reportMap = list.get(0);
 					   dumpLineToCsv(reportMap, writer, addHeaders);
