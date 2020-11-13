@@ -7958,12 +7958,18 @@ public class EvolutionEngine
       Date now = SystemTime.getCurrentTime();
       VoucherAction voucherActionEvent = new VoucherAction(subscriberProfile.getSubscriberID(), now, voucherCode, RESTAPIGenericReturnCodes.UNKNOWN.getGenericResponseMessage(), RESTAPIGenericReturnCodes.UNKNOWN.getGenericResponseCode(), operation.getExternalRepresentation());
       
+      //
+      //  journey id
+      //
+      
+      String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      
       if (operation == Operation.Redeem)
         {
           try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplier, subscriberProfile);
-              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFeatureID(), moduleID, voucherProfileStored.getFeatureID(), origin, RESTAPIGenericReturnCodes.UNKNOWN);
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFeatureID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN);
               for (VoucherProfileStored voucherStored : subscriberProfile.getVouchers())
                 {
                   if (voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
@@ -7990,7 +7996,7 @@ public class EvolutionEngine
           try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplier, subscriberProfile);
-              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Unknown, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFeatureID(), moduleID, voucherProfileStored.getFeatureID(), origin, RESTAPIGenericReturnCodes.SUCCESS);
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Unknown, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFeatureID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.SUCCESS);
               subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
               voucherActionEvent.setActionStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
               voucherActionEvent.setActionStatusCode(voucherChange.getReturnStatus().getGenericResponseCode());
@@ -8003,7 +8009,7 @@ public class EvolutionEngine
           actions.add(voucherActionEvent);
         }
       
-      if (log.isDebugEnabled()) log.debug("VoucherActionManager - VoucherAction {}, voucherActionEvent is {} and supplier is {}", operation, voucherActionEvent, supplier);
+      if (log.isDebugEnabled()) log.debug("VoucherActionManager - VoucherAction {}, journeyID {}, voucherActionEvent is {} and supplier is {}", operation, journeyID, voucherActionEvent, supplier);
       
       /*****************************************
       *
