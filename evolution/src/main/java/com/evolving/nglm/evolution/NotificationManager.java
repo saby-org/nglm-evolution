@@ -27,10 +27,12 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.NodeType.OutputType;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
@@ -738,9 +740,17 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
        * get DialogTemplate
        *
        *****************************************/
-
-      String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      
+      String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
+      String newModuleID = moduleID;
+      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
+        {
+          newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+        }
+      
+      String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
+      
       String language = subscriberEvaluationRequest.getLanguage();
       SubscriberMessageTemplateService subscriberMessageTemplateService = evolutionEventContext.getSubscriberMessageTemplateService();
       DialogTemplate baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateParameters.getSubscriberMessageTemplateID(), now);
@@ -825,7 +835,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
          if (destAddress != null)
            {
              request = new NotificationManagerRequest(evolutionEventContext, communicationChannel.getDeliveryType(), deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters);
-             request.setModuleID(moduleID);
+             request.setModuleID(newModuleID);
              request.setFeatureID(deliveryRequestSource);
              // Contact type can force priority from GUI, or default is to map to the event priority
              DeliveryRequest.DeliveryPriority priority = contactType!=ContactType.Default ? contactType.getDeliveryPriority() : evolutionEventContext.getEvent().getNGLMPriority().getDeliveryPriorityMappingTo();
