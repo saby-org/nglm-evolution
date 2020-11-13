@@ -835,7 +835,12 @@ public abstract class FileSourceConnector extends SourceConnector
 
             long startDate = System.currentTimeMillis();
             File[] filesInDirectory = directory.listFiles(filter);
-            if (filesInDirectory == null) log.error("{} -- Connector.pollDirectory() FAILED", connectorName);
+            if (filesInDirectory == null){
+              // thanks to docker, a glusterfs lost partition on host, and recovered later, is never recovered inside the container without restart, so this shutdown
+              log.error("{} -- Connector.pollDirectory() FAILED, triggering shutdown on purpose", connectorName);
+              stopRequested=true;
+              NGLMRuntime.failureShutdown();
+            }
             Set<File> files = new HashSet<File>(filesInDirectory != null ? Arrays.asList(filesInDirectory) : Collections.<File>emptyList());
 
             //
