@@ -168,16 +168,16 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
 
   public enum DeliveryPriority
   {
-    Urgent("urgent", 2),
-    High("high", 1),
-    Standard("standard", 0),
-    Unknown("(unknown)", -1);
+    High("high", 2),
+    Standard("standard", 1),
+    Low("low", 0);
     private String externalRepresentation;
     private int topicIndex;
     private DeliveryPriority(String externalRepresentation, int topicIndex) { this.externalRepresentation = externalRepresentation; this.topicIndex = topicIndex; }
     public String getExternalRepresentation() { return externalRepresentation; }
     public int getTopicIndex() { return topicIndex; }
-    public static DeliveryPriority fromExternalRepresentation(String externalRepresentation) { for (DeliveryPriority enumeratedValue : DeliveryPriority.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
+    public static DeliveryPriority fromExternalRepresentation(String externalRepresentation) { for (DeliveryPriority enumeratedValue : DeliveryPriority.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Standard; }
+    public static DeliveryPriority fromTopicIndex(int topicIndex) { for (DeliveryPriority enumeratedValue : DeliveryPriority.values()) { if (enumeratedValue.getTopicIndex()==topicIndex) return enumeratedValue; } return Standard; }
   }
   
   /*****************************************

@@ -516,7 +516,6 @@ public class PointBalance
     //
     
     DeliveryManagerDeclaration commodityDeliveryManagerDeclaration = Deployment.getDeliveryManagers().get("commodityDelivery");
-    String commodityDeliveryResponseTopic = commodityDeliveryManagerDeclaration.getResponseTopic();
 
     HashMap<String,Object> commodityDeliveryRequestData = new HashMap<String,Object>();
     
@@ -550,6 +549,7 @@ public class PointBalance
     commodityDeliveryRequest.setStatusMessage("Success");
     commodityDeliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
 
+    String commodityDeliveryResponseTopic = commodityDeliveryManagerDeclaration.getResponseTopic(commodityDeliveryRequest.getDeliveryPriority());
     commodityDeliveryProducer.send(new ProducerRecord<byte[], byte[]>(commodityDeliveryResponseTopic, StringKey.serde().serializer().serialize(commodityDeliveryResponseTopic, new StringKey(commodityDeliveryRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)commodityDeliveryManagerDeclaration.getRequestSerde()).serializer().serialize(commodityDeliveryResponseTopic, commodityDeliveryRequest)));
 
   }

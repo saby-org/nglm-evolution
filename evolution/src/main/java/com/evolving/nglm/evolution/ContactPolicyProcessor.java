@@ -30,31 +30,31 @@ public class ContactPolicyProcessor
    *
    *****************************************/
 
-  ContactPolicyProcessor(String groupIdBaseName, String key)
+  ContactPolicyProcessor()
   {
 
-    dynamicCriterionFieldsService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), groupIdBaseName + "dynamiccriterionfieldservice-" + key, Deployment.getDynamicCriterionFieldTopic(), false);
+    dynamicCriterionFieldsService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getDynamicCriterionFieldTopic(), false);
     dynamicCriterionFieldsService.start();
     CriterionContext.initialize(dynamicCriterionFieldsService);
     //
     //  instantiate journey service
     //
 
-    journeyService = new JourneyService(Deployment.getBrokerServers(), groupIdBaseName + "journeyservice-" + key, Deployment.getJourneyTopic(), false);
+    journeyService = new JourneyService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getJourneyTopic(), false);
     journeyService.start();
 
     //
     //  instantiate journey sobjective service
     //
 
-    journeyObjectiveService = new JourneyObjectiveService(Deployment.getBrokerServers(), groupIdBaseName + "journeyobjectiveservice-" + key, Deployment.getJourneyObjectiveTopic(), false);
+    journeyObjectiveService = new JourneyObjectiveService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getJourneyObjectiveTopic(), false);
     journeyObjectiveService.start();
 
     //
     //  instantiate journey sobjective service
     //
 
-    contactPolicyService = new ContactPolicyService(Deployment.getBrokerServers(), groupIdBaseName + "contactpolicyservice-" + key, Deployment.getContactPolicyTopic(), false);
+    contactPolicyService = new ContactPolicyService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getContactPolicyTopic(), false);
     contactPolicyService.start();
 
   }

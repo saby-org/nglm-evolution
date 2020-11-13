@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.core;
 
+import com.evolving.nglm.evolution.DeliveryRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +76,15 @@ public class NGLMRuntime
   *****************************************/
 
   public enum NGLMStatus { Created, Running, Stopped, FatalError }
-  public enum NGLMPriority { LowPriority, NormalPriority, HighPriority, RealTimePriority }
+  public enum NGLMPriority {
+    LowPriority(DeliveryRequest.DeliveryPriority.Low),
+    NormalPriority(DeliveryRequest.DeliveryPriority.Standard),
+    HighPriority(DeliveryRequest.DeliveryPriority.High);
+
+    DeliveryRequest.DeliveryPriority deliveryPriorityMappingTo;
+    NGLMPriority(DeliveryRequest.DeliveryPriority deliveryPriorityMappingTo){this.deliveryPriorityMappingTo=deliveryPriorityMappingTo;}
+    public DeliveryRequest.DeliveryPriority getDeliveryPriorityMappingTo(){return deliveryPriorityMappingTo;}
+  }
 
   /*****************************************
   *

@@ -116,6 +116,7 @@ public class GUIService
   *****************************************/
 
   // to remove once cleaned up
+  @Deprecated // groupID not needed
   protected GUIService(String bootstrapServers, String serviceName, String groupID, String guiManagedObjectTopic, boolean masterService, GUIManagedObjectListener guiManagedObjectListener, String putAPIString, String removeAPIString, boolean notifyOnSignificantChange){
     this(bootstrapServers,serviceName,guiManagedObjectTopic,masterService,guiManagedObjectListener,putAPIString,removeAPIString,notifyOnSignificantChange);
   }

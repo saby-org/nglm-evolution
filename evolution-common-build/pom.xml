@@ -89,7 +89,6 @@
     <common.build.skip.docker-extractmanager-image>true</common.build.skip.docker-extractmanager-image>
     
     <!-- topics -->
-    <topic.empty>empty</topic.empty>
     <topic.journey>journey</topic.journey>
     <topic.journeytemplate>journeytemplate</topic.journeytemplate>
     <topic.segmentationdimension>segmentation-dimension</topic.segmentationdimension>
@@ -133,12 +132,8 @@
     <topic.executeactionothersubscriber>executeactionothersubscriber</topic.executeactionothersubscriber>
     <topic.tokenredeemed>tokenredeemed</topic.tokenredeemed>
     <topic.tokenredeemed_fileconnector>tokenredeemed-fileconnector</topic.tokenredeemed_fileconnector>
-    <topic.journeyrequest>journeyrequest</topic.journeyrequest>
-    <topic.journeyresponse>journeyresponse</topic.journeyresponse>
     <topic.journeystatistic>journeystatistic</topic.journeystatistic>
     <topic.journeymetric>journeymetric</topic.journeymetric>
-    <topic.loyaltyprogramrequest>loyaltyprogramrequest</topic.loyaltyprogramrequest>
-    <topic.loyaltyprogramresponse>loyaltyprogramresponse</topic.loyaltyprogramresponse>
     <topic.deliverable.source>deliverable-source</topic.deliverable.source>
     <topic.externaldeliveryrequest_fileconnector>externaldeliveryrequest-fileconnector</topic.externaldeliveryrequest_fileconnector>
     <topic.presentationlog>presentationlog</topic.presentationlog>
@@ -150,37 +145,8 @@
     <topic.profilesegmentchangeevent>profilesegmentchangeevent</topic.profilesegmentchangeevent>
     <topic.profileloyaltyprogramchangeevent>profileloyaltyprogramchangeevent</topic.profileloyaltyprogramchangeevent>
     <topic.uploadedfile>uploadedfile</topic.uploadedfile>
-    <topic.pointfulfillment.request>pointfulfillment-request</topic.pointfulfillment.request>
-    <topic.pointfulfillment.response>pointfulfillment-response</topic.pointfulfillment.response>
-    <topic.pointfulfillment.rekeyed>pointfulfillmentrequest-rekeyed</topic.pointfulfillment.rekeyed>
     <topic.journeytraffic>journeytraffic</topic.journeytraffic>
     <topic.target>target</topic.target>
-    <topic.commoditydelivery.request>commoditydelivery-request</topic.commoditydelivery.request>
-    <topic.commoditydelivery.response>commoditydelivery-response</topic.commoditydelivery.response>
-    <topic.commoditydelivery.internal>commoditydelivery-internal</topic.commoditydelivery.internal>
-    <topic.commoditydelivery.routing>commoditydelivery-routing</topic.commoditydelivery.routing>
-    <topic.fulfillment.purchasefulfillment.request>purchasefulfillment-request</topic.fulfillment.purchasefulfillment.request>
-    <topic.fulfillment.purchasefulfillment.response>purchasefulfillment-response</topic.fulfillment.purchasefulfillment.response>
-    <topic.fulfillment.purchasefulfillment.internal>purchasefulfillment-internal</topic.fulfillment.purchasefulfillment.internal>
-    <topic.fulfillment.purchasefulfillment.routing>purchasefulfillment-routing</topic.fulfillment.purchasefulfillment.routing>
-    <topic.notificationmanagersms.request>notificationmanagersms-request</topic.notificationmanagersms.request>
-    <topic.notificationmanagersms.response>notificationmanagersms-response</topic.notificationmanagersms.response>
-    <topic.notificationmanagersms.internal>notificationmanagersms-internal</topic.notificationmanagersms.internal>
-    <topic.notificationmanagersms.routing>notificationmanagersms-routing</topic.notificationmanagersms.routing>
-    <topic.notificationmanagermail.request>notificationmanagermail-request</topic.notificationmanagermail.request>
-    <topic.notificationmanagermail.response>notificationmanagermail-response</topic.notificationmanagermail.response>
-    <topic.notificationmanagermail.internal>notificationmanagermail-internal</topic.notificationmanagermail.internal>
-    <topic.notificationmanagermail.routing>notificationmanagermail-routing</topic.notificationmanagermail.routing>
-    <topic.notificationmanagerpush.request>notificationmanagerpush-request</topic.notificationmanagerpush.request>
-    <topic.notificationmanagerpush.response>notificationmanagerpush-response</topic.notificationmanagerpush.response>
-    <topic.notificationmanagerpush.internal>notificationmanagerpush-internal</topic.notificationmanagerpush.internal>
-    <topic.notificationmanagerpush.routing>notificationmanagerpush-routing</topic.notificationmanagerpush.routing>
-
-    <topic.notificationmanager.request>notificationmanager-request</topic.notificationmanager.request>
-    <topic.notificationmanager.response>notificationmanager-response</topic.notificationmanager.response>
-    <topic.notificationmanager.internal>notificationmanager-internal</topic.notificationmanager.internal>
-    <topic.notificationmanager.routing>notificationmanager-routing</topic.notificationmanager.routing>
-
     <topic.communicationchannel>communicationchannel</topic.communicationchannel>
     <topic.blackoutperiod>blackoutperiod</topic.blackoutperiod>
     <topic.timewindowperiod>timewindowperiod</topic.timewindowperiod>

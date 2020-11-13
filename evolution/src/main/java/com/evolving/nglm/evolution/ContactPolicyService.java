@@ -71,7 +71,8 @@ public class ContactPolicyService extends GUIService
   *  constructor
   *
   *****************************************/
-  
+
+  @Deprecated // groupID not needed
   public ContactPolicyService(String bootstrapServers, String groupID, String catalogObjectiveTopic, boolean masterService, ContactPolicyListener contactPolicyListener, boolean notifyOnSignificantChange)
   {
     super(bootstrapServers, "ContactPolicyService", groupID, catalogObjectiveTopic, masterService, getSuperListener(contactPolicyListener), "putContactPolicy", "removeContactPolicy", notifyOnSignificantChange);
@@ -79,7 +80,8 @@ public class ContactPolicyService extends GUIService
   //
   //  constructor
   //
-  
+
+  @Deprecated // groupID not needed
   public ContactPolicyService(String bootstrapServers, String groupID, String contactPolicyTopic, boolean masterService, ContactPolicyListener contactPolicyListener)
   {
     this(bootstrapServers, groupID, contactPolicyTopic, masterService, contactPolicyListener, true);
@@ -89,6 +91,7 @@ public class ContactPolicyService extends GUIService
   //  constructor
   //
 
+  @Deprecated // groupID not needed
   public ContactPolicyService(String bootstrapServers, String groupID, String contactPolicyTopic, boolean masterService)
   {
     this(bootstrapServers, groupID, contactPolicyTopic, masterService, (ContactPolicyListener) null, true);

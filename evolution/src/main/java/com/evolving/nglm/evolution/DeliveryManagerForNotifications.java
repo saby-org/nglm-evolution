@@ -1,7 +1,5 @@
 package com.evolving.nglm.evolution;
 
-import java.util.HashMap;
-
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,11 +72,19 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
 
   private static final Logger log = LoggerFactory.getLogger(DeliveryManagerForNotifications.class);
 
-  private HashMap<String, NotificationStatistics> statsPerChannels = new HashMap<>();
-  private SubscriberMessageTemplateService subscriberMessageTemplateService;
-  private CommunicationChannelBlackoutService blackoutService;
-  private CommunicationChannelTimeWindowService timeWindowService;
-  private SourceAddressService sourceAddressService;
+  // lazy services instantiate using inner class holder
+  private static class ServicesSingletonHolder{
+    private static final SubscriberMessageTemplateService subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getSubscriberMessageTemplateTopic(), false);
+    private static final CommunicationChannelBlackoutService blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getCommunicationChannelBlackoutTopic(), false);
+    private static final CommunicationChannelTimeWindowService timeWindowService = new CommunicationChannelTimeWindowService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getCommunicationChannelTimeWindowTopic(), false);
+    private static final SourceAddressService sourceAddressService = new SourceAddressService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getSourceAddressTopic(),false);
+    static{
+      subscriberMessageTemplateService.start();
+      blackoutService.start();
+      timeWindowService.start();
+      sourceAddressService.start();
+    }
+  }
 
 
   /*****************************************
@@ -89,75 +95,26 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
 
   public SubscriberMessageTemplateService getSubscriberMessageTemplateService()
   {
-    return subscriberMessageTemplateService;
+    return ServicesSingletonHolder.subscriberMessageTemplateService;
   }
 
   public CommunicationChannelBlackoutService getBlackoutService()
   {
-    return blackoutService;
+    return ServicesSingletonHolder.blackoutService;
   }
   
   public CommunicationChannelTimeWindowService getTimeWindowService() 
   { 
-    return timeWindowService; 
-  }
-
-  public HashMap<String, NotificationStatistics> getStatsPerChannels()
-  {
-    return statsPerChannels;
+    return ServicesSingletonHolder.timeWindowService;
   }
 
   public SourceAddressService getSourceAddressService() {
-    return sourceAddressService;
+    return ServicesSingletonHolder.sourceAddressService;
   }
 
   protected DeliveryManagerForNotifications(String applicationID, String deliveryManagerKey, String bootstrapServers, ConnectSerde<? extends DeliveryRequest> requestSerde, DeliveryManagerDeclaration deliveryManagerDeclaration)
     {
       super(applicationID, deliveryManagerKey, bootstrapServers, requestSerde, deliveryManagerDeclaration);
-
-      //
-      // service
-      //
-
-      subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "common-notificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
-      subscriberMessageTemplateService.start();
-
-      //
-      // blackoutService
-      //
-
-      blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "common-notificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
-      blackoutService.start();
-      
-      //
-      //  timewindowService
-      //
-          
-      timeWindowService = new CommunicationChannelTimeWindowService(Deployment.getBrokerServers(), "common-notificationmanager-communicationchanneltimewindowservice-" + deliveryManagerKey, Deployment.getCommunicationChannelTimeWindowTopic(), false);
-      timeWindowService.start();
-
-      //
-      // source address service
-      //
-
-      sourceAddressService = new SourceAddressService(Deployment.getBrokerServers(), "common-notificationmanager-sourceaddressservice-" + deliveryManagerKey, Deployment.getSourceAddressTopic(),false);
-      sourceAddressService.start();
-//      
-//      //
-//      // statistics
-//      //
-//      
-//      try
-//        {
-//          stats = new NotificationStatistics(applicationID, channelID);
-//        }
-//      catch(Exception e)
-//        {
-//          log.error("SMSNotificationManager: could not load statistics ", e);
-//          throw new RuntimeException("SMSNotificationManager: could not load statistics  ", e);
-//        }
-      // TODO que faire des stats ?
-
     }
   
   /*****************************************
@@ -191,8 +148,6 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
   {
     if(log.isDebugEnabled()) log.debug("DeliveryManagerForNotifications.completeDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
     completeRequest(deliveryRequest);
-    // stats.updateMessageCount(pluginName, 1, deliveryRequest.getDeliveryStatus());
-    // // TODO Stats ?
   }
 
   /*****************************************

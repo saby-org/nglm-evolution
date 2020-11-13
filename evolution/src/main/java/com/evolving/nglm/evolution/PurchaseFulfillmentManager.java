@@ -36,6 +36,9 @@ import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileSer
 
 public class PurchaseFulfillmentManager extends DeliveryManager implements Runnable, CommodityDeliveryResponseHandler
 {
+
+  public static final String PURCHASEFULFILLMENT_DELIVERY_TYPE = "purchaseFulfillment";
+
   /*****************************************
   *
   *  enum
@@ -161,7 +164,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //  superclass
     //
     
-    super("deliverymanager-purchasefulfillment", deliveryManagerKey, Deployment.getBrokerServers(), PurchaseFulfillmentRequest.serde(), Deployment.getDeliveryManagers().get("purchaseFulfillment"));
+    super("deliverymanager-purchasefulfillment", deliveryManagerKey, Deployment.getBrokerServers(), PurchaseFulfillmentRequest.serde(), Deployment.getDeliveryManagers().get(PURCHASEFULFILLMENT_DELIVERY_TYPE));
 
     //
     // variables

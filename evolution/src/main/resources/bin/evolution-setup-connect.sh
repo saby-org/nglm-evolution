@@ -211,7 +211,6 @@ prepare-curl -XPOST $CONNECT_URL_ODR_ES/connectors -H "Content-Type: application
        {
        "connector.class" : "com.evolving.nglm.evolution.ODRSinkConnector",
        "tasks.max" : '$CONNECT_ES_ODR_SINK_TASKS',
-       "topics" : "${topic.fulfillment.purchasefulfillment.response}",
        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
        "indexName" : "detailedrecords_offers",
@@ -260,7 +259,6 @@ prepare-curl -XPOST $CONNECT_URL_BDR_ES/connectors -H "Content-Type: application
        {
        "connector.class" : "com.evolving.nglm.evolution.BDRSinkConnector",
        "tasks.max" : '$CONNECT_ES_BDR_SINK_TASKS',
-       "topics" : "${topic.commoditydelivery.response}",
        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
        "indexName" : "detailedrecords_bonuses",
@@ -285,7 +283,6 @@ prepare-curl -XPOST $CONNECT_URL_NOTIFICATION_ES/connectors -H "Content-Type: ap
       {
       "connector.class" : "com.evolving.nglm.evolution.NotificationSinkConnector",
       "tasks.max" : '$CONNECT_ES_NOTIFICATION_SINK_TASKS',
-      "topics" : "${topic.notificationmanager.response},${topic.notificationmanagerpush.response},${topic.notificationmanagermail.response},${topic.notificationmanagersms.response}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
       "indexName" : "detailedrecords_messages",

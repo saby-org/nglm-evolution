@@ -457,14 +457,6 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
 
-      // if external accountID needed (really for veon rewardManager here so far, but might worth having something generic for IN)
-      String externalSubscriberID = null;
-      String profileExternalSubscriberIDField = Deployment.getDeliveryManagers().get(this.deliveryType).getProfileExternalSubscriberIDField();
-      if ( profileExternalSubscriberIDField!=null ){
-        CriterionField criterionField = Deployment.getProfileCriterionFields().get(profileExternalSubscriberIDField);
-        externalSubscriberID = (String) criterionField.retrieveNormalized(subscriberEvaluationRequest);
-      }
-
       /*****************************************
       *
       *  Commodity to Provider and Deliverable
@@ -544,7 +536,7 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
       rewardRequestData.put("featureID", deliveryRequestSource);
       rewardRequestData.put("deliveryType", deliveryType);
       rewardRequestData.put("diplomaticBriefcase", new HashMap<String, String>());
-      rewardRequestData.put("msisdn", externalSubscriberID);
+      rewardRequestData.put("msisdn", evolutionEventContext.getSubscriberState().getSubscriberID());
       rewardRequestData.put("providerID", providerID);
       rewardRequestData.put("deliverableID", deliverable.getDeliverableID());
       rewardRequestData.put("deliverableName", deliverable.getDeliverableName());

@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import com.evolving.nglm.evolution.kafka.Topic;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -25,7 +26,6 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
-import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
 
@@ -50,6 +50,13 @@ public class Deployment
   //  data
   //
 
+  // kafka topics configs
+  private static int topicSubscriberPartitions;
+  private static int topicReplication;
+  private static String topicMinInSyncReplicas;
+  private static String topicRetentionShortMs;
+  private static String topicRetentionMs;
+  private static String topicRetentionLongMs;
   private static int evolutionEngineStreamThreads;
   private static int evolutionEngineInstanceNumbers;
   private static String subscriberGroupLoaderAlternateID;
@@ -65,14 +72,10 @@ public class Deployment
   private static Map<String, CriterionField> profileChangeDetectionCriterionFields = new HashMap<>();
   private static Map<String, CriterionField> profileChangeGeneratedCriterionFields = new HashMap<>();
   private static boolean enableProfileSegmentChange;
-  private static String emptyTopic;
   private static String journeyTopic;
   private static String journeyTemplateTopic;
   private static String segmentationDimensionTopic;
   private static String pointTopic;
-  private static String pointFulfillmentRequestTopic;
-  private static String pointFulfillmentResponseTopic;
-  private static String pointFulfillmentRekeyedTopic;
   private static String offerTopic;
   private static String reportTopic;
   private static String paymentMeanTopic;
@@ -110,10 +113,6 @@ public class Deployment
   private static String extendedSubscriberProfileChangeLogTopic;
   private static String subscriberHistoryChangeLog;
   private static String subscriberHistoryChangeLogTopic;
-  private static String journeyRequestTopic;
-  private static String journeyResponseTopic;
-  private static String loyaltyProgramRequestTopic;
-  private static String loyaltyProgramResponseTopic;
   private static String journeyStatisticTopic;
   private static String journeyMetricTopic;
   private static String deliverableSourceTopic;
@@ -270,6 +269,9 @@ public class Deployment
   
   private static int recurrentCampaignCreationDaysRange;
 
+  // generated
+  private static Map<String,Topic> allTopics;
+
   /*****************************************
    *
    *  accessors
@@ -306,6 +308,12 @@ public class Deployment
 
   public static boolean getRegressionMode() { return System.getProperty("use.regression","0").equals("1"); }
   public static String getSubscriberProfileEndpoints() { return System.getProperty("subscriberprofile.endpoints",""); }
+  public static int getTopicSubscriberPartitions() { return topicSubscriberPartitions; }
+  public static int getTopicReplication() { return topicReplication; }
+  public static String getTopicMinInSyncReplicas() { return topicMinInSyncReplicas; }
+  public static String getTopicRetentionShortMs() { return topicRetentionShortMs; }
+  public static String getTopicRetentionMs() { return topicRetentionMs; }
+  public static String getTopicRetentionLongMs() { return topicRetentionLongMs; }
   public static int getEvolutionEngineStreamThreads() { return evolutionEngineStreamThreads; }
   public static int getEvolutionEngineInstanceNumbers() { return evolutionEngineInstanceNumbers; }
   public static String getSubscriberGroupLoaderAlternateID() { return subscriberGroupLoaderAlternateID; }
@@ -318,14 +326,10 @@ public class Deployment
   public static String getExtendedSubscriberProfileClassName() { return extendedSubscriberProfileClassName; }
   public static Map<String,EvolutionEngineEventDeclaration> getEvolutionEngineEvents() { return evolutionEngineEvents; }
   public static boolean getEnableProfileSegmentChange() { return enableProfileSegmentChange; }
-  public static String getEmptyTopic() { return emptyTopic; }
   public static String getJourneyTopic() { return journeyTopic; }
   public static String getJourneyTemplateTopic() { return journeyTemplateTopic; }
   public static String getSegmentationDimensionTopic() { return segmentationDimensionTopic; }
   public static String getPointTopic() { return pointTopic; }
-  public static String getPointFulfillmentRequestTopic() { return pointFulfillmentRequestTopic; }
-  public static String getPointFulfillmentResponseTopic() { return pointFulfillmentResponseTopic; }
-  public static String getPointFulfillmentRekeyedTopic() { return pointFulfillmentRekeyedTopic; }
   public static String getOfferTopic() { return offerTopic; }
   public static String getReportTopic() { return reportTopic; }
   public static String getPaymentMeanTopic() { return paymentMeanTopic; }
@@ -363,10 +367,6 @@ public class Deployment
   public static String getExtendedSubscriberProfileChangeLogTopic() { return extendedSubscriberProfileChangeLogTopic; }
   public static String getSubscriberHistoryChangeLog() { return subscriberHistoryChangeLog; }
   public static String getSubscriberHistoryChangeLogTopic() { return subscriberHistoryChangeLogTopic; }
-  public static String getJourneyRequestTopic() { return journeyRequestTopic; }
-  public static String getJourneyResponseTopic() { return journeyResponseTopic; }
-  public static String getLoyaltyProgramRequestTopic() { return loyaltyProgramRequestTopic; }
-  public static String getLoyaltyProgramResponseTopic() { return loyaltyProgramResponseTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
   public static String getJourneyMetricTopic() { return journeyMetricTopic; }
   public static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
@@ -515,6 +515,7 @@ public class Deployment
   public static String getExtractManagerCsvSeparator() { return extractManagerCsvSeparator; }
   public static String getExtractManagerFieldSurrounder() { return extractManagerFieldSurrounder; }
   public static int getRecurrentCampaignCreationDaysRange() { return recurrentCampaignCreationDaysRange; }
+  public static Set<Topic> getAllTopics() { return new HashSet<>(allTopics.values()); }
 
   // addProfileCriterionField
   //
@@ -738,6 +739,23 @@ public class Deployment
        *  configuration
        *
        *****************************************/
+
+      //
+      // kafka topics configuration
+      //
+      try
+        {
+          topicSubscriberPartitions = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "topicSubscriberPartitions", true));
+          topicReplication = Integer.parseInt(JSONUtilities.decodeString(jsonRoot, "topicReplication", true));
+          topicMinInSyncReplicas = JSONUtilities.decodeString(jsonRoot, "topicMinInSyncReplicas", true);
+          topicRetentionShortMs = ""+(JSONUtilities.decodeInteger(jsonRoot, "topicRetentionShortHour", true) * 3600 * 1000L);
+          topicRetentionMs = ""+(JSONUtilities.decodeInteger(jsonRoot, "topicRetentionDay", true) * 24 * 3600 * 1000L);
+          topicRetentionLongMs = ""+(JSONUtilities.decodeInteger(jsonRoot, "topicRetentionLongDay", true) * 24 * 3600 * 1000L);
+        }
+      catch (JSONUtilitiesException|NumberFormatException e)
+        {
+          throw new ServerRuntimeException("deployment : topic configuration", e);
+        }
 
       try
         {
@@ -975,19 +993,6 @@ public class Deployment
         }
 
       //
-      //  emptyTopic
-      //
-
-      try
-        {
-          emptyTopic = JSONUtilities.decodeString(jsonRoot, "emptyTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
       //  journeyTopic
       //
 
@@ -1040,32 +1045,6 @@ public class Deployment
         }
 
       //
-      //  pointFulfillmentRequestTopic
-      //
-
-      try
-        {
-          pointFulfillmentRequestTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentRequestTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  pointFulfillmentResponseTopic
-      //
-
-      try
-        {
-          pointFulfillmentResponseTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentResponseTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
       //  maxPollIntervalMs
       //
 
@@ -1084,19 +1063,6 @@ public class Deployment
       try
         {
           purchaseTimeoutMs = JSONUtilities.decodeInteger(jsonRoot, "purchaseTimeoutMs", 15000);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  pointFulfillmentRekeyedTopic
-      //
-
-      try
-        {
-          pointFulfillmentRekeyedTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentRekeyedTopic", true);
         }
       catch (JSONUtilitiesException e)
         {
@@ -1709,58 +1675,6 @@ public class Deployment
       try
         {
           subscriberHistoryChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "subscriberHistoryChangeLogTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  journeyRequestTopic
-      //
-
-      try
-        {
-          journeyRequestTopic = JSONUtilities.decodeString(jsonRoot, "journeyRequestTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  journeyResponseTopic
-      //
-
-      try
-        {
-          journeyResponseTopic = JSONUtilities.decodeString(jsonRoot, "journeyResponseTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  loyaltyProgramRequestTopic
-      //
-
-      try
-        {
-          loyaltyProgramRequestTopic = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramRequestTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  loyaltyProgramResponseTopic
-      //
-
-      try
-        {
-          loyaltyProgramResponseTopic = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramResponseTopic", true);
         }
       catch (JSONUtilitiesException e)
         {
@@ -2719,6 +2633,17 @@ public class Deployment
                   fulfillmentProviders.put(deliveryManagerDeclaration.getProviderID(), deliveryManagerDeclaration);
                 }
             }
+          //TODO remove later, forcing conf cleaning
+          if(Deployment.getDeliveryManagers().get("notificationmanager")!=null)
+            {
+              log.error("notificationmanager deliveryManager declaration is not possible anymore, remove it");
+              throw new ServerRuntimeException("old conf for generic channel");
+            }
+          // auto generated notif ones
+          for (CommunicationChannel cc:getCommunicationChannels().values())
+            {
+              if (cc.getDeliveryManagerDeclaration()!=null) deliveryManagers.put(cc.getDeliveryManagerDeclaration().getDeliveryType(),cc.getDeliveryManagerDeclaration());
+            }
         }
       catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
         {
@@ -3218,19 +3143,13 @@ public class Deployment
 
       try
         {
-          JSONArray deliveryTypes = JSONUtilities.decodeJSONArray(jsonRoot, "deliveryManagers", new JSONArray());
-          for (int i = 0; i < deliveryTypes.size(); i++)
+          for (DeliveryManagerDeclaration deliveryManagerDeclaration:getDeliveryManagers().values())
             {
-              JSONObject deliveryTypeJOSN = (JSONObject) deliveryTypes.get(i);
-              String deliveryType = JSONUtilities.decodeString(deliveryTypeJOSN, "deliveryType", true);
-              JSONArray communicationChannels = JSONUtilities.decodeJSONArray(jsonRoot, "communicationChannels", new JSONArray());
-              for (int k = 0; k < communicationChannels.size(); k++)
+              for (CommunicationChannel communicationChannel:getCommunicationChannels().values())
                 {
-                  JSONObject communicationChannelJSON = (JSONObject) communicationChannels.get(k);
-                  String channelDeliveryType = JSONUtilities.decodeString(communicationChannelJSON, "deliveryType", true);
-                  if (deliveryType.equals(channelDeliveryType))
+                  if (deliveryManagerDeclaration.getDeliveryType().equals(communicationChannel.getDeliveryType()))
                     {
-                      deliveryTypeCommunicationChannelIDMap.put(deliveryType, JSONUtilities.decodeString(communicationChannelJSON, "id", true));
+                      deliveryTypeCommunicationChannelIDMap.put(communicationChannel.getDeliveryType(), communicationChannel.getID());
                     }
                 }
             }
@@ -3435,14 +3354,26 @@ public class Deployment
         }
       
       try
-      {
-        recurrentCampaignCreationDaysRange = JSONUtilities.decodeInteger(jsonRoot, "recurrentCampaignCreationDaysRange", 3);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-      
+        {
+          recurrentCampaignCreationDaysRange = JSONUtilities.decodeInteger(jsonRoot, "recurrentCampaignCreationDaysRange", 3);
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+
+      //
+      // all dynamic topics
+      //
+      allTopics = new HashMap<>();
+      // from delivery managers
+      for(DeliveryManagerDeclaration dmd:getDeliveryManagers().values())
+        {
+          dmd.getRequestTopics().stream().filter(Topic::isAutoCreated).forEach(topic->allTopics.put(topic.getName(),topic));
+          dmd.getResponseTopics().stream().filter(Topic::isAutoCreated).forEach(topic->allTopics.put(topic.getName(),topic));
+          if(dmd.getRoutingTopic()!=null&&dmd.getRoutingTopic().isAutoCreated()) allTopics.put(dmd.getRoutingTopic().getName(),dmd.getRoutingTopic());
+        }
+
     }
 
   /*****************************************
