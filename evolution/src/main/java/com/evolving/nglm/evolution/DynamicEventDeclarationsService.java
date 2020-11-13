@@ -19,9 +19,11 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.google.gson.JsonObject;
 
@@ -301,12 +303,46 @@ public class DynamicEventDeclarationsService extends GUIService
             result.put(criterionFieldOLD.getID(), criterionFieldOLD);
             result.put(criterionFieldNEW.getID(), criterionFieldNEW);
             result.put(criterionFieldUpdated.getID(), criterionFieldUpdated);
+            
+            //
+            // Tier Update Type
+            // 
+            
+            JSONObject criterionFieldTierUpdateTypeJSON = new JSONObject();
+            criterionFieldTierUpdateTypeJSON.put("id", "loyaltyprogram" + "." + loyaltyProgram.getLoyaltyProgramID() + ".tierupdatetype");
+            criterionFieldTierUpdateTypeJSON.put("display", "Loyalty Program " + loyaltyProgram.getGUIManagedObjectDisplay() + " tier update type");
+            criterionFieldTierUpdateTypeJSON.put("dataType", CriterionDataType.StringCriterion.getExternalRepresentation());
+            criterionFieldTierUpdateTypeJSON.put("retriever", "getProfilePointLoyaltyProgramTierUpdateType");
+            criterionFieldTierUpdateTypeJSON.put("availableValues", generateAvailableValuesForTierUpdateType());
+            CriterionField criterionFieldTierUpdateType = new CriterionField(criterionFieldTierUpdateTypeJSON);
 
+            result.put(criterionFieldOLD.getID(), criterionFieldOLD);
+            result.put(criterionFieldNEW.getID(), criterionFieldNEW);
+            result.put(criterionFieldUpdated.getID(), criterionFieldUpdated);
+            result.put(criterionFieldTierUpdateType.getID(),  criterionFieldTierUpdateType);
             break;
           }
       }
     return result;
   }  
+  
+  /*****************************************
+  *
+  *  generateAvailableValuesForTierDataType
+  *
+  *****************************************/
+
+  private JSONArray generateAvailableValuesForTierUpdateType()
+  {
+    JSONArray availableValuesField = new JSONArray();
+    availableValuesField.add(LoyaltyProgramTierChange.Optin.getExternalRepresentation());
+    availableValuesField.add(LoyaltyProgramTierChange.Optout.getExternalRepresentation());
+    availableValuesField.add(LoyaltyProgramTierChange.Upgrade.getExternalRepresentation());
+    availableValuesField.add(LoyaltyProgramTierChange.Downgrade.getExternalRepresentation());
+    
+    return availableValuesField;
+  }
+
   
   /*****************************************
   *
@@ -375,6 +411,8 @@ public class DynamicEventDeclarationsService extends GUIService
       }
     return result;
   }
+  
+  
 
   /*****************************************
   *
