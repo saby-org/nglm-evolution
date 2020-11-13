@@ -101,30 +101,6 @@ prepare-curl -XPOST $CONNECT_URL_JOURNEYMETRIC_ES/connectors -H "Content-Type: a
   }' 
 
 #
-#  source connector -- externalDeliveryRequest
-#
-
-export CONNECT_URL_EXTERNALDELIVERYREQUEST=${CONNECT_URL_EXTERNALDELIVERYREQUEST:-$DEFAULT_CONNECT_URL}
-prepare-curl -XPOST $CONNECT_URL_EXTERNALDELIVERYREQUEST/connectors -H "Content-Type: application/json" -d '
-  {
-    "name" : "externaldeliveryrequest_file_connector",
-    "config" :
-      {
-        "connector.class" : "com.evolving.nglm.evolution.ExternalDeliveryRequestFileSourceConnector",
-        "tasks.max" : 1,
-        "directory" : "/app/data/externaldeliveryrequests",
-        "filenamePattern" : "^.*(\\.gz)?(?<!\\.tmp)$",
-        "pollMaxRecords" : 5,
-        "pollingInterval" : 10,
-        "verifySizeInterval" : 0,
-        "topic" : "(automatically populated)",
-        "bootstrapServers" : "'$BROKER_SERVERS'",
-        "internalTopic" : "${topic.externaldeliveryrequest_fileconnector}",
-        "archiveDirectory" : "/app/data/externaldeliveryrequestsarchive"
-      }
-  }' 
-
-#
 #  source connector -- presentationLog
 #
 
