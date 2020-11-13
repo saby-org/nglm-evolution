@@ -105,6 +105,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public static final String VOUCHERPARTNERID = "voucherPartnerId";
   public static final String RESELLERID = "resellerID";
   public static final String RESELLERDISPLAY = "resellerDisplay";
+  public static final String SUPPLIERDISPLAY = "supplierDisplay";
   
   //
   // Messages

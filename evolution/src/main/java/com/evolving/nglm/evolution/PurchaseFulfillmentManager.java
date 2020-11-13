@@ -149,6 +149,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private SalesChannelService salesChannelService;
   private StockMonitor stockService;
   private DeliverableService deliverableService;
+  private ResellerService resellerService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private StatBuilder<CounterStat> statsCounter;
   private ZookeeperUniqueKeyServer zookeeperUniqueKeyServer;
@@ -214,7 +215,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     deliverableService = new DeliverableService(Deployment.getBrokerServers(), "PurchaseMgr-deliverableservice-"+deliveryManagerKey, Deployment.getDeliverableTopic(), false);
     deliverableService.start();
 
-    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("PurchaseMgr-subscribergroupepoch", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
+    resellerService = new ResellerService(Deployment.getBrokerServers(), "PurchaseMgr-resellereservice-"+deliveryManagerKey, Deployment.getResellerTopic(), false);
+    resellerService.start();
+
+    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("PurchaseMgr-subscribergroupepoch", "PurchaseMgr-subscriberGroupReader-"+deliveryManagerKey, Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
 
     //
     // define as commodityDelivery response consumer
@@ -268,7 +272,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_purchasefulfillment_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),9));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("offerID", Schema.STRING_SCHEMA);
       schemaBuilder.field("offerDisplay", Schema.OPTIONAL_STRING_SCHEMA);
@@ -280,6 +284,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       schemaBuilder.field("offerPrice", Schema.INT64_SCHEMA);
       schemaBuilder.field("origin", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("resellerID", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("resellerDisplay", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("supplierDisplay", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("voucherDeliveries", SchemaBuilder.array(VoucherDelivery.schema()).optional());
       schema = schemaBuilder.build();
     }
@@ -316,6 +322,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     private long offerPrice;
     private String origin;
     private String resellerID;
+    private String resellerDisplay;
+    private String supplierDisplay;
     private List<VoucherDelivery> voucherDeliveries;
     
     //
@@ -334,7 +342,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getOrigin() { return origin; }
     public String getResellerID() { return resellerID; }
     public List<VoucherDelivery> getVoucherDeliveries() { return voucherDeliveries; }
-    
+    public String getResellerDisplay() { return resellerDisplay; }
+    public String getSupplierDisplay() { return supplierDisplay; }
     //
     //  setters
     //
@@ -347,7 +356,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public void setMeanOfPayment(String meanOfPayment) { this.meanOfPayment = meanOfPayment; }
     public void setOfferPrice(Long offerPrice) { this.offerPrice = offerPrice; }
     public void addVoucherDelivery(VoucherDelivery voucherDelivery) {if(getVoucherDeliveries()==null){ this.voucherDeliveries = new ArrayList<>();} this.voucherDeliveries.add(voucherDelivery); }
-
+    public void setResellerDisplay(String resellerDisplay) { this.resellerDisplay = resellerDisplay; }
+    public void setSupplierDisplay(String supplierDisplay) { this.supplierDisplay = supplierDisplay; }
+    
     //
     //  offer delivery accessors
     //
@@ -365,6 +376,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getOfferDeliveryVoucherPartnerId() { return ""; }//TODO
     public String getOfferDeliveryOfferContent() { return getOfferContent(); }
     public String getOfferDeliveryResellerID() { return getResellerID(); }
+    public String getResellerName_OfferDelivery() { return getResellerDisplay(); }
+    public String getSupplierName_OfferDelivery() { return getSupplierDisplay(); }
     
     /*****************************************
     *
@@ -382,7 +395,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.returnCode = PurchaseFulfillmentStatus.PENDING.getReturnCode();
       this.origin = origin;       
       this.resellerID = resellerID;
-      updatePurchaseFulfillmentRequest(context.getOfferService(), context.getPaymentMeanService(), context.now());
+      updatePurchaseFulfillmentRequest(context.getOfferService(), context.getPaymentMeanService(), context.getResellerService(), context.getProductService(), context.getSupplierService(), context.getVoucherService(), context.now());
     }
 
     /*****************************************
@@ -391,8 +404,15 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    private void updatePurchaseFulfillmentRequest(OfferService offerService, PaymentMeanService paymentMeanService, Date now)
+    private void updatePurchaseFulfillmentRequest(OfferService offerService, PaymentMeanService paymentMeanService, ResellerService resellerService, ProductService productService, SupplierService supplierService, VoucherService voucherService, Date now)
     {
+      
+      // resellerDisplay
+      if (resellerID != null)
+        {
+          Reseller reseller = resellerService.getActiveReseller(resellerID, now);
+          this.resellerDisplay = (reseller == null || reseller.getGUIManagedObjectDisplay() == null) ? "" : reseller.getGUIManagedObjectDisplay();
+        }
 
       //
       // offerDisplay
@@ -445,6 +465,70 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         }
         this.offerContent = offerContent;
 
+        // supplierDisplay
+        // look for it in products, and if none, look for vouchers
+        
+        boolean found = false;
+        
+        if (offer != null)
+          {
+            Set<OfferProduct> offerProducts = offer.getOfferProducts();
+            if (offerProducts != null)
+              {
+                for (OfferProduct offerProduct : offerProducts)
+                  {
+                    String productID = offerProduct.getProductID();
+                    Product product = productService.getActiveProduct(productID, now);
+                    if (product != null)
+                      {
+                        String supplierID = product.getSupplierID();
+                        if (supplierID != null)
+                          {
+                            Supplier supplier = supplierService.getActiveSupplier(supplierID, now);
+                            if (supplier != null)
+                              {
+                                supplierDisplay = supplier.getGUIManagedObjectDisplay();
+                                found = true;
+                                break; // only consider first valid one
+                              }
+                          }
+                      }
+                  }
+              }
+            if (!found)
+              {
+                Set<OfferVoucher> offerVouchers = offer.getOfferVouchers();
+                if (offerVouchers != null)
+                  {
+                    for (OfferVoucher offerVoucher : offerVouchers)
+                      {
+                        String voucherID = offerVoucher.getVoucherID();
+                        Voucher voucher = voucherService.getActiveVoucher(voucherID, now);
+                        if (voucher != null)
+                          {
+                            String supplierID = voucher.getSupplierID();
+                            if (supplierID != null)
+                              {
+                                Supplier supplier = supplierService.getActiveSupplier(supplierID, now);
+                                if (supplier != null)
+                                  {
+                                    supplierDisplay = supplier.getGUIManagedObjectDisplay();
+                                    found = true;
+                                    break; // only consider first valid one
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+        if (!found)
+          {
+            log.info("Unable to find a supplier from offer " + offer);
+            supplierDisplay = "";
+          }
+        
+        
         //
         // meanOfPayment
         // offerPrice
@@ -483,7 +567,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    public PurchaseFulfillmentRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager, OfferService offerService, PaymentMeanService paymentMeanService, Date now)
+    public PurchaseFulfillmentRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager, OfferService offerService, PaymentMeanService paymentMeanService, ResellerService resellerService, ProductService productService, SupplierService supplierService, VoucherService voucherService, Date now)
     {
       super(subscriberProfile,subscriberGroupEpochReader,jsonRoot);
       this.offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
@@ -494,7 +578,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.returnCodeDetails = "";
       this.origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
       this.resellerID = JSONUtilities.decodeString(jsonRoot, "resellerID", false);
-      updatePurchaseFulfillmentRequest(offerService, paymentMeanService, now);
+      this.resellerDisplay = JSONUtilities.decodeString(jsonRoot, "resellerDisplay", false);
+      this.supplierDisplay = JSONUtilities.decodeString(jsonRoot, "supplierDisplay", false);
+      updatePurchaseFulfillmentRequest(offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, now);
     }
 
     /*****************************************
@@ -506,7 +592,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice, String origin, String resellerID, List<VoucherDelivery> voucherDeliveries)
+    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice, String origin, String resellerID, String resellerDisplay, String supplierDisplay, List<VoucherDelivery> voucherDeliveries)
     {
       super(schemaAndValue);
       this.offerID = offerID;
@@ -521,6 +607,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.origin = origin;
       this.resellerID = resellerID;
       this.voucherDeliveries = voucherDeliveries;
+      this.resellerDisplay = resellerDisplay;
+      this.supplierDisplay = supplierDisplay;
     }
 
     /*****************************************
@@ -543,6 +631,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.offerPrice = purchaseFulfillmentRequest.getOfferPrice();
       this.origin = purchaseFulfillmentRequest.getOrigin();
       this.resellerID = purchaseFulfillmentRequest.getResellerID();
+      this.resellerDisplay = purchaseFulfillmentRequest.getResellerDisplay();
+      this.supplierDisplay = purchaseFulfillmentRequest.getSupplierDisplay();
       this.voucherDeliveries = purchaseFulfillmentRequest.getVoucherDeliveries();
     }
 
@@ -578,6 +668,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       struct.put("offerPrice", purchaseFulfillmentRequest.getOfferPrice());
       struct.put("origin", purchaseFulfillmentRequest.getOrigin());
       struct.put("resellerID", purchaseFulfillmentRequest.getResellerID());
+      struct.put("resellerDisplay", purchaseFulfillmentRequest.getResellerDisplay());
+      struct.put("supplierDisplay", purchaseFulfillmentRequest.getSupplierDisplay());
       if(purchaseFulfillmentRequest.getVoucherDeliveries()!=null) struct.put("voucherDeliveries", packVoucherDeliveries(purchaseFulfillmentRequest.getVoucherDeliveries()));
       return struct;
     }
@@ -627,6 +719,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       long offerPrice = (schemaVersion >= 2) ? valueStruct.getInt64("offerPrice") : 0;
       String origin = (schemaVersion >= 3) ? valueStruct.getString("origin") : "";
       String resellerID = (schemaVersion >= 4) ? valueStruct.getString("resellerID") : "";
+      String resellerDisplay = (schemaVersion >= 9) ? valueStruct.getString("resellerDisplay") : "";
+      String supplierDisplay = (schemaVersion >= 9) ? valueStruct.getString("supplierDisplay") : "";
       List<VoucherDelivery> voucherDeliveries = (schemaVersion >= 5) ? unpackVoucherDeliveries(schema.field("voucherDeliveries").schema(), valueStruct.get("voucherDeliveries")) : null;
 
 
@@ -634,7 +728,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //  return
       //
 
-      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice, origin, resellerID, voucherDeliveries);
+      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice, origin, resellerID, resellerDisplay, supplierDisplay, voucherDeliveries);
     }
 
     private static List<VoucherDelivery> unpackVoucherDeliveries(Schema schema, Object value){
@@ -671,6 +765,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       b.append("," + offerPrice);
       b.append("," + origin);
       b.append("," + resellerID);
+      b.append("," + resellerDisplay);
+      b.append("," + supplierDisplay);
       b.append(",{");
       if(voucherDeliveries!=null) b.append(Arrays.toString(voucherDeliveries.toArray()));
       b.append("}");
@@ -758,14 +854,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           guiPresentationMap.put(FEATUREID, getFeatureID());
           guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
           guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-          guiPresentationMap.put(ORIGIN, getOrigin()); 
-          String display = "";
-          GUIManagedObject reseller = resellerService.getStoredReseller(resellerID);
-          if (reseller instanceof Reseller)
-            {
-              display = ((Reseller) reseller).getGUIManagedObjectDisplay();
-            }
-          guiPresentationMap.put(RESELLERDISPLAY, display);
+          guiPresentationMap.put(ORIGIN, getOrigin());
+          guiPresentationMap.put(RESELLERDISPLAY, getResellerDisplay());
+          guiPresentationMap.put(SUPPLIERDISPLAY, getSupplierDisplay());
           guiPresentationMap.put(RETURNCODE, getReturnCode());
           guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
           guiPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
@@ -843,11 +934,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
           thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
           thirdPartyPresentationMap.put(ORIGIN, getOrigin());
-          GUIManagedObject reseller = resellerService.getStoredReseller(resellerID);
-          if (reseller instanceof Reseller) {
-            String display = ((Reseller)reseller).getGUIManagedObjectDisplay();
-            thirdPartyPresentationMap.put(RESELLERDISPLAY, display);
-          }
+          thirdPartyPresentationMap.put(RESELLERDISPLAY, getResellerDisplay());
+          thirdPartyPresentationMap.put(SUPPLIERDISPLAY, getSupplierDisplay());
           thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
           thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
           thirdPartyPresentationMap.put(RETURNCODEDETAILS, getOfferDeliveryReturnCodeDetails());

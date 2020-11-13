@@ -2606,7 +2606,9 @@ public class Journey extends GUIManagedObject implements StockableItem
 
     if (unvalidatedContextVariables.size() > 0)
       {
-        throw new GUIManagerException("unvalidatedContextVariables", Integer.toString(unvalidatedContextVariables.size()));
+        StringBuilder buffer = new StringBuilder();
+        unvalidatedContextVariables.iterator().forEachRemaining(var -> buffer.append(var.getID()+" "));
+        throw new GUIManagerException("unvalidatedContextVariables "+buffer, Integer.toString(unvalidatedContextVariables.size()));
       }
 
     /*****************************************
@@ -2729,6 +2731,14 @@ public class Journey extends GUIManagedObject implements StockableItem
 
       this.contextVariables = nodeType.getAllowContextVariables() ? decodeContextVariables(JSONUtilities.decodeJSONArray(jsonRoot, "contextVariables", false)) : Collections.<ContextVariable>emptyList();
 
+      // add a special internal variables to hold partner
+      
+      if ("121".equals(nodeType.getID()) && "offerDelivery".equals(eventName)) // event.selection nodetype (defined in src/main/resources/config/deployment-product-toolbox.json)
+        {
+          this.contextVariables.add(new ContextVariable(buildContextVariableJSON(EvolutionEngine.INTERNAL_VARIABLE_SUPPLIER, "event.supplierName")));
+          this.contextVariables.add(new ContextVariable(buildContextVariableJSON(EvolutionEngine.INTERNAL_VARIABLE_RESELLER, "event.resellerName")));
+        }
+      
       /*****************************************
       *
       *  process these fields only if NOT doing contextVariableProcessing
@@ -2750,6 +2760,22 @@ public class Journey extends GUIManagedObject implements StockableItem
 
           this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), nodeType, nodeOnlyCriterionContext, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
         }
+    }
+    
+    public JSONObject buildContextVariableJSON(String internalVariableName, String eventField)
+    {
+      JSONObject contextVariableJSON;
+      JSONObject valueJSON = new JSONObject();
+      valueJSON.put("expression", eventField);
+      valueJSON.put("value", eventField);
+      valueJSON.put("expressionType", EvaluationCriterion.CriterionDataType.StringCriterion.getExternalRepresentation());
+      valueJSON.put("assignment", ContextVariable.Assignment.Direct.getExternalRepresentation());
+      valueJSON.put("valueType", "complex"); // not sure this is required
+
+      contextVariableJSON = new JSONObject();
+      contextVariableJSON.put("name", internalVariableName);
+      contextVariableJSON.put("value", valueJSON);
+      return contextVariableJSON;
     }
 
     /*****************************************

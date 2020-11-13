@@ -155,7 +155,7 @@ public class ContextVariable
     this.criterionContext = null;
     JSONObject jsonValue = JSONUtilities.decodeJSONObject(jsonRoot, "value", false);
     this.expressionString = (jsonValue != null) ? JSONUtilities.decodeString(jsonValue, "expression", false) : null;
-    this.assignment = Assignment.fromExternalRepresentation(JSONUtilities.decodeString(jsonValue, "assignment", "="));
+    this.assignment = (jsonValue != null) ? Assignment.fromExternalRepresentation(JSONUtilities.decodeString(jsonValue, "assignment", "=")) : Assignment.Direct;
     this.baseTimeUnit = (jsonValue != null) ? TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonValue, "timeUnit", "(unknown)")) : TimeUnit.Unknown;
     this.variableType = (jsonValue != null) ? (JSONUtilities.decodeBoolean(jsonValue, "isParameter", Boolean.FALSE) ? VariableType.Parameter : VariableType.Local) : VariableType.Local;
     this.validated = false;

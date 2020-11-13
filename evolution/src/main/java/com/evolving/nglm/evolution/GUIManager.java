@@ -10608,6 +10608,7 @@ public class GUIManager
     *
     *****************************************/
 
+    processPartnerAlternateID(jsonRoot);
     long epoch = epochServer.getKey();
     try
       {
@@ -10691,6 +10692,25 @@ public class GUIManager
         response.put("responseMessage", e.getMessage());
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  private void processPartnerAlternateID(JSONObject jsonRoot)
+  {
+    // find out the subscriberID, so that we can do the processing in EvolutionEngine
+    String alternateID = JSONUtilities.decodeString(jsonRoot, "alternateID", false);
+    String alternateIDValue = JSONUtilities.decodeString(jsonRoot, "alternateIDValue", false);
+    if (alternateID != null && alternateIDValue != null)
+      {
+        try
+        {
+          String customerID = subscriberIDService.getSubscriberID(alternateID, alternateIDValue);
+          jsonRoot.put("customerIDfromAlternateID", customerID);
+        }
+        catch (SubscriberIDServiceException e)
+        {
+          log.error("SubscriberIDServiceException can not resolve subscriberID for {} = {} error is {}", alternateID, alternateIDValue, e.getMessage());
+        }
       }
   }
 
@@ -19436,8 +19456,6 @@ public class GUIManager
 
     GUIManagedObject existingReseller= resellerService.getStoredGUIManagedObject(resellerID);
     
-    
-    
     /*****************************************
     *
     *  To check if the user is already in another reseller users list
@@ -19487,7 +19505,8 @@ public class GUIManager
     *  process Reseller
     *
     *****************************************/
-
+    
+    processPartnerAlternateID(jsonRoot);
     long epoch = epochServer.getKey();
     try
       {
@@ -23704,7 +23723,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
-    PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, SystemTime.getCurrentTime());
+    PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, SystemTime.getCurrentTime());
     purchaseRequest.setDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
 	String topic = deliveryManagerDeclaration.getRequestTopic(purchaseRequest.getDeliveryPriority());
 
@@ -25079,6 +25098,33 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 }
             }
           break;
+          
+        case "resellers":
+          if (includeDynamic)
+            {
+              for (Reseller reseller : resellerService.getActiveResellers(now))
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", reseller.getGUIManagedObjectID());
+                  availableValue.put("display", reseller.getGUIManagedObjectDisplay());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+          
+        case "suppliers":
+          if (includeDynamic)
+            {
+              for (Supplier supplier : supplierService.getActiveSuppliers(now))
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", supplier.getGUIManagedObjectID());
+                  availableValue.put("display", supplier.getGUIManagedObjectDisplay());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+          
         case "weekDays":
           if (includeDynamic)
             {
@@ -25150,7 +25196,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         case "supportedRelationships":
           HashMap<String, Object> availableValue = new HashMap<String, Object>();
           availableValue.put("id", "customer");
-          availableValue.put("display", "customer");
+          availableValue.put("display", "Customer");
           result.add(JSONUtilities.encodeObject(availableValue));
           
           for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
@@ -25182,6 +25228,29 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
           result.sort((m1, m2) -> ((String) m1.get("display")).compareTo((String) m2.get("display")));
           break;
           
+        case "supportedRelationshipsAndPartners":
+          availableValue = new HashMap<String, Object>();
+          availableValue.put("id", "customer");
+          availableValue.put("display", "Customer");
+          result.add(JSONUtilities.encodeObject(availableValue));
+          for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+            {
+              availableValue = new HashMap<String, Object>();
+              availableValue.put("id", "hierarchy_" + supportedRelationship.getID());
+              availableValue.put("display", supportedRelationship.getDisplay());
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          
+          availableValue = new HashMap<String, Object>();
+          availableValue.put("id", EvolutionEngine.INTERNAL_ID_SUPPLIER);
+          availableValue.put("display", "Supplier");
+          
+          result.add(JSONUtilities.encodeObject(availableValue));
+          availableValue.put("id", EvolutionEngine.INTERNAL_ID_RESELLER);
+          availableValue.put("display", "Reseller");
+          result.add(JSONUtilities.encodeObject(availableValue));
+          break;
+
       default:
           
           if(reference.startsWith("dialog_template_")) {

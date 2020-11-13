@@ -1205,7 +1205,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
           } 
         
         // add parameter relation to relationship
-        tb.addParameter(new ParameterBuilder("node.parameter.relationship", "Hierarchy Relationship", CriterionDataType.StringCriterion, false, true, "customer").addAvailableValue(new AvailableValueDynamicBuilder("#supportedRelationships#")));
+        tb.addParameter(new ParameterBuilder("node.parameter.relationship", "Hierarchy Relationship", CriterionDataType.StringCriterion, false, true, "customer").addAvailableValue(new AvailableValueDynamicBuilder("#supportedRelationshipsAndPartners#")));
 
         // Action:
         tb.setAction(new ActionBuilder("com.evolving.nglm.evolution.NotificationManager$ActionManager").addManagerClassConfigurationField("channelID", current.getID()).addManagerClassConfigurationField("moduleID", "1"));
