@@ -305,6 +305,7 @@ public class GUIManager
     getProductSummaryList("getProductSummaryList"),
     getProduct("getProduct"),
     putProduct("putProduct"),
+    updateProduct("updateProduct"),
     removeProduct("removeProduct"),
     setStatusProduct("setStatusProduct"),
     getCatalogCharacteristicList("getCatalogCharacteristicList"),
@@ -1911,6 +1912,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getProductSummaryList", new APISimpleHandler(API.getProductSummaryList));
         restServer.createContext("/nglm-guimanager/getProduct", new APISimpleHandler(API.getProduct));
         restServer.createContext("/nglm-guimanager/putProduct", new APISimpleHandler(API.putProduct));
+        restServer.createContext("/nglm-guimanager/updateProduct", new APISimpleHandler(API.updateProduct));
         restServer.createContext("/nglm-guimanager/setStatusProduct", new APISimpleHandler(API.setStatusProduct));
         restServer.createContext("/nglm-guimanager/removeProduct", new APISimpleHandler(API.removeProduct));
         restServer.createContext("/nglm-guimanager/getCatalogCharacteristicList", new APISimpleHandler(API.getCatalogCharacteristicList));
@@ -3099,6 +3101,10 @@ public class GUIManager
 
                 case putProduct:
                   jsonResponse = processPutProduct(userID, jsonRoot);
+                  break;
+                  
+                case updateProduct:
+                  jsonResponse = processUpdateProduct(userID, jsonRoot);
                   break;
 
                 case removeProduct:
@@ -11346,6 +11352,190 @@ public class GUIManager
     response.put("removedProductIDS", JSONUtilities.encodeArray(validIDs));
 
     return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processUpdateProduct
+  *
+  *****************************************/
+
+  private JSONObject processUpdateProduct(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
+
+    /*****************************************
+    *
+    *  productID
+    *
+    *****************************************/
+
+    String productID = JSONUtilities.decodeString(jsonRoot, "id", true);
+  
+
+    /*****************************************
+    *
+    *  existing product
+    *
+    *****************************************/
+
+    GUIManagedObject existingProduct = productService.getStoredProduct(productID);
+    
+    if (productID == null || existingProduct == null)
+      {
+        response.put("responseCode", "invalidProduct");
+        response.put("responseMessage", "product does not exist");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingProduct != null && existingProduct.getReadOnly())
+      {
+        response.put("id", existingProduct.getGUIManagedObjectID());
+        response.put("accepted", existingProduct.getAccepted());
+        response.put("valid", existingProduct.getAccepted());
+        response.put("processing", productService.isActiveProduct(existingProduct, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    Set<String> keySets = jsonRoot.keySet();  
+    JSONObject existingProductObject = existingProduct.getJSONRepresentation();
+    for (Object keyObject : existingProductObject.keySet())
+      {
+        String key = keyObject.toString();
+        if (!(keySets.contains(key)))
+          {
+            if (existingProductObject.get("key") != null)
+              {
+                jsonRoot.put("key", existingProductObject.get("key"));
+              }
+            else
+              {
+                jsonRoot.put("key", "");
+              }
+          }
+      }
+      
+    
+    
+
+    /*****************************************
+    *
+    *  process product
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate product
+        *
+        ****************************************/
+
+        Product product = new Product(jsonRoot, epoch, existingProduct, deliverableService, catalogCharacteristicService);
+        
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+        if (!dryRun)
+          {
+
+            productService.putProduct(product, supplierService, productTypeService, deliverableService,
+                (existingProduct == null), userID);
+
+            /*****************************************
+             *
+             * revalidateOffers
+             *
+             *****************************************/
+
+            revalidateOffers(now);
+          }
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", product.getProductID());
+        response.put("accepted", product.getAccepted());
+        response.put("valid", product.getAccepted());
+        response.put("processing", productService.isActiveProduct(product, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+        if (!dryRun)
+          {
+
+            productService.putProduct(incompleteObject, supplierService, productTypeService, deliverableService,
+                (existingProduct == null), userID);
+
+            //
+            // revalidateOffers
+            //
+
+            revalidateOffers(now);
+          }
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "productNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
   }
   
   /*****************************************
