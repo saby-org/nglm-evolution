@@ -5093,44 +5093,59 @@ public class ThirdPartyManager
   {
 
     /****************************************
-     *
-     * response
-     *
-     ****************************************/
+    *
+    * response
+    *
+    ****************************************/
 
-    Map<String, Object> response = new HashMap<String, Object>();
-    AuthenticatedResponse authResponse = null;
-    ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
-    if (!Deployment.getRegressionMode())
-      {
-        authResponse = authCache.get(thirdPartyCredential);
-      }
-    else
-      {
-        authResponse = authenticate(thirdPartyCredential);
-      }
-    int userID = (authResponse.getUserId());
-    String user = Integer.toString(userID);
-    for (GUIManagedObject reseller : resellerService.getStoredResellers())
-      {
-        if (reseller instanceof Reseller)
-          {
-            List<String> userIDs = ((Reseller) reseller).getUserIDs();
-            for (String userId : userIDs)
-              {
-                if (user.equals(userId))
-                  {
-                    JSONObject resellerJson = ThirdPartyJSONGenerator
-                        .generateResellerJSONForThirdParty((Reseller) reseller, resellerService);
-                    response.put("resellerDetails", JSONUtilities.encodeObject(resellerJson));
-                    updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+   Map<String, Object> response = new HashMap<String, Object>();
+   boolean userIsReseller = false;
+   AuthenticatedResponse authResponse = null;
+   Reseller userReseller = null;    
+   ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
+   JSONArray resellerJSONArray = new JSONArray();
+   if (!Deployment.getRegressionMode())
+     {
+       authResponse = authCache.get(thirdPartyCredential);
+     }
+   else
+     {
+       authResponse = authenticate(thirdPartyCredential);
+     }
+   int userID = (authResponse.getUserId());
+   String user = Integer.toString(userID);
+   resellerloop:
+   for (GUIManagedObject reseller : resellerService.getStoredResellers())
+     {
+       if (reseller instanceof Reseller)
+         {
+           List<String> userIDs = ((Reseller) reseller).getUserIDs();
+           for (String userId : userIDs)
+             {
+               if (user.equals(userId))
+                 {
+                   userIsReseller = true;
+                   userReseller = (Reseller) reseller;
+                   break resellerloop;
+                 }
+             }
+         }
+     }
+   if (userIsReseller == true)
+     {
 
-                  }
-              }
-          }
-      }
+       JSONObject resellerJson = ThirdPartyJSONGenerator.generateResellerJSONForThirdParty((Reseller) userReseller,
+           resellerService);
+       response.put("resellerDetails", JSONUtilities.encodeObject(resellerJson));
+       updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+     }
+   else
+     {
+       updateResponse(response, RESTAPIGenericReturnCodes.PARTNER_NOT_FOUND);
+       return JSONUtilities.encodeObject(response);
+     }
 
-    return JSONUtilities.encodeObject(response);
+   return JSONUtilities.encodeObject(response);
   }
  
   private Pair<String,VoucherProfileStored> getStoredVoucher(JSONObject jsonRoot) throws ThirdPartyManagerException {
