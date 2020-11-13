@@ -1,3 +1,4 @@
+
 {
   "baseTimeZone"                             : "<_DEPLOYMENT_TIMEZONE_>",
   "baseLanguage"                             : "<_DEPLOYMENT_LOCALE_LANGUAGE_>",
@@ -113,7 +114,8 @@
   [
     "subscriberprofile"
   ],
-
+  "evolutionVersion"                                     : "${nglm.evolution.version}",
+  "customerVersion"                                      : "${project.version}",
   "journeyTopic"                                         : "${topic.journey}",
   "journeyTemplateTopic"                                 : "${topic.journeytemplate}",
   "segmentationDimensionTopic"                           : "${topic.segmentationdimension}",
@@ -1027,7 +1029,9 @@
       "display"             : "Journey Impact Report",
       "description"         : "Description of the Journey Impact Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportDriver",
+
       "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
+
     },
     {
       "name"                : "journeyCustomerStatisticsReport",
@@ -1035,6 +1039,7 @@
       "description"         : "Description of the Journey Customer Statistics Report",
       "class"               : "com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriver",
       "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
+
     },
     {
       "name"                : "contactPolicyConfiguration",

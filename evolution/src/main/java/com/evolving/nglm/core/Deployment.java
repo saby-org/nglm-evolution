@@ -49,6 +49,8 @@ public class Deployment
   private static ZoneId baseZoneId;
   private static String baseLanguage;
   private static String baseCountry;
+  private static String evolutionVersion;
+  private static String customerVersion;
   private static Map<String,AlternateID> alternateIDs = new LinkedHashMap<String,AlternateID>();
   private static String assignSubscriberIDsTopic;
   private static String assignExternalSubscriberIDsTopic;
@@ -104,6 +106,8 @@ public class Deployment
   public static ZoneId getBaseZoneId() { return baseZoneId; }
   public static String getBaseLanguage() { return baseLanguage; }
   public static String getBaseCountry() { return baseCountry; }
+  public static String getEvolutionVersion() { return evolutionVersion!=null?evolutionVersion:"unknown"; }
+  public static String getCustomerVersion() { return customerVersion!=null?customerVersion:"unknown"; }
   public static String getRedisSentinels() { return System.getProperty("redis.sentinels",""); }
   public static Map<String,AlternateID> getAlternateIDs() { return alternateIDs; }
   public static String getAssignSubscriberIDsTopic() { return assignSubscriberIDsTopic; }
@@ -504,6 +508,34 @@ public class Deployment
         throw new RuntimeException("deployment", e);
       }
 
+    //
+    //  evolutionVersion
+    //
+
+    try
+      {
+    	evolutionVersion = JSONUtilities.decodeString(jsonRoot, "evolutionVersion", Boolean.TRUE);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment : evolutionVersion", e);
+      }
+    
+    //
+    // customerVersion
+    //
+
+    try
+      {
+    	customerVersion = JSONUtilities.decodeString(jsonRoot, "customerVersion", Boolean.TRUE);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment : customerVersion", e);
+      }
+    
+   
+    
     /*****************************************
     *
     *  subscribermanager configuration
