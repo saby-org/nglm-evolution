@@ -24923,23 +24923,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             }
           break;
 
-        case "suppliers":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject supplierUnchecked : supplierService.getStoredSuppliers())
-                {
-                  if (supplierUnchecked.getAccepted())
-                    {
-                      Supplier supplier = (Supplier) supplierUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", supplier.getSupplierID());
-                      availableValue.put("display", supplier.getGUIManagedObjectDisplay());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
         case "paymentMeans":
           if (includeDynamic)
             {

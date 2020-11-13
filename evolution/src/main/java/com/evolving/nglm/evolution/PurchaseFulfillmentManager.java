@@ -218,7 +218,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     resellerService = new ResellerService(Deployment.getBrokerServers(), "PurchaseMgr-resellereservice-"+deliveryManagerKey, Deployment.getResellerTopic(), false);
     resellerService.start();
 
-    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("PurchaseMgr-subscribergroupepoch", "PurchaseMgr-subscriberGroupReader-"+deliveryManagerKey, Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
+    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("PurchaseMgr-subscribergroupepoch", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
 
     //
     // define as commodityDelivery response consumer

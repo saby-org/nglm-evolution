@@ -213,7 +213,6 @@
               <Branch>${scmBranch}</Branch>
               <Build-Time>${maven.build.timestamp}</Build-Time>
             </manifestEntries>
-            </manifestEntries> 
           </archive>
         </configuration>
       </plugin>
