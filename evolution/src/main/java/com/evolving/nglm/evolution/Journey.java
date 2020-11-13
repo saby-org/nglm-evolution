@@ -34,7 +34,6 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -57,6 +56,7 @@ import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 @GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "campaign", "journeyobjective" , "target"})
 public class Journey extends GUIManagedObject implements StockableItem
@@ -608,7 +608,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   *  targetCount
   *
   *****************************************/
-  private long evaluateTargetCount(RestHighLevelClient elasticsearch) 
+  private long evaluateTargetCount(ElasticsearchClientAPI elasticsearch) 
   {
     try
       {
@@ -631,7 +631,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   // Like description, it is not used inside the system, only put at creation and pushed in Elasticsearch
   // mapping_journeys index in order to be visible for the GUI (Grafana).
   //
-  public void setTargetCount(RestHighLevelClient elasticsearch)
+  public void setTargetCount(ElasticsearchClientAPI elasticsearch)
   {
     if(this.getTargetingType() == TargetingType.Target) {
       this.getJSONRepresentation().put("targetCount", new Long(this.evaluateTargetCount(elasticsearch)) );

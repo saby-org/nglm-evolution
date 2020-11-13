@@ -11,7 +11,6 @@ import java.util.Map;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -65,7 +64,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public ProgramsHistoryDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, LoyaltyProgramService loyaltyProgramService)
+  public ProgramsHistoryDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, LoyaltyProgramService loyaltyProgramService)
   {
     super(datacubeName, elasticsearch);
 

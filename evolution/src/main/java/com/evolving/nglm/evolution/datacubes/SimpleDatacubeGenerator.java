@@ -6,7 +6,6 @@ import java.util.Map;
 
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -46,7 +45,7 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
   * Constructor
   *
   *****************************************/
-  public SimpleDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch) 
+  public SimpleDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch) 
   {
     super(datacubeName, elasticsearch);
   }

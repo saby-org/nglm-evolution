@@ -30,7 +30,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -42,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class ReportMonoPhase
 {
@@ -54,7 +54,7 @@ public class ReportMonoPhase
   private List<String> subscriberFields;
   private ReportCsvFactory reportFactory;
   private String csvfile;
-  private RestHighLevelClient elasticsearchReaderClient;
+  private ElasticsearchClientAPI elasticsearchReaderClient;
 
   public ReportMonoPhase(String esNode, LinkedHashMap<String, QueryBuilder> esIndex, ReportCsvFactory factory, String csvfile, boolean onlyKeepAlternateIDs, boolean onlyKeepAlternateIDsExtended)
   {
@@ -149,6 +149,11 @@ public class ReportMonoPhase
       // need to cut the string to get at least one
       String node = null;
       int port = 0;
+      int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getConnectTimeout();
+      int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getQueryTimeout();
+      String username = null;
+      String password = null;
+      
       if (esNode.contains(","))
         {
           String[] split = esNode.split(",");
@@ -158,6 +163,8 @@ public class ReportMonoPhase
               s.useDelimiter(":");
               node = s.next();
               port = s.nextInt();
+              username = s.next();
+              password = s.next();
               s.close();
             }
         } else
@@ -166,10 +173,12 @@ public class ReportMonoPhase
             s.useDelimiter(":");
             node = s.next();
             port = s.nextInt();
+            username = s.next();
+            password = s.next();
             s.close();
           }
 
-      elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
+      elasticsearchReaderClient = new ElasticsearchClientAPI(node, port, connectTimeout, queryTimeout, username, password);
 
       int i = 0;
       boolean addHeader = true;
@@ -324,6 +333,11 @@ public class ReportMonoPhase
         // need to cut the string to get at least one
         String node = null;
         int port = 0;
+        int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getConnectTimeout();
+        int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getQueryTimeout();
+        String username = null;
+        String password = null;
+        
         if (esNode.contains(","))
           {
             String[] split = esNode.split(",");
@@ -333,6 +347,8 @@ public class ReportMonoPhase
                 s.useDelimiter(":");
                 node = s.next();
                 port = s.nextInt();
+                username = s.next();
+                password = s.next();
                 s.close();
               }
           }
@@ -342,10 +358,12 @@ public class ReportMonoPhase
             s.useDelimiter(":");
             node = s.next();
             port = s.nextInt();
+            username = s.next();
+            password = s.next();
             s.close();
           }
 
-        elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
+        elasticsearchReaderClient = new ElasticsearchClientAPI(node, port, connectTimeout, queryTimeout, username, password);
 
         int i = 0;
 
