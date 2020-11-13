@@ -53,6 +53,7 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
     OLD_TIER("oldTier"),
     NEW_TIER("newTier"),
     LEAVING("leaving"),
+    TIER_UPDATE_TYPE("tierUpdateType"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private LoyaltyProgramPointsEventInfos(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
