@@ -106,7 +106,11 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
             Boolean statusTargetGroup  = journeyStats.get("statusTargetGroup")  == null ? null : (boolean) journeyStats.get("statusTargetGroup");
             Boolean statusControlGroup = journeyStats.get("statusControlGroup") == null ? null : (boolean) journeyStats.get("statusControlGroup");
             Boolean statusUniversalControlGroup = journeyStats.get("statusUniversalControlGroup") == null ? null : (boolean) journeyStats.get("statusUniversalControlGroup");
-
+//          String specialExit=journeyStats.get("specialExitStatus") == null ? null : (String) journeyStats.get("specialExitStatus");
+         // Required Changes in accordance to EVPRO-530
+//            if(specialExit!=null && !specialExit.equalsIgnoreCase("null") && !specialExit.isEmpty())
+//            journeyInfo.put("customerStatus", SubscriberJourneyStatus.fromExternalRepresentation(specialExit).getDisplay());
+//            else   
             journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
 
             List<String> nodeHistory = (List<String>) journeyStats.get("nodeHistory");

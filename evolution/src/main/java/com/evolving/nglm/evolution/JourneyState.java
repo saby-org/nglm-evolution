@@ -6,13 +6,12 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.SchemaUtilities;
+import java.time.Duration;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
-import com.evolving.nglm.evolution.retention.Cleanable;
-import com.evolving.nglm.evolution.retention.RetentionService;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -21,13 +20,13 @@ import org.apache.kafka.connect.data.Timestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
+import com.evolving.nglm.evolution.retention.Cleanable;
+import com.evolving.nglm.evolution.retention.RetentionService;
 
 public class JourneyState implements Cleanable
 {
@@ -92,6 +91,8 @@ public class JourneyState implements Cleanable
   private String journeyInstanceID;
   private String journeyID;
   private String journeyNodeID;
+  
+
   private ParameterMap journeyParameters;
   private ParameterMap journeyActionManagerContext;
   private Date journeyEntryDate;
@@ -105,6 +106,25 @@ public class JourneyState implements Cleanable
   private JourneyHistory journeyHistory;
   private Date journeyEndDate;
   private List<VoucherChange> voucherChanges;
+  private Boolean specialExit=false;
+  private SubscriberJourneyStatus specialExitReason=null;
+
+  public Boolean getSpecialExit() {
+	return specialExit;
+}
+public void setSpecialExit(boolean specialExit) {
+	this.specialExit = specialExit;
+}
+public void setJourneyEndDate(Date journeyEndDate) {
+	this.journeyEndDate = journeyEndDate;
+}
+public void setSpecialExitReason(SubscriberJourneyStatus specialExitReason) {
+	this.specialExitReason = specialExitReason;
+}
+public void setJourneyNodeID(String journeyNodeID) {
+	this.journeyNodeID = journeyNodeID;
+}
+
 
   /*****************************************
   *
@@ -129,8 +149,8 @@ public class JourneyState implements Cleanable
   public JourneyHistory getJourneyHistory() { return journeyHistory; }
   public Date getJourneyEndDate() { return journeyEndDate; }
   public List<VoucherChange> getVoucherChanges() { return voucherChanges; }
-  
-
+  public Boolean isSpecialExit() {return specialExit;}
+  public SubscriberJourneyStatus getSpecialExitReason() {return specialExitReason;}
   /*****************************************
   *
   *  setters
@@ -176,6 +196,8 @@ public class JourneyState implements Cleanable
     this.journeyEndDate = journey.getEffectiveEndDate();
     this.voucherChanges = new ArrayList<VoucherChange>();
   }
+  
+ 
 
   /*****************************************
   *

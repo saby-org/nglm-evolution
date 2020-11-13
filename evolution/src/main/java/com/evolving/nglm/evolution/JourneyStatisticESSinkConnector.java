@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ChangeLogESSinkTask;
 import com.evolving.nglm.core.SimpleESSinkConnector;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
@@ -171,9 +172,14 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       documentMap.put("statusControlGroup", journeyStatistic.getStatusControlGroup());
       documentMap.put("statusUniversalControlGroup", journeyStatistic.getStatusUniversalControlGroup());
       documentMap.put("journeyComplete", journeyStatistic.getJourneyComplete());
+      documentMap.put("exitDate", journeyStatistic.getExitDate()==null?"null":journeyStatistic.getExitDate());
       
       documentMap.put("nodeID", journeyStatistic.getToNodeID());
+      if(journeyStatistic.getSpecialExitStatus()!=null && !journeyStatistic.getSpecialExitStatus().equalsIgnoreCase("null") && !journeyStatistic.getSpecialExitStatus().isEmpty())
+      documentMap.put("status", SubscriberJourneyStatus.fromExternalRepresentation(journeyStatistic.getSpecialExitStatus()).getDisplay());
+       else
       documentMap.put("status", journeyStatistic.getSubscriberJourneyStatus().getDisplay());
+      
       documentMap.put("subscriberStratum", journeyStatistic.getSubscriberStratum());
       documentMap.put("rewards", rewards);
 
