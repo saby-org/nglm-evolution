@@ -509,7 +509,6 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     journeyService.stop();
     offerService.stop();
     loyaltyProgramService.stop();
-    
     log.info("The report " + csvfile + " is finished");
   }
 }
