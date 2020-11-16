@@ -34,7 +34,7 @@
     "Journeys"                       : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 * * * *" }
   },
   "elasticsearchJobsScheduling" : {
-    "SubscriberProfileSnapshot"      : { "enabled" : false, "scheduledAtRestart" : false, "cronEntry" : "5 0 * * *" },
+    "SubscriberProfileSnapshot"      : { "enabled" : true, "scheduledAtRestart" : false, "cronEntry" : "5 0 * * *" },
     "JourneystatisticCleanUp"        : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" },
     "ExpiredVoucherCleanUp"          : { "enabled" : true,  "scheduledAtRestart" : false, "cronEntry" : "0 3 * * *" }
   },
