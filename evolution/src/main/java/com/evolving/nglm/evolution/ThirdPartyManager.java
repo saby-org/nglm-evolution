@@ -5570,21 +5570,26 @@ public class ThirdPartyManager
     // lookup from authCache
     //
 
-    AuthenticatedResponse authResponse = null;
-    synchronized (authCache)
-    {
-      authResponse = authCache.get(thirdPartyCredential);
+    AuthenticatedResponse authResponse = authCache.get(thirdPartyCredential);
+    if(authResponse == null)
+      {
+        synchronized (authCache)
+        {
+          authResponse = authCache.get(thirdPartyCredential);
+          
+          //
+          //  cache miss - reauthenticate
+          //
+    
+          if (authResponse == null)
+            {
+              authResponse = authenticate(thirdPartyCredential);
+              log.info("(Re)Authenticated: credential {} response {}", thirdPartyCredential, authResponse);
+            }
+        }
     }
 
-    //
-    //  cache miss - reauthenticate
-    //
 
-    if (authResponse == null)
-      {
-        authResponse = authenticate(thirdPartyCredential);
-        log.info("(Re)Authenticated: credential {} response {}", thirdPartyCredential, authResponse);
-      }
 
     //
     //  hasAccess
