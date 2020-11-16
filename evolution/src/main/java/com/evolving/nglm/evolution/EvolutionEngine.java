@@ -86,8 +86,6 @@ import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
@@ -112,7 +110,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.Sets;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -2843,7 +2840,7 @@ public class EvolutionEngine
                     Tier tier = ((LoyaltyProgramPoints) loyaltyProgram).getTier(currentTier);
                     if (tier != null)
                       {
-                        subscriberProfileUpdated = triggerLoyaltyWorflow(evolutionEvent, context.getSubscriberState(), tier.getWorkflowDaily()) || subscriberProfileUpdated;
+                        subscriberProfileUpdated = triggerLoyaltyWorflow(evolutionEvent, context.getSubscriberState(), tier.getWorkflowDaily(), loyaltyProgram.getLoyaltyProgramID()) || subscriberProfileUpdated;
                       }
                   }
               }
@@ -3531,7 +3528,7 @@ public class EvolutionEngine
                   ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
                   subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
 
-                  launchChangeTierWorkflows(profileLoyaltyProgramChangeEvent, subscriberState, loyaltyProgramPoints, currentTier, newTierName);
+                  launchChangeTierWorkflows(profileLoyaltyProgramChangeEvent, subscriberState, loyaltyProgramPoints, currentTier, newTierName, loyaltyProgramState.getLoyaltyProgramID());
                 }
             }
 
@@ -3540,19 +3537,19 @@ public class EvolutionEngine
   }
 
 
-  public static void launchChangeTierWorkflows(ProfileLoyaltyProgramChangeEvent event, SubscriberState subscriberState, LoyaltyProgramPoints loyaltyProgramPoints, String oldTierName, String newTierName)
+  public static void launchChangeTierWorkflows(ProfileLoyaltyProgramChangeEvent event, SubscriberState subscriberState, LoyaltyProgramPoints loyaltyProgramPoints, String oldTierName, String newTierName, String featureID)
   {    
     // Exit tier workflow
     Tier oldTier = loyaltyProgramPoints.getTier(oldTierName);
-    if (oldTier != null) triggerLoyaltyWorflow(event, subscriberState, oldTier.getWorkflowChange());
+    if (oldTier != null) triggerLoyaltyWorflow(event, subscriberState, oldTier.getWorkflowChange(), featureID);
     
     // Enter tier workflow
     Tier newTier = loyaltyProgramPoints.getTier(newTierName);
-    if (newTier != null) triggerLoyaltyWorflow(event, subscriberState, newTier.getWorkflowChange());
+    if (newTier != null) triggerLoyaltyWorflow(event, subscriberState, newTier.getWorkflowChange(), featureID);
   }
 
 
-  public static boolean triggerLoyaltyWorflow(SubscriberStreamEvent eventToTrigWorkflow, SubscriberState subscriberState, String loyaltyWorflowID)
+  public static boolean triggerLoyaltyWorflow(SubscriberStreamEvent eventToTrigWorkflow, SubscriberState subscriberState, String loyaltyWorflowID, String featureID)
   {
     // 
     // Tag the subscriber state with the event's information, log a warn if a conflict appears (is the date enough to segregate 2 
@@ -3560,7 +3557,7 @@ public class EvolutionEngine
     
     if(loyaltyWorflowID == null) { return false; }
     
-    String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + loyaltyWorflowID;
+    String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + loyaltyWorflowID + ":" + featureID;
     List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
     if(workflowTriggering.contains(toBeAdded))
       {
@@ -3747,7 +3744,7 @@ public class EvolutionEngine
                     ProfileLoyaltyProgramChangeEvent profileChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), infos);
                     subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileChangeEvent);
                     
-                    launchChangeTierWorkflows(profileChangeEvent, subscriberState, loyaltyProgramPoints, null, newTierName);
+                    launchChangeTierWorkflows(profileChangeEvent, subscriberState, loyaltyProgramPoints, null, newTierName, currentLoyaltyProgramState.getLoyaltyProgramID());
                   }
                 else
                   {
@@ -3782,7 +3779,7 @@ public class EvolutionEngine
                         ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
                         subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
                         
-                        launchChangeTierWorkflows(profileLoyaltyProgramChangeEvent, subscriberState, loyaltyProgramPoints, currentTier, newTierName);
+                        launchChangeTierWorkflows(profileLoyaltyProgramChangeEvent, subscriberState, loyaltyProgramPoints, currentTier, newTierName, currentLoyaltyProgramState.getLoyaltyProgramID());
                       }
                   }
 
@@ -3847,7 +3844,7 @@ public class EvolutionEngine
                 ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
                 subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
                 
-                launchChangeTierWorkflows(profileLoyaltyProgramChangeEvent, subscriberState, loyaltyProgramPoints, oldTier, null);
+                launchChangeTierWorkflows(profileLoyaltyProgramChangeEvent, subscriberState, loyaltyProgramPoints, oldTier, null, loyaltyProgram.getLoyaltyProgramID());
 
                 //
                 //  return
@@ -3969,7 +3966,7 @@ public class EvolutionEngine
                           if(log.isDebugEnabled()) log.debug("update loyalty program STATUS => adding "+((LoyaltyProgramPointsEvent)evolutionEvent).getUnit()+" x "+subscriberCurrentTierDefinition.getNumberOfStatusPointsPerUnit()+" of point "+point.getPointName());
                           int amount = ((LoyaltyProgramPointsEvent)evolutionEvent).getUnit() * subscriberCurrentTierDefinition.getNumberOfStatusPointsPerUnit();
                           updatePointBalance(context, null, statusEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true);
-                          triggerLoyaltyWorflow(evolutionEvent, subscriberState, subscriberCurrentTierDefinition.getWorkflowStatus());
+                          triggerLoyaltyWorflow(evolutionEvent, subscriberState, subscriberCurrentTierDefinition.getWorkflowStatus(), loyaltyProgramID);
                           subscriberProfileUpdated = true;
                         }
                       else
@@ -3995,7 +3992,7 @@ public class EvolutionEngine
                         info.put(LoyaltyProgramPointsEventInfos.TIER_UPDATE_TYPE.getExternalRepresentation(), tierChangeType.getExternalRepresentation());
                         ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
                         subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
-                        launchChangeTierWorkflows(profileLoyaltyProgramChangeEvent, subscriberState, loyaltyProgramPoints, oldTier, newTier);
+                        launchChangeTierWorkflows(profileLoyaltyProgramChangeEvent, subscriberState, loyaltyProgramPoints, oldTier, newTier, loyaltyProgramState.getLoyaltyProgramID());
                       }
 
                     }
@@ -4018,7 +4015,7 @@ public class EvolutionEngine
                           updatePointBalance(context, null, rewardEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true);
                           
                           // TODO Previous call might have changed tier -> do we need to generate tier changed event + trigger workflow for tier change ?
-                          triggerLoyaltyWorflow(evolutionEvent, subscriberState, subscriberCurrentTierDefinition.getWorkflowReward());
+                          triggerLoyaltyWorflow(evolutionEvent, subscriberState, subscriberCurrentTierDefinition.getWorkflowReward(), loyaltyProgramID);
                           subscriberProfileUpdated = true;
                         }
                       else
@@ -4533,7 +4530,7 @@ public class EvolutionEngine
         //
         // In case of Workflow, it can be triggered through a JourneyRequest or from a loyalty program
         //
-        
+        String sourceFeatureIDFromWorkflowTriggering = null;
         List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
         List<String> toBeRemoved = new ArrayList<>();
         if(journey.isWorkflow())
@@ -4555,7 +4552,28 @@ public class EvolutionEngine
 				                    // this is the workflow to trig (good event, good date, good required workflow
 				                    calledJourney = true;
 				                    toBeRemoved.add(currentWFToTrigger);
-				                  }               
+				                    sourceFeatureIDFromWorkflowTriggering=elements[3];
+				                  }
+				              }
+				            else 
+				              {
+				                // make a cleanup if the date is too old and log a warn because that should not happen
+				                try 
+				                  {
+				                    long dateLong = Long.parseLong(eventDateLong);
+				                    if(SystemTime.getCurrentTime().getTime() > dateLong + 432000000)
+				                      {
+				                        // 5 days too old
+				                        toBeRemoved.add(currentWFToTrigger);
+		                            log.warn("currentWFToTrigger's date is too old " + currentWFToTrigger);
+				                      }				                  
+				                  }
+				                catch(NumberFormatException e)
+				                  {
+				                    // should normally never happen
+				                    toBeRemoved.add(currentWFToTrigger);
+				                    log.warn("currentWFToTrigger's date is not parsable " + currentWFToTrigger);
+				                  }				                
 				              }
 				          }
 			        }
@@ -4782,17 +4800,22 @@ public class EvolutionEngine
                 *****************************************/
 
                 JourneyRequest journeyRequest;
+                String sourceFeatureID;
                 ParameterMap boundParameters;
                 if (calledJourney && evolutionEvent instanceof JourneyRequest)
                   {
                     journeyRequest = (JourneyRequest) evolutionEvent;
                     boundParameters = new ParameterMap(journey.getBoundParameters());
                     boundParameters.putAll(journeyRequest.getBoundParameters());
+                    // get featureID from the source
+                    sourceFeatureID = journeyRequest.getDeliveryRequestSource();
                   }
                 else
                   {
                     journeyRequest = null;
                     boundParameters = journey.getBoundParameters();
+                    // get the featureID from the CalledJourney computation
+                    sourceFeatureID = sourceFeatureIDFromWorkflowTriggering;
                   }
 
                 /*****************************************
@@ -4811,7 +4834,7 @@ public class EvolutionEngine
                   }
 
                 JourneyHistory journeyHistory = new JourneyHistory(journey.getJourneyID());
-                JourneyState journeyState = new JourneyState(context, journey, journeyRequest, boundParameters, SystemTime.getCurrentTime(), journeyHistory);
+                JourneyState journeyState = new JourneyState(context, journey, journeyRequest, sourceFeatureID, boundParameters, SystemTime.getCurrentTime(), journeyHistory);
                 journeyState.getJourneyHistory().addNodeInformation(null, journeyState.getJourneyNodeID(), null, null);
                 boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(),journeyState, false);
                 subscriberState.getJourneyStates().add(journeyState);
