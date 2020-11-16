@@ -178,7 +178,19 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  private int httpTimeout = 5000;
+  private static final String ENV_CONF_THIRDPARTY_HTTP_CLIENT_TIMEOUT_MS = "THIRDPARTY_HTTP_CLIENT_TIMEOUT_MS";
+  private static int httpTimeout = 10000;
+  static{
+    String timeoutConf = System.getenv().get(ENV_CONF_THIRDPARTY_HTTP_CLIENT_TIMEOUT_MS);
+    if(timeoutConf!=null && !timeoutConf.isEmpty()){
+      try{
+        httpTimeout=Integer.parseInt(timeoutConf);
+        log.info("loading env conf "+ENV_CONF_THIRDPARTY_HTTP_CLIENT_TIMEOUT_MS+" "+httpTimeout);
+      }catch (NumberFormatException e){
+        log.warn("bad env conf "+ENV_CONF_THIRDPARTY_HTTP_CLIENT_TIMEOUT_MS, e);
+      }
+    }
+  }
   private String fwkServer = null;
   private String guimanagerHost = null;
   private int guimanagerPort;
@@ -5713,21 +5725,26 @@ public class ThirdPartyManager
     // lookup from authCache
     //
 
-    AuthenticatedResponse authResponse = null;
-    synchronized (authCache)
-    {
-      authResponse = authCache.get(thirdPartyCredential);
+    AuthenticatedResponse authResponse = authCache.get(thirdPartyCredential);
+    if(authResponse == null)
+      {
+        synchronized (authCache)
+        {
+          authResponse = authCache.get(thirdPartyCredential);
+          
+          //
+          //  cache miss - reauthenticate
+          //
+    
+          if (authResponse == null)
+            {
+              authResponse = authenticate(thirdPartyCredential);
+              log.info("(Re)Authenticated: credential {} response {}", thirdPartyCredential, authResponse);
+            }
+        }
     }
 
-    //
-    //  cache miss - reauthenticate
-    //
 
-    if (authResponse == null)
-      {
-        authResponse = authenticate(thirdPartyCredential);
-        log.info("(Re)Authenticated: credential {} response {}", thirdPartyCredential, authResponse);
-      }
 
     //
     //  hasAccess
