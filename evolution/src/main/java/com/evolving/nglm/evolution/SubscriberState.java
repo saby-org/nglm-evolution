@@ -111,7 +111,7 @@ public class SubscriberState implements StateStore
   private Set<JourneyState> recentJourneyStates;
   private SortedSet<TimedEvaluation> scheduledEvaluations;
   private Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests;
-  private List<String> workflowTriggering; // List of workflow to trigger on some event: <EventClassName>:<long eventDate>:<WorkflowID>
+  private List<String> workflowTriggering; // List of workflow to trigger on some event: <EventClassName>:<long eventDate>:<WorkflowID>:<sourceFeatureID>
   private String ucgRuleID;
   private Integer ucgEpoch;
   private Date ucgRefreshDay;

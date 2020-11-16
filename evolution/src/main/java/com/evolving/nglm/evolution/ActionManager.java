@@ -141,9 +141,9 @@ public abstract class ActionManager
     Journey sourceJourney = (Journey) evolutionEventContext.getJourneyService().getStoredJourney(deliveryRequestSource);
     if(sourceJourney != null && (sourceJourney.getGUIManagedObjectType() == GUIManagedObjectType.Workflow || sourceJourney.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow))
       {
-        if(subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getCallingJourneyRequest() != null)
+        if(subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceFeatureID() != null)
           {
-            deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getCallingJourneyRequest().getDeliveryRequestSource();
+            deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getsourceFeatureID();
           }
         
       }

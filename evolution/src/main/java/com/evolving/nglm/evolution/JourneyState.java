@@ -50,7 +50,7 @@ public class JourneyState implements Cleanable
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_state");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(5));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(6));
     schemaBuilder.field("callingJourneyRequest", JourneyRequest.serde().optionalSchema());
     schemaBuilder.field("journeyInstanceID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
@@ -65,6 +65,7 @@ public class JourneyState implements Cleanable
     schemaBuilder.field("journeyMetricsPost", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT64_SCHEMA).name("journeystate_metrics_post").schema());
     schemaBuilder.field("journeyNodeEntryDate", Timestamp.SCHEMA);
     schemaBuilder.field("journeyOutstandingDeliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("sourceFeatureID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("journeyHistory", JourneyHistory.schema());
     schemaBuilder.field("journeyEndDate", Timestamp.builder().optional().schema());
     schema = schemaBuilder.build();
@@ -105,28 +106,19 @@ public class JourneyState implements Cleanable
   private Map<String,Long> journeyMetricsPost;
   private Date journeyNodeEntryDate;
   private String journeyOutstandingDeliveryRequestID;
+  private String sourceFeatureID; // can be null, present by example for workflows that must not define there own ModuleID / FeatureID <ModuleID:FeatureID>
   private JourneyHistory journeyHistory;
   private Date journeyEndDate;
   private List<VoucherChange> voucherChanges;
   private Boolean specialExit=false;
-  private SubscriberJourneyStatus specialExitReason=null;
-
-  public Boolean getSpecialExit() {
-	return specialExit;
-}
-public void setSpecialExit(boolean specialExit) {
-	this.specialExit = specialExit;
-}
-public void setJourneyEndDate(Date journeyEndDate) {
-	this.journeyEndDate = journeyEndDate;
-}
-public void setSpecialExitReason(SubscriberJourneyStatus specialExitReason) {
-	this.specialExitReason = specialExitReason;
-}
-public void setJourneyNodeID(String journeyNodeID) {
-	this.journeyNodeID = journeyNodeID;
-}
-
+  private SubscriberJourneyStatus specialExitReason = null;
+  
+  public Boolean getSpecialExit() { return specialExit; }
+  public void setSpecialExit(boolean specialExit) { this.specialExit = specialExit; }
+  public void setJourneyEndDate(Date journeyEndDate) { this.journeyEndDate = journeyEndDate; }
+  public void setSpecialExitReason(SubscriberJourneyStatus specialExitReason) { this.specialExitReason = specialExitReason;	}
+  public void setJourneyNodeID(String journeyNodeID) { this.journeyNodeID = journeyNodeID; }
+ 
 
   /*****************************************
   *
@@ -148,6 +140,7 @@ public void setJourneyNodeID(String journeyNodeID) {
   public Map<String,Long> getJourneyMetricsPost() { return journeyMetricsPost; }
   public Date getJourneyNodeEntryDate() { return journeyNodeEntryDate; }
   public String getJourneyOutstandingDeliveryRequestID() { return journeyOutstandingDeliveryRequestID; }
+  public String getsourceFeatureID() { return sourceFeatureID; }
   public JourneyHistory getJourneyHistory() { return journeyHistory; }
   public Date getJourneyEndDate() { return journeyEndDate; }
   public List<VoucherChange> getVoucherChanges() { return voucherChanges; }
@@ -161,6 +154,7 @@ public void setJourneyNodeID(String journeyNodeID) {
 
   public void setJourneyNodeID(String journeyNodeID, Date journeyNodeEntryDate) { this.journeyNodeID = journeyNodeID; this.journeyNodeEntryDate = journeyNodeEntryDate; this.journeyOutstandingDeliveryRequestID = null; }
   public void setJourneyOutstandingDeliveryRequestID(String journeyOutstandingDeliveryRequestID) { this.journeyOutstandingDeliveryRequestID = journeyOutstandingDeliveryRequestID; }
+  public void setsourceFeatureID(String sourceFeatureID) { this.sourceFeatureID = sourceFeatureID; };
   public void setJourneyExitDate(Date journeyExitDate) { this.journeyExitDate = journeyExitDate; }
   public void setJourneyCloseDate(Date journeyCloseDate) { this.journeyCloseDate = journeyCloseDate; }
 
@@ -178,9 +172,10 @@ public void setJourneyNodeID(String journeyNodeID) {
   *
   *****************************************/
 
-  public JourneyState(EvolutionEventContext context, Journey journey, JourneyRequest callingJourneyRequest, Map<String, Object> journeyParameters, Date journeyEntryDate, JourneyHistory journeyHistory)
+  public JourneyState(EvolutionEventContext context, Journey journey, JourneyRequest callingJourneyRequest, String sourceFeatureID, Map<String, Object> journeyParameters, Date journeyEntryDate, JourneyHistory journeyHistory)
   {
-    this.callingJourneyRequest = callingJourneyRequest;
+     this.callingJourneyRequest = callingJourneyRequest;
+    this.sourceFeatureID = sourceFeatureID;
     this.journeyInstanceID = context.getUniqueKey();
     this.journeyID = journey.getJourneyID();
     this.journeyNodeID = journey.getStartNodeID();
@@ -207,7 +202,7 @@ public void setJourneyNodeID(String journeyNodeID) {
   *
   *****************************************/
 
-  public JourneyState(String journeyInstanceID, JourneyRequest callingJourneyRequest, String journeyID, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, JourneyHistory journeyHistory, Date journeyEndDate, List<VoucherChange> voucherChanges)
+  public JourneyState(String journeyInstanceID, JourneyRequest callingJourneyRequest, String journeyID, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, String sourceFeatureID, JourneyHistory journeyHistory, Date journeyEndDate, List<VoucherChange> voucherChanges)
   {
     this.callingJourneyRequest = callingJourneyRequest;
     this.journeyInstanceID = journeyInstanceID;
@@ -223,6 +218,7 @@ public void setJourneyNodeID(String journeyNodeID) {
     this.journeyMetricsPost = journeyMetricsPost;
     this.journeyNodeEntryDate = journeyNodeEntryDate;
     this.journeyOutstandingDeliveryRequestID = journeyOutstandingDeliveryRequestID;
+    this.sourceFeatureID = sourceFeatureID;
     this.journeyHistory = journeyHistory;
     this.journeyEndDate = journeyEndDate;
     this.voucherChanges = voucherChanges;
@@ -250,6 +246,7 @@ public void setJourneyNodeID(String journeyNodeID) {
     this.journeyMetricsPost = new HashMap<String,Long>(journeyState.getJourneyMetricsPost());
     this.journeyNodeEntryDate = journeyState.getJourneyNodeEntryDate();
     this.journeyOutstandingDeliveryRequestID = journeyState.getJourneyOutstandingDeliveryRequestID();
+    this.sourceFeatureID = journeyState.getsourceFeatureID();
     this.journeyHistory = journeyState.getJourneyHistory();
     this.journeyEndDate = journeyState.getJourneyEndDate();
     this.voucherChanges = journeyState.getVoucherChanges();
@@ -279,6 +276,7 @@ public void setJourneyNodeID(String journeyNodeID) {
     struct.put("journeyMetricsPost", journeyState.getJourneyMetricsPost());
     struct.put("journeyNodeEntryDate", journeyState.getJourneyNodeEntryDate());
     struct.put("journeyOutstandingDeliveryRequestID", journeyState.getJourneyOutstandingDeliveryRequestID());
+    struct.put("sourceFeatureID",  journeyState.getsourceFeatureID());
     struct.put("journeyHistory", JourneyHistory.serde().pack(journeyState.getJourneyHistory()));
     struct.put("journeyEndDate", journeyState.getJourneyEndDate());
     return struct;
@@ -319,6 +317,7 @@ public void setJourneyNodeID(String journeyNodeID) {
     Map<String,Long> journeyMetricsPost = (schemaVersion >= 2) ? (Map<String,Long>) valueStruct.get("journeyMetricsPost") : new HashMap<String,Long>();
     Date journeyNodeEntryDate = (Date) valueStruct.get("journeyNodeEntryDate");
     String journeyOutstandingDeliveryRequestID = valueStruct.getString("journeyOutstandingDeliveryRequestID");
+    String sourceFeatureID = schema.field("sourceFeatureID") != null ? valueStruct.getString("sourceFeatureID") : null;
     JourneyHistory journeyHistory = JourneyHistory.serde().unpack(new SchemaAndValue(schema.field("journeyHistory").schema(), valueStruct.get("journeyHistory")));
     Date journeyEndDate = (schemaVersion >= 5) ? (Date) valueStruct.get("journeyEndDate") : new Date();
     List<VoucherChange> voucherChanges = new ArrayList<VoucherChange>();
@@ -327,12 +326,12 @@ public void setJourneyNodeID(String journeyNodeID) {
     //  return
     //
 
-    return new JourneyState(journeyInstanceID, callingJourneyRequest, journeyID, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, journeyHistory, journeyEndDate, voucherChanges);
+    return new JourneyState(journeyInstanceID, callingJourneyRequest, journeyID, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, sourceFeatureID, journeyHistory, journeyEndDate, voucherChanges);
   }
   @Override
   public String toString()
   {
-    return "JourneyState [callingJourneyRequest=" + callingJourneyRequest + ", journeyInstanceID=" + journeyInstanceID + ", journeyID=" + journeyID + ", journeyNodeID=" + journeyNodeID + ", journeyParameters=" + journeyParameters + ", journeyActionManagerContext=" + journeyActionManagerContext + ", journeyEntryDate=" + journeyEntryDate + ", journeyExitDate=" + journeyExitDate + ", journeyCloseDate=" + journeyCloseDate + ", journeyMetricsPrior=" + journeyMetricsPrior + ", journeyMetricsDuring=" + journeyMetricsDuring + ", journeyMetricsPost=" + journeyMetricsPost + ", journeyNodeEntryDate=" + journeyNodeEntryDate + ", journeyOutstandingDeliveryRequestID=" + journeyOutstandingDeliveryRequestID + ", journeyHistory=" + journeyHistory + "]";
+    return "JourneyState [callingJourneyRequest=" + callingJourneyRequest + ", journeyInstanceID=" + journeyInstanceID + ", journeyID=" + journeyID + ", journeyNodeID=" + journeyNodeID + ", journeyParameters=" + journeyParameters + ", journeyActionManagerContext=" + journeyActionManagerContext + ", journeyEntryDate=" + journeyEntryDate + ", journeyExitDate=" + journeyExitDate + ", journeyCloseDate=" + journeyCloseDate + ", journeyMetricsPrior=" + journeyMetricsPrior + ", journeyMetricsDuring=" + journeyMetricsDuring + ", journeyMetricsPost=" + journeyMetricsPost + ", journeyNodeEntryDate=" + journeyNodeEntryDate + ", journeyOutstandingDeliveryRequestID=" + journeyOutstandingDeliveryRequestID + ", sourceFeatureID=" + sourceFeatureID + ", journeyHistory=" + journeyHistory + "]";
   }
   
   /*****************************************
