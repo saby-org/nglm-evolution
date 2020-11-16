@@ -962,6 +962,7 @@ public class EvolutionSetup
         {
           System.out.println("[DISPLAY] ERROR: Unable to call Deployment." + call);
           System.out.println(e.getMessage());
+          e.printStackTrace(System.out);
         }
     }
 
