@@ -428,7 +428,7 @@ echo
 #
 #  create a cleaning policy for VDR
 #
-prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/vdr_policy -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/vdr_policy -u admin:$ELASTICSEARCH_ADMIN_PASSWORD -H'Content-Type: application/json' -d'
 {
   "policy": {
     "phases": {
@@ -443,7 +443,7 @@ echo
 #
 #  manually create vdr template
 #
-prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/vdr -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/vdr -u admin:$ELASTICSEARCH_ADMIN_PASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["detailedrecords_vouchers-*"],
   "settings" : {
@@ -472,7 +472,7 @@ echo
 #
 #  manually create vdr pipeline
 #
-prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/vdr-daily -H 'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/vdr-daily -u admin:$ELASTICSEARCH_ADMIN_PASSWORD -H 'Content-Type: application/json' -d'
 {
   "description": "daily vdr index naming",
   "processors" : [
