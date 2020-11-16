@@ -65,6 +65,10 @@ elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-purchasefulfillmentmanager_purchase
   FILE=purchasefulfillment
 elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-reportmanager_reportmanager ]]; then
   FILE=reportmanager
+elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-reportscheduler_reportscheduler ]]; then
+  FILE=reportscheduler
+elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-datacubemanager_datacubemanager ]]; then
+  FILE=datacubemanager
 elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-connect_connect ]]; then
   FILE=connect
 else

@@ -11,13 +11,13 @@
 
 	<appender name="eventAppender"
 		class="org.apache.log4j.RollingFileAppender">
-		<param name="File" value="/app/logs/reportmanager-<_KEY_>.log" />
+		<param name="File" value="/app/logs/datacubemanager-<_KEY_>.log" />
 		<layout class="org.apache.log4j.EnhancedPatternLayout">
 			<param name="ConversionPattern"
 				value="%d{ISO8601}{<_DEPLOYMENT_TIMEZONE_>} %p [%t] %m%n" />
 		</layout>
 		<param name="MaxFileSize" value="50MB" />
-		<param name="MaxBackupIndex" value="9" />
+		<param name="MaxBackupIndex" value="2" />
 	</appender>
 
 	<category name="com.evolving.nglm">
