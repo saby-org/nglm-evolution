@@ -257,6 +257,7 @@ public class GUIManager
     getOffer("getOffer"),
     putOffer("putOffer"),
     removeOffer("removeOffer"),
+    updateOffer("updateOffer"),
     setStatusOffer("setStatusOffer"),
     getReportGlobalConfiguration("getReportGlobalConfiguration"),
     getReportList("getReportList"),
@@ -1864,6 +1865,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getOffer", new APISimpleHandler(API.getOffer));
         restServer.createContext("/nglm-guimanager/putOffer", new APISimpleHandler(API.putOffer));
         restServer.createContext("/nglm-guimanager/removeOffer", new APISimpleHandler(API.removeOffer));
+        restServer.createContext("/nglm-guimanager/updateOffer", new APISimpleHandler(API.updateOffer));
         restServer.createContext("/nglm-guimanager/setStatusOffer", new APISimpleHandler(API.setStatusOffer));
         restServer.createContext("/nglm-guimanager/getPresentationStrategyList", new APISimpleHandler(API.getPresentationStrategyList));
         restServer.createContext("/nglm-guimanager/getReportGlobalConfiguration", new APISimpleHandler(API.getReportGlobalConfiguration));
@@ -2909,6 +2911,10 @@ public class GUIManager
 
                 case removeOffer:
                   jsonResponse = processRemoveOffer(userID, jsonRoot);
+                  break;
+                  
+                case updateOffer:
+                  jsonResponse = processUpdateOffer(userID, jsonRoot);
                   break;
                   
                 case setStatusOffer:
@@ -7651,6 +7657,242 @@ public class GUIManager
   }
   
   /*****************************************
+  *
+  *  processUpdateOffer
+  *
+  *****************************************/
+
+  private JSONObject processUpdateOffer(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     * response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String, Object> response = new HashMap<String, Object>();
+    Boolean dryRun = false;
+    JSONArray offerIDs = new JSONArray();
+    List<GUIManagedObject> existingOffers = new ArrayList();
+    List<String> updatedIDs = new ArrayList();    
+    List<Object> exceptionList= new ArrayList();
+
+    /*****************************************
+     *
+     * dryRun
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("dryRun"))
+      {
+        dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+      }
+
+    /*****************************************
+     *
+     * update product
+     *
+     *****************************************/
+    
+    if (jsonRoot.containsKey("id"))
+      {
+        String offerID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        GUIManagedObject existingOffer = offerService.getStoredGUIManagedObject(offerID);
+
+        /*****************************************
+         *
+         * read-only
+         *
+         *****************************************/
+        if (existingOffer == null)
+          {
+            response.put("responseCode", "invalidOffer");
+            response.put("responseMessage", "offer does not exist");
+            return JSONUtilities.encodeObject(response);
+          }
+        if (existingOffer != null && existingOffer.getReadOnly())
+          {
+            response.put("id", existingOffer.getGUIManagedObjectID());
+            response.put("accepted", existingOffer.getAccepted());
+            response.put("valid", existingOffer.getAccepted());
+            response.put("processing", offerService.isActiveOffer(existingOffer, now));
+            response.put("responseCode", "failedReadOnly");
+            return JSONUtilities.encodeObject(response);
+          }
+        else
+          {
+            existingOffers.add(existingOffer); // update for single offer
+
+          }
+      }
+    else if (jsonRoot.containsKey("ids"))
+      {
+        offerIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false); // update for multiple offer
+      }
+    else
+      {
+        response.put("responseCode", "invalidOffer");
+        response.put("responseMessage", "offer ID is empty");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+     *
+     * existing products
+     *
+     *****************************************/
+    for (int i = 0; i < offerIDs.size(); i++)
+      {
+        String offerID = (offerIDs.get(i)).toString();
+        GUIManagedObject existingOfferObject = offerService.getStoredOffer(offerID);
+        if (existingOfferObject != null)
+          {
+            existingOffers.add(existingOfferObject); //ignore the wrong offerIDs
+          }
+      }
+
+    if (existingOffers == null || existingOffers.isEmpty())
+      {
+        response.put("responseCode", "invalidOffers");
+        response.put("responseMessage", "offers does not exist");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    for (GUIManagedObject existingOfferToBeUpdated : existingOffers)
+      {
+        JSONObject JSONToBeUpdated = new JSONObject();        
+        Set<String> JsonRootkeySets = jsonRoot.keySet();
+        JSONObject existingOfferObject = existingOfferToBeUpdated.getJSONRepresentation();
+        for (String JsonRootkey : JsonRootkeySets)
+          {
+            JSONToBeUpdated.put(JsonRootkey, jsonRoot.get(JsonRootkey));  // get the part of GUI object which need to be updated from jsonRoot
+          }
+        JSONToBeUpdated.put("id", existingOfferToBeUpdated.getGUIManagedObjectID());
+        for (Object keyObject : existingOfferObject.keySet())
+          {
+            String key = keyObject.toString();
+            if (!(JsonRootkeySets.contains(key)))
+              {
+                if (existingOfferObject.get(key) != null)
+                  {
+                    JSONToBeUpdated.put(key, existingOfferObject.get(key)); //get the other parts of the GUI objects from the existing offer JSON
+                  }
+                else
+                  {
+                    JSONToBeUpdated.put(key, "");
+                  }
+              }
+          }
+
+        /*****************************************
+         *
+         * process offer
+         *
+         *****************************************/
+
+        long epoch = epochServer.getKey();
+        try
+          {
+            /****************************************
+            *
+            *  instantiate offer
+            *
+            ****************************************/
+            Offer offer = new Offer(JSONToBeUpdated, epoch, existingOfferToBeUpdated, catalogCharacteristicService);
+
+            /*****************************************
+            *
+            *  store
+            *
+            *****************************************/
+            if (!dryRun)
+              {
+
+                offerService.putOffer(offer, callingChannelService, salesChannelService, productService, voucherService,
+                    (existingOfferToBeUpdated == null), userID);
+              }
+
+            /*****************************************
+             *
+             * response
+             *
+             *****************************************/
+            if (jsonRoot.containsKey("id"))
+              {
+                response.put("id", offer.getOfferID());
+                response.put("accepted", offer.getAccepted());
+                response.put("valid", offer.getAccepted());
+                response.put("processing", offerService.isActiveOffer(offer, now));
+                response.put("responseCode", "ok");
+              }
+            if (jsonRoot.containsKey("ids")) {
+              updatedIDs.add(offer.getOfferID());
+            }
+          }
+
+        catch (JSONUtilitiesException | GUIManagerException e)
+          {
+            //
+            // incompleteObject
+            //
+
+            //
+            //  incompleteObject
+            //
+
+            IncompleteObject incompleteObject = new IncompleteObject(JSONToBeUpdated, epoch);
+
+            //
+            //  store
+            //
+            if (!dryRun)
+              {
+                offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService,
+                    voucherService, (existingOfferToBeUpdated == null), userID);
+              }
+            //
+            //  log
+            //
+
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+            // response
+            //
+            if (jsonRoot.containsKey("id"))
+              {
+                response.put("id", incompleteObject.getGUIManagedObjectID());
+                response.put("responseCode", "OfferNotValid");
+                response.put("responseMessage", e.getMessage());
+                response.put("responseParameter",
+                    (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+              }
+            if (jsonRoot.containsKey("ids"))
+              {
+                HashMap<String, String> invalidOfferExceptions = new HashMap<String, String>();                
+                invalidOfferExceptions.put("id", incompleteObject.getGUIManagedObjectID());
+                invalidOfferExceptions.put("responseCode", "OfferNotValid");
+                invalidOfferExceptions.put("responseMessage", e.getMessage());
+                invalidOfferExceptions.put("responseParameter",
+                    (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null); 
+
+                exceptionList.add(invalidOfferExceptions); //get the exceptions for multiple offers
+                
+              }
+
+          }
+      }
+    if (jsonRoot.containsKey("ids")) {
+      response.put("updated OfferIds", updatedIDs);
+      response.put("invalid offers", exceptionList);
+      
+    }
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
    *
    * processSetStatusOffer
    *
@@ -11373,9 +11615,8 @@ public class GUIManager
     Boolean dryRun = false;
     JSONArray productIDs = new JSONArray();
     List<GUIManagedObject> existingProducts = new ArrayList();
-    List<String> updatedIDs = new ArrayList();
-    HashMap<String, String> invalidProductsExceptions = new HashMap<String, String>();
-    JSONArray exceptionArray= new JSONArray();
+    List<String> updatedIDs = new ArrayList();    
+    List<Object> exceptionList= new ArrayList();
 
     /*****************************************
      *
@@ -11389,9 +11630,10 @@ public class GUIManager
 
     /*****************************************
      *
-     * productID
+     * update product
      *
      *****************************************/
+    
     if (jsonRoot.containsKey("id"))
       {
         String productID = JSONUtilities.decodeString(jsonRoot, "id", false);
@@ -11419,13 +11661,13 @@ public class GUIManager
           }
         else
           {
-            existingProducts.add(existingProduct);
+            existingProducts.add(existingProduct); // update for single product
 
           }
       }
     else if (jsonRoot.containsKey("ids"))
       {
-        productIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+        productIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false); // update for multiple product
       }
     else
       {
@@ -11445,14 +11687,14 @@ public class GUIManager
         GUIManagedObject existingProductObject = productService.getStoredProduct(productID);
         if (existingProductObject != null)
           {
-            existingProducts.add(existingProductObject);
+            existingProducts.add(existingProductObject); //ignore the wrong productIDs
           }
       }
 
     if (existingProducts == null || existingProducts.isEmpty())
       {
-        response.put("responseCode", "invalidProduct");
-        response.put("responseMessage", "product does not exist");
+        response.put("responseCode", "invalidProducts");
+        response.put("responseMessage", "products does not exist");
         return JSONUtilities.encodeObject(response);
       }
 
@@ -11461,9 +11703,10 @@ public class GUIManager
         JSONObject JSONToBeUpdated = new JSONObject();        
         Set<String> JsonRootkeySets = jsonRoot.keySet();
         JSONObject existingProductObject = existingProductToBeUpdated.getJSONRepresentation();
-        for (String JsonRootkey : JsonRootkeySets) {
-          JSONToBeUpdated.put(JsonRootkey, jsonRoot.get(JsonRootkey));
-        }
+        for (String JsonRootkey : JsonRootkeySets)
+          {
+            JSONToBeUpdated.put(JsonRootkey, jsonRoot.get(JsonRootkey));  // get the part of GUI object which need to be updated from jsonRoot
+          }
         JSONToBeUpdated.put("id", existingProductToBeUpdated.getGUIManagedObjectID());
         for (Object keyObject : existingProductObject.keySet())
           {
@@ -11472,7 +11715,7 @@ public class GUIManager
               {
                 if (existingProductObject.get(key) != null)
                   {
-                    JSONToBeUpdated.put(key, existingProductObject.get(key));
+                    JSONToBeUpdated.put(key, existingProductObject.get(key)); //get the other parts of the GUI objects from the existing product JSON
                   }
                 else
                   {
@@ -11543,7 +11786,7 @@ public class GUIManager
             // incompleteObject
             //
 
-            IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+            IncompleteObject incompleteObject = new IncompleteObject(JSONToBeUpdated, epoch);
 
             //
             // store
@@ -11582,16 +11825,23 @@ public class GUIManager
               }
             if (jsonRoot.containsKey("ids"))
               {
-                invalidProductsExceptions.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-                exceptionArray.add(invalidProductsExceptions);
+                HashMap<String, String> invalidProductsExceptions = new HashMap<String, String>();
+                invalidProductsExceptions.put("id", incompleteObject.getGUIManagedObjectID());
+                invalidProductsExceptions.put("responseCode", "productNotValid");
+                invalidProductsExceptions.put("responseMessage", e.getMessage());
+                invalidProductsExceptions.put("responseParameter",
+                    (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null); 
+
+                exceptionList.add(invalidProductsExceptions); //get the exceptions for multiple products
+                updatedIDs.add(incompleteObject.getGUIManagedObjectID());
                 
               }
 
           }
       }
     if (jsonRoot.containsKey("ids")) {
-      response.put("updates prodcutIds", updatedIDs);
-      response.put("invalid products", exceptionArray);
+      response.put("updated productIds", updatedIDs);
+      response.put("invalid products", exceptionList);
       
     }
 
