@@ -3264,43 +3264,6 @@ public class EvolutionEngine
           }
         }
     }
-    
-    if (evolutionEvent instanceof PurchaseFulfillmentRequest)
-      {
-        PurchaseFulfillmentRequest purchaseFulfillmentRequest = (PurchaseFulfillmentRequest) evolutionEvent;
-        String offerID = purchaseFulfillmentRequest.getOfferID();
-        Offer offer = offerService.getActiveOffer(offerID, now);
-        if (offer == null)
-          {
-            log.info("Got a purchase for inexistent offer " + offerID);
-          }
-        else
-          {
-            int maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
-            Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getBaseTimeZone());
-            List<Date> cleanPurchaseHistory = new ArrayList<Date>();
-            Map<String,List<Date>> fullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
-            List<Date> purchaseHistory = fullPurchaseHistory.get(offerID);
-            if (purchaseHistory != null)
-              {
-                // clean list : only keep relevant purchase dates
-                for (Date purchaseDate : purchaseHistory)
-                  {
-                    if (purchaseDate.after(earliestDateToKeep))
-                      {
-                        cleanPurchaseHistory.add(purchaseDate);
-                      }
-                  }
-              }
-            // TODO : this could be size-optimized by storing date/quantity in a new object
-            for (int n=0; n<purchaseFulfillmentRequest.getQuantity(); n++)
-              {
-                cleanPurchaseHistory.add(now); // add new purchase
-              }
-            fullPurchaseHistory.put(offerID, cleanPurchaseHistory);
-            subscriberProfileUpdated = true;
-          }
-      }
 
     /*****************************************
     *
@@ -5019,6 +4982,7 @@ public class EvolutionEngine
         Set<JourneyNode> visited = new HashSet<JourneyNode>();
         boolean terminateCycle = false;
         JourneyLink firedLink = null;
+        String sample = null;
         do
           {
             /*****************************************
@@ -5417,7 +5381,7 @@ public class EvolutionEngine
                 // abTesting (we remove it so its only counted once per journey)
                 //
                 
-                String sample = null;
+               
                 if(journeyState.getJourneyParameters().get("sample.a") != null)
                   {
                     sample = (String) journeyState.getJourneyParameters().get("sample.a");
