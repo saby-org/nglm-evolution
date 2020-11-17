@@ -995,6 +995,7 @@ public class Deployment
               defaultTimeWindowJSON.put("active", true);
               defaultTimeWindowJSON.put("communicationChannelID", "default");
             }
+          GUIManagedObject.commonSchema();//avoiding a NPE in a "static init" loop
           defaultNotificationTimeWindowsMap = new CommunicationChannelTimeWindow(defaultTimeWindowJSON, System.currentTimeMillis() * 1000, null);          
         }
       catch (GUIManagerException | JSONUtilitiesException e)

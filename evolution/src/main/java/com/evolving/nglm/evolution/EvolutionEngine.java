@@ -167,12 +167,6 @@ public class EvolutionEngine
 
   private static final Logger log = LoggerFactory.getLogger(EvolutionEngine.class);
 
-  //
-  //  hardwired arguments
-  //
-
-  public static String baseTimeZone = Deployment.getBaseTimeZone();
-
   /*****************************************
   *
   *  data
