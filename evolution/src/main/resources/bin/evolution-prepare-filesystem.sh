@@ -284,6 +284,10 @@ do
    export HOST=`echo $TUPLE | cut -d: -f2`
    export MONITORING_PORT=`echo $TUPLE | cut -d: -f3`
    export DEBUG_PORT=`echo $TUPLE | cut -d: -f4`
+   cat $DEPLOY_ROOT/config/logger/log4j-reportmanager.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-reportmanager-$KEY.xml
+   scp $DEPLOY_ROOT/config/logger/log4j-reportmanager-$KEY.xml $HOST:$NGLM_CONFIG_LOGS/log4j-reportmanager-$KEY.xml
+   rm -f $DEPLOY_ROOT/config/logger/log4j-reportmanager-$KEY.xml
+
       ssh $HOST "
       mkdir -p $NGLM_REPORTS
    "
