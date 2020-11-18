@@ -11,7 +11,7 @@
 
 	<appender name="eventAppender"
 		class="org.apache.log4j.RollingFileAppender">
-		<param name="File" value="/app/logs/thirdpartyevent-<_KEY_>.log" />
+		<param name="File" value="/app/logs/datacubemanager-<_KEY_>.log" />
 		<layout class="org.apache.log4j.EnhancedPatternLayout">
 			<param name="ConversionPattern"
 				value="%d{ISO8601}{<_DEPLOYMENT_TIMEZONE_>} %p [%t] %m%n" />
