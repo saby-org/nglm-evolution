@@ -249,6 +249,7 @@ public class Target extends GUIManagedObject
     *
     *****************************************/
 
+    this.targetName = JSONUtilities.decodeString(jsonRoot, "name", false); // RAJ K make this to true and remove below line - and the other API in README
     this.targetName = JSONUtilities.decodeString(jsonRoot, "targetName", true);
     this.targetFileID = JSONUtilities.decodeString(jsonRoot, "targetFileID", false);
     this.targetingType = TargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
