@@ -162,7 +162,11 @@ public class DeliveryManagerDeclaration
     if(isNewRoutingTopic){
       //new
       // no routing for evolution engine
-      if(!isProcessedByEvolutionEngine()) this.routingTopic = new Topic(deliveryType+"_routing", Topic.TYPE.traffic, true);
+      if(!isProcessedByEvolutionEngine()){
+        // special case conf case, several channels linked together sharing the same routing topic (different channel on same SMSC, deliveryReceipt should be shared by all)
+        String topicName = JSONUtilities.decodeString(jsonRoot, "sharedRoutingTopic", deliveryType+"_routing");
+        this.routingTopic = new Topic(topicName, Topic.TYPE.traffic, true);
+      }
     }else{
       //old
       log.warn(warnLog,deliveryType,"(no priority for routing)",oldRoutingTopic);
