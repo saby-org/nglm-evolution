@@ -74,6 +74,8 @@ prepare-curl -XPOST $CONNECT_URL_JOURNEYSTATISTIC_ES/connectors -H "Content-Type
       "topics" : "${topic.journeystatistic}",
       "connectionHost" : "'$MASTER_ESROUTER_HOST'",
       "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+      "connectionUserName" : "'$ELASTICSEARCH_USERNAME'",
+      "connectionUserPassword" : "'$ELASTICSEARCH_USERPASSWORD'",
       "indexName" : "journeystatistic",
       "batchRecordCount" : "'$CONNECT_ES_JOURNEYSTATISTIC_BATCHRECORDCOUNT'",
       "batchSize" : "'$CONNECT_ES_JOURNEYSTATISTIC_BATCHSIZEMB'"
