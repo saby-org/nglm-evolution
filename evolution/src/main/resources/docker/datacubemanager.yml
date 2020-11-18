@@ -24,6 +24,7 @@ datacubemanager:
     GUIMANAGER_PORT: <_GUIMANAGER_PORT_>
     JAVA_DEBUG_OPTS: -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=<_DATACUBEMANAGER_DEBUG_PORT_>,suspend=n
     KAFKA_HEAP_OPTS: <_DATACUBEMANAGER_HEAP_OPTS_>
+    KAFKA_LOG4J_OPTS: -Dlog4j.configuration=file:/app/config/log4j-datacubemanager.xml
     KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_DATACUBEMANAGER_MONITORING_PORT_>:/app/config/datacubemanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_> -Dredis.password=<_REDIS_PASSWORD_> -Devolutionengine.streamthreads=<_EVOLUTIONENGINE_STREAMTHREADS_>
     ENTRYPOINT: datacubemanager
   deploy: 
@@ -39,3 +40,8 @@ datacubemanager:
         - engine.labels.hostname == <_DATACUBEMANAGER_HOST_>
   networks:
     - outside
+  volumes:
+    - <_NGLM_CONFIG_LOGS_>/log4j-datacubemanager.xml:/app/config/log4j-datacubemanager.xml
+    - type: bind
+      source: <_NGLM_LOGS_>
+      target: /app/logs

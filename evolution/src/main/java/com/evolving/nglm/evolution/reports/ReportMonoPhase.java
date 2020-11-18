@@ -228,7 +228,15 @@ public class ReportMonoPhase
                   log.trace("getTotalShards = " + searchResponse.getTotalShards());
                   log.trace("getTook = " + searchResponse.getTook());
                 }
-                log.info("for " + Arrays.toString(indicesToRead) + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
+              String logMsg = "for " + Arrays.toString(indicesToRead) + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits();
+              if (searchResponse.getFailedShards() != 0 || searchResponse.getSkippedShards() != 0)
+                {
+                  logMsg += " getFailedShards = " + searchResponse.getFailedShards() +
+                            " getSkippedShards = " + searchResponse.getSkippedShards() +
+                            " getTotalShards = " + searchResponse.getTotalShards() +
+                            " getTook = " + searchResponse.getTook();
+                }
+              log.info(logMsg);
             }
           boolean alreadyTraced = false;
           while (searchHits != null && searchHits.length > 0)
