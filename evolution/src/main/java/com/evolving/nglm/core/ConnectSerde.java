@@ -15,6 +15,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.storage.Converter;
 import io.confluent.connect.avro.AvroConverter;
@@ -351,7 +352,33 @@ public class ConnectSerde<T> implements Serde<T>
       @Override public void close() { }
       @Override public byte[] serialize(String topic, T data)
       {
-        return converter.fromConnectData(topic, optionalSchema, packOptional(data));
+        Object packData = packOptional(data);
+        try
+        {
+          return converter.fromConnectData(topic, optionalSchema, packData);
+        }
+        catch (DataException e)
+        {
+          // wrap exception to add more info
+          String moreData = "null fields : [ ";
+          if (packData instanceof Struct)
+            {
+              Struct struct = (Struct) packData;
+              Schema schema = struct.schema();
+              if (schema != null)
+                {
+                  for (Field field : schema.fields())
+                    {
+                      if (struct.get(field.name()) == null)
+                        {
+                          moreData += field.name() + " ";
+                        }
+                    }
+                }
+            }
+          moreData += "]";
+          throw new DataException(packData.toString() + " " + optionalSchema.toString() + " " + moreData, e);
+        }
       }
     };
   }

@@ -2067,36 +2067,55 @@ public class Journey extends GUIManagedObject implements StockableItem
                 break;
               
               case Dialog:
-                String templateID = JSONUtilities.decodeString(parameterJSON, "value", false);
-                GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
-                if (template instanceof SubscriberMessageTemplate)
+                JSONObject value = JSONUtilities.decodeJSONObject(parameterJSON, "value", false); //(JSONObject)parameterJSON.get("value");
+                if (value != null)
                   {
-                    JSONObject templateObject = template.getJSONRepresentation();
-                    if (templateObject != null)
-                      {
-                        // in case of TemplateID reference:
-                        //{
-                        //  "parameterName": "node.parameter.dialog_template",
-                        //  "value": {
-                        //      "macros": [
-                        //          {
-                        //              "campaignValue": "subscriber.email",
-                        //              "templateValue": "emailAddress"
-                        //          }
-                        //      ],
-                        //      "templateID": "17"
-                        //  }
-                        JSONObject value = new JSONObject();
-                        value.put("templateID", templateID);
-                        // value.put("macros", new JSONArray()); // optional
-                        HashMap<String,Boolean> dialogMessageFieldsMandatory = new HashMap<String, Boolean>();
-                        NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(value, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
-                        boundParameters.put(parameterName, templateParameters);
+                    JSONArray message = JSONUtilities.decodeJSONArray(value, "message");
+                    /*
+                    
+                      "value": {
+                          "message": [
+                            {
+                              "languageID": "1",
+                              "sms.body": "Bienvenue sur le reseau"
+                            },{
+                              "languageID": "2",
+                              "sms.body": null
+                            }
+                          ]
                       }
+                      
+                      or
+                      
+                       "value": {
+                          "templateID": "1",
+                          "macros": [
+                              {
+                                "templateValue": "tag.x",
+                                "campaignValue": "subscriber.arpu"
+                              },{
+                                "templateValue": "tag.y",
+                                "campaignValue": "bulkcampaign.customer.status"
+                              }
+                          ]
+                       }
+                    */
+                    HashMap<String,Boolean> dialogMessageFieldsMandatory = new HashMap<String, Boolean>();
+
+                    if(message != null) {                
+                      // case InLine Template
+                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(message, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
+                      boundParameters.put(parameterName, templateParameters);
+                    }
+                    else {
+                      // case referenced Template
+                      NotificationTemplateParameters templateParameters = new NotificationTemplateParameters(value, dialogMessageFieldsMandatory, subscriberMessageTemplateService, criterionContext);
+                      boundParameters.put(parameterName, templateParameters);
+                    }
                   }
                 else
                   {
-                    log.trace("template is not a SubscriberMessageTemplate : " + template.getClass().getCanonicalName());
+                    log.trace("parameter does not have a value : " + parameterJSON.toJSONString());
                   }
                 break;
                 
