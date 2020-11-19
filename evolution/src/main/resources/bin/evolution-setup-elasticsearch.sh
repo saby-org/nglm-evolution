@@ -649,7 +649,7 @@ then
     }
   }'
 
-  prepare-es-create-curl -XPUT http://$MASTER_ESROUTER_SERVER/regr_counter/_doc/1 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+  prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/regr_counter/_doc/1 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
   {
     "count" : 100
   }'
@@ -826,43 +826,43 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_mo
 }'
 echo
 
-prepare-es-create-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/1 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/1 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "moduleID" : "1", "moduleName": "Journey_Manager", "moduleDisplay" : "Journey Manager", "moduleFeature" : "journeyID"
 }'
 echo
 
-prepare-es-create-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/2 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/2 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "moduleID" : "2", "moduleName": "Loyalty_Program", "moduleDisplay" : "Loyalty Program", "moduleFeature" : "loyaltyProgramID"
 }'
 echo
 
-prepare-es-create-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/3 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/3 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "moduleID" : "3", "moduleName": "Offer_Catalog", "moduleDisplay" : "Offer Catalog", "moduleFeature" : "offerID"
 }'
 echo
 
-prepare-es-create-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/4 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/4 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "moduleID" : "4", "moduleName": "Delivery_Manager", "moduleDisplay" : "Delivery Manager", "moduleFeature" : "deliverableID"
 }'
 echo
 
-prepare-es-create-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/5 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/5 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "moduleID" : "5", "moduleName": "Customer_Care", "moduleDisplay" : "Customer Care", "moduleFeature" : "none"
 }'
 echo
 
-prepare-es-create-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/6 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/6 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "moduleID" : "6", "moduleName": "REST_API", "moduleDisplay" : "REST API", "moduleFeature" : "none"
 }'
 echo
 
-prepare-es-create-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/999 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/999 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "moduleID" : "999", "moduleName": "Unknown", "moduleDisplay" : "Unknown", "moduleFeature" : "none"
 }'
