@@ -428,18 +428,38 @@ echo
 #
 #  create a cleaning policy for VDR
 #
-prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/vdr_policy -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_opendistro/_ism/policies/vdr_policy -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "policy": {
-    "phases": {
-      "delete": {
-         "min_age": "Deployment.getElasticsearchRetentionDaysVDR()d",
-         "actions": { "delete": {} }
+    "description": "hot delete workflow for vdr",
+    "default_state": "hot",
+    "schema_version": 1,
+    "states": [
+      {
+        "name": "hot",
+        "actions": [],
+        "transitions": [
+          {
+            "state_name": "delete",
+            "conditions": {
+              "min_index_age": "Deployment.getElasticsearchRetentionDaysVDR()d"
+            }
+          }
+        ]
+      },
+      {
+        "name": "delete",
+        "actions": [
+          {
+            "delete": {}
+          }
+        ]
       }
-    }
+    ]
   }
 }'
 echo
+
 #
 #  manually create vdr template
 #
@@ -447,9 +467,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/vdr -u $EL
 {
   "index_patterns": ["detailedrecords_vouchers-*"],
   "settings" : {
-    "index" : {
-      "lifecycle.name": "vdr_policy"
-    }
+    "opendistro.index_state_management.policy_id": "vdr_policy"
   },
   "mappings" : {
     "properties" : {
