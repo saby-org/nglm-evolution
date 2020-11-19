@@ -51,12 +51,6 @@ public abstract class DeploymentManagedObject
         this.name = this.id;
         this.jsonRepresentation.put("name", this.name);
       }
-    if (this.display == null)
-      {
-        this.display = this.id;
-        this.jsonRepresentation.put("display", this.display);
-      }
-    
   }
 
   /*****************************************
