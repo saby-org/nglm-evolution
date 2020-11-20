@@ -27,5 +27,15 @@ public interface INotificationRequest
   public String getDeliveryRequestID();
 
   public String getCorrelator();
+
+  public MetricHistory getNotificationHistory();
+
+  public String getDeliveryType();
+
+  public String getFeatureID();
+
+  public DeliveryRequest.Module getModule();
+
+  public String getSegmentContactPolicyID();
   
 }

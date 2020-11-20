@@ -1324,12 +1324,13 @@ public abstract class DeliveryManager
   {
     boolean blockedByContactPolicy = false;
     //if request is not type of any of contact policy affected request types do nothing
-    if(request instanceof SMSNotificationManager.SMSNotificationManagerRequest || request instanceof PushNotificationManager.PushNotificationManagerRequest || request instanceof MailNotificationManager.MailNotificationManagerRequest)
+    if(request instanceof INotificationRequest)
       {
+        INotificationRequest notifRequest = (INotificationRequest) request;
         RESTAPIGenericReturnCodes returnCode = RESTAPIGenericReturnCodes.UNKNOWN;
         try
           {
-            blockedByContactPolicy = contactPolicyProcessor.ensureContactPolicy(request);
+            blockedByContactPolicy = contactPolicyProcessor.ensureContactPolicy(notifRequest);
             if (blockedByContactPolicy)
               {
                 request.setDeliveryStatus(DeliveryStatus.Failed);
@@ -1343,22 +1344,10 @@ public abstract class DeliveryManager
             returnCode = RESTAPIGenericReturnCodes.CONTACT_POLICY_EVALUATION_ERROR;
             log.warn("Processing contact policy for " + request.getSubscriberID() + " failed", ex);
           }
-        //because the return code is defined at each notification request type need to identify type cast and call setReturnCode
         if (blockedByContactPolicy)
           {
-            if (request instanceof SMSNotificationManager.SMSNotificationManagerRequest)
-              {
-                ((SMSNotificationManager.SMSNotificationManagerRequest) request).setReturnCode(returnCode.getGenericResponseCode());
-                ((SMSNotificationManager.SMSNotificationManagerRequest) request).setReturnCodeDetails(returnCode.toString());
-              } else if (request instanceof PushNotificationManager.PushNotificationManagerRequest)
-              {
-                ((PushNotificationManager.PushNotificationManagerRequest) request).setReturnCode(returnCode.getGenericResponseCode());
-                ((PushNotificationManager.PushNotificationManagerRequest) request).setReturnCodeDetails(returnCode.toString());
-              } else if (request instanceof MailNotificationManager.MailNotificationManagerRequest)
-              {
-                ((MailNotificationManager.MailNotificationManagerRequest) request).setReturnCode(returnCode.getGenericResponseCode());
-                ((MailNotificationManager.MailNotificationManagerRequest) request).setReturnCodeDetails(returnCode.toString());
-              }
+            notifRequest.setReturnCode(returnCode.getGenericResponseCode());
+            notifRequest.setReturnCodeDetails(returnCode.toString());
             completeRequest(request);
           }
       }

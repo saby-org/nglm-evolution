@@ -327,6 +327,8 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public Date getRescheduledDate() { return rescheduledDate; }
   public MetricHistory getNotificationHistory(){ return notificationHistory; }
   public Map<String,String> getSubscriberFields(){return subscriberFields;}
+  //derived
+  public Module getModule(){return Module.fromExternalRepresentation(getModuleID());}
 
   //
   //  setters

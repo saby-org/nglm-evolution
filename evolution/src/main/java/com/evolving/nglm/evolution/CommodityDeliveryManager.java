@@ -715,7 +715,6 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     
     @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
     {
-      Module module = Module.fromExternalRepresentation(getModuleID());
       Date now = SystemTime.getCurrentTime();
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(PROVIDERID, getProviderID());
@@ -729,10 +728,10 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       guiPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
       guiPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate()));
       guiPresentationMap.put(MODULEID, getModuleID());
-      guiPresentationMap.put(MODULENAME, module.toString());
+      guiPresentationMap.put(MODULENAME, getModule().toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
-      guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(ORIGIN, "");
       guiPresentationMap.put(RETURNCODE, getCommodityDeliveryStatus().getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, getCommodityDeliveryStatus().toString());
@@ -740,7 +739,6 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     
     @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
     {
-      Module module = Module.fromExternalRepresentation(getModuleID());
       Date now = SystemTime.getCurrentTime();
       thirdPartyPresentationMap.put(PROVIDERID, getProviderID());
       thirdPartyPresentationMap.put(PROVIDERNAME, Deployment.getFulfillmentProviders().get(getProviderID()).getProviderName());
@@ -753,10 +751,10 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       thirdPartyPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
       thirdPartyPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate()));
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
-      thirdPartyPresentationMap.put(MODULENAME, module.toString());
+      thirdPartyPresentationMap.put(MODULENAME, getModule().toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
-      thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-      thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(ORIGIN, "");
       thirdPartyPresentationMap.put(RETURNCODE, getCommodityDeliveryStatus().getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getCommodityDeliveryStatus().getReturnCode()).getGenericResponseMessage());
@@ -1270,7 +1268,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
         statsCounter.withLabel(StatsBuilders.LABEL.status.name(),commodityDeliveryRequest.getDeliveryStatus().getExternalRepresentation())
                     .withLabel(StatsBuilders.LABEL.commoditytype.name(),getCommodityType(commodityDeliveryRequest))
                     .withLabel(StatsBuilders.LABEL.operation.name(),commodityDeliveryRequest.getOperation().name())
-				    .withLabel(StatsBuilders.LABEL.module.name(), DeliveryRequest.Module.fromExternalRepresentation(commodityDeliveryRequest.getModuleID()).name())
+				    .withLabel(StatsBuilders.LABEL.module.name(), commodityDeliveryRequest.getModule().name())
 				    .getStats().increment();
 
         if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : DONE");

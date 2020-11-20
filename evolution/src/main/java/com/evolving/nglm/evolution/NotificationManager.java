@@ -596,14 +596,13 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     @Override
     public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
     {
-      Module module = Module.fromExternalRepresentation(getModuleID());
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(EVENTID, null);
       guiPresentationMap.put(MODULEID, getModuleID());
-      guiPresentationMap.put(MODULENAME, module.toString());
+      guiPresentationMap.put(MODULENAME, getModule().toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
-      guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(SOURCE, getSourceAddressParam());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
@@ -621,14 +620,13 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     @Override
     public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
     {
-      Module module = Module.fromExternalRepresentation(getModuleID());
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
       thirdPartyPresentationMap.put(EVENTID, null);
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
-      thirdPartyPresentationMap.put(MODULENAME, module.toString());
+      thirdPartyPresentationMap.put(MODULENAME, getModule().toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
-      thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-      thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(SOURCE, getSourceAddressParam());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
@@ -987,7 +985,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       NotificationManagerRequest dr = (NotificationManagerRequest)deliveryRequest;
       statsCounter.withLabel(StatsBuilders.LABEL.status.name(),deliveryRequest.getDeliveryStatus().getExternalRepresentation())
               .withLabel(StatsBuilders.LABEL.channel.name(),Deployment.getCommunicationChannels().get(dr.getChannelID()).getDisplay())
-              .withLabel(StatsBuilders.LABEL.module.name(), DeliveryRequest.Module.fromExternalRepresentation(dr.getModuleID()).name())
+              .withLabel(StatsBuilders.LABEL.module.name(), dr.getModule().name())
               .withLabel(StatsBuilders.LABEL.priority.name(), dr.getDeliveryPriority().getExternalRepresentation())
               .getStats().increment();
     }
