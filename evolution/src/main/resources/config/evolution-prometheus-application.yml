@@ -173,3 +173,10 @@ scrape_configs:
     # main config
     static_configs:
       - targets: [<_EXTRACTMANAGER_PROMETHEUS_>]
+
+  # gui job
+  - job_name: 'gui'
+
+    # main config
+    static_configs:
+      - targets: [<_GUI_PROMETHEUS_>]
