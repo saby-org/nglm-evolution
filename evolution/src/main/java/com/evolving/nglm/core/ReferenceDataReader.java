@@ -351,6 +351,10 @@ public class ReferenceDataReader<K, V extends ReferenceDataValue<K>>
     return toRet;
   }
 
+  public Map<K,V> getAll() {
+    return new HashMap<>(referenceData);
+  }
+
   /*****************************************
   *
   *  class ReferenceDataRecord

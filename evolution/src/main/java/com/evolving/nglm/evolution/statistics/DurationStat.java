@@ -8,6 +8,7 @@ public class DurationStat extends Stat<DurationStat> implements DurationStatMBea
   private LongAdder duration = new LongAdder();
   // got a counter stat as well
   private StatBuilder<CounterStat> counterStatBuilder;
+  protected StatBuilder<CounterStat> getCounterStatBuilder(){return counterStatBuilder;}
 
   DurationStat(String metricName, String processName, StatBuilder<CounterStat> counterStatBuilder) {
     super(metricName,processName);

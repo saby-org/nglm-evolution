@@ -67,10 +67,9 @@ public class ContactPolicyProcessor
    *
    *****************************************/
 
-  public boolean ensureContactPolicy(DeliveryRequest request) throws ContactPolityProcessorException
+  public boolean ensureContactPolicy(INotificationRequest request) throws ContactPolityProcessorException
   {
     Date now = SystemTime.getCurrentTime();
-    boolean returnValue = false;
     try
       {
         String channelId = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(request.getDeliveryType());
@@ -82,6 +81,9 @@ public class ContactPolicyProcessor
             return true;
           }
 
+        // if not a campaign, don't check for journey objectives
+        if(!request.getModule().equals(DeliveryRequest.Module.Journey_Manager)) return false;
+
         Journey journey = journeyService.getActiveJourney(request.getFeatureID(), now);
         Set<JourneyObjectiveInstance> journeyObjectivesInstances = journey.getJourneyObjectiveInstances();
         for (JourneyObjectiveInstance journeyObjectiveInstance : journeyObjectivesInstances)
@@ -89,8 +91,7 @@ public class ContactPolicyProcessor
             JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), now);
             if (this.evaluateChildParentsContactPolicies(channelId, journeyObjective, requestMetricHistory, now))
               {
-                returnValue = true;
-                break;
+                return true;
               }
           }
       }
@@ -98,7 +99,7 @@ public class ContactPolicyProcessor
       {
         throw new ContactPolityProcessorException(ex);
       }
-    return returnValue;
+    return false;
   }
 
   /*****************************************

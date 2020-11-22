@@ -80,7 +80,6 @@ public class EvolutionSetup
     //
     String rootPath = args[0];
     String topicsFolderPath = rootPath; // We will filter it and only process topics-* files.
-    String elasticsearchCreateFilePath = rootPath + "elasticsearch/create";
     String elasticsearchUpdateFilePath = rootPath + "elasticsearch/update";
     String connectorsFilePath = rootPath + "connectors/connectors";
 
@@ -111,7 +110,6 @@ public class EvolutionSetup
     System.out.println("= ELASTICSEARCH                                                                =");
     System.out.println("================================================================================");
     handleElasticsearchUpdate(elasticsearchUpdateFilePath); // Override
-    handleElasticsearchCreate(elasticsearchCreateFilePath); // New things to push, check if already there
 
     //
     // kafka connect setup (must be last, after topics & indexes setup)
@@ -130,45 +128,6 @@ public class EvolutionSetup
    *
    ****************************************/
 
-  private static void handleElasticsearchCreate(String elasticsearchCreateFilePath) {
-    List<CurlCommand> curls = handleCurlFile(elasticsearchCreateFilePath);
-    for(CurlCommand cmd : curls) {
-      try
-        {
-          ObjectHolder<String> responseBody = new ObjectHolder<String>();
-          ObjectHolder<Integer> httpResponseCode = new ObjectHolder<Integer>();
-
-          //
-          // First check if the item exist
-          //
-          while(httpResponseCode.getValue() == null || httpResponseCode.getValue() == 409 /* can happen if calls are made too quickly */) {
-            executeCurl(cmd.url, "{}", "-XGET", cmd.username, cmd.password, httpResponseCode, responseBody);
-          }
-
-          JSONObject answer = (JSONObject) (new JSONParser()).parse(responseBody.getValue());
-          if(answer.get("found") == null || !(boolean) answer.get("found")) { // can also be null
-            responseBody.setValue(null);
-            httpResponseCode.setValue(null);
-
-            //
-            // Not found in ES, push it
-            //
-            while(httpResponseCode.getValue() == null || httpResponseCode.getValue() == 409 /* can happen if calls are made too quickly */) {
-              executeCurl(cmd.url, cmd.jsonBody, cmd.verb, cmd.username, cmd.password, httpResponseCode, responseBody);
-            }
-
-            if(! (httpResponseCode.getValue().intValue() >= 200 && httpResponseCode.getValue().intValue() < 300)) {
-              System.out.println("[DISPLAY] WARNING: Unable to populate Elasticsearch on " + cmd.url);
-            }
-          }
-        }
-      catch (ParseException|EvolutionSetupException e)
-        {
-          System.out.println("[DISPLAY] ERROR: Something wrong happened while executing curl command. " + e.getMessage());
-        }
-    }
-  }
-
   private static void handleElasticsearchUpdate(String elasticsearchUpdateFilePath) {
     List<CurlCommand> curls = handleCurlFile(elasticsearchUpdateFilePath);
     for(CurlCommand cmd : curls) {
@@ -176,18 +135,60 @@ public class EvolutionSetup
         {
           ObjectHolder<String> responseBody = new ObjectHolder<String>();
           ObjectHolder<Integer> httpResponseCode = new ObjectHolder<Integer>();
-
+          
+          //
+          // First check if the item exist
+          //
+          int retry = 10;
           while(httpResponseCode.getValue() == null || httpResponseCode.getValue() == 409 /* can happen if calls are made too quickly */) {
-            executeCurl(cmd.url, cmd.jsonBody, cmd.verb, cmd.username, cmd.password, httpResponseCode, responseBody);
+            if(retry < 0) { 
+              throw new EvolutionSetupException("End of retry: " + responseBody.getValue());
+            }
+            
+            executeCurl(cmd.url, "{}", "-XGET", cmd.username, cmd.password, httpResponseCode, responseBody);
+            retry--;
+          }
+
+          // 
+          // Retrieve the previous version, if any and update command URL
+          //
+          String updatedURL = cmd.url;
+          if(httpResponseCode.getValue() == 200) {
+            System.out.println("[DISPLAY] INFO: There is a previous version in the system.");
+            
+            // There is a special case for ISM objects. Update function need to retrieve current version
+            if(updatedURL.contains("/_ism/")) {
+              JSONObject answer = (JSONObject) (new JSONParser()).parse(responseBody.getValue());
+              updatedURL += "?if_seq_no="+answer.get("_seq_no")+"&if_primary_term="+answer.get("_primary_term");
+            }
+          } else if(httpResponseCode.getValue() == 404) {
+            System.out.println("[DISPLAY] INFO: Item does not exist yet.");
+          } else {
+            throw new EvolutionSetupException("[DISPLAY] ERROR: Unknown response code (" + httpResponseCode.getValue() + "): " + responseBody.getValue());
+          }
+          
+          responseBody.setValue(null);
+          httpResponseCode.setValue(null);
+          retry = 10;
+          while(httpResponseCode.getValue() == null || httpResponseCode.getValue() == 409 /* can happen if calls are made too quickly */) {
+            if(retry < 0) { 
+              throw new EvolutionSetupException("End of retry: " + responseBody.getValue());
+            }
+            
+            executeCurl(updatedURL, cmd.jsonBody, cmd.verb, cmd.username, cmd.password, httpResponseCode, responseBody);
+            retry--;
           }
 
           if (! (httpResponseCode.getValue().intValue() >= 200 && httpResponseCode.getValue().intValue() < 300)) {
-            System.out.println("[DISPLAY] WARNING: Unable to update Elasticsearch on " + cmd.url + ". " + responseBody.getValue());
+            System.out.println("[DISPLAY] ERROR: Unable to update Elasticsearch on " + cmd.url + ". " + responseBody.getValue());
+          } else {
+            System.out.println("[DISPLAY] INFO: Item has been updated.");
           }
         }
-      catch (EvolutionSetupException e)
+      catch (ParseException|EvolutionSetupException e)
         {
-          System.out.println("[DISPLAY] ERROR: Something wrong happened while executing curl command. " + e.getMessage());
+          System.out.println("[DISPLAY] ERROR: Something wrong happened while executing curl command.");
+          e.printStackTrace(System.out);
         }
     }
   }
@@ -757,6 +758,7 @@ public class EvolutionSetup
 
   private static void executeCurl(String url, String jsonRequestEntity, String httpMethod, String username, String password, ObjectHolder<Integer> httpResponseCode, ObjectHolder<String> responseBody) throws EvolutionSetupException
   {
+    System.out.println("[DISPLAY] INFO: Executing CURL " + httpMethod + " on " + url);
     HttpResponse httpResponse = null;
     HttpRequestBase httpRequest;
     switch (httpMethod)
