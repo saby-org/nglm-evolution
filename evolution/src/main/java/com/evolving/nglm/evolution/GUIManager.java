@@ -27788,8 +27788,22 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
              *
              *****************************************/
 
-            GUIManagedObject existingProduct = productService.getStoredProduct(existingproductID);
-            GUIManagedObject existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
+            GUIManagedObject existingVoucher = null;
+            GUIManagedObject existingProduct = null;
+
+            if (existingVoucherID != null)
+              {
+                existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
+              }
+            if (existingproductID != null)
+              {
+                existingProduct = productService.getStoredProduct(existingproductID);
+              }
+
+            if (existingVoucher != null)
+              {
+                voucherService.removeVoucher(existingVoucherID, userID, uploadedFileService);
+              }
 
             if (existingVoucher != null)
               {
@@ -27864,8 +27878,23 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
              *
              *****************************************/
 
-            GUIManagedObject existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
-            GUIManagedObject existingProduct = productService.getStoredProduct(existingproductID);
+            GUIManagedObject existingVoucher = null;
+            GUIManagedObject existingProduct = null;
+
+            if (existingVoucherID != null)
+              {
+                existingVoucher = voucherService.getStoredVoucher(existingVoucherID);
+              }
+            if (existingproductID != null)
+              {
+                existingProduct = productService.getStoredProduct(existingproductID);
+              }
+
+            if (existingVoucher != null)
+              {
+                voucherService.removeVoucher(existingVoucherID, userID, uploadedFileService);
+              }
+            
             if (existingProduct != null)
               {
                 productService.removeProduct(existingproductID, userID);
