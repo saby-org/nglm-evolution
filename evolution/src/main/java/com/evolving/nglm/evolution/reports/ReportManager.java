@@ -27,6 +27,7 @@ import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.TimeZone;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
@@ -61,8 +62,8 @@ import com.evolving.nglm.evolution.ReportService.ReportListener;
  */
 public class ReportManager implements Watcher
 {
-
   private static final Logger log = LoggerFactory.getLogger(ReportManager.class);
+  private static final int MINUTES_BETWEEN_MEMORY_LOGS = 60;
   protected static final String CONTROL_SUBDIR = "control"; // used in ReportScheduler
   protected static final String LOCK_SUBDIR = "lock";
   protected static final int sessionTimeout = 30*1000; // 30 seconds
@@ -74,6 +75,7 @@ public class ReportManager implements Watcher
   private static ReportManagerStatistics reportManagerStatistics;
   private ReportService reportService = null;
   private boolean gotSessionExpired;
+  private boolean gotFatalError;
   private String controlFileToRemove = null;
   
   public static short replicationFactor;
@@ -138,6 +140,8 @@ public class ReportManager implements Watcher
   
   private void initializeReportManager() throws Exception
   {
+    gotSessionExpired = false;
+    gotFatalError = false;
     log.debug("controlDir = "+controlDir+" , lockDir = "+lockDir);
 
     serviceControlDir = controlDir;
@@ -160,7 +164,6 @@ public class ReportManager implements Watcher
         log.trace("ReportService started");
       }
 
-    gotSessionExpired = false;
     zk  = new ZooKeeper(zkHostList, sessionTimeout, this);
     log.debug("ZK client created : "+zk);
     // TODO next 3 lines could be done once for all in nglm-evolution/.../evolution-setup-zookeeper.sh
@@ -290,6 +293,11 @@ public class ReportManager implements Watcher
         {
           log.error("Error processing report", e);
         }
+        catch (Error e) // in case of fatal error, such as OutOfMemory, make sure the container exits
+        {
+          gotFatalError = true;
+          log.error("Fatal error processing report", e);
+        }
       }
   }
 
@@ -390,6 +398,7 @@ public class ReportManager implements Watcher
                   while (!allOK)
                     {
                       log.debug("report = "+report);
+                      log.info("JVM free memory : {} over total of {}", FileUtils.byteCountToDisplaySize(Runtime.getRuntime().freeMemory()), FileUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory()));
                       allOK = handleReport(reportName, reportGenerationDate, report, restOfLine);
                       reportManagerStatistics.incrementReportCount();
                       if (!allOK)
@@ -405,6 +414,7 @@ public class ReportManager implements Watcher
                             }
                         }
                     }
+                  log.info("JVM free memory : {} over total of {}", FileUtils.byteCountToDisplaySize(Runtime.getRuntime().freeMemory()), FileUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory()));
                 }
             }
             catch (KeeperException e) { handleSessionExpired(e, "Issue while reading from control node "+controlFile); }
@@ -565,10 +575,10 @@ public class ReportManager implements Watcher
             e.printStackTrace(new PrintWriter(stackTraceWriter, true));
             log.error("Exception processing report " + reportName + " in " + csvFilename + " : {}", stackTraceWriter.toString());
             // the report may have been partially generated. We need to remove it and restart
-            Path path = FileSystems.getDefault().getPath(csvFilename);
+            Path path = FileSystems.getDefault().getPath(csvFilename + ReportUtils.ZIP_EXTENSION);
             try
               {
-                log.info("Removing partial report " + csvFilename);
+                log.info("Removing partial report " + csvFilename + ReportUtils.ZIP_EXTENSION);
                 Files.delete(path);
                 allOK = false; // need to restart this report
               }
@@ -635,15 +645,21 @@ public class ReportManager implements Watcher
 
     reportManagerStatistics = new ReportManagerStatistics("reportmanager");
     ReportManager rm = new ReportManager();
+    int minuteCounter;
     try 
     {
       while (true) // we loop to handle session expiration
         {
+          minuteCounter = MINUTES_BETWEEN_MEMORY_LOGS;
           rm.initializeReportManager();
-          while (true) 
+          while (true)
             { //  sleep forever
               try 
               {
+                if (rm.gotFatalError)
+                  {
+                    return; // to exit JVM, and restart docker container
+                  }
                 if (rm.gotSessionExpired)
                   {
                     // got exception, should reconnect to ZK
@@ -651,6 +667,11 @@ public class ReportManager implements Watcher
                     break;
                   }
                 Thread.sleep(60*1000); // check every minute
+                if (minuteCounter-- < 0) // display memory size every hour
+                  {
+                    minuteCounter = MINUTES_BETWEEN_MEMORY_LOGS;
+                    log.info("JVM free memory : {} over total of {}", FileUtils.byteCountToDisplaySize(Runtime.getRuntime().freeMemory()), FileUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory()));
+                  }
               } catch (InterruptedException ignore) {}
             }
         }

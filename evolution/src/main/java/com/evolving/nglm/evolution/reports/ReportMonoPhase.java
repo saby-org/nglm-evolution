@@ -676,7 +676,7 @@ public class ReportMonoPhase
         StringWriter sw = new StringWriter();
         TotalHits totalHits = searchResponse.getHits().getTotalHits();
         long totalHitsLong = totalHits.value;
-        (new PrintWriter(sw)).printf(", totalHits = %,l%s", totalHitsLong, (totalHits.relation == Relation.EQUAL_TO)?" ":"+"); // better formating, can be huge
+        (new PrintWriter(sw)).printf(", totalHits = %,d%s", totalHitsLong, (totalHits.relation == Relation.EQUAL_TO)?"":"+"); // better formating, can be huge
         String logMsg = "For " + Arrays.toString(indicesToRead) + " searchHits.length = " + searchHits.length + sw;
         if (searchResponse.getFailedShards() != 0 || searchResponse.getSkippedShards() != 0)
           {
