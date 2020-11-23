@@ -27805,11 +27805,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 voucherService.removeVoucher(existingVoucherID, userID, uploadedFileService);
               }
 
-            if (existingVoucher != null)
-              {
-                voucherService.removeVoucher(existingVoucherID, userID, uploadedFileService);
-              }
-
             Product product = new Product(productJSON, epoch, existingProduct, deliverableService,
                 catalogCharacteristicService);
             /*****************************************
@@ -27888,11 +27883,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
             if (existingproductID != null)
               {
                 existingProduct = productService.getStoredProduct(existingproductID);
-              }
-
-            if (existingVoucher != null)
-              {
-                voucherService.removeVoucher(existingVoucherID, userID, uploadedFileService);
               }
             
             if (existingProduct != null)
