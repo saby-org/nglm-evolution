@@ -403,7 +403,7 @@ public class ReportManager implements Watcher
                       reportManagerStatistics.incrementReportCount();
                       if (!allOK)
                         {
-                          log.info("There was an issue producing " + reportName + " restarting it for the " + safeguardCount++ + " time");
+                          log.info("There was an issue producing " + reportName + " restarting it for the " + ++safeguardCount + " time, first wait 1 minute...");
                           if (safeguardCount > 3)
                             {
                               allOK = true; // after a while, stop, this should stay exceptional

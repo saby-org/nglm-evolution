@@ -261,7 +261,7 @@ public class ReportMonoPhase
                   addHeader &= reportFactory.dumpElementToCsvMono(miniSourceMap, writer, addHeader);
                 }
               long elapsedBatch = System.currentTimeMillis() - startBatch;
-              if (nbMaxTraces > 0 && elapsedBatch > scroolKeepAlive)
+              if (nbMaxTraces > 0 && elapsedBatch > scroolKeepAlive*1000L)
                 {
                   log.info("problem : took " + elapsedBatch + " to process scroll, keepAlive of " + scroolKeepAlive + " exceeded");
                   nbMaxTraces--;
@@ -455,7 +455,7 @@ public class ReportMonoPhase
                         }
                     }
                   long elapsedBatch = System.currentTimeMillis() - startBatch;
-                  if (nbMaxTraces > 0 && elapsedBatch > scroolKeepAlive)
+                  if (nbMaxTraces > 0 && elapsedBatch > scroolKeepAlive*1000L)
                     {
                       log.info("problem : took " + elapsedBatch + " to process scroll, keepAlive of " + scroolKeepAlive + " exceeded");
                       nbMaxTraces--;

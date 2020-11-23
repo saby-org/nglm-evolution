@@ -488,7 +488,19 @@ docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-
 --
 
 -- request the generation of a journey report
-docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> create /evolving/nglm/reports/control/report-001 journeyReport
+docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> create /evolving/nglm/reports/control/launch-Report-customerReport-000000001 '{"reportName":"customerReport","reportGenerationDate":1606150469246}'
+
+-- check reports being requested
+docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> ls /evolving/nglm/reports/control
+
+-- check reports being currently processed
+docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> ls /evolving/nglm/reports/lock
+
+-- remove a report control file
+docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> delete /evolving/nglm/reports/control/launchReport-customerReport-0000000006
+
+-- remove a report lock file
+docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> delete /evolving/nglm/reports/lock/launchReport-customerReport-0000000006
 
 docker service logs ev-reportmanager_reportmanager-001 --tail 100 -f
 docker service logs ev-reportscheduler_reportscheduler-001 --tail 100 -f
