@@ -34,14 +34,12 @@ public class ContactPolicyCommunicationChannels
 
   public enum ContactType
   {
-    Default("default", "Default", DeliveryPriority.Standard/*not used for default, will map to event priority*/, true/*not used for default, low priority is true, else it is false*/),
-    CallToAction("callToAction", "Advertising", DeliveryPriority.Low, true),
-    Response("response", "Bonus Message", DeliveryPriority.Standard, false),
-    Reminder("reminder", "Reminder", DeliveryPriority.Low, true),
-    Announcement("announcement", "Announcement", DeliveryPriority.Low, false),
-    ActionNotification("actionNotification", "Action Notification", DeliveryPriority.Standard, false),
-    Emergency("emergency", "Emergency", DeliveryPriority.High, false),
-    Unknown("(unknown)", "(unknown)", DeliveryPriority.Standard, false);
+    CallToAction("callToAction", "Call to Action (Low priority - Limited)", DeliveryPriority.Standard, true),
+    Response("response", "Response (High priority)", DeliveryPriority.High, false),
+    Reminder("reminder", "Reminder (Low priority - Limited)", DeliveryPriority.Standard, true),
+    Announcement("announcement", "Announcement (Low priority - Limited)", DeliveryPriority.Standard, false),
+    ActionNotification("actionNotification", "Action Notification (High priority)", DeliveryPriority.High, false),
+    Unknown("(unknown)", "Unknown (Low priority)", DeliveryPriority.Standard, false);
     private String externalRepresentation;
     private String display;
     private DeliveryPriority deliveryPriority;
