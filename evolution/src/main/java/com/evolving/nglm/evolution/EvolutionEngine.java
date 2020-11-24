@@ -4741,6 +4741,7 @@ public class EvolutionEngine
                       {
                         enterJourney = false;
                         currentStatus = null;
+                        context.subscriberTrace("NotEligible: journey or subscriber not inclusion list {0}", journey.getJourneyID());
                       }
                     else 
                       {
@@ -4761,8 +4762,22 @@ public class EvolutionEngine
                           }
                         else 
                           {
-                            enterJourney = true;
-                            currentStatus = null;                            
+                            // 5. Apply the journeyUniversalEligibilityCriteria
+                            evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now);
+                            eligibilityAndTargetting = new ArrayList<>();
+                            eligibilityAndTargetting.addAll(Deployment.getJourneyUniversalEligibilityCriteria());
+                            
+                            boolean  enterAfterJourneyUniversalCriteria = EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityAndTargetting);
+                            if(enterAfterJourneyUniversalCriteria == false) {
+                              // Do not enter into the Journey
+                              enterJourney = false;
+                              context.subscriberTrace("NotEligible: journey universal criteria {0}", journey.getJourneyID());
+                            }
+                            else {
+                              // Enter into the Journey
+                              enterJourney = true;
+                              currentStatus = null;
+                            }
                           }
                       }
                   }

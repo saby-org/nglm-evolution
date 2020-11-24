@@ -1123,28 +1123,6 @@ public class Journey extends GUIManagedObject implements StockableItem
 
     /*****************************************
     *
-    *  universal eligibility criteria
-    *
-    *****************************************/
-
-    List<EvaluationCriterion> journeyUniversalEligibilityCriteria = null;
-    switch (journeyType)
-      {
-        case JourneyTemplate:
-        case Journey:
-        case Campaign:
-        case BulkCampaign:
-          journeyUniversalEligibilityCriteria = Deployment.getJourneyUniversalEligibilityCriteria();
-          break;
-
-        case Workflow:
-        case LoyaltyWorkflow:
-          journeyUniversalEligibilityCriteria = new ArrayList<EvaluationCriterion>();
-          break;
-      }
-
-    /*****************************************
-    *
     *  existingJourney
     *
     *****************************************/
@@ -1160,7 +1138,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     this.effectiveEntryPeriodEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveEntryPeriodEndDate", false));
     this.templateParameters = decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot, "templateParameters", false));
     this.targetingType = TargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", "criteria"));
-    this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), journeyUniversalEligibilityCriteria);
+    this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), new ArrayList<EvaluationCriterion>());
     this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>());
     
     //
@@ -1878,7 +1856,7 @@ public class Journey extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  private List<EvaluationCriterion> decodeCriteria(JSONArray jsonArray, List<EvaluationCriterion> universalCriteria) throws GUIManagerException
+  private List<EvaluationCriterion> decodeCriteria(JSONArray jsonArray, List<EvaluationCriterion> additionalCriteria) throws GUIManagerException
   {
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
 
@@ -1886,7 +1864,7 @@ public class Journey extends GUIManagedObject implements StockableItem
     //  universal criteria
     //
 
-    result.addAll(universalCriteria);
+    result.addAll(additionalCriteria);
 
     //
     //  journey-level targeting critera
