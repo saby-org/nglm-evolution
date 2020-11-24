@@ -140,6 +140,8 @@ public class PresentationLog implements SubscriberStreamEvent
   public List<Date> getPresentationDates() { return presentationDates;}
   public String getTokenTypeID() { return tokenTypeID; }
   public DNBOToken getToken() { return token;}
+
+  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.High; }
   
   public void setToken(DNBOToken token) { this.token = token; }
 

@@ -83,6 +83,8 @@ public class TokenRedeemed implements EvolutionEngineEvent
   public String getTokenType() { return tokenType; }
   public String getAcceptedOfferId() { return acceptedOfferId; }
 
+  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.High; }
+
 
   /*****************************************
   *

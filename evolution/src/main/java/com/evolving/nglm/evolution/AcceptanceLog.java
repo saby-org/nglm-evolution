@@ -132,6 +132,8 @@ public class AcceptanceLog implements SubscriberStreamEvent
   public String getFeatureID() { return featureID; }
   public String getTokenTypeID() { return tokenTypeID; }
 
+  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.High; }
+
   /*****************************************
   *
   *  constructor

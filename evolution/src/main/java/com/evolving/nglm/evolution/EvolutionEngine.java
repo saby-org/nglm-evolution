@@ -6359,7 +6359,7 @@ public class EvolutionEngine
         result.addAll(subscriberState.getProfileLoyaltyProgramChangeEvents());
       }
     // enrich with alternateIds all here
-    result.stream().forEach(subscriberStreamOutput -> subscriberStreamOutput.enrichSubscriberStreamOutput(subscriberState.getSubscriberProfile(),subscriberGroupEpochReader));
+    result.stream().forEach(subscriberStreamOutput -> subscriberStreamOutput.enrichSubscriberStreamOutput(subscriberStateHackyWrapper.getOriginalEvent(),subscriberState.getSubscriberProfile(),subscriberGroupEpochReader));
     return result;
   }
 

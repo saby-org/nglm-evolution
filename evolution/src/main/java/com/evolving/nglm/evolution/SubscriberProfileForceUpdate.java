@@ -92,6 +92,9 @@ public class SubscriberProfileForceUpdate implements SubscriberStreamEvent, Acti
   public Date getEventDate() { return eventDate; }
   public ParameterMap getParameterMap() { return parameterMap; }
 
+  //TODO: this should probably extends SubscriberStreamOutput instead
+  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.Standard; }
+
   /*****************************************
   *
   *  constructor -- JSON
