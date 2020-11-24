@@ -23,9 +23,14 @@ import java.util.TimeZone;
 import org.apache.commons.lang3.time.DateUtils;
 
 import com.evolving.nglm.evolution.Deployment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RLMDateUtils
 {
+
+  private static final Logger log = LoggerFactory.getLogger(RLMDateUtils.class);
+
   /*****************************************
   *
   *  display methods
@@ -67,7 +72,7 @@ public class RLMDateUtils
 
   public static Date addYears(Date date, int amount, String timeZone)
   {
-    return addYears(date, amount, getCalendar(timeZone));
+    return addYears(date, amount, getCalendarInstance1(timeZone));
   }
       
   //
@@ -87,7 +92,7 @@ public class RLMDateUtils
 
   public static Date addMonths(Date date, int amount, String timeZone)
   {
-    return addMonths(date, amount, getCalendar(timeZone));
+    return addMonths(date, amount, getCalendarInstance1(timeZone));
   }
       
   //
@@ -107,7 +112,7 @@ public class RLMDateUtils
 
   public static Date addWeeks(Date date, int amount, String timeZone)
   {
-    Calendar calendar = getCalendar(timeZone);
+    Calendar calendar = getCalendarInstance1(timeZone);
     calendar.setTime(date);
     calendar.add(Calendar.DATE, 7*amount);
     return calendar.getTime();
@@ -119,7 +124,7 @@ public class RLMDateUtils
 
   public static Date addDays(Date date, int amount, String timeZone)
   {
-    return addDays(date, amount, getCalendar(timeZone));
+    return addDays(date, amount, getCalendarInstance1(timeZone));
   }
       
   //
@@ -196,9 +201,9 @@ public class RLMDateUtils
     //  initialize
     //
 
-    helperCalendar = getCalendar(timeZone);
-    first = getCalendar(timeZone);
-    second = getCalendar(timeZone);
+    helperCalendar = getCalendarInstance1(timeZone);
+    first = getCalendarInstance2(timeZone);
+    second = getCalendarInstance3(timeZone);
     first.setTime(firstDay);
     second.setTime(secondDay);
 
@@ -297,9 +302,9 @@ public class RLMDateUtils
     //  initialize
     //
 
-    helperCalendar = getCalendar(timeZone);
-    first = getCalendar(timeZone);
-    second = getCalendar(timeZone);
+    helperCalendar = getCalendarInstance1(timeZone);
+    first = getCalendarInstance2(timeZone);
+    second = getCalendarInstance3(timeZone);
     first.setTime(firstDay);
     second.setTime(secondDay);
 
@@ -386,7 +391,7 @@ public class RLMDateUtils
 
   public static Date ceiling(Date date, int field, int firstDayOfWeek, String timeZone)
   {
-    Calendar calendar = getCalendar(timeZone);
+    Calendar calendar = getCalendarInstance1(timeZone);
     calendar.setTime(date);
     Calendar result;
     switch (field)
@@ -418,7 +423,7 @@ public class RLMDateUtils
 
   public static Date truncate(Date date, int field, int firstDayOfWeek, String timeZone)
   {
-    Calendar calendar = getCalendar(timeZone);
+    Calendar calendar = getCalendarInstance1(timeZone);
     calendar.setTime(date);
     Calendar result;
     switch (field)
@@ -459,7 +464,7 @@ public class RLMDateUtils
 
   public static int getField(Date date, int field, String timeZone)
   {
-    Calendar calendar = getCalendar(timeZone);
+    Calendar calendar = getCalendarInstance1(timeZone);
     calendar.setTime(date);
     return calendar.get(field);
   }
@@ -470,7 +475,7 @@ public class RLMDateUtils
 
   public static Date setField(Date date, int field, int value, String timeZone)
   {
-    Calendar calendar = getCalendar(timeZone);
+    Calendar calendar = getCalendarInstance1(timeZone);
     calendar.setTime(date);
     calendar.set(field, value);
     return calendar.getTime();
@@ -482,7 +487,7 @@ public class RLMDateUtils
 
   public static Date lastFullPeriod(Date startDate, Date endDate, int field, String timeZone)
   {
-    Calendar startDay = getCalendar(timeZone);
+    Calendar startDay = getCalendarInstance1(timeZone);
     startDay.setTime(DateUtils.truncate(startDate, Calendar.DATE));
 
     Date endDay = DateUtils.truncate(endDate, Calendar.DATE);
@@ -552,17 +557,33 @@ public class RLMDateUtils
   
   /*****************************************
   *
-  *  calendar pool
+  *  calendars pool
   *
   *****************************************/
 
-  private static ThreadLocal<Map<String,Calendar>> calendars = ThreadLocal.withInitial(HashMap::new);
-  private static Calendar getCalendar(String timeZone)
-  {
-    Calendar calendar = calendars.get().get(timeZone);
+  // Calendar, Date, SimpleDateFormat... is deprecated since java8 and java.time package
+  // this entire class is there trying to compensate issues with those old objects
+  // the solution would be to use java.time package
+  // in the mean time, lets continue hacky stuff trying to have decent perf with those old objects
+
+  // used those methods highlight the fact we keep instance per thread :
+  private static Calendar getCalendarInstance1(String timeZone){return getCalendar(timeZone,0);}
+  private static Calendar getCalendarInstance2(String timeZone){return getCalendar(timeZone,1);}
+  private static Calendar getCalendarInstance3(String timeZone){return getCalendar(timeZone,2);}
+  // here are the real instances cached :
+  private static ThreadLocal<Map<String,Map<Integer,Calendar>>> calendars = ThreadLocal.withInitial(HashMap::new);
+  private static Calendar getCalendar(String timeZone, int instanceNumber){
+    Map<Integer,Calendar> threadCalendars = calendars.get().get(timeZone);
+    if(threadCalendars==null){
+      if(log.isDebugEnabled()) log.debug("RLMDateUtils.getCalendar() : no instances for timezone "+timeZone+" for this thread, creating instances pool");
+      threadCalendars = new HashMap<>();
+      calendars.get().put(timeZone,threadCalendars);
+    }
+    Calendar calendar = threadCalendars.get(instanceNumber);
     if(calendar==null){
+      if(log.isDebugEnabled()) log.debug("RLMDateUtils.getCalendar() : no instance "+instanceNumber+" for timezone "+timeZone+" for this thread, creating Calendar");
       calendar = Calendar.getInstance(TimeZone.getTimeZone(timeZone));
-      calendars.get().put(timeZone,calendar);
+      threadCalendars.put(instanceNumber,calendar);
     }
     return calendar;
   }

@@ -174,9 +174,7 @@ public class JourneysReportDriver extends ReportDriver
               log.info("Exception processing "+guiManagedObject.getGUIManagedObjectDisplay(), e);
             }
           }
-        log.info(" writeCompleted ");
-        log.info("journeyService {}", journeyService.toString());
-
+        log.info("WriteCompleted ");
         writer.flush();
         writer.closeEntry();
         writer.close();

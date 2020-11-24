@@ -1901,6 +1901,15 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  if notification
+    *  populate request with the notificationMetricHistory for the external processor to apply contact policy
+    *  update subscriberState with the +1 notif for the channel
+    *
+    *****************************************/
+    subscriberStateUpdated = updateNotificationMetricHistory(context.getSubscriberState(), now) || subscriberStateUpdated;
+
+    /*****************************************
+    *
     *  subscriberTrace
     *
     *****************************************/
@@ -2744,6 +2753,45 @@ public class EvolutionEngine
           }
       }
   }
+
+    private static boolean updateNotificationMetricHistory(SubscriberState subscriberState, Date now)
+    {
+      // if there are no DeliveryRequests to be sent out, nothing to do
+      if(subscriberState.getDeliveryRequests()==null || subscriberState.getDeliveryRequests().isEmpty()) return false;
+
+      boolean updated = false;
+      for(DeliveryRequest deliveryRequest:subscriberState.getDeliveryRequests()){
+
+        // skip if not a notification
+        if(!(deliveryRequest instanceof INotificationRequest)) continue;
+        // skip if not "pending" (means not a "request", but normally only pending in that temp list)
+        if(!deliveryRequest.isPending()) continue;
+
+        INotificationRequest notificationRequest = (INotificationRequest)deliveryRequest;
+        String channel = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(notificationRequest.getDeliveryType());
+        // "warn" and skip if no channel (conf change?)
+        if(channel==null){
+          log.info("delivery type {} not matching channel, can not update notificationHistory for {}",notificationRequest.getDeliveryType(),subscriberState.getSubscriberID());
+          continue;
+        }
+        // get notification metric history for that channel
+        MetricHistory channelMetricHistory = subscriberState.getNotificationHistory().get(channel);
+        // not yet any notif sent for this channel to this subs, init empty one
+        if(channelMetricHistory==null){
+          channelMetricHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
+          subscriberState.getNotificationHistory().put(channel,channelMetricHistory);
+        }
+        // FIRST enrich request with previous data (keep previous behaviour for downstream processor)
+        deliveryRequest.setNotificationHistory(channelMetricHistory);
+        // THEN increment by one
+        Date notifDate = deliveryRequest.getEventDate()!=null ? deliveryRequest.getEventDate() : now ;
+        channelMetricHistory.update(notifDate,1);
+        updated = true;
+      }
+
+      return updated;
+
+    }
   
   /*****************************************
   * 
@@ -3279,29 +3327,6 @@ public class EvolutionEngine
               break;
           }
       }
-
-    /*****************************************
-     *
-     *  increment metric history for delivered message in notificatioStatus
-     *
-     *****************************************/
-    if(evolutionEvent instanceof MessageDelivery && evolutionEvent instanceof INotificationRequest)
-    {
-      MessageDelivery messageDelivery = (MessageDelivery)evolutionEvent;
-      if(((INotificationRequest)evolutionEvent).getMessageStatus() == DeliveryManagerForNotifications.MessageStatus.DELIVERED)
-        {
-          try {
-            MetricHistory channelMetricHistory = context.getSubscriberState().getNotificationHistory().stream().filter(p -> p.getFirstElement().equals(Deployment.getDeliveryTypeCommunicationChannelIDMap().get(((DeliveryRequest)messageDelivery).getDeliveryType()))).collect(Collectors.toList()).get(0).getSecondElement();
-            Date messageDeliveryDate = RLMDateUtils.truncate(messageDelivery.getMessageDeliveryEventDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-            //long messageCount = channelMetricHistory.getValue(messageDeliveryDate, messageDeliveryDate).longValue() + 1;
-            //this update should be called increment for metric history.
-            channelMetricHistory.update(messageDeliveryDate,1);
-          }
-          catch(Exception e) {
-            log.warn("CATCHED Exception " + e.getClass().getName() + " while updating channelMetricHistory", e);
-          }
-        }
-    }
     
     if (evolutionEvent instanceof PurchaseFulfillmentRequest)
       {

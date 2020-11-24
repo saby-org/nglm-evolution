@@ -76,7 +76,7 @@ public class OfferReportDriver extends ReportDriver
     FileOutputStream fos;
     try
       {
-        log.info("no.of Offers :" + offerService.getStoredOffers().size());
+        log.info("no. of Offers :" + offerService.getStoredOffers().size());
         if (offerService.getStoredOffers().size() == 0)
           {
             log.info("No Offers ");
@@ -91,7 +91,7 @@ public class OfferReportDriver extends ReportDriver
             writer.putNextEntry(entry);
             Collection<GUIManagedObject> offers = offerService.getStoredOffers();
             int nbOffers = offers.size();
-            log.info("offer list size : " + nbOffers);
+            log.debug("offer list size : " + nbOffers);
 
             for (GUIManagedObject guiManagedObject : offers)
               {
@@ -356,13 +356,11 @@ public class OfferReportDriver extends ReportDriver
 
   private void writeCompleted(ZipOutputStream writer) throws IOException, InterruptedException
   {
-    log.info(" writeCompleted ...");
     log.info("offerService {}", offerService.toString());
-
     writer.flush();
     writer.closeEntry();
     writer.close();
-    log.info("csv Writer closed");
+    log.debug("csv Writer closed");
     NGLMRuntime.addShutdownHook(
         new ShutdownHook(offerService, salesChannelService, offerObjectiveService, productService, paymentmeanservice));
   }

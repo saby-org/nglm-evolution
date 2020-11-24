@@ -1015,26 +1015,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     return result;
   }
 
-  /*****************************************
-   *
-   *  setNotificationStatus
-   *  will set right metric history from list of metrics
-   *
-   *****************************************/
-
-  protected void setNotificationHistory(List<Pair<String,MetricHistory>> metricHistoryList)
-  {
-    MetricHistory returnMetric = null;
-    for(Pair<String,MetricHistory> item : metricHistoryList)
-      {
-        if (item.getFirstElement().equals(Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryType)))
-          {
-            this.notificationHistory = item.getSecondElement();
-            break;
-          }
-      }
-  }
-
   // build subscriberFields populated
   private Map<String,String> buildSubscriberFields(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader) {
     Map<String,String> subscriberFields = new LinkedHashMap<>();

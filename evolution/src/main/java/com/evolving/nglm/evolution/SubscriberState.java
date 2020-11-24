@@ -7,16 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.UUID;
+import java.util.*;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -27,9 +18,7 @@ import org.apache.kafka.connect.data.Timestamp;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SubscriberTrace;
-import com.evolving.nglm.core.Pair;
 
 public class SubscriberState implements StateStore
 {
@@ -137,7 +126,7 @@ public class SubscriberState implements StateStore
   private SubscriberTrace subscriberTrace;
   private ExternalAPIOutput externalAPIOutput;
   private List<TokenChange> tokenChanges;
-  private List<Pair<String,MetricHistory>> notificationHistory;
+  private Map<String,MetricHistory> notificationHistory;
   private List<VoucherChange> voucherChanges;
   private DeliveryRequest deliveryResponse;
   //
@@ -178,7 +167,7 @@ public class SubscriberState implements StateStore
   public ExternalAPIOutput getExternalAPIOutput() { return externalAPIOutput; }
   public List<UUID> getTrackingIDs() { return trackingIDs; }
   public List<TokenChange> getTokenChanges() { return tokenChanges; }
-  public List<Pair<String,MetricHistory>> getNotificationHistory() { return notificationHistory; }
+  public Map<String,MetricHistory> getNotificationHistory() { return notificationHistory; }
   public List<VoucherChange> getVoucherChanges() { return voucherChanges; }
   public DeliveryRequest getDeliveryResponse() { return deliveryResponse; }
 
@@ -277,9 +266,7 @@ public class SubscriberState implements StateStore
         this.kafkaRepresentation = null;
         this.trackingIDs = new ArrayList<UUID>();
         this.tokenChanges = new ArrayList<TokenChange>();
-        this.notificationHistory = new ArrayList<Pair<String, MetricHistory>>();
-        //put all commuication channels available. This is made in constructor to avoid verifying when delivery request is processed
-        Deployment.getDeliveryTypeCommunicationChannelIDMap().forEach((deliveryType,communicationChannelId) -> notificationHistory.add(new Pair<String,MetricHistory>(communicationChannelId, new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS))));
+        this.notificationHistory = new HashMap<>();
         this.voucherChanges = new ArrayList<VoucherChange>();
       }
     catch (InvocationTargetException e)
@@ -298,7 +285,7 @@ public class SubscriberState implements StateStore
    *
    *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, List<String> workflowTriggering, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<ExecuteActionOtherSubscriber> executeActionsOtherSubscriber, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput, List<UUID> trackingIDs, List<TokenChange> tokenChanges, List<Pair<String,MetricHistory>> notificationHistory, List<VoucherChange> voucherChanges)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, List<String> workflowTriggering, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<ExecuteActionOtherSubscriber> executeActionsOtherSubscriber, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput, List<UUID> trackingIDs, List<TokenChange> tokenChanges, Map<String,MetricHistory> notificationHistory, List<VoucherChange> voucherChanges)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
@@ -483,16 +470,16 @@ public class SubscriberState implements StateStore
    *
    ****************************************/
 
-  private static Object packNotificationHistory(List<Pair<String,MetricHistory>> notificationHistory)
+  private static Object packNotificationHistory(Map<String,MetricHistory> notificationHistory)
   {
-    List<Object> result = new ArrayList<>();
-    notificationHistory = (notificationHistory != null) ? notificationHistory : Collections.emptyList();
-    for (Pair<String,MetricHistory> notificationStatus : notificationHistory)
+    List<Object> result = new ArrayList<>();//Map stored as List<Pair<String,MetricHistory>>
+    notificationHistory = (notificationHistory != null) ? notificationHistory : Collections.emptyMap();
+    for (Map.Entry entry : notificationHistory.entrySet())
       {
-        Struct packedNotificationStatus = new Struct(notificationHistorySchema);
-        packedNotificationStatus.put("channelID",notificationStatus.getFirstElement());
-        packedNotificationStatus.put("metricHistory",MetricHistory.pack(notificationStatus.getSecondElement()));
-        result.add(packedNotificationStatus);
+        Struct packedEntry = new Struct(notificationHistorySchema);
+        packedEntry.put("channelID",entry.getKey());
+        packedEntry.put("metricHistory",MetricHistory.pack(entry.getValue()));
+        result.add(packedEntry);
       }
     return result;
   }
@@ -546,7 +533,7 @@ public class SubscriberState implements StateStore
     ExternalAPIOutput externalAPIOutput = null;
     List<UUID> trackingIDs = schemaVersion >= 4 ? EvolutionUtilities.getUUIDsFromBytes(valueStruct.getBytes("trackingID")) : null;
     List<TokenChange> tokenChanges = new ArrayList<TokenChange>();
-    List<Pair<String,MetricHistory>> notificationHistory = schemaVersion >= 6 ? unpackNotificationHistory(valueStruct.get("notificationHistory")) : new ArrayList<Pair<String,MetricHistory>>();
+    Map<String,MetricHistory> notificationHistory = schemaVersion >= 6 ? unpackNotificationHistory(valueStruct.get("notificationHistory")) : new HashMap<>();
     List<VoucherChange> voucherChanges = new ArrayList<VoucherChange>();
 
     //
@@ -664,20 +651,17 @@ public class SubscriberState implements StateStore
    *
    *****************************************/
 
-  private static List<Pair<String,MetricHistory>> unpackNotificationHistory(Object value)
+  private static Map<String,MetricHistory> unpackNotificationHistory(Object value)
   {
     if (value == null) return null;
-    List<Pair<String,MetricHistory>> result = new ArrayList<>();
-    if (value != null)
+    Map<String,MetricHistory> result = new HashMap<>();
+    List<Object> valueMap = (List<Object>) value;
+    for (Object notificationHistoryObject : valueMap)
       {
-        List<Object> valueMap = (List<Object>) value;
-        for (Object notificationHistoryObject : valueMap)
-          {
-            Struct notificationHistoryStruct = (Struct)notificationHistoryObject;
-            String channelID = notificationHistoryStruct.getString("channelID");
-            MetricHistory metricHistory = MetricHistory.unpack(new SchemaAndValue(MetricHistory.schema(),notificationHistoryStruct.get("metricHistory")));
-            result.add(new Pair<>(channelID,metricHistory));
-          }
+        Struct notificationHistoryStruct = (Struct)notificationHistoryObject;
+        String channelID = notificationHistoryStruct.getString("channelID");
+        MetricHistory metricHistory = MetricHistory.unpack(new SchemaAndValue(MetricHistory.schema(),notificationHistoryStruct.get("metricHistory")));
+        result.put(channelID,metricHistory);
       }
     return result;
   }

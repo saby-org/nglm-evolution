@@ -633,7 +633,6 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
           request.setConfirmationExpected(confirmationExpected);
           request.setRestricted(restricted);
           request.setDeliveryPriority(contactType.getDeliveryPriority());
-          request.setNotificationHistory(evolutionEventContext.getSubscriberState().getNotificationHistory());
         }
       else
         {
