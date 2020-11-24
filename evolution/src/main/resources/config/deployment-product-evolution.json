@@ -56,6 +56,7 @@
     "ReportManager"                  : { "connectTimeout" : 30000, "queryTimeout" : 60000 },
     "DatacubeManager"                : { "connectTimeout" : 30000, "queryTimeout" : 900000 }
   },
+  "elasticSearchScrollKeepAlive" : 15,
   
   "elasticsearchDefaultShards" : 1,
   "elasticsearchDefaultReplicas" : 1,
