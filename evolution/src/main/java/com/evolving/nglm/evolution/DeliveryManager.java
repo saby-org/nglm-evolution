@@ -1045,6 +1045,10 @@ public abstract class DeliveryManager
       consumedOffsets.put(topicPartition, routingProgressConsumer.position(topicPartition) - 1L);
     }
 
+    log.info("DeliveryManager assignRoutingConsumerPartitions: will check end offsets");
+    Map<TopicPartition,Long> availableOffsets = routingProgressConsumer.endOffsets(routingProgressConsumerPartitions);
+    log.info("DeliveryManager assignRoutingConsumerPartitions: kafka returned end offsets (will reload all till there) : "+routingProgressConsumer.endOffsets(routingProgressConsumerPartitions));
+
     //
     //  read
     //
@@ -1102,7 +1106,6 @@ public abstract class DeliveryManager
       //  consumed all available?
       //
 
-      Map<TopicPartition,Long> availableOffsets = routingProgressConsumer.endOffsets(routingProgressConsumerPartitions);
       consumedAllAvailable = true;
       for (TopicPartition topicPartition : availableOffsets.keySet())
       {
@@ -1115,6 +1118,7 @@ public abstract class DeliveryManager
         }
         if (consumedOffsetForPartition < availableOffsetForPartition-1)
         {
+          log.info("DeliveryManager assignRoutingConsumerPartitions: "+topicPartition.topic()+":"+topicPartition.partition()+", still not reached end ("+consumedOffsetForPartition+" vs "+(availableOffsetForPartition-1)+")");
           consumedAllAvailable = false;
           break;
         }
