@@ -98,7 +98,9 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile -H'Content
               "loyaltyProgramEnrollmentDate" : { "type" : "date" },
               "loyaltyProgramExitDate"       : { "type" : "date" },
               "tierUpdateDate"               : { "type" : "date" },
-              "loyaltyProgramEpoch"          : { "type" : "long" }
+              "loyaltyProgramEpoch"          : { "type" : "long" },
+              "rewardTodayRedeemer"          : { "type" : "boolean" },
+              "rewardYesterdayRedeemer"      : { "type" : "boolean" }
            }
       },
       "pointBalances"                       : { "type": "nested",
