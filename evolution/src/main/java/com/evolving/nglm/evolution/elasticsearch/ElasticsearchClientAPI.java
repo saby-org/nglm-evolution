@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution.elasticsearch;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -25,12 +26,16 @@ import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.evolution.datacubes.mapping.JourneyRewardsMap;
 
 public class ElasticsearchClientAPI extends RestHighLevelClient
 {
@@ -345,7 +350,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     }
   }
 
-  public Map<String, Long> getDistributedRewards(String journeyID)
+  public Map<String, Long> getDistributedRewards(String journeyID) throws ElasticsearchClientException
   {
     try {
       Map<String, Long> result = new HashMap<>();
@@ -388,19 +393,22 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
               }
        */
       
-      
       //
       // Build Elasticsearch query
       // 
       String index = getJourneyIndex(journeyID);
-      
-      String bucketName = "REWARD";
       SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder()
           .query(QueryBuilders.matchAllQuery())
-          .size(0)
-          .aggregation(AggregationBuilders.terms(bucketName).field(JOURNEYSTATISTIC_REWARD_FIELD).size(MAX_BUCKETS));
-      SearchRequest searchRequest = new SearchRequest(index).source(searchSourceRequest);
+          .size(0);
 
+      JourneyRewardsMap journeyRewardsList = new JourneyRewardsMap(this);
+      journeyRewardsList.update(journeyID, index);
+      
+      for(String reward : journeyRewardsList.getRewards()) 
+        {
+          searchSourceRequest.aggregation(AggregationBuilders.sum(reward).field(JOURNEYSTATISTIC_REWARD_FIELD + "." + reward));
+        }
+      SearchRequest searchRequest = new SearchRequest(index).source(searchSourceRequest);
       
       //
       // Send request & retrieve response synchronously (blocking call)
@@ -424,17 +432,26 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         throw new ElasticsearchClientException("Aggregation is missing in search response.");
       }
 
-      ParsedStringTerms buckets = searchResponse.getAggregations().get(bucketName);
-      if(buckets == null) {
-        throw new ElasticsearchClientException("Buckets are missing in search response.");
+      Aggregations aggregations = searchResponse.getAggregations();
+      if(aggregations == null) {
+        throw new ElasticsearchClientException("aggregations are missing in search response.");
       }
 
       //
       // Fill result map
       //
-      for(Bucket bucket : buckets.getBuckets()) {
-        result.put(bucket.getKeyAsString(), bucket.getDocCount());
-      }
+      for (String reward : journeyRewardsList.getRewards()) 
+        {
+          ParsedStringTerms buckets = aggregations.get(reward);
+          if (buckets.getBuckets().size() != 1)
+            {
+              log.error("very strange");
+            }
+          for (Bucket bucket : buckets.getBuckets())
+            {
+              result.put(reward, bucket.getDocCount());              
+            }
+        }
 
       return result;
     }
@@ -458,9 +475,6 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       e.printStackTrace();
       throw new ElasticsearchClientException(e.getMessage());
     }
-
-
-    return res;
   }
 
   public Map<String, Integer> getByAbTesting(String journeyID)
