@@ -41,6 +41,7 @@
   
   "elasticsearchDateFormat" : "yyyy-MM-dd HH:mm:ss.SSSZZ",
   "elasticsearchScrollSize" : 1000,
+  "elasticSearchScrollKeepAlive" : 15,
   "elasticsearchConnectTimeout" : 5000,
   "elasticsearchQueryTimeout" : 7200000,
   
