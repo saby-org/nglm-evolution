@@ -18,9 +18,9 @@ import com.evolving.nglm.evolution.VoucherTypeService;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
+import com.evolving.nglm.evolution.reports.ReportMonoPhase.PERIOD;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
-import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 
 import org.elasticsearch.index.query.QueryBuilder;

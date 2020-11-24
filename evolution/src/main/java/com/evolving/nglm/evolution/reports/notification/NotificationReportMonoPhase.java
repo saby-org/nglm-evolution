@@ -20,12 +20,10 @@ import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManag
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
-import com.evolving.nglm.evolution.reports.ReportCsvWriter;
-import com.evolving.nglm.evolution.reports.ReportEsReader;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
+import com.evolving.nglm.evolution.reports.ReportMonoPhase.PERIOD;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
-import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 import com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate.LoyaltyProgramCustomerStatesMonoPhase;
 import com.evolving.nglm.evolution.reports.odr.ODRReportMonoPhase;

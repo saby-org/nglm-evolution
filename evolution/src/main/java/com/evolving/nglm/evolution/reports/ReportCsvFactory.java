@@ -15,7 +15,6 @@ import java.util.regex.Matcher;
 import java.util.zip.ZipOutputStream;
 
 import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 
 /**

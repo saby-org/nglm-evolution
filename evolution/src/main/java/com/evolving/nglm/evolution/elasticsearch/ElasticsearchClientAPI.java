@@ -1,6 +1,7 @@
 package com.evolving.nglm.evolution.elasticsearch;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.http.HttpHost;
@@ -65,6 +66,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   *****************************************/
   public static String JOURNEYSTATISTIC_STATUS_FIELD = "status";
   public static String JOURNEYSTATISTIC_NODEID_FIELD = "nodeID";
+  public static String JOURNEYSTATISTIC_REWARD_FIELD = "rewards";
   public static String getJourneyIndex(String journeyID) {
     if(journeyID == null) {
       return "";
@@ -341,5 +343,129 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       e.printStackTrace();
       throw new ElasticsearchClientException(e.getMessage());
     }
+  }
+
+  public Map<String, Long> getDistributedRewards(String journeyID)
+  {
+    try {
+      Map<String, Long> result = new HashMap<>();
+      
+      /*
+       *  1) get list of rewards with :
+       *  
+       *  utiliser l'objet java map xxrewards
+       *  qui est utilisé dans datacube_journeyrewards
+       *  update it before use :
+       *   this.journeyRewardsList.update(this.journeyID, this.getDataESIndex());
+ 
+      2) build a request containing all rewards, to journeystatistic-JJJJJJ
+      
+           {
+              "size": 0,
+              "aggs": {
+                "GigaBytes": {
+                  "sum": {
+                    "field": "rewards.GigaBytes"
+                  }
+                },
+                "disp_PTT_100138": {
+                  "sum": {
+                    "field": "rewards.disp_PTT_100138"
+                  }
+                }
+              }
+            }
+            
+           *   result :
+              
+              "aggregations": {
+                "disp_PTT_100138": {
+                  "value": 4.0
+                },
+                "GigaBytes": {
+                  "value": 20.0
+                }
+              }
+       */
+      
+      
+      //
+      // Build Elasticsearch query
+      // 
+      String index = getJourneyIndex(journeyID);
+      
+      String bucketName = "REWARD";
+      SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder()
+          .query(QueryBuilders.matchAllQuery())
+          .size(0)
+          .aggregation(AggregationBuilders.terms(bucketName).field(JOURNEYSTATISTIC_REWARD_FIELD).size(MAX_BUCKETS));
+      SearchRequest searchRequest = new SearchRequest(index).source(searchSourceRequest);
+
+      
+      //
+      // Send request & retrieve response synchronously (blocking call)
+      // 
+      SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
+
+      //
+      // Check search response
+      //
+      if(searchResponse.status() == RestStatus.NOT_FOUND) {
+        return result; // empty map
+      }
+
+      // @rl TODO checking status seems useless because it raises exception
+      if (searchResponse.isTimedOut()
+          || searchResponse.getFailedShards() > 0) {
+            throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
+      }
+
+      if(searchResponse.getAggregations() == null) {
+        throw new ElasticsearchClientException("Aggregation is missing in search response.");
+      }
+
+      ParsedStringTerms buckets = searchResponse.getAggregations().get(bucketName);
+      if(buckets == null) {
+        throw new ElasticsearchClientException("Buckets are missing in search response.");
+      }
+
+      //
+      // Fill result map
+      //
+      for(Bucket bucket : buckets.getBuckets()) {
+        result.put(bucket.getKeyAsString(), bucket.getDocCount());
+      }
+
+      return result;
+    }
+    catch (ElasticsearchClientException e) { // forward
+      throw e;
+    }
+    catch (ElasticsearchStatusException e)
+    {
+      if(e.status() == RestStatus.NOT_FOUND) { // index not found
+        log.debug(e.getMessage());
+        return new HashMap<String, Long>();
+      }
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (ElasticsearchException e) {
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getMessage());
+    }
+
+
+    return res;
+  }
+
+  public Map<String, Integer> getByAbTesting(String journeyID)
+  {
+    Map<String, Integer> res = new HashMap<>();
+    return res;
   }
 }
