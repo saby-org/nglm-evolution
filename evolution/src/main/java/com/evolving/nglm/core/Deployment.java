@@ -73,6 +73,7 @@ public class Deployment
   private static int elasticsearchConnectTimeout;
   private static int elasticsearchQueryTimeout;
   private static int elasticsearchScrollSize;
+  private static int elasticSearchScrollKeepAlive;
   private static String elasticsearchDateFormat;
   private static int elasticsearchDefaultShards;
   private static int elasticsearchDefaultReplicas;
@@ -128,6 +129,7 @@ public class Deployment
   // ELASTICSEARCH 
   public static String getElasticsearchDateFormat() { return elasticsearchDateFormat; }
   public static int getElasticsearchScrollSize() {return elasticsearchScrollSize; }
+  public static int getElasticSearchScrollKeepAlive() {return elasticSearchScrollKeepAlive; }
   public static int getElasticsearchConnectTimeout() { return elasticsearchConnectTimeout; }
   public static int getElasticsearchQueryTimeout() { return elasticsearchQueryTimeout; }
   public static int getElasticsearchDefaultShards() { return elasticsearchDefaultShards; }
@@ -818,6 +820,7 @@ public class Deployment
         // Elasticsearch settings
         elasticsearchDateFormat = JSONUtilities.decodeString(jsonRoot, "elasticsearchDateFormat", true);
         elasticsearchScrollSize = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchScrollSize", true);
+        elasticSearchScrollKeepAlive = JSONUtilities.decodeInteger(jsonRoot, "elasticSearchScrollKeepAlive", 0);
         elasticsearchConnectTimeout = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchConnectTimeout", true);
         elasticsearchQueryTimeout = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchQueryTimeout", true);
         
