@@ -75,51 +75,60 @@ public class EvolutionSetup
    ****************************************/
   public static void main(String[] args) throws InterruptedException, ExecutionException
   {
-    //
-    // extracts files from args
-    //
-    String rootPath = args[0];
-    String topicsFolderPath = rootPath; // We will filter it and only process topics-* files.
-    String elasticsearchUpdateFilePath = rootPath + "elasticsearch/update";
-    String connectorsFilePath = rootPath + "connectors/connectors";
-
-    //
-    // init utilities
-    //
-    PoolingHttpClientConnectionManager httpClientConnectionManager = new PoolingHttpClientConnectionManager();
-    httpClientConnectionManager.setDefaultMaxPerRoute(50);
-    httpClientConnectionManager.setMaxTotal(150);
-    HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
-    httpClientBuilder.setConnectionManager(httpClientConnectionManager);
-    httpClient = httpClientBuilder.build();
-
-    //
-    // kafka topics
-    //
-    System.out.println("");
-    System.out.println("================================================================================");
-    System.out.println("= KAFKA                                                                        =");
-    System.out.println("================================================================================");
-    handleTopicSetup(topicsFolderPath);
-
-    //
-    // elasticSearch index setup
-    //
-    System.out.println("");
-    System.out.println("================================================================================");
-    System.out.println("= ELASTICSEARCH                                                                =");
-    System.out.println("================================================================================");
-    handleElasticsearchUpdate(elasticsearchUpdateFilePath); // Override
-
-    //
-    // kafka connect setup (must be last, after topics & indexes setup)
-    //
-    System.out.println("");
-    System.out.println("================================================================================");
-    System.out.println("= KAFKA CONNECTORS                                                             =");
-    System.out.println("================================================================================");
-    handleConnectors(connectorsFilePath);
-
+    try {
+      //
+      // extracts files from args
+      //
+      String rootPath = args[0];
+      String topicsFolderPath = rootPath; // We will filter it and only process topics-* files.
+      String elasticsearchUpdateFilePath = rootPath + "elasticsearch/update";
+      String connectorsFilePath = rootPath + "connectors/connectors";
+  
+      //
+      // init utilities
+      //
+      PoolingHttpClientConnectionManager httpClientConnectionManager = new PoolingHttpClientConnectionManager();
+      httpClientConnectionManager.setDefaultMaxPerRoute(50);
+      httpClientConnectionManager.setMaxTotal(150);
+      HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
+      httpClientBuilder.setConnectionManager(httpClientConnectionManager);
+      httpClient = httpClientBuilder.build();
+  
+      //
+      // kafka topics
+      //
+      System.out.println("");
+      System.out.println("================================================================================");
+      System.out.println("= KAFKA                                                                        =");
+      System.out.println("================================================================================");
+      handleTopicSetup(topicsFolderPath);
+  
+      //
+      // elasticSearch index setup
+      //
+      System.out.println("");
+      System.out.println("================================================================================");
+      System.out.println("= ELASTICSEARCH                                                                =");
+      System.out.println("================================================================================");
+      handleElasticsearchUpdate(elasticsearchUpdateFilePath);
+  
+      //
+      // kafka connect setup (must be last, after topics & indexes setup)
+      //
+      System.out.println("");
+      System.out.println("================================================================================");
+      System.out.println("= KAFKA CONNECTORS                                                             =");
+      System.out.println("================================================================================");
+      handleConnectors(connectorsFilePath);
+    }
+    catch (Exception e) {
+      System.out.println("[ERROR]: " + e.getMessage());
+      e.printStackTrace(System.out);
+      System.out.println("");
+      System.out.println("================================================================================");
+      System.out.println("Setup FAILED"); // Do not change this print or you need to change the check in core-deploy-setup.sh & core-upgrade-setup.sh !
+      System.exit(-1);
+    }
   }
 
   /****************************************
@@ -128,68 +137,60 @@ public class EvolutionSetup
    *
    ****************************************/
 
-  private static void handleElasticsearchUpdate(String elasticsearchUpdateFilePath) {
+  private static void handleElasticsearchUpdate(String elasticsearchUpdateFilePath) throws ParseException, EvolutionSetupException {
     List<CurlCommand> curls = handleCurlFile(elasticsearchUpdateFilePath);
     for(CurlCommand cmd : curls) {
-      try
-        {
-          ObjectHolder<String> responseBody = new ObjectHolder<String>();
-          ObjectHolder<Integer> httpResponseCode = new ObjectHolder<Integer>();
-          
-          //
-          // First check if the item exist
-          //
-          int retry = 10;
-          while(httpResponseCode.getValue() == null || httpResponseCode.getValue() == 409 /* can happen if calls are made too quickly */) {
-            if(retry < 0) { 
-              throw new EvolutionSetupException("End of retry: " + responseBody.getValue());
-            }
-            
-            executeCurl(cmd.url, "{}", "-XGET", cmd.username, cmd.password, httpResponseCode, responseBody);
-            retry--;
-          }
-
-          // 
-          // Retrieve the previous version, if any and update command URL
-          //
-          String updatedURL = cmd.url;
-          if(httpResponseCode.getValue() == 200) {
-            System.out.println("[DISPLAY] INFO: There is a previous version in the system.");
-            
-            // There is a special case for ISM objects. Update function need to retrieve current version
-            if(updatedURL.contains("/_ism/")) {
-              JSONObject answer = (JSONObject) (new JSONParser()).parse(responseBody.getValue());
-              updatedURL += "?if_seq_no="+answer.get("_seq_no")+"&if_primary_term="+answer.get("_primary_term");
-            }
-          } else if(httpResponseCode.getValue() == 404) {
-            System.out.println("[DISPLAY] INFO: Item does not exist yet.");
-          } else {
-            throw new EvolutionSetupException("[DISPLAY] ERROR: Unknown response code (" + httpResponseCode.getValue() + "): " + responseBody.getValue());
-          }
-          
-          responseBody.setValue(null);
-          httpResponseCode.setValue(null);
-          retry = 10;
-          while(httpResponseCode.getValue() == null || httpResponseCode.getValue() == 409 /* can happen if calls are made too quickly */) {
-            if(retry < 0) { 
-              throw new EvolutionSetupException("End of retry: " + responseBody.getValue());
-            }
-            
-            executeCurl(updatedURL, cmd.jsonBody, cmd.verb, cmd.username, cmd.password, httpResponseCode, responseBody);
-            retry--;
-          }
-
-          if (! (httpResponseCode.getValue().intValue() >= 200 && httpResponseCode.getValue().intValue() < 300)) {
-            System.out.println("[DISPLAY] ERROR: Unable to update Elasticsearch on " + cmd.url + ". " + responseBody.getValue());
-          } else {
-            System.out.println("[DISPLAY] INFO: Item has been updated.");
-          }
+      ObjectHolder<String> responseBody = new ObjectHolder<String>();
+      ObjectHolder<Integer> httpResponseCode = new ObjectHolder<Integer>();
+      
+      //
+      // First check if the item exist
+      //
+      int retry = 10;
+      while(httpResponseCode.getValue() == null || httpResponseCode.getValue() == 409 /* can happen if calls are made too quickly */) {
+        if(retry < 0) { 
+          throw new EvolutionSetupException("Fail to get an answer after retrying several times: " + responseBody.getValue());
         }
-      catch (ParseException|EvolutionSetupException e)
-        {
-          System.out.println("[DISPLAY] ERROR: Something wrong happened while executing curl command.");
-          e.printStackTrace(System.out);
+        
+        executeCurl(cmd.url, "{}", "-XGET", cmd.username, cmd.password, httpResponseCode, responseBody);
+        retry--;
+      }
+
+      // 
+      // Retrieve the previous version, if any and update command URL
+      //
+      String updatedURL = cmd.url;
+      if(httpResponseCode.getValue() == 200) {
+        System.out.println("[DISPLAY] INFO: There is a previous version in the system.");
+        
+        // There is a special case for ISM objects. Update function need to retrieve current version
+        if(updatedURL.contains("/_ism/")) {
+          JSONObject answer = (JSONObject) (new JSONParser()).parse(responseBody.getValue());
+          updatedURL += "?if_seq_no="+answer.get("_seq_no")+"&if_primary_term="+answer.get("_primary_term");
         }
+      } else if(httpResponseCode.getValue() == 404) {
+        System.out.println("[DISPLAY] INFO: Item does not exist yet.");
+      } else {
+        throw new EvolutionSetupException("Unknown response code (" + httpResponseCode.getValue() + "): " + responseBody.getValue());
+      }
+      
+      responseBody.setValue(null);
+      httpResponseCode.setValue(null);
+      retry = 10;
+      while(httpResponseCode.getValue() == null || httpResponseCode.getValue() == 409 /* can happen if calls are made too quickly */) {
+        if(retry < 0) { 
+          throw new EvolutionSetupException("Fail to get an answer after retrying several times: " + responseBody.getValue());
+        }
+        
+        executeCurl(updatedURL, cmd.jsonBody, cmd.verb, cmd.username, cmd.password, httpResponseCode, responseBody);
+        retry--;
+      }
+
+      if (! (httpResponseCode.getValue().intValue() >= 200 && httpResponseCode.getValue().intValue() < 300)) {
+        throw new EvolutionSetupException("Unable to update Elasticsearch on " + cmd.url + ". " + responseBody.getValue());
+      } else {
+        System.out.println("[DISPLAY] INFO: Item has been updated.");
+      }
     }
   }
 
@@ -199,9 +200,8 @@ public class EvolutionSetup
    *
    ****************************************/
 
-  private static void getFinalTopicSetup(String topicSetupFileName, Map<String, NewTopic> topicsToSetup)
+  private static void getFinalTopicSetup(String topicSetupFileName, Map<String, NewTopic> topicsToSetup) throws EvolutionSetupException
   {
-
     String line = null;
     BufferedReader reader = null;
     try
@@ -265,9 +265,7 @@ public class EvolutionSetup
       }
     catch (IOException e)
       {
-        System.out.println("[DISPLAY] WARNING: problems reading topic configuration : " + e.getMessage() + ((line != null) ? " (" + line + ")" : ""));
-        System.out.flush();
-        System.exit(-1);
+        throw new EvolutionSetupException("Problems reading topic configuration : " + e.getMessage() + ((line != null) ? " (" + line + ")" : ""));
       }
     finally
       {
@@ -282,7 +280,7 @@ public class EvolutionSetup
       }
   }
 
-  private static void handleTopicSetup(String topicsFolderPath)
+  private static void handleTopicSetup(String topicsFolderPath) throws EvolutionSetupException
   {
     //
     // get topics that need to exist
@@ -482,7 +480,7 @@ public class EvolutionSetup
    *
    ****************************************/
 
-  private static void handleConnectors(String connectorsFilePath)
+  private static void handleConnectors(String connectorsFilePath) throws EvolutionSetupException
   {
     HashMap<String,Set<String>> allFromConf = new HashMap<>();//this will register <url,connectorsName> from conf file, to list what might need to be deleted at the end
     BufferedReader reader = null;
@@ -733,9 +731,7 @@ public class EvolutionSetup
       }
     catch (IOException e)
       {
-        System.out.println("[DISPLAY] WARNING: problems creating connectors: " + e.getMessage() + ((line != null) ? " (" + line + ")" : ""));
-        System.out.flush();
-        System.exit(-1);
+        throw new EvolutionSetupException("Problems creating connectors: " + e.getMessage() + ((line != null) ? " (" + line + ")" : ""));
       }
     finally
       {
@@ -785,7 +781,7 @@ public class EvolutionSetup
         ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(new StringEntity(jsonRequestEntity, ContentType.create("application/json")));
       }
 
-    httpRequest.setConfig(RequestConfig.custom().setConnectTimeout(20).build());    
+    httpRequest.setConfig(RequestConfig.custom().setConnectTimeout(120).build());    
     if(username != null) {
       String auth = username + ":" + password;
       byte[] encodedAuth = Base64.encodeBase64(auth.getBytes(StandardCharsets.ISO_8859_1));
@@ -801,7 +797,7 @@ public class EvolutionSetup
       {
         StringWriter stackTraceWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        throw new EvolutionSetupException("[DISPLAY] Exception processing REST api: {}" + stackTraceWriter.toString());
+        throw new EvolutionSetupException("Exception processing REST api: {}" + stackTraceWriter.toString());
       }
     httpResponseCode.setValue(httpResponse.getStatusLine().getStatusCode());
     if (httpResponse.getEntity() != null)
@@ -814,7 +810,7 @@ public class EvolutionSetup
           {
             StringWriter stackTraceWriter = new StringWriter();
             e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-            throw new EvolutionSetupException("[DISPLAY] Exception while decoding http response body " + stackTraceWriter.toString());
+            throw new EvolutionSetupException("Exception while decoding http response body " + stackTraceWriter.toString());
           }
       }
   }
@@ -856,7 +852,7 @@ public class EvolutionSetup
     }
   }
 
-  private static List<CurlCommand> handleCurlFile(String curlFilePath)
+  private static List<CurlCommand> handleCurlFile(String curlFilePath) throws EvolutionSetupException
   {
     BufferedReader reader = null;
     String line = null;
@@ -894,7 +890,7 @@ public class EvolutionSetup
                 username = split[0];
                 password = split[1];
               } else {
-                System.out.println("[DISPLAY] ERROR: Bad format for authentication credentials in CURL command.");
+                throw new EvolutionSetupException("Bad format for authentication credentials in CURL command.");
               }
               i = i + 2; // forward
             }
@@ -923,9 +919,7 @@ public class EvolutionSetup
       }
     catch (IOException e)
       {
-        System.out.println("[DISPLAY] WARNING: Problems in reading CURL line: " + e.getMessage() + ((line != null) ? " (" + line + ")" : ""));
-        System.out.flush();
-        System.exit(-1);
+        throw new EvolutionSetupException("Problems in reading CURL line: " + e.getMessage() + ((line != null) ? " (" + line + ")" : ""));
       }
     finally
       {
@@ -942,7 +936,7 @@ public class EvolutionSetup
     return result;
   }
 
-  private static String parseJsonBody(String jsonBody)
+  private static String parseJsonBody(String jsonBody) throws EvolutionSetupException
   {
     Pattern deploymentGetterCall = Pattern.compile("Deployment\\.(\\w*)\\(\\)");
     Matcher matcher = deploymentGetterCall.matcher(jsonBody);
@@ -962,9 +956,9 @@ public class EvolutionSetup
         }
       catch(InvocationTargetException | NoSuchMethodException| IllegalAccessException e)
         {
-          System.out.println("[DISPLAY] ERROR: Unable to call Deployment." + call);
           System.out.println(e.getMessage());
           e.printStackTrace(System.out);
+          throw new EvolutionSetupException("Unable to call Deployment." + call);
         }
     }
 
