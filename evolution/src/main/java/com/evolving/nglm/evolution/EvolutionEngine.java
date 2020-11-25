@@ -4740,7 +4740,7 @@ public class EvolutionEngine
                     for(List<EvaluationCriterion> current : targetsAndTriggerCriteria)
                       {
                         if(inAnyTargetOrTrigger == false) { // avoid evaluating target is already true
-                          SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
+                          SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now);
                           context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
                           boolean inThisTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, current);
                           if(inThisTarget)
