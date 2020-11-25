@@ -564,7 +564,7 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
 
       // XL: manual hack, the only purpose of this is campaign request not going into same topic as purchase request
       // purchase going into "standard" aka, first topic in : requestTopics of delivery manager declaration, this one going in the second one of the list
-      rewardRequest.setDeliveryPriority(DeliveryPriority.High);
+      rewardRequest.forceDeliveryPriority(DeliveryPriority.High);
 
       /*****************************************
       *

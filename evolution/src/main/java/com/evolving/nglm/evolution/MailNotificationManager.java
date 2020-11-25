@@ -632,7 +632,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
           request.setFeatureID(deliveryRequestSource);
           request.setConfirmationExpected(confirmationExpected);
           request.setRestricted(restricted);
-          request.setDeliveryPriority(contactType.getDeliveryPriority());
+          request.forceDeliveryPriority(contactType.getDeliveryPriority());
         }
       else
         {

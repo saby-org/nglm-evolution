@@ -579,7 +579,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
           request.setConfirmationExpected(confirmationExpected);
           request.setRestricted(restricted);
           request.setFlashSMS(flashSMS);
-          request.setDeliveryPriority(contactType.getDeliveryPriority());
+          request.forceDeliveryPriority(contactType.getDeliveryPriority());
         }
       else if (template != null)
         {

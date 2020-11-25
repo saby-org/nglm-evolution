@@ -108,6 +108,8 @@ public class SubscriberGroup implements AutoProvisionSubscriberStreamEvent
   public String getSubscriberGroupPrimaryID() { return subscriberGroupIDs.get(0); }
   public int getEpoch() { return epoch; }
   public boolean getAddSubscriber() { return addSubscriber; }
+
+  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.Low; }
   
   /****************************************
   *

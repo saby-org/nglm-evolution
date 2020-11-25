@@ -5605,7 +5605,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, approval);
+        Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService, approval);
         if(GUIManagedObjectType.Workflow.equals(objectType) || GUIManagedObjectType.LoyaltyWorkflow.equals(objectType)) {
           journey.setApproval(JourneyStatus.StartedApproved);
         }
@@ -5967,7 +5967,7 @@ public class GUIManager
                  ****************************************/
 
                 Journey journey = new Journey(elementRoot, objectType, epoch, existingElement, journeyService,
-                    catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+                    catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService);
 
                 journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService,
                     (existingElement == null), userID);
@@ -6176,7 +6176,7 @@ public class GUIManager
              ****************************************/
 
             Journey element = new Journey(elementRoot, type, epoch, existingJourneyElement, journeyService,
-                catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService,
+                catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService,
                 approval);
 
             /*****************************************
@@ -6636,7 +6636,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, approval);
+        Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService, approval);
 
         //
         // Update targetCount
@@ -6891,7 +6891,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journeyTemplate = new Journey(jsonRoot, GUIManagedObjectType.JourneyTemplate, epoch, existingJourneyTemplate, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+        Journey journeyTemplate = new Journey(jsonRoot, GUIManagedObjectType.JourneyTemplate, epoch, existingJourneyTemplate, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService);
 
         /*****************************************
         *
@@ -7103,7 +7103,7 @@ public class GUIManager
 
                 Journey journeyTemplate = new Journey(elementRoot, GUIManagedObjectType.JourneyTemplate, epoch,
                     existingElement, journeyService, catalogCharacteristicService, subscriberMessageTemplateService,
-                    dynamicEventDeclarationsService);
+                    dynamicEventDeclarationsService, journeyTemplateService);
 
                 /*****************************************
                  *
@@ -20408,7 +20408,7 @@ public class GUIManager
       {
         String uniqueKey = UUID.randomUUID().toString();
         JourneyRequest journeyRequest = new JourneyRequest(baseSubscriberProfile, subscriberGroupEpochReader, uniqueKey, subscriberID, journey.getJourneyID(), baseSubscriberProfile.getUniversalControlGroup());
-        journeyRequest.setDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+        journeyRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
         DeliveryManagerDeclaration journeyManagerDeclaration = Deployment.getDeliveryManagers().get(journeyRequest.getDeliveryType());
         String journeyRequestTopic = journeyManagerDeclaration.getRequestTopic(journeyRequest.getDeliveryPriority());
         
@@ -23922,7 +23922,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
     PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, SystemTime.getCurrentTime());
-    purchaseRequest.setDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+    purchaseRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
 	String topic = deliveryManagerDeclaration.getRequestTopic(purchaseRequest.getDeliveryPriority());
 
     Future<PurchaseFulfillmentRequest> waitingResponse=null;
@@ -25785,7 +25785,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         GUIManagedObject modifiedJourney;
         try
           {
-            Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+            Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService);
             journey.validate(journeyObjectiveService, catalogCharacteristicService, targetService, date);
             modifiedJourney = journey;
           }

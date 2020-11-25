@@ -835,7 +835,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
              request = new NotificationManagerRequest(evolutionEventContext, communicationChannel.getDeliveryType(), deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters);
              request.setModuleID(newModuleID);
              request.setFeatureID(deliveryRequestSource);
-             request.setDeliveryPriority(contactType.getDeliveryPriority());
+             request.forceDeliveryPriority(contactType.getDeliveryPriority());
              request.setRestricted(contactType.getRestricted());
            }
          else

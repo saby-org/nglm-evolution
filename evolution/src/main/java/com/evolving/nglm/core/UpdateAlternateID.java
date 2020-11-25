@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.core;
 
+import com.evolving.nglm.evolution.DeliveryRequest;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -107,6 +108,8 @@ public class UpdateAlternateID implements com.evolving.nglm.core.SubscriberStrea
   public SubscriberAction getSubscriberAction() { return subscriberAction; }
   public boolean getBackChannel() { return backChannel; }
   public boolean getCleanupTableEntry() { return cleanupTableEntry; }
+
+  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.High; }
 
   /*****************************************
   *

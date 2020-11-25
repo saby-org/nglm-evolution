@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.core;
 
+import com.evolving.nglm.evolution.DeliveryRequest;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -42,6 +43,8 @@ public class SubscriberTraceControl implements AutoProvisionSubscriberStreamEven
 
   public static Schema schema() { return schema; }
   public Schema subscriberStreamEventSchema() { return schema(); }
+
+  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.High; }
 
   /*****************************************
   *

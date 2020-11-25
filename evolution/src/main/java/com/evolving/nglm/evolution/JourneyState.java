@@ -50,7 +50,7 @@ public class JourneyState implements Cleanable
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_state");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(6));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(7));
     schemaBuilder.field("callingJourneyRequest", JourneyRequest.serde().optionalSchema());
     schemaBuilder.field("journeyInstanceID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
@@ -68,6 +68,7 @@ public class JourneyState implements Cleanable
     schemaBuilder.field("sourceFeatureID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("journeyHistory", JourneyHistory.schema());
     schemaBuilder.field("journeyEndDate", Timestamp.builder().optional().schema());
+    schemaBuilder.field("specialExitReason", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -110,11 +111,7 @@ public class JourneyState implements Cleanable
   private JourneyHistory journeyHistory;
   private Date journeyEndDate;
   private List<VoucherChange> voucherChanges;
-  private Boolean specialExit=false;
-  private SubscriberJourneyStatus specialExitReason = null;
-  
-  public Boolean getSpecialExit() { return specialExit; }
-  public void setSpecialExit(boolean specialExit) { this.specialExit = specialExit; }
+  private SubscriberJourneyStatus specialExitReason = null;  
   public void setJourneyEndDate(Date journeyEndDate) { this.journeyEndDate = journeyEndDate; }
   public void setSpecialExitReason(SubscriberJourneyStatus specialExitReason) { this.specialExitReason = specialExitReason;	}
   public void setJourneyNodeID(String journeyNodeID) { this.journeyNodeID = journeyNodeID; }
@@ -144,7 +141,7 @@ public class JourneyState implements Cleanable
   public JourneyHistory getJourneyHistory() { return journeyHistory; }
   public Date getJourneyEndDate() { return journeyEndDate; }
   public List<VoucherChange> getVoucherChanges() { return voucherChanges; }
-  public Boolean isSpecialExit() {return specialExit;}
+  public Boolean isSpecialExit() { return specialExitReason != null; }
   public SubscriberJourneyStatus getSpecialExitReason() {return specialExitReason;}
   /*****************************************
   *
@@ -202,7 +199,7 @@ public class JourneyState implements Cleanable
   *
   *****************************************/
 
-  public JourneyState(String journeyInstanceID, JourneyRequest callingJourneyRequest, String journeyID, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, String sourceFeatureID, JourneyHistory journeyHistory, Date journeyEndDate, List<VoucherChange> voucherChanges)
+  public JourneyState(String journeyInstanceID, JourneyRequest callingJourneyRequest, String journeyID, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, String sourceFeatureID, JourneyHistory journeyHistory, Date journeyEndDate, List<VoucherChange> voucherChanges, SubscriberJourneyStatus specialExitReason)
   {
     this.callingJourneyRequest = callingJourneyRequest;
     this.journeyInstanceID = journeyInstanceID;
@@ -222,6 +219,7 @@ public class JourneyState implements Cleanable
     this.journeyHistory = journeyHistory;
     this.journeyEndDate = journeyEndDate;
     this.voucherChanges = voucherChanges;
+    this.specialExitReason = specialExitReason;
   }
 
   /*****************************************
@@ -250,6 +248,7 @@ public class JourneyState implements Cleanable
     this.journeyHistory = journeyState.getJourneyHistory();
     this.journeyEndDate = journeyState.getJourneyEndDate();
     this.voucherChanges = journeyState.getVoucherChanges();
+    this.specialExitReason = journeyState.getSpecialExitReason();
   }
 
   /*****************************************
@@ -279,6 +278,7 @@ public class JourneyState implements Cleanable
     struct.put("sourceFeatureID",  journeyState.getsourceFeatureID());
     struct.put("journeyHistory", JourneyHistory.serde().pack(journeyState.getJourneyHistory()));
     struct.put("journeyEndDate", journeyState.getJourneyEndDate());
+    struct.put("specialExitReason", journeyState.getSpecialExitReason() != null ? journeyState.getSpecialExitReason().getExternalRepresentation() : null);
     return struct;
   }
   
@@ -321,13 +321,24 @@ public class JourneyState implements Cleanable
     JourneyHistory journeyHistory = JourneyHistory.serde().unpack(new SchemaAndValue(schema.field("journeyHistory").schema(), valueStruct.get("journeyHistory")));
     Date journeyEndDate = (schemaVersion >= 5) ? (Date) valueStruct.get("journeyEndDate") : new Date();
     List<VoucherChange> voucherChanges = new ArrayList<VoucherChange>();
-    
+    SubscriberJourneyStatus specialExitReason = schema.field("specialExitReason") != null ? unpackSpecialExitReason(valueStruct) : null;
+  
     //
     //  return
     //
 
-    return new JourneyState(journeyInstanceID, callingJourneyRequest, journeyID, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, sourceFeatureID, journeyHistory, journeyEndDate, voucherChanges);
+    return new JourneyState(journeyInstanceID, callingJourneyRequest, journeyID, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, sourceFeatureID, journeyHistory, journeyEndDate, voucherChanges, specialExitReason);
   }
+  
+  private static SubscriberJourneyStatus unpackSpecialExitReason(Struct valueStruct)
+  {
+    if(valueStruct.getString("specialExitReason") != null)
+      {
+        return SubscriberJourneyStatus.fromExternalRepresentation(valueStruct.getString("specialExitReason"));
+      }
+    return null;
+  }
+  
   @Override
   public String toString()
   {

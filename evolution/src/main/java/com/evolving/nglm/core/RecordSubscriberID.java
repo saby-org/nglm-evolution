@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.core;
 
+import com.evolving.nglm.evolution.DeliveryRequest;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -77,6 +78,7 @@ public class RecordSubscriberID implements com.evolving.nglm.core.SubscriberStre
   public String getAlternateID() { return alternateID; }
   public Date getEventDate() { return eventDate; }
   @Override public SubscriberAction getSubscriberAction() { return subscriberAction; }
+  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.High; }
 
   /*****************************************
   *

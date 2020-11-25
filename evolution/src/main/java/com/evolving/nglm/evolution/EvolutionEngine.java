@@ -4428,7 +4428,6 @@ public class EvolutionEngine
     *  result
     *
     *****************************************/
-
     SubscriberState subscriberState = context.getSubscriberState();
     boolean subscriberStateUpdated = false;
 
@@ -4444,7 +4443,7 @@ public class EvolutionEngine
     // so it is important to migrate data, but once all customer run over this version, this should be removed
     // ------ START DATA MIGRATION COULD BE REMOVED
     for(JourneyState recentJourneyState:subscriberState.getRecentJourneyStates()){
-      if(subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().get(recentJourneyState.getJourneyID())==null){
+      if(subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().get(recentJourneyState.getJourneyID())==null && !recentJourneyState.isSpecialExit()){
         subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().put(recentJourneyState.getJourneyID(),recentJourneyState.getExpirationDate(retentionService)!=null?recentJourneyState.getExpirationDate(retentionService):now);
       }
     }
@@ -4721,135 +4720,167 @@ public class EvolutionEngine
 
                 /*****************************************
                 *
-                *  verify pass all objective-level targeting policies
+                *  Check target / trigger / Inclusion / Eligibility
                 *
                 *****************************************/
-
-                if (enterJourney)
+                if(enterJourney && currentStatus == null)
                   {
-                    for (JourneyObjective journeyObjective : allObjectives)
+                    // check if the subscriber should enter by 
+                    // - Target (file or rules)
+                    // - Trigger Event
+                    // - Manual : already filtered with CalledJourney, so no need to take this case in account
+                    // - All Subscribers is considered as Target with no target specified, so this case is handled by Target case                   
+                    
+                    // 1- Compute inAnyTargetOrTrigger: if no trigger or no target, then this boolean is set to true 
+                    List<List<EvaluationCriterion>> targetsAndTriggerCriteria = journey.getAllTargetsCriteria(targetService, now);
+                    if(journey.getTargetingEventCriteria() != null) { targetsAndTriggerCriteria.add(journey.getTargetingEventCriteria()); }
+                    boolean inAnyTargetOrTrigger = targetsAndTriggerCriteria.size() == 0 ? true : false; // if no target is defined into the journey, then this boolean is true otherwise, false by default 
+                    List<EvaluationCriterion> targets = new ArrayList<>();
+
+                    for(List<EvaluationCriterion> current : targetsAndTriggerCriteria)
                       {
-                        if (permittedJourneys.get(journeyObjective) < 1)
-                          {                      	
-                        	currentStatus=SubscriberJourneyStatus.ObjectiveLimitReached;
-                        	context.subscriberTrace("NotEligible: journey {0}, objective {1}", journey.getJourneyID(), journeyObjective.getJourneyObjectiveID());
-                            break;
+                        if(inAnyTargetOrTrigger == false) { // avoid evaluating target is already true
+                          SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
+                          context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
+                          boolean inThisTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, current);
+                          if(inThisTarget)
+                            {
+                              inAnyTargetOrTrigger = true;
+                            }
+                        }                    
+                      }
+                    
+                    boolean enterAfterInclusionList = inAnyTargetOrTrigger;
+                    // 2. At this stage: Apply Inclusion List in case in AnyTarget = false
+                    if(!inAnyTargetOrTrigger)
+                      {
+                        if(journey.getAppendInclusionLists() && inclusionList)
+                          {
+                            enterAfterInclusionList = true;
+                          }
+                      }
+                    // 3. Now                     
+                    //    - if enterAfterInclusionList = false, enterJourney = false and currentStatus = null
+                    //    - if enterAfterInclusionList = true, then apply the Eligibility Criterion
+                    if(enterAfterInclusionList == false)
+                      {
+                        enterJourney = false;
+                        currentStatus = null;
+                        context.subscriberTrace("NotEligible: journey or subscriber not inclusion list {0}", journey.getJourneyID());
+                      }
+                    else 
+                      {
+                        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now);
+                        List<EvaluationCriterion> eligibilityAndTargetting = new ArrayList<>();
+                        eligibilityAndTargetting.addAll(journey.getEligibilityCriteria());
+                        //eligibilityAndTargetting.addAll(journey.getTargetingCriteria());
+                        
+                        boolean  enterAfterEligibilityCriteria = EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityAndTargetting);
+                        
+                        // 4. if enterAfterEligibilityCriteria :
+                        //     - is false : The would enter without Eligibility Criterion, so enterJourney = true and currentStatus = NotEligible
+                        //     - is true : all ok! enterJourney = true and currentStatus = null;
+                        if(enterAfterEligibilityCriteria == false)
+                          {
+                            enterJourney = true;
+                            currentStatus = SubscriberJourneyStatus.NotEligible;
+                          }
+                        else 
+                          {
+                            // 5. Apply the journeyUniversalEligibilityCriteria
+                            evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now);
+                            eligibilityAndTargetting = new ArrayList<>();
+                            eligibilityAndTargetting.addAll(Deployment.getJourneyUniversalEligibilityCriteria());
+                            
+                            boolean  enterAfterJourneyUniversalCriteria = EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityAndTargetting);
+                            if(enterAfterJourneyUniversalCriteria == false) {
+                              // Do not enter into the Journey
+                              enterJourney = false;
+                              context.subscriberTrace("NotEligible: journey universal criteria {0}", journey.getJourneyID());
+                            }
+                            else {
+                              // Enter into the Journey
+                              enterJourney = true;
+                              currentStatus = null;
+                            }
                           }
                       }
                   }
 
                 /*****************************************
                 *
-                *  pass is customer UCG?
+                *  verify pass all objective-level targeting policies
                 *
                 *****************************************/
 
                 if (enterJourney && currentStatus==null)
                   {
-                    if (!journey.getAppendUCG() && subscriberState.getSubscriberProfile().getUniversalControlGroup())
+                    for (JourneyObjective journeyObjective : allObjectives)
                       {
-                        currentStatus=SubscriberJourneyStatus.UniversalControlGroup;
-                        context.subscriberTrace("NotEligible: user is UCG {0}", journey.getJourneyID());
+                        if (permittedJourneys.get(journeyObjective) < 1)
+                          {                       
+                          currentStatus=SubscriberJourneyStatus.ObjectiveLimitReached;
+                          context.subscriberTrace("NotEligible: journey {0}, objective {1}", journey.getJourneyID(), journeyObjective.getJourneyObjectiveID());
+                            break;
+                          }
                       }
-                      
                   }
-
-                /******************************************
-                *
-                *  pass is customer in the exclusion list?
-                *
-                *******************************************/
-
-                if (enterJourney && currentStatus==null)
-                  {
-                      if (!journey.getAppendExclusionLists() && exclusionList)
-                        {
-                          currentStatus=SubscriberJourneyStatus.Excluded;
-                          context.subscriberTrace("NotEligible: user is in exclusion list {0}", journey.getJourneyID());
-                        }
-                     
-                  }
-
+                
                 /*********************************************
                 *
-                *  pass targeting criteria and inclusion list
+                *  pass max number of customers in journey
                 *
                 **********************************************/
 
                 if (enterJourney && currentStatus==null)
                   {
-                    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now);
-                    List<EvaluationCriterion> eligibilityAndTargetting = new ArrayList<>();
-                    eligibilityAndTargetting.addAll(journey.getEligibilityCriteria());
-                    eligibilityAndTargetting.addAll(journey.getTargetingCriteria());
-                    if(journey.getTargetingEventCriteria() != null) 
+                    if (!stockService.reserve(journey,1))
                       {
-                        eligibilityAndTargetting.addAll(journey.getTargetingEventCriteria());
+                        enterJourney = false;
+                        context.subscriberTrace("NotEligible: max number of customers {0}", journey.getJourneyID());
                       }
-                    boolean subscriberToBeProvisionned = EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityAndTargetting);
-                    context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
-                
-                    List<List<EvaluationCriterion>> targetsCriteria = journey.getAllTargetsCriteria(targetService, now);
-                    boolean inAnyTarget = targetsCriteria.size() == 0 ? true : false; // if no target is defined into the journey, then this boolean is true otherwise, false by default 
-                    List<EvaluationCriterion> targets = new ArrayList<>();
-
-                    for(List<EvaluationCriterion> current : targetsCriteria)
+                    else
                       {
-                        if(inAnyTarget == false) { // avoid evaluating target is already true
-                          evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
-                          context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
-                          boolean inThisTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, current);
-                          if(inThisTarget)
-                            {
-                              inAnyTarget = true;
-                            }
-                        }                    
+                        journeyMaxNumberOfCustomersReserved=true;
                       }
-                    boolean targeting = subscriberToBeProvisionned && inAnyTarget;
 
-                    if(!targeting)
-                      {
-                        if(journey.getAppendInclusionLists() && !inclusionList) 
-                          {
-                            // the journey allows the inclusion list but the subscriber is not in the inclusion list
-                            enterJourney = true;
-                            currentStatus=SubscriberJourneyStatus.NotEligible;
-                            context.subscriberTrace("NotEligible: targeting criteria / inclusion list {0}", journey.getJourneyID());
+                  }
+                }
 
-                          }
-                        else if(!journey.getAppendInclusionLists())
-                          {
-                            // whatever if the subscriber is into an inclusion list, those are not allowed for this journey
-                            enterJourney = true;
-                            currentStatus=SubscriberJourneyStatus.NotEligible;
-                            context.subscriberTrace("NotEligible: targeting criteria {0}", journey.getJourneyID());
-                          }
-                      }
+            /******************************************
+            *
+            *  pass is customer in the exclusion list?
+            *
+            *******************************************/
+
+            if (enterJourney && currentStatus == null)
+              {
+                if (!journey.getAppendExclusionLists() && exclusionList)
+                  {
+                    currentStatus = SubscriberJourneyStatus.Excluded;
+                    context.subscriberTrace("NotEligible: user is in exclusion list {0}", journey.getJourneyID());
                   }
 
-                  /*********************************************
-                  *
-                  *  pass max number of customers in journey
-                  *
-                  **********************************************/
-
-                  if (enterJourney && currentStatus==null)
-                    {
-                      if (!stockService.reserve(journey,1))
-                        {
-                          enterJourney = false;
-                          context.subscriberTrace("NotEligible: max number of customers {0}", journey.getJourneyID());
-                        }
-                      else
-                        {
-                          journeyMaxNumberOfCustomersReserved=true;
-                        }
-
-                    }
               }
+
             /*****************************************
             *
-            *  enterJourney
+            * pass is customer UCG?
+            *
+            *****************************************/
+
+            if (enterJourney && currentStatus == null)
+              {
+                if (!journey.getAppendUCG() && subscriberState.getSubscriberProfile().getUniversalControlGroup())
+                  {
+                    currentStatus = SubscriberJourneyStatus.UniversalControlGroup;
+                    context.subscriberTrace("NotEligible: user is UCG {0}", journey.getJourneyID());
+                  }
+              }
+
+            /*****************************************
+            *
+            * enterJourney
             *
             *****************************************/
 
@@ -4903,13 +4934,32 @@ public class EvolutionEngine
 
 				JourneyHistory journeyHistory = new JourneyHistory(journey.getJourneyID());
 				JourneyState journeyState = new JourneyState(context, journey, journeyRequest, sourceFeatureID, boundParameters, SystemTime.getCurrentTime(), journeyHistory);
+
 				if (currentStatus != null) // EVPRO-530
 				{
-					journeyState.setJourneyNodeID(journey.getEndNodeID());
-					journeyState.setSpecialExit(true);
-					journeyState.setSpecialExitReason(currentStatus);
-					journeyState.setJourneyExitDate(SystemTime.getCurrentTime());
+					// keep the current status only if it has not been kept before...
+				  boolean keep = true;
+				  for(JourneyState current : subscriberState.getRecentJourneyStates())
+				    {
+				      if(current.getJourneyID().equals(journey.getJourneyID()) && currentStatus.equals(current.getSpecialExitReason()))
+				        {
+				          keep = false;
+				          break;
+				        }
+				    }
+				  if(keep)
+				    {
+    				  journeyState.setJourneyNodeID(journey.getEndNodeID());
+    					journeyState.setSpecialExitReason(currentStatus);
+    					journeyState.setJourneyExitDate(SystemTime.getCurrentTime());
+				    }
+				  else 
+				    {
+				      // just avoid the entry in the journey without status
+				      continue; // continue of the main journey loop
+				    }
 				}
+				
 				journeyState.getJourneyHistory().addNodeInformation(null, journeyState.getJourneyNodeID(), null, null);
 				boolean statusUpdated = journeyState.getJourneyHistory()
 						.addStatusInformation(SystemTime.getCurrentTime(), journeyState, false, currentStatus);
@@ -5176,6 +5226,7 @@ public class EvolutionEngine
         Set<JourneyNode> visited = new HashSet<JourneyNode>();
         boolean terminateCycle = false;
         JourneyLink firedLink = null;
+        String sample = null;
         do
           {
             /*****************************************
@@ -5581,7 +5632,7 @@ public class EvolutionEngine
                 // abTesting (we remove it so its only counted once per journey)
                 //
                 
-                String sample = null;
+               
                 if(journeyState.getJourneyParameters().get("sample.a") != null)
                   {
                     sample = (String) journeyState.getJourneyParameters().get("sample.a");
@@ -5684,7 +5735,11 @@ public class EvolutionEngine
       {
         subscriberState.getRecentJourneyStates().add(journeyState);
         subscriberState.getJourneyStates().remove(journeyState);
-        subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().put(journeyState.getJourneyID(),now);
+        if(!journeyState.isSpecialExit()) 
+          {
+            // this if because if we have a special exit means the Journey has not been effectively executed
+            subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().put(journeyState.getJourneyID(),now);
+          }
         subscriberStateUpdated = true;
       }
 
@@ -6305,7 +6360,7 @@ public class EvolutionEngine
         result.addAll(subscriberState.getProfileLoyaltyProgramChangeEvents());
       }
     // enrich with alternateIds all here
-    result.stream().forEach(subscriberStreamOutput -> subscriberStreamOutput.enrichSubscriberStreamOutput(subscriberState.getSubscriberProfile(),subscriberGroupEpochReader));
+    result.stream().forEach(subscriberStreamOutput -> subscriberStreamOutput.enrichSubscriberStreamOutput(subscriberStateHackyWrapper.getOriginalEvent(),subscriberState.getSubscriberProfile(),subscriberGroupEpochReader));
     return result;
   }
 
