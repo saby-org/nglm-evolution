@@ -16,6 +16,7 @@ import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SystemTime;
 
 import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.errors.RecordTooLargeException;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.json.simple.JSONObject;
 
@@ -489,8 +490,15 @@ public class GUIService
     //
     //  submit to kafka
     //
-
-    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(guiManagedObjectTopic, stringKeySerde.serializer().serialize(guiManagedObjectTopic, new StringKey(guiManagedObject.getGUIManagedObjectID())), guiManagedObjectSerde.optionalSerializer().serialize(guiManagedObjectTopic, guiManagedObject)));
+    try {
+      kafkaProducer.send(new ProducerRecord<byte[], byte[]>(guiManagedObjectTopic, stringKeySerde.serializer().serialize(guiManagedObjectTopic, new StringKey(guiManagedObject.getGUIManagedObjectID())), guiManagedObjectSerde.optionalSerializer().serialize(guiManagedObjectTopic, guiManagedObject))).get();
+    } catch (InterruptedException|ExecutionException e) {
+      log.error("putGUIManagedObject error saving to kafka "+guiManagedObject.getClass().getSimpleName()+" "+guiManagedObject.getGUIManagedObjectID(),e);
+      if(e.getCause() instanceof RecordTooLargeException){
+        throw new RuntimeException("too big to be saved",e);
+	  }
+	  throw new RuntimeException(e);
+    }
 
     //
     //  audit
