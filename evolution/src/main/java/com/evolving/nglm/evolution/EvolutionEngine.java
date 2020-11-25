@@ -5226,6 +5226,7 @@ public class EvolutionEngine
         Set<JourneyNode> visited = new HashSet<JourneyNode>();
         boolean terminateCycle = false;
         JourneyLink firedLink = null;
+        String sample = null;
         do
           {
             /*****************************************
@@ -5631,7 +5632,7 @@ public class EvolutionEngine
                 // abTesting (we remove it so its only counted once per journey)
                 //
                 
-                String sample = null;
+               
                 if(journeyState.getJourneyParameters().get("sample.a") != null)
                   {
                     sample = (String) journeyState.getJourneyParameters().get("sample.a");
