@@ -113,8 +113,8 @@ public class JourneyImpactReportMonoPhase implements ReportCsvFactory
                 }
 
               StringBuilder abTesting = new StringBuilder();
-              Map<String, Integer> byAbTesting = elasticsearchReaderClient.getByAbTesting(journeyID);
-              for (Entry<String, Integer> value : byAbTesting.entrySet())
+              Map<String, Long> byAbTesting = elasticsearchReaderClient.getByAbTesting(journeyID);
+              for (Entry<String, Long> value : byAbTesting.entrySet())
                 {
                   abTesting.append(value.getKey()).append("=").append(value.getValue()).append(",");
                 }

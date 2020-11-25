@@ -75,6 +75,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   public static String JOURNEYSTATISTIC_STATUS_FIELD = "status";
   public static String JOURNEYSTATISTIC_NODEID_FIELD = "nodeID";
   public static String JOURNEYSTATISTIC_REWARD_FIELD = "rewards";
+  public static String JOURNEYSTATISTIC_SAMPLE_FIELD = "sample";
   public static String getJourneyIndex(String journeyID) {
     if(journeyID == null) {
       return "";
@@ -243,76 +244,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   }
   
   public Map<String, Long> getJourneyStatusCount(String journeyID) throws ElasticsearchClientException {
-    try {
-      Map<String, Long> result = new HashMap<String, Long>();
-  
-      //
-      // Build Elasticsearch query
-      // 
-      String index = getJourneyIndex(journeyID);
-      String bucketName = "STATUS";
-      SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder()
-          .query(QueryBuilders.matchAllQuery())
-          .size(0)
-          .aggregation(AggregationBuilders.terms(bucketName).field(JOURNEYSTATISTIC_STATUS_FIELD).size(MAX_BUCKETS));
-      SearchRequest searchRequest = new SearchRequest(index).source(searchSourceRequest);
-      
-      //
-      // Send request & retrieve response synchronously (blocking call)
-      // 
-      SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
-      
-      //
-      // Check search response
-      //
-      if(searchResponse.status() == RestStatus.NOT_FOUND) {
-        return result; // empty map
-      }
-
-      // @rl TODO checking status seems useless because it raises exception
-      if (searchResponse.isTimedOut()
-          || searchResponse.getFailedShards() > 0) {
-        throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
-      }
-      
-      if(searchResponse.getAggregations() == null) {
-        throw new ElasticsearchClientException("Aggregation is missing in search response.");
-      }
-      
-      ParsedStringTerms buckets = searchResponse.getAggregations().get(bucketName);
-      if(buckets == null) {
-        throw new ElasticsearchClientException("Buckets are missing in search response.");
-      }
-      
-      //
-      // Fill result map
-      //
-      for(Bucket bucket : buckets.getBuckets()) {
-        result.put(bucket.getKeyAsString(), bucket.getDocCount());
-      }
-      
-      return result;
-    }
-    catch (ElasticsearchClientException e) { // forward
-      throw e;
-    }
-    catch (ElasticsearchStatusException e)
-    {
-      if(e.status() == RestStatus.NOT_FOUND) { // index not found
-        log.debug(e.getMessage());
-        return new HashMap<String, Long>();
-      }
-      e.printStackTrace();
-      throw new ElasticsearchClientException(e.getDetailedMessage());
-    }
-    catch (ElasticsearchException e) {
-      e.printStackTrace();
-      throw new ElasticsearchClientException(e.getDetailedMessage());
-    }
-    catch (Exception e) {
-      e.printStackTrace();
-      throw new ElasticsearchClientException(e.getMessage());
-    }
+    return getGeneric("STATUS", JOURNEYSTATISTIC_STATUS_FIELD, journeyID);
   }
 
   public long getLoyaltyProgramCount(String loyaltyProgramID) throws ElasticsearchClientException
@@ -432,24 +364,18 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       }
 
       Aggregations aggregations = searchResponse.getAggregations();
-      if (aggregations == null) {
-        throw new ElasticsearchClientException("aggregations are missing in search response.");
+      if (aggregations != null) {
+        for (String reward : journeyRewardsList.getRewards()) 
+          {
+            ParsedSum sum = aggregations.get(reward);
+            if (sum == null) {
+              log.error("Sum aggregation missing in search response for " + reward);
+            }
+            else {
+              result.put(reward, (long) sum.getValue());
+            }
+          }
       }
-
-      //
-      // Fill result map
-      //
-      for (String reward : journeyRewardsList.getRewards()) 
-        {
-          ParsedSum sum = aggregations.get(reward);
-          if (sum == null) {
-            log.error("Sum aggregation missing in search response for " + reward);
-          }
-          else {
-            result.put(reward, (long) sum.getValue());
-          }
-        }
-
       return result;
     }
     catch (ElasticsearchClientException e) { // forward
@@ -473,9 +399,80 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       }
   }
 
-  public Map<String, Integer> getByAbTesting(String journeyID)
+  public Map<String, Long> getByAbTesting(String journeyID) throws ElasticsearchClientException
   {
-    Map<String, Integer> res = new HashMap<>();
-    return res;
+    return getGeneric("SAMPLE", JOURNEYSTATISTIC_SAMPLE_FIELD, journeyID);
+  }
+  
+  private Map<String, Long> getGeneric(String bucketName, String field, String journeyID) throws ElasticsearchClientException {
+    try {
+      Map<String, Long> result = new HashMap<String, Long>();
+
+      //
+      // Build Elasticsearch query
+      // 
+      String index = getJourneyIndex(journeyID);
+      SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder()
+          .query(QueryBuilders.matchAllQuery())
+          .size(0)
+          .aggregation(AggregationBuilders.terms(bucketName).field(field).size(MAX_BUCKETS));
+      SearchRequest searchRequest = new SearchRequest(index).source(searchSourceRequest);
+
+      //
+      // Send request & retrieve response synchronously (blocking call)
+      // 
+      SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
+
+      //
+      // Check search response
+      //
+      if(searchResponse.status() == RestStatus.NOT_FOUND) {
+        return result; // empty map
+      }
+
+      // @rl TODO checking status seems useless because it raises exception
+      if (searchResponse.isTimedOut()
+          || searchResponse.getFailedShards() > 0) {
+            throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
+      }
+
+      if(searchResponse.getAggregations() == null) {
+        throw new ElasticsearchClientException("Aggregation is missing in search response.");
+      }
+
+      ParsedStringTerms buckets = searchResponse.getAggregations().get(bucketName);
+      if(buckets == null) {
+        throw new ElasticsearchClientException("Buckets are missing in search response.");
+      }
+
+      //
+      // Fill result map
+      //
+      for(Bucket bucket : buckets.getBuckets()) {
+        result.put(bucket.getKeyAsString(), bucket.getDocCount());
+      }
+
+      return result;
+    }
+    catch (ElasticsearchClientException e) { // forward
+      throw e;
+    }
+    catch (ElasticsearchStatusException e)
+    {
+      if(e.status() == RestStatus.NOT_FOUND) { // index not found
+        log.debug(e.getMessage());
+        return new HashMap<String, Long>();
+      }
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (ElasticsearchException e) {
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getMessage());
+    }
   }
 }
