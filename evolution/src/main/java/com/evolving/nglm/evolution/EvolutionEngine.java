@@ -19,8 +19,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
+import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
 import com.evolving.nglm.evolution.propensity.PropensityService;
 import com.evolving.nglm.evolution.retention.RetentionService;
 import com.evolving.nglm.evolution.statistics.CounterStat;
@@ -87,21 +87,15 @@ import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
-import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
-import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.Expression.ExpressionContext;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
-import com.evolving.nglm.evolution.Expression.ExpressionReader;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
-import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
@@ -109,12 +103,10 @@ import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramPointsEven
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
-import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyManagerException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.VoucherChange.VoucherChangeAction;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
-import com.evolving.nglm.evolution.VoucherChange.VoucherChangeAction;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -229,9 +221,6 @@ public class EvolutionEngine
   private static StockMonitor stockService;
   private static PropensityService propensityService;
   private static RetentionService retentionService;
-
-  private static final int MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES = 5;
-  private static Date kafkaSizeErrorLogDate = SystemTime.getCurrentTime();
 
   private String evolutionEngineKey;
   public String getEvolutionEngineKey(){return evolutionEngineKey;}
@@ -667,6 +656,7 @@ public class EvolutionEngine
     streamsProperties.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, Integer.toString(kafkaReplicationFactor));
     streamsProperties.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, Integer.toString(kafkaStreamsStandbyReplicas));
     streamsProperties.put(StreamsConfig.APPLICATION_SERVER_CONFIG, subscriberProfileHost + ":" + Integer.toString(internalPort));
+    streamsProperties.put(StreamsConfig.DEFAULT_PRODUCTION_EXCEPTION_HANDLER_CLASS_CONFIG, EvolutionProductionExceptionHandler.class);
     if(!isInMemoryStateStores && rocksDBCacheMBytes!=-1 && rocksDBMemTableMBytes!=-1)
       {
         BoundedMemoryRocksDBConfig.setRocksDBCacheMBytes(rocksDBCacheMBytes);
@@ -1965,17 +1955,12 @@ public class EvolutionEngine
       {
         SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
         evolutionEngineStatistics.updateSubscriberStateSize(subscriberState.getKafkaRepresentation());
+        // this does not really prevent final exception (as SubscriberState deep copy is not really possible)
+		// what "catch" exception at the end is our EvolutionProductionExceptionHandler
+		// but we still keep that, that "should" avoid to produce outputs we are too big
         if (subscriberState.getKafkaRepresentation().length > 950000)
           {
-            if (SystemTime.getCurrentTime().after(kafkaSizeErrorLogDate))
-              {
-                log.error("StateStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberState.toString());
-                kafkaSizeErrorLogDate = RLMDateUtils.addMinutes(SystemTime.getCurrentTime(), MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES);
-              }
-            else
-              {
-                log.error("StateStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberState.getKafkaRepresentation().length);
-              }
+            log.error("StateStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberState.getKafkaRepresentation().length);
             cleanSubscriberState(currentSubscriberState, now);
             SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), currentSubscriberState);
             subscriberStateUpdated = false;
@@ -6050,21 +6035,6 @@ public class EvolutionEngine
       {
         ExtendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), extendedSubscriberProfile);
         evolutionEngineStatistics.updateExtendedProfileSize(extendedSubscriberProfile.getKafkaRepresentation());
-        if (extendedSubscriberProfile.getKafkaRepresentation().length > 950000)
-          {
-            if (SystemTime.getCurrentTime().after(kafkaSizeErrorLogDate))
-              {
-                log.error("ExtendedSubscriberProfile size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), extendedSubscriberProfile.toString());
-                kafkaSizeErrorLogDate = RLMDateUtils.addMinutes(SystemTime.getCurrentTime(), MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES);
-              }
-            else
-              {
-                log.error("ExtendedSubscriberProfile size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), extendedSubscriberProfile.getKafkaRepresentation().length);
-              }
-            cleanExtendedSubscriberProfile(currentExtendedSubscriberProfile, now);
-            ExtendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), currentExtendedSubscriberProfile);
-            extendedSubscriberProfileUpdated = false;
-          }
       }
 
     /****************************************
@@ -6174,20 +6144,6 @@ public class EvolutionEngine
       {
         SubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), subscriberHistory);
         evolutionEngineStatistics.updateSubscriberHistorySize(subscriberHistory.getKafkaRepresentation());
-        if (subscriberHistory.getKafkaRepresentation().length > 950000)
-          {
-            if (SystemTime.getCurrentTime().after(kafkaSizeErrorLogDate))
-              {
-                log.error("HistoryStore size error, ignoring event {} for subscriber {}: {}", subscriberStateOutputWrapper.getOriginalEvent().getClass().toString(), subscriberStateOutputWrapper.getOriginalEvent().getSubscriberID(), subscriberHistory.toString());
-                kafkaSizeErrorLogDate = RLMDateUtils.addMinutes(SystemTime.getCurrentTime(), MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES);
-              }
-            else
-              {
-                log.error("HistoryStore size error, ignoring event {} for subscriber {}: {}", subscriberStateOutputWrapper.getOriginalEvent().getClass().toString(), subscriberStateOutputWrapper.getOriginalEvent().getSubscriberID(), subscriberHistory.getKafkaRepresentation().length);
-              }
-            SubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), currentSubscriberHistory);
-            subscriberHistoryUpdated = false;
-          }
       }
 
     return subscriberHistoryUpdated ? subscriberHistory : currentSubscriberHistory;
