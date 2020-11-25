@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution.elasticsearch;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,9 @@ import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
+import org.elasticsearch.search.aggregations.bucket.terms.ParsedTerms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
+import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -352,8 +355,8 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
 
   public Map<String, Long> getDistributedRewards(String journeyID) throws ElasticsearchClientException
   {
+    Map<String, Long> result = new HashMap<>();
     try {
-      Map<String, Long> result = new HashMap<>();
       
       /*
        *  1) get list of rewards with :
@@ -418,22 +421,18 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       //
       // Check search response
       //
-      if(searchResponse.status() == RestStatus.NOT_FOUND) {
+      if (searchResponse.status() == RestStatus.NOT_FOUND) {
         return result; // empty map
       }
 
-      // @rl TODO checking status seems useless because it raises exception
+      // TODO checking status seems useless because it raises exception
       if (searchResponse.isTimedOut()
           || searchResponse.getFailedShards() > 0) {
             throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
       }
 
-      if(searchResponse.getAggregations() == null) {
-        throw new ElasticsearchClientException("Aggregation is missing in search response.");
-      }
-
       Aggregations aggregations = searchResponse.getAggregations();
-      if(aggregations == null) {
+      if (aggregations == null) {
         throw new ElasticsearchClientException("aggregations are missing in search response.");
       }
 
@@ -442,15 +441,13 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       //
       for (String reward : journeyRewardsList.getRewards()) 
         {
-          ParsedStringTerms buckets = aggregations.get(reward);
-          if (buckets.getBuckets().size() != 1)
-            {
-              log.error("very strange");
-            }
-          for (Bucket bucket : buckets.getBuckets())
-            {
-              result.put(reward, bucket.getDocCount());              
-            }
+          ParsedSum sum = aggregations.get(reward);
+          if (sum == null) {
+            log.error("Sum aggregation missing in search response for " + reward);
+          }
+          else {
+            result.put(reward, (long) sum.getValue());
+          }
         }
 
       return result;
@@ -462,19 +459,18 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     {
       if(e.status() == RestStatus.NOT_FOUND) { // index not found
         log.debug(e.getMessage());
-        return new HashMap<String, Long>();
+        return result;
       }
-      e.printStackTrace();
       throw new ElasticsearchClientException(e.getDetailedMessage());
     }
     catch (ElasticsearchException e) {
-      e.printStackTrace();
       throw new ElasticsearchClientException(e.getDetailedMessage());
     }
-    catch (Exception e) {
-      e.printStackTrace();
-      throw new ElasticsearchClientException(e.getMessage());
-    }
+    catch (IOException e)
+      {
+        log.debug(e.getLocalizedMessage());
+        throw new ElasticsearchClientException(e.getLocalizedMessage());
+      }
   }
 
   public Map<String, Integer> getByAbTesting(String journeyID)
