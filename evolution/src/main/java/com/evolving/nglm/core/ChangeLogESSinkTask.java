@@ -62,28 +62,43 @@ public abstract class ChangeLogESSinkTask<T> extends SimpleESSinkTask
     if (sinkRecord.value() != null) {
       T item = unpackRecord(sinkRecord);
       if (item != null) {
-        Object guiManagedObjectValue = sinkRecord.value();
-        Schema guiManagedObjectValueSchema = sinkRecord.valueSchema();
-        GUIManagedObject guiManagedObject = GUIManagedObject.commonSerde().unpack(new SchemaAndValue(guiManagedObjectValueSchema, guiManagedObjectValue));
-        if (guiManagedObject.getDeleted() && (getDocumentIndexName(item).equals("mapping_basemanagement") || getDocumentIndexName(item).equals("mapping_journeys") || getDocumentIndexName(item).equals("mapping_journeyobjective"))) {
-          try {
-            DeleteRequest deleteRequest = new DeleteRequest(getDocumentIndexName(item), getDocumentID(item));
-            deleteRequest.id(getDocumentID(item));
-            return Collections.<DocWriteRequest>singletonList(deleteRequest);
-            }
-            catch (Exception e) {
-              if (log.isDebugEnabled()) {
-                log.debug("The document has not been removed" + e.getMessage());
+            if (item instanceof GUIManagedObject)
+              {
+                GUIManagedObject guiManagedObject = (GUIManagedObject) item;
+                if (guiManagedObject.getDeleted())
+                  {
+                    try
+                      {
+                        DeleteRequest deleteRequest = new DeleteRequest(getDocumentIndexName(item),
+                            getDocumentID(item));
+                        deleteRequest.id(getDocumentID(item));
+                        return Collections.<DocWriteRequest>singletonList(deleteRequest);
+                      }
+                    catch (Exception e)
+                      {
+                        if (log.isDebugEnabled())
+                          {
+                            log.debug("The document has not been removed" + e.getMessage());
+                          }
+                      }
+                  }
+                else
+                  {
+                    UpdateRequest request = new UpdateRequest(getDocumentIndexName(item), getDocumentID(item));
+                    request.doc(getDocumentMap(item));
+                    request.docAsUpsert(true);
+                    request.retryOnConflict(4);
+                    return Collections.<DocWriteRequest>singletonList(request);
+                  }
               }
-            }
-        }
-        else {
-        UpdateRequest request = new UpdateRequest(getDocumentIndexName(item), getDocumentID(item));
-        request.doc(getDocumentMap(item));
-        request.docAsUpsert(true);
-        request.retryOnConflict(4);
-        return Collections.<DocWriteRequest>singletonList(request);
-        }
+            else
+              {
+                UpdateRequest request = new UpdateRequest(getDocumentIndexName(item), getDocumentID(item));
+                request.doc(getDocumentMap(item));
+                request.docAsUpsert(true);
+                request.retryOnConflict(4);
+                return Collections.<DocWriteRequest>singletonList(request);
+              }
        
       }
     }
