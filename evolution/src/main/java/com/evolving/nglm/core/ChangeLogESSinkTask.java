@@ -64,20 +64,12 @@ public abstract class ChangeLogESSinkTask<T> extends SimpleESSinkTask
                 GUIManagedObject guiManagedObject = (GUIManagedObject) item;
                 if (guiManagedObject.getDeleted())
                   {
-                    try
-                      {
                         DeleteRequest deleteRequest = new DeleteRequest(getDocumentIndexName(item),
                             getDocumentID(item));
                         deleteRequest.id(getDocumentID(item));
                         return Collections.<DocWriteRequest>singletonList(deleteRequest);
                       }
-                    catch (Exception e)
-                      {
-                        if (log.isDebugEnabled())
-                          {
-                            log.debug("The document has not been removed" + e.getMessage());
-                          }
-                      }
+                    
                   }
                 else
                   {
