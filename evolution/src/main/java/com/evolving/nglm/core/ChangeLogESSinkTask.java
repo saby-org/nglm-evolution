@@ -6,12 +6,18 @@
 
 package com.evolving.nglm.core;
 
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import org.elasticsearch.action.DocWriteRequest;
+import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 
+import com.evolving.nglm.evolution.GUIManagedObject;
+
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -56,11 +62,29 @@ public abstract class ChangeLogESSinkTask<T> extends SimpleESSinkTask
     if (sinkRecord.value() != null) {
       T item = unpackRecord(sinkRecord);
       if (item != null) {
+        Object guiManagedObjectValue = sinkRecord.value();
+        Schema guiManagedObjectValueSchema = sinkRecord.valueSchema();
+        GUIManagedObject guiManagedObject = GUIManagedObject.commonSerde().unpack(new SchemaAndValue(guiManagedObjectValueSchema, guiManagedObjectValue));
+        if (guiManagedObject.getDeleted()) {
+          try {
+            DeleteRequest deleteRequest = new DeleteRequest(getDocumentIndexName(item), getDocumentID(item));
+            deleteRequest.id(getDocumentID(item));
+            return Collections.<DocWriteRequest>singletonList(deleteRequest);
+            }
+            catch (Exception e) {
+              if (log.isDebugEnabled()) {
+                log.debug("The document has not been removed" + e.getMessage());
+              }
+            }
+        }
+        else {
         UpdateRequest request = new UpdateRequest(getDocumentIndexName(item), getDocumentID(item));
         request.doc(getDocumentMap(item));
         request.docAsUpsert(true);
         request.retryOnConflict(4);
         return Collections.<DocWriteRequest>singletonList(request);
+        }
+       
       }
     }
     
