@@ -297,5 +297,10 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
   {
     this.setNumberOfSegments(segments.size());
   }
-  
+
+  @Override public boolean getSegmentsConditionEqual(SegmentationDimension dimension)
+  {
+    return true;
+  }
+
 }

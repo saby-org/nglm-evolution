@@ -672,14 +672,6 @@ public class GUIManagerGeneral extends GUIManager
 
     /*****************************************
     *
-    *  populate segmentationDimensionID with "nothing"
-    *
-    *****************************************/
-
-    jsonRoot.put("id", "(not used)"); 
-
-    /*****************************************
-    *
     *  validate targetingType
     *
     *****************************************/
@@ -703,6 +695,18 @@ public class GUIManagerGeneral extends GUIManager
         return JSONUtilities.encodeObject(response);
       }
 
+    boolean evaluateBySegmentId = false;
+
+    if(JSONUtilities.decodeString(jsonRoot,"id") == null)
+    {
+      evaluateBySegmentId = false;
+      jsonRoot.put("id","new_dimension");
+    }
+    else
+    {
+      evaluateBySegmentId = true;
+    }
+
     /****************************************
     *
     *  response
@@ -711,28 +715,36 @@ public class GUIManagerGeneral extends GUIManager
 
     List<JSONObject> aggregationResult = new ArrayList<>();
     List<QueryBuilder> processedQueries = new ArrayList<>();
+    //String stratumESFieldName = Deployment.getProfileCriterionFields().get("subscriber.stratum").getESField();
+    String stratumESFieldName = "stratum";
     try
       {
+        SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
+        if(evaluateBySegmentId)
+        {
+          SegmentationDimension storedSegmentationDimensionEligibility = segmentationDimensionService.getActiveSegmentationDimension(segmentationDimensionEligibility.getGUIManagedObjectID() , SystemTime.getCurrentTime());
+          evaluateBySegmentId = evaluateBySegmentId && segmentationDimensionEligibility.getSegmentsConditionEqual(storedSegmentationDimensionEligibility);
+        }
+        if(evaluateBySegmentId) return processGetCountBySegmentationEligibilityBySegmentId(segmentationDimensionEligibility);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
         List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
-        SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
-        for(SegmentEligibility segmentEligibility :segmentationDimensionEligibility.getSegments())
+        for (SegmentEligibility segmentEligibility : segmentationDimensionEligibility.getSegments())
+        {
+          BoolQueryBuilder query = QueryBuilders.boolQuery();
+          for (QueryBuilder processedQuery : processedQueries)
           {
-            BoolQueryBuilder query = QueryBuilders.boolQuery();
-            for(QueryBuilder processedQuery : processedQueries)
-              {
-                query = query.mustNot(processedQuery);
-              }
-            BoolQueryBuilder segmentQuery = QueryBuilders.boolQuery();
-            for(EvaluationCriterion evaluationCriterion:segmentEligibility.getProfileCriteria())
-              {
-                segmentQuery = segmentQuery.filter(evaluationCriterion.esQuery());
-                processedQueries.add(segmentQuery);
-              }
-            query = query.filter(segmentQuery);
-            //use name as key, even if normally should use id, to make simpler to use this count in chart
-            aggFilters.add(new FiltersAggregator.KeyedFilter(segmentEligibility.getName(),query));
+            query = query.mustNot(processedQuery);
           }
+          BoolQueryBuilder segmentQuery = QueryBuilders.boolQuery();
+          for (EvaluationCriterion evaluationCriterion : segmentEligibility.getProfileCriteria())
+          {
+            segmentQuery = segmentQuery.filter(evaluationCriterion.esQuery());
+            processedQueries.add(segmentQuery);
+          }
+          query = query.filter(segmentQuery);
+          //use name as key, even if normally should use id, to make simpler to use this count in chart
+          aggFilters.add(new FiltersAggregator.KeyedFilter(segmentEligibility.getName(), query));
+        }
         AggregationBuilder aggregation = null;
         FiltersAggregator.KeyedFilter [] filterArray = new FiltersAggregator.KeyedFilter [aggFilters.size()];
         filterArray = aggFilters.toArray(filterArray);
@@ -782,46 +794,15 @@ public class GUIManagerGeneral extends GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
-  JSONObject processGetCountBySegmentationEligibilityBySegmentId(String userID,JSONObject jsonRoot)
+  private JSONObject processGetCountBySegmentationEligibilityBySegmentId(SegmentationDimensionEligibility segmentationDimensionEligibility)
   {
-    /*****************************************
-     *
-     *  response
-     *
-     *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-     *
-     *  validate targetingType
-     *
-     *****************************************/
-
-    SegmentationDimensionTargetingType targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
-    if(targetingType != SegmentationDimensionTargetingType.ELIGIBILITY)
-    {
-      //
-      //  log
-      //
-
-      log.warn("Invalid dimension targeting type for processGetCountBySegmentationEligibility. Targeting type: {}",targetingType.getExternalRepresentation());
-
-      //
-      //  response
-      //
-
-      response.put("responseCode", "segmentationDimensionNotValid");
-      response.put("responseMessage", "Segmentation dimension not ELIGIBILITY");
-      response.put("responseParameter", null);
-      return JSONUtilities.encodeObject(response);
-    }
 
     /****************************************
      *
      *  response
      *
      ****************************************/
+    HashMap<String,Object> response = new HashMap<String,Object>();
 
     List<JSONObject> aggregationResult = new ArrayList<>();
     List<QueryBuilder> processedQueries = new ArrayList<>();
@@ -831,7 +812,6 @@ public class GUIManagerGeneral extends GUIManager
     {
       SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
       List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
-      SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
       for(SegmentEligibility segmentEligibility :segmentationDimensionEligibility.getSegments())
       {
         TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery(stratumESFieldName+"."+segmentationDimensionEligibility.getGUIManagedObjectID(), segmentEligibility.getID());
@@ -1643,7 +1623,18 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    jsonRoot.put("id", "fake-id"); // fill segmentationDimensionID with anything
+    boolean evaluateBySegmentId = false;
+
+    if(JSONUtilities.decodeString(jsonRoot,"id")== null)
+    {
+      evaluateBySegmentId = false;
+      jsonRoot.put("id","new_dimension");
+    }
+    else
+    {
+      evaluateBySegmentId = true;
+    }
+
     SegmentationDimensionRanges segmentationDimensionRanges = null;
     try
       {
@@ -1677,6 +1668,14 @@ public class GUIManagerGeneral extends GUIManager
         return JSONUtilities.encodeObject(response);
       }
 
+    if(evaluateBySegmentId)
+    {
+      SegmentationDimension storedSegmentationDimensionRanges = segmentationDimensionService.getActiveSegmentationDimension(segmentationDimensionRanges.getGUIManagedObjectID() , SystemTime.getCurrentTime());
+      evaluateBySegmentId = evaluateBySegmentId &&  segmentationDimensionRanges.getSegmentsConditionEqual(storedSegmentationDimensionRanges);
+      log.info("evaluate by segment_id = "+evaluateBySegmentId);
+    }
+    //tamporary call only for banglaink hot fix because in 1.4.26 sbm is called
+    if(evaluateBySegmentId) return processGetCountBySegmentationRangesBySegmentId(userID,jsonRoot);
     /*****************************************
     *
     *  extract BaseSplits
@@ -2022,7 +2021,6 @@ public class GUIManagerGeneral extends GUIManager
   }
 
   /*****************************************
-
    *
    *  processGetCountBySegmentationRanges
    *
