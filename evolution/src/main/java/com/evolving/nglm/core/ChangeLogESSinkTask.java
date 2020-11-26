@@ -6,8 +6,6 @@
 
 package com.evolving.nglm.core;
 
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import org.elasticsearch.action.DocWriteRequest;
@@ -17,7 +15,6 @@ import org.elasticsearch.action.update.UpdateRequest;
 import com.evolving.nglm.evolution.GUIManagedObject;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
