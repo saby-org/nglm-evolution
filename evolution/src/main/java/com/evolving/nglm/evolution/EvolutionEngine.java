@@ -5469,11 +5469,17 @@ public class EvolutionEngine
                         String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(entryActionEvaluationRequest, "node.parameter.relationship");
                         if (hierarchyRelationship != null && hierarchyRelationship.trim().equals(INTERNAL_ID_SUPPLIER))
                           {
-                            addActionForPartner(context, journeyState, actions, entryActionEvaluationRequest, supplierService, INTERNAL_VARIABLE_SUPPLIER);
+                            if (!addActionForPartner(context, journeyState, actions, entryActionEvaluationRequest, supplierService, INTERNAL_VARIABLE_SUPPLIER))
+                              {
+                                subscriberState.getSubscriberProfile().getUnknownRelationships().add(new Pair(entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID()));
+                              }
                           }
                         else if (hierarchyRelationship != null && hierarchyRelationship.trim().equals(INTERNAL_ID_RESELLER))
                           {
-                            addActionForPartner(context, journeyState, actions, entryActionEvaluationRequest, resellerService, INTERNAL_VARIABLE_RESELLER);
+                            if (!addActionForPartner(context, journeyState, actions, entryActionEvaluationRequest, resellerService, INTERNAL_VARIABLE_RESELLER))
+                              {
+                                subscriberState.getSubscriberProfile().getUnknownRelationships().add(new Pair(entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID()));
+                              }
                           }
                         else if (hierarchyRelationship != null && !hierarchyRelationship.trim().equals("customer"))
                           {
@@ -5802,8 +5808,9 @@ public class EvolutionEngine
   }
 
 
-  private static void addActionForPartner(EvolutionEventContext context, JourneyState journeyState, List<Action> actions, SubscriberEvaluationRequest entryActionEvaluationRequest, GUIService guiService, String variableName)
+  private static boolean addActionForPartner(EvolutionEventContext context, JourneyState journeyState, List<Action> actions, SubscriberEvaluationRequest entryActionEvaluationRequest, GUIService guiService, String variableName)
   {
+    boolean res = true; // success by default
     String variableID = "variable." + variableName;
     Object partnerName = (journeyState.getJourneyParameters() != null) ? journeyState.getJourneyParameters().get(variableID) : "unknown";
     if (partnerName instanceof String)
@@ -5820,7 +5827,12 @@ public class EvolutionEngine
               }
           }
         log.trace("Will do action for partner " + customerIDPartner);
-        if (customerIDPartner != null)
+        if (customerIDPartner == null)
+          {
+            // The alternateID given when creating the partner does not exist, we should exit the node using the appropriate link.
+            res = false;
+          }
+        else
           {
             ExecuteActionOtherSubscriber action = new ExecuteActionOtherSubscriber(customerIDPartner, entryActionEvaluationRequest.getSubscriberProfile().getSubscriberID(), entryActionEvaluationRequest.getJourneyState().getJourneyID(), entryActionEvaluationRequest.getJourneyNode().getNodeID(), context.getUniqueKey(), entryActionEvaluationRequest.getJourneyState());
             actions.add(action);
@@ -5829,7 +5841,9 @@ public class EvolutionEngine
     else
       {
         log.info("expecting partner, found " + partnerName + " " + ((partnerName != null) ? partnerName.getClass().getCanonicalName() : "null"));
+        res = false;
       }
+    return res;
   }
 
   private static void handleExecuteOnEntryActions(SubscriberState subscriberState, JourneyState journeyState, Journey journey, List<Action> actions)
