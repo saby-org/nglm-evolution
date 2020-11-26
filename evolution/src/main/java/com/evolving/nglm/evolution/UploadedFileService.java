@@ -346,7 +346,6 @@ public class UploadedFileService extends GUIService
                     //
                     
                     isHeader = false;
-                    log.info("putUploadedFileWithVariables header {}", line);
                     String headers[] = line.split(Deployment.getUploadedFileSeparator(), -1);
                     boolean isFirstColumn = true;
                     for (String header : headers)
@@ -395,7 +394,6 @@ public class UploadedFileService extends GUIService
                         isFirstColumn = false;
                         index++;
                       }
-                    log.info("putUploadedFileWithVariables line {}", line);
                   }
               }
           } 
@@ -409,6 +407,7 @@ public class UploadedFileService extends GUIService
         //
         
         ((UploadedFile) guiManagedObject).addMetaData("variables", JSONUtilities.encodeObject(variableDatatypes));
+        log.info("RAJ K variables {} ", variables);
       }
 
     //
@@ -420,6 +419,7 @@ public class UploadedFileService extends GUIService
   
   private void validateValue(String variableName, CriterionDataType criterionDataType, String rawValue) throws GUIManagerException
   {
+    log.debug("validateValue {}, {}, {}", variableName, criterionDataType, rawValue);
     switch (criterionDataType)
     {
       case StringCriterion:
@@ -469,7 +469,6 @@ public class UploadedFileService extends GUIService
       default:
         throw new GUIManagerException("datatype not supported", "invalid dataType " + criterionDataType + " for variable " + variableName + " in file line no ");
     }
-    
   }
 
   private String getVaribaleName(String header)
