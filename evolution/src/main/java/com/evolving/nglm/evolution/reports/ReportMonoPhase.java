@@ -225,7 +225,26 @@ public class ReportMonoPhase
           
           String scrollId = searchResponse.getScrollId(); // always null
           SearchHit[] searchHits = searchResponse.getHits().getHits();
-          logSearchResponse(indicesToRead, searchResponse, searchHits);
+          if (log.isTraceEnabled()) log.trace("searchHits = " + Arrays.toString(searchHits));
+          if (searchHits != null)
+            {
+              if (log.isTraceEnabled()) 
+                {
+                  log.trace("getFailedShards = " + searchResponse.getFailedShards());
+                  log.trace("getSkippedShards = " + searchResponse.getSkippedShards());
+                  log.trace("getTotalShards = " + searchResponse.getTotalShards());
+                  log.trace("getTook = " + searchResponse.getTook());
+                }
+              String logMsg = "for " + Arrays.toString(indicesToRead) + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits();
+              if (searchResponse.getFailedShards() != 0 || searchResponse.getSkippedShards() != 0)
+                {
+                  logMsg += " getFailedShards = " + searchResponse.getFailedShards() +
+                            " getSkippedShards = " + searchResponse.getSkippedShards() +
+                            " getTotalShards = " + searchResponse.getTotalShards() +
+                            " getTook = " + searchResponse.getTook();
+                }
+              log.info(logMsg);
+            }
           boolean alreadyTraced = false;
           while (searchHits != null && searchHits.length > 0)
             {

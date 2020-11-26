@@ -5253,8 +5253,8 @@ public class ThirdPartyManager
                     String criterionFieldValue = (String) criterionField.retrieveNormalized(evaluationRequest);                    
                     alternateIDs.put(entry.getKey(), criterionFieldValue);
                   }
-                String msisdn = "";
-                String contractID = "";
+                String msisdn = null;
+                String contractID = null;
                 if (alternateIDs != null && !(alternateIDs.isEmpty()))
                   {
                     if (alternateIDs.containsKey("msisdn") && alternateIDs.get("msisdn") != null)
@@ -5268,7 +5268,7 @@ public class ThirdPartyManager
                   }
                 errorException = new ThirdPartyManagerException(
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseMessage() + " (RedeemedDate: "
-                        + redeemedDate + ", " + " CustomerID: "+ redeemedSubscriberID + ", " +" msisdn: " + msisdn +" contactID: " + contractID + ")",
+                        + redeemedDate + ", " + " CustomerID: "+ redeemedSubscriberID + ", " +" msisdn: " + msisdn + ", "+" contractID: " + contractID + ")",
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseCode());
               }else if(profileVoucher.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired||profileVoucher.getVoucherExpiryDate().before(now)){
           errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
