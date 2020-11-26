@@ -61,8 +61,6 @@ import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
-import org.apache.kafka.streams.errors.InvalidStateStoreException;
-import org.apache.kafka.streams.state.KeyValueIterator;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -85,7 +83,6 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Alarm;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.CronFormat;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker;
@@ -100,7 +97,6 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
-import com.evolving.nglm.core.utilities.UtilitiesException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
@@ -247,6 +243,7 @@ public class GUIManager
     getCountBySegmentationRanges("getCountBySegmentationRanges"),
     getCountBySegmentationRangesBySegmentID("getCountBySegmentationRangesBySegmentID"),
     getCountBySegmentationEligibility("getCountBySegmentationEligibility"),
+    getCountBySegmentationEligibilityBySegmentId("getCountBySegmentationEligibilityBySegmentId"),
     evaluateProfileCriteria("evaluateProfileCriteria"),
     getUCGDimensionSummaryList("getUCGDimensionSummaryList"),
     getPointList("getPointList"),
@@ -1860,6 +1857,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCountBySegmentationRanges", new APISimpleHandler(API.getCountBySegmentationRanges));
         restServer.createContext("/nglm-guimanager/getCountBySegmentationRangesBySegmentID", new APISimpleHandler(API.getCountBySegmentationRangesBySegmentID));
         restServer.createContext("/nglm-guimanager/getCountBySegmentationEligibility", new APISimpleHandler(API.getCountBySegmentationEligibility));
+        restServer.createContext("/nglm-guimanager/getCountBySegmentationEligibilityBySegmentId", new APISimpleHandler(API.getCountBySegmentationEligibilityBySegmentId));
         restServer.createContext("/nglm-guimanager/evaluateProfileCriteria", new APISimpleHandler(API.evaluateProfileCriteria));
         restServer.createContext("/nglm-guimanager/getUCGDimensionSummaryList", new APISimpleHandler(API.getUCGDimensionSummaryList));
         restServer.createContext("/nglm-guimanager/getPointList", new APISimpleHandler(API.getPointList));
@@ -2861,6 +2859,10 @@ public class GUIManager
 
                 case getCountBySegmentationEligibility:
                   jsonResponse = guiManagerGeneral.processGetCountBySegmentationEligibility(userID, jsonRoot);
+                  break;
+
+                case getCountBySegmentationEligibilityBySegmentId:
+                  jsonResponse = guiManagerGeneral.processGetCountBySegmentationEligibilityBySegmentId(userID, jsonRoot);
                   break;
 
                 case evaluateProfileCriteria:

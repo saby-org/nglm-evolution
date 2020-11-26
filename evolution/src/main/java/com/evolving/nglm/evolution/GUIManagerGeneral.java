@@ -792,6 +792,111 @@ public class GUIManagerGeneral extends GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  JSONObject processGetCountBySegmentationEligibilityBySegmentId(String userID,JSONObject jsonRoot)
+  {
+    /*****************************************
+     *
+     *  response
+     *
+     *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+     *
+     *  validate targetingType
+     *
+     *****************************************/
+
+    SegmentationDimensionTargetingType targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
+    if(targetingType != SegmentationDimensionTargetingType.ELIGIBILITY)
+    {
+      //
+      //  log
+      //
+
+      log.warn("Invalid dimension targeting type for processGetCountBySegmentationEligibility. Targeting type: {}",targetingType.getExternalRepresentation());
+
+      //
+      //  response
+      //
+
+      response.put("responseCode", "segmentationDimensionNotValid");
+      response.put("responseMessage", "Segmentation dimension not ELIGIBILITY");
+      response.put("responseParameter", null);
+      return JSONUtilities.encodeObject(response);
+    }
+
+    /****************************************
+     *
+     *  response
+     *
+     ****************************************/
+
+    List<JSONObject> aggregationResult = new ArrayList<>();
+    List<QueryBuilder> processedQueries = new ArrayList<>();
+    //String stratumESFieldName = Deployment.getProfileCriterionFields().get("subscriber.stratum").getESField();
+    String stratumESFieldName = "stratum";
+    try
+    {
+      SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
+      List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
+      SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
+      for(SegmentEligibility segmentEligibility :segmentationDimensionEligibility.getSegments())
+      {
+        TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery(stratumESFieldName+"."+segmentationDimensionEligibility.getGUIManagedObjectID(), segmentEligibility.getID());
+        //use name as key, even if normally should use id, to make simpler to use this count in chart
+        aggFilters.add(new FiltersAggregator.KeyedFilter(segmentEligibility.getName(),termQueryBuilder));
+      }
+      AggregationBuilder aggregation = null;
+      FiltersAggregator.KeyedFilter [] filterArray = new FiltersAggregator.KeyedFilter [aggFilters.size()];
+      filterArray = aggFilters.toArray(filterArray);
+      aggregation = AggregationBuilders.filters("SegmentEligibility",filterArray);
+      ((FiltersAggregationBuilder) aggregation).otherBucket(true);
+      ((FiltersAggregationBuilder) aggregation).otherBucketKey("other_key");
+      searchSourceBuilder.aggregation(aggregation);
+
+      //
+      //  search in ES
+      //
+
+      SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
+      SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+      Filters aggResultFilters = searchResponse.getAggregations().get("SegmentEligibility");
+      for (Filters.Bucket entry : aggResultFilters.getBuckets())
+      {
+        HashMap<String,Object> aggItem = new HashMap<String,Object>();
+        String key = entry.getKeyAsString();            // bucket key
+        long docCount = entry.getDocCount();            // Doc count
+        aggItem.put("name",key);
+        aggItem.put("count",docCount);
+        aggregationResult.add(JSONUtilities.encodeObject(aggItem));
+      }
+    }
+    catch(Exception ex)
+    {
+      //
+      //  log
+      //
+
+      StringWriter stackTraceWriter = new StringWriter();
+      ex.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+      //
+      //  response
+      //
+
+      response.put("responseCode", "systemError");
+      response.put("responseMessage", ex.getMessage());
+      response.put("responseParameter", (ex instanceof GUIManagerException) ? ((GUIManagerException) ex).getResponseParameter() : null);
+      return JSONUtilities.encodeObject(response);
+    }
+    response.put("responseCode", "ok");
+    response.put("result",aggregationResult);
+    return JSONUtilities.encodeObject(response);
+  }
+
 
   /*****************************************
   *
@@ -1932,6 +2037,7 @@ public class GUIManagerGeneral extends GUIManager
   }
 
   /*****************************************
+
    *
    *  processGetCountBySegmentationRanges
    *
@@ -1953,10 +2059,10 @@ public class GUIManagerGeneral extends GUIManager
      *
      *****************************************/
 
-    jsonRoot.put("id", "fake-id"); // fill segmentationDimensionID with anything
     SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
     JSONObject responseJSON = new JSONObject();
-    String segmentsESFieldName = Deployment.getProfileCriterionFields().get("subscriber.segments").getESField();
+    //String segmentsESFieldName = Deployment.getProfileCriterionFields().get("subscriber.stratum").getESField();
+    String stratumESFieldName = "stratum";
 
     SegmentationDimensionRanges segmentationDimensionRanges = null;
     try
@@ -2015,13 +2121,14 @@ public class GUIManagerGeneral extends GUIManager
         List<SegmentRanges> ranges = baseSplit.getSegments();
 
         //create aggregations for all ids from a base split
-        TermsQueryBuilder splitTerms = QueryBuilders.termsQuery(segmentsESFieldName,ranges.stream().map(SegmentRanges::getID).collect(Collectors.toList()));
-        AggregationBuilder baseSpitAgg = AggregationBuilders.filter(baseSplit.getSplitName(),splitTerms);
+        //TermsQueryBuilder splitTerms = QueryBuilders.termsQuery(stratumESFieldName,ranges.stream().map(SegmentRanges::getID).collect(Collectors.toList()));
+        MatchAllQueryBuilder matchAllQueryBuilder = QueryBuilders.matchAllQuery();
+        AggregationBuilder baseSpitAgg = AggregationBuilders.filter(baseSplit.getSplitName(),matchAllQueryBuilder);
 
         //add subaggregations for each segment
         for (SegmentRanges range : ranges)
         {
-          TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery(segmentsESFieldName, range.getID());
+          TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery(stratumESFieldName+"."+segmentationDimensionRanges.getGUIManagedObjectID(), range.getID());
           baseSpitAgg.subAggregation(AggregationBuilders.filter(range.getName(),termQueryBuilder));
         }
 
@@ -2070,7 +2177,7 @@ public class GUIManagerGeneral extends GUIManager
       for(JSONObject responseBaseSplit : responseBaseSplits)
       {
         ParsedAggregation splitAgg = resultAggs.get((String) responseBaseSplit.get("splitName"));
-        responseBaseSplit.put("count",((ParsedFilter)splitAgg).getDocCount());
+       // responseBaseSplit.put("count",((ParsedFilter)splitAgg).getDocCount());
         for(JSONObject responseSegment : (List<JSONObject>)responseBaseSplit.get("segments"))
         {
           ParsedFilter segmentFilter = ((ParsedFilter)splitAgg).getAggregations().get((String)responseSegment.get("name"));
