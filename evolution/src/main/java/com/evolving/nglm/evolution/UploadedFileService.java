@@ -367,6 +367,7 @@ public class UploadedFileService extends GUIService
                           {
                             String dataType = getDatatype(header);
                             String variableName = getVaribaleName(header);
+                            log.info("RAJ K header {}, dataType {}, variableName {}", header, dataType, variableName);
                             variableDatatypes.put(variableName, dataType);
                             variables.add(variableName);
                           }
@@ -407,7 +408,7 @@ public class UploadedFileService extends GUIService
         //
         
         ((UploadedFile) guiManagedObject).addMetaData("variables", JSONUtilities.encodeObject(variableDatatypes));
-        log.info("RAJ K variables {} ", variables);
+        log.info("RAJ K variableDatatypes {} ", variableDatatypes);
       }
 
     //
