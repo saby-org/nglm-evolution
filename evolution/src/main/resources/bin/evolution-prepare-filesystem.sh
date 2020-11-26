@@ -306,6 +306,7 @@ do
    cat $DEPLOY_ROOT/config/logger/log4j-reportscheduler.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-reportscheduler-$KEY.xml
    scp $DEPLOY_ROOT/config/logger/log4j-reportscheduler-$KEY.xml $HOST:$NGLM_CONFIG_LOGS/log4j-reportscheduler-$KEY.xml
    rm -f $DEPLOY_ROOT/config/logger/log4j-reportscheduler-$KEY.xml
+
       ssh $HOST "
       mkdir -p $NGLM_REPORTS
    "
@@ -317,9 +318,9 @@ done
 
 if [ "$DATACUBEMANAGER_ENABLED" = "true" ]; then
    export HOST=$DATACUBEMANAGER_HOST
-   cat $DEPLOY_ROOT/config/logger/log4j-datacubemanager.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-datacubemanager.xml
-   scp $DEPLOY_ROOT/config/logger/log4j-datacubemanager.xml $HOST:$NGLM_CONFIG_LOGS/log4j-datacubemanager.xml
-   rm -f $DEPLOY_ROOT/config/logger/log4j-datacubemanager.xml
+   cat $DEPLOY_ROOT/config/logger/log4j-datacubemanager.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-datacubemanager-001.xml
+   scp $DEPLOY_ROOT/config/logger/log4j-datacubemanager-001.xml $HOST:$NGLM_CONFIG_LOGS/log4j-datacubemanager.xml
+   rm -f $DEPLOY_ROOT/config/logger/log4j-datacubemanager-001.xml
 fi
 
 
