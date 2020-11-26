@@ -1622,7 +1622,18 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    //jsonRoot.put("id", "fake-id"); // fill segmentationDimensionID with anything
+    boolean evaluateBySegmentId = false;
+
+    if(JSONUtilities.decodeString(jsonRoot,"id")== null)
+    {
+      evaluateBySegmentId = false;
+      jsonRoot.put("id","new_dimension");
+    }
+    else
+    {
+      evaluateBySegmentId = true;
+    }
+
     SegmentationDimensionRanges segmentationDimensionRanges = null;
     try
       {
@@ -1655,18 +1666,6 @@ public class GUIManagerGeneral extends GUIManager
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
       }
-
-    boolean evaluateBySegmentId = false;
-
-    if(JSONUtilities.decodeString(jsonRoot,"id")== null)
-    {
-      evaluateBySegmentId = false;
-      jsonRoot.put("id","new_dimension");
-    }
-    else
-    {
-      evaluateBySegmentId = true;
-    }
 
     if(evaluateBySegmentId)
     {
