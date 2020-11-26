@@ -239,7 +239,6 @@ public class GUIManager
     getCountBySegmentationRanges("getCountBySegmentationRanges"),
     getCountBySegmentationRangesBySegmentID("getCountBySegmentationRangesBySegmentID"),
     getCountBySegmentationEligibility("getCountBySegmentationEligibility"),
-    getCountBySegmentationEligibilityBySegmentId("getCountBySegmentationEligibilityBySegmentId"),
     evaluateProfileCriteria("evaluateProfileCriteria"),
     getUCGDimensionSummaryList("getUCGDimensionSummaryList"),
     getPointList("getPointList"),
@@ -1843,7 +1842,6 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCountBySegmentationRanges", new APISimpleHandler(API.getCountBySegmentationRanges));
         restServer.createContext("/nglm-guimanager/getCountBySegmentationRangesBySegmentID", new APISimpleHandler(API.getCountBySegmentationRangesBySegmentID));
         restServer.createContext("/nglm-guimanager/getCountBySegmentationEligibility", new APISimpleHandler(API.getCountBySegmentationEligibility));
-        restServer.createContext("/nglm-guimanager/getCountBySegmentationEligibilityBySegmentId", new APISimpleHandler(API.getCountBySegmentationEligibilityBySegmentId));
         restServer.createContext("/nglm-guimanager/evaluateProfileCriteria", new APISimpleHandler(API.evaluateProfileCriteria));
         restServer.createContext("/nglm-guimanager/getUCGDimensionSummaryList", new APISimpleHandler(API.getUCGDimensionSummaryList));
         restServer.createContext("/nglm-guimanager/getPointList", new APISimpleHandler(API.getPointList));
@@ -2843,10 +2841,6 @@ public class GUIManager
 
                 case getCountBySegmentationEligibility:
                   jsonResponse = guiManagerGeneral.processGetCountBySegmentationEligibility(userID, jsonRoot);
-                  break;
-
-                case getCountBySegmentationEligibilityBySegmentId:
-                  jsonResponse = guiManagerGeneral.processGetCountBySegmentationEligibilityBySegmentId(userID, jsonRoot);
                   break;
 
                 case evaluateProfileCriteria:

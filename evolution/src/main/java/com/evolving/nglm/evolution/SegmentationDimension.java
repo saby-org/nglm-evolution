@@ -20,6 +20,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import java.util.List;
+import java.util.Optional;
 
 public abstract class SegmentationDimension extends GUIManagedObject
 {
@@ -260,4 +261,6 @@ public abstract class SegmentationDimension extends GUIManagedObject
       }
     return result;
   }
+
+  public abstract boolean getSegmentsConditionEqual(SegmentationDimension dimension);
 }
