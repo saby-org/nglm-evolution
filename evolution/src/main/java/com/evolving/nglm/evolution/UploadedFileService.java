@@ -37,6 +37,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -319,8 +320,8 @@ public class UploadedFileService extends GUIService
         UploadedFile uploadededFile = (UploadedFile) guiManagedObject;
         uploadededFile.validate();
         
-        Map<String, String> variableDatatypes = new LinkedHashMap<String, String>();
         ArrayList<String> variables = new ArrayList<String>();
+        ArrayList<JSONObject> valiablesJSON = new ArrayList<JSONObject>();
         
         //
         //  scan and validate
@@ -358,7 +359,7 @@ public class UploadedFileService extends GUIService
                             //
                             
                             Map<String, AlternateID> alternateIDs = Deployment.getAlternateIDs();
-                            if (alternateIDs.get(header) == null) new GUIManagerException("invalid alternateID " + header, "supported alternateIDs are " + alternateIDs.keySet());
+                            if (alternateIDs.get(header) == null) throw new GUIManagerException("invalid alternateID " + header, "supported alternateIDs are " + alternateIDs.keySet());
                             variables.add(header);
                             uploadededFile.setCustomerAlternateID(header);
                             isFirstColumn = false;
@@ -367,8 +368,10 @@ public class UploadedFileService extends GUIService
                           {
                             String dataType = getDatatype(header);
                             String variableName = getVaribaleName(header);
-                            log.info("RAJ K header {}, dataType {}, variableName {}", header, dataType, variableName);
-                            variableDatatypes.put(variableName, dataType);
+                            HashMap<String, String> variablesDataTypes = new LinkedHashMap<String, String>();
+                            variablesDataTypes.put("variableName", variableName);
+                            variablesDataTypes.put("dataType", dataType);
+                            valiablesJSON.add(JSONUtilities.encodeObject(variablesDataTypes));
                             variables.add(variableName);
                           }
                       }
@@ -388,7 +391,7 @@ public class UploadedFileService extends GUIService
                         if (!isFirstColumn)
                           {
                             String variableName = variables.get(index);
-                            String dataType = variableDatatypes.get(variableName);
+                            String dataType = getDataType(variableName, valiablesJSON);
                             CriterionDataType CriterionDataType = EvaluationCriterion.CriterionDataType.fromExternalRepresentation(dataType);
                             validateValue(variableName, CriterionDataType, value);
                           }
@@ -407,8 +410,9 @@ public class UploadedFileService extends GUIService
         // variables
         //
         
-        ((UploadedFile) guiManagedObject).addMetaData("variables", JSONUtilities.encodeObject(variableDatatypes));
-        log.info("RAJ K variableDatatypes {} ", variableDatatypes);
+        HashMap<String, Object> fileVariables = new LinkedHashMap<String, Object>();
+        fileVariables.put("fileVariables", JSONUtilities.encodeArray(valiablesJSON));
+        ((UploadedFile) guiManagedObject).addMetaData("variables", JSONUtilities.encodeObject(fileVariables));
       }
 
     //
@@ -418,6 +422,22 @@ public class UploadedFileService extends GUIService
     putGUIManagedObject(guiManagedObject, now, newObject, userID);  
   }
   
+  private String getDataType(String variableName, ArrayList<JSONObject> valiablesJSON)
+  {
+    String result = null;
+    for (JSONObject variableJSON : valiablesJSON)
+      {
+        String varName = JSONUtilities.decodeString(variableJSON, "variableName", true);
+        String dataType = JSONUtilities.decodeString(variableJSON, "dataType", true);
+        if (variableName.equals(varName))
+          {
+            result = dataType;
+            break;
+          }
+      }
+    return result;
+  }
+
   private void validateValue(String variableName, CriterionDataType criterionDataType, String rawValue) throws GUIManagerException
   {
     log.debug("validateValue {}, {}, {}", variableName, criterionDataType, rawValue);
