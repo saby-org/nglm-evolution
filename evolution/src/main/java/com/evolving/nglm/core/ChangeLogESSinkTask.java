@@ -65,7 +65,7 @@ public abstract class ChangeLogESSinkTask<T> extends SimpleESSinkTask
         Object guiManagedObjectValue = sinkRecord.value();
         Schema guiManagedObjectValueSchema = sinkRecord.valueSchema();
         GUIManagedObject guiManagedObject = GUIManagedObject.commonSerde().unpack(new SchemaAndValue(guiManagedObjectValueSchema, guiManagedObjectValue));
-        if (guiManagedObject.getDeleted()) {
+        if (guiManagedObject.getDeleted() && (getDocumentIndexName(item).equals("mapping_basemanagement") || getDocumentIndexName(item).equals("mapping_journeys") || getDocumentIndexName(item).equals("mapping_journeyobjective"))) {
           try {
             DeleteRequest deleteRequest = new DeleteRequest(getDocumentIndexName(item), getDocumentID(item));
             deleteRequest.id(getDocumentID(item));
