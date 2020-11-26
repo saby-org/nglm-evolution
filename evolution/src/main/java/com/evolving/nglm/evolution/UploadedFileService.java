@@ -415,7 +415,7 @@ public class UploadedFileService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(guiManagedObject, now, newObject, userID);   
+    putGUIManagedObject(guiManagedObject, now, newObject, userID);  
   }
   
   private void validateValue(String variableName, CriterionDataType criterionDataType, String rawValue) throws GUIManagerException

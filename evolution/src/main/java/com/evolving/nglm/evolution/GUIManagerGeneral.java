@@ -4615,23 +4615,42 @@ public class GUIManagerGeneral extends GUIManager
                     break;
                 }
               }
-            
+          }
+        else
+          {
+            jsonResponse.put("responseCode", "systemError");
+            jsonResponse.put("responseMessage", responseText);
           }
         
+        //
+        //  log
+        //
+
+        log.debug("API (raw response): {}", jsonResponse.toString());
+        
+        //
+        //  send
+        //
+
+        exchange.sendResponseHeaders(200, 0);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(jsonResponse.toString());
+        writer.close();
+        exchange.close();
       }
     catch (Exception e)
-    { 
-      StringWriter stackTraceWriter = new StringWriter();
-      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-      log.error("Failed to write file REST api: {}", stackTraceWriter.toString());   
-      jsonResponse.put("responseCode", "systemError");
-      jsonResponse.put("responseMessage", e.getMessage());
-      exchange.sendResponseHeaders(200, 0);
-      BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
-      writer.write(jsonResponse.toString());
-      writer.close();
-      exchange.close();
-    } 
+      {
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error("Failed to write file REST api: {}", stackTraceWriter.toString());
+        jsonResponse.put("responseCode", "systemError");
+        jsonResponse.put("responseMessage", e.getMessage());
+        exchange.sendResponseHeaders(200, 0);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(jsonResponse.toString());
+        writer.close();
+        exchange.close();
+      } 
   }
  
   /*****************************************
