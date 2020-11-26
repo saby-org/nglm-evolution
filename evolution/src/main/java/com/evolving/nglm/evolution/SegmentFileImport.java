@@ -107,6 +107,11 @@ public class SegmentFileImport implements Segment
   public String getName() { return name; }
   public boolean getDependentOnExtendedSubscriberProfile() { return false; }
 
+  @Override public boolean getSegmentConditionEqual(Segment segment)
+  {
+    return true;
+  }
+
   /*****************************************
   *
   *  serde
