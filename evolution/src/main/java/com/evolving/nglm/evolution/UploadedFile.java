@@ -107,6 +107,7 @@ public class UploadedFile extends GUIManagedObject
 
   public void setMetaData(Map<String, JSONObject> metaData) { this.metaData = (metaData != null) ? metaData : new HashMap<String,JSONObject>(); }
   public void setApplicationID(String applicationID){ this.applicationID = applicationID; }
+  public void setCustomerAlternateID(String customerAlternateID){ this.customerAlternateID = customerAlternateID; }
   
   /*****************************************
   *

@@ -435,6 +435,7 @@ public class GUIManager
     getCustomerLoyaltyPrograms("getCustomerLoyaltyPrograms"),
     refreshUCG("refreshUCG"),
     putUploadedFile("putUploadedFile"),
+    putUploadedFileWithVariables("putUploadedFileWithVariables"),
     getUploadedFileList("getUploadedFileList"),
     getUploadedFileSummaryList("getUploadedFileSummaryList"),
     removeUploadedFile("removeUploadedFile"),
@@ -2049,6 +2050,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getUploadedFileSummaryList", new APISimpleHandler(API.getUploadedFileSummaryList));
         restServer.createContext("/nglm-guimanager/removeUploadedFile", new APISimpleHandler(API.removeUploadedFile));
         restServer.createContext("/nglm-guimanager/putUploadedFile", new APIComplexHandler(API.putUploadedFile));
+        restServer.createContext("/nglm-guimanager/putUploadedFileWithVariables", new APIComplexHandler(API.putUploadedFileWithVariables));
         restServer.createContext("/nglm-guimanager/getCustomerAlternateIDs", new APISimpleHandler(API.getCustomerAlternateIDs));
         restServer.createContext("/nglm-guimanager/getCustomerAvailableCampaigns", new APISimpleHandler(API.getCustomerAvailableCampaigns));
         restServer.createContext("/nglm-guimanager/getTargetList", new APISimpleHandler(API.getTargetList));
@@ -4133,6 +4135,7 @@ public class GUIManager
         switch (api)
           {
             case putUploadedFile:
+            case putUploadedFileWithVariables:
               break;
 
             default:
@@ -4224,6 +4227,10 @@ public class GUIManager
               {
                 case putUploadedFile:
                   guiManagerGeneral.processPutFile(jsonResponse, exchange);
+                  break;
+                  
+                case putUploadedFileWithVariables:
+                  guiManagerGeneral.processPutUploadedFileWithVariables(jsonResponse, exchange);
                   break;
 
                 case downloadReport:

@@ -6,10 +6,17 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
+import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import org.slf4j.Logger;
@@ -29,8 +36,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -56,6 +66,7 @@ public class UploadedFileService extends GUIService
 
   private UploadedFileListener uploadedFileListener = null;
   public static final String basemanagementApplicationID = "101";
+  public static final String DATATYPE_VRIABLE_PATTER = "\\<(.*?)\\>";  // <String>Name, <Int>Years, <String>Gift
 
   /*****************************************
   *
@@ -256,6 +267,232 @@ public class UploadedFileService extends GUIService
     putGUIManagedObject(guiManagedObject, now, newObject, userID);   
   }
   
+  /*****************************************
+  *
+  *  putUploadedFile
+  *
+  *****************************************/
+
+  public void putUploadedFileWithVariables(GUIManagedObject guiManagedObject, InputStream inputStrm, String filename, boolean newObject, String userID) throws GUIManagerException, IOException
+  {
+    //
+    //  now
+    //
+
+    Date now = SystemTime.getCurrentTime();
+    FileOutputStream destFile = null;
+    try {
+
+      //
+      // store file
+      //
+
+      destFile = new FileOutputStream(new File(UploadedFile.OUTPUT_FOLDER+filename));
+      byte[] bytes = new byte[1024];
+      int readSize = inputStrm.read(bytes);
+      while(readSize > 0) {
+        byte[] finalArray = new byte[readSize];
+        for(int i = 0; i < readSize ; i++) {
+          finalArray[i] = bytes[i];           
+        }
+        destFile.write(finalArray);
+        readSize = inputStrm.read(bytes);
+      }
+    }catch(Exception e) {
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.error("Exception saving file: putUploadedFileWithVariables API: {}", stackTraceWriter.toString());
+      removeGUIManagedObject(guiManagedObject.getGUIManagedObjectID(), now, userID);
+    }finally {
+      if(destFile != null) {
+        destFile.flush();
+        destFile.close();
+      }
+    }
+    
+    //
+    // validate 
+    //
+    
+    if (guiManagedObject instanceof UploadedFile)
+      {
+        UploadedFile uploadededFile = (UploadedFile) guiManagedObject;
+        uploadededFile.validate();
+        
+        Map<String, String> variableDatatypes = new LinkedHashMap<String, String>();
+        ArrayList<String> variables = new ArrayList<String>();
+        
+        //
+        //  scan and validate
+        //
+        
+        List<String> lines = new ArrayList<String>();
+        
+        //
+        //  read file
+        //
+        
+        try (Stream<String> stream = Files.lines(Paths.get(UploadedFile.OUTPUT_FOLDER + filename)))
+          {
+            lines = stream.filter(line -> (line != null && !line.trim().isEmpty())).map(String::trim).collect(Collectors.toList());
+            boolean isHeader = true;
+            for (String line : lines)
+              {
+                line = line.trim();
+                if (isHeader)
+                  {
+                    //
+                    //  validate and prepare the variables
+                    //
+                    
+                    isHeader = false;
+                    log.info("putUploadedFileWithVariables header {}", line);
+                    String headers[] = line.split(Deployment.getUploadedFileSeparator(), -1);
+                    boolean isFirstColumn = true;
+                    for (String header : headers)
+                      {
+                        header = header.trim();
+                        if (isFirstColumn)
+                          {
+                            //
+                            //  first column is for alternteID - validate and set alternateID
+                            //
+                            
+                            Map<String, AlternateID> alternateIDs = Deployment.getAlternateIDs();
+                            if (alternateIDs.get(header) == null) new GUIManagerException("invalid alternateID " + header, "supported alternateIDs are " + alternateIDs.keySet());
+                            variables.add(header);
+                            uploadededFile.setCustomerAlternateID(header);
+                            isFirstColumn = false;
+                          }
+                        else
+                          {
+                            String dataType = getDatatype(header);
+                            String variableName = getVaribaleName(header);
+                            variableDatatypes.put(variableName, dataType);
+                            variables.add(variableName);
+                          }
+                      }
+                  }
+                else
+                  {
+                    //
+                    //  validate the data type value
+                    //
+                    
+                    String values[] = line.split(Deployment.getUploadedFileSeparator(), -1);
+                    boolean isFirstColumn = true;
+                    int index = 0;
+                    for (String value : values)
+                      {
+                        value = value.trim();
+                        if (!isFirstColumn)
+                          {
+                            String variableName = variables.get(index);
+                            String dataType = variableDatatypes.get(variableName);
+                            CriterionDataType CriterionDataType = EvaluationCriterion.CriterionDataType.fromExternalRepresentation(dataType);
+                            validateValue(variableName, CriterionDataType, value);
+                          }
+                        isFirstColumn = false;
+                        index++;
+                      }
+                    log.info("putUploadedFileWithVariables line {}", line);
+                  }
+              }
+          } 
+        catch (IOException e)
+          {
+            log.warn("UploadedFileService.putUploadedFileWithVariables(problem with file parsing)", e);
+          }
+        
+        //
+        // variables
+        //
+        
+        ((UploadedFile) guiManagedObject).addMetaData("variables", JSONUtilities.encodeObject(variableDatatypes));
+      }
+
+    //
+    //  put
+    //
+
+    putGUIManagedObject(guiManagedObject, now, newObject, userID);   
+  }
+  
+  private void validateValue(String variableName, CriterionDataType criterionDataType, String rawValue) throws GUIManagerException
+  {
+    switch (criterionDataType)
+    {
+      case StringCriterion:
+        break;
+        
+      case IntegerCriterion:
+        try
+          {
+            Integer.parseInt(rawValue);
+          }
+        catch(Exception ex)
+          {
+            throw new GUIManagerException("bad value in " + criterionDataType, "invalid " + criterionDataType + " value " + rawValue + " for variable " + variableName + " in file line no ");
+          }
+        break;
+        
+      case DoubleCriterion:
+        try
+          {
+            Integer.parseInt(rawValue);
+          }
+      catch(Exception ex)
+        {
+          throw new GUIManagerException("bad value in " + criterionDataType, "invalid " + criterionDataType + " value " + rawValue + " for variable " + variableName + " in file line no ");
+        }
+        break;
+        
+      case DateCriterion:
+        try 
+        {
+          GUIManagedObject.parseDateField(rawValue);
+        }
+      catch(JSONUtilitiesException ex)
+        {
+          throw new GUIManagerException("invaid date format", "invalid dateString " + rawValue + " for variable " + variableName + " in file line no ");
+        }
+        break;
+        
+      case TimeCriterion:
+        String[] args = rawValue.split(":");
+        if (args.length != 3) 
+          {
+            throw new GUIManagerException("invaid time format", "invalid timeString " + rawValue + " for variable " + variableName + " in file line no ");
+          }
+        break;
+
+      default:
+        throw new GUIManagerException("datatype not supported", "invalid dataType " + criterionDataType + " for variable " + variableName + " in file line no ");
+    }
+    
+  }
+
+  private String getVaribaleName(String header)
+  {
+    String result = null;
+    Pattern pattern = Pattern.compile(DATATYPE_VRIABLE_PATTER);
+    Matcher matcher = pattern.matcher(header);
+    if (matcher.find())
+      {
+        result = header.replaceAll(matcher.group(0), "");
+      }
+    return result;
+  }
+
+  private String getDatatype(String header)
+  {
+    String result = null;
+    Pattern pattern = Pattern.compile(DATATYPE_VRIABLE_PATTER);
+    Matcher matcher = pattern.matcher(header);
+    if (matcher.find()) result = matcher.group(1);
+    return result;
+  }
+
   /*****************************************
   *
   *  deleteUploadedFile

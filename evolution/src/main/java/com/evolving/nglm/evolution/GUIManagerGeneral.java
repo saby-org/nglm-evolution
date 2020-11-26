@@ -4400,6 +4400,239 @@ public class GUIManagerGeneral extends GUIManager
         exchange.close();
       } 
   }
+  
+  /*****************************************
+  *
+  *  processPutUploadedFileWithVariables
+  *
+  *****************************************/
+
+  void processPutUploadedFileWithVariables(JSONObject jsonResponse, HttpExchange exchange) throws IOException
+  {
+    
+    /****************************************
+    *
+    *  response map and object
+    *
+    ****************************************/
+
+    JSONObject jsonRoot = null;
+    String fileID = null;
+    String userID = null;
+    String responseText = null;
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  check incoming request
+    *
+    ****************************************/
+
+    //
+    //  contentType
+    //
+
+    String contentType = exchange.getRequestHeaders().getFirst("Content-Type"); 
+    if(contentType == null)
+      { 
+        responseText = "Content-Type is null";    
+      }
+    else if (!contentType.startsWith(MULTIPART_FORM_DATA))
+      { 
+        responseText = "Message is not multipart/form-data";
+      } 
+
+    //
+    //  contentLength
+    //
+
+    String contentLengthString = exchange.getRequestHeaders().getFirst("Content-Length"); 
+    if(contentLengthString == null)
+      { 
+        responseText = "Content of message is null";  
+      } 
+
+    /****************************************
+    *
+    *  apache FileUpload API
+    *
+    ****************************************/
+
+    final InputStream requestBodyStream = exchange.getRequestBody(); 
+    final String contentEncoding = exchange.getRequestHeaders().getFirst("Content-Encoding");
+    FileUpload upload = new FileUpload(); 
+    FileItemIterator fileItemIterator; 
+    
+    try
+      {
+        fileItemIterator = upload.getItemIterator(new RequestContext()
+        { 
+          public String getCharacterEncoding() { return contentEncoding; } 
+          public String getContentType() { return contentType; } 
+          public int getContentLength() { return 0; } 
+          public InputStream getInputStream() throws IOException { return requestBodyStream; }
+        }); 
+
+        if (!fileItemIterator.hasNext())
+          { 
+            responseText = "Body is empty";
+          }
+
+        //
+        // here we will extract the meta data of the request and the file
+        //
+        
+        if (responseText == null)
+          {
+            boolean uploadFile = false;
+            while (fileItemIterator.hasNext())
+              {
+                FileItemStream fis = fileItemIterator.next();
+                String fieldName = fis.getFieldName();
+                switch (fieldName)
+                {
+                  case FILE_UPLOAD_META_DATA:
+                    InputStream streams = fis.openStream();
+                    String jsonAsString = Streams.asString(streams, "UTF-8");
+                    jsonRoot = (JSONObject) (new JSONParser()).parse(jsonAsString);
+                    userID = JSONUtilities.decodeString(jsonRoot, "userID", true);
+                    if(!jsonRoot.containsKey("id"))
+                      {
+                        fileID = uploadedFileService.generateFileID();
+                      }
+                    else
+                      {
+                        fileID = JSONUtilities.decodeString(jsonRoot, "id", true);
+                      }
+                    jsonRoot.put("id", fileID);
+                    uploadFile = true;
+                    break;
+                    
+                  case FILE_REQUEST:
+                    if (uploadFile)
+                      {
+                        // converted the meta data and now attempting to save the file locally
+                        //
+
+                        long epoch = epochServer.getKey();
+
+                        /*****************************************
+                         *
+                         * existing UploadedFile
+                         *
+                         *****************************************/
+                        
+                        GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(fileID);
+                        try
+                          {
+                            /****************************************
+                            *
+                            *  instantiate new UploadedFile
+                            *
+                            ****************************************/
+
+                            UploadedFile uploadedFile = new UploadedFile(jsonRoot, epoch, existingFileUpload);
+                            
+                            /*****************************************
+                            *
+                            *  store UploadedFile
+                            *
+                            *****************************************/
+                            
+                            uploadedFileService.putUploadedFileWithVariables(uploadedFile, fis.openStream(), uploadedFile.getDestinationFilename(), (uploadedFile == null), userID);
+                            
+                            /*****************************************
+                            *
+                            *  revalidate dependent objects
+                            *
+                            *****************************************/
+
+                            revalidateTargets(now);
+
+                            /*****************************************
+                            *
+                            *  response
+                            *
+                            *****************************************/
+                            
+                            jsonResponse.put("id", fileID);
+                            jsonResponse.put("accepted", true);
+                            jsonResponse.put("valid", true);
+                            jsonResponse.put("processing", true);
+                            if(uploadedFile.getMetaData() != null && uploadedFile.getMetaData().get("variables") != null) 
+                              {
+                                jsonResponse.put("variables", uploadedFile.getMetaData().get("variables"));
+                              }
+                            jsonResponse.put("responseCode", "ok");
+                          }
+                        catch (JSONUtilitiesException|GUIManagerException e)
+                        {
+                          //
+                          //  incompleteObject
+                          //
+
+                          IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+                          //
+                          //  store
+                          //
+
+                          uploadedFileService.putIncompleteUploadedFile(incompleteObject, (existingFileUpload == null), userID);
+
+                          //
+                          //  revalidate dependent objects
+                          //
+
+                          revalidateTargets(now);
+
+                          //
+                          //  log
+                          //
+
+                          StringWriter stackTraceWriter = new StringWriter();
+                          e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                          log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+                          //
+                          //  response
+                          //
+
+                          jsonResponse.put("id", incompleteObject.getGUIManagedObjectID());
+                          jsonResponse.put("responseCode", "fileNotValid");
+                          jsonResponse.put("responseMessage", e.getMessage());
+                          jsonResponse.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+                        }
+                      }
+
+                  default:
+                    break;
+                }
+              }
+            
+          }
+        
+      }
+    catch (Exception e)
+    { 
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.error("Failed to write file REST api: {}", stackTraceWriter.toString());   
+      jsonResponse.put("responseCode", "systemError");
+      jsonResponse.put("responseMessage", e.getMessage());
+      exchange.sendResponseHeaders(200, 0);
+      BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+      writer.write(jsonResponse.toString());
+      writer.close();
+      exchange.close();
+    } 
+  }
  
   /*****************************************
   *
