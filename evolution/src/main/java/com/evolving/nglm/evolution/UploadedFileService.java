@@ -337,8 +337,10 @@ public class UploadedFileService extends GUIService
           {
             lines = stream.filter(line -> (line != null && !line.trim().isEmpty())).map(String::trim).collect(Collectors.toList());
             boolean isHeader = true;
+            int lineNumber = 0;
             for (String line : lines)
               {
+                lineNumber++;
                 line = line.trim();
                 if (isHeader)
                   {
@@ -393,7 +395,7 @@ public class UploadedFileService extends GUIService
                             String variableName = variables.get(index);
                             String dataType = getDataType(variableName, valiablesJSON);
                             CriterionDataType CriterionDataType = EvaluationCriterion.CriterionDataType.fromExternalRepresentation(dataType);
-                            validateValue(variableName, CriterionDataType, value);
+                            validateValue(variableName, CriterionDataType, value, lineNumber);
                           }
                         isFirstColumn = false;
                         index++;
@@ -438,7 +440,7 @@ public class UploadedFileService extends GUIService
     return result;
   }
 
-  private void validateValue(String variableName, CriterionDataType criterionDataType, String rawValue) throws GUIManagerException
+  private void validateValue(String variableName, CriterionDataType criterionDataType, String rawValue, int lineNumber) throws GUIManagerException
   {
     log.debug("validateValue {}, {}, {}", variableName, criterionDataType, rawValue);
     switch (criterionDataType)
@@ -453,18 +455,18 @@ public class UploadedFileService extends GUIService
           }
         catch(Exception ex)
           {
-            throw new GUIManagerException("bad value in " + criterionDataType, "invalid " + criterionDataType + " value " + rawValue + " for variable " + variableName + " in file line no ");
+            throw new GUIManagerException("bad value in " + criterionDataType, "invalid " + criterionDataType + " value " + rawValue + " for variable " + variableName + " in file line no " + lineNumber);
           }
         break;
         
       case DoubleCriterion:
         try
           {
-            Integer.parseInt(rawValue);
+            Double.parseDouble(rawValue);
           }
       catch(Exception ex)
         {
-          throw new GUIManagerException("bad value in " + criterionDataType, "invalid " + criterionDataType + " value " + rawValue + " for variable " + variableName + " in file line no ");
+          throw new GUIManagerException("bad value in " + criterionDataType, "invalid " + criterionDataType + " value " + rawValue + " for variable " + variableName + " in file line no " + lineNumber);
         }
         break;
         
@@ -475,7 +477,7 @@ public class UploadedFileService extends GUIService
         }
       catch(JSONUtilitiesException ex)
         {
-          throw new GUIManagerException("invaid date format", "invalid dateString " + rawValue + " for variable " + variableName + " in file line no ");
+          throw new GUIManagerException("invaid date format", "invalid dateString " + rawValue + " for variable " + variableName + " in file line no " + lineNumber);
         }
         break;
         
@@ -483,12 +485,12 @@ public class UploadedFileService extends GUIService
         String[] args = rawValue.split(":");
         if (args.length != 3) 
           {
-            throw new GUIManagerException("invaid time format", "invalid timeString " + rawValue + " for variable " + variableName + " in file line no ");
+            throw new GUIManagerException("invaid time format", "invalid timeString " + rawValue + " for variable " + variableName + " in file line no " + lineNumber);
           }
         break;
 
       default:
-        throw new GUIManagerException("datatype not supported", "invalid dataType " + criterionDataType + " for variable " + variableName + " in file line no ");
+        throw new GUIManagerException("datatype not supported", "invalid dataType " + criterionDataType + " for variable " + variableName + " in file line no " + lineNumber);
     }
   }
 
