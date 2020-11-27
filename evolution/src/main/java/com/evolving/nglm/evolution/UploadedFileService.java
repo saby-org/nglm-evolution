@@ -402,6 +402,7 @@ public class UploadedFileService extends GUIService
                       }
                   }
               }
+            uploadededFile.setNumberOfLines(lineNumber);
           } 
         catch (IOException e)
           {
