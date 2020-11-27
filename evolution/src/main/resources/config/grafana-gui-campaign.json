@@ -16,8 +16,8 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 2,
-  "id": 30,
-  "iteration": 1606123449709,
+  "id": 38,
+  "iteration": 1606462589663,
   "links": [],
   "panels": [
     {
@@ -84,7 +84,7 @@
       "pageSize": null,
       "showHeader": true,
       "sort": {
-        "col": 0,
+        "col": 7,
         "desc": true
       },
       "styles": [
@@ -200,7 +200,7 @@
           "unit": "short"
         },
         {
-          "alias": "Initial Target Count",
+          "alias": "Initial Target",
           "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
@@ -977,7 +977,8 @@
               "settings": {
                 "interval": "1d",
                 "min_doc_count": 0,
-                "trimEdges": 0
+                "offset": "-1d",
+                "trimEdges": 1
               },
               "type": "date_histogram"
             }
@@ -1035,7 +1036,8 @@
               "settings": {
                 "interval": "1d",
                 "min_doc_count": 0,
-                "trimEdges": 0
+                "offset": "-1d",
+                "trimEdges": 1
               },
               "type": "date_histogram"
             }
@@ -1053,15 +1055,6 @@
                 }
               },
               "type": "sum"
-            },
-            {
-              "field": "1",
-              "hide": true,
-              "id": "3",
-              "meta": {},
-              "pipelineAgg": "1",
-              "settings": {},
-              "type": "derivative"
             },
             {
               "field": "select field",
@@ -1093,23 +1086,12 @@
               "type": "max"
             },
             {
-              "field": "select field",
-              "id": "6",
+              "field": "1",
+              "id": "7",
               "meta": {},
-              "pipelineVariables": [
-                {
-                  "name": "target",
-                  "pipelineAgg": "1"
-                },
-                {
-                  "name": "ctrl",
-                  "pipelineAgg": "5"
-                }
-              ],
-              "settings": {
-                "script": "params.target*params.ctrl"
-              },
-              "type": "bucket_script"
+              "pipelineAgg": "1",
+              "settings": {},
+              "type": "derivative"
             }
           ],
           "query": "filter.journey:$journey",
@@ -1125,7 +1107,8 @@
               "settings": {
                 "interval": "1d",
                 "min_doc_count": 0,
-                "trimEdges": 0
+                "offset": "-1d",
+                "trimEdges": 1
               },
               "type": "date_histogram"
             }
@@ -1182,7 +1165,8 @@
               "settings": {
                 "interval": "1d",
                 "min_doc_count": 0,
-                "trimEdges": 0
+                "offset": "-1d",
+                "trimEdges": 1
               },
               "type": "date_histogram"
             }
@@ -1239,7 +1223,8 @@
               "settings": {
                 "interval": "1d",
                 "min_doc_count": 0,
-                "trimEdges": 0
+                "offset": "-1d",
+                "trimEdges": 1
               },
               "type": "date_histogram"
             }
@@ -1296,7 +1281,8 @@
               "settings": {
                 "interval": "1d",
                 "min_doc_count": 0,
-                "trimEdges": 0
+                "offset": "-1d",
+                "trimEdges": 1
               },
               "type": "date_histogram"
             }
@@ -2143,7 +2129,8 @@
               "settings": {
                 "interval": "1d",
                 "min_doc_count": 0,
-                "trimEdges": 0
+                "offset": "-1d",
+                "trimEdges": 1
               },
               "type": "date_histogram"
             }
@@ -2355,7 +2342,7 @@
     }
   ],
   "refresh": false,
-  "schemaVersion": 22,
+  "schemaVersion": 21,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -2603,6 +2590,6 @@
   },
   "timezone": "",
   "title": "Campaign Dashboard",
-  "uid": "X5gK27KMk",
-  "version": 11
+  "uid": "X5gK27KMkk",
+  "version": 4
 }
