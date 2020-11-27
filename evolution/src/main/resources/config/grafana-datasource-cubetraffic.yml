@@ -7,9 +7,11 @@ datasources:
   access: proxy
   database: "datacube_journeytraffic-*"
   url: 'http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>'
-  user: "customer"
+  basicAuth: true
+  withCredentials: true
+  basicAuthUser: admin 
   secureJsonData:
-    password: "ev0lv1ng"
+    basicAuthPassword: "<_ELASTICSEARCH_ADMIN_PASSWORD_>"
   jsonData:
     timeField: "timestamp"
     esVersion: 70
