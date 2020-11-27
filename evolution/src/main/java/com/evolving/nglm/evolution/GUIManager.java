@@ -27555,7 +27555,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 if (productObject != null)
                   {
                     Product product = (Product) productObject;
-                    if (product.getSupplierID())
+                    if (product.getSupplierID() != null)
                       {
                         supplierID = product.getSupplierID();
                         response.put("supplierID", supplierID);
@@ -27579,7 +27579,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 if (voucherObject != null)
                   {
                     Voucher voucher = (Voucher) voucherObject;                    
-                    if (voucher.getSupplierID())
+                    if (voucher.getSupplierID() != null)
                       {
                         supplierID = voucher.getSupplierID();
                         response.put("supplierID", supplierID);
