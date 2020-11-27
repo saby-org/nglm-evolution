@@ -27580,9 +27580,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                   {
                     Voucher voucher = (Voucher) voucherObject;
                     supplierID = voucher.getSupplierID();
-                    response.put("supplierID", supplierID);
-                    response.put("offerVoucher", offerVoucher);
-                    break;
+                    if (voucher.getSupplierID())
+                      {
+                        response.put("supplierID", supplierID);
+                        response.put("offerVoucher", offerVoucher);
+                        break;
+                      }
                   }
               }
           }
