@@ -27578,10 +27578,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherId);
                 if (voucherObject != null)
                   {
-                    Voucher voucher = (Voucher) voucherObject;
-                    supplierID = voucher.getSupplierID();
+                    Voucher voucher = (Voucher) voucherObject;                    
                     if (voucher.getSupplierID())
                       {
+                        supplierID = voucher.getSupplierID();
                         response.put("supplierID", supplierID);
                         response.put("offerVoucher", offerVoucher);
                         break;
