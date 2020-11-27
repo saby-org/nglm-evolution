@@ -1059,25 +1059,29 @@ public class EvolutionEngine
 
 	// rekeyed as needed
 	KStream<StringKey, DeliveryRequest> rekeyedDeliveryRequestStream = deliveryRequestStream.map(EvolutionEngine::rekeyDeliveryRequestStream);
-	// predicates/serde for branching by request or reponse and priority
-	Map<String,Predicate<StringKey,DeliveryRequest>> deliveryRequestPredicates = new LinkedHashMap<>();// <topic,predicate>
+	// topics/predicates/serdes for branching by request or reponse and priority
+	// important to keep to 2 list coherent one with the other!
+	LinkedList<String> topics = new LinkedList<>();
+	LinkedList<Predicate<StringKey,DeliveryRequest>> deliveryRequestPredicates = new LinkedList<>();
 	Map<String,ConnectSerde<DeliveryRequest>> deliveryRequestSerdes = new HashMap<>();// <topic,serde>
 	// populate
 	for(DeliveryManagerDeclaration deliveryManagerDeclaration:Deployment.getDeliveryManagers().values()){
 	  for(DeliveryPriority priority:DeliveryPriority.values()){
 	  	if(deliveryManagerDeclaration.isProcessedByEvolutionEngine()){
 	  	  String topic = deliveryManagerDeclaration.getResponseTopic(priority);// a response of a request we did process
-	  	  deliveryRequestPredicates.put(topic,(key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && !value.isPending());
+		  topics.add(topic);
+	  	  deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && !value.isPending());
 	  	  deliveryRequestSerdes.put(topic,(ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde());
 		}
 		String topic = deliveryManagerDeclaration.getRequestTopic(priority);// a request we are doing
-		deliveryRequestPredicates.put(topic,(key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && value.isPending());
+		topics.add(topic);
+		deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && value.isPending());
 		deliveryRequestSerdes.put(topic,(ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde());
 	  }
 	}
 	//branch and sink
-	Iterator<String> topicIterator = deliveryRequestPredicates.keySet().iterator();
-	for(KStream<StringKey,DeliveryRequest> stream:rekeyedDeliveryRequestStream.branch(deliveryRequestPredicates.values().toArray(new Predicate[deliveryRequestPredicates.size()]))){
+	Iterator<String> topicIterator = topics.iterator();
+	for(KStream<StringKey,DeliveryRequest> stream:rekeyedDeliveryRequestStream.branch(deliveryRequestPredicates.toArray(new Predicate[deliveryRequestPredicates.size()]))){
 	  String topic = topicIterator.next();
 	  stream.to(topic,Produced.with(stringKeySerde,deliveryRequestSerdes.get(topic)));
 	}
