@@ -19,6 +19,8 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+import java.util.Objects;
+
 public class SegmentRanges implements Segment
 {
   /*****************************************
@@ -120,6 +122,21 @@ public class SegmentRanges implements Segment
   public Integer getRangeMin() { return range_min; }
   public Integer getRangeMax() { return range_max; }
   public boolean getDependentOnExtendedSubscriberProfile() { return dependentOnExtendedSubscriberProfile; }
+
+  @Override public boolean getSegmentConditionEqual(Segment segment)
+  {
+    //verify if objects comapred are the same type
+    if(segment.getClass().getTypeName() != this.getClass().getTypeName()) return false;
+    //cast parameter to current type
+    SegmentRanges castedSegment = (SegmentRanges)segment;
+    // if range min different segment changed
+    //if (!this.getRangeMin().equals(castedSegment.getRangeMin())) return false;
+    if(!Objects.equals(this.getRangeMin(),castedSegment.getRangeMin())) return false;
+    // if range max different segment changed
+    //if(!this.getRangeMax().equals(castedSegment.getRangeMax())) return false;
+    if(!Objects.equals(this.getRangeMax(),castedSegment.getRangeMax())) return false;
+    return true;
+  }
 
   /*****************************************
   *

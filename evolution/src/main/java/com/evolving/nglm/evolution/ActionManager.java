@@ -37,7 +37,10 @@ public abstract class ActionManager
     ActionManagerContextUpdate,
     TokenUpdate,
     TokenChange,
-    TriggerEvent;
+    TriggerEvent,
+    UpdateProfile,
+    VoucherChange;
+
   }
 
   /*****************************************
@@ -136,11 +139,11 @@ public abstract class ActionManager
   public static String extractWorkflowFeatureID(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, String deliveryRequestSource)
   {
     Journey sourceJourney = (Journey) evolutionEventContext.getJourneyService().getStoredJourney(deliveryRequestSource);
-    if(sourceJourney != null && sourceJourney.getGUIManagedObjectType() == GUIManagedObjectType.Workflow)
+    if(sourceJourney != null && (sourceJourney.getGUIManagedObjectType() == GUIManagedObjectType.Workflow || sourceJourney.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow))
       {
-        if(subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getCallingJourneyRequest() != null)
+        if(subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceFeatureID() != null)
           {
-            deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getCallingJourneyRequest().getDeliveryRequestSource();
+            deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getsourceFeatureID();
           }
         
       }

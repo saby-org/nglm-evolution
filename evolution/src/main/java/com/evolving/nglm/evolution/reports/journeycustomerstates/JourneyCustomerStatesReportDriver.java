@@ -22,11 +22,8 @@ public class JourneyCustomerStatesReportDriver extends ReportDriver
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
     String JOURNEY_ES_INDEX = "journeystatistic-";
-    JourneyService journeyService = new JourneyService(kafka, "JourneyCustomerStatesReport-journeyservice-JourneyCustomerStatesReportMonoDriver", Deployment.getJourneyTopic(), false);
-    journeyService.start();
     log.debug("PHASE 1 : read ElasticSearch");
-    JourneyCustomerStatesReportMonoPhase.main(new String[] { elasticSearch, JOURNEY_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, journeyService, reportGenerationDate);
-    journeyService.stop();
+    JourneyCustomerStatesReportMonoPhase.main(new String[] { elasticSearch, JOURNEY_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
     log.debug("Finished with Journey Customer States Report");
 
   }

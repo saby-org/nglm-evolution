@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.Script;
@@ -27,6 +26,7 @@ import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
 import com.evolving.nglm.evolution.datacubes.mapping.SegmentationDimensionsMap;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
 {
@@ -55,7 +55,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public SubscriberProfileDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, SegmentationDimensionService segmentationDimensionService)
+  public SubscriberProfileDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, SegmentationDimensionService segmentationDimensionService)
   {
     super(datacubeName, elasticsearch);
 
@@ -239,7 +239,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     Date beginningOfTomorrow = RLMDateUtils.truncate(tomorrow, Calendar.DATE, Deployment.getBaseTimeZone());
 
     this.previewMode = false;
-    this.metricTargetDay = DAY_FORMAT.format(yesterday);
+    this.metricTargetDay = RLMDateUtils.printDay(yesterday);
     this.metricTargetDayStartTime = beginningOfYesterday.getTime();
     this.metricTargetDayDuration = beginningOfToday.getTime() - beginningOfYesterday.getTime();
     this.metricTargetDayAfterStartTime = beginningOfToday.getTime();
@@ -249,7 +249,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     // Timestamp & period
     //
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
-    String timestamp = TIMESTAMP_FORMAT.format(endOfYesterday);
+    String timestamp = RLMDateUtils.printTimestamp(endOfYesterday);
     long targetPeriod = beginningOfToday.getTime() - beginningOfYesterday.getTime();    // most of the time 86400000ms (24 hours)
     
     this.run(timestamp, targetPeriod);
@@ -272,7 +272,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     Date beginningOfTwodaysafter = RLMDateUtils.truncate(twodaysafter, Calendar.DATE, Deployment.getBaseTimeZone());
 
     this.previewMode = true;
-    this.metricTargetDay = DAY_FORMAT.format(now);
+    this.metricTargetDay = RLMDateUtils.printDay(now);
     this.metricTargetDayStartTime = beginningOfToday.getTime();
     this.metricTargetDayDuration = beginningOfTomorrow.getTime() - beginningOfToday.getTime();
     this.metricTargetDayAfterStartTime = beginningOfTomorrow.getTime();
@@ -281,7 +281,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     //
     // Timestamp & period
     //
-    String timestamp = TIMESTAMP_FORMAT.format(now);
+    String timestamp = RLMDateUtils.printTimestamp(now);
     long targetPeriod = now.getTime() - beginningOfToday.getTime() + 1; // +1 !
     
     this.run(timestamp, targetPeriod);

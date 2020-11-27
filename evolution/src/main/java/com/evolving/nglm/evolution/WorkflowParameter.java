@@ -111,7 +111,7 @@ public class WorkflowParameter
 
     this.workflowID = JSONUtilities.decodeString(jsonRoot, "workflowID", true);
     Journey workflow = journeyService.getActiveJourney(workflowID, SystemTime.getCurrentTime());
-    workflow = (workflow.getGUIManagedObjectType() == GUIManagedObjectType.Workflow) ? workflow : null;
+    workflow = (workflow.getGUIManagedObjectType() == GUIManagedObjectType.Workflow || workflow.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow) ? workflow : null;
     if (workflow == null)
       {
         throw new GUIManagerException("unknown workflow", workflowID);
@@ -144,6 +144,7 @@ public class WorkflowParameter
         JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
         String parameterID = JSONUtilities.decodeString(parameterJSON, "name", true);
         CriterionField parameter = workflow.getJourneyParameters().get(parameterID);
+        if(parameter == null) { parameter = workflow.getJourneyParameters().get(parameterID.toLowerCase());}
         if (parameter == null) throw new GUIManagerException("unknown workflow parameter", parameterID);
         if (! Journey.isExpressionValuedParameterValue(parameterJSON))
           {

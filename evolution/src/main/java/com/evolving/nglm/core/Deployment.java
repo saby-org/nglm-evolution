@@ -49,7 +49,8 @@ public class Deployment
   private static ZoneId baseZoneId;
   private static String baseLanguage;
   private static String baseCountry;
-  private static boolean generateNumericIDs;
+  private static String evolutionVersion;
+  private static String customerVersion;
   private static Map<String,AlternateID> alternateIDs = new LinkedHashMap<String,AlternateID>();
   private static String assignSubscriberIDsTopic;
   private static String assignExternalSubscriberIDsTopic;
@@ -60,6 +61,7 @@ public class Deployment
   private static String autoProvisionedSubscriberChangeLogTopic;
   private static String rekeyedAutoProvisionedAssignSubscriberIDsStreamTopic;
   private static String cleanupSubscriberTopic;
+  private static Set<String> cleanupSubscriberElasticsearchIndexes = new HashSet<String>();
   private static String externalSubscriberID;
   private static String subscriberTraceControlAlternateID;
   private static boolean subscriberTraceControlAutoProvision;
@@ -68,7 +70,30 @@ public class Deployment
   private static String subscriberTraceTopic;
   private static String simulatedTimeTopic;
   private static Map<String,AutoProvisionEvent> autoProvisionEvents = new LinkedHashMap<String,AutoProvisionEvent>();
-  private static Set<String> subscriberESIndexes = new HashSet<String>();
+  // ELASTICSEARCH (moved in core because it's needed for setup/upgrade process)
+  private static int elasticsearchConnectTimeout;
+  private static int elasticsearchQueryTimeout;
+  private static int elasticsearchScrollSize;
+  private static int elasticSearchScrollKeepAlive;
+  private static String elasticsearchDateFormat;
+  private static int elasticsearchDefaultShards;
+  private static int elasticsearchDefaultReplicas;
+  private static int elasticsearchSubscriberprofileShards;
+  private static int elasticsearchSubscriberprofileReplicas;
+  private static int elasticsearchSnapshotShards;
+  private static int elasticsearchSnapshotReplicas;
+  private static int elasticsearchLiveVoucherShards;
+  private static int elasticsearchLiveVoucherReplicas;
+  private static int elasticsearchRetentionDaysODR;
+  private static int elasticsearchRetentionDaysBDR;
+  private static int elasticsearchRetentionDaysMDR;
+  private static int elasticsearchRetentionDaysTokens;
+  private static int elasticsearchRetentionDaysSnapshots;
+  private static int elasticsearchRetentionDaysJourneys;
+  private static int elasticsearchRetentionDaysCampaigns;
+  private static int elasticsearchRetentionDaysBulkCampaigns;
+  private static int elasticsearchRetentionDaysExpiredVouchers; 
+  private static int elasticsearchRetentionDaysVDR;
 
   //
   //  accessors
@@ -82,7 +107,8 @@ public class Deployment
   public static ZoneId getBaseZoneId() { return baseZoneId; }
   public static String getBaseLanguage() { return baseLanguage; }
   public static String getBaseCountry() { return baseCountry; }
-  public static boolean getGenerateNumericIDs() { return generateNumericIDs; }
+  public static String getEvolutionVersion() { return evolutionVersion!=null?evolutionVersion:"unknown"; }
+  public static String getCustomerVersion() { return customerVersion!=null?customerVersion:"unknown"; }
   public static String getRedisSentinels() { return System.getProperty("redis.sentinels",""); }
   public static Map<String,AlternateID> getAlternateIDs() { return alternateIDs; }
   public static String getAssignSubscriberIDsTopic() { return assignSubscriberIDsTopic; }
@@ -102,7 +128,30 @@ public class Deployment
   public static String getSubscriberTraceTopic() { return subscriberTraceTopic; }
   public static String getSimulatedTimeTopic() { return simulatedTimeTopic; }
   public static Map<String,AutoProvisionEvent> getAutoProvisionEvents() { return autoProvisionEvents; }
-  public static Set<String> getSubscriberESIndexes() { return subscriberESIndexes; }
+
+  // ELASTICSEARCH 
+  public static String getElasticsearchDateFormat() { return elasticsearchDateFormat; }
+  public static int getElasticsearchScrollSize() {return elasticsearchScrollSize; }
+  public static int getElasticSearchScrollKeepAlive() {return elasticSearchScrollKeepAlive; }
+  public static int getElasticsearchDefaultShards() { return elasticsearchDefaultShards; }
+  public static int getElasticsearchDefaultReplicas() { return elasticsearchDefaultReplicas; }
+  public static int getElasticsearchSubscriberprofileShards() { return elasticsearchSubscriberprofileShards; }
+  public static int getElasticsearchSubscriberprofileReplicas() { return elasticsearchSubscriberprofileReplicas; }
+  public static int getElasticsearchSnapshotShards() { return elasticsearchSnapshotShards; }
+  public static int getElasticsearchSnapshotReplicas() { return elasticsearchSnapshotReplicas; }
+  public static int getElasticsearchLiveVoucherShards() { return elasticsearchLiveVoucherShards; }
+  public static int getElasticsearchLiveVoucherReplicas() { return elasticsearchLiveVoucherReplicas; }
+  public static int getElasticsearchRetentionDaysODR() { return elasticsearchRetentionDaysODR; }
+  public static int getElasticsearchRetentionDaysBDR() { return elasticsearchRetentionDaysBDR; }
+  public static int getElasticsearchRetentionDaysMDR() { return elasticsearchRetentionDaysMDR; }
+  public static int getElasticsearchRetentionDaysTokens() { return elasticsearchRetentionDaysTokens; }
+  public static int getElasticsearchRetentionDaysSnapshots() { return elasticsearchRetentionDaysSnapshots; }
+  public static int getElasticsearchRetentionDaysJourneys() { return elasticsearchRetentionDaysJourneys; }
+  public static int getElasticsearchRetentionDaysCampaigns() { return elasticsearchRetentionDaysCampaigns; }
+  public static int getElasticsearchRetentionDaysBulkCampaigns() { return elasticsearchRetentionDaysBulkCampaigns; }
+  public static int getElasticsearchRetentionDaysExpiredVouchers() { return elasticsearchRetentionDaysExpiredVouchers; }  
+  public static Set<String> getCleanupSubscriberElasticsearchIndexes() { return cleanupSubscriberElasticsearchIndexes; }
+  public static int getElasticsearchRetentionDaysVDR() { return elasticsearchRetentionDaysVDR; }
   
   /*****************************************
   *
@@ -459,21 +508,34 @@ public class Deployment
         throw new RuntimeException("deployment", e);
       }
 
-    /*****************************************
-    *
-    *  generateNumericIDs
-    *
-    *****************************************/
+    //
+    //  evolutionVersion
+    //
 
     try
       {
-        generateNumericIDs = JSONUtilities.decodeBoolean(jsonRoot, "generateNumericIDs", Boolean.FALSE);
+    	evolutionVersion = JSONUtilities.decodeString(jsonRoot, "evolutionVersion", Boolean.TRUE);
       }
     catch (JSONUtilitiesException e)
       {
-        throw new RuntimeException("deployment", e);
+        throw new ServerRuntimeException("deployment : evolutionVersion", e);
       }
+    
+    //
+    // customerVersion
+    //
 
+    try
+      {
+    	customerVersion = JSONUtilities.decodeString(jsonRoot, "customerVersion", Boolean.TRUE);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment : customerVersion", e);
+      }
+    
+   
+    
     /*****************************************
     *
     *  subscribermanager configuration
@@ -735,35 +797,73 @@ public class Deployment
       }
 
     //
-    //  subscriberESIndexes
+    //  cleanupSubscriberElasticsearchIndexes
     //
 
     try
       {
         //
-        //  subscriberESIndexes (evolution)
+        //  cleanupSubscriberElasticsearchIndexes (evolution)
         //
 
-        JSONArray subscriberESIndexesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "subscriberESIndexes", new JSONArray());
+        JSONArray subscriberESIndexesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "cleanupSubscriberElasticsearchIndexes", new JSONArray());
         for (int i=0; i<subscriberESIndexesJSON.size(); i++)
           {
-            subscriberESIndexes.add((String) subscriberESIndexesJSON.get(i));
+            cleanupSubscriberElasticsearchIndexes.add((String) subscriberESIndexesJSON.get(i));
           }
 
         //
-        //  deploymentSubscriberESIndexes (deployment)
+        //  deploymentCleanupSubscriberElasticsearchIndexes (deployment)
         //
 
-        JSONArray deploymentSubscriberESIndexesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "deploymentSubscriberESIndexes", new JSONArray());
+        JSONArray deploymentSubscriberESIndexesJSON = JSONUtilities.decodeJSONArray(jsonRoot, "deploymentCleanupSubscriberElasticsearchIndexes", new JSONArray());
         for (int i=0; i<deploymentSubscriberESIndexesJSON.size(); i++)
           {
-            subscriberESIndexes.add((String) deploymentSubscriberESIndexesJSON.get(i));
+            cleanupSubscriberElasticsearchIndexes.add((String) deploymentSubscriberESIndexesJSON.get(i));
           }            
       }
     catch (JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }
+    
+    //
+    // Elasticsearch
+    //
+    try
+      {
+        // Elasticsearch settings
+        elasticsearchDateFormat = JSONUtilities.decodeString(jsonRoot, "elasticsearchDateFormat", true);
+        elasticsearchScrollSize = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchScrollSize", true);
+        elasticSearchScrollKeepAlive = JSONUtilities.decodeInteger(jsonRoot, "elasticSearchScrollKeepAlive", 0);
+        
+        // Elasticsearch shards & replicas
+        elasticsearchDefaultShards = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchDefaultShards", true);
+        elasticsearchDefaultReplicas = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchDefaultReplicas", true);
+        elasticsearchSubscriberprofileShards = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchSubscriberprofileShards", elasticsearchDefaultShards);
+        elasticsearchSubscriberprofileReplicas = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchSubscriberprofileReplicas",elasticsearchDefaultReplicas);
+        elasticsearchSnapshotShards = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchSnapshotShards", elasticsearchDefaultShards);
+        elasticsearchSnapshotReplicas = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchSnapshotReplicas",elasticsearchDefaultReplicas);
+        elasticsearchLiveVoucherShards = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchLiveVoucherShards", elasticsearchDefaultShards);
+        elasticsearchLiveVoucherReplicas = JSONUtilities.decodeInteger(jsonRoot, "elasticsearchLiveVoucherReplicas",elasticsearchDefaultReplicas);
+        
+        // Elasticsearch retention days
+        elasticsearchRetentionDaysODR = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysODR", true);
+        elasticsearchRetentionDaysBDR = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysBDR", true);
+        elasticsearchRetentionDaysMDR = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysMDR", true);
+        elasticsearchRetentionDaysTokens = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysTokens", true);
+        elasticsearchRetentionDaysSnapshots = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysSnapshots", true);
+        elasticsearchRetentionDaysJourneys = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysJourneys", true);
+        elasticsearchRetentionDaysCampaigns = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysCampaigns", true);
+        elasticsearchRetentionDaysBulkCampaigns = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysBulkCampaigns", true);
+        elasticsearchRetentionDaysExpiredVouchers = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysExpiredVouchers", true);
+        elasticsearchRetentionDaysVDR = JSONUtilities.decodeInteger(jsonRoot, "ESRetentionDaysVDR", true);
+      }
+    catch (JSONUtilitiesException|NumberFormatException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
   };
 
   /****************************************

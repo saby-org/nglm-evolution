@@ -6,47 +6,21 @@
 
 package com.evolving.nglm.evolution;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.stream.Collectors;
+
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.JourneyStatus;
-
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.StringKey;
-
-import com.evolving.nglm.core.SystemTime;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.common.TopicPartition;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.stream.Collectors;
 
 public class JourneyService extends GUIService
 {
@@ -76,6 +50,7 @@ public class JourneyService extends GUIService
   *
   *****************************************/
 
+  @Deprecated // groupID not needed
   public JourneyService(String bootstrapServers, String groupID, String journeyTopic, boolean masterService, JourneyListener journeyListener, boolean notifyOnSignificantChange)
   {
     super(bootstrapServers, "JourneyService", groupID, journeyTopic, masterService, getSuperListener(journeyListener), "putJourney", "removeJourney", notifyOnSignificantChange);
@@ -85,6 +60,7 @@ public class JourneyService extends GUIService
   //  constructor
   //
 
+  @Deprecated // groupID not needed
   public JourneyService(String bootstrapServers, String groupID, String journeyTopic, boolean masterService, JourneyListener journeyListener)
   {
     this(bootstrapServers, groupID, journeyTopic, masterService, journeyListener, true);
@@ -94,6 +70,7 @@ public class JourneyService extends GUIService
   //  constructor
   //
 
+  @Deprecated // groupID not needed
   public JourneyService(String bootstrapServers, String groupID, String journeyTopic, boolean masterService)
   {
     this(bootstrapServers, groupID, journeyTopic, masterService, (JourneyListener) null, true);
@@ -139,10 +116,36 @@ public class JourneyService extends GUIService
   @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
   {
     JSONObject fullJSON = getJSONRepresentation(guiManagedObject);
+    
+    //
+    //  recurrence field
+    //
+    
+    boolean recurrence = JSONUtilities.decodeBoolean(fullJSON, "recurrence", Boolean.FALSE);
+    Integer occurrenceNumber =  JSONUtilities.decodeInteger(fullJSON, "occurrenceNumber", recurrence);
+    JSONObject scheduler = JSONUtilities.decodeJSONObject(fullJSON, "scheduler", recurrence);
+    Integer numberOfOccurrences =  null;
+    Integer lastCompletedOccurrenceNumber =  null;
+    if (recurrence)
+      {
+        Collection<Journey> allRecs = getAllRecurrentJourneysByID(guiManagedObject.getGUIManagedObjectID(), true);
+        
+        //
+        //  filter completed
+        //
+        
+        allRecs = allRecs.stream().filter(journey -> JourneyStatus.Complete == getJourneyStatus(journey)).collect(Collectors.toList());
+        numberOfOccurrences =  JSONUtilities.decodeInteger(scheduler, "numberOfOccurrences", recurrence);
+        lastCompletedOccurrenceNumber =  allRecs.size();
+      }
+    
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("status", getJourneyStatus(guiManagedObject).getExternalRepresentation());
-    result.put("recurrence", JSONUtilities.decodeBoolean(fullJSON, "recurrence", false));
-    result.put("occurrenceNumber", JSONUtilities.decodeInteger(fullJSON, "occurrenceNumber", false));
+    result.put("recurrence", recurrence);
+    result.put("occurrenceNumber", occurrenceNumber);
+    result.put("numberOfOccurrences", numberOfOccurrences);
+    result.put("lastCompletedOccurrenceNumber", lastCompletedOccurrenceNumber);
+    
     if (guiManagedObject.getGUIManagedObjectType().equals(GUIManagedObjectType.BulkCampaign))
       {
         result.put("journeyTemplateID", guiManagedObject.getJSONRepresentation().get("journeyTemplateID"));
@@ -165,7 +168,7 @@ public class JourneyService extends GUIService
   public Journey getActiveJourney(String journeyID, Date date) 
   { 
     Journey activeJourney = (Journey) getActiveGUIManagedObject(journeyID, date);
-    if (!Deployment.getAutoApproveGuiObjects() && activeJourney != null && GUIManagedObjectType.Workflow != activeJourney.getGUIManagedObjectType())
+    if (!Deployment.getAutoApproveGuiObjects() && activeJourney != null && GUIManagedObjectType.Workflow != activeJourney.getGUIManagedObjectType()&& GUIManagedObjectType.LoyaltyWorkflow != activeJourney.getGUIManagedObjectType())
       {
         return JourneyStatus.StartedApproved == activeJourney.getApproval() ? activeJourney : null; 
       }

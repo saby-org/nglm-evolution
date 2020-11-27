@@ -10,6 +10,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,13 +26,14 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.http.HttpHost;
+import org.apache.lucene.search.TotalHits;
+import org.apache.lucene.search.TotalHits.Relation;
 import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -42,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class ReportMonoPhase
 {
@@ -54,7 +58,7 @@ public class ReportMonoPhase
   private List<String> subscriberFields;
   private ReportCsvFactory reportFactory;
   private String csvfile;
-  private RestHighLevelClient elasticsearchReaderClient;
+  private ElasticsearchClientAPI elasticsearchReaderClient;
 
   public ReportMonoPhase(String esNode, LinkedHashMap<String, QueryBuilder> esIndex, ReportCsvFactory factory, String csvfile, boolean onlyKeepAlternateIDs, boolean onlyKeepAlternateIDsExtended)
   {
@@ -118,7 +122,7 @@ public class ReportMonoPhase
 
   public boolean startOneToOne()
   {
-    String indexes = "";
+	String indexes = "";
     for (String s : esIndex.keySet())
       indexes += s + " ";
     log.info("Reading data from ES in \"" + indexes + "\" indexes");
@@ -149,6 +153,11 @@ public class ReportMonoPhase
       // need to cut the string to get at least one
       String node = null;
       int port = 0;
+      int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getConnectTimeout();
+      int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getQueryTimeout();
+      String username = null;
+      String password = null;
+      
       if (esNode.contains(","))
         {
           String[] split = esNode.split(",");
@@ -158,6 +167,8 @@ public class ReportMonoPhase
               s.useDelimiter(":");
               node = s.next();
               port = s.nextInt();
+              username = s.next();
+              password = s.next();
               s.close();
             }
         } else
@@ -166,14 +177,16 @@ public class ReportMonoPhase
             s.useDelimiter(":");
             node = s.next();
             port = s.nextInt();
+            username = s.next();
+            password = s.next();
             s.close();
           }
 
-      elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
+      elasticsearchReaderClient = new ElasticsearchClientAPI(node, port, connectTimeout, queryTimeout, username, password);
 
       int i = 0;
       boolean addHeader = true;
-
+      int scroolKeepAlive = getScrollKeepAlive();
       for (Entry<String, QueryBuilder> index : esIndex.entrySet())
         {
           SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(index.getValue());
@@ -188,7 +201,7 @@ public class ReportMonoPhase
           // Read all docs from ES, on esIndex[i]
           // Write to topic, one message per document
 
-          Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
+          Scroll scroll = new Scroll(TimeValue.timeValueSeconds(scroolKeepAlive));
           String[] indicesToRead = getIndices(index.getKey());
 
           //
@@ -206,7 +219,10 @@ public class ReportMonoPhase
           searchRequest.scroll(scroll);
           SearchResponse searchResponse;
           searchResponse = elasticsearchReaderClient.search(searchRequest, RequestOptions.DEFAULT);
-
+          
+          long startBatch = System.currentTimeMillis();
+          int nbMaxTraces = 10; // max number of traces to display at INFO level
+          
           String scrollId = searchResponse.getScrollId(); // always null
           SearchHit[] searchHits = searchResponse.getHits().getHits();
           if (log.isTraceEnabled()) log.trace("searchHits = " + Arrays.toString(searchHits));
@@ -219,7 +235,15 @@ public class ReportMonoPhase
                   log.trace("getTotalShards = " + searchResponse.getTotalShards());
                   log.trace("getTook = " + searchResponse.getTook());
                 }
-                log.info("for " + Arrays.toString(indicesToRead) + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
+              String logMsg = "for " + Arrays.toString(indicesToRead) + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits();
+              if (searchResponse.getFailedShards() != 0 || searchResponse.getSkippedShards() != 0)
+                {
+                  logMsg += " getFailedShards = " + searchResponse.getFailedShards() +
+                            " getSkippedShards = " + searchResponse.getSkippedShards() +
+                            " getTotalShards = " + searchResponse.getTotalShards() +
+                            " getTook = " + searchResponse.getTook();
+                }
+              log.info(logMsg);
             }
           boolean alreadyTraced = false;
           while (searchHits != null && searchHits.length > 0)
@@ -228,7 +252,6 @@ public class ReportMonoPhase
               for (SearchHit searchHit : searchHits)
                 {
                   Map<String, Object> sourceMap = searchHit.getSourceAsMap();
-                  String key;
                   Map<String, Object> miniSourceMap = sourceMap;
                   if (onlyKeepAlternateIDs && (i == (esIndex.size()-1))) // subscriber index is always last
                     {
@@ -261,8 +284,14 @@ public class ReportMonoPhase
                       sourceMap = null; // to help GC do its job
                     }
 
-                  // We have in miniSourceMap the maping for this ES line, now write it to csv
+                  // We have in miniSourceMap the mapping for this ES line, now write it to csv
                   addHeader &= reportFactory.dumpElementToCsvMono(miniSourceMap, writer, addHeader);
+                }
+              long elapsedBatch = System.currentTimeMillis() - startBatch;
+              if (nbMaxTraces > 0 && elapsedBatch > scroolKeepAlive*1000L)
+                {
+                  log.info("problem : took " + elapsedBatch + " to process scroll, keepAlive of " + scroolKeepAlive + " exceeded");
+                  nbMaxTraces--;
                 }
               SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
               scrollRequest.scroll(scroll);
@@ -279,8 +308,15 @@ public class ReportMonoPhase
             }
           i++;
         }
-      
-      elasticsearchReaderClient.close();
+    
+      try
+      {
+        elasticsearchReaderClient.close();
+      }
+      catch (IOException e)
+      {
+        log.info("Exception while closing ElasticSearch client " + e.getLocalizedMessage());
+      }
       writer.flush();
       writer.closeEntry();
       writer.close();
@@ -298,7 +334,7 @@ public class ReportMonoPhase
   {
     if (!multipleFile)
       {
-        return startOneToOne();
+		return startOneToOne();
       }
     else
       {
@@ -322,6 +358,11 @@ public class ReportMonoPhase
         // need to cut the string to get at least one
         String node = null;
         int port = 0;
+        int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getConnectTimeout();
+        int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getQueryTimeout();
+        String username = null;
+        String password = null;
+        
         if (esNode.contains(","))
           {
             String[] split = esNode.split(",");
@@ -331,6 +372,8 @@ public class ReportMonoPhase
                 s.useDelimiter(":");
                 node = s.next();
                 port = s.nextInt();
+                username = s.next();
+                password = s.next();
                 s.close();
               }
           }
@@ -340,16 +383,17 @@ public class ReportMonoPhase
             s.useDelimiter(":");
             node = s.next();
             port = s.nextInt();
+            username = s.next();
+            password = s.next();
             s.close();
           }
 
-        elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
+        elasticsearchReaderClient = new ElasticsearchClientAPI(node, port, connectTimeout, queryTimeout, username, password);
 
         int i = 0;
-
+        int scroolKeepAlive = getScrollKeepAlive();
         for (Entry<String, QueryBuilder> index : esIndex.entrySet())
           {
-
             SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(index.getValue());
             if (subscriberFields != null && (i == (esIndex.size()-1))) // subscriber index is always last
               {
@@ -364,7 +408,7 @@ public class ReportMonoPhase
               // Read all docs from ES, on esIndex[i]
               // Write to topic, one message per document
 
-              Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
+              Scroll scroll = new Scroll(TimeValue.timeValueSeconds(scroolKeepAlive));
               String[] indicesToRead = getIndices(index.getKey());
 
               //
@@ -383,20 +427,12 @@ public class ReportMonoPhase
               SearchResponse searchResponse;
               searchResponse = elasticsearchReaderClient.search(searchRequest, RequestOptions.DEFAULT);
 
+              long startBatch = System.currentTimeMillis();
+              int nbMaxTraces = 10; // max number of traces to display at INFO level
+
               String scrollId = searchResponse.getScrollId(); // always null
               SearchHit[] searchHits = searchResponse.getHits().getHits();
-              if (log.isTraceEnabled()) log.trace("searchHits = " + Arrays.toString(searchHits));
-              if (searchHits != null)
-                {
-                  if (log.isTraceEnabled()) 
-                    {
-                      log.trace("getFailedShards = " + searchResponse.getFailedShards());
-                      log.trace("getSkippedShards = " + searchResponse.getSkippedShards());
-                      log.trace("getTotalShards = " + searchResponse.getTotalShards());
-                      log.trace("getTook = " + searchResponse.getTook());
-                    }
-                  log.info("for " + Arrays.toString(indicesToRead) + " searchHits.length = " + searchHits.length + " totalHits = " + searchResponse.getHits().getTotalHits());
-                }
+              logSearchResponse(indicesToRead, searchResponse, searchHits);
               boolean alreadyTraced = false;
               while (searchHits != null && searchHits.length > 0)
                 {
@@ -407,7 +443,6 @@ public class ReportMonoPhase
                   for (SearchHit searchHit : searchHits)
                     {
                       Map<String, Object> sourceMap = searchHit.getSourceAsMap();
-                      String key;
                       Map<String, Object> miniSourceMap = sourceMap;
                       if (onlyKeepAlternateIDs && (i == (esIndex.size()-1))) // subscriber index is always last
                         {
@@ -422,10 +457,10 @@ public class ReportMonoPhase
                           for (AlternateID alternateID : Deployment.getAlternateIDs().values())
                             {
                               String name = alternateID.getName();
-                              if (log.isTraceEnabled())log.trace("Only keep alternateID " + name);
+                              if (log.isTraceEnabled()) log.trace("Only keep alternateID " + name);
                               if (sourceMap.get(name) == null)
                                 {
-                                  if (log.isTraceEnabled())log.trace("Unexpected : no value for alternateID " + name);
+                                  if (log.isTraceEnabled()) log.trace("Unexpected : no value for alternateID " + name);
                                 }
                               else
                                 {
@@ -441,6 +476,11 @@ public class ReportMonoPhase
                         }
 
                       // We have in miniSourceMap the maping for this ES line, now write it to csv
+
+                        String _id = searchHit.getId();
+
+                        miniSourceMap.put("_id", _id);
+                        
                       Map<String, List<Map<String, Object>>> splittedReportElements = reportFactory.getSplittedReportElementsForFileMono(miniSourceMap);
                       for (String fileKey : splittedReportElements.keySet())
                         {
@@ -456,6 +496,13 @@ public class ReportMonoPhase
                             }
                         }
                     }
+                  long elapsedBatch = System.currentTimeMillis() - startBatch;
+                  if (nbMaxTraces > 0 && elapsedBatch > scroolKeepAlive*1000L)
+                    {
+                      log.info("problem : took " + elapsedBatch + " to process scroll, keepAlive of " + scroolKeepAlive + " exceeded");
+                      nbMaxTraces--;
+                    }
+
                   SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
                   scrollRequest.scroll(scroll);
                   searchResponse = elasticsearchReaderClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
@@ -512,7 +559,6 @@ public class ReportMonoPhase
           i++;
 
         }
-        
         try
           {
             elasticsearchReaderClient.close();
@@ -637,13 +683,52 @@ public class ReportMonoPhase
 
   private int getScrollSize()
   {
-    int scrollSize = Deployment.getElasticSearchScrollSize();
+    int scrollSize = com.evolving.nglm.core.Deployment.getElasticsearchScrollSize();
     if (scrollSize == 0)
       {
         scrollSize = ReportUtils.DEFAULT_ELASTIC_SEARCH_SCROLL_SIZE;
       }
     log.trace("Using " + scrollSize + " as scroll size in Elastic Search");
     return scrollSize;
+  }
+
+  private int getScrollKeepAlive()
+  {
+    int scrollKeepAlive = com.evolving.nglm.core.Deployment.getElasticSearchScrollKeepAlive();
+    if (scrollKeepAlive == 0)
+      {
+        scrollKeepAlive = ReportUtils.DEFAULT_ELASTIC_SEARCH_SCROLL_KEEP_ALIVE;
+      }
+    log.info("Using " + scrollKeepAlive + " as scroll keep alive in Elastic Search");
+    return scrollKeepAlive;
+  }
+
+  private void logSearchResponse(String[] indicesToRead, SearchResponse searchResponse, SearchHit[] searchHits)
+  {
+    if (log.isTraceEnabled()) log.trace("searchHits = " + Arrays.toString(searchHits));
+    if (searchResponse != null && searchHits != null)
+      {
+        if (log.isTraceEnabled()) 
+          {
+            log.trace("getFailedShards = " + searchResponse.getFailedShards());
+            log.trace("getSkippedShards = " + searchResponse.getSkippedShards());
+            log.trace("getTotalShards = " + searchResponse.getTotalShards());
+            log.trace("getTook = " + searchResponse.getTook());
+          }
+        StringWriter sw = new StringWriter();
+        TotalHits totalHits = searchResponse.getHits().getTotalHits();
+        long totalHitsLong = totalHits.value;
+        (new PrintWriter(sw)).printf(", totalHits = %,d%s", totalHitsLong, (totalHits.relation == Relation.EQUAL_TO)?"":"+"); // better formating, can be huge
+        String logMsg = "For " + Arrays.toString(indicesToRead) + " searchHits.length = " + searchHits.length + sw;
+        if (searchResponse.getFailedShards() != 0 || searchResponse.getSkippedShards() != 0)
+          {
+            logMsg += " getFailedShards = " + searchResponse.getFailedShards() +
+                      " getSkippedShards = " + searchResponse.getSkippedShards() +
+                      " getTotalShards = " + searchResponse.getTotalShards() +
+                      " getTook = " + searchResponse.getTook();
+          }
+        log.info(logMsg);
+      }
   }
 
 

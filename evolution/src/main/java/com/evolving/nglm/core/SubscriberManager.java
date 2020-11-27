@@ -521,7 +521,25 @@ public class SubscriberManager
     //
 
     KafkaStreams streams = new KafkaStreams(builder.build(), streamsConfig, new com.evolving.nglm.core.NGLMKafkaClientSupplier());
-        
+
+    /*****************************************
+    *
+    *  state change listener
+    *
+    *****************************************/
+
+    KafkaStreams.StateListener stateListener = new KafkaStreams.StateListener()
+    {
+      @Override public void onChange(KafkaStreams.State newState, KafkaStreams.State oldState)
+      {
+
+        // need to re-run unique key prefix computation
+        if(newState==KafkaStreams.State.RUNNING) KStreamsUniqueKeyServer.streamRebalanced();
+
+      }
+    };
+    streams.setStateListener(stateListener);
+
     //
     //  shutdown hook
     //
@@ -1380,7 +1398,7 @@ public class SubscriberManager
 
   private static String generateSubscriberID()
   {
-    return String.format(Deployment.getGenerateNumericIDs() ? "%d" : "%019d", uniqueKeyServer.getKey());
+    return uniqueKeyServer.getKey();
   }
   
   /*****************************************

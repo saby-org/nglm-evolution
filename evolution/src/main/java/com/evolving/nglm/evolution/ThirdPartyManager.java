@@ -56,7 +56,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Serializer;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -86,6 +85,7 @@ import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileReques
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
@@ -98,6 +98,8 @@ public class ThirdPartyManager
   private static final String DEFAULT_FEATURE_ID = "<anonymous>";
 
   private static final String CUSTOMER_ID = "customerID";
+
+  private static final DeliveryRequest.DeliveryPriority DELIVERY_REQUEST_PRIORITY = DeliveryRequest.DeliveryPriority.High;
 
   /*****************************************
    *
@@ -153,7 +155,7 @@ public class ThirdPartyManager
   private HttpServer restServer;
   private ZookeeperUniqueKeyServer zuks;
   private ZookeeperUniqueKeyServer zuksVoucherChange;
-  private RestHighLevelClient elasticsearch;
+  private ElasticsearchClientAPI elasticsearch;
   private KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
   private KafkaResponseListenerService<StringKey,VoucherChange> voucherChangeResponseListenerService;
   private static Map<String, ThirdPartyMethodAccessLevel> methodPermissionsMapper = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
@@ -176,7 +178,19 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  private int httpTimeout = 5000;
+  private static final String ENV_CONF_THIRDPARTY_HTTP_CLIENT_TIMEOUT_MS = "THIRDPARTY_HTTP_CLIENT_TIMEOUT_MS";
+  private static int httpTimeout = 10000;
+  static{
+    String timeoutConf = System.getenv().get(ENV_CONF_THIRDPARTY_HTTP_CLIENT_TIMEOUT_MS);
+    if(timeoutConf!=null && !timeoutConf.isEmpty()){
+      try{
+        httpTimeout=Integer.parseInt(timeoutConf);
+        log.info("loading env conf "+ENV_CONF_THIRDPARTY_HTTP_CLIENT_TIMEOUT_MS+" "+httpTimeout);
+      }catch (NumberFormatException e){
+        log.warn("bad env conf "+ENV_CONF_THIRDPARTY_HTTP_CLIENT_TIMEOUT_MS, e);
+      }
+    }
+  }
   private String fwkServer = null;
   private String guimanagerHost = null;
   private int guimanagerPort;
@@ -220,9 +234,9 @@ public class ThirdPartyManager
     validateVoucher(29),
     redeemVoucher(30),
     getCustomerTokenAndNBO(31),
-    putSupplierOffer(32),
-    getSupplierOfferList(33),
-    removeSupplierOffer(34),
+    putSimpleOffer(32),
+    getSimpleOfferList(33),
+    removeSimpleOffer(34),
     getResellerDetails(35);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
@@ -282,8 +296,12 @@ public class ThirdPartyManager
     int threadPoolSize = parseInteger("threadPoolSize", args[4]);
     String elasticsearchServerHost = args[5];
     int elasticsearchServerPort = Integer.parseInt(args[6]);
-    String guimanagerHost = args[7];
-    int guimanagerPort = Integer.parseInt(args[8]);
+    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("ThirdPartyManager").getConnectTimeout();
+    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("ThirdPartyManager").getQueryTimeout();
+    String userName = args[7];
+    String userPassword = args[8];
+    String guimanagerHost = args[9];
+    int guimanagerPort = Integer.parseInt(args[10]);
     String nodeID = System.getProperty("nglm.license.nodeid");
     String offerTopic = Deployment.getOfferTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
@@ -344,10 +362,10 @@ public class ThirdPartyManager
     // elasticsearch
     //
 
-    RestHighLevelClient elasticsearch;
+    ElasticsearchClientAPI elasticsearch;
     try
     {
-      elasticsearch = new RestHighLevelClient(RestClient.builder(new HttpHost(elasticsearchServerHost, elasticsearchServerPort, "http")));
+      elasticsearch = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
     }
     catch (ElasticsearchException e)
     {
@@ -483,10 +501,10 @@ public class ThirdPartyManager
     exclusionInclusionTargetService.start();
 
     subscriberIDService = new SubscriberIDService(redisServer, "thirdpartymanager-" + apiProcessKey);
-    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("thirdpartymanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
+    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("thirdpartymanager-subscribergroupepoch", bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
 
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(PURCHASE_FULFILLMENT_MANAGER_TYPE);
-    purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(),StringKey.serde(),PurchaseFulfillmentRequest.serde());
+    purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(DELIVERY_REQUEST_PRIORITY),StringKey.serde(),PurchaseFulfillmentRequest.serde());
     purchaseResponseListenerService.start();
 
     voucherChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getVoucherChangeResponseTopic(),StringKey.serde(),VoucherChange.serde());
@@ -531,9 +549,9 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/loyaltyProgramOptOut", new APIHandler(API.loyaltyProgramOptOut));
       restServer.createContext("/nglm-thirdpartymanager/validateVoucher", new APIHandler(API.validateVoucher));
       restServer.createContext("/nglm-thirdpartymanager/redeemVoucher", new APIHandler(API.redeemVoucher));
-      restServer.createContext("/nglm-thirdpartymanager/putSupplierOffer", new APIHandler(API.putSupplierOffer));
-      restServer.createContext("/nglm-thirdpartymanager/getSupplierOfferList", new APIHandler(API.getSupplierOfferList));
-      restServer.createContext("/nglm-thirdpartymanager/removeSupplierOffer", new APIHandler(API.removeSupplierOffer));
+      restServer.createContext("/nglm-thirdpartymanager/putSimpleOffer", new APIHandler(API.putSimpleOffer));
+      restServer.createContext("/nglm-thirdpartymanager/getSimpleOfferList", new APIHandler(API.getSimpleOfferList));
+      restServer.createContext("/nglm-thirdpartymanager/removeSimpleOffer", new APIHandler(API.removeSimpleOffer));
       restServer.createContext("/nglm-thirdpartymanager/getResellerDetails", new APIHandler(API.getResellerDetails));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
@@ -631,11 +649,6 @@ public class ThirdPartyManager
 
     @Override public void shutdown(boolean normalShutdown)
     {
-      //
-      //  reference data reader
-      //
-
-      if (subscriberGroupEpochReader != null) subscriberGroupEpochReader.close();
 
       //
       //  services
@@ -885,14 +898,14 @@ public class ThirdPartyManager
             case getResellerDetails:
               jsonResponse = processGetResellerDetails(jsonRoot);
               break;
-            case putSupplierOffer:
-              jsonResponse = processPutSupplierOffer(jsonRoot);
+            case putSimpleOffer:
+              jsonResponse = processPutSimpleOffer(jsonRoot);
               break;
-            case getSupplierOfferList:
-              jsonResponse = processGetSupplierOfferList(jsonRoot);
+            case getSimpleOfferList:
+              jsonResponse = processGetSimpleOfferList(jsonRoot);
               break;
-            case removeSupplierOffer:
-              jsonResponse = processRemoveSupplierOffer(jsonRoot);
+            case removeSimpleOffer:
+              jsonResponse = processRemoveSimpleOffer(jsonRoot);
               break;
           }
         }
@@ -1282,7 +1295,7 @@ public class ThirdPartyManager
 
               if (moduleID != null)
                 {
-                  BDRs = BDRs.stream().filter(activity -> activity.getModuleID().equals(moduleID)).collect(Collectors.toList());
+                  BDRs = BDRs.stream().filter(activity -> moduleID.equals(activity.getModuleID())).collect(Collectors.toList());
                 }
               
               //
@@ -1291,7 +1304,7 @@ public class ThirdPartyManager
 
               if (featureID != null)
                 {
-                  BDRs = BDRs.stream().filter(activity -> activity.getFeatureID().equals(featureID)).collect(Collectors.toList());
+                  BDRs = BDRs.stream().filter(activity -> featureID.equals(activity.getFeatureID())).collect(Collectors.toList());
                 }
               
               //
@@ -1453,7 +1466,7 @@ public class ThirdPartyManager
 
               if (moduleID != null)
                 {
-                  ODRs = ODRs.stream().filter(activity -> activity.getModuleID().equals(moduleID)).collect(Collectors.toList());
+                  ODRs = ODRs.stream().filter(activity -> moduleID.equals(activity.getModuleID())).collect(Collectors.toList());
                 }
               
               //
@@ -1462,7 +1475,7 @@ public class ThirdPartyManager
 
               if (featureID != null)
                 {
-                  ODRs = ODRs.stream().filter(activity -> activity.getFeatureID().equals(featureID)).collect(Collectors.toList());
+                  ODRs = ODRs.stream().filter(activity -> featureID.equals(activity.getFeatureID())).collect(Collectors.toList());
                 }
               
               //
@@ -1476,7 +1489,7 @@ public class ThirdPartyManager
                     {
                       if(request instanceof PurchaseFulfillmentRequest)
                         {
-                          if(((PurchaseFulfillmentRequest)request).getOfferID().equals(offerID))
+                          if(offerID.equals(((PurchaseFulfillmentRequest)request).getOfferID()))
                             {
                               result.add(request);
                             }
@@ -1496,7 +1509,7 @@ public class ThirdPartyManager
                     {
                       if(request instanceof PurchaseFulfillmentRequest)
                         {
-                          if(((PurchaseFulfillmentRequest)request).getSalesChannelID().equals(salesChannelID))
+                          if (salesChannelID.equals(((PurchaseFulfillmentRequest)request).getSalesChannelID()))
                             {
                               result.add(request);
                             }
@@ -1524,7 +1537,7 @@ public class ThirdPartyManager
                                 {
                                   for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
                                     {
-                                      if(channel.getPrice() != null && channel.getPrice().getPaymentMeanID().equals(paymentMeanID))
+                                      if(channel.getPrice() != null && paymentMeanID.equals(channel.getPrice().getPaymentMeanID()))
                                         {
                                           result.add(request);
                                         }
@@ -1755,7 +1768,7 @@ public class ThirdPartyManager
         validityPeriodType = point.getValidity().getPeriodType();
         validityPeriod = point.getValidity().getPeriodQuantity();
       }
-     CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod);
+     CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod, DELIVERY_REQUEST_PRIORITY);
     } catch (SubscriberProfileServiceException e) {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
@@ -1832,7 +1845,7 @@ public class ThirdPartyManager
     String deliveryRequestID = zuks.getStringKey();
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
-      CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, null);
+      CommodityDeliveryManager.sendCommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY);
     } catch (SubscriberProfileServiceException e) {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
@@ -1934,7 +1947,7 @@ public class ThirdPartyManager
 
               if (moduleID != null)
                 {
-                  messages = messages.stream().filter(activity -> activity.getModuleID().equals(moduleID)).collect(Collectors.toList());
+                  messages = messages.stream().filter(activity -> moduleID.equals(activity.getModuleID())).collect(Collectors.toList());
                 }
               
               //
@@ -1943,7 +1956,7 @@ public class ThirdPartyManager
 
               if (featureID != null)
                 {
-                  messages = messages.stream().filter(activity -> activity.getFeatureID().equals(featureID)).collect(Collectors.toList());
+                  messages = messages.stream().filter(activity -> featureID.equals(activity.getFeatureID())).collect(Collectors.toList());
                 }
 
               //
@@ -2148,7 +2161,10 @@ public class ThirdPartyManager
                   Boolean statusUniversalControlGroup = subsLatestStatistic.getUniversalControlGroupStatus();
                   boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
                   SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
-
+                  SubscriberJourneyStatus profilejourneyStatus= baseSubscriberProfile.getSubscriberJourneys().get(storeJourney.getJourneyID()+"");
+                  if(profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible,SubscriberJourneyStatus.UniversalControlGroup,SubscriberJourneyStatus.Excluded,SubscriberJourneyStatus.ObjectiveLimitReached))
+                  	customerStatusInJourney=profilejourneyStatus;	
+                 
                   if (customerStatus != null)
                     {
                       SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
@@ -2436,7 +2452,10 @@ public class ThirdPartyManager
                   Boolean statusUniversalControlGroup = subsLatestStatistic.getUniversalControlGroupStatus();
                   boolean campaignComplete = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> campaignStat.getJourneyComplete()).count() > 0L ;
                   SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
-
+                  SubscriberJourneyStatus profilejourneyStatus= baseSubscriberProfile.getSubscriberJourneys().get(storeCampaign.getJourneyID()+"");
+                  if(profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible,SubscriberJourneyStatus.UniversalControlGroup,SubscriberJourneyStatus.Excluded,SubscriberJourneyStatus.ObjectiveLimitReached))
+                  	customerStatusInJourney=profilejourneyStatus;	
+                 
                   if (customerStatus != null)
                     {
                       SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
@@ -2887,6 +2906,7 @@ public class ThirdPartyManager
     String startDateString = readString(jsonRoot, "startDate", false);
     String endDateString = readString(jsonRoot, "endDate", false);
     String offerObjective = readString(jsonRoot, "objective", false);
+    String supplier = readString(jsonRoot, "supplier", false);
     //String userID = readString(jsonRoot, "loginName", true);
     String parentResellerID = "";
     Date now = SystemTime.getCurrentTime();
@@ -2920,27 +2940,6 @@ public class ThirdPartyManager
               return JSONUtilities.encodeObject(response);
             }
         }
-        if (activeResellerAndSalesChannelIDs.get("parentResellerID") != null
-            && !(activeResellerAndSalesChannelIDs.get("parentResellerID").isEmpty()))
-          {
-            if (activeResellerAndSalesChannelIDs.get("parentResellerID").get(0) != null)
-              {
-                parentResellerID = activeResellerAndSalesChannelIDs.get("parentResellerID").get(0);
-                if (parentResellerID != null)
-                  {
-                    Reseller parentReseller = resellerService.getActiveReseller(parentResellerID, now);
-
-                    if (parentReseller == null)
-                      {
-                        response.put(GENERIC_RESPONSE_CODE,
-                            RESTAPIGenericReturnCodes.PARENT_RESELLER_INACTIVE.getGenericResponseCode());
-                        response.put(GENERIC_RESPONSE_MSG,
-                            RESTAPIGenericReturnCodes.PARENT_RESELLER_INACTIVE.getGenericResponseMessage());
-                        return JSONUtilities.encodeObject(response);
-                      }
-                  }
-              }
-          }
     
       if ((activeResellerAndSalesChannelIDs.containsKey("activeReseller")) && (activeResellerAndSalesChannelIDs.get("activeReseller")).size() == 0) {
         updateResponse(response, RESTAPIGenericReturnCodes.INACTIVE_RESELLER);
@@ -3033,6 +3032,86 @@ public class ThirdPartyManager
                 offers = offers.stream().filter(offer -> (offer.getOfferObjectives() != null && (offer.getOfferObjectives().stream().filter(obj -> obj.getOfferObjectiveID().equals(exactOfferObjectives.getOfferObjectiveID())).count() > 0L))).collect(Collectors.toList());
 
             }
+          
+          //
+          //filter using supplier
+          //
+          
+          List<String> filteredBySupplierOfferIDs = new ArrayList<>();
+          if (supplier != null && !supplier.isEmpty())
+            {
+              for (Offer offer : offers)
+                {                    
+                  Set<OfferProduct> offerProducts = offer.getOfferProducts();
+                  Set<OfferVoucher> offerVouchers = offer.getOfferVouchers();
+                  if (offerProducts != null && offerProducts.size() != 0)
+                    {
+                      for (OfferProduct offerproduct : offerProducts)
+                        {
+                          String productID = offerproduct.getProductID();
+                          GUIManagedObject productObject = productService.getStoredProduct(productID);
+                          if (productObject != null && productObject instanceof Product)
+                            {
+                              Product product = (Product) productObject;
+                              GUIManagedObject SupplierObject = supplierService
+                                  .getStoredSupplier(product.getSupplierID());
+                              if (SupplierObject != null && SupplierObject instanceof Supplier)
+                                {
+                                  String supplierDisplay = ((Supplier) SupplierObject).getGUIManagedObjectDisplay();
+
+                                  if (supplierDisplay.equals(supplier))
+                                    {
+                                      filteredBySupplierOfferIDs.add(offer.getOfferID());
+                                      break;
+                                    }
+
+                                  else
+                                    {
+                                      if (log.isDebugEnabled())
+                                        log.debug(productObject + "is not a complete product");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                  if (offerVouchers != null && offerVouchers.size() != 0)
+                    {
+                      for (OfferVoucher offerVoucher : offerVouchers)
+                        {
+                          String voucherID = offerVoucher.getVoucherID();
+                          GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherID);
+                          if (voucherObject != null && voucherObject instanceof Voucher)
+                            {
+                              Voucher voucher = (Voucher) voucherObject;
+                              GUIManagedObject SupplierObject = supplierService
+                                  .getStoredSupplier(voucher.getSupplierID());
+                              if (SupplierObject != null && SupplierObject instanceof Supplier)
+                                {
+                                  String supplierDisplay = ((Supplier) SupplierObject).getGUIManagedObjectDisplay();
+
+                                  if (supplierDisplay.equals(supplier))
+                                    {
+                                      filteredBySupplierOfferIDs.add(offer.getOfferID());
+                                      break;
+                                    }
+
+                                  else
+                                    {
+                                      if (log.isDebugEnabled())
+                                        log.debug(voucherObject + "is not a complete voucher");
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                }
+              offers = offers.stream()
+                  .filter(offer -> (offer.getOfferID() != null) && (filteredBySupplierOfferIDs.contains(offer.getOfferID())))
+                  .collect(Collectors.toList());
+
+            }
+
           if (activeResellerAndSalesChannelIDs.containsKey("salesChannelIDsList") && (activeResellerAndSalesChannelIDs.get("salesChannelIDsList")).size() != 0)
             {
               List salesChannelIDList = activeResellerAndSalesChannelIDs.get("salesChannelIDsList");
@@ -3558,6 +3637,24 @@ public class ThirdPartyManager
    String callingChannelDisplay = JSONUtilities.decodeString(jsonRoot, "inboundChannel", false);
    
    Date now = SystemTime.getCurrentTime();
+   String supplier = JSONUtilities.decodeString(jsonRoot, "supplier", false);
+   Supplier supplierFilter = null;
+
+   /*****************************************
+    *
+    * getSupplier
+    *
+    *****************************************/
+   if (supplier != null)
+     {
+       Collection<Supplier> suppliers = supplierService.getActiveSuppliers(SystemTime.getCurrentTime());
+       for (Supplier supplierObject : suppliers) {
+         if (supplierObject.getGUIManagedObjectDisplay().equals(supplier)) {
+           supplierFilter = supplierObject;
+           break;
+         }
+       }
+     }
    
    /*****************************************
     *
@@ -3724,7 +3821,7 @@ public class ThirdPartyManager
          catalogCharacteristicService,
          scoringStrategyService,
          subscriberGroupEpochReader,
-         segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
+         segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, supplierFilter
          );
      String tokenCode = newToken.getTokenCode();
      if (presentedOffers.isEmpty())
@@ -3856,6 +3953,24 @@ public class ThirdPartyManager
    String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
    Boolean viewOffersOnly = JSONUtilities.decodeBoolean(jsonRoot, "viewOffersOnly", Boolean.FALSE);
    Date now = SystemTime.getCurrentTime();
+   String supplier = JSONUtilities.decodeString(jsonRoot, "supplier", false);
+   Supplier supplierFilter = null;
+
+   /*****************************************
+    *
+    * getSupplier
+    *
+    *****************************************/
+   if (supplier != null)
+     {
+       Collection<Supplier> suppliers = supplierService.getActiveSuppliers(SystemTime.getCurrentTime());
+       for (Supplier supplierObject : suppliers) {
+         if (supplierObject.getGUIManagedObjectDisplay().equals(supplier)) {
+           supplierFilter = supplierObject;
+           break;
+         }
+       }
+     }
    
    /*****************************************
     *
@@ -3944,7 +4059,7 @@ public class ThirdPartyManager
               catalogCharacteristicService,
               scoringStrategyService,
               subscriberGroupEpochReader,
-              segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
+              segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, supplierFilter
               );
 
           if (presentedOffers.isEmpty())
@@ -4333,28 +4448,7 @@ public class ThirdPartyManager
     try
     {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
-      
-      if (activeResellerAndSalesChannelIDs.get("parentResellerID") != null
-          && !(activeResellerAndSalesChannelIDs.get("parentResellerID").isEmpty()))
-        {
-          if (activeResellerAndSalesChannelIDs.get("parentResellerID").get(0) != null)
-            {
-              parentResellerID = activeResellerAndSalesChannelIDs.get("parentResellerID").get(0);
-              if (parentResellerID != null)
-                {
-                  Reseller parentReseller = resellerService.getActiveReseller(parentResellerID, now);
-
-                  if (parentReseller == null)
-                    {
-                      response.put(GENERIC_RESPONSE_CODE,
-                          RESTAPIGenericReturnCodes.PARENT_RESELLER_INACTIVE.getGenericResponseCode());
-                      response.put(GENERIC_RESPONSE_MSG,
-                          RESTAPIGenericReturnCodes.PARENT_RESELLER_INACTIVE.getGenericResponseMessage());
-                      return JSONUtilities.encodeObject(response);
-                    }
-                }
-            }
-        }
+    
       if ((activeResellerAndSalesChannelIDs.containsKey("activeReseller")) && (activeResellerAndSalesChannelIDs.get("activeReseller")).size() == 0) {
         updateResponse(response, RESTAPIGenericReturnCodes.INACTIVE_RESELLER);
         return JSONUtilities.encodeObject(response);
@@ -4564,7 +4658,7 @@ public class ThirdPartyManager
           updateResponse(response, RESTAPIGenericReturnCodes.LOYALTY_PROJECT_NOT_FOUND);
           return JSONUtilities.encodeObject(response);          
         }
-      String topic = Deployment.getLoyaltyProgramRequestTopic();
+
       Serializer<StringKey> keySerializer = StringKey.serde().serializer();
       Serializer<LoyaltyProgramRequest> valueSerializer = LoyaltyProgramRequest.serde().serializer();
       
@@ -4599,6 +4693,8 @@ public class ThirdPartyManager
       JSONObject valueRes = JSONUtilities.encodeObject(request);
 
       LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, null);
+      loyaltyProgramRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+      String topic = Deployment.getDeliveryManagers().get(loyaltyProgramRequest.getDeliveryType()).getRequestTopic(loyaltyProgramRequest.getDeliveryPriority());
 
       // Write it to the right topic
       kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
@@ -4918,9 +5014,10 @@ public class ThirdPartyManager
       {
         String uniqueKey = UUID.randomUUID().toString();
         JourneyRequest journeyRequest = new JourneyRequest(baseSubscriberProfile, subscriberGroupEpochReader, uniqueKey, subscriberID, journey.getJourneyID(), baseSubscriberProfile.getUniversalControlGroup());
+        journeyRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
         DeliveryManagerDeclaration journeyManagerDeclaration = Deployment.getDeliveryManagers().get(journeyRequest.getDeliveryType());
-        String journeyRequestTopic = journeyManagerDeclaration.getDefaultRequestTopic();
-        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getJourneyRequestTopic(), StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest)));
+        String journeyRequestTopic = journeyManagerDeclaration.getRequestTopic(journeyRequest.getDeliveryPriority());
+        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(journeyRequestTopic, StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest)));
         responseCode = "ok";
       }
     
@@ -5018,44 +5115,59 @@ public class ThirdPartyManager
   {
 
     /****************************************
-     *
-     * response
-     *
-     ****************************************/
+    *
+    * response
+    *
+    ****************************************/
 
-    Map<String, Object> response = new HashMap<String, Object>();
-    AuthenticatedResponse authResponse = null;
-    ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
-    if (!Deployment.getRegressionMode())
-      {
-        authResponse = authCache.get(thirdPartyCredential);
-      }
-    else
-      {
-        authResponse = authenticate(thirdPartyCredential);
-      }
-    int userID = (authResponse.getUserId());
-    String user = Integer.toString(userID);
-    for (GUIManagedObject reseller : resellerService.getStoredResellers())
-      {
-        if (reseller instanceof Reseller)
-          {
-            List<String> userIDs = ((Reseller) reseller).getUserIDs();
-            for (String userId : userIDs)
-              {
-                if (user.equals(userId))
-                  {
-                    JSONObject resellerJson = ThirdPartyJSONGenerator
-                        .generateResellerJSONForThirdParty((Reseller) reseller, resellerService);
-                    response.put("resellerDetails", JSONUtilities.encodeObject(resellerJson));
-                    updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+   Map<String, Object> response = new HashMap<String, Object>();
+   boolean userIsReseller = false;
+   AuthenticatedResponse authResponse = null;
+   Reseller userReseller = null;    
+   ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
+   JSONArray resellerJSONArray = new JSONArray();
+   if (!Deployment.getRegressionMode())
+     {
+       authResponse = authCache.get(thirdPartyCredential);
+     }
+   else
+     {
+       authResponse = authenticate(thirdPartyCredential);
+     }
+   int userID = (authResponse.getUserId());
+   String user = Integer.toString(userID);
+   resellerloop:
+   for (GUIManagedObject reseller : resellerService.getStoredResellers())
+     {
+       if (reseller instanceof Reseller)
+         {
+           List<String> userIDs = ((Reseller) reseller).getUserIDs();
+           for (String userId : userIDs)
+             {
+               if (user.equals(userId))
+                 {
+                   userIsReseller = true;
+                   userReseller = (Reseller) reseller;
+                   break resellerloop;
+                 }
+             }
+         }
+     }
+   if (userIsReseller == true)
+     {
 
-                  }
-              }
-          }
-      }
+       JSONObject resellerJson = ThirdPartyJSONGenerator.generateResellerJSONForThirdParty((Reseller) userReseller,
+           resellerService);
+       response.put("resellerDetails", JSONUtilities.encodeObject(resellerJson));
+       updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+     }
+   else
+     {
+       updateResponse(response, RESTAPIGenericReturnCodes.PARTNER_NOT_FOUND);
+       return JSONUtilities.encodeObject(response);
+     }
 
-    return JSONUtilities.encodeObject(response);
+   return JSONUtilities.encodeObject(response);
   }
  
   private Pair<String,VoucherProfileStored> getStoredVoucher(JSONObject jsonRoot) throws ThirdPartyManagerException {
@@ -5064,7 +5176,6 @@ public class ThirdPartyManager
 
     String voucherCode = readString(jsonRoot, "voucherCode", true);
     String supplierDisplay = readString(jsonRoot, "supplier", true);
-    String customerID = readString(jsonRoot, CUSTOMER_ID, false);
 
     Supplier supplier=null;
     for(Supplier supplierConf:supplierService.getActiveSuppliers(now)){
@@ -5078,17 +5189,25 @@ public class ThirdPartyManager
     }
 
     String subscriberID=null;
+    try
+      {
+        subscriberID = resolveSubscriberID(jsonRoot);
+      }
+    catch (ThirdPartyManagerException e)
+      {
+        if (e.getResponseCode() != RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode())
+          {
+            throw e;
+          }
+      }
+
     // OK if "not transferable"
-    if(customerID==null){
+    if(subscriberID == null){
       VoucherPersonalES voucherES = voucherService.getVoucherPersonalESService().getESVoucherFromVoucherCode(supplier.getSupplierID(),voucherCode);
       if(voucherES==null) throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
       subscriberID=voucherES.getSubscriberId();
     }
-
-    if(subscriberID==null&&customerID!=null){
-      subscriberID = resolveSubscriberID(jsonRoot);
-    }
-
+    
     SubscriberProfile subscriberProfile=null;
     try{
       subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
@@ -5112,9 +5231,46 @@ public class ThirdPartyManager
       }
       if(voucherCode.equals(profileVoucher.getVoucherCode()) && supplier.getSupplierID().equals(voucher.getSupplierID())){
 
-        if(profileVoucher.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
-          errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
-        }else if(profileVoucher.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired||profileVoucher.getVoucherExpiryDate().before(now)){
+            if (profileVoucher.getVoucherStatus() == VoucherDelivery.VoucherStatus.Redeemed)
+              {
+                Date redeemedDateToBeFormatted = profileVoucher.getVoucherRedeemDate();
+                SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
+                dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+                String redeemedDate = dateFormat.format(redeemedDateToBeFormatted);
+                String redeemedSubscriberID = subscriberID;
+                Map<String, String> alternateIDs = new LinkedHashMap<>();
+                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile,
+                    subscriberGroupEpochReader, SystemTime.getCurrentTime());
+                for (Map.Entry<String, AlternateID> entry : Deployment.getAlternateIDs().entrySet())
+                  {
+                    AlternateID alternateID = entry.getValue();
+                    if (alternateID.getProfileCriterionField() == null)
+                      {
+                        continue;
+                      }
+                    CriterionField criterionField = Deployment.getProfileCriterionFields()
+                        .get(alternateID.getProfileCriterionField());
+                    String criterionFieldValue = (String) criterionField.retrieveNormalized(evaluationRequest);                    
+                    alternateIDs.put(entry.getKey(), criterionFieldValue);
+                  }
+                String msisdn = null;
+                String contractID = null;
+                if (alternateIDs != null && !(alternateIDs.isEmpty()))
+                  {
+                    if (alternateIDs.containsKey("msisdn") && alternateIDs.get("msisdn") != null)
+                      {
+                        msisdn = alternateIDs.get("msisdn").toString();
+                      }
+                    if (alternateIDs.containsKey("contractID") && alternateIDs.get("contractID") != null)
+                      {
+                        contractID = alternateIDs.get("contractID").toString();
+                      }
+                  }
+                errorException = new ThirdPartyManagerException(
+                    RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseMessage() + " (RedeemedDate: "
+                        + redeemedDate + ", " + " CustomerID: "+ redeemedSubscriberID + ", " +" msisdn: " + msisdn + ", "+" contractID: " + contractID + ")",
+                    RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseCode());
+              }else if(profileVoucher.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired||profileVoucher.getVoucherExpiryDate().before(now)){
           errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
         }else{
           //an OK one
@@ -5136,11 +5292,11 @@ public class ThirdPartyManager
 
   /*****************************************
   *
-  *  processPutSupplierOffer
+  *  processPutSimpleOffer
   *
   *****************************************/
   
-  private JSONObject processPutSupplierOffer(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
+  private JSONObject processPutSimpleOffer(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
 
   {
     try
@@ -5168,13 +5324,13 @@ public class ThirdPartyManager
           }
         int user = (authResponse.getUserId());
         String userID = Integer.toString(user);
-        jsonRoot.put("userID", userID);
+        jsonRoot.put("loginID", userID);
         
         JSONObject result;
 
 
         StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
-        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/putSupplierOffers");
+        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/putSimpleOfferThirdParty");
         httpPost.setEntity(stringEntity);
 
         //
@@ -5208,12 +5364,12 @@ public class ThirdPartyManager
         else if (httpResponse != null && httpResponse.getStatusLine() != null)
           {
             log.error("GUI server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.PUT_SUPPLIEROFFER_FAILED.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
           }
         else
           {
             log.error("GUI server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse, httpResponse.getStatusLine());
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.PUT_SUPPLIEROFFER_FAILED.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
           }
         return result;
       }
@@ -5232,11 +5388,11 @@ public class ThirdPartyManager
 
   /*****************************************
   *
-  *  processGetSupplierOffers
+  *  processGetSimpleOfferList
   *
   *****************************************/
   
-  private JSONObject processGetSupplierOfferList(JSONObject jsonRoot)  throws ThirdPartyManagerException, ParseException, IOException
+  private JSONObject processGetSimpleOfferList(JSONObject jsonRoot)  throws ThirdPartyManagerException, ParseException, IOException
 
   {
     try 
@@ -5264,11 +5420,11 @@ public class ThirdPartyManager
           } 
         int user = (authResponse.getUserId());
         String userID = Integer.toString(user);
-        jsonRoot.put("userID", userID);
+        jsonRoot.put("loginID", userID);
         JSONObject result;
 
         StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
-        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/getSupplierOfferList");
+        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/getSimpleOfferListThirdParty");
         httpPost.setEntity(stringEntity);
 
         //
@@ -5306,15 +5462,15 @@ public class ThirdPartyManager
         else if (httpResponse != null && httpResponse.getStatusLine() != null)
           {
             log.error("GUI server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(),
-                RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.GET_SUPPLIEROFFERS_FAILED.getGenericResponseMessage(),
+                RESTAPIGenericReturnCodes.GET_SUPPLIEROFFERS_FAILED.getGenericResponseCode());
           }
         else
           {
             log.error("GUI server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse,
                 httpResponse.getStatusLine());
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(),
-                RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.GET_SUPPLIEROFFERS_FAILED.getGenericResponseMessage(),
+                RESTAPIGenericReturnCodes.GET_SUPPLIEROFFERS_FAILED.getGenericResponseCode());
           }
         return result;
       }
@@ -5333,11 +5489,11 @@ public class ThirdPartyManager
 
   /*****************************************
   *
-  *  processRemoveSupplierOffer
+  *  processRemoveSimpleOffer
   *
   *****************************************/
   
-  private JSONObject processRemoveSupplierOffer(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
+  private JSONObject processRemoveSimpleOffer(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
 
   {
     try 
@@ -5365,11 +5521,11 @@ public class ThirdPartyManager
           }
         int user = (authResponse.getUserId());
         String userID = Integer.toString(user);
-        jsonRoot.put("userID", userID);
+        jsonRoot.put("loginID", userID);
         JSONObject result;
 
         StringEntity stringEntity = new StringEntity(jsonRoot.toString(), ContentType.create("application/json"));
-        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/removeSupplierOffers");
+        HttpPost httpPost = new HttpPost("http://"+guimanagerHost +":"+ guimanagerPort+"/nglm-guimanager/removeSimpleOfferThirdParty");
         httpPost.setEntity(stringEntity);
 
         //
@@ -5407,15 +5563,15 @@ public class ThirdPartyManager
         else if (httpResponse != null && httpResponse.getStatusLine() != null)
           {
             log.error("GUI server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(),
-                RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseMessage(),
+                RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseCode());
           }
         else
           {
             log.error("GUI server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse,
                 httpResponse.getStatusLine());
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(),
-                RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseMessage(),
+                RESTAPIGenericReturnCodes.REMOVE_SUPPLIEROFFER_FAILED.getGenericResponseCode());
           }
         return result;
       }
@@ -5600,21 +5756,26 @@ public class ThirdPartyManager
     // lookup from authCache
     //
 
-    AuthenticatedResponse authResponse = null;
-    synchronized (authCache)
-    {
-      authResponse = authCache.get(thirdPartyCredential);
+    AuthenticatedResponse authResponse = authCache.get(thirdPartyCredential);
+    if(authResponse == null)
+      {
+        synchronized (authCache)
+        {
+          authResponse = authCache.get(thirdPartyCredential);
+          
+          //
+          //  cache miss - reauthenticate
+          //
+    
+          if (authResponse == null)
+            {
+              authResponse = authenticate(thirdPartyCredential);
+              log.info("(Re)Authenticated: credential {} response {}", thirdPartyCredential, authResponse);
+            }
+        }
     }
 
-    //
-    //  cache miss - reauthenticate
-    //
 
-    if (authResponse == null)
-      {
-        authResponse = authenticate(thirdPartyCredential);
-        log.info("(Re)Authenticated: credential {} response {}", thirdPartyCredential, authResponse);
-      }
 
     //
     //  hasAccess
@@ -5696,12 +5857,12 @@ public class ThirdPartyManager
       else if (httpResponse != null && httpResponse.getStatusLine() != null)
         {
           log.error("FWK server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
-          throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+          throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE);
         }
       else
         {
           log.error("FWK server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse, httpResponse.getStatusLine());
-          throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+          throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE);
         }
     }
     catch(ParseException pe) 
@@ -6087,7 +6248,7 @@ public class ThirdPartyManager
         log.error("Internal error, cannot find a deliveryManager with a RequestClassName as com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest");
         throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
       }
-    String topic = deliveryManagerDeclaration.getDefaultRequestTopic();
+
     Serializer<StringKey> keySerializer = StringKey.serde().serializer();
     Serializer<PurchaseFulfillmentRequest> valueSerializer = ((ConnectSerde<PurchaseFulfillmentRequest>) deliveryManagerDeclaration.getRequestSerde()).serializer();
     
@@ -6107,7 +6268,9 @@ public class ThirdPartyManager
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
-    PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, SystemTime.getCurrentTime());
+    PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, SystemTime.getCurrentTime());
+    purchaseRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+    String topic = deliveryManagerDeclaration.getRequestTopic(purchaseRequest.getDeliveryPriority());
 
     Future<PurchaseFulfillmentRequest> waitingResponse=null;
     if(sync){

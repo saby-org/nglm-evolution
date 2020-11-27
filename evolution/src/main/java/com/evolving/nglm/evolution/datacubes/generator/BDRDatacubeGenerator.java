@@ -8,10 +8,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -34,10 +32,10 @@ import com.evolving.nglm.evolution.datacubes.mapping.DeliverablesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.ModulesMap;
-import com.evolving.nglm.evolution.datacubes.mapping.OfferObjectivesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.OffersMap;
 import com.evolving.nglm.evolution.datacubes.mapping.PaymentMeansMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SalesChannelsMap;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
 {
@@ -56,7 +54,6 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
   private ModulesMap modulesMap;
   private SalesChannelsMap salesChannelsMap;
   private PaymentMeansMap paymentMeansMap;
-  private OfferObjectivesMap offerObjectivesMap;
   private LoyaltyProgramsMap loyaltyProgramsMap;
   private DeliverablesMap deliverablesMap;
   private JourneysMap journeysMap;
@@ -69,7 +66,7 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public BDRDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService)  
+  public BDRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService)  
   {
     super(datacubeName, elasticsearch);
 
@@ -77,7 +74,6 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.modulesMap = new ModulesMap();
     this.salesChannelsMap = new SalesChannelsMap(salesChannelService);
     this.paymentMeansMap = new PaymentMeansMap(paymentMeanService);
-    this.offerObjectivesMap = new OfferObjectivesMap(offerObjectiveService);
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
     this.deliverablesMap = new DeliverablesMap();
     this.journeysMap = new JourneysMap(journeyService);
@@ -235,12 +231,12 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
 
     this.previewMode = false;
-    this.targetDay = DAY_FORMAT.format(yesterday);
+    this.targetDay = RLMDateUtils.printDay(yesterday);
 
     //
     // Timestamp & period
     //
-    String timestamp = TIMESTAMP_FORMAT.format(endOfYesterday);
+    String timestamp = RLMDateUtils.printTimestamp(endOfYesterday);
     long targetPeriod = beginningOfToday.getTime() - beginningOfYesterday.getTime();    // most of the time 86400000ms (24 hours)
     
     this.run(timestamp, targetPeriod);
@@ -257,12 +253,12 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
 
     this.previewMode = true;
-    this.targetDay = DAY_FORMAT.format(now);
+    this.targetDay = RLMDateUtils.printDay(now);
 
     //
     // Timestamp & period
     //
-    String timestamp = TIMESTAMP_FORMAT.format(now);
+    String timestamp = RLMDateUtils.printTimestamp(now);
     long targetPeriod = now.getTime() - beginningOfToday.getTime() + 1; // +1 !
     
     this.run(timestamp, targetPeriod);

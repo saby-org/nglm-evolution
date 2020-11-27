@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution.reports;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 import org.apache.http.HttpHost;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -24,7 +25,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -84,6 +84,8 @@ public class ReportEsReader
 {
   private static final Logger log = LoggerFactory.getLogger(ReportEsReader.class);
 
+  private static ElasticsearchClientAPI elasticsearchReaderClient;
+  
   private String topicName;
   private String kafkaNodeList;
   private String kzHostList;
@@ -226,6 +228,11 @@ public class ReportEsReader
     // need to cut the string to get at least one
     String node = null;
     int port = 0;
+    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getConnectTimeout();
+    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getQueryTimeout();
+    String username = null;
+    String password = null;
+    
     if (esNode.contains(","))
       {
         String[] split = esNode.split(",");
@@ -235,6 +242,8 @@ public class ReportEsReader
             s.useDelimiter(":");
             node = s.next();
             port = s.nextInt();
+            username = s.next();
+            password = s.next();
             s.close();
           }
       } else
@@ -243,10 +252,12 @@ public class ReportEsReader
         s.useDelimiter(":");
         node = s.next();
         port = s.nextInt();
+        username = s.next();
+        password = s.next();
         s.close();
       }
 
-    elasticsearchReaderClient = new RestHighLevelClient(RestClient.builder(new HttpHost(node, port, "http")));
+    elasticsearchReaderClient = new ElasticsearchClientAPI(node, port, connectTimeout, queryTimeout, username, password);
 
     int i = 0;
     for (Entry<String, QueryBuilder> index : esIndex.entrySet())
@@ -503,7 +514,7 @@ public class ReportEsReader
 
   private int getScrollSize()
   {
-    int scrollSize = Deployment.getElasticSearchScrollSize();
+    int scrollSize = com.evolving.nglm.core.Deployment.getElasticsearchScrollSize();
     if (scrollSize == 0)
       {
         scrollSize = ReportUtils.DEFAULT_ELASTIC_SEARCH_SCROLL_SIZE;
@@ -530,7 +541,5 @@ public class ReportEsReader
     log.trace("Using " + producerId + " as clientId for Kafka producer");
     return producerId;
   }
-
-  private static RestHighLevelClient elasticsearchReaderClient;
 
 }

@@ -284,7 +284,7 @@ public class DNBOToken extends Token
     if (getScoringStrategyIDs() != null)
       {
         final JSONArray scoringStrategies = new JSONArray();
-        getScoringStrategyIDs().stream().forEach(ssID -> scoringStrategyIDs.add(ssID));
+        getScoringStrategyIDs().stream().forEach(ssID -> scoringStrategies.add(ssID));
         result.put("scoringStrategyIDs", scoringStrategies);
       }
     else

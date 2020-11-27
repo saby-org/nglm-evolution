@@ -100,9 +100,14 @@ public class ReportUtils {
 	public static final int DEFAULT_ELASTIC_SEARCH_PORT = 9200;
 	
 	/**
-	 * Default size of scroll when doing search in phase 1.
+	 * Default size of scroll when doing search
 	 */
-	public static final int DEFAULT_ELASTIC_SEARCH_SCROLL_SIZE = 10_000;
+	public static final int DEFAULT_ELASTIC_SEARCH_SCROLL_SIZE = 1_000;
+
+  /**
+   * Default scroll keep alive (seconds) when doing search
+   */
+	public static final int DEFAULT_ELASTIC_SEARCH_SCROLL_KEEP_ALIVE = 15;
 
 	/**
 	 * Default number of messages fetched per poll() call from a topic in phase 3.

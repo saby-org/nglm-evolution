@@ -45,7 +45,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
   
   public static class NotificationSinkConnectorTask extends StreamESSinkTask<MessageDelivery>
   {
-    private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+    private static String elasticSearchDateFormat = com.evolving.nglm.core.Deployment.getElasticsearchDateFormat();
     private DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
 
     /*****************************************
@@ -86,29 +86,19 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
     
     @Override public MessageDelivery unpackRecord(SinkRecord sinkRecord) 
     {
-      Object smsNotificationValue = sinkRecord.value();
+      Object notificationValue = sinkRecord.value();
       Schema notificationValueSchema = sinkRecord.valueSchema();
-      
-      Struct valueStruct = (Struct) smsNotificationValue;
+
+      Struct valueStruct = (Struct) notificationValue;
       String type = valueStruct.getString("deliveryType");
-      
+
       //  safety guard - return null
-      if(type == null || type.equals("")) {
+      if(type == null || type.equals("") || Deployment.getDeliveryManagers().get(type)==null ) {
         return null;
       }
 
-      if (type.equals("notificationmanagermail")) {
-       return MailNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
-      }
-      else if (type.equals("notificationmanagersms")) {
-        return SMSNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
-      }
-      else if (type.equals("notificationmanager")) {
-        return NotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
-      }
-      else {
-        return PushNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
-      }
+      return (MessageDelivery) Deployment.getDeliveryManagers().get(type).getRequestSerde().unpack(new SchemaAndValue(notificationValueSchema, notificationValue));
+
     }
     
     /*****************************************

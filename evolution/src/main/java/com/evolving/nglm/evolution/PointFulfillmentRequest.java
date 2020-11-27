@@ -270,7 +270,6 @@ public class PointFulfillmentRequest extends DeliveryRequest implements BonusDel
   
   @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
   {
-    Module module = Module.fromExternalRepresentation(getModuleID());
     guiPresentationMap.put(CUSTOMERID, getSubscriberID());
     guiPresentationMap.put(DELIVERABLEID, getPointID());
     guiPresentationMap.put(DELIVERABLEQTY, getAmount());
@@ -279,16 +278,15 @@ public class PointFulfillmentRequest extends DeliveryRequest implements BonusDel
     guiPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
     guiPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate()));
     guiPresentationMap.put(MODULEID, getModuleID());
-    guiPresentationMap.put(MODULENAME, module.toString());
+    guiPresentationMap.put(MODULENAME, getModule().toString());
     guiPresentationMap.put(FEATUREID, getFeatureID());
-    guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-    guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
     guiPresentationMap.put(ORIGIN, "");
   }
   
   @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
   {
-    Module module = Module.fromExternalRepresentation(getModuleID());
     thirdPartyPresentationMap.put(DELIVERABLEID, getPointID());
     thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
     thirdPartyPresentationMap.put(OPERATION, getOperation().toString());
@@ -296,10 +294,10 @@ public class PointFulfillmentRequest extends DeliveryRequest implements BonusDel
     thirdPartyPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
     thirdPartyPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate()));
     thirdPartyPresentationMap.put(MODULEID, getModuleID());
-    thirdPartyPresentationMap.put(MODULENAME, module.toString());
+    thirdPartyPresentationMap.put(MODULENAME, getModule().toString());
     thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
-    thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-    thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
     thirdPartyPresentationMap.put(ORIGIN, "");
   }
 

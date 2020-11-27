@@ -6,9 +6,10 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -16,6 +17,8 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -25,6 +28,9 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public abstract class SubscriberMessage
 {
+  
+  private static final Logger log = LoggerFactory.getLogger(SubscriberMessage.class);
+  
   /*****************************************
   *
   *  schema
@@ -40,8 +46,9 @@ public abstract class SubscriberMessage
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("subscriber_message");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("subscriberMessageTemplateID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("communicationChannelID", Schema.OPTIONAL_STRING_SCHEMA); // A enlever
     schemaBuilder.field("parameterTags", SimpleParameterMap.schema());
     schemaBuilder.field("dialogMessages", SchemaBuilder.map(Schema.STRING_SCHEMA, DialogMessage.schema()).name("message_dialog_messages").schema());
     commonSchema = schemaBuilder.build();
@@ -60,6 +67,7 @@ public abstract class SubscriberMessage
   *****************************************/
 
   private String subscriberMessageTemplateID = null;
+  private String communicationChannelID = null;
   private SimpleParameterMap parameterTags = new SimpleParameterMap();
   private Map<String, DialogMessage> dialogMessages = new HashMap<String, DialogMessage>();
 
@@ -70,6 +78,7 @@ public abstract class SubscriberMessage
   *****************************************/
 
   public String getSubscriberMessageTemplateID() { return subscriberMessageTemplateID; }
+  public String getCommunicationChannelID() { return communicationChannelID; }
   public SimpleParameterMap getParameterTags() { return parameterTags; }
   public Map<String, DialogMessage> getDialogMessages() { return dialogMessages; }
   
@@ -87,8 +96,10 @@ public abstract class SubscriberMessage
   *
   *****************************************/
 
-  protected SubscriberMessage(Object subscriberMessageJSON, Map<String, Boolean> dialogMessageFields, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
+  protected SubscriberMessage(Object subscriberMessageJSON, String communicationChannelID, Map<String, Boolean> dialogMessageFields, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
   {
+    this.communicationChannelID = communicationChannelID;
+    
     /*****************************************
     *
     *  case 1:  subscriberMessageJSON is a reference to a template
@@ -173,14 +184,24 @@ public abstract class SubscriberMessage
     *
     *****************************************/
 
+    List<String> contextIDs = subscriberMessageTemplate.getContextTags().stream().map(CriterionField::getID).collect(Collectors.toList());
     SimpleParameterMap parameterTags = new SimpleParameterMap();
     for (int i=0; i<jsonArray.size(); i++)
       {
         JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
         String parameterID = JSONUtilities.decodeString(parameterJSON, "templateValue", true);
-        parameterID = CriterionField.generateTagID(parameterID);
+        
+        //
+        //  ignore contexts - no need to respect the context tags
+        //
+        
+        if (contextIDs.contains(parameterID)) continue;
         CriterionField parameter = parameterTagsByID.get(parameterID);
-        if (parameter == null) throw new GUIManagerException("unknown parameterTag", parameterID);
+        if (parameter == null)
+          {
+            log.error("parameterID {} not found in parameterTagsByID {} and parameterJSON is {}", parameterID, parameterTagsByID, parameterJSON);
+            throw new GUIManagerException("unknown parameterTag", parameterID);
+          }
         
         if (! Journey.isExpressionValuedParameterValue(parameterJSON))
           {
@@ -257,6 +278,7 @@ public abstract class SubscriberMessage
 
     Struct valueStruct = (Struct) value;
     String subscriberMessageTemplateID = valueStruct.getString("subscriberMessageTemplateID");
+    String communicationChannelID = schema.field("communicationChannelID") != null ? valueStruct.getString("communicationChannelID") : null;
     SimpleParameterMap parameterTags = SimpleParameterMap.unpack(new SchemaAndValue(schema.field("parameterTags").schema(), valueStruct.get("parameterTags")));    
     Map<String,DialogMessage> dialogMessages = unpackDialogMessages(schema.field("dialogMessages").schema(), (Map<String,Object>) valueStruct.get("dialogMessages"));
     
@@ -265,6 +287,7 @@ public abstract class SubscriberMessage
     //
 
     this.subscriberMessageTemplateID = subscriberMessageTemplateID;
+    this.communicationChannelID = communicationChannelID;
     this.parameterTags = parameterTags;
   }
 
@@ -312,6 +335,7 @@ public abstract class SubscriberMessage
     SubscriberMessage subscriberMessage = (SubscriberMessage) value;
     Struct struct = new Struct(schema);
     struct.put("subscriberMessageTemplateID", subscriberMessage.getSubscriberMessageTemplateID());
+    struct.put("communicationChannelID", subscriberMessage.getCommunicationChannelID());
     struct.put("parameterTags", SimpleParameterMap.pack(subscriberMessage.getParameterTags()));
     struct.put("dialogMessages", packDialogMessages(subscriberMessage.getDialogMessages()));
     return struct;

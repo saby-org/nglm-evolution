@@ -44,8 +44,19 @@ public abstract class DeploymentManagedObject
   {
     this.jsonRepresentation = jsonRoot;
     this.id = JSONUtilities.decodeString(jsonRoot, "id", true);
-    this.name = JSONUtilities.decodeString(jsonRoot, "name", this.id);
-    this.display = JSONUtilities.decodeString(jsonRoot, "display", this.id);
+    this.name = JSONUtilities.decodeString(jsonRoot, "name", false);
+    this.display = JSONUtilities.decodeString(jsonRoot, "display", false);
+    if (this.name == null)
+      {
+        this.name = this.id;
+        this.jsonRepresentation.put("name", this.name);
+      }
+    if (this.display == null)
+      {
+        this.display = this.id;
+        this.jsonRepresentation.put("display", this.display);
+      }
+    
   }
 
   /*****************************************

@@ -9,9 +9,11 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.*;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityType;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -331,7 +333,6 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
 
   @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
   {
-    Module module = Module.fromExternalRepresentation(getModuleID());
     guiPresentationMap.put(CUSTOMERID, getSubscriberID());
     guiPresentationMap.put(PROVIDERID, getProviderID());
     guiPresentationMap.put(PROVIDERNAME, Deployment.getFulfillmentProviders().get(getProviderID()).getProviderName());
@@ -342,10 +343,10 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
     guiPresentationMap.put(VALIDITYPERIODTYPE, getPeriodType().getExternalRepresentation());
     guiPresentationMap.put(VALIDITYPERIODQUANTITY, getPeriodQuantity());
     guiPresentationMap.put(MODULEID, getModuleID());
-    guiPresentationMap.put(MODULENAME, module.toString());
+    guiPresentationMap.put(MODULENAME, getModule().toString());
     guiPresentationMap.put(FEATUREID, getFeatureID());
-    guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-    guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
     guiPresentationMap.put(ORIGIN, "");
     guiPresentationMap.put(RETURNCODE, getReturnCode());
     guiPresentationMap.put(RETURNCODEDETAILS, getReturnStatus());
@@ -357,7 +358,6 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
 
   @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService)
   {
-    Module module = Module.fromExternalRepresentation(getModuleID());
     thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
     thirdPartyPresentationMap.put(PROVIDERID, getProviderID());
     thirdPartyPresentationMap.put(PROVIDERNAME, Deployment.getFulfillmentProviders().get(getProviderID()).getProviderName());
@@ -368,10 +368,10 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
     thirdPartyPresentationMap.put(VALIDITYPERIODTYPE, getPeriodType().getExternalRepresentation());
     thirdPartyPresentationMap.put(VALIDITYPERIODQUANTITY, getPeriodQuantity());
     thirdPartyPresentationMap.put(MODULEID, getModuleID());
-    thirdPartyPresentationMap.put(MODULENAME, module.toString());
+    thirdPartyPresentationMap.put(MODULENAME, getModule().toString());
     thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
-    thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-    thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
     thirdPartyPresentationMap.put(ORIGIN, "");
     thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
     thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
@@ -451,19 +451,18 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
       *
       *****************************************/
 
+      String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
+      String newModuleID = moduleID;
+      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow)
+        {
+          newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+        }
+
       // retrieve the featureID that is the origin of this delivery request:
       // - If the Journey related to JourneyState is not a Workflow, then featureID = JourneyState.getID
       // - if the Journey related to JourneyState is a Workflown then we must extract the original featureID from the origial delivery Request that created the workflow instance
-      String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
-
-      // if external accountID needed (really for veon rewardManager here so far, but might worth having something generic for IN)
-      String externalSubscriberID = null;
-      String profileExternalSubscriberIDField = Deployment.getDeliveryManagers().get(this.deliveryType).getProfileExternalSubscriberIDField();
-      if ( profileExternalSubscriberIDField!=null ){
-        CriterionField criterionField = Deployment.getProfileCriterionFields().get(profileExternalSubscriberIDField);
-        externalSubscriberID = (String) criterionField.retrieveNormalized(subscriberEvaluationRequest);
-      }
+      String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
 
       /*****************************************
       *
@@ -540,11 +539,11 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
       rewardRequestData.put("originatingRequest", true);
       rewardRequestData.put("subscriberID", evolutionEventContext.getSubscriberState().getSubscriberID());
       rewardRequestData.put("eventID", rewardRequestData.get("deliveryRequestID")); // sure of that ??
-      rewardRequestData.put("moduleID", this.moduleID);
+      rewardRequestData.put("moduleID", newModuleID);
       rewardRequestData.put("featureID", deliveryRequestSource);
       rewardRequestData.put("deliveryType", deliveryType);
       rewardRequestData.put("diplomaticBriefcase", new HashMap<String, String>());
-      rewardRequestData.put("msisdn", externalSubscriberID);
+      rewardRequestData.put("msisdn", evolutionEventContext.getSubscriberState().getSubscriberID());
       rewardRequestData.put("providerID", providerID);
       rewardRequestData.put("deliverableID", deliverable.getDeliverableID());
       rewardRequestData.put("deliverableName", deliverable.getDeliverableName());
@@ -560,12 +559,12 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
       if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.REWARD+" request DONE");
 
       RewardManagerRequest rewardRequest = new RewardManagerRequest(evolutionEventContext.getSubscriberState().getSubscriberProfile(),evolutionEventContext.getSubscriberGroupEpochReader(),JSONUtilities.encodeObject(rewardRequestData), Deployment.getDeliveryManagers().get(deliveryType));
-      rewardRequest.setModuleID(moduleID);
+      rewardRequest.setModuleID(newModuleID);
       rewardRequest.setFeatureID(deliveryRequestSource);
 
       // XL: manual hack, the only purpose of this is campaign request not going into same topic as purchase request
       // purchase going into "standard" aka, first topic in : requestTopics of delivery manager declaration, this one going in the second one of the list
-      rewardRequest.setDeliveryPriority(DeliveryPriority.High);
+      // rewardRequest.forceDeliveryPriority(DeliveryPriority.High); --> not forcing any priority means we stick to the incoming event priority
 
       /*****************************************
       *

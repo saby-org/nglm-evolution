@@ -346,6 +346,7 @@ public class CriterionField extends DeploymentManagedObject
     criterionFieldJSON.put("dataType", CriterionDataType.StringCriterion.getExternalRepresentation());
     criterionFieldJSON.put("expressionValuedParameter", true);
     criterionFieldJSON.put("retriever", "getSubscriberMessageParameterTag");
+    criterionFieldJSON.put("tagMaxLength", Integer.MAX_VALUE);
     return JSONUtilities.encodeObject(criterionFieldJSON);
   }
 

@@ -30,7 +30,6 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -47,6 +46,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionContext;
 import com.evolving.nglm.evolution.Expression.ExpressionDataType;
@@ -55,6 +55,7 @@ import com.evolving.nglm.evolution.Expression.ExpressionParseException;
 import com.evolving.nglm.evolution.Expression.ExpressionReader;
 import com.evolving.nglm.evolution.Expression.ExpressionTypeCheckException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class EvaluationCriterion
 {
@@ -789,19 +790,12 @@ public class EvaluationCriterion
     *
     ****************************************/
     Object criterionFieldValue = null;
-    List<String> criterionFieldValues=new ArrayList<>();
-    
     Object evaluatedArgument = null;
     ExpressionDataType argumentType = null;
     try
       {        
         criterionFieldValue = criterionField.retrieveNormalized(evaluationRequest);
-              if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
-        {
-        	criterionFieldValues=Arrays.asList(criterionFieldValue.toString().split(","));
-        	 
-        }
-             
+    
         /****************************************
         *
         *  evaluate argument
@@ -1000,35 +994,13 @@ public class EvaluationCriterion
         *****************************************/
 
         case EqualOperator:
-        	  
-        	if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
-             {
-             	for(String singleCriterionFieldValue: criterionFieldValues) {
-             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
-             		 result = traceCondition(evaluationRequest, singleCriterionFieldValue.equals(evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
-             	    if (result)
-             		break;
-             	}
-             }else {
-            	 result = traceCondition(evaluationRequest, criterionFieldValue.equals(evaluatedArgument), criterionFieldValue, evaluatedArgument);
-            }
-        	 break;
+          result = traceCondition(evaluationRequest, criterionFieldValue.equals(evaluatedArgument), criterionFieldValue, evaluatedArgument);
+          break;
           
         case NotEqualOperator:
-        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
-             {
-             	for(String singleCriterionFieldValue: criterionFieldValues) {
-             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
-             		result = traceCondition(evaluationRequest, !singleCriterionFieldValue.equals(evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
-             	   if (!result)
-             		break;
-             	}
-             }
-             	else {
-        	result = traceCondition(evaluationRequest, !criterionFieldValue.equals(evaluatedArgument), criterionFieldValue, evaluatedArgument);
-             	}
-        	 break;
-             	         
+          result = traceCondition(evaluationRequest, !criterionFieldValue.equals(evaluatedArgument), criterionFieldValue, evaluatedArgument);
+          break;
+          
         /*****************************************
         *
         *  relational operators
@@ -1116,31 +1088,12 @@ public class EvaluationCriterion
         *****************************************/
 
         case IsNullOperator:
-        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
-             {
-             	for(String singleCriterionFieldValue: criterionFieldValues) {
-             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
-             		result = traceCondition(evaluationRequest, (singleCriterionFieldValue == null || singleCriterionFieldValue.equalsIgnoreCase("null") ), singleCriterionFieldValue, evaluatedArgument);
-             		if (result)
-             		break;
-             	}
-             }
-        	else { result = traceCondition(evaluationRequest, criterionFieldValue == null, criterionFieldValue, evaluatedArgument);
-        }
-        break;
+          result = traceCondition(evaluationRequest, criterionFieldValue == null, criterionFieldValue, evaluatedArgument);
+          break;
           
         case IsNotNullOperator:
-        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
-             {
-             	for(String singleCriterionFieldValue: criterionFieldValues) {
-             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
-             		result = traceCondition(evaluationRequest, !(singleCriterionFieldValue == null || singleCriterionFieldValue.equalsIgnoreCase("null")), singleCriterionFieldValue, evaluatedArgument);
-             		if (!result)
-             		break;
-             	}
-             }else {
-        	result = traceCondition(evaluationRequest, criterionFieldValue != null, criterionFieldValue, evaluatedArgument);
-             } break;
+          result = traceCondition(evaluationRequest, criterionFieldValue != null, criterionFieldValue, evaluatedArgument);
+          break;
 
         /*****************************************
         *
@@ -1149,20 +1102,9 @@ public class EvaluationCriterion
         *****************************************/
 
         case ContainsKeywordOperator:
-        if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
-        {
-        	for(String singleCriterionFieldValue: criterionFieldValues) {
-        		singleCriterionFieldValue=singleCriterionFieldValue.trim();
-        		 result = traceCondition(evaluationRequest, evaluateContainsKeyword(singleCriterionFieldValue, (String) evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
-        	if (result)
-        		break;
-        	}
-        }
-        else {
           result = traceCondition(evaluationRequest, evaluateContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
-         
-        }
-        break;  
+          break;
+          
         /*****************************************
         *
         *  doesNotContainsKeywordOperator operator
@@ -1170,17 +1112,8 @@ public class EvaluationCriterion
         *****************************************/
           
         case DoesNotContainsKeywordOperator:
-        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
-             {
-             	for(String singleCriterionFieldValue:criterionFieldValues) {
-             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
-             		result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) singleCriterionFieldValue, (String) evaluatedArgument), singleCriterionFieldValue, evaluatedArgument);
-             	   if (!result)
-             		break;
-             	}
-             }
-        	 else { result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
-        } break;
+          result = traceCondition(evaluationRequest, evaluateDoesNotContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
+          break;
 
         /*****************************************
         *
@@ -1189,16 +1122,6 @@ public class EvaluationCriterion
         *****************************************/
 
         case IsInSetOperator:
-        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
-             {
-             	for(String singleCriterionFieldValue: criterionFieldValues) {
-             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
-             		result = traceCondition(evaluationRequest, ((Set<String>) evaluatedArgument).contains((String) singleCriterionFieldValue), singleCriterionFieldValue, evaluatedArgument);
-                  	if (result)
-             		break;
-             	}
-             }
-        	else {
           switch (evaluationDataType)
             {
               case StringCriterion:
@@ -1208,21 +1131,10 @@ public class EvaluationCriterion
                 result = traceCondition(evaluationRequest, ((Set<Integer>) evaluatedArgument).contains((Integer) criterionFieldValue), criterionFieldValue, evaluatedArgument);
                 break;
             }
-        }
           break;
           
         case NotInSetOperator:
-        	 if(criterionField.getCriterionFieldRetriever().equalsIgnoreCase("getEvaluationJourneyStatus"))
-             {
-             	for(String singleCriterionFieldValue: criterionFieldValues) {
-             		singleCriterionFieldValue=singleCriterionFieldValue.trim();
-             		 result = traceCondition(evaluationRequest, !((Set<String>) evaluatedArgument).contains((String) singleCriterionFieldValue), singleCriterionFieldValue, evaluatedArgument);
-                     if (!result)
-             		break;
-             	}
-             }
-        	else { 
-            switch (evaluationDataType)
+          switch (evaluationDataType)
             {
               case StringCriterion:
                 result = traceCondition(evaluationRequest, !((Set<String>) evaluatedArgument).contains((String) criterionFieldValue), criterionFieldValue, evaluatedArgument);
@@ -1231,7 +1143,6 @@ public class EvaluationCriterion
                 result = traceCondition(evaluationRequest, !((Set<Integer>) evaluatedArgument).contains((Integer) criterionFieldValue), criterionFieldValue, evaluatedArgument);
                 break;
             }
-        	}
           break;
           
         case ContainsOperator:
@@ -1333,9 +1244,8 @@ public class EvaluationCriterion
 
     boolean result = true;
     for (EvaluationCriterion criterion : criteria)
-      {
-        result = result && criterion.evaluate(evaluationRequest);
-      }
+    result = result && criterion.evaluate(evaluationRequest);
+      
     return result;
   }
   
@@ -1354,14 +1264,13 @@ public class EvaluationCriterion
         query = query.filter(evaluationCriterion.esQuery());
       }
     
-    if(log.isDebugEnabled()) log.debug("final es query:"+query.toString());
     return query;
   }
   
   //
   // execute query
   //
-  public static long esCountMatchCriteriaExecuteQuery(BoolQueryBuilder query, RestHighLevelClient elasticsearch) throws IOException, ElasticsearchStatusException {
+  public static long esCountMatchCriteriaExecuteQuery(BoolQueryBuilder query, ElasticsearchClientAPI elasticsearch) throws IOException, ElasticsearchStatusException {
     CountRequest countRequest = new CountRequest("subscriberprofile").query(query);
     CountResponse countResponse = elasticsearch.count(countRequest, RequestOptions.DEFAULT);
     return countResponse.getCount();
@@ -1801,7 +1710,6 @@ public class EvaluationCriterion
           //
 
           String argumentValue = (String) argument.evaluateExpression(null, TimeUnit.Unknown);
-          if (argumentValue != null) argumentValue = argumentValue.toLowerCase();
 
           //
           //  script
@@ -1925,7 +1833,7 @@ public class EvaluationCriterion
           break;
           
         case DoesNotContainsKeywordOperator:
-          query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).mustNot(baseQuery);
+            query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).mustNot(baseQuery);
           break;
           
 
@@ -1946,10 +1854,9 @@ public class EvaluationCriterion
     return query;
   }
 
-  static HashSet journeyNames = new HashSet<Object>();
-  static HashSet campaignNames = new HashSet<Object>();
-  static HashSet bulkcampaignNames = new HashSet<Object>();
-
+  static String journeyName = "";
+  static String campaignName = "";
+  static String bulkcampaignName = "";
   
   /*****************************************
   *
@@ -1965,40 +1872,38 @@ public class EvaluationCriterion
     String criterion = fieldNameMatcher.group(1);
     // TODO : necessary ? To be checked
     if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
-    //String value = "";
-    HashSet<Object> values=new HashSet<Object>();
+    String value = "";
     switch (criterion)
     {
       case "Journey":
-        journeyNames = (HashSet<Object>) (argument.evaluate(null, null));
+        journeyName = (String) (argument.evaluate(null, null));
         return QueryBuilders.matchAllQuery();
         
       case "Campaign":
-    	  campaignNames = (HashSet<Object>) (argument.evaluate(null, null));
+        campaignName = (String) (argument.evaluate(null, null));
         return QueryBuilders.matchAllQuery();
         
       case "Bulkcampaign":
-    	  bulkcampaignNames = (HashSet<Object>) (argument.evaluate(null, null));
+        bulkcampaignName = (String) (argument.evaluate(null, null));
         return QueryBuilders.matchAllQuery();
         
       case "JourneyStatus":
-        values = journeyNames;
+        value = journeyName;
         break;
         
       case "CampaignStatus":
-    	  values = campaignNames;
+        value = campaignName;
         break;
         
       case "BulkcampaignStatus":
-        values = bulkcampaignNames;
+        value = bulkcampaignName;
         break;
         
       default:
         throw new CriterionException("unknown criteria : " + esField);
     }
     
-       
-    QueryBuilder queryID = QueryBuilders.termsQuery("subscriberJourneys.journeyID", values);
+    QueryBuilder queryID = QueryBuilders.termQuery("subscriberJourneys.journeyID", value);
     QueryBuilder queryStatus = null;
     QueryBuilder query = null;
     QueryBuilder insideQuery = null;
@@ -2132,28 +2037,57 @@ public class EvaluationCriterion
     String pointID = fieldNameMatcher.group(1);
     String criterionFieldBaseName = fieldNameMatcher.group(2);
     QueryBuilder queryPointID = QueryBuilders.termQuery("pointBalances.pointID", pointID);
+    QueryBuilder queryPointFluctuations = null;
     QueryBuilder queryInternal = null;
     switch (criterionFieldBaseName)
     {
-      case "balance":
+      case "balance": // point.POINT_ID.balance
         queryInternal = buildCompareQuery("pointBalances." + SubscriberProfile.CURRENT_BALANCE, ExpressionDataType.IntegerExpression);
         break;
 
-      case "earliestexpirydate":
+      case "earliestexpirydate": // point.POINT_ID.earliestexpirydate
         queryInternal = buildCompareQuery("pointBalances." + SubscriberProfile.EARLIEST_EXPIRATION_DATE, ExpressionDataType.DateExpression);
         break;
 
-      case "earliestexpiryquantity":
+      case "earliestexpiryquantity": // point.POINT_ID.earliestexpiryquantity
         queryInternal = buildCompareQuery("pointBalances." + SubscriberProfile.EARLIEST_EXPIRATION_QUANTITY, ExpressionDataType.IntegerExpression);
         break;
         
-      default:
-        throw new CriterionException("Internal error, unsupported criterion field : " + esField);
+      default:  // point.POINT_ID.expired.last7days
+        String searchStringForPointFluctuations = "pointFluctuations." + pointID + ".";
+        fieldNamePattern = Pattern.compile("^([^.]+)\\.([^.]+)$");
+        fieldNameMatcher = fieldNamePattern.matcher(criterionFieldBaseName);
+        if (! fieldNameMatcher.find()) throw new CriterionException("invalid criterionFieldBaseName field " + criterionFieldBaseName);
+        String nature = fieldNameMatcher.group(1); // earned, consumed, expired
+        String interval = fieldNameMatcher.group(2); // yesterday, last7days, last30days
+        switch (interval)
+        {
+          case "yesterday":
+          case "last7days":
+          case "last30days":
+            searchStringForPointFluctuations += interval + "."; // pointFluctuations.POINT_ID.yesterday.earned
+            break;
+          default: throw new CriterionException("invalid criterionField interval " + interval + " (should be yesterday, last7days, last30days)");
+        }
+        switch (nature)
+        {
+          case "earned"   :
+          case "expired"  :
+            searchStringForPointFluctuations += nature;
+            break;
+
+          case "consumed" :
+            searchStringForPointFluctuations += "redeemed";  // different name in criteria and in ElasticSearch, don't know why (??)
+            break;
+
+          default: throw new CriterionException("invalid criterionField nature " + nature + " (should be earned, consumed, expired)");
+        }
+        return buildCompareQuery(searchStringForPointFluctuations, ExpressionDataType.IntegerExpression);
     }
     QueryBuilder query = QueryBuilders.nestedQuery("pointBalances",
-                                          QueryBuilders.boolQuery()
-                                                          .filter(queryPointID)
-                                                          .filter(queryInternal), ScoreMode.Total);
+            QueryBuilders.boolQuery()
+            .filter(queryPointID)
+            .filter(queryInternal), ScoreMode.Total);
     return query;
   }
 
@@ -2184,6 +2118,22 @@ public class EvaluationCriterion
 
       case "rewardpoint.balance":
         query = handleLoyaltyProgramField("loyaltyPrograms.rewardPointBalance", esField, queryLPID, ExpressionDataType.IntegerExpression);
+        break;
+        
+      case "tierupdatedate":
+        query = handleLoyaltyProgramField("loyaltyPrograms.tierUpdateDate", esField, queryLPID, ExpressionDataType.DateExpression);
+        break;
+
+      case "optindate":
+        query = handleLoyaltyProgramField("loyaltyPrograms.loyaltyProgramEnrollmentDate", esField, queryLPID, ExpressionDataType.DateExpression);
+        break;
+
+      case "optoutdate":
+        query = handleLoyaltyProgramField("loyaltyPrograms.loyaltyProgramExitDate", esField, queryLPID, ExpressionDataType.DateExpression);
+        break;
+
+      case "tierupdatetype":
+        query = handleLoyaltyProgramField("loyaltyPrograms.tierChangeType", esField, queryLPID, ExpressionDataType.StringExpression);
         break;
 
       default:

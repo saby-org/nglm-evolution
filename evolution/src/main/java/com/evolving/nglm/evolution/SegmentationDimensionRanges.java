@@ -309,4 +309,45 @@ public class SegmentationDimensionRanges extends SegmentationDimension
     this.setDefaultSegmentID(defaultSegmentID);
     this.setNumberOfSegments(numberOfSegments);
   }
+
+  @Override public boolean getSegmentsConditionEqual(SegmentationDimension dimension)
+  {
+    //verify the same type for objects
+    if(this.getClass() != dimension.getClass()) return false;
+    //cast to ranges dimension
+    SegmentationDimensionRanges rangesDimension = (SegmentationDimensionRanges)dimension;
+    //if base split size changed inequality
+    if(this.getBaseSplit().size() != rangesDimension.getBaseSplit().size()) return false;
+    for(BaseSplit split : this.getBaseSplit())
+    {
+      BaseSplit comparedSameGroupSplit = rangesDimension.getBaseSplit().stream().filter(p -> p.getSplitName().equals(split.getSplitName())).findFirst().orElse(null);
+      //if not group name exists in splits means that eligibility criteria changed or damaged
+      if(comparedSameGroupSplit == null) return false;
+      //verify if number of segments are different between the same splits.
+      // This is made before criteria because is less cost effective and if size changed we don't want to verify criteria that is most expensive
+      if(split.getSegments().size() != comparedSameGroupSplit.getSegments().size()) return false;
+      //verify if profile criteria is the same for splits
+      for(EvaluationCriterion criterion : split.getProfileCriteria())
+      {
+        if(!comparedSameGroupSplit.getProfileCriteria().stream().anyMatch(p -> (p.getCriterionOperator().equals(criterion.getCriterionOperator())
+            && (p.getArgumentExpression().equals(criterion.getArgumentExpression())))
+            && (p.getCriterionField().equals(criterion.getCriterionField())))) return false;
+      }
+      for(Segment segment : split.getSegments())
+      {
+        Segment comparedSplitSegment = comparedSameGroupSplit.getSegments().stream().filter(p -> p.getID().equals(segment.getID())).findFirst().orElse(null);
+        //segment does not exists
+        if(comparedSplitSegment == null)
+        {
+          return false;
+        }
+        else
+        {
+          //verify segments with the same id are equals
+          if(!segment.getSegmentConditionEqual(comparedSplitSegment)) return false;
+        }
+      }
+    }
+    return true;
+  }
 }

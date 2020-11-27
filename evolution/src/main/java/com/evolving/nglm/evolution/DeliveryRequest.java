@@ -105,6 +105,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public static final String VOUCHERPARTNERID = "voucherPartnerId";
   public static final String RESELLERID = "resellerID";
   public static final String RESELLERDISPLAY = "resellerDisplay";
+  public static final String SUPPLIERDISPLAY = "supplierDisplay";
   
   //
   // Messages
@@ -152,6 +153,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     ODR(2),
     Messages(3),
     LoyaltyProgram(4),
+    Journey(5),
     Unknown(-1);
     private Integer externalRepresentation;
     private ActivityType(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -167,16 +169,16 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
 
   public enum DeliveryPriority
   {
-    Urgent("urgent", 2),
-    High("high", 1),
-    Standard("standard", 0),
-    Unknown("(unknown)", -1);
+    High("high", 2),
+    Standard("standard", 1),
+    Low("low", 0);
     private String externalRepresentation;
     private int topicIndex;
     private DeliveryPriority(String externalRepresentation, int topicIndex) { this.externalRepresentation = externalRepresentation; this.topicIndex = topicIndex; }
     public String getExternalRepresentation() { return externalRepresentation; }
     public int getTopicIndex() { return topicIndex; }
-    public static DeliveryPriority fromExternalRepresentation(String externalRepresentation) { for (DeliveryPriority enumeratedValue : DeliveryPriority.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
+    public static DeliveryPriority fromExternalRepresentation(String externalRepresentation) { for (DeliveryPriority enumeratedValue : DeliveryPriority.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Standard; }
+    public static DeliveryPriority fromTopicIndex(int topicIndex) { for (DeliveryPriority enumeratedValue : DeliveryPriority.values()) { if (enumeratedValue.getTopicIndex()==topicIndex) return enumeratedValue; } return Standard; }
   }
   
   /*****************************************
@@ -195,7 +197,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("delivery_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),9));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),10));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("deliveryRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequestSource", Schema.STRING_SCHEMA);
@@ -207,8 +209,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     /* In case the request is triggered for another subscriber: originating and targeted subscriber (mainly hierachy relation) */
     schemaBuilder.field("originatingSubscriberID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("targetedSubscriberID", Schema.OPTIONAL_STRING_SCHEMA);
-    
-    schemaBuilder.field("deliveryPriority", Schema.STRING_SCHEMA);
+
     schemaBuilder.field("eventID", Schema.STRING_SCHEMA);
     schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
@@ -273,7 +274,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   private String subscriberID;
   private String originatingSubscriberID;   // in case of executeActionForOtherSubscriber
   private String targetedSubscriberID; // in case of executeActionForOtherSubscriber
-  private DeliveryPriority deliveryPriority;
   private String eventID;
   private String moduleID;
   private String featureID;
@@ -305,7 +305,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public String getSubscriberID() { return subscriberID; }
   public String getOriginatingSubscriberID() { return originatingSubscriberID; }
   public String getTargetedSubscriberID() { return targetedSubscriberID; }
-  public DeliveryPriority getDeliveryPriority() { return deliveryPriority; }
   public String getEventID() { return eventID; }
   public String getModuleID() { return moduleID; }
   public String getFeatureID() { return featureID; }
@@ -325,6 +324,8 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public Date getRescheduledDate() { return rescheduledDate; }
   public MetricHistory getNotificationHistory(){ return notificationHistory; }
   public Map<String,String> getSubscriberFields(){return subscriberFields;}
+  //derived
+  public Module getModule(){return Module.fromExternalRepresentation(getModuleID());}
 
   //
   //  setters
@@ -341,7 +342,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public void setCorrelator(String correlator) { this.correlator = correlator; }
   public void setDeliveryStatus(DeliveryStatus deliveryStatus) { this.deliveryStatus = deliveryStatus; }
   public void setDeliveryDate(Date deliveryDate) { this.deliveryDate = deliveryDate; }
-  public void setDeliveryPriority(DeliveryPriority deliveryPriority) { this.deliveryPriority = deliveryPriority; }
   public void setEventID(String eventID) { this.eventID = eventID; }
   public void setFeatureID(String featureID) { this.featureID = featureID; }
   public void setModuleID(String moduleID) { this.moduleID = moduleID; }
@@ -383,8 +383,10 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
 
   // if false, not going in SubscriberHistoryStateStore
   public boolean isToStoreInHistoryStateStore(){
+    // store only response
+    boolean toStore = !getDeliveryStatus().equals(DeliveryStatus.Pending);
     // store only those types
-    boolean toStore = getActivityType()==ActivityType.BDR || getActivityType()==ActivityType.ODR || getActivityType()==ActivityType.Messages;
+    toStore = toStore && (getActivityType()==ActivityType.BDR || getActivityType()==ActivityType.ODR || getActivityType()==ActivityType.Messages);
     // filter DeliveryRequest response that are related to a parent... keep history only if we are for the parent here...
     toStore = toStore && (getOriginatingSubscriberID() == null || getOriginatingSubscriberID().startsWith(ORIGIN));
     return toStore;
@@ -443,7 +445,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.originatingRequest = true;
     this.creationDate = context.now();
     this.subscriberID = context.getSubscriberState().getSubscriberID();
-    this.deliveryPriority = DeliveryPriority.Standard;
     this.eventID = this.deliveryRequestID;
     this.moduleID = null;
     this.featureID = null;
@@ -484,7 +485,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.subscriberID = subscriberID;
     this.originatingSubscriberID = null; // consider from GUIManager no delivery request delegation
     this.targetedSubscriberID = null; // consider from GUIManager no delivery request delegation
-    this.deliveryPriority = DeliveryPriority.Standard;
     this.eventID = this.deliveryRequestID;
     this.moduleID = null;
     this.featureID = null;
@@ -520,7 +520,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.subscriberID = deliveryRequest.getSubscriberID();
     this.originatingSubscriberID = deliveryRequest.getOriginatingSubscriberID();
     this.targetedSubscriberID = deliveryRequest.getTargetedSubscriberID();
-    this.deliveryPriority = deliveryRequest.getDeliveryPriority();
     this.eventID = deliveryRequest.getEventID();
     this.moduleID = deliveryRequest.getModuleID();
     this.featureID = deliveryRequest.getFeatureID();
@@ -554,14 +553,13 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
      *
      *****************************************/
 
-    super(subscriberProfile,subscriberGroupEpochReader);
+    super(subscriberProfile,subscriberGroupEpochReader,DeliveryPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryPriority", DeliveryPriority.Standard.getExternalRepresentation())));
     this.deliveryRequestID = JSONUtilities.decodeString(jsonRoot, "deliveryRequestID", true);
     this.deliveryRequestSource = "external";
     this.originatingDeliveryRequestID = JSONUtilities.decodeString(jsonRoot, "originatingDeliveryRequestID", false);
     this.originatingRequest = JSONUtilities.decodeBoolean(jsonRoot, "originatingRequest", Boolean.TRUE);
     this.creationDate = SystemTime.getCurrentTime();
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
-    this.deliveryPriority = DeliveryPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryPriority", "standard"));
     this.eventID = JSONUtilities.decodeString(jsonRoot, "eventID", true);
     this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", true);
     this.featureID = JSONUtilities.decodeString(jsonRoot, "featureID", true);
@@ -603,7 +601,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
     this.originatingSubscriberID = JSONUtilities.decodeString(jsonRoot, "originatingSubscriberID", false);
     this.targetedSubscriberID = JSONUtilities.decodeString(jsonRoot, "targetedSubscriberID", false);
-    this.deliveryPriority = DeliveryPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryPriority", "standard"));
     this.eventID = JSONUtilities.decodeString(jsonRoot, "eventID", true);
     this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", true);
     this.featureID = JSONUtilities.decodeString(jsonRoot, "featureID", true);
@@ -637,7 +634,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.originatingRequest = true;
     this.creationDate = null;
     this.subscriberID = null;
-    this.deliveryPriority = null;
     this.eventID = null;
     this.moduleID = null;
     this.featureID = null;
@@ -673,7 +669,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     struct.put("subscriberID", deliveryRequest.getSubscriberID());
     struct.put("originatingSubscriberID", deliveryRequest.getOriginatingSubscriberID());
     struct.put("targetedSubscriberID", deliveryRequest.getTargetedSubscriberID());
-    struct.put("deliveryPriority", deliveryRequest.getDeliveryPriority().getExternalRepresentation());
     struct.put("eventID", deliveryRequest.getEventID());
     struct.put("moduleID", deliveryRequest.getModuleID());
     struct.put("featureID", deliveryRequest.getFeatureID());
@@ -722,7 +717,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     String subscriberID = valueStruct.getString("subscriberID");
     String originatingSubscriberID = (schemaVersion >=9) ? valueStruct.getString("originatingSubscriberID") : null;
     String targetedSubscriberID = (schemaVersion >=9) ? valueStruct.getString("targetedSubscriberID") : null;
-    DeliveryPriority deliveryPriority = DeliveryPriority.fromExternalRepresentation(valueStruct.getString("deliveryPriority"));
     String eventID = valueStruct.getString("eventID");
     String moduleID = valueStruct.getString("moduleID");
     String featureID = valueStruct.getString("featureID");
@@ -752,7 +746,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.subscriberID = subscriberID;
     this.originatingSubscriberID = originatingSubscriberID;
     this.targetedSubscriberID = targetedSubscriberID;
-    this.deliveryPriority = deliveryPriority;
     this.eventID = eventID;
     this.moduleID = moduleID;
     this.featureID = featureID;
@@ -829,7 +822,12 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
       {
         case Journey_Manager:
           GUIManagedObject journey = journeyService.getStoredJourney(featureId);
-          journey = (journey != null && (journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey || journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign || journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow || journey.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)) ? journey : null;
+          journey = (journey != null && (
+              journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey ||
+              journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign ||
+              journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow ||
+              journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow ||
+              journey.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)) ? journey : null;
           featureName = journey == null ? null : journey.getGUIManagedObjectName();
           break;
 
@@ -873,7 +871,12 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
       {
         case Journey_Manager:
           GUIManagedObject journey = journeyService.getStoredJourney(featureId);
-          journey = (journey != null && (journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey || journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign || journey.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)) ? journey : null;
+          journey = (journey != null && (
+              journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey ||
+              journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign ||
+              journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow ||
+              journey.getGUIManagedObjectType() == GUIManagedObjectType.LoyaltyWorkflow ||
+              journey.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)) ? journey : null;
           featureDisplay = journey == null ? null : journey.getGUIManagedObjectDisplay();
           break;
 
@@ -939,7 +942,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     b.append("," + originatingRequest);
     b.append("," + creationDate);
     b.append("," + subscriberID);
-    b.append("," + deliveryPriority);
     b.append("," + eventID);
     b.append("," + moduleID);
     b.append("," + featureID);
@@ -997,26 +999,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     	log.warn(e.getMessage());
       }
     return result;
-  }
-
-  /*****************************************
-   *
-   *  setNotificationStatus
-   *  will set right metric history from list of metrics
-   *
-   *****************************************/
-
-  protected void setNotificationHistory(List<Pair<String,MetricHistory>> metricHistoryList)
-  {
-    MetricHistory returnMetric = null;
-    for(Pair<String,MetricHistory> item : metricHistoryList)
-      {
-        if (item.getFirstElement().equals(Deployment.getDeliveryTypeCommunicationChannelIDMap().get(deliveryType)))
-          {
-            this.notificationHistory = item.getSecondElement();
-            break;
-          }
-      }
   }
 
   // build subscriberFields populated

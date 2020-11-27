@@ -14,14 +14,14 @@
 # Those settings will be applied by default to all indexes
 # Order is intentionally set to -10 (to be taken into account before every other templates).
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/root -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/root -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["*"],
   "order": -10,
   "settings" : {
     "index" : {
-      "number_of_shards" : "'$ELASTICSEARCH_SHARDS_DEFAULT'",
-      "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS_DEFAULT'",
+      "number_of_shards" : "Deployment.getElasticsearchDefaultShards()",
+      "number_of_replicas" : "Deployment.getElasticsearchDefaultReplicas()",
       "refresh_interval" : "30s",
       "translog" : { 
         "durability" : "async", 
@@ -56,14 +56,14 @@ echo
 #   - this template will be used by the subscriberprofile index, and also subscriberprofile snapshots
 #  Order is set to -1 to be taken into account before subscriberprofile_snapshot
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["subscriberprofile*"],
   "order": -1,
   "settings" : {
     "index" : {
-      "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SUBSCRIBERPROFILE'",
-      "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS_SUBSCRIBERPROFILE'"
+      "number_of_shards" : "Deployment.getElasticsearchSubscriberprofileShards()",
+      "number_of_replicas" : "Deployment.getElasticsearchSubscriberprofileReplicas()"
     }
   },
   "mappings" : {
@@ -90,7 +90,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile -H'Content
       },
       "vouchers"                            : { "type" : "nested",
       	   "properties" : {
-              "vouchers"        : { "type": "nested", "properties": { "voucherExpiryDate" : { "type" : "date" } } }
+              "vouchers"        : { "type": "nested", "properties": { "voucherExpiryDate" : { "type" : "date" }, "voucherDeliveryDate" : { "type" : "date" } } }
            }
       },
       "loyaltyPrograms"                     : { "type" : "nested",
@@ -98,7 +98,9 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile -H'Content
               "loyaltyProgramEnrollmentDate" : { "type" : "date" },
               "loyaltyProgramExitDate"       : { "type" : "date" },
               "tierUpdateDate"               : { "type" : "date" },
-              "loyaltyProgramEpoch"          : { "type" : "long" }
+              "loyaltyProgramEpoch"          : { "type" : "long" },
+              "rewardTodayRedeemer"          : { "type" : "boolean" },
+              "rewardYesterdayRedeemer"      : { "type" : "boolean" }
            }
       },
       "pointBalances"                       : { "type": "nested",
@@ -115,15 +117,34 @@ echo
 #
 #  create a cleaning policy for subscriberprofile snapshots
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/subscriberprofile_snapshot_policy -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_opendistro/_ism/policies/subscriberprofile_snapshot_policy -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "policy": {
-    "phases": {
-      "delete": {
-        "min_age": "'$ELASTICSEARCH_SUBSCRIBERPROFILE_SNAPSHOT_CLEANING'",
-        "actions": { "delete": {} }
+    "description": "hot delete workflow for subscriber snapshot",
+    "default_state": "hot",
+    "schema_version": 1,
+    "states": [
+      {
+        "name": "hot",
+        "actions": [],
+        "transitions": [
+          {
+            "state_name": "delete",
+            "conditions": {
+              "min_index_age": "Deployment.getElasticsearchRetentionDaysSnapshots()d"
+            }
+          }
+        ]
+      },
+      {
+        "name": "delete",
+        "actions": [
+          {
+            "delete": {}
+          }
+        ]
       }
-    }
+    ]
   }
 }'
 echo
@@ -131,15 +152,15 @@ echo
 #
 #  override subscriberprofile template for snapshots ONLY with cleaning policy
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile_snapshot -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile_snapshot -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["subscriberprofile_snapshot-*"],
   "settings" : {
     "index" : {
-      "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SNAPSHOT'",
-      "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS_SNAPSHOT'",
-      "lifecycle.name": "subscriberprofile_snapshot_policy"
-    }
+      "number_of_shards" : "Deployment.getElasticsearchSnapshotShards()",
+      "number_of_replicas" : "Deployment.getElasticsearchSnapshotReplicas()"
+    },
+    "opendistro.index_state_management.policy_id": "subscriberprofile_snapshot_policy"
   }
 }'
 echo
@@ -152,15 +173,34 @@ echo
 #
 #  create a cleaning policy for bdr
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/bdr_policy -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_opendistro/_ism/policies/bdr_policy -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "policy": {
-    "phases": {
-      "delete": {
-         "min_age": "'$ELASTICSEARCH_BDR_CLEANING'",
-         "actions": { "delete": {} }
+    "description": "hot delete workflow for bdr",
+    "default_state": "hot",
+    "schema_version": 1,
+    "states": [
+      {
+        "name": "hot",
+        "actions": [],
+        "transitions": [
+          {
+            "state_name": "delete",
+            "conditions": {
+              "min_index_age": "Deployment.getElasticsearchRetentionDaysBDR()d"
+            }
+          }
+        ]
+      },
+      {
+        "name": "delete",
+        "actions": [
+          {
+            "delete": {}
+          }
+        ]
       }
-    }
+    ]
   }
 }'
 echo
@@ -168,13 +208,11 @@ echo
 #
 #  manually create bdr template
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/bdr -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/bdr -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["detailedrecords_bonuses-*"],
   "settings" : {
-    "index" : {
-      "lifecycle.name": "bdr_policy"
-    }
+    "opendistro.index_state_management.policy_id": "bdr_policy"
   },
   "mappings" : {
     "properties" : {
@@ -201,7 +239,7 @@ echo
 #
 #  manually create bdr pipeline
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/bdr-daily -H 'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/bdr-daily -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H 'Content-Type: application/json' -d'
 {
   "description": "daily bdr index naming",
   "processors" : [
@@ -222,15 +260,34 @@ echo
 #
 #  create a cleaning policy for tokens
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/token_policy -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_opendistro/_ism/policies/token_policy -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "policy": {
-    "phases": {
-      "delete": {
-         "min_age": "'$ELASTICSEARCH_TOKEN_CLEANING'",
-         "actions": { "delete": {} }
+    "description": "hot delete workflow for token",
+    "default_state": "hot",
+    "schema_version": 1,
+    "states": [
+      {
+        "name": "hot",
+        "actions": [],
+        "transitions": [
+          {
+            "state_name": "delete",
+            "conditions": {
+              "min_index_age": "Deployment.getElasticsearchRetentionDaysTokens()d"
+            }
+          }
+        ]
+      },
+      {
+        "name": "delete",
+        "actions": [
+          {
+            "delete": {}
+          }
+        ]
       }
-    }
+    ]
   }
 }'
 echo
@@ -238,13 +295,11 @@ echo
 #
 #  manually create token template
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/token -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/token -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["detailedrecords_tokens-*"],
   "settings" : {
-    "index" : {
-      "lifecycle.name": "token_policy"
-    }
+    "opendistro.index_state_management.policy_id": "token_policy"
   },
   "mappings" : {
     "properties" : {
@@ -263,7 +318,7 @@ echo
 #
 #  manually create token pipeline
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/token-daily -H 'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/token-daily -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H 'Content-Type: application/json' -d'
 {
   "description": "daily token index naming",
   "processors" : [
@@ -284,15 +339,34 @@ echo
 #
 #  create a cleaning policy for odr
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/odr_policy -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_opendistro/_ism/policies/odr_policy -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "policy": {
-    "phases": {
-      "delete": {
-         "min_age": "'$ELASTICSEARCH_ODR_CLEANING'",
-         "actions": { "delete": {} }
+    "description": "hot delete workflow for odr",
+    "default_state": "hot",
+    "schema_version": 1,
+    "states": [
+      {
+        "name": "hot",
+        "actions": [],
+        "transitions": [
+          {
+            "state_name": "delete",
+            "conditions": {
+              "min_index_age": "Deployment.getElasticsearchRetentionDaysODR()d"
+            }
+          }
+        ]
+      },
+      {
+        "name": "delete",
+        "actions": [
+          {
+            "delete": {}
+          }
+        ]
       }
-    }
+    ]
   }
 }'
 echo
@@ -300,13 +374,11 @@ echo
 #
 #  manually create odr template
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/odr -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/odr -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["detailedrecords_offers-*"],
   "settings" : {
-    "index" : {
-      "lifecycle.name": "odr_policy"
-    }
+    "opendistro.index_state_management.policy_id": "odr_policy"
   },
   "mappings" : {
     "properties" : {
@@ -337,7 +409,7 @@ echo
 #
 #  manually create odr pipeline
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/odr-daily -H 'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/odr-daily -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H 'Content-Type: application/json' -d'
 {
   "description": "daily odr index naming",
   "processors" : [
@@ -356,17 +428,119 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/odr-daily -H 'Content
 echo
 
 #
-#  create a cleaning policy for mdr
+#  create a cleaning policy for VDR
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/mdr_policy -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_opendistro/_ism/policies/vdr_policy -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "policy": {
-    "phases": {
-      "delete": {
-         "min_age": "'$ELASTICSEARCH_MDR_CLEANING'",
-         "actions": { "delete": {} }
+    "description": "hot delete workflow for vdr",
+    "default_state": "hot",
+    "schema_version": 1,
+    "states": [
+      {
+        "name": "hot",
+        "actions": [],
+        "transitions": [
+          {
+            "state_name": "delete",
+            "conditions": {
+              "min_index_age": "Deployment.getElasticsearchRetentionDaysVDR()d"
+            }
+          }
+        ]
+      },
+      {
+        "name": "delete",
+        "actions": [
+          {
+            "delete": {}
+          }
+        ]
+      }
+    ]
+  }
+}'
+echo
+
+#
+#  manually create vdr template
+#
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/vdr -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["detailedrecords_vouchers-*"],
+  "settings" : {
+    "opendistro.index_state_management.policy_id": "vdr_policy"
+  },
+  "mappings" : {
+    "properties" : {
+      "subscriberID" : { "type" : "keyword" },
+      "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
+      "eventID" : { "type" : "keyword" },     
+      "moduleID" : { "type" : "keyword" },
+      "featureID" : { "type" : "keyword" },
+      "origin" : { "type" : "keyword", "index" : "false" },
+      "returnStatus" : { "type" : "keyword" },
+      "voucherCode" : { "type" : "keyword" },
+      "voucherID" : { "type" : "keyword" },
+      "opertaion" : { "type" : "keyword" },
+      "expiryDate" : { "type" : "keyword" }
+    }
+  }
+}'
+echo
+
+#
+#  manually create vdr pipeline
+#
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/vdr-daily -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H 'Content-Type: application/json' -d'
+{
+  "description": "daily vdr index naming",
+  "processors" : [
+    {
+      "date_index_name" : {
+        "field" : "eventDatetime",
+        "index_name_prefix" : "detailedrecords_vouchers-",
+        "index_name_format" : "yyyy-MM-dd",
+        "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
+        "timezone" : "'$DEPLOYMENT_TIMEZONE'",
+        "date_rounding" : "d"
       }
     }
+  ]
+}'
+echo
+
+#
+#  create a cleaning policy for mdr
+#
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_opendistro/_ism/policies/mdr_policy -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "policy": {
+    "description": "hot delete workflow for mdr",
+    "default_state": "hot",
+    "schema_version": 1,
+    "states": [
+      {
+        "name": "hot",
+        "actions": [],
+        "transitions": [
+          {
+            "state_name": "delete",
+            "conditions": {
+              "min_index_age": "Deployment.getElasticsearchRetentionDaysMDR()d"
+            }
+          }
+        ]
+      },
+      {
+        "name": "delete",
+        "actions": [
+          {
+            "delete": {}
+          }
+        ]
+      }
+    ]
   }
 }'
 echo
@@ -374,13 +548,11 @@ echo
 #
 #  manually create mdr template
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mdr -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mdr -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["detailedrecords_messages-*"],
   "settings" : {
-    "index" : {
-      "lifecycle.name": "mdr_policy"
-    }
+    "opendistro.index_state_management.policy_id": "mdr_policy"
   },
   "mappings" : {
     "properties" : {
@@ -404,7 +576,7 @@ echo
 #
 #  manually create mdr pipeline
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/mdr-daily -H 'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/mdr-daily -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H 'Content-Type: application/json' -d'
 {
   "description": "daily mdr index naming",
   "processors" : [
@@ -430,7 +602,7 @@ echo
 #
 #  manually create journeystatistic index
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/journeystatistic -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/journeystatistic -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["journeystatistic*"],
   "mappings" : {
@@ -470,7 +642,7 @@ then
   #
   #  manually create regr_criteria index
   #
-  curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/regr_criteria -H'Content-Type: application/json' -d'
+  prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/regr_criteria -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
   {
     "index_patterns": ["regr_criteria"],
     "mappings" : {
@@ -487,7 +659,7 @@ then
   #
   #  manually create regr_counter index
   #
-  curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/regr_counter -H'Content-Type: application/json' -d'
+  prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/regr_counter -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
   {
     "index_patterns": ["regr_counter"],
     "mappings" : {
@@ -497,7 +669,7 @@ then
     }
   }'
 
-  curl -XPUT http://$MASTER_ESROUTER_SERVER/regr_counter/_create/1 -H'Content-Type: application/json' -d'
+  prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/regr_counter/_doc/1 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
   {
     "count" : 100
   }'
@@ -509,7 +681,7 @@ fi
 # datacubes
 #
 # -------------------------------------------------------------------------------
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_subscriberprofile -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_subscriberprofile -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["datacube_subscriberprofile"],
   "mappings" : {
@@ -522,7 +694,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_subscriberprofile -
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_loyaltyprogramshistory -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_loyaltyprogramshistory -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["datacube_loyaltyprogramshistory"],
   "mappings" : {
@@ -542,7 +714,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_loyaltyprogramshist
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_loyaltyprogramschanges -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_loyaltyprogramschanges -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["datacube_loyaltyprogramschanges"],
   "mappings" : {
@@ -559,7 +731,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_loyaltyprogramschan
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeytraffic- -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeytraffic- -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["datacube_journeytraffic-*"],
   "mappings" : {
@@ -575,7 +747,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeytraffic- -H'
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeyrewards- -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeyrewards- -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["datacube_journeyrewards-*"],
   "mappings" : {
@@ -589,7 +761,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeyrewards- -H'
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_odr -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_odr -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["datacube_odr"],
   "mappings" : {
@@ -610,7 +782,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_odr -H'Content-Type
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_bdr -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_bdr -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["datacube_bdr"],
   "mappings" : {
@@ -631,7 +803,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_bdr -H'Content-Type
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_messages -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_messages -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["datacube_messages"],
   "mappings" : {
@@ -660,7 +832,7 @@ echo
 # mapping_modules is a static index, filled at deployment.
 # Rows are manually insert below.
 #
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_modules -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_modules -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["mapping_modules"],
   "mappings" : {
@@ -674,49 +846,49 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_modules -H'Content-T
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/1 -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/1 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "moduleID" : "1", "moduleName": "Journey_Manager", "moduleDisplay" : "Journey Manager", "moduleFeature" : "journeyID"
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/2 -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/2 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "moduleID" : "2", "moduleName": "Loyalty_Program", "moduleDisplay" : "Loyalty Program", "moduleFeature" : "loyaltyProgramID"
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/3 -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/3 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "moduleID" : "3", "moduleName": "Offer_Catalog", "moduleDisplay" : "Offer Catalog", "moduleFeature" : "offerID"
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/4 -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/4 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "moduleID" : "4", "moduleName": "Delivery_Manager", "moduleDisplay" : "Delivery Manager", "moduleFeature" : "deliverableID"
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/5 -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/5 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "moduleID" : "5", "moduleName": "Customer_Care", "moduleDisplay" : "Customer Care", "moduleFeature" : "none"
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/6 -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/6 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "moduleID" : "6", "moduleName": "REST_API", "moduleDisplay" : "REST API", "moduleFeature" : "none"
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/999 -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/999 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "moduleID" : "999", "moduleName": "Unknown", "moduleDisplay" : "Unknown", "moduleFeature" : "none"
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeys -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeys -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["mapping_journeys"],
   "mappings" : {
@@ -738,7 +910,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeys -H'Content-
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeyrewards -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeyrewards -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["mapping_journeyrewards"],
   "mappings" : {
@@ -751,7 +923,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeyrewards -H'Co
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_deliverables -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_deliverables -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["mapping_deliverables"],
   "mappings" : {
@@ -765,7 +937,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_deliverables -H'Cont
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_basemanagement -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_basemanagement -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["mapping_basemanagement"],
   "mappings" : {
@@ -787,7 +959,7 @@ curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_basemanagement -H'Co
 }'
 echo
 
-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeyobjective -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_journeyobjective -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["mapping_journeyobjective"],
   "mappings" : {

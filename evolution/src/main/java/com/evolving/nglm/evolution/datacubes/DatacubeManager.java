@@ -30,7 +30,7 @@ import com.evolving.nglm.evolution.datacubes.generator.ProgramsChangesDatacubeGe
 import com.evolving.nglm.evolution.datacubes.generator.ProgramsHistoryDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.SubscriberProfileDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
-import com.evolving.nglm.evolution.datacubes.snapshots.SubscriberProfileSnapshot;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -40,7 +40,6 @@ import org.apache.http.client.config.RequestConfig;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +74,7 @@ public class DatacubeManager
   private static SalesChannelService salesChannelService;
   private static PaymentMeanService paymentMeanService;
   private static OfferObjectiveService offerObjectiveService;
-  private static RestHighLevelClient elasticsearchRestClient;
+  private static ElasticsearchClientAPI elasticsearchRestClient;
   private static SubscriberMessageTemplateService subscriberMessageTemplateService;
   
   //
@@ -107,6 +106,10 @@ public class DatacubeManager
     String instanceID = args[2];
     String elasticsearchServerHost = args[3];
     Integer elasticsearchServerPort = Integer.parseInt(args[4]);
+    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("DatacubeManager").getConnectTimeout();
+    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("DatacubeManager").getQueryTimeout();
+    String userName = args[5];
+    String userPassword = args[6];
     
     //
     // Shutdown hook
@@ -144,19 +147,9 @@ public class DatacubeManager
     //
     // initialize ES client & GUI client
     //
-    // @rl TODO use ElasticsearchClientAPI ?
     try
       {
-        RestClientBuilder restClientBuilder = RestClient.builder(new HttpHost(elasticsearchServerHost, elasticsearchServerPort, "http"));
-        restClientBuilder.setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback()
-        {
-          @Override
-          public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder)
-          {
-            return requestConfigBuilder.setConnectTimeout(Deployment.getElasticSearchConnectTimeout()).setSocketTimeout(Deployment.getElasticSearchQueryTimeout());
-          }
-        });
-        elasticsearchRestClient = new RestHighLevelClient(restClientBuilder);
+        elasticsearchRestClient = new ElasticsearchClientAPI(elasticsearchServerHost, elasticsearchServerPort, connectTimeout, queryTimeout, userName, userPassword);
       }
     catch (ElasticsearchException e)
       {
@@ -569,15 +562,6 @@ public class DatacubeManager
     uniqueID = scheduleBDRDefinitive(datacubeScheduler, uniqueID);
     uniqueID = scheduleMDRDefinitive(datacubeScheduler, uniqueID);
     uniqueID = scheduleJourneyDatacubeDefinitive(datacubeScheduler, uniqueID);
-    
-    //
-    // Snapshots
-    //
-    ScheduledJob subscriberprofileSnapshot = new SubscriberProfileSnapshot(uniqueID++, elasticsearchRestClient);
-    if(subscriberprofileSnapshot.isProperlyConfigured())
-      {
-        datacubeScheduler.schedule(subscriberprofileSnapshot);
-      }
 
     log.info("Starting scheduler");
     datacubeScheduler.runScheduler();

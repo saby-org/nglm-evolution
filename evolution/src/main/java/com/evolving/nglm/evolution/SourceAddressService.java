@@ -37,6 +37,7 @@ public class SourceAddressService extends GUIService
   *
   *****************************************/
 
+  @Deprecated // groupID not used
   public SourceAddressService(String bootstrapServers, String groupID, String sourceAddressTopic, boolean masterService, SourceAddressListener sourceAddressListener, boolean notifyOnSignificantChange)
   {
     super(bootstrapServers, "SourceAddressService", groupID, sourceAddressTopic, masterService, getSuperListener(sourceAddressListener), "putSourceAddress", "removeSourceAddress", notifyOnSignificantChange);
@@ -45,7 +46,8 @@ public class SourceAddressService extends GUIService
   //
   //  constructor
   //
-  
+
+  @Deprecated // groupID not used
   public SourceAddressService(String bootstrapServers, String groupID, String sourceAddressTopic, boolean masterService, SourceAddressListener sourceAddressListener)
   {
     this(bootstrapServers, groupID, sourceAddressTopic, masterService, sourceAddressListener, true);
@@ -55,6 +57,7 @@ public class SourceAddressService extends GUIService
   //  constructor
   //
 
+  @Deprecated // groupID not used
   public SourceAddressService(String bootstrapServers, String groupID, String sourceAddressTopic, boolean masterService)
   {
     this(bootstrapServers, groupID, sourceAddressTopic, masterService, (SourceAddressListener) null, true);

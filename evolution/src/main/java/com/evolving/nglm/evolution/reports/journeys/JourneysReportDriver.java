@@ -79,7 +79,7 @@ public class JourneysReportDriver extends ReportDriver
     journeyObjectiveService = new JourneyObjectiveService(kafkaNode, "journeysreportcsvwriter-journeyObjectiveService-" + apiProcessKey, journeyObjectiveTopic, false);
     journeyObjectiveService.start();
     
-    journeyTrafficReader = ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", "journeysreportcsvwriter-journeytrafficservice-" + apiProcessKey, kafkaNode, Deployment.getJourneyTrafficChangeLogTopic(), JourneyTrafficHistory::unpack);
+    journeyTrafficReader = ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", kafkaNode, Deployment.getJourneyTrafficChangeLogTopic(), JourneyTrafficHistory::unpack);
     
     ReportsCommonCode.initializeDateFormats();
     
@@ -174,9 +174,7 @@ public class JourneysReportDriver extends ReportDriver
               log.info("Exception processing "+guiManagedObject.getGUIManagedObjectDisplay(), e);
             }
           }
-        log.info(" writeCompleted ");
-        log.info("journeyService {}", journeyService.toString());
-
+        log.info("WriteCompleted ");
         writer.flush();
         writer.closeEntry();
         writer.close();

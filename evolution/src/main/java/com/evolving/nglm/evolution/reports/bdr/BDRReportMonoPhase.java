@@ -9,6 +9,8 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.zip.ZipOutputStream;
 
@@ -49,10 +51,10 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   }
 
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private static DeliverableService deliverableService;
-  private static JourneyService journeyService;
-  private static OfferService offerService;
-  private static LoyaltyProgramService loyaltyProgramService;
+  private DeliverableService deliverableService;
+  private JourneyService journeyService;
+  private OfferService offerService;
+  private LoyaltyProgramService loyaltyProgramService;
 
   private static final String moduleId = "moduleID";
   private static final String featureId = "featureID";
@@ -108,6 +110,42 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(deliveryStatus);
   }
 
+  /****************************************
+  *
+  * dumpElementToCsv
+  *
+  ****************************************/
+ public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
+ {
+   Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map);  
+   if(mapLocal.size() != 1) {
+	   log.debug("We have multiple dates in the same index " + mapLocal.size());
+   } else {
+	   if(mapLocal.values().size() != 1) {
+		   log.debug("We have multiple values for this date " + mapLocal.values().size());
+	   }
+	   else {
+		   Set<Entry<String, List<Map<String, Object>>>> setLocal = mapLocal.entrySet();
+		   if(setLocal.size() != 1) {
+			   log.debug("We have multiple dates in this report " + setLocal.size());
+		   } else {
+			   for (Entry<String, List<Map<String, Object>>> entry : setLocal) {
+				   List<Map<String, Object>> list = entry.getValue();
+
+				   if(list.size() != 1) {
+					   log.debug("We have multiple reports in this folder " + list.size());
+				   } else {
+					   Map<String, Object> reportMap = list.get(0);
+					   dumpLineToCsv(reportMap, writer, addHeaders);
+					   return false;
+				   }
+			   }
+		   }
+	   }
+   }
+   return true;
+ }
+  
   @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
     try
@@ -117,7 +155,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
             addHeaders(writer, headerFieldsOrder, 1);
           }
         String line = ReportUtils.formatResult(headerFieldsOrder, lineMap);
-        log.trace("Writing to csv file : " + line);
+        log.info("Writing to csv file : " + line);
         writer.write(line.getBytes());
       } 
     catch (IOException e)
@@ -343,7 +381,8 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   {
     Date tempfromDate = fromDate;
     List<String> esIndexOdrList = new ArrayList<String>();
-    while(tempfromDate.getTime() <= toDate.getTime())
+    // to get the reports with yesterday's date only
+    while(tempfromDate.getTime() < toDate.getTime())
       {
         esIndexOdrList.add(DATE_FORMAT.format(tempfromDate));
         tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getBaseTimeZone());
@@ -384,6 +423,12 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   
   public static void main(String[] args, final Date reportGenerationDate)
   {
+    BDRReportMonoPhase bdrReportMonoPhase = new BDRReportMonoPhase();
+    bdrReportMonoPhase.start(args, reportGenerationDate);
+  }
+  
+  private void start(String[] args, final Date reportGenerationDate)
+  {
     log.info("received " + args.length + " args");
     for (String arg : args)
       {
@@ -421,7 +466,6 @@ public class BDRReportMonoPhase implements ReportCsvFactory
       }
 
     log.info("Reading data from ES in (" + esIndexBdrList.toString() + ") and writing to " + csvfile);
-    ReportCsvFactory reportFactory = new BDRReportMonoPhase();
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexBdrList.toString(), QueryBuilders.matchAllQuery());
@@ -435,6 +479,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     journeyService        = new JourneyService(Deployment.getBrokerServers(), "bdrreportcsvwriter-journeyservice-BDRReportMonoPhase", journeyTopic, false);
     offerService          = new OfferService(Deployment.getBrokerServers(), "bdrreportcsvwriter-offerservice-BDRReportMonoPhase", offerTopic, false);
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "bdrreportcsvwriter-loyaltyprogramservice-BDRReportMonoPhase", loyaltyProgramTopic, false);
+
     deliverableService.start();
     journeyService.start();
     offerService.start();
@@ -443,16 +488,27 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
         esIndexWithQuery,
-        reportFactory,
+        this,
         csvfile
     );
-
-    if (!reportMonoPhase.startOneToOne(true))
+    
+    // check if a report with multiple dates is required in the zipped file 
+    boolean isMultiDates = false;
+    if (reportPeriodQuantity > 1)
+    {
+    	isMultiDates = true;
+    }
+    
+    if (!reportMonoPhase.startOneToOne(isMultiDates))
       {
-        log.warn("An error occured, the report might be corrupted");
+        log.warn("An error occured, the report " + csvfile + "  might be corrupted");
         return;
       }
     
-    log.info("Finished BDRReport");
+    deliverableService.stop();
+    journeyService.stop();
+    offerService.stop();
+    loyaltyProgramService.stop();
+    log.info("The report " + csvfile + " is finished");
   }
 }

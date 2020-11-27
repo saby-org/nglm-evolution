@@ -194,7 +194,7 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
   *
   *****************************************/
 
-  public void update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toTier, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService)
+  public LoyaltyProgramTierChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toTier, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService)
   {
     
     //
@@ -272,6 +272,8 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
     default:
       break;
     }
+    
+    return tierChangeType;
     
   }
 }

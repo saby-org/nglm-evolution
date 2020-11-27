@@ -12,7 +12,6 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.Script;
@@ -25,8 +24,10 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 /**
  * This map is special and will not be retrieve from GUIService or from a mapping index.
@@ -44,7 +45,7 @@ public class JourneyRewardsMap
   * Properties
   *
   *****************************************/
-  private RestHighLevelClient elasticsearch;
+  private ElasticsearchClientAPI elasticsearch;
   private List<String> rewards;
 
   /*****************************************
@@ -52,7 +53,7 @@ public class JourneyRewardsMap
   * Constructor
   *
   *****************************************/
-  public JourneyRewardsMap(RestHighLevelClient elasticsearch) 
+  public JourneyRewardsMap(ElasticsearchClientAPI elasticsearch) 
   {
     this.elasticsearch = elasticsearch;
     this.rewards = Collections.emptyList();
@@ -126,7 +127,7 @@ public class JourneyRewardsMap
   }
   
   private void pushInMapping(String journeyID) throws ElasticsearchException, IOException {
-    String timestamp = DatacubeGenerator.TIMESTAMP_FORMAT.format(SystemTime.getCurrentTime());      // @rl: TODO timestamp in more generic class ? Elasticsearch client ?
+    String timestamp = RLMDateUtils.printTimestamp(SystemTime.getCurrentTime());
     for(String reward: this.rewards) {
       Map<String,Object> mappingRow = new HashMap<String,Object>();
       mappingRow.put("timestamp", timestamp);

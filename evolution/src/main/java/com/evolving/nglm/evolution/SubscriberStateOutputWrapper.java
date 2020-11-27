@@ -36,4 +36,7 @@ public class SubscriberStateOutputWrapper implements SubscriberStreamEvent {
 	public Object subscriberStreamEventPack(Object value) {
 		return event.subscriberStreamEventPack(value);
 	}
+
+	@Override
+	public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return event.getDeliveryPriority(); }
 }

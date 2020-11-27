@@ -6,7 +6,6 @@ import java.util.Map;
 
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -20,6 +19,8 @@ import org.elasticsearch.search.aggregations.bucket.composite.TermsValuesSourceB
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 /**
  * Simple datacube generator where the structure of the ES request is basically:
@@ -44,7 +45,7 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
   * Constructor
   *
   *****************************************/
-  public SimpleDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch) 
+  public SimpleDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch) 
   {
     super(datacubeName, elasticsearch);
   }
@@ -97,7 +98,7 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
       TermsValuesSourceBuilder sourceTerms = new TermsValuesSourceBuilder(datacubeFilter).field(datacubeFilter).missingBucket(true);
       sources.add(sourceTerms);
     }
-    CompositeAggregationBuilder compositeAggregation = AggregationBuilders.composite(compositeAggregationName, sources).size(BUCKETS_MAX_NBR);
+    CompositeAggregationBuilder compositeAggregation = AggregationBuilders.composite(compositeAggregationName, sources).size(ElasticsearchClientAPI.MAX_BUCKETS);
 
     //
     // Metric aggregations

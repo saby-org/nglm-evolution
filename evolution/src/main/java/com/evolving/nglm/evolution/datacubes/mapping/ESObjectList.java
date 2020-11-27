@@ -11,7 +11,6 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
@@ -21,6 +20,8 @@ import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public abstract class ESObjectList<T>
 {  
@@ -86,7 +87,7 @@ public abstract class ESObjectList<T>
   *  updateFromElasticsearch
   *
   *****************************************/
-  public void updateFromElasticsearch(RestHighLevelClient elasticsearch) throws ElasticsearchException, IOException, ClassCastException 
+  public void updateFromElasticsearch(ElasticsearchClientAPI elasticsearch) throws ElasticsearchException, IOException, ClassCastException 
   {
     this.reset();
     

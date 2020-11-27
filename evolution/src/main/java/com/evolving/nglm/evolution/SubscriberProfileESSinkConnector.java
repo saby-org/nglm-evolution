@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ChangeLogESSinkTask;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.ReferenceDataReader;
 
@@ -51,7 +52,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
     @Override public void start(Map<String, String> taskConfig)
     {
       super.start(taskConfig);
-      this.subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("profileSinkConnector-subscriberGroupEpoch", Integer.toHexString(getTaskNumber()), Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
+      this.subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("profileSinkConnector-subscriberGroupEpoch", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
       SubscriberState.forceClassLoad();
       
       loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "sinkconnector-loyaltyprogramservice" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getLoyaltyProgramTopic(), false);
@@ -70,12 +71,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
 
     @Override public void stop()
     {
-      //
-      //  reference reader
-      //
 
-      if (subscriberGroupEpochReader != null) subscriberGroupEpochReader.close();
-      
       //
       //  super
       //
@@ -162,7 +158,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("vouchers", subscriberProfile.getVouchersJSON());
       documentMap.put("tokens", subscriberProfile.getTokensJSON());
       documentMap.put("subscriberJourneys", subscriberProfile.getSubscriberJourneysJSON());
-      documentMap.put("lastUpdateDate", DatacubeGenerator.TIMESTAMP_FORMAT.format(now));
+      documentMap.put("lastUpdateDate", RLMDateUtils.printTimestamp(now));
       documentMap.put("relationships", subscriberProfile.getSubscriberRelationsJSON());
       addToDocumentMap(documentMap, subscriberProfile, now);
       

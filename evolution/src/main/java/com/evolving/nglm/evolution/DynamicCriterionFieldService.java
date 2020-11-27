@@ -22,6 +22,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 
 public class DynamicCriterionFieldService extends GUIService
@@ -48,6 +49,7 @@ public class DynamicCriterionFieldService extends GUIService
   *
   *****************************************/
 
+  @Deprecated // groupID not needed
   public DynamicCriterionFieldService(String bootstrapServers, String groupID, String dynamicCriterionFieldTopic, boolean masterService, DynamicCriterionFieldListener dynamicCriterionFieldListener, boolean notifyOnSignificantChange)
   {
     super(bootstrapServers, "DynamicCriterionFieldService", groupID, dynamicCriterionFieldTopic, masterService, getSuperListener(dynamicCriterionFieldListener), "putDynamicCriterionField", "removeDynamicCriterionField", notifyOnSignificantChange);
@@ -57,6 +59,7 @@ public class DynamicCriterionFieldService extends GUIService
   //  constructor
   //
 
+  @Deprecated // groupID not needed
   public DynamicCriterionFieldService(String bootstrapServers, String groupID, String dynamicCriterionFieldTopic, boolean masterService, DynamicCriterionFieldListener dynamicCriterionFieldListener)
   {
     this(bootstrapServers, groupID, dynamicCriterionFieldTopic, masterService, dynamicCriterionFieldListener, true);
@@ -66,6 +69,7 @@ public class DynamicCriterionFieldService extends GUIService
   //  constructor
   //
 
+  @Deprecated // groupID not needed
   public DynamicCriterionFieldService(String bootstrapServers, String groupID, String dynamicCriterionFieldTopic, boolean masterService)
   {
     this(bootstrapServers, groupID, dynamicCriterionFieldTopic, masterService, (DynamicCriterionFieldListener) null, true);
@@ -133,7 +137,6 @@ public class DynamicCriterionFieldService extends GUIService
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "tierupdatedate", CriterionDataType.DateCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optindate", CriterionDataType.DateCriterion, null);
         addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "optoutdate", CriterionDataType.DateCriterion, null);
-        addLoyaltyProgramCriterionField(loyaltyProgram, newLoyaltyProgram, "tierupdatetype", CriterionDataType.StringCriterion, generateAvailableValuesForTierUpdateType());
       }    
   }
   /*****************************************
@@ -206,22 +209,6 @@ public class DynamicCriterionFieldService extends GUIService
     return availableValuesField;
   }
   
-  /*****************************************
-  *
-  *  generateAvailableValuesForTierDataType
-  *
-  *****************************************/
-
-  private JSONArray generateAvailableValuesForTierUpdateType()
-  {
-    JSONArray availableValuesField = new JSONArray();
-    availableValuesField.add("opt-in");
-    availableValuesField.add("opt-out");
-    availableValuesField.add("upgrade");
-    availableValuesField.add("downgrade");
-    
-    return availableValuesField;
-  }
 
   /*****************************************
   *

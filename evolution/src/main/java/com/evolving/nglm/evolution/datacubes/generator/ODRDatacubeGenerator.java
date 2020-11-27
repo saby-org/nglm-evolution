@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -38,6 +37,7 @@ import com.evolving.nglm.evolution.datacubes.mapping.OfferObjectivesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.OffersMap;
 import com.evolving.nglm.evolution.datacubes.mapping.PaymentMeansMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SalesChannelsMap;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
 {
@@ -69,7 +69,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public ODRDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService)  
+  public ODRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService)  
   {
     super(datacubeName, elasticsearch);
 
@@ -240,12 +240,12 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     Date endOfYesterday = RLMDateUtils.addMilliseconds(beginningOfToday, -1);                               // 23:59:59.999
 
     this.previewMode = false;
-    this.targetDay = DAY_FORMAT.format(yesterday);
+    this.targetDay = RLMDateUtils.printDay(yesterday);
 
     //
     // Timestamp & period
     //
-    String timestamp = TIMESTAMP_FORMAT.format(endOfYesterday);
+    String timestamp = RLMDateUtils.printTimestamp(endOfYesterday);
     long targetPeriod = beginningOfToday.getTime() - beginningOfYesterday.getTime();    // most of the time 86400000ms (24 hours)
     
     this.run(timestamp, targetPeriod);
@@ -262,12 +262,12 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
     Date beginningOfToday = RLMDateUtils.truncate(now, Calendar.DATE, Deployment.getBaseTimeZone());
 
     this.previewMode = true;
-    this.targetDay = DAY_FORMAT.format(now);
+    this.targetDay = RLMDateUtils.printDay(now);
 
     //
     // Timestamp & period
     //
-    String timestamp = TIMESTAMP_FORMAT.format(now);
+    String timestamp = RLMDateUtils.printTimestamp(now);
     long targetPeriod = now.getTime() - beginningOfToday.getTime() + 1; // +1 !
     
     this.run(timestamp, targetPeriod);

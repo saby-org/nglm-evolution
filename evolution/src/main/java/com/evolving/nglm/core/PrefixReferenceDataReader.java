@@ -6,9 +6,9 @@
 
 package com.evolving.nglm.core;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class PrefixReferenceDataReader<V extends ReferenceDataValue<String>> extends ReferenceDataReader<String,V>
 {
@@ -18,7 +18,7 @@ public class PrefixReferenceDataReader<V extends ReferenceDataValue<String>> ext
   *
   *****************************************/
 
-  private TrieNode trie;
+  private volatile TrieNode trie;
 
   /*****************************************
   *
@@ -26,24 +26,8 @@ public class PrefixReferenceDataReader<V extends ReferenceDataValue<String>> ext
   *
   *****************************************/
 
-  public static <V extends ReferenceDataValue<String>> PrefixReferenceDataReader<V> startPrefixReader(String readerName, String readerKey, String bootstrapServers, String referenceDataTopic, UnpackValue<V> unpackValue)
-  {
-    synchronized (readersLock)
-      {
-        if (! readerReferences.containsKey(readerName))
-          {
-            if (readers.get(readerName) != null) throw new ServerRuntimeException("invariant - readers/readReferences start 1");
-            readerReferences.put(readerName, new Integer(1));
-            readers.put(readerName, new PrefixReferenceDataReader<V>(readerName, readerKey, bootstrapServers, referenceDataTopic, unpackValue));
-            readers.get(readerName).start();
-          }
-        else
-          {
-            if (readers.get(readerName) == null) throw new ServerRuntimeException("invariant - readers/readReferences start 2");
-            readerReferences.put(readerName, new Integer(readerReferences.get(readerName).intValue() + 1));
-          }
-        return (PrefixReferenceDataReader<V>) readers.get(readerName);
-      }
+  public static <V extends ReferenceDataValue<String>> PrefixReferenceDataReader<V> startPrefixReader(String readerName, String bootstrapServers, String referenceDataTopic, UnpackValue<V> unpackValue) {
+    return (PrefixReferenceDataReader<V>)startReader(readerName,bootstrapServers,referenceDataTopic,unpackValue);
   }
 
   /*****************************************
@@ -58,67 +42,45 @@ public class PrefixReferenceDataReader<V extends ReferenceDataValue<String>> ext
     this.trie = new TrieNode("");
   }
 
-  /*****************************************
-  *
-  *  updateKey
-  *
-  *****************************************/
+  @Override protected void put(String key, V value){
+    super.put(key,value);
+    updateTrie(key,false);
+  }
 
-  @Override protected void updateKey(String key, Set<ReferenceDataRecord> recordsForKey)
+  @Override protected void remove(String key){
+    super.remove(key);
+    updateTrie(key,true);
+  }
+
+  private void updateTrie(String key, boolean toDelete)
   {
-    /*****************************************
-    *
-    *  cases
-    *
-    *****************************************/
+    //
+    //  walk
+    //
 
-    boolean keyAdded = recordsForKey.size() > 0 && ! referenceData.containsKey(key);
-    boolean keyDeleted = recordsForKey.size() == 0 && referenceData.containsKey(key);
-    
-    /*****************************************
-    *
-    *  super
-    *
-    *****************************************/
-
-    super.updateKey(key, recordsForKey);
-
-    /*****************************************
-    *
-    *  updateTrie
-    *
-    *****************************************/
-
-    if (keyAdded || keyDeleted)
+    TrieNode node = trie;
+    StringBuilder prefix = new StringBuilder();
+    for (int i=0; i<key.length(); i++)
       {
-        //
-        //  walk
-        //
-
-        TrieNode node = trie;
-        StringBuilder prefix = new StringBuilder();
-        for (int i=0; i<key.length(); i++)
+        Character character = key.charAt(i);
+        prefix.append(character);
+        TrieNode nodeForCharacter = node.getChildren().get(character);
+        if (nodeForCharacter == null)
           {
-            Character character = key.charAt(i);
-            prefix.append(character);
-            TrieNode nodeForCharacter = node.getChildren().get(character);
-            if (nodeForCharacter == null)
-              {
-                nodeForCharacter = new TrieNode(prefix.toString());
-                node.getChildren().put(character, nodeForCharacter);
-              }
-            node = nodeForCharacter;
+            nodeForCharacter = new TrieNode(prefix.toString());
+            node.getChildren().put(character, nodeForCharacter);
           }
-
-        //
-        //  update
-        //
-
-        if (keyAdded)
-          node.markInSet(true);
-        else
-          node.markInSet(false);
+        node = nodeForCharacter;
       }
+
+    //
+    //  update
+    //
+
+    if (!toDelete)
+      node.markInSet(true);
+    else
+      node.markInSet(false);
   }
 
   /*****************************************
@@ -139,40 +101,37 @@ public class PrefixReferenceDataReader<V extends ReferenceDataValue<String>> ext
     //  normal case
     //
 
-    synchronized (this)
+    V result = trie.getInSet() ? super.get(trie.getPrefix()) : null;
+    TrieNode node = trie;
+    for (int i=0; i<key.length(); i++)
       {
-        V result = trie.getInSet() ? super.get(trie.getPrefix()) : null;
-        TrieNode node = trie;
-        for (int i=0; i<key.length(); i++)
+        //
+        //  child for next characater
+        //
+
+        Character character = key.charAt(i);
+        node = node.getChildren().get(character);
+
+        //
+        //  break if we have walked to the end
+        //
+
+        if (node == null)
           {
-            //
-            //  child for next characater
-            //
-
-            Character character = key.charAt(i);
-            node = node.getChildren().get(character);
-
-            //
-            //  break if we have walked to the end
-            //
-
-            if (node == null)
-              {
-                break;
-              }
-
-            //
-            //  update result
-            //
-
-            if (node.getInSet())
-              {
-                V candidate = super.get(node.getPrefix());
-                result = (candidate != null) ? candidate : result;
-              }
+            break;
           }
-        return result;
+
+        //
+        //  update result
+        //
+
+        if (node.getInSet())
+          {
+            V candidate = super.get(node.getPrefix());
+            result = (candidate != null) ? candidate : result;
+          }
       }
+    return result;
   }
 
   /*****************************************
@@ -189,9 +148,9 @@ public class PrefixReferenceDataReader<V extends ReferenceDataValue<String>> ext
     *
     *****************************************/
 
-    private boolean inSet;
-    private String prefix;
-    private Map<Character,TrieNode> children;
+    private volatile boolean inSet;
+    private volatile String prefix;
+    private ConcurrentMap<Character,TrieNode> children;
 
     /*****************************************
     *
@@ -203,7 +162,7 @@ public class PrefixReferenceDataReader<V extends ReferenceDataValue<String>> ext
     {
       this.inSet = false;
       this.prefix = prefix;
-      this.children = new HashMap<Character,TrieNode>();
+      this.children = new ConcurrentHashMap<>();
     }
 
     /*****************************************

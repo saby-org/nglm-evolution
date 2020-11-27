@@ -43,7 +43,7 @@ public class VoucherPersonalES {
     subscriberId("keyword"),
     voucherId("keyword"),
     fileId("keyword"),
-    expiryDate("date",Deployment.getElasticSearchDateFormat());
+    expiryDate("date", com.evolving.nglm.core.Deployment.getElasticsearchDateFormat());
 
     private String type;
     private String format;

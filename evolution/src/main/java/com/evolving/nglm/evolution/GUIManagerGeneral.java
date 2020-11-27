@@ -6,9 +6,17 @@
 
 package com.evolving.nglm.evolution;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -24,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
@@ -35,22 +44,22 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.ExistsQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.ParsedAggregation;
 import org.elasticsearch.search.aggregations.bucket.filter.Filters;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator;
 import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilter;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator.KeyedFilter;
+import org.elasticsearch.search.aggregations.bucket.nested.ParsedNested;
 import org.elasticsearch.search.aggregations.bucket.range.ParsedRange;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregator.Range;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregator;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
@@ -72,8 +81,10 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.sun.net.httpserver.HttpExchange;
 
 public class GUIManagerGeneral extends GUIManager
@@ -84,6 +95,8 @@ public class GUIManagerGeneral extends GUIManager
   //
   
   private static final Logger log = LoggerFactory.getLogger(GUIManagerGeneral.class);
+
+  private static final int HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE = 100;
   
   //
   //  data
@@ -99,7 +112,7 @@ public class GUIManagerGeneral extends GUIManager
    * 
    ***************************/
   
-  public GUIManagerGeneral(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, RestHighLevelClient elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
+  public GUIManagerGeneral(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
   {
     super.callingChannelService = callingChannelService;
     super.catalogCharacteristicService = catalogCharacteristicService;
@@ -669,14 +682,6 @@ public class GUIManagerGeneral extends GUIManager
 
     /*****************************************
     *
-    *  populate segmentationDimensionID with "nothing"
-    *
-    *****************************************/
-
-    jsonRoot.put("id", "(not used)"); 
-
-    /*****************************************
-    *
     *  validate targetingType
     *
     *****************************************/
@@ -700,6 +705,18 @@ public class GUIManagerGeneral extends GUIManager
         return JSONUtilities.encodeObject(response);
       }
 
+    boolean evaluateBySegmentId = false;
+
+    if(JSONUtilities.decodeString(jsonRoot,"id") == null)
+    {
+      evaluateBySegmentId = false;
+      jsonRoot.put("id","new_dimension");
+    }
+    else
+    {
+      evaluateBySegmentId = true;
+    }
+
     /****************************************
     *
     *  response
@@ -708,28 +725,36 @@ public class GUIManagerGeneral extends GUIManager
 
     List<JSONObject> aggregationResult = new ArrayList<>();
     List<QueryBuilder> processedQueries = new ArrayList<>();
+    //String stratumESFieldName = Deployment.getProfileCriterionFields().get("subscriber.stratum").getESField();
+    String stratumESFieldName = "stratum";
     try
       {
+        SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
+        if(evaluateBySegmentId)
+        {
+          SegmentationDimension storedSegmentationDimensionEligibility = segmentationDimensionService.getActiveSegmentationDimension(segmentationDimensionEligibility.getGUIManagedObjectID() , SystemTime.getCurrentTime());
+          evaluateBySegmentId = evaluateBySegmentId && segmentationDimensionEligibility.getSegmentsConditionEqual(storedSegmentationDimensionEligibility);
+        }
+        if(evaluateBySegmentId) return processGetCountBySegmentationEligibilityBySegmentId(segmentationDimensionEligibility);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
         List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
-        SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
-        for(SegmentEligibility segmentEligibility :segmentationDimensionEligibility.getSegments())
+        for (SegmentEligibility segmentEligibility : segmentationDimensionEligibility.getSegments())
+        {
+          BoolQueryBuilder query = QueryBuilders.boolQuery();
+          for (QueryBuilder processedQuery : processedQueries)
           {
-            BoolQueryBuilder query = QueryBuilders.boolQuery();
-            for(QueryBuilder processedQuery : processedQueries)
-              {
-                query = query.mustNot(processedQuery);
-              }
-            BoolQueryBuilder segmentQuery = QueryBuilders.boolQuery();
-            for(EvaluationCriterion evaluationCriterion:segmentEligibility.getProfileCriteria())
-              {
-                segmentQuery = segmentQuery.filter(evaluationCriterion.esQuery());
-                processedQueries.add(segmentQuery);
-              }
-            query = query.filter(segmentQuery);
-            //use name as key, even if normally should use id, to make simpler to use this count in chart
-            aggFilters.add(new FiltersAggregator.KeyedFilter(segmentEligibility.getName(),query));
+            query = query.mustNot(processedQuery);
           }
+          BoolQueryBuilder segmentQuery = QueryBuilders.boolQuery();
+          for (EvaluationCriterion evaluationCriterion : segmentEligibility.getProfileCriteria())
+          {
+            segmentQuery = segmentQuery.filter(evaluationCriterion.esQuery());
+            processedQueries.add(segmentQuery);
+          }
+          query = query.filter(segmentQuery);
+          //use name as key, even if normally should use id, to make simpler to use this count in chart
+          aggFilters.add(new FiltersAggregator.KeyedFilter(segmentEligibility.getName(), query));
+        }
         AggregationBuilder aggregation = null;
         FiltersAggregator.KeyedFilter [] filterArray = new FiltersAggregator.KeyedFilter [aggFilters.size()];
         filterArray = aggFilters.toArray(filterArray);
@@ -774,6 +799,79 @@ public class GUIManagerGeneral extends GUIManager
         response.put("responseParameter", (ex instanceof GUIManagerException) ? ((GUIManagerException) ex).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
       }
+    response.put("responseCode", "ok");
+    response.put("result",aggregationResult);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  private JSONObject processGetCountBySegmentationEligibilityBySegmentId(SegmentationDimensionEligibility segmentationDimensionEligibility)
+  {
+
+    /****************************************
+     *
+     *  response
+     *
+     ****************************************/
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    List<JSONObject> aggregationResult = new ArrayList<>();
+    List<QueryBuilder> processedQueries = new ArrayList<>();
+    //String stratumESFieldName = Deployment.getProfileCriterionFields().get("subscriber.stratum").getESField();
+    String stratumESFieldName = "stratum";
+    try
+    {
+      SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
+      List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
+      for(SegmentEligibility segmentEligibility :segmentationDimensionEligibility.getSegments())
+      {
+        TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery(stratumESFieldName+"."+segmentationDimensionEligibility.getGUIManagedObjectID(), segmentEligibility.getID());
+        //use name as key, even if normally should use id, to make simpler to use this count in chart
+        aggFilters.add(new FiltersAggregator.KeyedFilter(segmentEligibility.getName(),termQueryBuilder));
+      }
+      AggregationBuilder aggregation = null;
+      FiltersAggregator.KeyedFilter [] filterArray = new FiltersAggregator.KeyedFilter [aggFilters.size()];
+      filterArray = aggFilters.toArray(filterArray);
+      aggregation = AggregationBuilders.filters("SegmentEligibility",filterArray);
+      ((FiltersAggregationBuilder) aggregation).otherBucket(true);
+      ((FiltersAggregationBuilder) aggregation).otherBucketKey("other_key");
+      searchSourceBuilder.aggregation(aggregation);
+
+      //
+      //  search in ES
+      //
+
+      SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
+      SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+      Filters aggResultFilters = searchResponse.getAggregations().get("SegmentEligibility");
+      for (Filters.Bucket entry : aggResultFilters.getBuckets())
+      {
+        HashMap<String,Object> aggItem = new HashMap<String,Object>();
+        String key = entry.getKeyAsString();            // bucket key
+        long docCount = entry.getDocCount();            // Doc count
+        aggItem.put("name",key);
+        aggItem.put("count",docCount);
+        aggregationResult.add(JSONUtilities.encodeObject(aggItem));
+      }
+    }
+    catch(Exception ex)
+    {
+      //
+      //  log
+      //
+
+      StringWriter stackTraceWriter = new StringWriter();
+      ex.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+      //
+      //  response
+      //
+
+      response.put("responseCode", "systemError");
+      response.put("responseMessage", ex.getMessage());
+      response.put("responseParameter", (ex instanceof GUIManagerException) ? ((GUIManagerException) ex).getResponseParameter() : null);
+      return JSONUtilities.encodeObject(response);
+    }
     response.put("responseCode", "ok");
     response.put("result",aggregationResult);
     return JSONUtilities.encodeObject(response);
@@ -1535,7 +1633,18 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    jsonRoot.put("id", "fake-id"); // fill segmentationDimensionID with anything
+    boolean evaluateBySegmentId = false;
+
+    if(JSONUtilities.decodeString(jsonRoot,"id")== null)
+    {
+      evaluateBySegmentId = false;
+      jsonRoot.put("id","new_dimension");
+    }
+    else
+    {
+      evaluateBySegmentId = true;
+    }
+
     SegmentationDimensionRanges segmentationDimensionRanges = null;
     try
       {
@@ -1569,6 +1678,14 @@ public class GUIManagerGeneral extends GUIManager
         return JSONUtilities.encodeObject(response);
       }
 
+    if(evaluateBySegmentId)
+    {
+      SegmentationDimension storedSegmentationDimensionRanges = segmentationDimensionService.getActiveSegmentationDimension(segmentationDimensionRanges.getGUIManagedObjectID() , SystemTime.getCurrentTime());
+      evaluateBySegmentId = evaluateBySegmentId &&  segmentationDimensionRanges.getSegmentsConditionEqual(storedSegmentationDimensionRanges);
+      log.info("evaluate by segment_id = "+evaluateBySegmentId);
+    }
+    //tamporary call only for banglaink hot fix because in 1.4.26 sbm is called
+    if(evaluateBySegmentId) return processGetCountBySegmentationRangesBySegmentId(userID,jsonRoot);
     /*****************************************
     *
     *  extract BaseSplits
@@ -1719,6 +1836,11 @@ public class GUIManagerGeneral extends GUIManager
 
             RangeAggregationBuilder range = AggregationBuilders.range(RANGE_AGG_PREFIX+baseSplit.getSplitName());
 
+            //aici de scris codul cand nu exista range
+            //TermsAggregationBuilder term = AggregationBuilders.terms(RANGE_AGG_PREFIX+baseSplit.getSplitName());
+
+            //term = term.field(Deployment.getSu)
+
             //
             // Retrieving the ElasticSearch field from the Criterion field.
             //
@@ -1772,7 +1894,7 @@ public class GUIManagerGeneral extends GUIManager
     *  construct response (JSON object)
     *
     *****************************************/
-//trebuie inteles aici cum se conpun array-urile pentru citirea raspunsului
+
     JSONObject responseJSON = new JSONObject();
     List<JSONObject> responseBaseSplits = new ArrayList<JSONObject>();
     for(int i = 0; i < nbBaseSplits; i++)
@@ -1910,6 +2032,184 @@ public class GUIManagerGeneral extends GUIManager
 
     response.put("result", responseJSON);
     response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+   *
+   *  processGetCountBySegmentationRanges
+   *
+   *****************************************/
+
+  JSONObject processGetCountBySegmentationRangesBySegmentId(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     *  response
+     *
+     ****************************************/
+
+    HashMap<String, Object> response = new HashMap<String, Object>();
+
+    /*****************************************
+     *
+     *  parse input (segmentationDimension)
+     *
+     *****************************************/
+
+    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
+    JSONObject responseJSON = new JSONObject();
+    //String segmentsESFieldName = Deployment.getProfileCriterionFields().get("subscriber.stratum").getESField();
+    String stratumESFieldName = "stratum";
+
+    SegmentationDimensionRanges segmentationDimensionRanges = null;
+    try
+    {
+      switch (SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true)))
+      {
+      case RANGES:
+        segmentationDimensionRanges = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
+        break;
+
+      case Unknown:
+        throw new GUIManagerException("unsupported dimension type", JSONUtilities.decodeString(jsonRoot, "targetingType", false));
+      }
+    }
+    catch (JSONUtilitiesException | GUIManagerException e)
+    {
+      //
+      //  log
+      //
+
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+      //
+      //  response
+      //
+
+      response.put("responseCode", "segmentationDimensionNotValid");
+      response.put("responseMessage", e.getMessage());
+      response.put("responseParameter", (e instanceof GUIManagerException) ?
+          ((GUIManagerException) e).getResponseParameter() :
+          null);
+      return JSONUtilities.encodeObject(response);
+    }
+
+    /*****************************************
+     *
+     *  extract BaseSplits
+     *
+     *****************************************/
+
+    List<BaseSplit> baseSplits = segmentationDimensionRanges.getBaseSplit();
+    int nbBaseSplits = baseSplits.size();
+
+    /*****************************************
+     *
+     *  construct query
+     *
+     *****************************************/
+    try
+    {
+      for (int i = 0; i < nbBaseSplits; i++)
+      {
+        BaseSplit baseSplit = baseSplits.get(i);
+        List<SegmentRanges> ranges = baseSplit.getSegments();
+
+        //create aggregations for all ids from a base split
+        //TermsQueryBuilder splitTerms = QueryBuilders.termsQuery(stratumESFieldName,ranges.stream().map(SegmentRanges::getID).collect(Collectors.toList()));
+        MatchAllQueryBuilder matchAllQueryBuilder = QueryBuilders.matchAllQuery();
+        AggregationBuilder baseSpitAgg = AggregationBuilders.filter(baseSplit.getSplitName(),matchAllQueryBuilder);
+
+        //add subaggregations for each segment
+        for (SegmentRanges range : ranges)
+        {
+          TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery(stratumESFieldName+"."+segmentationDimensionRanges.getGUIManagedObjectID(), range.getID());
+          baseSpitAgg.subAggregation(AggregationBuilders.filter(range.getName(),termQueryBuilder));
+        }
+
+        searchSourceBuilder.aggregation(baseSpitAgg);
+      }
+
+      /*****************************************
+       *
+       *  construct response (JSON object)
+       *
+       *****************************************/
+
+
+      List<JSONObject> responseBaseSplits = new ArrayList<JSONObject>();
+      for(int i = 0; i < nbBaseSplits; i++)
+      {
+        BaseSplit baseSplit = baseSplits.get(i);
+        JSONObject responseBaseSplit = new JSONObject();
+        List<JSONObject> responseSegments = new ArrayList<JSONObject>();
+        responseBaseSplit.put("splitName", baseSplit.getSplitName());
+
+        //
+        //  ranges
+        //   the "count" field will be filled with the result of the ElasticSearch query
+        //
+
+        for(SegmentRanges segment : baseSplit.getSegments())
+        {
+          JSONObject responseSegment = new JSONObject();
+          responseSegment.put("name", segment.getName());
+          responseSegments.add(responseSegment);
+        }
+        responseBaseSplit.put("segments", responseSegments);
+        responseBaseSplits.add(responseBaseSplit);
+      }
+
+      //
+      //  search in ES
+      //
+
+      SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
+      SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+
+      Aggregations resultAggs = searchResponse.getAggregations();
+
+      for(JSONObject responseBaseSplit : responseBaseSplits)
+      {
+        ParsedAggregation splitAgg = resultAggs.get((String) responseBaseSplit.get("splitName"));
+       // responseBaseSplit.put("count",((ParsedFilter)splitAgg).getDocCount());
+        for(JSONObject responseSegment : (List<JSONObject>)responseBaseSplit.get("segments"))
+        {
+          ParsedFilter segmentFilter = ((ParsedFilter)splitAgg).getAggregations().get((String)responseSegment.get("name"));
+          responseSegment.put("count",segmentFilter.getDocCount());
+        }
+
+      }
+      responseJSON.put("baseSplit", responseBaseSplits);
+
+    }
+    catch (Exception e)
+    {
+      //
+      //  log
+      //
+
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+      //
+      //  response
+      //
+
+      response.put("responseCode", "argumentError");
+      response.put("responseMessage", e.getMessage());
+      response.put("responseParameter", (e instanceof GUIManagerException) ?
+          ((GUIManagerException) e).getResponseParameter() :
+          null);
+      return JSONUtilities.encodeObject(response);
+    }
+
+    response.put("responseCode", "ok");
+    response.put("result",responseJSON);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -3393,6 +3693,179 @@ public class GUIManagerGeneral extends GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  /*****************************************
+  *
+  *  processGetVoucherCodePatternList
+  *
+  *****************************************/
+  JSONObject processGetVoucherCodePatternList(String userID, JSONObject jsonRoot)
+  {
+
+    /*****************************************
+    *
+    *  retrieve voucherCodePatternList
+    *
+    *****************************************/
+
+    List<JSONObject> supportedVoucherCodePatternList = new ArrayList<JSONObject>();
+    for (SupportedVoucherCodePattern supportedVoucherCodePattern : Deployment.getSupportedVoucherCodePatternList().values())
+      {
+        JSONObject supportedVoucherCodePatternJSON = supportedVoucherCodePattern.getJSONRepresentation();
+        supportedVoucherCodePatternList.add(supportedVoucherCodePatternJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("supportedVoucherCodePatternList", JSONUtilities.encodeArray(supportedVoucherCodePatternList));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+
+  /*****************************************
+  *
+  *  processGenerateVouchers
+  *
+  *****************************************/
+
+  JSONObject processGenerateVouchers(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    String pattern = JSONUtilities.decodeString(jsonRoot, "pattern", true);
+    int quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+    Date expirationDate = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "expirationDate", true));
+    
+    // find existing vouchers
+    
+    List<String> existingVoucherCodes = new ArrayList<>();
+    Collection<GUIManagedObject> uploadedFileObjects = uploadedFileService.getStoredGUIManagedObjects(true);
+
+    String supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
+
+    String applicationID = "vouchers_" + supplierID; // TODO CHECK THIS MK
+    
+    for (GUIManagedObject uploaded : uploadedFileObjects)
+      {
+        String fileApplicationID = JSONUtilities.decodeString(uploaded.getJSONRepresentation(), "applicationID", false);
+        if (Objects.equals(applicationID, fileApplicationID))
+          {
+            if (uploaded instanceof UploadedFile)
+              {
+                UploadedFile uploadedFile = (UploadedFile) uploaded;
+                BufferedReader reader;
+                String filename = UploadedFile.OUTPUT_FOLDER + uploadedFile.getDestinationFilename();
+                try
+                {
+                  reader = new BufferedReader(new FileReader(filename));
+                  for (String line; (line = reader.readLine()) != null;)
+                    {
+                      if (line.trim().isEmpty()) continue;
+                      existingVoucherCodes.add(line.trim());
+                    }
+                }
+                catch (IOException e)
+                {
+                  log.info("Unable to read voucher file " + filename);
+                }
+              }
+          }
+      }
+        
+    List<String> currentVoucherCodes = new ArrayList<>();
+    for (int q=0; q<quantity; q++)
+      {
+        String voucherCode = null; 
+        boolean newVoucherGenerated = false;
+        for (int i=0; i<HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
+          {
+            voucherCode = TokenUtils.generateFromRegex(pattern);
+            if (!currentVoucherCodes.contains(voucherCode) && !existingVoucherCodes.contains(voucherCode))
+              {
+                newVoucherGenerated = true;
+                break;
+              }
+          }
+        if (!newVoucherGenerated)
+          {
+            log.info("After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
+            break;
+          }
+        log.debug("voucherCode  generated : " + voucherCode);
+        currentVoucherCodes.add(voucherCode);
+      }
+
+    // convert list to InputStream
+    
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    try
+    {
+      for (String voucherCode : currentVoucherCodes)
+        {
+          baos.write(voucherCode.getBytes());
+          baos.write("\n".getBytes());
+        }
+    }
+    catch (IOException e) // will never happen as we write to memory
+    {
+      log.info("Issue when converting voucher list to file : " + e.getLocalizedMessage());
+      log.debug("Voucher list : " + currentVoucherCodes);
+    }
+    byte[] bytes = baos.toByteArray();
+    InputStream vouchersStream = new ByteArrayInputStream(bytes);
+
+    // write list to UploadedFile
+
+    String fileID = uploadedFileService.generateFileID();
+    String sourceFilename = "Generated_internally_" + fileID + ".txt";
+    
+    JSONObject fileJSON = new JSONObject();
+    fileJSON.put("id", fileID);
+    fileJSON.put("applicationID", applicationID);
+    fileJSON.put("sourceFilename", sourceFilename);
+    fileJSON.put("fileType", ".txt");
+
+    GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(fileID);
+    long epoch = epochServer.getKey();
+    
+    try
+      {
+        UploadedFile uploadedFile = new UploadedFile(fileJSON, epoch, existingFileUpload);
+        uploadedFileService.putUploadedFile(uploadedFile, vouchersStream, uploadedFile.getDestinationFilename(), (uploadedFile == null), userID);
+      }
+    catch (GUIManagerException|IOException e)
+      {
+        log.info("Issue when creating uploaded voucher file : " + e.getLocalizedMessage());
+      }
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("id", fileID);
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+
+  
   /*****************************************
   *
   *  processGetPaymentMean

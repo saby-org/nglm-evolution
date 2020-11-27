@@ -4,14 +4,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.HashMap;
 
 import org.elasticsearch.ElasticsearchException;
@@ -19,7 +16,6 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -29,7 +25,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public abstract class DatacubeGenerator
 {
@@ -40,36 +36,14 @@ public abstract class DatacubeGenerator
   *****************************************/
   protected static final Logger log = LoggerFactory.getLogger(DatacubeGenerator.class);
   
-  /** 
-   * The maximum number of buckets allowed in a single response is limited by a dynamic cluster
-   * setting named search.max_buckets. It defaults to 10,000, requests that try to return more
-   * than the limit will fail with an exception. */
-  protected static final int BUCKETS_MAX_NBR = 10000; // TODO: factorize in ES client later (with some generic ES calls)
   protected static final String UNDEFINED_BUCKET_VALUE = "undefined";
-
-  //
-  // Date formats
-  //
-  public static final DateFormat TIMESTAMP_FORMAT;
-  static
-  {
-    TIMESTAMP_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
-    TIMESTAMP_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-  }
-  
-  public static final DateFormat DAY_FORMAT;
-  static
-  {
-    DAY_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    DAY_FORMAT.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-  }
   
   /*****************************************
   *
   * Properties
   *
   *****************************************/
-  protected RestHighLevelClient elasticsearch;
+  protected ElasticsearchClientAPI elasticsearch;
   protected String datacubeName;
   protected ByteBuffer tmpBuffer = null;
 
@@ -78,7 +52,7 @@ public abstract class DatacubeGenerator
   * Constructor
   *
   *****************************************/
-  public DatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch) 
+  public DatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch) 
   {
     this.datacubeName = datacubeName;
     this.elasticsearch = elasticsearch;

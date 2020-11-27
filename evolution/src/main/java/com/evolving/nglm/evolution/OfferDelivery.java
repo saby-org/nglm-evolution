@@ -40,5 +40,7 @@ public interface OfferDelivery
   public List<VoucherDelivery> getVoucherDeliveries();
   public String getOfferDeliveryVoucherCode();
   public String getOfferDeliveryVoucherPartnerId();
+  public String getResellerName_OfferDelivery();
+  public String getSupplierName_OfferDelivery();
   
 }

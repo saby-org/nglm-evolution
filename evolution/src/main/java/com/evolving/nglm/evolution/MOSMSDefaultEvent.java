@@ -61,6 +61,7 @@ public class MOSMSDefaultEvent implements EvolutionEngineEvent, MONotificationEv
   public static Schema schema() { return schema; }
   public static ConnectSerde<MOSMSDefaultEvent> serde() { return serde; }
   public Schema subscriberStreamEventSchema() { return schema(); }
+  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.High; }
   
   //
   //  logger

@@ -113,6 +113,7 @@ public class DNBOUtils
       *****************************************/
       String strategyID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest, "node.parameter.strategy");
       String tokenTypeID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest, "node.parameter.tokentype"); 
+      String supplierID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest, "node.parameter.supplier"); 
       
       /*****************************************
       *
@@ -143,7 +144,17 @@ public class DNBOUtils
         }
 
       log.debug("ActionManagerDNBO.handleToken() tokenType valid");
-
+      
+      /*****************************************
+      *
+      * supplier
+      *
+      *****************************************/
+      Supplier supplier = null;
+      if (supplierID != null) {
+        supplier = evolutionEventContext.getSupplierService().getActiveSupplier(supplierID, evolutionEventContext.now());
+      }
+      
       /*****************************************
       *
       *  action -- generate new token code (different from others already associated with this subscriber)
@@ -185,7 +196,7 @@ public class DNBOUtils
       *  return
       *
       *****************************************/
-      return new Object[] {actionList, token, contextUpdate, presentationStrategy, tokenType};
+      return new Object[] {actionList, token, contextUpdate, presentationStrategy, tokenType, supplier};
     }
     
     /*****************************************
@@ -194,7 +205,7 @@ public class DNBOUtils
     *
     *****************************************/
     // returns an array of Action if error, otherwise Collection<ProposedOfferDetails>
-    protected Object handleAllocate(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, PresentationStrategy strategy, DNBOToken token, TokenType tokenType, ContextUpdate tokenContextUpdate, String action)
+    protected Object handleAllocate(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, PresentationStrategy strategy, DNBOToken token, TokenType tokenType, ContextUpdate tokenContextUpdate, String action, Supplier supplier)
     {
       /*****************************************
       *
@@ -243,7 +254,7 @@ public class DNBOUtils
       Collection<ProposedOfferDetails> presentedOffers;
       try
         {
-          presentedOffers = TokenUtils.getOffers(now, token, subscriberEvaluationRequest, subscriberProfile, strategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, scoringStrategyService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID);
+          presentedOffers = TokenUtils.getOffers(now, token, subscriberEvaluationRequest, subscriberProfile, strategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, scoringStrategyService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, supplier);
         }
       catch (GetOfferException e)
         {
@@ -407,6 +418,7 @@ public class DNBOUtils
       ContextUpdate tokenContextUpdate = (ContextUpdate) res[2];
       PresentationStrategy strategy = (PresentationStrategy) res[3];
       TokenType tokenType = (TokenType) res[4];
+      Supplier supplier = (Supplier) res[5];
       
       /*****************************************
       *
@@ -414,7 +426,7 @@ public class DNBOUtils
       *
       *****************************************/
       
-      Object resAllocate = handleAllocate(evolutionEventContext, subscriberEvaluationRequest, strategy, token, tokenType, tokenContextUpdate, TokenChange.ALLOCATE);
+      Object resAllocate = handleAllocate(evolutionEventContext, subscriberEvaluationRequest, strategy, token, tokenType, tokenContextUpdate, TokenChange.ALLOCATE, supplier);
       if (resAllocate instanceof Action[])
         {
           return Arrays.asList((Action[]) resAllocate);
@@ -472,6 +484,7 @@ public class DNBOUtils
       ContextUpdate tokenUpdate = (ContextUpdate) res[2];
       PresentationStrategy strategy = (PresentationStrategy) res[3];
       TokenType tokenType = (TokenType) res[4];
+      Supplier supplier = (Supplier) res[5];
 
       /*****************************************
       *
@@ -479,7 +492,7 @@ public class DNBOUtils
       *
       *****************************************/
       
-      Object resAllocate = handleAllocate(evolutionEventContext, subscriberEvaluationRequest, strategy, token, tokenType, tokenUpdate, TokenChange.REDEEM);
+      Object resAllocate = handleAllocate(evolutionEventContext, subscriberEvaluationRequest, strategy, token, tokenType, tokenUpdate, TokenChange.REDEEM, supplier);
       if (resAllocate instanceof Action[])
         {
           return Arrays.asList((Action[]) resAllocate);

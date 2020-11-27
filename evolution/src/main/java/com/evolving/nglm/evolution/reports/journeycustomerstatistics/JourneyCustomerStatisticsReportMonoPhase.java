@@ -25,12 +25,13 @@ import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 
 public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactory
 {
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatisticsReportMonoPhase.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private static JourneyService journeyServiceStatic;
+  private JourneyService journeyService;
   List<String> headerFieldsOrder = new ArrayList<String>();
   private final String subscriberID = "subscriberID";
   private final String customerID = "customerID";
@@ -60,10 +61,23 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
     Map<String, Object> journeyMetric = map;
         if (journeyStats != null && !journeyStats.isEmpty() && journeyMetric != null && !journeyMetric.isEmpty())
           {
-            Journey journey = journeyServiceStatic.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
+            Journey journey = journeyService.getActiveJourney(journeyStats.get("journeyID").toString(), SystemTime.getCurrentTime());
             if (journey != null)
               {
                 Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>();
+                if (journeyStats.get(subscriberID) != null)
+                  {
+                    Object subscriberIDField = journeyStats.get(subscriberID);
+                    journeyInfo.put(customerID, subscriberIDField);
+                  }
+                for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+                  {
+                    if (journeyStats.get(alternateID.getID()) != null)
+                      {
+                        Object alternateId = journeyStats.get(alternateID.getID());
+                        journeyInfo.put(alternateID.getID(), alternateId);
+                      }
+                  }
                 journeyInfo.put("journeyID", journey.getJourneyID());
                 journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
                 journeyInfo.put("journeyType", journey.getTargetingType());
@@ -79,7 +93,12 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
                   {
                     journeyInfo.put("sample", journeyStats.get("sample"));
                   }
-
+ //Required Changes in accordance to EVPRO-530          
+//                String specialExit=journeyStats.get("status") == null ? null : (String) journeyStats.get("status");
+//                if(specialExit!=null && !specialExit.equalsIgnoreCase("null") && !specialExit.isEmpty() &&  (SubscriberJourneyStatus.fromExternalRepresentation(specialExit).in(SubscriberJourneyStatus.NotEligible,SubscriberJourneyStatus.UniversalControlGroup,SubscriberJourneyStatus.Excluded,SubscriberJourneyStatus.ObjectiveLimitReached))
+//                     )
+//                journeyInfo.put("customerStatus", SubscriberJourneyStatus.fromExternalRepresentation(specialExit).getDisplay());
+//                else 
                 journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
                 Date currentDate = SystemTime.getCurrentTime();
                 journeyInfo.put("dateTime", ReportsCommonCode.getDateString(currentDate));
@@ -92,20 +111,7 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
                     journeyInfo.put(journeyMetricDeclaration.getESFieldDuring(), journeyMetric.get(journeyMetricDeclaration.getESFieldDuring()));
                     journeyInfo.put(journeyMetricDeclaration.getESFieldPost(), journeyMetric.get(journeyMetricDeclaration.getESFieldPost()));
                   }
-
-                if (journeyStats.get(subscriberID) != null)
-                  {
-                    Object subscriberIDField = journeyStats.get(subscriberID);
-                    journeyInfo.put(customerID, subscriberIDField);
-                  }
-                for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-                  {
-                    if (journeyStats.get(alternateID.getID()) != null)
-                      {
-                        Object alternateId = journeyStats.get(alternateID.getID());
-                        journeyInfo.put(alternateID.getID(), alternateId);
-                      }
-                  }
+                
 
                 /*
                  * if (addHeaders) { headerFieldsOrder.clear(); addHeaders(writer,
@@ -136,7 +142,13 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
     return result;
   }
 
-  public static void main(String[] args, JourneyService journeyService, Date reportGenerationDate)
+  public static void main(String[] args, Date reportGenerationDate)
+  {
+    JourneyCustomerStatisticsReportMonoPhase journeyCustomerStatisticsReportMonoPhase = new JourneyCustomerStatisticsReportMonoPhase();
+    journeyCustomerStatisticsReportMonoPhase.start(args, reportGenerationDate);
+  }
+  
+  private void start(String[] args, final Date reportGenerationDate)
   {
     log.info("received " + args.length + " args");
     for (String arg : args)
@@ -153,6 +165,9 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
     String esIndexJourney = args[1];
     String csvfile = args[2];
     
+    journeyService = new JourneyService(Deployment.getBrokerServers(), "JourneyCustomerStatisticsReport-journeyservice-JourneyCustomerStatisticsReportMonoDriver", Deployment.getJourneyTopic(), false);
+    journeyService.start();
+    
     Collection<Journey> activeJourneys = journeyService.getActiveJourneys(reportGenerationDate);
     StringBuilder activeJourneyEsIndex = new StringBuilder();
     boolean firstEntry = true;
@@ -166,15 +181,13 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
 
     log.info("Reading data from ES in (" + activeJourneyEsIndex.toString() + ") and " + esIndexJourney + " index on " + esNode + " producing " + csvfile + " with '" + CSV_SEPARATOR + "' separator");
     
-    journeyServiceStatic = journeyService;
-    ReportCsvFactory reportFactory = new JourneyCustomerStatisticsReportMonoPhase();
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(activeJourneyEsIndex.toString(), QueryBuilders.matchAllQuery());
     
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
         esIndexWithQuery,
-        reportFactory,
+        this,
         csvfile
     );
 
@@ -183,6 +196,9 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
         log.warn("An error occured, the report might be corrupted");
         return;
       }
+    journeyService.stop();
+    log.info("Finished JourneyCustomerStatisticsReport");
+
   }
 
   private void addHeaders(ZipOutputStream writer, Map<String, Object> values, int offset) throws IOException

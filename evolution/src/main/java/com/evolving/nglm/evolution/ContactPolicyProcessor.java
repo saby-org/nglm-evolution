@@ -30,31 +30,31 @@ public class ContactPolicyProcessor
    *
    *****************************************/
 
-  ContactPolicyProcessor(String groupIdBaseName, String key)
+  ContactPolicyProcessor()
   {
 
-    dynamicCriterionFieldsService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), groupIdBaseName + "dynamiccriterionfieldservice-" + key, Deployment.getDynamicCriterionFieldTopic(), false);
+    dynamicCriterionFieldsService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getDynamicCriterionFieldTopic(), false);
     dynamicCriterionFieldsService.start();
     CriterionContext.initialize(dynamicCriterionFieldsService);
     //
     //  instantiate journey service
     //
 
-    journeyService = new JourneyService(Deployment.getBrokerServers(), groupIdBaseName + "journeyservice-" + key, Deployment.getJourneyTopic(), false);
+    journeyService = new JourneyService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getJourneyTopic(), false);
     journeyService.start();
 
     //
     //  instantiate journey sobjective service
     //
 
-    journeyObjectiveService = new JourneyObjectiveService(Deployment.getBrokerServers(), groupIdBaseName + "journeyobjectiveservice-" + key, Deployment.getJourneyObjectiveTopic(), false);
+    journeyObjectiveService = new JourneyObjectiveService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getJourneyObjectiveTopic(), false);
     journeyObjectiveService.start();
 
     //
     //  instantiate journey sobjective service
     //
 
-    contactPolicyService = new ContactPolicyService(Deployment.getBrokerServers(), groupIdBaseName + "contactpolicyservice-" + key, Deployment.getContactPolicyTopic(), false);
+    contactPolicyService = new ContactPolicyService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getContactPolicyTopic(), false);
     contactPolicyService.start();
 
   }
@@ -67,10 +67,9 @@ public class ContactPolicyProcessor
    *
    *****************************************/
 
-  public boolean ensureContactPolicy(DeliveryRequest request) throws ContactPolityProcessorException
+  public boolean ensureContactPolicy(INotificationRequest request) throws ContactPolityProcessorException
   {
     Date now = SystemTime.getCurrentTime();
-    boolean returnValue = false;
     try
       {
         String channelId = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(request.getDeliveryType());
@@ -82,6 +81,9 @@ public class ContactPolicyProcessor
             return true;
           }
 
+        // if not a campaign, don't check for journey objectives
+        if(!request.getModule().equals(DeliveryRequest.Module.Journey_Manager)) return false;
+
         Journey journey = journeyService.getActiveJourney(request.getFeatureID(), now);
         Set<JourneyObjectiveInstance> journeyObjectivesInstances = journey.getJourneyObjectiveInstances();
         for (JourneyObjectiveInstance journeyObjectiveInstance : journeyObjectivesInstances)
@@ -89,8 +91,7 @@ public class ContactPolicyProcessor
             JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), now);
             if (this.evaluateChildParentsContactPolicies(channelId, journeyObjective, requestMetricHistory, now))
               {
-                returnValue = true;
-                break;
+                return true;
               }
           }
       }
@@ -98,7 +99,7 @@ public class ContactPolicyProcessor
       {
         throw new ContactPolityProcessorException(ex);
       }
-    return returnValue;
+    return false;
   }
 
   /*****************************************

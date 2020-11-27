@@ -1698,6 +1698,207 @@ public class MetricHistory
   
   /****************************************
   *
+  *  Utilities
+  *
+  ****************************************/
+
+  //
+  //  getPreviousNDays
+  //
+
+  private Long getPreviousNDays(Date evaluationDate, int numberOfDays)
+  {
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -numberOfDays, Deployment.getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
+    return this.getValue(startDay, endDay);
+  }
+
+  //
+  //  getToday
+  //
+
+  public Long getToday(Date evaluationDate)
+  {
+    Date today = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getBaseTimeZone());
+    return this.getValue(today, today);
+  }
+
+  //
+  //  getYesterday
+  //
+
+  public Long getYesterday(Date evaluationDate)
+  {
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
+    Date endDay = startDay;
+    return this.getValue(startDay, endDay);
+  }
+
+  //
+  //  getPrevious7Days
+  //
+
+  public Long getPrevious7Days(Date evaluationDate)
+  {
+    return getPreviousNDays(evaluationDate, 7);
+  }
+
+  //
+  //  getPrevious14Days
+  //
+
+  public Long getPrevious14Days(Date evaluationDate)
+  {
+    return getPreviousNDays(evaluationDate, 14);
+  }
+
+  //
+  //  getPrevious30Days
+  //
+
+  public Long getPrevious30Days(Date evaluationDate)
+  {
+    return getPreviousNDays(evaluationDate, 30);
+  }
+
+  //
+  //  getPreviousMonth
+  //
+
+  public Long getPreviousMonth(Date evaluationDate)
+  {
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getBaseTimeZone());
+    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, 0, Deployment.getBaseTimeZone());
+    Date startDay = RLMDateUtils.addMonths(startOfMonth, -1, Deployment.getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(startOfMonth, -1, Deployment.getBaseTimeZone());
+    return this.getValue(startDay, endDay);
+  }
+
+  //
+  //  getPrevious90Days
+  //
+
+  public Long getPrevious90Days(Date evaluationDate)
+  {
+    return getPreviousNDays(evaluationDate, 90);
+  }
+
+  //
+  //  getCountIfZeroOrNotPrevious90Days
+  //
+
+  private Long getCountIfZeroOrNotPrevious90Days(Date evaluationDate, MetricHistory.Criteria zeroOrNot)
+  {
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
+    return this.countIf(startDay, endDay, zeroOrNot);
+  }
+
+  //
+  //  getCountIfZeroPrevious90Days
+  //
+
+  public Long getCountIfZeroPrevious90Days(Date evaluationDate)
+  {
+    return getCountIfZeroOrNotPrevious90Days(evaluationDate, MetricHistory.Criteria.IsZero);
+  }
+
+  //
+  //  getCountIfNonZeroPrevious90Days
+  //
+
+  public Long getCountIfNonZeroPrevious90Days( Date evaluationDate)
+  {
+    return getCountIfZeroOrNotPrevious90Days(evaluationDate, MetricHistory.Criteria.IsNonZero);
+  }
+
+  //
+  //  getAggregateIfZeroOrNotPrevious90Days
+  //
+
+  private Long getAggregateIfZeroOrNotPrevious90Days(MetricHistory criteriaMetricHistory, Date evaluationDate, MetricHistory.Criteria zeroOrNot)
+  {
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
+    return this.aggregateIf(startDay, endDay, zeroOrNot, criteriaMetricHistory);
+  }
+
+  //
+  //  getAggregateIfZeroPrevious90Days
+  //
+
+  public Long getAggregateIfZeroPrevious90Days(MetricHistory criteriaMetricHistory, Date evaluationDate)
+  {
+    return getAggregateIfZeroOrNotPrevious90Days(criteriaMetricHistory, evaluationDate, MetricHistory.Criteria.IsZero);
+  }
+
+  //
+  //  getAggregateIfNonZeroPrevious90Days
+  //
+
+  public Long getAggregateIfNonZeroPrevious90Days(MetricHistory criteriaMetricHistory, Date evaluationDate)
+  {
+    return getAggregateIfZeroOrNotPrevious90Days(criteriaMetricHistory, evaluationDate, MetricHistory.Criteria.IsNonZero);
+  }
+
+  //
+  //  getThreeMonthAverage
+  //
+
+  public Long getThreeMonthAverage(Date evaluationDate)
+  {
+    //
+    //  undefined
+    //
+
+    switch (this.getMetricHistoryMode())
+      {
+        case Min:
+        case Max:
+          return null;
+      }
+
+    //
+    //  retrieve values by month
+    //
+
+    int numberOfMonths = 3;
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, 0, Deployment.getBaseTimeZone());
+    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, 0, Deployment.getBaseTimeZone());
+    long[] valuesByMonth = new long[numberOfMonths];
+    for (int i=0; i<numberOfMonths; i++)
+      {
+        Date startDay = RLMDateUtils.addMonths(startOfMonth, -(i+1), Deployment.getBaseTimeZone());
+        Date endDay = RLMDateUtils.addDays(RLMDateUtils.addMonths(startDay, 1, Deployment.getBaseTimeZone()), -1, Deployment.getBaseTimeZone());
+        valuesByMonth[i] = this.getValue(startDay, endDay);
+      }
+
+    //
+    //  average (excluding "leading" zeroes)
+    //
+
+    long totalValue = 0L;
+    int includedMonths = 0;
+    for (int i=numberOfMonths-1; i>=0; i--)
+      {
+        totalValue += valuesByMonth[i];
+        if (totalValue > 0L) includedMonths += 1;
+      }
+
+    //
+    //  result
+    //
+
+    return (includedMonths > 0) ? totalValue / includedMonths : 0L;
+  }
+
+  
+  /****************************************
+  *
   *  toString
   *
   ****************************************/
