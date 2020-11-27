@@ -27555,10 +27555,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
                 if (productObject != null)
                   {
                     Product product = (Product) productObject;
-                    supplierID = product.getSupplierID();
-                    response.put("supplierID", supplierID);
-                    response.put("offerProduct", offerProduct);
-                    break;
+                    if (product.getSupplierID())
+                      {
+                        supplierID = product.getSupplierID();
+                        response.put("supplierID", supplierID);
+                        response.put("offerProduct", offerProduct);
+                        break;
+                      }
                   }
               }
 
