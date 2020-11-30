@@ -4568,7 +4568,7 @@ public class GUIManagerGeneral extends GUIManager
                             jsonResponse.put("processing", true);
                             if(uploadedFile.getMetaData() != null && uploadedFile.getMetaData().get("variables") != null) 
                               {
-                                jsonResponse.put("variables", JSONUtilities.decodeJSONArray(uploadedFile.getMetaData().get("variables"), "fileVariables", new JSONArray());
+                                jsonResponse.put("variables", JSONUtilities.decodeJSONArray(uploadedFile.getMetaData().get("variables"), "fileVariables", new JSONArray()));
                               }
                             jsonResponse.put("responseCode", "ok");
                           }
