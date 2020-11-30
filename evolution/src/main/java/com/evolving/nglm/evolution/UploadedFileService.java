@@ -320,7 +320,7 @@ public class UploadedFileService extends GUIService
         UploadedFile uploadededFile = (UploadedFile) guiManagedObject;
         uploadededFile.validate();
         
-        ArrayList<String> variables = new ArrayList<String>();
+        ArrayList<String> fileHeader = new ArrayList<String>();
         ArrayList<JSONObject> valiablesJSON = new ArrayList<JSONObject>();
         
         //
@@ -362,7 +362,7 @@ public class UploadedFileService extends GUIService
                             
                             Map<String, AlternateID> alternateIDs = Deployment.getAlternateIDs();
                             if (alternateIDs.get(header) == null) throw new GUIManagerException("invalid alternateID " + header, "supported alternateIDs are " + alternateIDs.keySet());
-                            variables.add(header);
+                            fileHeader.add(header);
                             uploadededFile.setCustomerAlternateID(header);
                             isFirstColumn = false;
                           }
@@ -372,10 +372,10 @@ public class UploadedFileService extends GUIService
                             String variableName = getVaribaleName(header);
                             validateVaribaleName(variableName);
                             HashMap<String, String> variablesDataTypes = new LinkedHashMap<String, String>();
-                            variablesDataTypes.put("variableName", variableName);
+                            variablesDataTypes.put("name", variableName);
                             variablesDataTypes.put("dataType", dataType);
                             valiablesJSON.add(JSONUtilities.encodeObject(variablesDataTypes));
-                            variables.add(variableName);
+                            fileHeader.add(variableName);
                           }
                       }
                   }
@@ -393,7 +393,7 @@ public class UploadedFileService extends GUIService
                         value = value.trim();
                         if (!isFirstColumn)
                           {
-                            String variableName = variables.get(index);
+                            String variableName = fileHeader.get(index);
                             String dataType = getDataType(variableName, valiablesJSON);
                             CriterionDataType CriterionDataType = EvaluationCriterion.CriterionDataType.fromExternalRepresentation(dataType);
                             validateValue(variableName, CriterionDataType, value, lineNumber);
