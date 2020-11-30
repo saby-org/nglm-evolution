@@ -93,7 +93,8 @@ public class JourneyImpactReportMonoPhase implements ReportCsvFactory
 
               for (SubscriberJourneyStatus states : SubscriberJourneyStatus.values())
                 {
-                  sbStatus.append(states.getDisplay()).append("=").append(journeyStatusCount.get(states.getExternalRepresentation())).append(",");
+                  Long statusCount = journeyStatusCount.get(states.getDisplay());
+                  sbStatus.append(states.getDisplay()).append("=").append((statusCount==null) ? "0" : statusCount.toString()).append(",");
                 }
 
               if (sbStatus.length() > 0)
