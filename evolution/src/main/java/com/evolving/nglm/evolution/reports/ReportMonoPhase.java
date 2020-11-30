@@ -731,5 +731,6 @@ public class ReportMonoPhase
       }
   }
 
+  public ElasticsearchClientAPI getESClient() { return elasticsearchReaderClient; }
 
 }

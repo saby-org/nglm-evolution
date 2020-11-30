@@ -12,9 +12,6 @@
   "topicRetentionDay"         : 4,
   "topicRetentionLongDay"     : 31,
 
-  "journeyTrafficArchivePeriodInSeconds"     : 3600,
-  "journeyTrafficArchiveMaxNumberOfPeriods"  : 168,
-
   "kafkaRetentionDaysExpiredTokens"   : 31,
   "kafkaRetentionDaysExpiredVouchers" : 31,
   "kafkaRetentionDaysJourneys"        : 31,
@@ -165,9 +162,6 @@
   "extendedSubscriberProfileChangeLogTopic"              : "${changelog.evolutionengine.extendedsubscriberprofile.topic}",
   "subscriberHistoryChangeLog"                           : "${changelog.evolutionengine.subscriberhistory}",
   "subscriberHistoryChangeLogTopic"                      : "${changelog.evolutionengine.subscriberhistory.topic}",
-  "journeyTrafficChangeLog"                              : "${changelog.journeytrafficengine.journeytraffic}",
-  "journeyTrafficChangeLogTopic"                         : "${changelog.journeytrafficengine.journeytraffic.topic}",
-  "journeyTrafficTopic"                                  : "${topic.journeytraffic}",
   "tokenChangeTopic"                                     : "${topic.tokenchange}",
   "autoProvisionedSubscriberChangeLog"                   : "${changelog.subscribermanager.autoprovisionedsubscriber}",
   "autoProvisionedSubscriberChangeLogTopic"              : "${changelog.subscribermanager.autoprovisionedsubscriber.topic}",

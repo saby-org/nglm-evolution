@@ -15,25 +15,29 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.elasticsearch.ElasticsearchException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ReferenceDataReader;
+import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.Journey;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
 import com.evolving.nglm.evolution.JourneyNode;
 import com.evolving.nglm.evolution.JourneyObjective;
 import com.evolving.nglm.evolution.JourneyObjectiveService;
 import com.evolving.nglm.evolution.JourneyService;
-import com.evolving.nglm.evolution.JourneyTrafficHistory;
 import com.evolving.nglm.evolution.PointService;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.ReportDriver;
@@ -49,7 +53,6 @@ public class JourneysReportDriver extends ReportDriver
   private static PointService pointService;
   private static JourneyObjectiveService journeyObjectiveService;
   List<String> headerFieldsOrder = new ArrayList<String>();
-  private static ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader;
 
   /****************************************
   *
@@ -79,8 +82,40 @@ public class JourneysReportDriver extends ReportDriver
     journeyObjectiveService = new JourneyObjectiveService(kafkaNode, "journeysreportcsvwriter-journeyObjectiveService-" + apiProcessKey, journeyObjectiveTopic, false);
     journeyObjectiveService.start();
     
-    journeyTrafficReader = ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", kafkaNode, Deployment.getJourneyTrafficChangeLogTopic(), JourneyTrafficHistory::unpack);
+    // ESROUTER can have two access points
+    // need to cut the string to get at least one
+    String node = null;
+    int port = 0;
+    int connectTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getConnectTimeout();
+    int queryTimeout = Deployment.getElasticsearchConnectionSettings().get("ReportManager").getQueryTimeout();
+    String username = null;
+    String password = null;
     
+    if (elasticSearch.contains(","))
+      {
+        String[] split = elasticSearch.split(",");
+        if (split[0] != null)
+          {
+            Scanner s = new Scanner(split[0]);
+            s.useDelimiter(":");
+            node = s.next();
+            port = s.nextInt();
+            username = s.next();
+            password = s.next();
+            s.close();
+          }
+      } else
+        {
+          Scanner s = new Scanner(elasticSearch);
+          s.useDelimiter(":");
+          node = s.next();
+          port = s.nextInt();
+          username = s.next();
+          password = s.next();
+          s.close();
+        }
+    ElasticsearchClientAPI elasticsearchReaderClient = new ElasticsearchClientAPI(node, port, connectTimeout, queryTimeout, username, password);
+
     ReportsCommonCode.initializeDateFormats();
     
     File file = new File(csvFilename + ".zip");
@@ -106,10 +141,10 @@ public class JourneysReportDriver extends ReportDriver
 
                 Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>(); // to preserve order
                 if (journey != null) {
-                  JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journey.getJourneyID());
                   StringBuilder sbJourneyObjectives = new StringBuilder();
 
-                  journeyInfo.put("journeyID", journey.getJourneyID());
+                  String journeyID = journey.getJourneyID();
+                  journeyInfo.put("journeyID", journeyID);
                   journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
                   journeyInfo.put("journeyDescription", journey.getJSONRepresentation().get("description"));
                   journeyInfo.put("journeyType", journey.getGUIManagedObjectType().getExternalRepresentation()); 
@@ -130,29 +165,29 @@ public class JourneysReportDriver extends ReportDriver
                   String journeyRewards = null;
                   String journeyStates = null;
 
-                  if (journeyTrafficHistory != null) {
-                    for (SubscriberJourneyStatus states : SubscriberJourneyStatus.values()){
-                      sbStatus.append(states.getDisplay()).append("=").append(journeyTrafficHistory.getCurrentData().getStatusSubscribersCount(states)).append(",");
-                    }
-                    journeyStatus = sbStatus.toString().substring(0, sbStatus.toString().length()-1);
+                  Map<String, Long> journeyStatusCount = elasticsearchReaderClient.getJourneyStatusCount(journeyID);
+                  for (SubscriberJourneyStatus states : SubscriberJourneyStatus.values()){
+                    Long statusCount = journeyStatusCount.get(states.getDisplay());
+                    sbStatus.append(states.getDisplay()).append("=").append((statusCount==null) ? "0" : statusCount.toString()).append(",");
+                  }
+                  journeyStatus = sbStatus.toString().substring(0, sbStatus.toString().length()-1);
 
-                    for (JourneyNode node : journey.getJourneyNodes().values()) {
-                      sbStates.append(node.getNodeName()).append("=").append(journeyTrafficHistory.getCurrentData().getNodeSubscribersCount(node.getNodeID())).append(",");
-                    }
-                    journeyStates = sbStates.toString().substring(0, sbStates.toString().length()-1);
+                  Map<String, Long> nodeSubscribersCount = elasticsearchReaderClient.getJourneyNodeCount(journeyID);
+                  for (JourneyNode journeyNode : journey.getJourneyNodes().values()) {
+                    sbStates.append(journeyNode.getNodeName()).append("=").append(nodeSubscribersCount.get(journeyNode.getNodeID())).append(",");
+                  }
+                  journeyStates = sbStates.toString().substring(0, sbStates.toString().length()-1);
 
-                    if (journeyTrafficHistory.getCurrentData().getGlobal().getDistributedRewards() != null) {
-                      for (String rewards : journeyTrafficHistory.getCurrentData().getGlobal().getDistributedRewards().keySet()) {
-                        if (pointService.getStoredPoint(rewards) != null) {
-                          String rewardName = pointService.getStoredPoint(rewards).getGUIManagedObjectDisplay();
-                          sbRewards.append(rewardName).append(",");
-                        }
-                        else {
-                          sbRewards.append("").append(",");
-                        }
-                      }
-                      journeyRewards = (sbRewards.length() > 0)? sbRewards.toString().substring(0, sbRewards.toString().length()-1) : "";
+                  Map<String, Long> distributedRewards = elasticsearchReaderClient.getDistributedRewards(journeyID);
+                  for (String rewards : distributedRewards.keySet()) {
+                    if (pointService.getStoredPoint(rewards) != null) {
+                      String rewardName = pointService.getStoredPoint(rewards).getGUIManagedObjectDisplay();
+                      sbRewards.append(rewardName).append(",");
                     }
+                    else {
+                      sbRewards.append("").append(",");
+                    }
+                    journeyRewards = (sbRewards.length() > 0)? sbRewards.toString().substring(0, sbRewards.toString().length()-1) : "";
                   }
                   journeyInfo.put("customerStates", journeyStates);
                   journeyInfo.put("customerStatuses", journeyStatus);         
@@ -169,7 +204,7 @@ public class JourneysReportDriver extends ReportDriver
                 writer.write(line.getBytes());
               }
             }
-            catch (IOException e)
+            catch (IOException | ElasticsearchClientException e)
             {
               log.info("Exception processing "+guiManagedObject.getGUIManagedObjectDisplay(), e);
             }

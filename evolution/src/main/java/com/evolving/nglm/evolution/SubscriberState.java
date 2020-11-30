@@ -118,7 +118,7 @@ public class SubscriberState implements StateStore
   private List<LoyaltyProgramRequest> loyaltyProgramResponses;
   private List<PointFulfillmentRequest> pointFulfillmentResponses;
   private List<DeliveryRequest> deliveryRequests;
-  private List<JourneyStatisticWrapper> journeyStatisticWrappers;
+  private List<JourneyStatistic> journeyStatisticWrappers;
   private List<JourneyMetric> journeyMetrics;
   private List<ProfileChangeEvent> profileChangeEvents;
   private List<ProfileSegmentChangeEvent> profileSegmentChangeEvents;
@@ -158,7 +158,7 @@ public class SubscriberState implements StateStore
   public List<LoyaltyProgramRequest> getLoyaltyProgramResponses() { return loyaltyProgramResponses; }
   public List<PointFulfillmentRequest> getPointFulfillmentResponses() { return pointFulfillmentResponses; }
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
-  public List<JourneyStatisticWrapper> getJourneyStatisticWrappers() { return journeyStatisticWrappers; }
+  public List<JourneyStatistic> getJourneyStatisticWrappers() { return journeyStatisticWrappers; }
   public List<JourneyMetric> getJourneyMetrics() { return journeyMetrics; }
   public List<ProfileChangeEvent> getProfileChangeEvents() { return profileChangeEvents; }
   public List<ProfileSegmentChangeEvent> getProfileSegmentChangeEvents() { return profileSegmentChangeEvents; }
@@ -256,7 +256,7 @@ public class SubscriberState implements StateStore
         this.loyaltyProgramResponses = new ArrayList<LoyaltyProgramRequest>();
         this.pointFulfillmentResponses = new ArrayList<PointFulfillmentRequest>();
         this.deliveryRequests = new ArrayList<DeliveryRequest>();
-        this.journeyStatisticWrappers = new ArrayList<JourneyStatisticWrapper>();
+        this.journeyStatisticWrappers = new ArrayList<JourneyStatistic>();
         this.journeyMetrics = new ArrayList<JourneyMetric>();
         this.profileChangeEvents = new ArrayList<ProfileChangeEvent>();
         this.profileSegmentChangeEvents = new ArrayList<ProfileSegmentChangeEvent>();
@@ -285,7 +285,7 @@ public class SubscriberState implements StateStore
    *
    *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, List<String> workflowTriggering, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<ExecuteActionOtherSubscriber> executeActionsOtherSubscriber, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput, List<UUID> trackingIDs, List<TokenChange> tokenChanges, Map<String,MetricHistory> notificationHistory, List<VoucherChange> voucherChanges)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, List<String> workflowTriggering, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<ExecuteActionOtherSubscriber> executeActionsOtherSubscriber, List<JourneyStatistic> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput, List<UUID> trackingIDs, List<TokenChange> tokenChanges, Map<String,MetricHistory> notificationHistory, List<VoucherChange> voucherChanges)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
@@ -366,7 +366,7 @@ public class SubscriberState implements StateStore
         this.loyaltyProgramResponses = new ArrayList<LoyaltyProgramRequest>(subscriberState.getLoyaltyProgramResponses());
         this.pointFulfillmentResponses= new ArrayList<PointFulfillmentRequest>(subscriberState.getPointFulfillmentResponses());
         this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberState.getDeliveryRequests());
-        this.journeyStatisticWrappers = new ArrayList<JourneyStatisticWrapper>(subscriberState.getJourneyStatisticWrappers());
+        this.journeyStatisticWrappers = new ArrayList<JourneyStatistic>(subscriberState.getJourneyStatisticWrappers());
         this.journeyMetrics = new ArrayList<JourneyMetric>(subscriberState.getJourneyMetrics());
         this.profileChangeEvents= new ArrayList<ProfileChangeEvent>(subscriberState.getProfileChangeEvents());
         this.profileSegmentChangeEvents= new ArrayList<ProfileSegmentChangeEvent>(subscriberState.getProfileSegmentChangeEvents());
@@ -524,7 +524,7 @@ public class SubscriberState implements StateStore
     List<PointFulfillmentRequest> pointFulfillmentResponses = new ArrayList<PointFulfillmentRequest>();
     List<DeliveryRequest> deliveryRequests = new ArrayList<DeliveryRequest>();
     List<ExecuteActionOtherSubscriber> executeActionsOtherSubscriber = new ArrayList<ExecuteActionOtherSubscriber>();
-    List<JourneyStatisticWrapper> journeyStatisticWrappers = new ArrayList<JourneyStatisticWrapper>();
+    List<JourneyStatistic> journeyStatisticWrappers = new ArrayList<JourneyStatistic>();
     List<JourneyMetric> journeyMetrics = new ArrayList<JourneyMetric>();
     List<ProfileChangeEvent> profileChangeEvents = new ArrayList<ProfileChangeEvent>();
     List<ProfileSegmentChangeEvent> profileSegmentChangeEvents = new ArrayList<ProfileSegmentChangeEvent>();

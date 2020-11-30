@@ -56,6 +56,7 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
     this.basicFilterFields = new ArrayList<String>();
     this.basicFilterFields.add("status");
     this.basicFilterFields.add("nodeID");
+    this.basicFilterFields.add("sample");
     this.filterFields = new ArrayList<String>();
   }
 
