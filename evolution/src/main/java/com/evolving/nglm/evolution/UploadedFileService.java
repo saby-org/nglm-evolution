@@ -446,7 +446,7 @@ public class UploadedFileService extends GUIService
     String result = null;
     for (JSONObject variableJSON : valiablesJSON)
       {
-        String varName = JSONUtilities.decodeString(variableJSON, "variableName", true);
+        String varName = JSONUtilities.decodeString(variableJSON, "name", true);
         String dataType = JSONUtilities.decodeString(variableJSON, "dataType", true);
         if (variableName.equals(varName))
           {
