@@ -48,13 +48,6 @@ scrape_configs:
     static_configs:
       - targets: [<_EVOLUTIONENGINE_PROMETHEUS_>]
 
-  # journeytrafficengine job
-  - job_name: 'journeytrafficengine'
-
-    # main config
-    static_configs:
-      - targets: [<_JOURNEYTRAFFICENGINE_PROMETHEUS_>]
-
   # ucgengine job
   - job_name: 'ucgengine'
 

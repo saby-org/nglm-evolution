@@ -24,7 +24,6 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
 import com.evolving.nglm.evolution.JourneyMetricDeclaration;
 import com.evolving.nglm.evolution.JourneyService;
-import com.evolving.nglm.evolution.JourneyTrafficHistory;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;

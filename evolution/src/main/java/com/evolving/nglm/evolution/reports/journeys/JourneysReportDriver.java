@@ -38,7 +38,6 @@ import com.evolving.nglm.evolution.JourneyNode;
 import com.evolving.nglm.evolution.JourneyObjective;
 import com.evolving.nglm.evolution.JourneyObjectiveService;
 import com.evolving.nglm.evolution.JourneyService;
-import com.evolving.nglm.evolution.JourneyTrafficHistory;
 import com.evolving.nglm.evolution.PointService;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.ReportDriver;
