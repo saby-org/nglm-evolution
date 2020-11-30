@@ -4566,11 +4566,9 @@ public class GUIManagerGeneral extends GUIManager
                             jsonResponse.put("accepted", true);
                             jsonResponse.put("valid", true);
                             jsonResponse.put("processing", true);
-                            log.info("RAJ K uploadedFile.getMetaData() {} ", uploadedFile.getMetaData());
                             if(uploadedFile.getMetaData() != null && uploadedFile.getMetaData().get("variables") != null) 
                               {
-                                log.info("RAJ K uploadedFile.getMetaData().get(\"variables\") {} ", uploadedFile.getMetaData().get("variables"));
-                                jsonResponse.put("variables", uploadedFile.getMetaData().get("variables"));
+                                jsonResponse.put("variables", JSONUtilities.decodeJSONArray(uploadedFile.getMetaData().get("variables"), "fileVariables", new JSONArray());
                               }
                             jsonResponse.put("responseCode", "ok");
                           }

@@ -370,6 +370,7 @@ public class UploadedFileService extends GUIService
                           {
                             String dataType = getDatatype(header);
                             String variableName = getVaribaleName(header);
+                            validateVaribaleName(variableName);
                             HashMap<String, String> variablesDataTypes = new LinkedHashMap<String, String>();
                             variablesDataTypes.put("variableName", variableName);
                             variablesDataTypes.put("dataType", dataType);
@@ -425,6 +426,21 @@ public class UploadedFileService extends GUIService
     putGUIManagedObject(guiManagedObject, now, newObject, userID);  
   }
   
+  private void validateVaribaleName(String variableName) throws GUIManagerException
+  {
+    if (variableName != null)
+      {
+        for(int i=0; i < variableName.length();i++)
+          {
+            Character ch = variableName.charAt(i);
+            if(Character.isDigit(ch) || Character.isUpperCase(ch))
+              {
+                throw new GUIManagerException("variable names must use letters only and not capital letters", variableName);
+              }
+          }
+      }
+  }
+
   private String getDataType(String variableName, ArrayList<JSONObject> valiablesJSON)
   {
     String result = null;
