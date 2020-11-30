@@ -167,7 +167,8 @@ public class JourneysReportDriver extends ReportDriver
 
                   Map<String, Long> journeyStatusCount = elasticsearchReaderClient.getJourneyStatusCount(journeyID);
                   for (SubscriberJourneyStatus states : SubscriberJourneyStatus.values()){
-                    sbStatus.append(states.getDisplay()).append("=").append(journeyStatusCount.get(states)).append(",");
+                    Long statusCount = journeyStatusCount.get(states.getDisplay());
+                    sbStatus.append(states.getDisplay()).append("=").append((statusCount==null) ? "0" : statusCount.toString()).append(",");
                   }
                   journeyStatus = sbStatus.toString().substring(0, sbStatus.toString().length()-1);
 
