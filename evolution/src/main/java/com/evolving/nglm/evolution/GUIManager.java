@@ -27501,13 +27501,22 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         for (OfferProduct offerProduct : offerProducts)
           {
             String productId = offerProduct.getProductID();
-            GUIManagedObject productObject = productService.getStoredProduct(productId);
-            Product product = (Product) productObject;
-            supplierID = product.getSupplierID();
-            response.put("supplierID", supplierID);
-            response.put("offerProduct", offerProduct);          
-            break;
-            
+            if (productId != null)
+              {
+                GUIManagedObject productObject = productService.getStoredProduct(productId);
+                if (productObject != null)
+                  {
+                    Product product = (Product) productObject;
+                    if (product.getSupplierID() != null)
+                      {
+                        supplierID = product.getSupplierID();
+                        response.put("supplierID", supplierID);
+                        response.put("offerProduct", offerProduct);
+                        break;
+                      }
+                  }
+              }
+
           }
       }
     
@@ -27516,12 +27525,21 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot) thro
         for (OfferVoucher offerVoucher : offerVouchers)
           {
             String voucherId = offerVoucher.getVoucherID();
-            GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherId);
-            Voucher voucher = (Voucher) voucherObject;
-            supplierID = voucher.getSupplierID();
-            response.put("supplierID", supplierID);          
-            response.put("offerVoucher", offerVoucher);
-            break;
+            if (voucherId != null)
+              {
+                GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherId);
+                if (voucherObject != null)
+                  {
+                    Voucher voucher = (Voucher) voucherObject;                    
+                    if (voucher.getSupplierID() != null)
+                      {
+                        supplierID = voucher.getSupplierID();
+                        response.put("supplierID", supplierID);
+                        response.put("offerVoucher", offerVoucher);
+                        break;
+                      }
+                  }
+              }
           }
       }
    
