@@ -1177,7 +1177,9 @@ public class GUIManagerBaseManagement extends GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     Boolean dryRun = false;
     
-
+    jsonRoot.put("effectiveEndDate", "2019-12-25T00:00:00+02:00");
+    
+    System.out.println("json root for target:==="+jsonRoot);
     /*****************************************
     *
     *  dryRun
