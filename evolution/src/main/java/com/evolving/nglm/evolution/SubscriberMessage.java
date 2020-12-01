@@ -202,6 +202,7 @@ public abstract class SubscriberMessage
             log.error("parameterID {} not found in parameterTagsByID {} and parameterJSON is {}", parameterID, parameterTagsByID, parameterJSON);
             throw new GUIManagerException("unknown parameterTag", parameterID);
           }
+        
         if (! Journey.isExpressionValuedParameterValue(parameterJSON))
           {
             switch (parameter.getFieldDataType())
@@ -217,15 +218,6 @@ public abstract class SubscriberMessage
                   if(tagCriterionField != null) {
                     ParameterExpression parameterExpression = new ParameterExpression(parameterValue, null, criterionContext);
                     parameterTags.put(parameterID, parameterExpression);
-                    //subscriberMessageTemplate.getParameterTags().stream().filter(paramTag -> paramTag.getID().equalsIgnoreCase(parameterID)).forEach(tag -> log.info("RAJ K templateValue {}, campaignValue {} and length is {}", parameterID, tagCriterionField.getID(), tagCriterionField.getTagMaxLength()));
-                    List<CriterionField> crtList = subscriberMessageTemplate.getParameterTags().stream().filter(paramTag -> paramTag.getID().equalsIgnoreCase(parameterID)).collect(Collectors.toList());
-                    if (crtList != null && crtList.size() > 0)
-                      {
-                        CriterionField tg = crtList.get(0);
-                        log.info("RAJ K previous {} length {}", tg.getID(), tg.getTagMaxLength());
-                        tg.setTagMaxLength(tagCriterionField.getTagMaxLength());
-                        log.info("RAJ K after {} length {}", tg.getID(), tg.getTagMaxLength());
-                      }
                   }
                   else {
                     parameterTags.put(parameterID, JSONUtilities.decodeString(parameterJSON, "campaignValue", false));

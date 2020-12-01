@@ -539,8 +539,12 @@ public class DialogMessage
         
         subscriberEvaluationRequest.getMiscData().put("tagJourneyNodeParameterName", (String)tag.getJSONRepresentation().get("tagJourneyNodeParameterName"));
         Object tagValue = tag.retrieve(subscriberEvaluationRequest);
-        log.info("RAJ K tagID {}", tag.getID());
-        log.info("RAJ K tag {} and tagValue {}", tag, tagValue);
+        Integer tagMaxLength = null;
+        if (parameterTags.contains(tag))
+          {
+            log.info("RAJ K parameterTag {}", tag.getID());
+            tagMaxLength = getTagMaxLength(subscriberEvaluationRequest, tag.getID());
+          }
 
         //
         //  resolve formatDataType
@@ -573,7 +577,7 @@ public class DialogMessage
         //  truncate (if necessary)
         //
 
-        int maxLength = tag.resolveTagMaxLength(formatDataType);
+        int maxLength = tagMaxLength != null ? tagMaxLength.intValue() : tag.resolveTagMaxLength(formatDataType);
         String resolvedTag = formattedTag;
         if (formattedTag.length() > maxLength)
           {
@@ -608,6 +612,41 @@ public class DialogMessage
     return messageTags;
   }
 
+  private Integer getTagMaxLength(SubscriberEvaluationRequest evaluationRequest, String fieldName)
+  {
+    Integer result = null;
+    String tagJourneyNodeParameterName = evaluationRequest.getMiscData().get("tagJourneyNodeParameterName");
+    if (tagJourneyNodeParameterName == null)
+      {
+        tagJourneyNodeParameterName = "node.parameter.message"; // compatibility with OLD SMS
+      }
+    // OLD Way to retrieve subscriberMessage
+    SubscriberMessage subscriberMessage = (SubscriberMessage) CriterionFieldRetriever.getJourneyNodeParameter(evaluationRequest, tagJourneyNodeParameterName);
+    if (subscriberMessage == null)
+      {
+        // compatibility with OLD MAIL
+        subscriberMessage = (SubscriberMessage) CriterionFieldRetriever.getJourneyNodeParameter(evaluationRequest, "node.parameter.message");
+      }
+    if (subscriberMessage == null)
+      {
+        // GENERIC WAY to retrieve subscriberMessage
+        subscriberMessage = (SubscriberMessage) CriterionFieldRetriever.getJourneyNodeParameter(evaluationRequest, "node.parameter.dialog_template");
+      }
+    SimpleParameterMap parameterMap = subscriberMessage.getParameterTags();
+    Object parameterValue = parameterMap.get(fieldName);
+    if (parameterValue != null && parameterValue instanceof ParameterExpression)
+      {
+        ParameterExpression parameterExpression = (ParameterExpression) parameterValue;
+        String resolvedCriterionID = parameterExpression.getExpressionString();
+        CriterionField criterionField = CriterionContext.FullProfile.getCriterionFields().get(resolvedCriterionID);
+        if (criterionField != null)
+          {
+            log.info("RAJ K parameterTag {}, criterionFieldID {}, maxLength {}", fieldName, criterionField.getID(), criterionField.getTagMaxLength());
+            result = criterionField.getTagMaxLength();
+          }
+      }
+    return result;
+  }
   /*****************************************
   *
   *  resolveFormatDataType
