@@ -170,6 +170,7 @@ public class CriterionField extends DeploymentManagedObject
   public Integer getTagMaxLength() { return tagMaxLength; }
   public VariableType getVariableType() { return variableType; }
   public boolean getProfileChangeEvent() { return profileChangeEvent; }
+  public void setTagMaxLength(Integer tagMaxLength) { this.tagMaxLength = tagMaxLength; }
 
   /*****************************************
   *
@@ -806,7 +807,6 @@ public class CriterionField extends DeploymentManagedObject
 
   public int resolveTagMaxLength(CriterionDataType formatDataType)
   {
-    log.info("RAJ K resolveTagMaxLength id {}, tagMaxLength {}", getID(), tagMaxLength);
     /*****************************************
     *
     *  tagMaxLength -- set explicitly
