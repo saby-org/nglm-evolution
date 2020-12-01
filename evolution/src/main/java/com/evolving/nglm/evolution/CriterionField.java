@@ -331,6 +331,7 @@ public class CriterionField extends DeploymentManagedObject
     this(generateCriterionField(tagName));
     // add a field into the JSONrepresenation only to know which field to retrive when a Tag is NOT a classical criterion field but a parameter (cf macros in JSON templates)
     this.getJSONRepresentation().put("tagJourneyNodeParameterName", tagJourneyNodeParameterName);
+    log.info("RAJ K tagJourneyNodeParameterName {}", tagJourneyNodeParameterName);
   }
 
   //
