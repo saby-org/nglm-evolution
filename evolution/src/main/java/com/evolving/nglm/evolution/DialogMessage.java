@@ -539,6 +539,7 @@ public class DialogMessage
         
         subscriberEvaluationRequest.getMiscData().put("tagJourneyNodeParameterName", (String)tag.getJSONRepresentation().get("tagJourneyNodeParameterName"));
         Object tagValue = tag.retrieve(subscriberEvaluationRequest);
+        log.info("RAJ K tagID {}", tag.getID());
         log.info("RAJ K tag {} and tagValue {}", tag, tagValue);
 
         //

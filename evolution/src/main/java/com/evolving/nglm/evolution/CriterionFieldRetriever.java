@@ -129,6 +129,7 @@ public abstract class CriterionFieldRetriever
   //
 
   public static Object getSubscriberMessageParameterTag(SubscriberEvaluationRequest evaluationRequest, String fieldName) {
+    log.info("RAJ K getSubscriberMessageParameterTag fieldName {}", fieldName);
     Object result = null;
     String tagJourneyNodeParameterName = evaluationRequest.getMiscData().get("tagJourneyNodeParameterName");
     if(tagJourneyNodeParameterName == null) {
@@ -145,6 +146,7 @@ public abstract class CriterionFieldRetriever
       subscriberMessage = (SubscriberMessage) CriterionFieldRetriever.getJourneyNodeParameter(evaluationRequest, "node.parameter.dialog_template");
     }
     SimpleParameterMap parameterMap = subscriberMessage.getParameterTags();
+    log.info("RAJ K parameterMap {}", parameterMap.get(fieldName));
 
     result = evaluateParameter(evaluationRequest, parameterMap.get(fieldName)); 
     return result;
