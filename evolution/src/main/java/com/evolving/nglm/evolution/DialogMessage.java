@@ -578,7 +578,7 @@ public class DialogMessage
 
         int maxLength = tagMaxLength != null ? tagMaxLength.intValue() : tag.resolveTagMaxLength(formatDataType);
         String resolvedTag = formattedTag;
-        log.debug("resolveMessageTags maxLength for {} is {}", tag.getID(), maxLength);
+        if (log.isDebugEnabled()) log.debug("resolveMessageTags maxLength for {} is {}", tag.getID(), maxLength);
         if (formattedTag.length() > maxLength)
           {
             switch (formatDataType)
