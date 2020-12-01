@@ -542,7 +542,6 @@ public class DialogMessage
         Integer tagMaxLength = null;
         if (parameterTags.contains(tag))
           {
-            log.info("RAJ K parameterTag {}", tag.getID());
             tagMaxLength = getTagMaxLength(subscriberEvaluationRequest, tag.getID());
           }
 
@@ -579,6 +578,7 @@ public class DialogMessage
 
         int maxLength = tagMaxLength != null ? tagMaxLength.intValue() : tag.resolveTagMaxLength(formatDataType);
         String resolvedTag = formattedTag;
+        log.debug("resolveMessageTags maxLength for {} is {}", tag.getID(), maxLength);
         if (formattedTag.length() > maxLength)
           {
             switch (formatDataType)
@@ -641,7 +641,6 @@ public class DialogMessage
         CriterionField criterionField = CriterionContext.FullProfile.getCriterionFields().get(resolvedCriterionID);
         if (criterionField != null)
           {
-            log.info("RAJ K parameterTag {}, criterionFieldID {}, maxLength {}", fieldName, criterionField.getID(), criterionField.getTagMaxLength());
             result = criterionField.getTagMaxLength();
           }
       }
