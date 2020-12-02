@@ -349,183 +349,188 @@ public class ReportManager implements Watcher
     log.trace("Finished Wait " + waitTimeSec + " seconds");
   }
 
+  // Called when a control file is created or deleted
   public void processChild2(String child) throws InterruptedException
   {
     String controlFile = controlDir + File.separator + child;
     String lockFile = lockDir + File.separator + child;
-    log.trace("Checking if lock exists : "+lockFile);
+    log.trace("Checking if control exists : "+controlFile); // We might have been called for the suppression of the control node
     try
     {
-      if (zk.exists(lockFile, false) == null) 
+      if (zk.exists(controlFile, false) != null)
         {
-          log.trace("Processing entry "+child+" with znodes "+controlFile+" and "+lockFile);
-          try
-          {
-            log.trace("Trying to create lock "+lockFile);
-            zk.create(lockFile, dfrm.format(SystemTime.getCurrentTime()).getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
-            try 
+          log.trace("Checking if lock exists : "+lockFile);
+          if (zk.exists(lockFile, false) == null) 
             {
-              log.trace("Lock "+lockFile+" successfully created");
-              Stat stat = null;
-              Charset utf8Charset = Charset.forName("UTF-8");
-              byte[] d = zk.getData(controlFile, false, stat);
-              String data = new String(d, utf8Charset);
-              log.info("Got data "+data);
-              Scanner s = new Scanner(data + "\n");
-              String reportMetadata = s.next().trim();
-              JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(reportMetadata);
-              String reportName = JSONUtilities.decodeString(jsonRoot, "reportName", true);
-              final Date reportGenerationDate = new Date(JSONUtilities.decodeLong(jsonRoot, "reportGenerationDate", true));
-              String restOfLine = s.nextLine().trim();
-              s.close();
-              Collection<GUIManagedObject> reports = reportService.getStoredReports();
-              Report report = null;
-              if (reportName != null)
-                {
-                  for (GUIManagedObject gmo : reports)
-                    {
-                      if (gmo instanceof Report)
-                        {
-                          Report reportLocal = (Report) gmo;
-                          log.trace("Checking "+reportLocal+" for "+reportName);
-                          if (reportName.equals(reportLocal.getName())) 
-                            {
-                              report = reportLocal;
-                              break;
-                            }
-                        }
-                    }
-                }
-              if (report == null)
-                {
-                  log.error("Report does not exist : "+reportName);
-                  reportManagerStatistics.incrementFailureCount();
-                } 
-              else
-                {
-                  boolean allOK = false;
-                  int safeguardCount = 0;
-                  while (!allOK)
-                    {
-                      log.debug("report = "+report);
-                      log.info("JVM free memory : {} over total of {}", FileUtils.byteCountToDisplaySize(Runtime.getRuntime().freeMemory()), FileUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory()));
-                      allOK = handleReport(reportName, reportGenerationDate, report, restOfLine);
-                      reportManagerStatistics.incrementReportCount();
-                      if (!allOK)
-                        {
-                          if (safeguardCount > 3)
-                            {
-                              log.info("There was an issue producing " + reportName + ", stop retrying");
-                              allOK = true; // after a while, stop, this should stay exceptional
-                            }
-                          else
-                            {
-                              log.info("There was an issue producing " + reportName + ", restarting it after 1 minute, occurence" + (++safeguardCount));
-                              try { Thread.sleep(60*1000L); } catch (InterruptedException ie) {} // wait 1 minute
-                            }
-                        }
-                    }
-                  long beforeGC = System.currentTimeMillis();
-                  long freeMemoryBefore = Runtime.getRuntime().freeMemory();
-                  long allMemoryBefore = Runtime.getRuntime().totalMemory();
-                  log.info("Before GC JVM free memory : {} over total of {}",
-                      FileUtils.byteCountToDisplaySize(freeMemoryBefore), FileUtils.byteCountToDisplaySize(allMemoryBefore));
-                  System.gc();
-                  System.runFinalization();
-                  long afterGC = System.currentTimeMillis();
-                  long freeMemoryAfter = Runtime.getRuntime().freeMemory();
-                  long allMemoryAfter = Runtime.getRuntime().totalMemory();
-                  log.info("After GC JVM free memory : {} over total of {}, {} reclaimed, took {} ms",
-                      FileUtils.byteCountToDisplaySize(freeMemoryAfter), FileUtils.byteCountToDisplaySize(allMemoryAfter),
-                      FileUtils.byteCountToDisplaySize(freeMemoryAfter-freeMemoryBefore), (afterGC-beforeGC));
-                }
-            }
-            catch (KeeperException e) { handleSessionExpired(e, "Issue while reading from control node "+controlFile); }
-            catch (InterruptedException | NoSuchElementException e)
-            {
-              log.error("Issue while reading from control node "+e.getLocalizedMessage(), e);
-              reportManagerStatistics.incrementFailureCount();
-            }
-            catch (IllegalCharsetNameException e)
-            {
-              log.error("Unexpected issue, UTF-8 does not seem to exist "+e.getLocalizedMessage(), e);
-              reportManagerStatistics.incrementFailureCount();
-            }
-            catch (Exception e) // this is OK because we trace the root cause, and we'll fix it
-            {
-              log.error("Unexpected issue " + e.getLocalizedMessage(), e);
-              reportManagerStatistics.incrementFailureCount();
-            }
-
-            // Delete control file
-            while (true)
+              log.trace("Processing entry "+child+" with znodes "+controlFile+" and "+lockFile);
+              try
               {
-                log.info("Deleting control "+controlFile);
-                try
-                {
-                  zk.delete(controlFile, -1);
-                }
-                catch (KeeperException e) { 
-                  handleSessionExpired(e, "Issue deleting control "+controlFile);
-                  if (e.code() == Code.SESSIONEXPIRED)
-                    {
-                      // We need to remove the control file, so that the same report is not restarted when everything restarts
-                      controlFileToRemove = controlFile;
-                    }
-                  else if (e.code() != Code.NONODE)
-                    {
-                      // if we get a KeeperException like ConnectionLossException, keep trying to delete file, until ZK is back, or the session expires
-                      Thread.sleep(5000);
-                      continue;
-                    }
-                }
-                catch (InterruptedException e) 
-                {
-                  log.info("Interrupted deleting control : "+e.getLocalizedMessage(), e);
-                  continue;
-                }
-                break;
-              }
-
-            // Delete lock file
-            while (true)
-              {
+                log.trace("Trying to create lock "+lockFile);
+                zk.create(lockFile, dfrm.format(SystemTime.getCurrentTime()).getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
                 try 
                 {
-                  log.info("Deleting lock "+lockFile);
-                  zk.delete(lockFile, -1);
-                }
-                catch (KeeperException e) {
-                  handleSessionExpired(e, "Issue deleting lock " + lockFile);
-                  if (e.code() != Code.SESSIONEXPIRED && e.code() != Code.NONODE)
+                  log.trace("Lock "+lockFile+" successfully created");
+                  Stat stat = null;
+                  Charset utf8Charset = Charset.forName("UTF-8");
+                  byte[] d = zk.getData(controlFile, false, stat);
+                  String data = new String(d, utf8Charset);
+                  log.info("Got data "+data);
+                  Scanner s = new Scanner(data + "\n");
+                  String reportMetadata = s.next().trim();
+                  JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(reportMetadata);
+                  String reportName = JSONUtilities.decodeString(jsonRoot, "reportName", true);
+                  final Date reportGenerationDate = new Date(JSONUtilities.decodeLong(jsonRoot, "reportGenerationDate", true));
+                  String restOfLine = s.nextLine().trim();
+                  s.close();
+                  Collection<GUIManagedObject> reports = reportService.getStoredReports();
+                  Report report = null;
+                  if (reportName != null)
                     {
-                      // if we get a KeeperException like ConnectionLossException, keep trying to delete file, until ZK is back, or the session expires
-                      Thread.sleep(5000);
-                      continue;
+                      for (GUIManagedObject gmo : reports)
+                        {
+                          if (gmo instanceof Report)
+                            {
+                              Report reportLocal = (Report) gmo;
+                              log.trace("Checking "+reportLocal+" for "+reportName);
+                              if (reportName.equals(reportLocal.getName())) 
+                                {
+                                  report = reportLocal;
+                                  break;
+                                }
+                            }
+                        }
+                    }
+                  if (report == null)
+                    {
+                      log.error("Report does not exist : "+reportName);
+                      reportManagerStatistics.incrementFailureCount();
+                    } 
+                  else
+                    {
+                      boolean allOK = false;
+                      int safeguardCount = 0;
+                      while (!allOK)
+                        {
+                          log.debug("report = "+report);
+                          log.info("JVM free memory : {} over total of {}", FileUtils.byteCountToDisplaySize(Runtime.getRuntime().freeMemory()), FileUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory()));
+                          allOK = handleReport(reportName, reportGenerationDate, report, restOfLine);
+                          reportManagerStatistics.incrementReportCount();
+                          if (!allOK)
+                            {
+                              if (safeguardCount > 3)
+                                {
+                                  log.info("There was an issue producing " + reportName + ", stop retrying");
+                                  allOK = true; // after a while, stop, this should stay exceptional
+                                }
+                              else
+                                {
+                                  log.info("There was an issue producing " + reportName + ", restarting it after 1 minute, occurence " + (++safeguardCount));
+                                  try { Thread.sleep(60*1000L); } catch (InterruptedException ie) {} // wait 1 minute
+                                }
+                            }
+                        }
+                      long beforeGC = System.currentTimeMillis();
+                      long freeMemoryBefore = Runtime.getRuntime().freeMemory();
+                      long allMemoryBefore = Runtime.getRuntime().totalMemory();
+                      log.info("Before GC JVM free memory : {} over total of {}",
+                          FileUtils.byteCountToDisplaySize(freeMemoryBefore), FileUtils.byteCountToDisplaySize(allMemoryBefore));
+                      System.gc();
+                      System.runFinalization();
+                      long afterGC = System.currentTimeMillis();
+                      long freeMemoryAfter = Runtime.getRuntime().freeMemory();
+                      long allMemoryAfter = Runtime.getRuntime().totalMemory();
+                      log.info("After GC JVM free memory : {} over total of {}, {} reclaimed, took {} ms",
+                          FileUtils.byteCountToDisplaySize(freeMemoryAfter), FileUtils.byteCountToDisplaySize(allMemoryAfter),
+                          FileUtils.byteCountToDisplaySize(freeMemoryAfter-freeMemoryBefore), (afterGC-beforeGC));
                     }
                 }
-                catch (InterruptedException e)
+                catch (KeeperException e) { handleSessionExpired(e, "Issue while reading from control node "+controlFile); }
+                catch (InterruptedException | NoSuchElementException e)
                 {
-                  log.info("Interrupted deleting lock : "+e.getLocalizedMessage(), e);
-                  continue;
+                  log.error("Issue while reading from control node "+e.getLocalizedMessage(), e);
+                  reportManagerStatistics.incrementFailureCount();
                 }
-                break;
+                catch (IllegalCharsetNameException e)
+                {
+                  log.error("Unexpected issue, UTF-8 does not seem to exist "+e.getLocalizedMessage(), e);
+                  reportManagerStatistics.incrementFailureCount();
+                }
+                catch (Exception e) // this is OK because we trace the root cause, and we'll fix it
+                {
+                  log.error("Unexpected issue " + e.getLocalizedMessage(), e);
+                  reportManagerStatistics.incrementFailureCount();
+                }
+
+                // Delete control file
+                while (true)
+                  {
+                    log.info("Deleting control "+controlFile);
+                    try
+                    {
+                      zk.delete(controlFile, -1);
+                    }
+                    catch (KeeperException e) { 
+                      handleSessionExpired(e, "Issue deleting control "+controlFile);
+                      if (e.code() == Code.SESSIONEXPIRED)
+                        {
+                          // We need to remove the control file, so that the same report is not restarted when everything restarts
+                          controlFileToRemove = controlFile;
+                        }
+                      else if (e.code() != Code.NONODE)
+                        {
+                          // if we get a KeeperException like ConnectionLossException, keep trying to delete file, until ZK is back, or the session expires
+                          Thread.sleep(5000);
+                          continue;
+                        }
+                    }
+                    catch (InterruptedException e) 
+                    {
+                      log.info("Interrupted deleting control : "+e.getLocalizedMessage(), e);
+                      continue;
+                    }
+                    break;
+                  }
+
+                // Delete lock file
+                while (true)
+                  {
+                    try 
+                    {
+                      log.info("Deleting lock "+lockFile);
+                      zk.delete(lockFile, -1);
+                    }
+                    catch (KeeperException e) {
+                      handleSessionExpired(e, "Issue deleting lock " + lockFile);
+                      if (e.code() != Code.SESSIONEXPIRED && e.code() != Code.NONODE)
+                        {
+                          // if we get a KeeperException like ConnectionLossException, keep trying to delete file, until ZK is back, or the session expires
+                          Thread.sleep(5000);
+                          continue;
+                        }
+                    }
+                    catch (InterruptedException e)
+                    {
+                      log.info("Interrupted deleting lock : "+e.getLocalizedMessage(), e);
+                      continue;
+                    }
+                    break;
+                  }
+                log.info("Both files deleted");
               }
-            log.info("Both files deleted");
-          }
-          catch (KeeperException e) { handleSessionExpired(e, "Failed to create lockfile, this is OK " + lockFile); }
-          catch (InterruptedException ignore)
-          {
-            // even so we check the existence of a lock, it could have been created in the mean time making create fail. We catch and ignore it.
-            log.trace("Failed to create lockfile, this is OK " +lockFile+ ":"+ignore.getLocalizedMessage(), ignore);
-          } 
-        } 
-      else 
-        {
-          log.trace("--> This report is already processed, skip it");
+              catch (KeeperException e) { handleSessionExpired(e, "Failed to create lockfile, this is OK " + lockFile); }
+              catch (InterruptedException ignore)
+              {
+                // even so we check the existence of a lock, it could have been created in the mean time making create fail. We catch and ignore it.
+                log.trace("Failed to create lockfile, this is OK " +lockFile+ ":"+ignore.getLocalizedMessage(), ignore);
+              } 
+            } 
+          else 
+            {
+              log.trace("--> This report is already processed, skip it");
+            }
         }
     }
-    catch (KeeperException e) { handleSessionExpired(e, "Issue while reading from lockfile " + lockFile); }
+    catch (KeeperException e) { handleSessionExpired(e, "Issue while reading from lock or control file " + lockFile + " " + controlFile); }
   }
 
   private void handleSessionExpired(KeeperException e, String msg)
