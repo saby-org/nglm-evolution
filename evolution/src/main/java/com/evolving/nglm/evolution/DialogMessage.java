@@ -612,6 +612,12 @@ public class DialogMessage
     return messageTags;
   }
 
+  /*****************************************
+  *
+  *  getTagMaxLength
+  *
+  *****************************************/
+  
   private Integer getTagMaxLength(SubscriberEvaluationRequest evaluationRequest, String fieldName)
   {
     Integer result = null;
@@ -646,6 +652,7 @@ public class DialogMessage
       }
     return result;
   }
+  
   /*****************************************
   *
   *  resolveFormatDataType
