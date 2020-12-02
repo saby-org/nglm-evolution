@@ -17,6 +17,8 @@ import com.evolving.nglm.evolution.Product;
 import com.evolving.nglm.evolution.ProductService;
 import com.evolving.nglm.evolution.RESTAPIGenericReturnCodes;
 import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.Reseller;
+import com.evolving.nglm.evolution.ResellerService;
 import com.evolving.nglm.evolution.SalesChannel;
 import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
@@ -65,6 +67,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   private static SalesChannelService salesChannelService;
   private static LoyaltyProgramService loyaltyProgramService;
   private static ProductService productService;
+  private static ResellerService resellerService;
 
   private final static String moduleId = "moduleID";
   private final static String featureId = "featureID";
@@ -92,6 +95,8 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   private static final String voucherCode = "voucherCode";
   private static final String returnCode = "returnCode";
   private static final String returnCodeDescription  = "returnCodeDescription ";
+  private static final String resellerDisplay = "resellerDisplay";
+  private static final String resellerID = "resellerID";
 
   private static List<String> headerFieldsOrder = new LinkedList<String>();
   static
@@ -105,9 +110,9 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(featureName);
     headerFieldsOrder.add(offerID);
     headerFieldsOrder.add(offerDisplay);
-    headerFieldsOrder.add(salesChannelID);
     headerFieldsOrder.add(voucherPartnerID);
     headerFieldsOrder.add(salesChannelDisplay);
+    headerFieldsOrder.add(salesChannelID);
     headerFieldsOrder.add(customerID);
     for (AlternateID alternateID : Deployment.getAlternateIDs().values())
       {
@@ -124,6 +129,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(offerStock);
     headerFieldsOrder.add(origin);
     headerFieldsOrder.add(voucherCode);
+    headerFieldsOrder.add(resellerDisplay);
     headerFieldsOrder.add(returnCode);
     headerFieldsOrder.add(returnCodeDescription);
     headerFieldsOrder.add(deliveryStatus);
@@ -269,17 +275,54 @@ public class ODRReportMonoPhase implements ReportCsvFactory
         // get salesChannel display
         if (odrFields.containsKey(salesChannelID))
           {
-            GUIManagedObject salesChannelObject = salesChannelService.getStoredSalesChannel(String.valueOf(odrFields.get(salesChannelID)));
-            if(salesChannelObject instanceof SalesChannel)
+            if (odrFields.get(salesChannelID) != null)
               {
-                odrFields.put(salesChannelDisplay, ((SalesChannel)salesChannelObject).getGUIManagedObjectDisplay());
-                odrFields.remove(salesChannelID);
+                GUIManagedObject salesChannelObject = salesChannelService
+                    .getStoredSalesChannel(String.valueOf(odrFields.get(salesChannelID)));
+                if (salesChannelObject != null && salesChannelObject instanceof SalesChannel)
+                  {
+                    oderRecs.put(salesChannelDisplay, ((SalesChannel) salesChannelObject).getGUIManagedObjectDisplay());
+                  }
+                else {
+                  oderRecs.put(salesChannelDisplay, "");
+                }
               }
+            else {
+              oderRecs.put(salesChannelDisplay, "");
+            }
+          }
+        
+        if (odrFields.containsKey(salesChannelID))
+          {
+            oderRecs.put(salesChannelID, odrFields.get(salesChannelID));
           }
         if (odrFields.containsKey(voucherCode))
           {
             oderRecs.put(voucherCode, odrFields.get(voucherCode));
           }
+        
+        if (odrFields.containsKey(resellerID))
+          {
+            if (odrFields.get(resellerID) != null)
+              {
+                String resellerIDString = (String) (odrFields.get(resellerID));
+                GUIManagedObject resellerObject = resellerService.getStoredReseller(resellerIDString);
+                if (resellerObject != null && resellerObject instanceof Reseller)
+                  {
+                    String display = ((Reseller) resellerObject).getGUIManagedObjectDisplay();
+                    oderRecs.put(resellerDisplay, display);
+                  }
+                else
+                  {
+                    oderRecs.put(resellerDisplay, "");
+                  }
+              }
+            else
+              {
+                oderRecs.put(resellerDisplay, "");
+              }
+          }
+        
         if (odrFields.containsKey(returnCode))
           {
             Object code = odrFields.get(returnCode);
@@ -388,6 +431,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     String salesChannelTopic = Deployment.getSalesChannelTopic();
     String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
     String productTopic = Deployment.getProductTopic();
+    String resellerTopic = Deployment.getResellerTopic();
 
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "odrreportcsvwriter-saleschannelservice-ODRReportMonoPhase", salesChannelTopic, false);
     salesChannelService.start();
@@ -399,6 +443,8 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     loyaltyProgramService.start();
     productService = new ProductService(Deployment.getBrokerServers(), "odrreportcsvwriter-productService-ODRReportMonoPhase", productTopic, false);
     productService.start();
+    resellerService = new ResellerService(Deployment.getBrokerServers(), "odrreportcsvwriter-resellerService-ODRReportMonoPhase", resellerTopic, false);
+    resellerService.start();
 
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
