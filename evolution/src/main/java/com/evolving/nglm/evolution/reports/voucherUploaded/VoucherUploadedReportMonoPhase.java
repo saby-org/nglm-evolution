@@ -255,41 +255,41 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
     voucherTypeService.start();
     voucherService.start();
 
+    try {
+      Collection<Voucher> activeVouchers = voucherService.getActiveVouchers(reportGenerationDate);
+      StringBuilder activeVoucherEsIndex = new StringBuilder();
+      boolean firstEntry = true;
+      for (Voucher voucher : activeVouchers)
+        {
+          if (!firstEntry) activeVoucherEsIndex.append(",");
+          String indexName = esIndexVoucher + voucher.getSupplierID(); 
+          activeVoucherEsIndex.append(indexName);
+          firstEntry = false;
+        }
 
-    Collection<Voucher> activeVouchers = voucherService.getActiveVouchers(reportGenerationDate);
-    StringBuilder activeVoucherEsIndex = new StringBuilder();
-    boolean firstEntry = true;
-    for (Voucher voucher : activeVouchers)
-      {
-        if (!firstEntry) activeVoucherEsIndex.append(",");
-        String indexName = esIndexVoucher + voucher.getSupplierID(); 
-        activeVoucherEsIndex.append(indexName);
-        firstEntry = false;
-      }
+      log.info("Reading data from ES in (" + activeVoucherEsIndex.toString() + ") and writing to " + csvfile);
+      LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
+      esIndexWithQuery.put(activeVoucherEsIndex.toString(), QueryBuilders.matchAllQuery());
 
-    log.info("Reading data from ES in (" + activeVoucherEsIndex.toString() + ") and writing to " + csvfile);
-    LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(activeVoucherEsIndex.toString(), QueryBuilders.matchAllQuery());
+      ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
+          esNode,
+          esIndexWithQuery,
+          this,
+          csvfile
+          );
 
+      if (!reportMonoPhase.startOneToOne(true))
+        {
+          if(log.isWarnEnabled())
+            log.warn("An error occured, the report might be corrupted");
+        }
+    } finally {
+      supplierService.stop();
+      voucherTypeService.stop();
+      voucherService.stop();
 
-    ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
-        esNode,
-        esIndexWithQuery,
-        this,
-        csvfile
-    );
-
-    if (!reportMonoPhase.startOneToOne(true))
-      {
-        if(log.isWarnEnabled())
-        log.warn("An error occured, the report might be corrupted");
-      }
-    supplierService.stop();
-    voucherTypeService.stop();
-    voucherService.stop();
-    
-    if(log.isInfoEnabled())
-    log.info("Finished VoucherUploadedReportESReader");
+      if(log.isInfoEnabled()) log.info("Finished VoucherUploadedReportESReader");
+    }
   }
 
 }

@@ -73,7 +73,8 @@ public class OfferReportDriver extends ReportDriver
     boolean header = true;
     int first = 0;
     File file = new File(csvFilename + ".zip");
-    FileOutputStream fos;
+    FileOutputStream fos = null;
+    ZipOutputStream writer = null;
     try
       {
         log.info("no. of Offers :" + offerService.getStoredOffers().size());
@@ -84,7 +85,7 @@ public class OfferReportDriver extends ReportDriver
         else
           {
             fos = new FileOutputStream(file);
-            ZipOutputStream writer = new ZipOutputStream(fos);
+            writer = new ZipOutputStream(fos);
             // do not include tree structure in zipentry, just csv filename
             ZipEntry entry = new ZipEntry(new File(csvFilename).getName());
             writer.putNextEntry(entry);
@@ -115,14 +116,34 @@ public class OfferReportDriver extends ReportDriver
       {
         log.info("exception " + e.getLocalizedMessage());
       }
-    
-    offerService.stop();
-    salesChannelService.stop();
-    offerObjectiveService.stop();
-    productService.stop();
-    paymentmeanservice.stop();
-    catalogCharacteristicService.stop();
+    finally {
+      offerService.stop();
+      salesChannelService.stop();
+      offerObjectiveService.stop();
+      productService.stop();
+      paymentmeanservice.stop();
+      catalogCharacteristicService.stop();
 
+      try
+      {
+        if (writer != null) writer.close();
+      }
+      catch (IOException e)
+      {
+        log.info("exception " + e.getLocalizedMessage());
+      }
+      if (fos != null)
+        {
+          try
+          {
+            fos.close();
+          }
+          catch (IOException e)
+          {
+            log.info("Exception " + e);
+          }
+        }
+    }
   }
 
   /****************************************

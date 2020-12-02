@@ -217,7 +217,7 @@ public class GUIService
     //
 
     Runnable scheduler = new Runnable() { @Override public void run() { runScheduler(); } };
-    schedulerThread = new Thread(scheduler, "GUIManagedObjectScheduler "+this.getClass().getCanonicalName());
+    schedulerThread = new Thread(scheduler, "GUIManagedObjectScheduler "+this.getClass().getSimpleName());
     schedulerThread.start();
 
     //
@@ -225,7 +225,7 @@ public class GUIService
     //
 
     Runnable listener = new Runnable() { @Override public void run() { runListener(); } };
-    listenerThread = new Thread(listener, "GUIManagedObjectListener "+this.getClass().getCanonicalName());
+    listenerThread = new Thread(listener, "GUIManagedObjectListener "+this.getClass().getSimpleName());
     listenerThread.start();
 
     //
@@ -235,7 +235,7 @@ public class GUIService
     if (! masterService)
       {
         Runnable guiManagedObjectReader = new Runnable() { @Override public void run() { readGUIManagedObjects(false); } };
-        guiManagedObjectReaderThread = new Thread(guiManagedObjectReader, "GUIManagedObjectReader "+this.getClass().getCanonicalName());
+        guiManagedObjectReaderThread = new Thread(guiManagedObjectReader, "GUIManagedObjectReader "+this.getClass().getSimpleName());
         guiManagedObjectReaderThread.start();
       }
     

@@ -332,8 +332,18 @@ public class ReportManager implements Watcher
       }
     } );
     thread.start();
+    
     // Wait some random time (10-60 sec), so that when ReportManager starts with a big backlog, all threads do not start simultaneously
     long waitTimeSec = 10L + (long) (new java.util.Random().nextInt(50));
+    
+    
+    
+    
+    waitTimeSec = 1L;
+    
+    
+    
+    
     log.info("Wait " + waitTimeSec + " seconds for contention management...");
     try { Thread.sleep(waitTimeSec*1000L); } catch (InterruptedException ie) {}
     log.trace("Finished Wait " + waitTimeSec + " seconds");

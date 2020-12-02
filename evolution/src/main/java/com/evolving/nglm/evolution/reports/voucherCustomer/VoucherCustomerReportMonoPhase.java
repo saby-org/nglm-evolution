@@ -277,15 +277,17 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
     voucherTypeService.start();
     supplierService.start();
     
-    if (!reportMonoPhase.startOneToOne())
-      {
-        if(log.isWarnEnabled())
-        log.warn("An error occured, the report might be corrupted");
-      }
-    voucherService.stop();
-    voucherTypeService.stop();
-    supplierService.stop();
-    
+    try {
+      if (!reportMonoPhase.startOneToOne())
+        {
+          if(log.isWarnEnabled())
+            log.warn("An error occured, the report might be corrupted");
+        }
+    } finally {
+      voucherService.stop();
+      voucherTypeService.stop();
+      supplierService.stop();
+    }    
   }
 
 }

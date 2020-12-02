@@ -455,29 +455,31 @@ public class VDRReportMonoPhase implements ReportCsvFactory
     voucherTypeService.start();
     voucherService.start();
     
-    ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
-        esNode,
-        esIndexWithQuery,
-        this,
-        csvfile
-    );
+    try {
+      ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
+          esNode,
+          esIndexWithQuery,
+          this,
+          csvfile
+          );
 
-    if (!reportMonoPhase.startOneToOne(true))
-      {
-        if (log.isWarnEnabled()) log.warn("An error occured, the report might be corrupted");
-      }
-    
-    salesChannelService.stop();
-    offerService.stop();
-    journeyService.stop();
-    loyaltyProgramService.stop();
-    productService.stop();
-    supplierService.stop();
-    voucherTypeService.stop();
-    voucherService.stop();
-    
-    if (log.isInfoEnabled())
-      log.info("Finished VDRReport");
+      if (!reportMonoPhase.startOneToOne(true))
+        {
+          if (log.isWarnEnabled()) log.warn("An error occured, the report might be corrupted");
+        }
+    } finally {
+
+      salesChannelService.stop();
+      offerService.stop();
+      journeyService.stop();
+      loyaltyProgramService.stop();
+      productService.stop();
+      supplierService.stop();
+      voucherTypeService.stop();
+      voucherService.stop();
+
+      if (log.isInfoEnabled()) log.info("Finished VDRReport");
+    }
   }
 
   private static List<String> getEsIndexDates(final Date fromDate, Date toDate)

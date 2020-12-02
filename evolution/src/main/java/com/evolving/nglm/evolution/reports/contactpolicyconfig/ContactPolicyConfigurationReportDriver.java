@@ -128,6 +128,11 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
     }
     finally 
     {
+      contactPolicyService.stop();
+      segmentContactPolicyService.stop();
+      journeyObjectiveService.stop();
+      segmentationDimensionService.stop();
+
       try
       {
         if (writer != null) 
@@ -152,11 +157,6 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
         }           
       }
     }
-    contactPolicyService.stop();
-    segmentContactPolicyService.stop();
-    journeyObjectiveService.stop();
-    segmentationDimensionService.stop();
-
   }
 
 

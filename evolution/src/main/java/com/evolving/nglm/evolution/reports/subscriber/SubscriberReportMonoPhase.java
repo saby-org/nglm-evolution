@@ -277,37 +277,39 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
       segmentationDimensionService = new SegmentationDimensionService(kafkaNodeList, "report-segmentationDimensionservice-subscriberReportMonoPhase", Deployment.getSegmentationDimensionTopic(), false);
       segmentationDimensionService.start();
       
-      //
-      // build map of segmentID -> [dimensionName, segmentName] once for all
-      //
-      
-      synchronized (allDimensionsMap)
+      try {
+        //
+        // build map of segmentID -> [dimensionName, segmentName] once for all
+        //
+
+        synchronized (allDimensionsMap)
         {
           allDimensionsMap.clear();
           segmentsNames.clear();
           dimNameDisplayMapping.clear();
           initSegmentationData();
         }
-      
-      synchronized (allProfileFields)
-      {
-        allProfileFields.clear();
-        initProfileFields();
+
+        synchronized (allProfileFields)
+        {
+          allProfileFields.clear();
+          initProfileFields();
+        }
+
+        if (allProfileFields.isEmpty())
+          {
+            log.warn("Cannot find any profile field in configuration, no report produced");
+            return;
+          }
+
+        if (!reportMonoPhase.startOneToOne())
+          {
+            log.warn("An error occured, the report might be corrupted");
+          }
+      } finally {
+        segmentationDimensionService.stop();
+        log.info("Finished SubscriberReportESReader");
       }
-      
-      if (allProfileFields.isEmpty())
-        {
-          log.warn("Cannot find any profile field in configuration, no report produced");
-          return;
-        }
-      
-      if (!reportMonoPhase.startOneToOne())
-        {
-          log.warn("An error occured, the report might be corrupted");
-          return;
-        }
-    segmentationDimensionService.stop();
-	  log.info("Finished SubscriberReportESReader");
 	}
 	
   private void initProfileFields()

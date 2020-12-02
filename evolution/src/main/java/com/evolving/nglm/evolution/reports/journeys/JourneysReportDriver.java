@@ -219,32 +219,33 @@ public class JourneysReportDriver extends ReportDriver
       {
         log.info("Exception generating "+csvFilename, e);
       }
-    if (fos != null)
-      {
-        try
+    finally {
+      if (fos != null)
         {
-          fos.close();
+          try
+          {
+            fos.close();
+          }
+          catch (IOException e)
+          {
+            log.info("Exception generating "+csvFilename, e);
+          }
         }
-        catch (IOException e)
+      if (elasticsearchReaderClient != null)
         {
-          log.info("Exception generating "+csvFilename, e);
+          try
+          {
+            elasticsearchReaderClient.close();
+          }
+          catch (IOException e)
+          {
+            log.info("Exception generating "+csvFilename, e);
+          }
         }
-      }
-    if (elasticsearchReaderClient != null)
-      {
-        try
-        {
-          elasticsearchReaderClient.close();
-        }
-        catch (IOException e)
-        {
-          log.info("Exception generating "+csvFilename, e);
-        }
-      }
-    journeyService.stop();
-    pointService.stop();
-    journeyObjectiveService.stop();
-
+      journeyService.stop();
+      pointService.stop();
+      journeyObjectiveService.stop();
+    }
   }
    
   private void addHeaders(ZipOutputStream writer, Map<String,Object> values, int offset) throws IOException {
@@ -263,5 +264,4 @@ public class JourneysReportDriver extends ReportDriver
     }
   }
   
-  }
 }

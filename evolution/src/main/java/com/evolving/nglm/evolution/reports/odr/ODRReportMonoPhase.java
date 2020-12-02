@@ -437,30 +437,33 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     loyaltyProgramService.start();
     productService.start();
 
-    ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
-        esNode,
-        esIndexWithQuery,
-        this,
-        csvfile
-    );
+    try {
+      ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
+          esNode,
+          esIndexWithQuery,
+          this,
+          csvfile
+          );
 
-    // check if a report with multiple dates is required in the zipped file 
-    boolean isMultiDates = false;
-    if (reportPeriodQuantity > 1)
-    {
-    	isMultiDates = true;
+      // check if a report with multiple dates is required in the zipped file 
+      boolean isMultiDates = false;
+      if (reportPeriodQuantity > 1)
+        {
+          isMultiDates = true;
+        }
+
+      if (!reportMonoPhase.startOneToOne(isMultiDates))
+        {
+          log.warn("An error occured, the report " + csvfile + "  might be corrupted");
+        }
+    } finally {
+      salesChannelService.stop();
+      offerService.stop();
+      journeyService.stop();
+      loyaltyProgramService.stop();
+      productService.stop();
+      log.info("The report " + csvfile + " is finished");
     }
-    
-    if (!reportMonoPhase.startOneToOne(isMultiDates))
-      {
-        log.warn("An error occured, the report " + csvfile + "  might be corrupted");
-      }
-    salesChannelService.stop();
-    offerService.stop();
-    journeyService.stop();
-    loyaltyProgramService.stop();
-    productService.stop();
-    log.info("The report " + csvfile + " is finished");
   }
   
 

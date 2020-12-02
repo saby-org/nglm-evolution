@@ -265,19 +265,22 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "loyaltyprogramcustomerstatereport-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getLoyaltyProgramTopic(), false);
     loyaltyProgramService.start();
 
-    ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
-        esNode,
-        esIndexWithQuery,
-        this,
-        csvfile, true, true, subscriberFields
-    );
+    try {
+      ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
+          esNode,
+          esIndexWithQuery,
+          this,
+          csvfile, true, true, subscriberFields
+          );
 
-    if (!reportMonoPhase.startOneToOne())
-      {
-        log.warn("An error occured, the report might be corrupted");
-        return;
-      }
-    loyaltyProgramService.stop();
-    log.info("Finished LoyaltyProgramESReader");
+      if (!reportMonoPhase.startOneToOne())
+        {
+          log.warn("An error occured, the report might be corrupted");
+          return;
+        }
+    } finally {
+      loyaltyProgramService.stop();
+      log.info("Finished LoyaltyProgramESReader");
+    }
   }
 }

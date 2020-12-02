@@ -107,9 +107,13 @@ public class ProductReportDriver extends ReportDriver
         log.info("exception " + e.getLocalizedMessage());
       }
     finally {
+      productService.stop();
+      supplierService.stop();
+      deliverableService.stop();
+      productTypeService.stop();
       try
         {
-          writer.close();
+          if (writer != null) writer.close();
         }
       catch (IOException e)
         {
@@ -128,10 +132,6 @@ public class ProductReportDriver extends ReportDriver
         }
       }
 
-    productService.stop();
-    supplierService.stop();
-    deliverableService.stop();
-    productTypeService.stop();
 
   }
 
@@ -240,5 +240,4 @@ public class ProductReportDriver extends ReportDriver
   }
 
 
-  }
 }

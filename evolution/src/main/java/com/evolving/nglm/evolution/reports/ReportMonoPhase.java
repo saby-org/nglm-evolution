@@ -139,8 +139,9 @@ public class ReportMonoPhase
         log.info(csvfile + " already exists, do nothing");
         return false;
       }
-    FileOutputStream fos;
-    ZipOutputStream writer;
+    FileOutputStream fos = null;
+    ZipOutputStream writer = null;
+    boolean res = true;
     try
     {
       fos = new FileOutputStream(file);
@@ -298,17 +299,31 @@ public class ReportMonoPhase
       {
         log.info("Exception while closing ElasticSearch client " + e.getLocalizedMessage());
       }
-      writer.flush();
-      writer.closeEntry();
-      writer.close();
     }
     catch (IOException e1)
     {
       log.info("Error when creating " + csvfile + " : " + e1.getLocalizedMessage());
-      return false;
+      res = false;
+    }
+    finally
+    {
+      if (writer != null)
+        {
+          try
+            {
+              writer.flush();
+              writer.closeEntry();
+              writer.close();
+            }
+          catch (IOException e)
+            {
+              // TODO Auto-generated catch block
+              e.printStackTrace();
+            }
+        }
     }
     log.info("Finished producing " + csvfile + ReportUtils.ZIP_EXTENSION);
-    return true;
+    return res;
   }
   
   public final boolean startOneToOne(boolean multipleFile)
@@ -502,7 +517,7 @@ public class ReportMonoPhase
 
                       String tmpFileName=file+"."+key+".tmp";
                       boolean addHeader = false;
-                      ZipOutputStream writer = tmpZipFiles.get(tmpFileName);
+                      ZipOutputStream writer = tmpZipFiles.get(tmpFileName); // it is closed later
                       if(writer==null){
                         addHeader = true;
                         FileOutputStream fos = new FileOutputStream(tmpFileName);
@@ -648,7 +663,7 @@ public class ReportMonoPhase
           } 
         catch (IOException e)
           {
-            e.printStackTrace();
+            log.info("Exception " + e.getLocalizedMessage());
           }
       }
     log.debug("index to be read {}", existingIndexes.toString());

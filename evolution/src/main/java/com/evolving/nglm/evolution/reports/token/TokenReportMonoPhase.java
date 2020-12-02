@@ -273,18 +273,20 @@ public class TokenReportMonoPhase implements ReportCsvFactory
     tokenTypeService.start();
     journeyService.start();
     loyaltyProgramService.start();
-    
-    if (!reportMonoPhase.startOneToOne())
-      {
-        log.warn("An error occured, the report might be corrupted");
-      }
-    offerService.stop();
-    scoringStrategyService.stop();
-    presentationStrategyService.stop();
-    tokenTypeService.stop();
-    journeyService.stop();
-    loyaltyProgramService.stop();
-    
+
+    try {
+      if (!reportMonoPhase.startOneToOne())
+        {
+          log.warn("An error occured, the report might be corrupted");
+        }
+    } finally {
+      offerService.stop();
+      scoringStrategyService.stop();
+      presentationStrategyService.stop();
+      tokenTypeService.stop();
+      journeyService.stop();
+      loyaltyProgramService.stop();
+    }
   }
 
 }
