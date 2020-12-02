@@ -120,10 +120,11 @@ public class JourneysReportDriver extends ReportDriver
     
     File file = new File(csvFilename + ".zip");
     FileOutputStream fos = null;
+    ZipOutputStream writer = null;
     try
       {
         fos = new FileOutputStream(file);
-        ZipOutputStream writer = new ZipOutputStream(fos);
+        writer = new ZipOutputStream(fos);
         // do not include tree structure in zipentry, just csv filename
         ZipEntry entry = new ZipEntry(new File(csvFilename).getName());
         writer.putNextEntry(entry);
@@ -210,9 +211,6 @@ public class JourneysReportDriver extends ReportDriver
             }
           }
         log.info("WriteCompleted ");
-        writer.flush();
-        writer.closeEntry();
-        writer.close();
         log.info("csv Writer closed");
       }
     catch (IOException e)
@@ -220,6 +218,19 @@ public class JourneysReportDriver extends ReportDriver
         log.info("Exception generating "+csvFilename, e);
       }
     finally {
+      if (writer != null)
+        {
+          try
+          {
+            writer.flush();
+            writer.closeEntry();
+            writer.close();
+          }
+          catch (IOException e)
+          {
+            log.info("Exception generating "+csvFilename, e);
+          }
+        }
       if (fos != null)
         {
           try

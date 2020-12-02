@@ -42,7 +42,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
 
 	private static final Logger log = LoggerFactory.getLogger(SubscriberReportMonoPhase.class);
   final private static String CSV_SEPARATOR = ReportUtils.getSeparator();
-  private SegmentationDimensionService segmentationDimensionService = null;
+  private static SegmentationDimensionService segmentationDimensionService = null;
   private final static String subscriberID = "subscriberID";
   private final static String customerID = "customerID";
   private final static String segments = "segments";
@@ -274,43 +274,48 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
         csvfile
         );
 
-      segmentationDimensionService = new SegmentationDimensionService(kafkaNodeList, "report-segmentationDimensionservice-subscriberReportMonoPhase", Deployment.getSegmentationDimensionTopic(), false);
-      segmentationDimensionService.start();
+    synchronized (log) // why not, this is a static object that always exists
+    {
+      if (segmentationDimensionService == null) // do it only once, because we can't stop it fully
+        {
+          segmentationDimensionService = new SegmentationDimensionService(kafkaNodeList, "report-segmentationDimensionservice-subscriberReportMonoPhase", Deployment.getSegmentationDimensionTopic(), false);
+          segmentationDimensionService.start(); // never stop it
+        }
+    }
       
-      try {
-        //
-        // build map of segmentID -> [dimensionName, segmentName] once for all
-        //
+    try {
+      //
+      // build map of segmentID -> [dimensionName, segmentName] once for all
+      //
 
-        synchronized (allDimensionsMap)
-        {
-          allDimensionsMap.clear();
-          segmentsNames.clear();
-          dimNameDisplayMapping.clear();
-          initSegmentationData();
-        }
-
-        synchronized (allProfileFields)
-        {
-          allProfileFields.clear();
-          initProfileFields();
-        }
-
-        if (allProfileFields.isEmpty())
-          {
-            log.warn("Cannot find any profile field in configuration, no report produced");
-            return;
-          }
-
-        if (!reportMonoPhase.startOneToOne())
-          {
-            log.warn("An error occured, the report might be corrupted");
-          }
-      } finally {
-        segmentationDimensionService.stop();
-        log.info("Finished SubscriberReportESReader");
+      synchronized (allDimensionsMap)
+      {
+        allDimensionsMap.clear();
+        segmentsNames.clear();
+        dimNameDisplayMapping.clear();
+        initSegmentationData();
       }
-	}
+
+      synchronized (allProfileFields)
+      {
+        allProfileFields.clear();
+        initProfileFields();
+      }
+
+      if (allProfileFields.isEmpty())
+        {
+          log.warn("Cannot find any profile field in configuration, no report produced");
+          return;
+        }
+
+      if (!reportMonoPhase.startOneToOne())
+        {
+          log.warn("An error occured, the report might be corrupted");
+        }
+    } finally {
+      log.info("Finished SubscriberReportESReader");
+    }
+  }
 	
   private void initProfileFields()
   {

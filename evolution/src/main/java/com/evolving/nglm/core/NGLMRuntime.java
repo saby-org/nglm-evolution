@@ -197,6 +197,20 @@ public class NGLMRuntime
 
   /*****************************************
   *
+  *  unregisterSystemTimeDependency
+  *
+  *****************************************/
+
+  public static void unregisterSystemTimeDependency(Object systemTimeDependency)
+  {
+    synchronized (systemTimeDependencies)
+      {
+        systemTimeDependencies.remove(systemTimeDependency);
+      }
+  }
+  
+  /*****************************************
+  *
   *  runSimulatedTime
   *
   *****************************************/

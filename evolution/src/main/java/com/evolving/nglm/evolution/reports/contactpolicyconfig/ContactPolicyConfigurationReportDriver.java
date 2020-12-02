@@ -35,7 +35,7 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
   private ContactPolicyService contactPolicyService;
   private SegmentContactPolicyService segmentContactPolicyService;
   private JourneyObjectiveService journeyObjectiveService;
-  private SegmentationDimensionService segmentationDimensionService;
+  private static SegmentationDimensionService segmentationDimensionService = null;
   private boolean addHeaders=true;
 
   /****************************************
@@ -60,8 +60,14 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
     journeyObjectiveService = new JourneyObjectiveService(kafka, "contactPolicyConfigReportDriver-journeyobjectiveservice-" + apiProcessKey, Deployment.getJourneyObjectiveTopic(), false);
     journeyObjectiveService.start();
     
-    segmentationDimensionService = new SegmentationDimensionService(kafka, "contactPolicyConfigReportDriver-segmentationDimensionservice-" + apiProcessKey, Deployment.getSegmentationDimensionTopic(), false);
-    segmentationDimensionService.start();
+    synchronized (log) // why not, this is a static object that always exists
+    {
+      if (segmentationDimensionService == null) // do it only once, because we can't stop it fully
+        {
+          segmentationDimensionService = new SegmentationDimensionService(kafka, "contactPolicyConfigReportDriver-segmentationDimensionservice-" + apiProcessKey, Deployment.getSegmentationDimensionTopic(), false);
+          segmentationDimensionService.start(); // never stop it
+        }
+    }
 
     File file = new File(csvFilename+".zip");
     FileOutputStream fos = null;
@@ -131,15 +137,14 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
       contactPolicyService.stop();
       segmentContactPolicyService.stop();
       journeyObjectiveService.stop();
-      segmentationDimensionService.stop();
 
       try
       {
         if (writer != null) 
           {
-            writeCompleted(writer);
+            writer.flush();
+            writer.closeEntry();
             writer.close();
-            if (fos != null) fos.close();
           }
       }
       catch (IOException e)
@@ -228,17 +233,4 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
     return result;
   }
   
-  private void writeCompleted(ZipOutputStream writer)
-  {
-    try
-      {
-        writer.flush();
-        writer.closeEntry();
-        writer.close();
-      } catch (IOException e)
-      {
-        log.warn("ContactPolicyConfigurationReportDriver.writeCompleted(error closing BufferedWriter)", e);
-      }
-    log.info("csv Writer closed");
-  }
 }

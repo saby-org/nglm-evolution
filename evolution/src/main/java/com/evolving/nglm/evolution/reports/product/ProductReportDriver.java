@@ -119,19 +119,18 @@ public class ProductReportDriver extends ReportDriver
         {
           log.info("exception " + e.getLocalizedMessage());
         }
+      if (fos != null)
+        {
+          try
+          {
+            fos.close();
+          }
+          catch (IOException e)
+          {
+            log.info("Exception generating "+csvFilename, e);
+          }
+        }
     }
-    if (fos != null)
-      {
-        try
-        {
-          fos.close();
-        }
-        catch (IOException e)
-        {
-          log.info("Exception generating "+csvFilename, e);
-        }
-      }
-
 
   }
 
