@@ -320,7 +320,6 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
     if (!reportMonoPhase.startOneToOne(true))
       {
         log.warn("An error occured, the report might be corrupted");
-        return;
       }
     
     journeyService.stop();

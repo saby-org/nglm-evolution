@@ -600,7 +600,6 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     if (!reportMonoPhase.startOneToOne(isMultiDates))
       {
         log.warn("An error occured, the report " + csvfile + " might be corrupted");
-        return;
       }
     offerService.stop();
     journeyService.stop();

@@ -454,7 +454,6 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     if (!reportMonoPhase.startOneToOne(isMultiDates))
       {
         log.warn("An error occured, the report " + csvfile + "  might be corrupted");
-        return;
       }
     salesChannelService.stop();
     offerService.stop();

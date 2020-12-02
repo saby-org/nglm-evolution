@@ -64,14 +64,13 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
     segmentationDimensionService.start();
 
     File file = new File(csvFilename+".zip");
-    FileOutputStream fos;
+    FileOutputStream fos = null;
     ZipOutputStream writer = null;
     try
     {
       if(contactPolicyService.getStoredContactPolicies().size()==0)
         {
           log.info("No Contact Policies ");
-          NGLMRuntime.addShutdownHook(new ShutdownHook(contactPolicyService, segmentContactPolicyService, journeyObjectiveService));
         }
       else
         {
@@ -115,9 +114,8 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
                       } 
                       catch (Exception e)
                       {
-                        e.printStackTrace();
+                        log.info(e.getLocalizedMessage());
                       }
-                      
                     }
                   }
                 }
@@ -130,11 +128,35 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
     }
     finally 
     {
-      if(writer != null) 
+      try
+      {
+        if (writer != null) 
+          {
+            writeCompleted(writer);
+            writer.close();
+            if (fos != null) fos.close();
+          }
+      }
+      catch (IOException e)
+      {
+        log.info(e.getLocalizedMessage());
+      }
+      finally {
+        try
         {
-          writeCompleted(writer);
+          if (fos != null) fos.close();
         }
+        catch (IOException e)
+        {
+          log.info(e.getLocalizedMessage());
+        }           
+      }
     }
+    contactPolicyService.stop();
+    segmentContactPolicyService.stop();
+    journeyObjectiveService.stop();
+    segmentationDimensionService.stop();
+
   }
 
 
@@ -218,27 +240,5 @@ public class ContactPolicyConfigurationReportDriver extends ReportDriver
         log.warn("ContactPolicyConfigurationReportDriver.writeCompleted(error closing BufferedWriter)", e);
       }
     log.info("csv Writer closed");
-    NGLMRuntime.addShutdownHook(new ShutdownHook(contactPolicyService, segmentContactPolicyService, journeyObjectiveService));
-  }
-  private static class ShutdownHook implements NGLMRuntime.NGLMShutdownHook
-  {
-    private ContactPolicyService contactPolicyService;
-    private SegmentContactPolicyService segmentContactPolicyService;
-    private JourneyObjectiveService journeyObjectiveService;  
-
-    public ShutdownHook(ContactPolicyService contactPolicyService, SegmentContactPolicyService segmentContactPolicyService, JourneyObjectiveService journeyObjectiveService)
-    {
-      this.contactPolicyService = contactPolicyService;
-      this.segmentContactPolicyService = segmentContactPolicyService;
-      this.journeyObjectiveService = journeyObjectiveService;
-    }
-
-    @Override
-    public void shutdown(boolean normalShutdown)
-    {
-      if(contactPolicyService!=null){contactPolicyService.stop();log.trace("contactPolicyService stopped..");}
-      if(segmentContactPolicyService!=null){segmentContactPolicyService.stop();log.trace("segmentContactPolicyService stopped..");}
-      if(journeyObjectiveService!=null){journeyObjectiveService.stop();log.trace("journeyObjectiveService stopped..");}
-    }
   }
 }

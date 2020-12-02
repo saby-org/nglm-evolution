@@ -464,9 +464,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
 
     if (!reportMonoPhase.startOneToOne(true))
       {
-        if (log.isWarnEnabled())
-          log.warn("An error occured, the report might be corrupted");
-        return;
+        if (log.isWarnEnabled()) log.warn("An error occured, the report might be corrupted");
       }
     
     salesChannelService.stop();

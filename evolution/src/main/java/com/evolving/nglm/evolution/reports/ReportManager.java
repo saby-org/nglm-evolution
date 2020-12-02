@@ -332,9 +332,9 @@ public class ReportManager implements Watcher
       }
     } );
     thread.start();
-    // Wait some random time (30-60 sec), so that when ReportManager starts with a big backlog, all threads do not start simultaneously
-    long waitTimeSec = 30L + (long) (new java.util.Random().nextInt(30));
-    log.trace("Wait " + waitTimeSec + " seconds");
+    // Wait some random time (10-60 sec), so that when ReportManager starts with a big backlog, all threads do not start simultaneously
+    long waitTimeSec = 10L + (long) (new java.util.Random().nextInt(50));
+    log.info("Wait " + waitTimeSec + " seconds for contention management...");
     try { Thread.sleep(waitTimeSec*1000L); } catch (InterruptedException ie) {}
     log.trace("Finished Wait " + waitTimeSec + " seconds");
   }
@@ -403,18 +403,31 @@ public class ReportManager implements Watcher
                       reportManagerStatistics.incrementReportCount();
                       if (!allOK)
                         {
-                          log.info("There was an issue producing " + reportName + " restarting it for the " + ++safeguardCount + " time, first wait 1 minute...");
                           if (safeguardCount > 3)
                             {
+                              log.info("There was an issue producing " + reportName + ", stop retrying");
                               allOK = true; // after a while, stop, this should stay exceptional
                             }
                           else
                             {
+                              log.info("There was an issue producing " + reportName + ", restarting it after 1 minute, occurence" + (++safeguardCount));
                               try { Thread.sleep(60*1000L); } catch (InterruptedException ie) {} // wait 1 minute
                             }
                         }
                     }
-                  log.info("JVM free memory : {} over total of {}", FileUtils.byteCountToDisplaySize(Runtime.getRuntime().freeMemory()), FileUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory()));
+                  long beforeGC = System.currentTimeMillis();
+                  long freeMemoryBefore = Runtime.getRuntime().freeMemory();
+                  long allMemoryBefore = Runtime.getRuntime().totalMemory();
+                  log.info("Before GC JVM free memory : {} over total of {}",
+                      FileUtils.byteCountToDisplaySize(freeMemoryBefore), FileUtils.byteCountToDisplaySize(allMemoryBefore));
+                  System.gc();
+                  System.runFinalization();
+                  long afterGC = System.currentTimeMillis();
+                  long freeMemoryAfter = Runtime.getRuntime().freeMemory();
+                  long allMemoryAfter = Runtime.getRuntime().totalMemory();
+                  log.info("After GC JVM free memory : {} over total of {}, {} reclaimed, took {} ms",
+                      FileUtils.byteCountToDisplaySize(freeMemoryAfter), FileUtils.byteCountToDisplaySize(allMemoryAfter),
+                      FileUtils.byteCountToDisplaySize(freeMemoryAfter-freeMemoryBefore), (afterGC-beforeGC));
                 }
             }
             catch (KeeperException e) { handleSessionExpired(e, "Issue while reading from control node "+controlFile); }

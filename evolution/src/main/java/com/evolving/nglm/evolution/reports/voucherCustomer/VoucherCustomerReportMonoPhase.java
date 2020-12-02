@@ -281,7 +281,6 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
       {
         if(log.isWarnEnabled())
         log.warn("An error occured, the report might be corrupted");
-        return;
       }
     voucherService.stop();
     voucherTypeService.stop();
