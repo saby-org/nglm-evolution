@@ -95,7 +95,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   private static final String voucherCode = "voucherCode";
   private static final String returnCode = "returnCode";
   private static final String returnCodeDescription  = "returnCodeDescription ";
-  private static final String resellerDisplay = "resellerDisplay";
+  private static final String resellerDisplay = "reseller";
   private static final String resellerID = "resellerID";
 
   private static List<String> headerFieldsOrder = new LinkedList<String>();
