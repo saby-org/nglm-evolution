@@ -105,7 +105,12 @@ public class TokenReportMonoPhase implements ReportCsvFactory
                         result.put("qtyAllocations", token.get("qtyAllocations"));
                         result.put("qtyAllocatedOffers", token.get("qtyAllocatedOffers"));
 
-                        GUIManagedObject presentationStrategy = presentationStrategyService.getStoredPresentationStrategy((String) token.get("presentationStrategyID"));
+                        GUIManagedObject presentationStrategy = null;
+                        if (token.get("presentationStrategyID") != null)
+                          {
+                            presentationStrategy = presentationStrategyService
+                                .getStoredPresentationStrategy((String) token.get("presentationStrategyID"));
+                          }
                         if (presentationStrategy != null)
                           {
                             result.put("presentationStrategy", presentationStrategy.getGUIManagedObjectDisplay());
@@ -142,7 +147,11 @@ public class TokenReportMonoPhase implements ReportCsvFactory
                             result.put("scoringStrategy", "");
                           }
 
-                        GUIManagedObject acceptedOffer = offerService.getStoredOffer((String) token.get("acceptedOfferID"));
+                        GUIManagedObject acceptedOffer = null;
+                        if (token.get("acceptedOfferID") != null)
+                          {
+                            acceptedOffer = offerService.getStoredOffer((String) token.get("acceptedOfferID"));
+                          }
                         if (acceptedOffer != null)
                           {
                             result.put("acceptedOffer", acceptedOffer.getGUIManagedObjectDisplay());
