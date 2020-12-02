@@ -9,7 +9,10 @@ package com.evolving.nglm.core;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import org.elasticsearch.action.DocWriteRequest;
+import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
+
+import com.evolving.nglm.evolution.GUIManagedObject;
 
 import java.util.Collections;
 import java.util.List;
@@ -56,11 +59,34 @@ public abstract class ChangeLogESSinkTask<T> extends SimpleESSinkTask
     if (sinkRecord.value() != null) {
       T item = unpackRecord(sinkRecord);
       if (item != null) {
-        UpdateRequest request = new UpdateRequest(getDocumentIndexName(item), getDocumentID(item));
-        request.doc(getDocumentMap(item));
-        request.docAsUpsert(true);
-        request.retryOnConflict(4);
-        return Collections.<DocWriteRequest>singletonList(request);
+            if (item instanceof GUIManagedObject)
+              {
+                GUIManagedObject guiManagedObject = (GUIManagedObject) item;
+                if (guiManagedObject.getDeleted())
+                  {
+                    DeleteRequest deleteRequest = new DeleteRequest(getDocumentIndexName(item), getDocumentID(item));
+                    deleteRequest.id(getDocumentID(item));
+                    return Collections.<DocWriteRequest>singletonList(deleteRequest);
+
+                  }
+                else
+                  {
+                    UpdateRequest request = new UpdateRequest(getDocumentIndexName(item), getDocumentID(item));
+                    request.doc(getDocumentMap(item));
+                    request.docAsUpsert(true);
+                    request.retryOnConflict(4);
+                    return Collections.<DocWriteRequest>singletonList(request);
+                  }
+              }
+            else
+              {
+                UpdateRequest request = new UpdateRequest(getDocumentIndexName(item), getDocumentID(item));
+                request.doc(getDocumentMap(item));
+                request.docAsUpsert(true);
+                request.retryOnConflict(4);
+                return Collections.<DocWriteRequest>singletonList(request);
+              }
+       
       }
     }
     
