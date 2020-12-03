@@ -52,8 +52,10 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     THROTTLING(23),
     THIRD_PARTY_ERROR(24),
     BONUS_NOT_FOUND(100),
+    INSUFFICIENT_BALANCE(405),
     CHECK_BALANCE_LT(300),
     CHECK_BALANCE_GT(301),
+    CHECK_BALANCE_ET(302),
     UNKNOWN(999);
     private Integer externalRepresentation;
     private INFulfillmentStatus(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -80,6 +82,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
         case CUSTOMER_NOT_FOUND:
         case BONUS_NOT_FOUND:
           return DeliveryStatus.Failed;
+        case INSUFFICIENT_BALANCE:
         case TIMEOUT:
         case THROTTLING:
           return DeliveryStatus.FailedRetry;
@@ -87,6 +90,8 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
           return DeliveryStatus.CheckBalanceLowerThan;
         case CHECK_BALANCE_GT:
           return DeliveryStatus.CheckBalanceGreaterThan;
+        case CHECK_BALANCE_ET:
+          return DeliveryStatus.CheckBalanceEqualsTo;
         default:
           return DeliveryStatus.Failed;
       }

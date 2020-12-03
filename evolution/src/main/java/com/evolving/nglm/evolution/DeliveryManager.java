@@ -51,6 +51,7 @@ public abstract class DeliveryManager
     Delivered("delivered"),
     CheckBalanceLowerThan("checkbalancelowerthan"),
     CheckBalanceGreaterThan("checkbalancegreaterthan"),
+    CheckBalanceEqualsTo("checkbalanceequalsto"),
     Indeterminate("indeterminate"),
     Failed("failed"),
     FailedTimeout("failedtimeout"),

@@ -117,6 +117,9 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     THIRD_PARTY_ERROR(24),
     BONUS_NOT_FOUND(100),
     INSUFFICIENT_BALANCE(405),
+    CHECK_BALANCE_LT(300),
+    CHECK_BALANCE_GT(301),
+    CHECK_BALANCE_EQUALS(302),
     UNKNOWN(-1);
     private Integer externalRepresentation;
     private CommodityDeliveryStatus(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -141,6 +144,12 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       case CUSTOMER_NOT_FOUND:
       case BONUS_NOT_FOUND:
       case INSUFFICIENT_BALANCE:
+      case CHECK_BALANCE_LT:
+        return DeliveryStatus.CheckBalanceLowerThan;
+      case CHECK_BALANCE_GT:
+        return DeliveryStatus.CheckBalanceGreaterThan;
+      case CHECK_BALANCE_EQUALS:
+        return DeliveryStatus.CheckBalanceEqualsTo;
       default:
         return DeliveryStatus.Failed;
       }
