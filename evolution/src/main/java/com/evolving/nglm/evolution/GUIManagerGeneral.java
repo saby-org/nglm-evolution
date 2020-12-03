@@ -112,7 +112,7 @@ public class GUIManagerGeneral extends GUIManager
    * 
    ***************************/
   
-  public GUIManagerGeneral(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
+  public GUIManagerGeneral(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
   {
     super.callingChannelService = callingChannelService;
     super.catalogCharacteristicService = catalogCharacteristicService;
@@ -165,7 +165,6 @@ public class GUIManagerGeneral extends GUIManager
     super.getCustomerAlternateID = getCustomerAlternateID;
     super.guiManagerContext = guiManagerContext;
     super.subscriberGroupEpochReader = subscriberGroupEpochReader;
-    super.journeyTrafficReader = journeyTrafficReader;
     super.renamedProfileCriterionFieldReader = renamedProfileCriterionFieldReader;
     
     guiServiceList.add(callingChannelService);
@@ -682,14 +681,6 @@ public class GUIManagerGeneral extends GUIManager
 
     /*****************************************
     *
-    *  populate segmentationDimensionID with "nothing"
-    *
-    *****************************************/
-
-    jsonRoot.put("id", "(not used)"); 
-
-    /*****************************************
-    *
     *  validate targetingType
     *
     *****************************************/
@@ -713,6 +704,18 @@ public class GUIManagerGeneral extends GUIManager
         return JSONUtilities.encodeObject(response);
       }
 
+    boolean evaluateBySegmentId = false;
+
+    if(JSONUtilities.decodeString(jsonRoot,"id") == null)
+    {
+      evaluateBySegmentId = false;
+      jsonRoot.put("id","new_dimension");
+    }
+    else
+    {
+      evaluateBySegmentId = true;
+    }
+
     /****************************************
     *
     *  response
@@ -721,28 +724,36 @@ public class GUIManagerGeneral extends GUIManager
 
     List<JSONObject> aggregationResult = new ArrayList<>();
     List<QueryBuilder> processedQueries = new ArrayList<>();
+    //String stratumESFieldName = Deployment.getProfileCriterionFields().get("subscriber.stratum").getESField();
+    String stratumESFieldName = "stratum";
     try
       {
+        SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
+        if(evaluateBySegmentId)
+        {
+          SegmentationDimension storedSegmentationDimensionEligibility = segmentationDimensionService.getActiveSegmentationDimension(segmentationDimensionEligibility.getGUIManagedObjectID() , SystemTime.getCurrentTime());
+          evaluateBySegmentId = evaluateBySegmentId && segmentationDimensionEligibility.getSegmentsConditionEqual(storedSegmentationDimensionEligibility);
+        }
+        if(evaluateBySegmentId) return processGetCountBySegmentationEligibilityBySegmentId(segmentationDimensionEligibility);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
         List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
-        SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
-        for(SegmentEligibility segmentEligibility :segmentationDimensionEligibility.getSegments())
+        for (SegmentEligibility segmentEligibility : segmentationDimensionEligibility.getSegments())
+        {
+          BoolQueryBuilder query = QueryBuilders.boolQuery();
+          for (QueryBuilder processedQuery : processedQueries)
           {
-            BoolQueryBuilder query = QueryBuilders.boolQuery();
-            for(QueryBuilder processedQuery : processedQueries)
-              {
-                query = query.mustNot(processedQuery);
-              }
-            BoolQueryBuilder segmentQuery = QueryBuilders.boolQuery();
-            for(EvaluationCriterion evaluationCriterion:segmentEligibility.getProfileCriteria())
-              {
-                segmentQuery = segmentQuery.filter(evaluationCriterion.esQuery());
-                processedQueries.add(segmentQuery);
-              }
-            query = query.filter(segmentQuery);
-            //use name as key, even if normally should use id, to make simpler to use this count in chart
-            aggFilters.add(new FiltersAggregator.KeyedFilter(segmentEligibility.getName(),query));
+            query = query.mustNot(processedQuery);
           }
+          BoolQueryBuilder segmentQuery = QueryBuilders.boolQuery();
+          for (EvaluationCriterion evaluationCriterion : segmentEligibility.getProfileCriteria())
+          {
+            segmentQuery = segmentQuery.filter(evaluationCriterion.esQuery());
+            processedQueries.add(segmentQuery);
+          }
+          query = query.filter(segmentQuery);
+          //use name as key, even if normally should use id, to make simpler to use this count in chart
+          aggFilters.add(new FiltersAggregator.KeyedFilter(segmentEligibility.getName(), query));
+        }
         AggregationBuilder aggregation = null;
         FiltersAggregator.KeyedFilter [] filterArray = new FiltersAggregator.KeyedFilter [aggFilters.size()];
         filterArray = aggFilters.toArray(filterArray);
@@ -787,6 +798,79 @@ public class GUIManagerGeneral extends GUIManager
         response.put("responseParameter", (ex instanceof GUIManagerException) ? ((GUIManagerException) ex).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
       }
+    response.put("responseCode", "ok");
+    response.put("result",aggregationResult);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  private JSONObject processGetCountBySegmentationEligibilityBySegmentId(SegmentationDimensionEligibility segmentationDimensionEligibility)
+  {
+
+    /****************************************
+     *
+     *  response
+     *
+     ****************************************/
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    List<JSONObject> aggregationResult = new ArrayList<>();
+    List<QueryBuilder> processedQueries = new ArrayList<>();
+    //String stratumESFieldName = Deployment.getProfileCriterionFields().get("subscriber.stratum").getESField();
+    String stratumESFieldName = "stratum";
+    try
+    {
+      SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
+      List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
+      for(SegmentEligibility segmentEligibility :segmentationDimensionEligibility.getSegments())
+      {
+        TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery(stratumESFieldName+"."+segmentationDimensionEligibility.getGUIManagedObjectID(), segmentEligibility.getID());
+        //use name as key, even if normally should use id, to make simpler to use this count in chart
+        aggFilters.add(new FiltersAggregator.KeyedFilter(segmentEligibility.getName(),termQueryBuilder));
+      }
+      AggregationBuilder aggregation = null;
+      FiltersAggregator.KeyedFilter [] filterArray = new FiltersAggregator.KeyedFilter [aggFilters.size()];
+      filterArray = aggFilters.toArray(filterArray);
+      aggregation = AggregationBuilders.filters("SegmentEligibility",filterArray);
+      ((FiltersAggregationBuilder) aggregation).otherBucket(true);
+      ((FiltersAggregationBuilder) aggregation).otherBucketKey("other_key");
+      searchSourceBuilder.aggregation(aggregation);
+
+      //
+      //  search in ES
+      //
+
+      SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
+      SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+      Filters aggResultFilters = searchResponse.getAggregations().get("SegmentEligibility");
+      for (Filters.Bucket entry : aggResultFilters.getBuckets())
+      {
+        HashMap<String,Object> aggItem = new HashMap<String,Object>();
+        String key = entry.getKeyAsString();            // bucket key
+        long docCount = entry.getDocCount();            // Doc count
+        aggItem.put("name",key);
+        aggItem.put("count",docCount);
+        aggregationResult.add(JSONUtilities.encodeObject(aggItem));
+      }
+    }
+    catch(Exception ex)
+    {
+      //
+      //  log
+      //
+
+      StringWriter stackTraceWriter = new StringWriter();
+      ex.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+      //
+      //  response
+      //
+
+      response.put("responseCode", "systemError");
+      response.put("responseMessage", ex.getMessage());
+      response.put("responseParameter", (ex instanceof GUIManagerException) ? ((GUIManagerException) ex).getResponseParameter() : null);
+      return JSONUtilities.encodeObject(response);
+    }
     response.put("responseCode", "ok");
     response.put("result",aggregationResult);
     return JSONUtilities.encodeObject(response);
@@ -1548,7 +1632,18 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    jsonRoot.put("id", "fake-id"); // fill segmentationDimensionID with anything
+    boolean evaluateBySegmentId = false;
+
+    if(JSONUtilities.decodeString(jsonRoot,"id")== null)
+    {
+      evaluateBySegmentId = false;
+      jsonRoot.put("id","new_dimension");
+    }
+    else
+    {
+      evaluateBySegmentId = true;
+    }
+
     SegmentationDimensionRanges segmentationDimensionRanges = null;
     try
       {
@@ -1582,6 +1677,14 @@ public class GUIManagerGeneral extends GUIManager
         return JSONUtilities.encodeObject(response);
       }
 
+    if(evaluateBySegmentId)
+    {
+      SegmentationDimension storedSegmentationDimensionRanges = segmentationDimensionService.getActiveSegmentationDimension(segmentationDimensionRanges.getGUIManagedObjectID() , SystemTime.getCurrentTime());
+      evaluateBySegmentId = evaluateBySegmentId &&  segmentationDimensionRanges.getSegmentsConditionEqual(storedSegmentationDimensionRanges);
+      log.info("evaluate by segment_id = "+evaluateBySegmentId);
+    }
+    //tamporary call only for banglaink hot fix because in 1.4.26 sbm is called
+    if(evaluateBySegmentId) return processGetCountBySegmentationRangesBySegmentId(userID,jsonRoot);
     /*****************************************
     *
     *  extract BaseSplits
@@ -1953,10 +2056,10 @@ public class GUIManagerGeneral extends GUIManager
      *
      *****************************************/
 
-    jsonRoot.put("id", "fake-id"); // fill segmentationDimensionID with anything
     SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
     JSONObject responseJSON = new JSONObject();
-    String segmentsESFieldName = Deployment.getProfileCriterionFields().get("subscriber.segments").getESField();
+    //String segmentsESFieldName = Deployment.getProfileCriterionFields().get("subscriber.stratum").getESField();
+    String stratumESFieldName = "stratum";
 
     SegmentationDimensionRanges segmentationDimensionRanges = null;
     try
@@ -2015,13 +2118,14 @@ public class GUIManagerGeneral extends GUIManager
         List<SegmentRanges> ranges = baseSplit.getSegments();
 
         //create aggregations for all ids from a base split
-        TermsQueryBuilder splitTerms = QueryBuilders.termsQuery(segmentsESFieldName,ranges.stream().map(SegmentRanges::getID).collect(Collectors.toList()));
-        AggregationBuilder baseSpitAgg = AggregationBuilders.filter(baseSplit.getSplitName(),splitTerms);
+        //TermsQueryBuilder splitTerms = QueryBuilders.termsQuery(stratumESFieldName,ranges.stream().map(SegmentRanges::getID).collect(Collectors.toList()));
+        MatchAllQueryBuilder matchAllQueryBuilder = QueryBuilders.matchAllQuery();
+        AggregationBuilder baseSpitAgg = AggregationBuilders.filter(baseSplit.getSplitName(),matchAllQueryBuilder);
 
         //add subaggregations for each segment
         for (SegmentRanges range : ranges)
         {
-          TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery(segmentsESFieldName, range.getID());
+          TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery(stratumESFieldName+"."+segmentationDimensionRanges.getGUIManagedObjectID(), range.getID());
           baseSpitAgg.subAggregation(AggregationBuilders.filter(range.getName(),termQueryBuilder));
         }
 
@@ -2070,7 +2174,7 @@ public class GUIManagerGeneral extends GUIManager
       for(JSONObject responseBaseSplit : responseBaseSplits)
       {
         ParsedAggregation splitAgg = resultAggs.get((String) responseBaseSplit.get("splitName"));
-        responseBaseSplit.put("count",((ParsedFilter)splitAgg).getDocCount());
+       // responseBaseSplit.put("count",((ParsedFilter)splitAgg).getDocCount());
         for(JSONObject responseSegment : (List<JSONObject>)responseBaseSplit.get("segments"))
         {
           ParsedFilter segmentFilter = ((ParsedFilter)splitAgg).getAggregations().get((String)responseSegment.get("name"));

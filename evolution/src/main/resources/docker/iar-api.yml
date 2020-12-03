@@ -6,6 +6,8 @@ iar-api-<_KEY_>:
     FwkSettings__UploadFolder: '/mnt/upload'
     ConnectionStrings__FwkConnection: 'Server=<_MYSQL_GUI_SERVER_HOST_>;Port=<_MYSQL_GUI_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
     IarSettings__ApiElasticsearchUrl: "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>/"
+    IarSettings__ODUser: "admin"
+    IarSettings__ODPassword: "<_ELASTICSEARCH_ADMIN_PASSWORD_>"
     IarSettings__KibanaUrl: "http://<_MONITORING_HOST_IP_>:<_KIBANA_PORT_>/"
     IarSettings__GUIManagerApiBaseUrl: "http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/"
     TZ: <_DEPLOYMENT_TIMEZONE_>

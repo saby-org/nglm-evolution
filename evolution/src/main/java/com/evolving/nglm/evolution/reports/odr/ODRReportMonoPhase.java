@@ -38,12 +38,11 @@ import com.evolving.nglm.evolution.RESTAPIGenericReturnCodes;
 import com.evolving.nglm.evolution.SalesChannel;
 import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
-import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
 import com.evolving.nglm.evolution.reports.notification.NotificationReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
+import com.evolving.nglm.evolution.reports.ReportMonoPhase.PERIOD;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
-import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 

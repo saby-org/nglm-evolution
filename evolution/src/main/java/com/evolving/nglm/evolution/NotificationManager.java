@@ -835,13 +835,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
              request = new NotificationManagerRequest(evolutionEventContext, communicationChannel.getDeliveryType(), deliveryRequestSource, destAddress, language, template.getDialogTemplateID(), tags, channelID, notificationParameters);
              request.setModuleID(newModuleID);
              request.setFeatureID(deliveryRequestSource);
-             // Contact type can force priority from GUI, or default is to map to the event priority
-             DeliveryRequest.DeliveryPriority priority = contactType!=ContactType.Default ? contactType.getDeliveryPriority() : evolutionEventContext.getEvent().getNGLMPriority().getDeliveryPriorityMappingTo();
-             request.setDeliveryPriority(priority);
-             // Contact type can force restriction from GUI, or default is low priority is restricted, else not
-             boolean restricted = contactType!=ContactType.Default ? contactType.getRestricted() : priority==DeliveryRequest.DeliveryPriority.Low;
-             request.setRestricted(restricted);
-             request.setNotificationHistory(evolutionEventContext.getSubscriberState().getNotificationHistory());
+             request.forceDeliveryPriority(contactType.getDeliveryPriority());
+             request.setRestricted(contactType.getRestricted());
            }
          else
            {

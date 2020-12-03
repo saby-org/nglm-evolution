@@ -120,6 +120,9 @@ public class VoucherAction implements EvolutionEngineEvent, Action, VoucherRedem
   public Integer getActionStatusCode() { return actionStatusCode; }
   public String getOperation() { return operation; }
   @Override public ActionType getActionType() { return ActionType.VoucherChange; }
+
+  //TODO: this should probably extends SubscriberStreamOutput instead
+  @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.Low; }
   
   /*****************************************
   *

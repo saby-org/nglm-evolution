@@ -19,8 +19,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
+import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
 import com.evolving.nglm.evolution.propensity.PropensityService;
 import com.evolving.nglm.evolution.retention.RetentionService;
 import com.evolving.nglm.evolution.statistics.CounterStat;
@@ -87,21 +87,15 @@ import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
-import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
-import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.Expression.ExpressionContext;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
-import com.evolving.nglm.evolution.Expression.ExpressionReader;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
-import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
@@ -109,12 +103,10 @@ import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramPointsEven
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramTierChange;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
-import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyManagerException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.VoucherChange.VoucherChangeAction;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
-import com.evolving.nglm.evolution.VoucherChange.VoucherChangeAction;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -230,9 +222,6 @@ public class EvolutionEngine
   private static PropensityService propensityService;
   private static RetentionService retentionService;
 
-  private static final int MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES = 5;
-  private static Date kafkaSizeErrorLogDate = SystemTime.getCurrentTime();
-
   private String evolutionEngineKey;
   public String getEvolutionEngineKey(){return evolutionEngineKey;}
   private static EvolutionEngineEventDeclaration voucherActionEventDeclaration = null;
@@ -324,7 +313,6 @@ public class EvolutionEngine
     //
 
     String subscriberTraceTopic = Deployment.getSubscriberTraceTopic();
-    String journeyTrafficTopic = Deployment.getJourneyTrafficTopic();
     String tokenChangeTopic = Deployment.getTokenChangeTopic();
     String voucherChangeResponseTopic = Deployment.getVoucherChangeResponseTopic();
 
@@ -667,6 +655,7 @@ public class EvolutionEngine
     streamsProperties.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, Integer.toString(kafkaReplicationFactor));
     streamsProperties.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, Integer.toString(kafkaStreamsStandbyReplicas));
     streamsProperties.put(StreamsConfig.APPLICATION_SERVER_CONFIG, subscriberProfileHost + ":" + Integer.toString(internalPort));
+    streamsProperties.put(StreamsConfig.DEFAULT_PRODUCTION_EXCEPTION_HANDLER_CLASS_CONFIG, EvolutionProductionExceptionHandler.class);
     if(!isInMemoryStateStores && rocksDBCacheMBytes!=-1 && rocksDBMemTableMBytes!=-1)
       {
         BoundedMemoryRocksDBConfig.setRocksDBCacheMBytes(rocksDBCacheMBytes);
@@ -730,7 +719,6 @@ public class EvolutionEngine
     final ConnectSerde<RecordSubscriberID> recordSubscriberIDSerde = RecordSubscriberID.serde();
     final ConnectSerde<JourneyRequest> journeyRequestSerde = JourneyRequest.serde();
     final ConnectSerde<JourneyStatistic> journeyStatisticSerde = JourneyStatistic.serde();
-    final ConnectSerde<JourneyStatisticWrapper> journeyStatisticWrapperSerde = JourneyStatisticWrapper.serde();
     final ConnectSerde<JourneyMetric> journeyMetricSerde = JourneyMetric.serde();
     final ConnectSerde<LoyaltyProgramRequest> loyaltyProgramRequestSerde = LoyaltyProgramRequest.serde();
     final ConnectSerde<SubscriberGroup> subscriberGroupSerde = SubscriberGroup.serde();
@@ -982,7 +970,6 @@ public class EvolutionEngine
     KStream<StringKey, ? extends SubscriberStreamOutput>[] branchedEvolutionEngineOutputs = evolutionEngineOutputs.branch(
 
         (key,value) -> (value instanceof DeliveryRequest), 
-        (key,value) -> (value instanceof JourneyStatisticWrapper), 
         (key,value) -> (value instanceof JourneyStatistic), 
         (key,value) -> (value instanceof JourneyMetric), 
         (key,value) -> (value instanceof SubscriberTrace),
@@ -996,26 +983,17 @@ public class EvolutionEngine
         (key,value) -> (value instanceof VoucherChange));
 
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[0];
-    KStream<StringKey, JourneyStatisticWrapper> journeyStatisticWrapperStream = (KStream<StringKey, JourneyStatisticWrapper>) branchedEvolutionEngineOutputs[1];
-    KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[2];
-    KStream<StringKey, JourneyMetric> journeyMetricStream = (KStream<StringKey, JourneyMetric>) branchedEvolutionEngineOutputs[3];
-    KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[4];
+    KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[1];
+    KStream<StringKey, JourneyMetric> journeyMetricStream = (KStream<StringKey, JourneyMetric>) branchedEvolutionEngineOutputs[2];
+    KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[3];
 
-    KStream<StringKey, ExternalAPIOutput> externalAPIOutputsStream = (KStream<StringKey, ExternalAPIOutput>) branchedEvolutionEngineOutputs[5];
-    KStream<StringKey, ProfileChangeEvent> profileChangeEventsStream = (KStream<StringKey, ProfileChangeEvent>) branchedEvolutionEngineOutputs[6];
-    KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventsStream = (KStream<StringKey, ProfileSegmentChangeEvent>) branchedEvolutionEngineOutputs[7];
-    KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventsStream = (KStream<StringKey, ProfileLoyaltyProgramChangeEvent>) branchedEvolutionEngineOutputs[8];
-    KStream<StringKey, TokenChange> tokenChangeStream = (KStream<StringKey, TokenChange>) branchedEvolutionEngineOutputs[9];
+    KStream<StringKey, ExternalAPIOutput> externalAPIOutputsStream = (KStream<StringKey, ExternalAPIOutput>) branchedEvolutionEngineOutputs[4];
+    KStream<StringKey, ProfileChangeEvent> profileChangeEventsStream = (KStream<StringKey, ProfileChangeEvent>) branchedEvolutionEngineOutputs[5];
+    KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventsStream = (KStream<StringKey, ProfileSegmentChangeEvent>) branchedEvolutionEngineOutputs[6];
+    KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventsStream = (KStream<StringKey, ProfileLoyaltyProgramChangeEvent>) branchedEvolutionEngineOutputs[7];
+    KStream<StringKey, TokenChange> tokenChangeStream = (KStream<StringKey, TokenChange>) branchedEvolutionEngineOutputs[8];
 
-    KStream<StringKey, VoucherChange> voucherChangeStream = (KStream<StringKey, VoucherChange>) branchedEvolutionEngineOutputs[10];
-
-    /*****************************************
-    *
-    *  JourneyStatistics
-    *
-    *****************************************/
-
-    KStream<StringKey, JourneyStatisticWrapper> rekeyedJourneyStatisticStream = journeyStatisticWrapperStream.map(EvolutionEngine::rekeyByJourneyID);
+    KStream<StringKey, VoucherChange> voucherChangeStream = (KStream<StringKey, VoucherChange>) branchedEvolutionEngineOutputs[9];
 
     /*****************************************
     *
@@ -1049,7 +1027,6 @@ public class EvolutionEngine
     profileChangeEventsStream.to(profileChangeEventTopic, Produced.with(stringKeySerde, profileChangeEventSerde));
     profileSegmentChangeEventsStream.to(profileSegmentChangeEventTopic, Produced.with(stringKeySerde, profileSegmentChangeEventSerde));
     profileLoyaltyProgramChangeEventsStream.to(profileLoyaltyProgramChangeEventTopic, Produced.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
-    rekeyedJourneyStatisticStream.to(journeyTrafficTopic, Produced.with(stringKeySerde, journeyStatisticWrapperSerde));
     tokenChangeStream.to(tokenChangeTopic, Produced.with(stringKeySerde, tokenChangeSerde));
     voucherChangeStream.to(voucherChangeResponseTopic, Produced.with(stringKeySerde, voucherChangeSerde));
 
@@ -1059,25 +1036,29 @@ public class EvolutionEngine
 
 	// rekeyed as needed
 	KStream<StringKey, DeliveryRequest> rekeyedDeliveryRequestStream = deliveryRequestStream.map(EvolutionEngine::rekeyDeliveryRequestStream);
-	// predicates/serde for branching by request or reponse and priority
-	Map<String,Predicate<StringKey,DeliveryRequest>> deliveryRequestPredicates = new LinkedHashMap<>();// <topic,predicate>
+	// topics/predicates/serdes for branching by request or reponse and priority
+	// important to keep to 2 list coherent one with the other!
+	LinkedList<String> topics = new LinkedList<>();
+	LinkedList<Predicate<StringKey,DeliveryRequest>> deliveryRequestPredicates = new LinkedList<>();
 	Map<String,ConnectSerde<DeliveryRequest>> deliveryRequestSerdes = new HashMap<>();// <topic,serde>
 	// populate
 	for(DeliveryManagerDeclaration deliveryManagerDeclaration:Deployment.getDeliveryManagers().values()){
 	  for(DeliveryPriority priority:DeliveryPriority.values()){
 	  	if(deliveryManagerDeclaration.isProcessedByEvolutionEngine()){
 	  	  String topic = deliveryManagerDeclaration.getResponseTopic(priority);// a response of a request we did process
-	  	  deliveryRequestPredicates.put(topic,(key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && !value.isPending());
+		  topics.add(topic);
+	  	  deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && !value.isPending());
 	  	  deliveryRequestSerdes.put(topic,(ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde());
 		}
 		String topic = deliveryManagerDeclaration.getRequestTopic(priority);// a request we are doing
-		deliveryRequestPredicates.put(topic,(key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && value.isPending());
+		topics.add(topic);
+		deliveryRequestPredicates.add((key,value)->value.getDeliveryType().equals(deliveryManagerDeclaration.getDeliveryType()) && value.getDeliveryPriority()==priority && value.isPending());
 		deliveryRequestSerdes.put(topic,(ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde());
 	  }
 	}
 	//branch and sink
-	Iterator<String> topicIterator = deliveryRequestPredicates.keySet().iterator();
-	for(KStream<StringKey,DeliveryRequest> stream:rekeyedDeliveryRequestStream.branch(deliveryRequestPredicates.values().toArray(new Predicate[deliveryRequestPredicates.size()]))){
+	Iterator<String> topicIterator = topics.iterator();
+	for(KStream<StringKey,DeliveryRequest> stream:rekeyedDeliveryRequestStream.branch(deliveryRequestPredicates.toArray(new Predicate[deliveryRequestPredicates.size()]))){
 	  String topic = topicIterator.next();
 	  stream.to(topic,Produced.with(stringKeySerde,deliveryRequestSerdes.get(topic)));
 	}
@@ -1901,6 +1882,15 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  if notification
+    *  populate request with the notificationMetricHistory for the external processor to apply contact policy
+    *  update subscriberState with the +1 notif for the channel
+    *
+    *****************************************/
+    subscriberStateUpdated = updateNotificationMetricHistory(context.getSubscriberState(), now) || subscriberStateUpdated;
+
+    /*****************************************
+    *
     *  subscriberTrace
     *
     *****************************************/
@@ -1956,17 +1946,12 @@ public class EvolutionEngine
       {
         SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
         evolutionEngineStatistics.updateSubscriberStateSize(subscriberState.getKafkaRepresentation());
+        // this does not really prevent final exception (as SubscriberState deep copy is not really possible)
+		// what "catch" exception at the end is our EvolutionProductionExceptionHandler
+		// but we still keep that, that "should" avoid to produce outputs we are too big
         if (subscriberState.getKafkaRepresentation().length > 950000)
           {
-            if (SystemTime.getCurrentTime().after(kafkaSizeErrorLogDate))
-              {
-                log.error("StateStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberState.toString());
-                kafkaSizeErrorLogDate = RLMDateUtils.addMinutes(SystemTime.getCurrentTime(), MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES);
-              }
-            else
-              {
-                log.error("StateStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberState.getKafkaRepresentation().length);
-              }
+            log.error("StateStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberState.getKafkaRepresentation().length);
             cleanSubscriberState(currentSubscriberState, now);
             SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), currentSubscriberState);
             subscriberStateUpdated = false;
@@ -2744,6 +2729,45 @@ public class EvolutionEngine
           }
       }
   }
+
+    private static boolean updateNotificationMetricHistory(SubscriberState subscriberState, Date now)
+    {
+      // if there are no DeliveryRequests to be sent out, nothing to do
+      if(subscriberState.getDeliveryRequests()==null || subscriberState.getDeliveryRequests().isEmpty()) return false;
+
+      boolean updated = false;
+      for(DeliveryRequest deliveryRequest:subscriberState.getDeliveryRequests()){
+
+        // skip if not a notification
+        if(!(deliveryRequest instanceof INotificationRequest)) continue;
+        // skip if not "pending" (means not a "request", but normally only pending in that temp list)
+        if(!deliveryRequest.isPending()) continue;
+
+        INotificationRequest notificationRequest = (INotificationRequest)deliveryRequest;
+        String channel = Deployment.getDeliveryTypeCommunicationChannelIDMap().get(notificationRequest.getDeliveryType());
+        // "warn" and skip if no channel (conf change?)
+        if(channel==null){
+          log.info("delivery type {} not matching channel, can not update notificationHistory for {}",notificationRequest.getDeliveryType(),subscriberState.getSubscriberID());
+          continue;
+        }
+        // get notification metric history for that channel
+        MetricHistory channelMetricHistory = subscriberState.getNotificationHistory().get(channel);
+        // not yet any notif sent for this channel to this subs, init empty one
+        if(channelMetricHistory==null){
+          channelMetricHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
+          subscriberState.getNotificationHistory().put(channel,channelMetricHistory);
+        }
+        // FIRST enrich request with previous data (keep previous behaviour for downstream processor)
+        deliveryRequest.setNotificationHistory(channelMetricHistory);
+        // THEN increment by one
+        Date notifDate = deliveryRequest.getEventDate()!=null ? deliveryRequest.getEventDate() : now ;
+        channelMetricHistory.update(notifDate,1);
+        updated = true;
+      }
+
+      return updated;
+
+    }
   
   /*****************************************
   * 
@@ -3279,29 +3303,6 @@ public class EvolutionEngine
               break;
           }
       }
-
-    /*****************************************
-     *
-     *  increment metric history for delivered message in notificatioStatus
-     *
-     *****************************************/
-    if(evolutionEvent instanceof MessageDelivery && evolutionEvent instanceof INotificationRequest)
-    {
-      MessageDelivery messageDelivery = (MessageDelivery)evolutionEvent;
-      if(((INotificationRequest)evolutionEvent).getMessageStatus() == DeliveryManagerForNotifications.MessageStatus.DELIVERED)
-        {
-          try {
-            MetricHistory channelMetricHistory = context.getSubscriberState().getNotificationHistory().stream().filter(p -> p.getFirstElement().equals(Deployment.getDeliveryTypeCommunicationChannelIDMap().get(((DeliveryRequest)messageDelivery).getDeliveryType()))).collect(Collectors.toList()).get(0).getSecondElement();
-            Date messageDeliveryDate = RLMDateUtils.truncate(messageDelivery.getMessageDeliveryEventDate(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-            //long messageCount = channelMetricHistory.getValue(messageDeliveryDate, messageDeliveryDate).longValue() + 1;
-            //this update should be called increment for metric history.
-            channelMetricHistory.update(messageDeliveryDate,1);
-          }
-          catch(Exception e) {
-            log.warn("CATCHED Exception " + e.getClass().getName() + " while updating channelMetricHistory", e);
-          }
-        }
-    }
     
     if (evolutionEvent instanceof PurchaseFulfillmentRequest)
       {
@@ -4403,7 +4404,6 @@ public class EvolutionEngine
     *  result
     *
     *****************************************/
-
     SubscriberState subscriberState = context.getSubscriberState();
     boolean subscriberStateUpdated = false;
 
@@ -4419,7 +4419,7 @@ public class EvolutionEngine
     // so it is important to migrate data, but once all customer run over this version, this should be removed
     // ------ START DATA MIGRATION COULD BE REMOVED
     for(JourneyState recentJourneyState:subscriberState.getRecentJourneyStates()){
-      if(subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().get(recentJourneyState.getJourneyID())==null){
+      if(subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().get(recentJourneyState.getJourneyID())==null && !recentJourneyState.isSpecialExit()){
         subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().put(recentJourneyState.getJourneyID(),recentJourneyState.getExpirationDate(retentionService)!=null?recentJourneyState.getExpirationDate(retentionService):now);
       }
     }
@@ -4696,135 +4696,167 @@ public class EvolutionEngine
 
                 /*****************************************
                 *
-                *  verify pass all objective-level targeting policies
+                *  Check target / trigger / Inclusion / Eligibility
                 *
                 *****************************************/
-
-                if (enterJourney)
+                if(enterJourney && currentStatus == null)
                   {
-                    for (JourneyObjective journeyObjective : allObjectives)
+                    // check if the subscriber should enter by 
+                    // - Target (file or rules)
+                    // - Trigger Event
+                    // - Manual : already filtered with CalledJourney, so no need to take this case in account
+                    // - All Subscribers is considered as Target with no target specified, so this case is handled by Target case                   
+                    
+                    // 1- Compute inAnyTargetOrTrigger: if no trigger or no target, then this boolean is set to true 
+                    List<List<EvaluationCriterion>> targetsAndTriggerCriteria = journey.getAllTargetsCriteria(targetService, now);
+                    if(journey.getTargetingEventCriteria() != null) { targetsAndTriggerCriteria.add(journey.getTargetingEventCriteria()); }
+                    boolean inAnyTargetOrTrigger = targetsAndTriggerCriteria.size() == 0 ? true : false; // if no target is defined into the journey, then this boolean is true otherwise, false by default 
+                    List<EvaluationCriterion> targets = new ArrayList<>();
+
+                    for(List<EvaluationCriterion> current : targetsAndTriggerCriteria)
                       {
-                        if (permittedJourneys.get(journeyObjective) < 1)
-                          {                      	
-                        	currentStatus=SubscriberJourneyStatus.ObjectiveLimitReached;
-                        	context.subscriberTrace("NotEligible: journey {0}, objective {1}", journey.getJourneyID(), journeyObjective.getJourneyObjectiveID());
-                            break;
+                        if(inAnyTargetOrTrigger == false) { // avoid evaluating target is already true
+                          SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now);
+                          context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
+                          boolean inThisTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, current);
+                          if(inThisTarget)
+                            {
+                              inAnyTargetOrTrigger = true;
+                            }
+                        }                    
+                      }
+                    
+                    boolean enterAfterInclusionList = inAnyTargetOrTrigger;
+                    // 2. At this stage: Apply Inclusion List in case in AnyTarget = false
+                    if(!inAnyTargetOrTrigger)
+                      {
+                        if(journey.getAppendInclusionLists() && inclusionList)
+                          {
+                            enterAfterInclusionList = true;
+                          }
+                      }
+                    // 3. Now                     
+                    //    - if enterAfterInclusionList = false, enterJourney = false and currentStatus = null
+                    //    - if enterAfterInclusionList = true, then apply the Eligibility Criterion
+                    if(enterAfterInclusionList == false)
+                      {
+                        enterJourney = false;
+                        currentStatus = null;
+                        context.subscriberTrace("NotEligible: journey or subscriber not inclusion list {0}", journey.getJourneyID());
+                      }
+                    else 
+                      {
+                        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now);
+                        List<EvaluationCriterion> eligibilityAndTargetting = new ArrayList<>();
+                        eligibilityAndTargetting.addAll(journey.getEligibilityCriteria());
+                        //eligibilityAndTargetting.addAll(journey.getTargetingCriteria());
+                        
+                        boolean  enterAfterEligibilityCriteria = EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityAndTargetting);
+                        
+                        // 4. if enterAfterEligibilityCriteria :
+                        //     - is false : The would enter without Eligibility Criterion, so enterJourney = true and currentStatus = NotEligible
+                        //     - is true : all ok! enterJourney = true and currentStatus = null;
+                        if(enterAfterEligibilityCriteria == false)
+                          {
+                            enterJourney = true;
+                            currentStatus = SubscriberJourneyStatus.NotEligible;
+                          }
+                        else 
+                          {
+                            // 5. Apply the journeyUniversalEligibilityCriteria
+                            evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now);
+                            eligibilityAndTargetting = new ArrayList<>();
+                            eligibilityAndTargetting.addAll(Deployment.getJourneyUniversalEligibilityCriteria());
+                            
+                            boolean  enterAfterJourneyUniversalCriteria = EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityAndTargetting);
+                            if(enterAfterJourneyUniversalCriteria == false) {
+                              // Do not enter into the Journey
+                              enterJourney = false;
+                              context.subscriberTrace("NotEligible: journey universal criteria {0}", journey.getJourneyID());
+                            }
+                            else {
+                              // Enter into the Journey
+                              enterJourney = true;
+                              currentStatus = null;
+                            }
                           }
                       }
                   }
 
                 /*****************************************
                 *
-                *  pass is customer UCG?
+                *  verify pass all objective-level targeting policies
                 *
                 *****************************************/
 
                 if (enterJourney && currentStatus==null)
                   {
-                    if (!journey.getAppendUCG() && subscriberState.getSubscriberProfile().getUniversalControlGroup())
+                    for (JourneyObjective journeyObjective : allObjectives)
                       {
-                        currentStatus=SubscriberJourneyStatus.UniversalControlGroup;
-                        context.subscriberTrace("NotEligible: user is UCG {0}", journey.getJourneyID());
+                        if (permittedJourneys.get(journeyObjective) < 1)
+                          {                       
+                          currentStatus=SubscriberJourneyStatus.ObjectiveLimitReached;
+                          context.subscriberTrace("NotEligible: journey {0}, objective {1}", journey.getJourneyID(), journeyObjective.getJourneyObjectiveID());
+                            break;
+                          }
                       }
-                      
                   }
-
-                /******************************************
-                *
-                *  pass is customer in the exclusion list?
-                *
-                *******************************************/
-
-                if (enterJourney && currentStatus==null)
-                  {
-                      if (!journey.getAppendExclusionLists() && exclusionList)
-                        {
-                          currentStatus=SubscriberJourneyStatus.Excluded;
-                          context.subscriberTrace("NotEligible: user is in exclusion list {0}", journey.getJourneyID());
-                        }
-                     
-                  }
-
+                
                 /*********************************************
                 *
-                *  pass targeting criteria and inclusion list
+                *  pass max number of customers in journey
                 *
                 **********************************************/
 
                 if (enterJourney && currentStatus==null)
                   {
-                    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent, now);
-                    List<EvaluationCriterion> eligibilityAndTargetting = new ArrayList<>();
-                    eligibilityAndTargetting.addAll(journey.getEligibilityCriteria());
-                    eligibilityAndTargetting.addAll(journey.getTargetingCriteria());
-                    if(journey.getTargetingEventCriteria() != null) 
+                    if (!stockService.reserve(journey,1))
                       {
-                        eligibilityAndTargetting.addAll(journey.getTargetingEventCriteria());
+                        enterJourney = false;
+                        context.subscriberTrace("NotEligible: max number of customers {0}", journey.getJourneyID());
                       }
-                    boolean subscriberToBeProvisionned = EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityAndTargetting);
-                    context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
-                
-                    List<List<EvaluationCriterion>> targetsCriteria = journey.getAllTargetsCriteria(targetService, now);
-                    boolean inAnyTarget = targetsCriteria.size() == 0 ? true : false; // if no target is defined into the journey, then this boolean is true otherwise, false by default 
-                    List<EvaluationCriterion> targets = new ArrayList<>();
-
-                    for(List<EvaluationCriterion> current : targetsCriteria)
+                    else
                       {
-                        if(inAnyTarget == false) { // avoid evaluating target is already true
-                          evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
-                          context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
-                          boolean inThisTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, current);
-                          if(inThisTarget)
-                            {
-                              inAnyTarget = true;
-                            }
-                        }                    
+                        journeyMaxNumberOfCustomersReserved=true;
                       }
-                    boolean targeting = subscriberToBeProvisionned && inAnyTarget;
 
-                    if(!targeting)
-                      {
-                        if(journey.getAppendInclusionLists() && !inclusionList) 
-                          {
-                            // the journey allows the inclusion list but the subscriber is not in the inclusion list
-                            enterJourney = true;
-                            currentStatus=SubscriberJourneyStatus.NotEligible;
-                            context.subscriberTrace("NotEligible: targeting criteria / inclusion list {0}", journey.getJourneyID());
+                  }
+                }
 
-                          }
-                        else if(!journey.getAppendInclusionLists())
-                          {
-                            // whatever if the subscriber is into an inclusion list, those are not allowed for this journey
-                            enterJourney = true;
-                            currentStatus=SubscriberJourneyStatus.NotEligible;
-                            context.subscriberTrace("NotEligible: targeting criteria {0}", journey.getJourneyID());
-                          }
-                      }
+            /******************************************
+            *
+            *  pass is customer in the exclusion list?
+            *
+            *******************************************/
+
+            if (enterJourney && currentStatus == null)
+              {
+                if (!journey.getAppendExclusionLists() && exclusionList)
+                  {
+                    currentStatus = SubscriberJourneyStatus.Excluded;
+                    context.subscriberTrace("NotEligible: user is in exclusion list {0}", journey.getJourneyID());
                   }
 
-                  /*********************************************
-                  *
-                  *  pass max number of customers in journey
-                  *
-                  **********************************************/
-
-                  if (enterJourney && currentStatus==null)
-                    {
-                      if (!stockService.reserve(journey,1))
-                        {
-                          enterJourney = false;
-                          context.subscriberTrace("NotEligible: max number of customers {0}", journey.getJourneyID());
-                        }
-                      else
-                        {
-                          journeyMaxNumberOfCustomersReserved=true;
-                        }
-
-                    }
               }
+
             /*****************************************
             *
-            *  enterJourney
+            * pass is customer UCG?
+            *
+            *****************************************/
+
+            if (enterJourney && currentStatus == null)
+              {
+                if (!journey.getAppendUCG() && subscriberState.getSubscriberProfile().getUniversalControlGroup())
+                  {
+                    currentStatus = SubscriberJourneyStatus.UniversalControlGroup;
+                    context.subscriberTrace("NotEligible: user is UCG {0}", journey.getJourneyID());
+                  }
+              }
+
+            /*****************************************
+            *
+            * enterJourney
             *
             *****************************************/
 
@@ -4878,24 +4910,41 @@ public class EvolutionEngine
 
 				JourneyHistory journeyHistory = new JourneyHistory(journey.getJourneyID());
 				JourneyState journeyState = new JourneyState(context, journey, journeyRequest, sourceFeatureID, boundParameters, SystemTime.getCurrentTime(), journeyHistory);
+
 				if (currentStatus != null) // EVPRO-530
 				{
-					journeyState.setJourneyNodeID(journey.getEndNodeID());
-					journeyState.setSpecialExit(true);
-					journeyState.setSpecialExitReason(currentStatus);
-					journeyState.setJourneyExitDate(SystemTime.getCurrentTime());
+					// keep the current status only if it has not been kept before...
+				  boolean keep = true;
+				  for(JourneyState current : subscriberState.getRecentJourneyStates())
+				    {
+				      if(current.getJourneyID().equals(journey.getJourneyID()) && currentStatus.equals(current.getSpecialExitReason()))
+				        {
+				          keep = false;
+				          break;
+				        }
+				    }
+				  if(keep)
+				    {
+    				  journeyState.setJourneyNodeID(journey.getEndNodeID());
+    					journeyState.setSpecialExitReason(currentStatus);
+    					journeyState.setJourneyExitDate(SystemTime.getCurrentTime());
+				    }
+				  else 
+				    {
+				      // just avoid the entry in the journey without status
+				      continue; // continue of the main journey loop
+				    }
 				}
+				
 				journeyState.getJourneyHistory().addNodeInformation(null, journeyState.getJourneyNodeID(), null, null);
 				boolean statusUpdated = journeyState.getJourneyHistory()
 						.addStatusInformation(SystemTime.getCurrentTime(), journeyState, false, currentStatus);
 				subscriberState.getJourneyStates().add(journeyState);
 				subscriberState.getJourneyStatisticWrappers()
-						.add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(),
-								subscriberGroupEpochReader, ucgStateReader, statusUpdated,
-								new JourneyStatistic(context, subscriberState.getSubscriberID(),
+						.add(new JourneyStatistic(context, subscriberState.getSubscriberID(),
 										journeyState.getJourneyHistory(), journeyState, subscriberState
 												.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader),
-										subscriberState.getSubscriberProfile())));
+										subscriberState.getSubscriberProfile()));
 				subscriberState.getSubscriberProfile().getSubscriberJourneys().put(journey.getJourneyID(),
 						Journey.getSubscriberJourneyStatus(journeyState));
 				subscriberStateUpdated = true;
@@ -5029,7 +5078,7 @@ public class EvolutionEngine
             if(journeyState.isSpecialExit())
             journeyState.setJourneyExitDate(now);
             boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
-            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), now)));
+            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), now));
             inactiveJourneyStates.add(journeyState);
             continue;
           }
@@ -5099,7 +5148,7 @@ public class EvolutionEngine
 
                               journeyState.setJourneyExitDate(now);
                               boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
-                              subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), SystemTime.getCurrentTime())));
+                              subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), SystemTime.getCurrentTime()));
                               inactiveJourneyStates.add(journeyState);
                               break;
                             }
@@ -5117,30 +5166,6 @@ public class EvolutionEngine
                   }
               }
           }
-
-        /*****************************************
-        *
-        *   get reward information 
-        *
-        *****************************************/
-
-        if (evolutionEvent instanceof DeliveryRequest && !((DeliveryRequest)evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending)) 
-          {
-            DeliveryRequest deliveryResponse = (DeliveryRequest) evolutionEvent;
-            if(deliveryResponse.getOriginatingSubscriberID() == null || deliveryResponse.getOriginatingSubscriberID().startsWith(DeliveryManager.ORIGIN))
-              {
-                // case where the response is to the parent into the relationship, so the history must be taken in account...
-                // this history is not taken in account for a response to the original subscriber as this response is only here to unlock the Journey
-                if (Objects.equals(deliveryResponse.getModuleID(), DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && Objects.equals(deliveryResponse.getFeatureID(), journeyState.getJourneyID()))
-                  {
-                    RewardHistory lastRewards = journeyState.getJourneyHistory().addRewardInformation(deliveryResponse, deliverableService, now);
-                    if (lastRewards != null)
-                      {
-                        subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, new RewardHistory(lastRewards), journeyState.getJourneyID()));
-                      }
-                  }
-              }
-          }
         
         /*****************************************
         *
@@ -5151,6 +5176,7 @@ public class EvolutionEngine
         Set<JourneyNode> visited = new HashSet<JourneyNode>();
         boolean terminateCycle = false;
         JourneyLink firedLink = null;
+        String sample = null;
         do
           {
             /*****************************************
@@ -5279,7 +5305,7 @@ public class EvolutionEngine
 
                                   journeyState.setJourneyExitDate(now);
                                   boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
-                                  subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), SystemTime.getCurrentTime())));
+                                  subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), SystemTime.getCurrentTime()));
                                   inactiveJourneyStates.add(journeyState);
                                   break;
                                 }
@@ -5482,7 +5508,7 @@ public class EvolutionEngine
 
                                   journeyState.setJourneyExitDate(now);
                                   boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
-                                  subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), SystemTime.getCurrentTime())));
+                                  subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile(), SystemTime.getCurrentTime()));
                                   inactiveJourneyStates.add(journeyState);
                                   break;
                                 }
@@ -5556,7 +5582,7 @@ public class EvolutionEngine
                 // abTesting (we remove it so its only counted once per journey)
                 //
                 
-                String sample = null;
+               
                 if(journeyState.getJourneyParameters().get("sample.a") != null)
                   {
                     sample = (String) journeyState.getJourneyParameters().get("sample.a");
@@ -5574,7 +5600,7 @@ public class EvolutionEngine
                 //
                 
                 boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, journeyNode.getExitNode());
-                subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile())));
+                subscriberState.getJourneyStatisticWrappers().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), subscriberState.getSubscriberProfile()));
 
                 /*****************************************
                 *
@@ -5659,7 +5685,11 @@ public class EvolutionEngine
       {
         subscriberState.getRecentJourneyStates().add(journeyState);
         subscriberState.getJourneyStates().remove(journeyState);
-        subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().put(journeyState.getJourneyID(),now);
+        if(!journeyState.isSpecialExit()) 
+          {
+            // this if because if we have a special exit means the Journey has not been effectively executed
+            subscriberState.getSubscriberProfile().getSubscriberJourneysEnded().put(journeyState.getJourneyID(),now);
+          }
         subscriberStateUpdated = true;
       }
 
@@ -5971,21 +6001,6 @@ public class EvolutionEngine
       {
         ExtendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), extendedSubscriberProfile);
         evolutionEngineStatistics.updateExtendedProfileSize(extendedSubscriberProfile.getKafkaRepresentation());
-        if (extendedSubscriberProfile.getKafkaRepresentation().length > 950000)
-          {
-            if (SystemTime.getCurrentTime().after(kafkaSizeErrorLogDate))
-              {
-                log.error("ExtendedSubscriberProfile size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), extendedSubscriberProfile.toString());
-                kafkaSizeErrorLogDate = RLMDateUtils.addMinutes(SystemTime.getCurrentTime(), MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES);
-              }
-            else
-              {
-                log.error("ExtendedSubscriberProfile size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), extendedSubscriberProfile.getKafkaRepresentation().length);
-              }
-            cleanExtendedSubscriberProfile(currentExtendedSubscriberProfile, now);
-            ExtendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), currentExtendedSubscriberProfile);
-            extendedSubscriberProfileUpdated = false;
-          }
       }
 
     /****************************************
@@ -6081,12 +6096,9 @@ public class EvolutionEngine
 
     if (subscriberStateOutputWrapper.getSubscriberState().getJourneyStatisticWrappers()!=null)
       {
-        for(JourneyStatisticWrapper journeyStatisticWrapper:subscriberStateOutputWrapper.getSubscriberState().getJourneyStatisticWrappers())
+        for(JourneyStatistic journeyStatistic:subscriberStateOutputWrapper.getSubscriberState().getJourneyStatisticWrappers())
           {
-            if(journeyStatisticWrapper.getJourneyStatistic()!=null)
-              {
-                subscriberHistoryUpdated = updateSubscriberHistoryJourneyStatistics(journeyStatisticWrapper.getJourneyStatistic(), subscriberHistory) || subscriberHistoryUpdated;
-              }
+            subscriberHistoryUpdated = updateSubscriberHistoryJourneyStatistics(journeyStatistic, subscriberHistory) || subscriberHistoryUpdated;
           }
       }
 
@@ -6095,20 +6107,6 @@ public class EvolutionEngine
       {
         SubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), subscriberHistory);
         evolutionEngineStatistics.updateSubscriberHistorySize(subscriberHistory.getKafkaRepresentation());
-        if (subscriberHistory.getKafkaRepresentation().length > 950000)
-          {
-            if (SystemTime.getCurrentTime().after(kafkaSizeErrorLogDate))
-              {
-                log.error("HistoryStore size error, ignoring event {} for subscriber {}: {}", subscriberStateOutputWrapper.getOriginalEvent().getClass().toString(), subscriberStateOutputWrapper.getOriginalEvent().getSubscriberID(), subscriberHistory.toString());
-                kafkaSizeErrorLogDate = RLMDateUtils.addMinutes(SystemTime.getCurrentTime(), MINIMUM_TIME_BETWEEN_FULL_TRACES_IN_MINUTES);
-              }
-            else
-              {
-                log.error("HistoryStore size error, ignoring event {} for subscriber {}: {}", subscriberStateOutputWrapper.getOriginalEvent().getClass().toString(), subscriberStateOutputWrapper.getOriginalEvent().getSubscriberID(), subscriberHistory.getKafkaRepresentation().length);
-              }
-            SubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), currentSubscriberHistory);
-            subscriberHistoryUpdated = false;
-          }
       }
 
     return subscriberHistoryUpdated ? subscriberHistory : currentSubscriberHistory;
@@ -6263,13 +6261,6 @@ public class EvolutionEngine
         result.addAll(subscriberState.getPointFulfillmentResponses());
         result.addAll(subscriberState.getDeliveryRequests());
         result.addAll(subscriberState.getJourneyStatisticWrappers());
-        for (JourneyStatisticWrapper wrapper: subscriberState.getJourneyStatisticWrappers()) 
-          {
-            if (wrapper.getJourneyStatistic() != null)
-              {
-                result.add(wrapper.getJourneyStatistic());
-              }
-          }
         result.addAll(subscriberState.getJourneyMetrics());
         result.addAll((subscriberState.getSubscriberTrace() != null) ? Collections.<SubscriberTrace>singletonList(subscriberState.getSubscriberTrace()) : Collections.<SubscriberTrace>emptyList());
         result.addAll((subscriberState.getExternalAPIOutput() != null) ? Collections.<ExternalAPIOutput>singletonList(subscriberState.getExternalAPIOutput()) : Collections.<ExternalAPIOutput>emptyList());
@@ -6280,7 +6271,7 @@ public class EvolutionEngine
         result.addAll(subscriberState.getProfileLoyaltyProgramChangeEvents());
       }
     // enrich with alternateIds all here
-    result.stream().forEach(subscriberStreamOutput -> subscriberStreamOutput.enrichSubscriberStreamOutput(subscriberState.getSubscriberProfile(),subscriberGroupEpochReader));
+    result.stream().forEach(subscriberStreamOutput -> subscriberStreamOutput.enrichSubscriberStreamOutput(subscriberStateHackyWrapper.getOriginalEvent(),subscriberState.getSubscriberProfile(),subscriberGroupEpochReader));
     return result;
   }
 
@@ -6295,28 +6286,6 @@ public class EvolutionEngine
     List<SubscriberStreamOutput> result = new ArrayList<SubscriberStreamOutput>();
     result.addAll((extendedSubscriberProfile != null && extendedSubscriberProfile.getSubscriberTrace() != null) ? Collections.<SubscriberTrace>singletonList(extendedSubscriberProfile.getSubscriberTrace()) : Collections.<SubscriberTrace>emptyList());
     return result;
-  }
-  
-  /****************************************
-  *
-  *  getJourneyStatistic
-  *
-  ****************************************/
-
-  private static JourneyStatistic getJourneyStatisticFromWrapper(JourneyStatisticWrapper value)
-  {
-    return value.getJourneyStatistic();
-  }
-  
-  /****************************************
-  *
-  *  getJourneyNodeStatisticsFromWrapper
-  *
-  ****************************************/
-
-  private static KeyValue<StringKey, JourneyStatisticWrapper> rekeyByJourneyID(StringKey key, JourneyStatisticWrapper value)
-  {
-    return new KeyValue<StringKey, JourneyStatisticWrapper>(new StringKey(value.getJourneyID()), value);
   }
   
   // sorry I'm lost between all cases, not sure at all this cover all (note sure we have to key by deliveryRequest at all now, so TODO: double check if we can just key all deliveryRequest by subsId always everywhere instead of that mess)

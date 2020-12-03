@@ -126,13 +126,8 @@ public class Deployment
   private static String tokenRedeemedTopic;
   private static int propensityInitialisationPresentationThreshold;
   private static int propensityInitialisationDurationInDaysThreshold;
-  private static String journeyTrafficChangeLog;
-  private static String journeyTrafficChangeLogTopic;
-  private static String journeyTrafficTopic;
   private static String tokenChangeTopic;
   private static String subscriberProfileRegistrySubject;
-  private static int journeyTrafficArchivePeriodInSeconds;
-  private static int journeyTrafficArchiveMaxNumberOfPeriods;
   private static Map<String,ScheduledJobConfiguration> datacubeJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
   private static Map<String,ScheduledJobConfiguration> elasticsearchJobsScheduling = new LinkedHashMap<String,ScheduledJobConfiguration>();
   private static PropensityRule propensityRule;
@@ -251,7 +246,6 @@ public class Deployment
   private static int kafkaRetentionDaysBDR;
   private static int kafkaRetentionDaysMDR;
 
-  private static boolean bypassJourneyTrafficEngine; // @rl Hack. TODO: remove later
   private static boolean enableContactPolicyProcessing;
 
   //extracts configuration
@@ -378,13 +372,8 @@ public class Deployment
   public static String getTokenRedeemedTopic() { return tokenRedeemedTopic; }
   public static int getPropensityInitialisationPresentationThreshold() { return propensityInitialisationPresentationThreshold; }
   public static int getPropensityInitialisationDurationInDaysThreshold() { return propensityInitialisationDurationInDaysThreshold; }
-  public static String getJourneyTrafficChangeLog() { return journeyTrafficChangeLog; }
-  public static String getJourneyTrafficChangeLogTopic() { return journeyTrafficChangeLogTopic; }
-  public static String getJourneyTrafficTopic() { return journeyTrafficTopic; }
   public static String getTokenChangeTopic() { return tokenChangeTopic; }
   public static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
-  public static int getJourneyTrafficArchivePeriodInSeconds() { return journeyTrafficArchivePeriodInSeconds; }
-  public static int getJourneyTrafficArchiveMaxNumberOfPeriods() { return journeyTrafficArchiveMaxNumberOfPeriods; }
   public static Map<String,ScheduledJobConfiguration> getDatacubeJobsScheduling() { return datacubeJobsScheduling; }
   public static Map<String,ScheduledJobConfiguration> getElasticsearchJobsScheduling() { return elasticsearchJobsScheduling; }
   public static PropensityRule getPropensityRule() { return propensityRule; }
@@ -503,7 +492,6 @@ public class Deployment
   public static int getKafkaRetentionDaysODR() { return kafkaRetentionDaysODR; }
   public static int getKafkaRetentionDaysBDR() { return kafkaRetentionDaysBDR; }
   public static int getKafkaRetentionDaysMDR() { return kafkaRetentionDaysMDR; }
-  public static boolean getBypassJourneyTrafficEngine() { return bypassJourneyTrafficEngine; }
   public static boolean getEnableContactPolicyProcessing(){ return  enableContactPolicyProcessing;}
   public static String getExtractManagerZookeeperDir() { return extractManagerZookeeperDir; }
   public static String getExtractManagerOutputPath() { return extractManagerOutputPath; }
@@ -1836,46 +1824,7 @@ public class Deployment
         {
           throw new ServerRuntimeException("deployment", e);
         }
-
-      //
-      //  journeyTrafficChangeLog
-      //
-
-      try
-        {
-          journeyTrafficChangeLog = JSONUtilities.decodeString(jsonRoot, "journeyTrafficChangeLog", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  journeyTrafficChangeLogTopic
-      //
-
-      try
-        {
-          journeyTrafficChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "journeyTrafficChangeLogTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  journeyTrafficTopic
-      //
-
-      try
-        {
-          journeyTrafficTopic = JSONUtilities.decodeString(jsonRoot, "journeyTrafficTopic", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
+      
       //
       //  tokenChangeTopic
       //
@@ -1896,32 +1845,6 @@ public class Deployment
       try
         {
           subscriberProfileRegistrySubject = JSONUtilities.decodeString(jsonRoot, "subscriberProfileRegistrySubject", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  journeyTrafficArchivePeriodInSeconds
-      //
-
-      try
-        {
-          journeyTrafficArchivePeriodInSeconds = JSONUtilities.decodeInteger(jsonRoot, "journeyTrafficArchivePeriodInSeconds", true);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
-
-      //
-      //  journeyTrafficArchiveMaxNumberOfPeriods
-      //
-
-      try
-        {
-          journeyTrafficArchiveMaxNumberOfPeriods = JSONUtilities.decodeInteger(jsonRoot, "journeyTrafficArchiveMaxNumberOfPeriods", true);
         }
       catch (JSONUtilitiesException e)
         {
@@ -3254,21 +3177,6 @@ public class Deployment
           {
             throw new ServerRuntimeException("deployment", e);
           }
-
-
-      //
-      //  bypassJourneyTrafficEngine
-      //  @rl Hack TODO remove later
-      //  default to true
-
-      try
-        {
-          bypassJourneyTrafficEngine = JSONUtilities.decodeBoolean(jsonRoot, "bypassJourneyTrafficEngine", Boolean.TRUE);
-        }
-      catch (JSONUtilitiesException e)
-        {
-          throw new ServerRuntimeException("deployment", e);
-        }
 
       try
         {

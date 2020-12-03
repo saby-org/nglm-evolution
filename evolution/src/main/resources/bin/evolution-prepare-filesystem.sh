@@ -73,22 +73,6 @@ do
 done
 
 #
-#  journeytrafficengine
-#
-
-JOURNEYTRAFFICENGINE_CONFIGURATION=`echo $JOURNEYTRAFFICENGINE_CONFIGURATION | sed 's/ /\n/g' | uniq`
-for TUPLE in $JOURNEYTRAFFICENGINE_CONFIGURATION
-do
-   export KEY=`echo $TUPLE | cut -d: -f1`
-   export HOST=`echo $TUPLE | cut -d: -f2`
-   export MONITORING_PORT=`echo $TUPLE | cut -d: -f3`
-   export DEBUG_PORT=`echo $TUPLE | cut -d: -f4`
-   ssh $HOST "
-      mkdir -p $NGLM_STREAMS_RUNTIME/streams-journeytrafficengine-$KEY
-   "
-done
-
-#
 #  thirdpartymanager
 #
 
@@ -306,6 +290,7 @@ do
    cat $DEPLOY_ROOT/config/logger/log4j-reportscheduler.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-reportscheduler-$KEY.xml
    scp $DEPLOY_ROOT/config/logger/log4j-reportscheduler-$KEY.xml $HOST:$NGLM_CONFIG_LOGS/log4j-reportscheduler-$KEY.xml
    rm -f $DEPLOY_ROOT/config/logger/log4j-reportscheduler-$KEY.xml
+
       ssh $HOST "
       mkdir -p $NGLM_REPORTS
    "
@@ -317,9 +302,9 @@ done
 
 if [ "$DATACUBEMANAGER_ENABLED" = "true" ]; then
    export HOST=$DATACUBEMANAGER_HOST
-   cat $DEPLOY_ROOT/config/logger/log4j-datacubemanager.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-datacubemanager.xml
-   scp $DEPLOY_ROOT/config/logger/log4j-datacubemanager.xml $HOST:$NGLM_CONFIG_LOGS/log4j-datacubemanager.xml
-   rm -f $DEPLOY_ROOT/config/logger/log4j-datacubemanager.xml
+   cat $DEPLOY_ROOT/config/logger/log4j-datacubemanager.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-datacubemanager-001.xml
+   scp $DEPLOY_ROOT/config/logger/log4j-datacubemanager-001.xml $HOST:$NGLM_CONFIG_LOGS/log4j-datacubemanager.xml
+   rm -f $DEPLOY_ROOT/config/logger/log4j-datacubemanager-001.xml
 fi
 
 

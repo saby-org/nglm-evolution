@@ -76,15 +76,6 @@ public class NGLMRuntime
   *****************************************/
 
   public enum NGLMStatus { Created, Running, Stopped, FatalError }
-  public enum NGLMPriority {
-    LowPriority(DeliveryRequest.DeliveryPriority.Low),
-    NormalPriority(DeliveryRequest.DeliveryPriority.Standard),
-    HighPriority(DeliveryRequest.DeliveryPriority.High);
-
-    DeliveryRequest.DeliveryPriority deliveryPriorityMappingTo;
-    NGLMPriority(DeliveryRequest.DeliveryPriority deliveryPriorityMappingTo){this.deliveryPriorityMappingTo=deliveryPriorityMappingTo;}
-    public DeliveryRequest.DeliveryPriority getDeliveryPriorityMappingTo(){return deliveryPriorityMappingTo;}
-  }
 
   /*****************************************
   *

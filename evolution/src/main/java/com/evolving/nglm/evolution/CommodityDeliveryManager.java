@@ -873,7 +873,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     requestData.put("diplomaticBriefcase", diplomaticBriefcase);
 
     CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader, JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get("commodityDelivery"));
-    commodityDeliveryRequest.setDeliveryPriority(priority);
+    commodityDeliveryRequest.forceDeliveryPriority(priority);
 
     // ---------------------------------
     //
@@ -1703,7 +1703,6 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       CommodityDeliveryRequest request = new CommodityDeliveryRequest(evolutionEventContext, deliveryRequestSource, null, providerID, commodityID, operation, amount, validityPeriodType, validityPeriodQuantity, null);
       request.setModuleID(newModuleID);
       request.setFeatureID(deliveryRequestSource);
-      request.setDeliveryPriority(evolutionEventContext.getEvent().getNGLMPriority().getDeliveryPriorityMappingTo());
 
       /*****************************************
       *

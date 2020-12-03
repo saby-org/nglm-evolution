@@ -4693,7 +4693,7 @@ public class ThirdPartyManager
       JSONObject valueRes = JSONUtilities.encodeObject(request);
 
       LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, null);
-      loyaltyProgramRequest.setDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+      loyaltyProgramRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
       String topic = Deployment.getDeliveryManagers().get(loyaltyProgramRequest.getDeliveryType()).getRequestTopic(loyaltyProgramRequest.getDeliveryPriority());
 
       // Write it to the right topic
@@ -5014,7 +5014,7 @@ public class ThirdPartyManager
       {
         String uniqueKey = UUID.randomUUID().toString();
         JourneyRequest journeyRequest = new JourneyRequest(baseSubscriberProfile, subscriberGroupEpochReader, uniqueKey, subscriberID, journey.getJourneyID(), baseSubscriberProfile.getUniversalControlGroup());
-        journeyRequest.setDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+        journeyRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
         DeliveryManagerDeclaration journeyManagerDeclaration = Deployment.getDeliveryManagers().get(journeyRequest.getDeliveryType());
         String journeyRequestTopic = journeyManagerDeclaration.getRequestTopic(journeyRequest.getDeliveryPriority());
         kafkaProducer.send(new ProducerRecord<byte[], byte[]>(journeyRequestTopic, StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest)));
@@ -5253,8 +5253,8 @@ public class ThirdPartyManager
                     String criterionFieldValue = (String) criterionField.retrieveNormalized(evaluationRequest);                    
                     alternateIDs.put(entry.getKey(), criterionFieldValue);
                   }
-                String msisdn = "";
-                String contractID = "";
+                String msisdn = null;
+                String contractID = null;
                 if (alternateIDs != null && !(alternateIDs.isEmpty()))
                   {
                     if (alternateIDs.containsKey("msisdn") && alternateIDs.get("msisdn") != null)
@@ -5268,7 +5268,7 @@ public class ThirdPartyManager
                   }
                 errorException = new ThirdPartyManagerException(
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseMessage() + " (RedeemedDate: "
-                        + redeemedDate + ", " + " CustomerID: "+ redeemedSubscriberID + ", " +" msisdn: " + msisdn +" contactID: " + contractID + ")",
+                        + redeemedDate + ", " + " CustomerID: "+ redeemedSubscriberID + ", " +" msisdn: " + msisdn + ", "+" contractID: " + contractID + ")",
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseCode());
               }else if(profileVoucher.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired||profileVoucher.getVoucherExpiryDate().before(now)){
           errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
@@ -6269,7 +6269,7 @@ public class ThirdPartyManager
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
     PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, SystemTime.getCurrentTime());
-    purchaseRequest.setDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+    purchaseRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
     String topic = deliveryManagerDeclaration.getRequestTopic(purchaseRequest.getDeliveryPriority());
 
     Future<PurchaseFulfillmentRequest> waitingResponse=null;
