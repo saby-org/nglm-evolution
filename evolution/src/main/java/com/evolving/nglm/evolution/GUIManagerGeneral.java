@@ -3768,7 +3768,7 @@ public class GUIManagerGeneral extends GUIManager
             if (uploaded instanceof UploadedFile)
               {
                 UploadedFile uploadedFile = (UploadedFile) uploaded;
-                BufferedReader reader;
+                BufferedReader reader = null;
                 String filename = UploadedFile.OUTPUT_FOLDER + uploadedFile.getDestinationFilename();
                 try
                 {
@@ -3782,6 +3782,14 @@ public class GUIManagerGeneral extends GUIManager
                 catch (IOException e)
                 {
                   log.info("Unable to read voucher file " + filename);
+                } finally {
+                  try {
+                    if (reader != null) reader.close();
+                  }
+                  catch (IOException e)
+                  {
+                    log.info("Unable to read voucher file " + filename);
+                  }
                 }
               }
           }
@@ -4369,6 +4377,7 @@ public class GUIManagerGeneral extends GUIManager
                       {
                         fileID = JSONUtilities.decodeString(jsonRoot, "id", true);
                       }
+                    if (streams != null) streams.close();
                     jsonRoot.put("id", fileID);
                     uploadFile = true;
                   }

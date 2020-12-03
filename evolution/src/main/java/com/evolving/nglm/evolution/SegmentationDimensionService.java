@@ -397,7 +397,7 @@ public class SegmentationDimensionService extends GUIService
                     //  parse file
                     //
 
-                    BufferedReader reader;
+                    BufferedReader reader = null;
                     try
                     {
                       AlternateID alternateID = Deployment.getAlternateIDs().get(uploadedFile.getCustomerAlternateID());
@@ -431,11 +431,13 @@ public class SegmentationDimensionService extends GUIService
                                 }
                             }
                         }
-                      reader.close();
                     }
                     catch (IOException | SubscriberIDServiceException e)
                     {
                       log.warn("SegmentationDimensionService.run(problem with file parsing)", e);
+                    }
+                    finally {
+                      if (reader != null) reader.close();
                     }
                   }
               }
