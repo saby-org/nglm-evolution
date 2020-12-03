@@ -4709,7 +4709,7 @@ public class EvolutionEngine
                     
                     // 1- Compute inAnyTargetOrTrigger: if no trigger or no target, then this boolean is set to true 
                     List<List<EvaluationCriterion>> targetsAndTriggerCriteria = journey.getAllTargetsCriteria(targetService, now);
-                    if(journey.getTargetingEventCriteria() != null) { targetsAndTriggerCriteria.add(journey.getTargetingEventCriteria()); }
+                    if(journey.getTargetingEventCriteria() != null && !journey.getTargetingEventCriteria().isEmpty()) { targetsAndTriggerCriteria.add(journey.getTargetingEventCriteria()); }
                     boolean inAnyTargetOrTrigger = targetsAndTriggerCriteria.size() == 0 ? true : false; // if no target is defined into the journey, then this boolean is true otherwise, false by default 
                     List<EvaluationCriterion> targets = new ArrayList<>();
 
