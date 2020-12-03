@@ -26,6 +26,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.Journey;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
@@ -123,14 +124,17 @@ public class JourneyImpactReportDriver extends ReportDriver
         {
           if (guiManagedObject != null && guiManagedObject instanceof Journey) {
             Journey journey = (Journey) guiManagedObject;
-            Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>(); // to preserve order
+            Map<String, Object> journeyInfo1 = new LinkedHashMap<String, Object>(); // to preserve order
             String journeyID = journey.getJourneyID();
-            journeyInfo.put("dateTime", ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
-            journeyInfo.put("journeyID", journeyID);
-            journeyInfo.put("journeyName", journey.getGUIManagedObjectDisplay());
-            journeyInfo.put("journeyType", journey.getGUIManagedObjectType().getExternalRepresentation()); 
-            journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
-            journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
+            journeyInfo1.put("journeyID", journeyID);
+            journeyInfo1.put("journeyName", journey.getGUIManagedObjectDisplay());
+            journeyInfo1.put("journeyType", journey.getGUIManagedObjectType().getExternalRepresentation());
+            
+            Map<String, Object> journeyInfo2 = new LinkedHashMap<String, Object>(); // to preserve order
+            
+            journeyInfo2.put("dateTime", ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
+            journeyInfo2.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
+            journeyInfo2.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
 
             String journeyRewards = "";
             try
@@ -150,18 +154,30 @@ public class JourneyImpactReportDriver extends ReportDriver
             {
               log.info("Exception processing "+journey.getGUIManagedObjectDisplay(), e);
             }
+            journeyInfo2.put("rewards", journeyRewards); // added each time for order
 
             try
             {
               Map<String, Long> journeyStatusCount = elasticsearchReaderClient.getJourneyStatusCount(journeyID);
+              // Fill with missing statuses
+//              for (SubscriberJourneyStatus states : SubscriberJourneyStatus.values())
+//                {
+//                  if (!journeyStatusCount.containsKey(states.getDisplay()))
+//                      {
+//                        journeyStatusCount.put(states.getDisplay(), 0L);
+//                      }
+//                }
+              
+              // TODO metrics
+              
               boolean addHeader = true;
               for (Entry<String, Long> status : journeyStatusCount.entrySet())
                 {
                   Map<String, Object> mapPerStatus = new LinkedHashMap<>();
-                  mapPerStatus.putAll(journeyInfo);
+                  mapPerStatus.putAll(journeyInfo1);
                   mapPerStatus.put("customerStatus", status.getKey());
                   mapPerStatus.put("qty_customers", status.getValue());
-                  journeyInfo.put("rewards", journeyRewards); // added each time for order
+                  mapPerStatus.putAll(journeyInfo2);
                   // We have data for this journey, write it to tmp file
                   String tmpFileName = file+"."+journeyID+".tmp";
                   FileOutputStream fos = null;
@@ -173,8 +189,8 @@ public class JourneyImpactReportDriver extends ReportDriver
                     String dataFile[] = csvFilename.split("[.]");
                     String dataFileName = dataFile[0] + "_" + journeyID;
                     String zipEntryName = new File(dataFileName + "." + dataFile[1]).getName();
-                    ZipEntry entry2 = new ZipEntry(zipEntryName);
-                    writer.putNextEntry(entry2);
+                    ZipEntry entry = new ZipEntry(zipEntryName);
+                    writer.putNextEntry(entry);
                     writer.setLevel(Deflater.BEST_SPEED);
                     tmpZipFiles.put(tmpFileName,writer); // to add it later to final ZIP file
                     dumpLineToCsv(mapPerStatus, writer, addHeader);
@@ -206,71 +222,71 @@ public class JourneyImpactReportDriver extends ReportDriver
             {
               log.info("Exception processing "+journey.getGUIManagedObjectDisplay(), e);
             }
+          }
+        }
 
-            // write final file from tmp
-            FileOutputStream fos = null;
-            ZipOutputStream writer = null;
+      // write final file from tmp
+      FileOutputStream fos = null;
+      ZipOutputStream writer = null;
+      try {
+        fos = new FileOutputStream(file);
+        writer = new ZipOutputStream(fos);
+        for (String tmpFile : tmpZipFiles.keySet()){
+          // open tmp file
+          FileInputStream fis = null;
+          ZipInputStream reader = null;
+          try {
+            fis = new FileInputStream(tmpFile);
+            reader = new ZipInputStream(fis);
+            writer.putNextEntry(reader.getNextEntry());
+            writer.setLevel(Deflater.BEST_SPEED);
+            int length;
+            byte[] bytes = new byte[5*1024*1024];//5M buffer
+            while ((length=reader.read(bytes))!=-1) writer.write(bytes,0,length); // copy to final file
+          } catch (IOException e) {
+            log.error("Error writing to " + file.getAbsolutePath() + " : " + e.getLocalizedMessage());
+          } finally {
             try {
-              fos = new FileOutputStream(file);
-              writer = new ZipOutputStream(fos);
-              for (String tmpFile : tmpZipFiles.keySet()){
-                // open tmp file
-                FileInputStream fis = null;
-                ZipInputStream reader = null;
-                try {
-                  fis = new FileInputStream(tmpFile);
-                  reader = new ZipInputStream(fis);
-                  writer.putNextEntry(reader.getNextEntry());
-                  writer.setLevel(Deflater.BEST_SPEED);
-                  int length;
-                  byte[] bytes = new byte[5*1024*1024];//5M buffer
-                  while ((length=reader.read(bytes))!=-1) writer.write(bytes,0,length); // copy to final file
-                } catch (IOException e) {
-                  log.error("Error writing to " + file.getAbsolutePath() + " : " + e.getLocalizedMessage());
-                } finally {
-                  try {
-                    if (reader != null) {
-                      reader.closeEntry();
-                      reader.close();
-                    }
-                  } catch (IOException e) {
-                    log.info("Exception generating "+file.getAbsolutePath(), e.getLocalizedMessage());
-                  } finally {
-                    try {
-                      if (fis != null) {
-                        fis.close();
-                      }
-                    } catch (IOException e) {
-                      log.info("Exception generating "+file.getAbsolutePath(), e.getLocalizedMessage());
-                    } finally {
-                      new File(tmpFile).delete();
-                    }
-                  }
-                } 
+              if (reader != null) {
+                reader.closeEntry();
+                reader.close();
               }
             } catch (IOException e) {
-              log.error("Error writing to " + file.getAbsolutePath() + " : " + e.getLocalizedMessage());
+              log.info("Exception generating "+file.getAbsolutePath(), e.getLocalizedMessage());
             } finally {
               try {
-                if (writer != null) {
-                  writer.flush();
-                  writer.closeEntry();
-                  writer.close();
+                if (fis != null) {
+                  fis.close();
                 }
               } catch (IOException e) {
                 log.info("Exception generating "+file.getAbsolutePath(), e.getLocalizedMessage());
               } finally {
-                try {
-                  if (fos != null) {
-                    fos.close();
-                  }
-                } catch (IOException e) {
-                  log.info("Exception generating "+file.getAbsolutePath(), e.getLocalizedMessage());
-                }
+                new File(tmpFile).delete();
               }
             }
+          } 
+        }
+      } catch (IOException e) {
+        log.error("Error writing to " + file.getAbsolutePath() + " : " + e.getLocalizedMessage());
+      } finally {
+        try {
+          if (writer != null) {
+            writer.flush();
+            writer.closeEntry();
+            writer.close();
+          }
+        } catch (IOException e) {
+          log.info("Exception generating "+file.getAbsolutePath(), e.getLocalizedMessage());
+        } finally {
+          try {
+            if (fos != null) {
+              fos.close();
+            }
+          } catch (IOException e) {
+            log.info("Exception generating "+file.getAbsolutePath(), e.getLocalizedMessage());
           }
         }
+      }
     } finally {
       try {
         if (elasticsearchReaderClient != null) {
