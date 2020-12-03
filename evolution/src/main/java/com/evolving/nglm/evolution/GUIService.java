@@ -299,6 +299,8 @@ public class GUIService
 
     if (guiManagedObjectsConsumer != null) guiManagedObjectsConsumer.close();
     if (kafkaProducer != null) kafkaProducer.close();
+    
+    NGLMRuntime.unregisterSystemTimeDependency(this); // remove this, otherwise references to the service exists, even after we stop it
   }
 
   /*****************************************
