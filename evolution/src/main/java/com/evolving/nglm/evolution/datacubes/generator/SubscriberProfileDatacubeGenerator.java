@@ -23,6 +23,7 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
+import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
 import com.evolving.nglm.evolution.datacubes.mapping.SegmentationDimensionsMap;
@@ -55,9 +56,9 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public SubscriberProfileDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, SegmentationDimensionService segmentationDimensionService)
+  public SubscriberProfileDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, SegmentationDimensionService segmentationDimensionService)
   {
-    super(datacubeName, elasticsearch);
+    super(datacubeName, elasticsearch, datacubeWriter);
 
     this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
     
@@ -106,6 +107,11 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
       {
         this.filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
       }
+    
+    if(this.filterFields.isEmpty()) {
+      log.warn("Found no dimension defined.");
+      return false;
+    }
     
     return true;
   }

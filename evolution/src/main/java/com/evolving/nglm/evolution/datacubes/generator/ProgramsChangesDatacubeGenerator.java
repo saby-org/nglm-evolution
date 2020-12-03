@@ -31,6 +31,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
@@ -56,9 +57,9 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public ProgramsChangesDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, LoyaltyProgramService loyaltyProgramService)
+  public ProgramsChangesDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, LoyaltyProgramService loyaltyProgramService)
   {
-    super(datacubeName, elasticsearch);
+    super(datacubeName, elasticsearch, datacubeWriter);
     
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
   }
@@ -155,24 +156,24 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
         || response.getFailedShards() > 0
         || response.getSkippedShards() > 0
         || response.status() != RestStatus.OK) {
-      log.error("Elasticsearch search response return with bad status in {} generation.", getDatacubeName());
+      log.error("Elasticsearch search response return with bad status.");
       return result;
     }
     
     if(response.getAggregations() == null) {
-      log.error("Main aggregation is missing in {} search response.", getDatacubeName());
+      log.error("Main aggregation is missing in search response.");
       return result;
     }
     
     ParsedNested parsedNested = response.getAggregations().get("DATACUBE");
     if(parsedNested == null || parsedNested.getAggregations() == null) {
-      log.error("Nested aggregation is missing in {} search response.", getDatacubeName());
+      log.error("Nested aggregation is missing in search response.");
       return result;
     }
     
     ParsedComposite parsedComposite = parsedNested.getAggregations().get("LOYALTY-COMPOSITE");
     if(parsedComposite == null || parsedComposite.getBuckets() == null) {
-      log.error("Composite buckets are missing in {} search response.", getDatacubeName());
+      log.error("Composite buckets are missing in search response.");
       return result;
     }
     
@@ -191,13 +192,13 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
       // Extract only the change of the day
       //
       if(bucket.getAggregations() == null) {
-        log.error("Aggregations in bucket is missing in {} search response.", getDatacubeName());
+        log.error("Aggregations in bucket is missing in search response.");
         continue;
       }
       
       ParsedRange parsedRange = bucket.getAggregations().get("DATE");
       if(parsedRange == null || parsedRange.getBuckets() == null) {
-        log.error("Composite buckets are missing in {} search response.", getDatacubeName());
+        log.error("Composite buckets are missing in search response.");
         continue;
       }
 

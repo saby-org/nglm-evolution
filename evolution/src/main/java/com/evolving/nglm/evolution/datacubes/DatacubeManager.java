@@ -76,6 +76,11 @@ public class DatacubeManager
   private static OfferObjectiveService offerObjectiveService;
   private static ElasticsearchClientAPI elasticsearchRestClient;
   private static SubscriberMessageTemplateService subscriberMessageTemplateService;
+
+  //
+  // Datacube writer
+  //
+  private static DatacubeWriter datacubeWriter;
   
   //
   // Maps
@@ -83,7 +88,7 @@ public class DatacubeManager
   private static JourneysMap journeysMap;
   
   //
-  // Datacube generators
+  // Datacube generators - Those classes are NOT thread-safe and must be used by only one thread.
   //
   private static ProgramsHistoryDatacubeGenerator loyaltyHistoryDatacube;
   private static ProgramsChangesDatacubeGenerator tierChangesDatacube;
@@ -157,6 +162,11 @@ public class DatacubeManager
       }
     
     //
+    // Datacube writer
+    //
+    datacubeWriter = new DatacubeWriter(elasticsearchRestClient);
+    
+    //
     // Maps 
     //
     journeysMap = new JourneysMap(journeyService);
@@ -164,14 +174,14 @@ public class DatacubeManager
     //
     // Datacube generators
     //
-    loyaltyHistoryDatacube = new ProgramsHistoryDatacubeGenerator("LoyaltyPrograms:History", elasticsearchRestClient, loyaltyProgramService);
-    tierChangesDatacube = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes", elasticsearchRestClient, loyaltyProgramService);
-    trafficDatacube = new JourneyTrafficDatacubeGenerator("Journey:Traffic", elasticsearchRestClient, segmentationDimensionService, journeyService);
-    rewardsDatacube = new JourneyRewardsDatacubeGenerator("Journey:Rewards", elasticsearchRestClient, segmentationDimensionService, journeyService);
-    odrDatacube = new ODRDatacubeGenerator("ODR", elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
-    bdrDatacube = new BDRDatacubeGenerator("BDR", elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
-    mdrDatacube = new MDRDatacubeGenerator("MDR", elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
-    subscriberProfileDatacube = new SubscriberProfileDatacubeGenerator("SubscriberProfile", elasticsearchRestClient, segmentationDimensionService);
+    loyaltyHistoryDatacube = new ProgramsHistoryDatacubeGenerator("LoyaltyPrograms:History", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
+    tierChangesDatacube = new ProgramsChangesDatacubeGenerator("LoyaltyPrograms:Changes", elasticsearchRestClient, datacubeWriter, loyaltyProgramService);
+    trafficDatacube = new JourneyTrafficDatacubeGenerator("Journey:Traffic", elasticsearchRestClient, datacubeWriter, segmentationDimensionService, journeyService);
+    rewardsDatacube = new JourneyRewardsDatacubeGenerator("Journey:Rewards", elasticsearchRestClient, datacubeWriter, segmentationDimensionService, journeyService);
+    odrDatacube = new ODRDatacubeGenerator("ODR", elasticsearchRestClient, datacubeWriter, offerService, salesChannelService, paymentMeanService, offerObjectiveService, loyaltyProgramService, journeyService);
+    bdrDatacube = new BDRDatacubeGenerator("BDR", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService);
+    mdrDatacube = new MDRDatacubeGenerator("MDR", elasticsearchRestClient, datacubeWriter, offerService, offerObjectiveService, loyaltyProgramService, journeyService, subscriberMessageTemplateService);
+    subscriberProfileDatacube = new SubscriberProfileDatacubeGenerator("SubscriberProfile", elasticsearchRestClient, datacubeWriter, segmentationDimensionService);
   }
 
   /*****************************************
@@ -186,23 +196,23 @@ public class DatacubeManager
    * Those data are not definitive, the day is not ended yet, metrics can still change.
    */
   private static long scheduleLoyaltyProgramsPreview(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "LoyaltyPrograms-preview";
+    String jobName = "LoyaltyPrograms-preview";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getBaseTimeZone(),
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
         loyaltyHistoryDatacube.preview();
         tierChangesDatacube.preview();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -217,23 +227,23 @@ public class DatacubeManager
    * This will generated a datacube every day from the subscriberprofile snapshot index of the previous day.
    */
   private static long scheduleLoyaltyProgramsDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "LoyaltyPrograms-definitive";
+    String jobName = "LoyaltyPrograms-definitive";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getBaseTimeZone(),
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
         loyaltyHistoryDatacube.definitive();
         tierChangesDatacube.definitive();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -249,22 +259,22 @@ public class DatacubeManager
    * Those data are not definitive, the day is not ended yet, metrics can still change.
    */
   private static long scheduleSubscriberProfilePreview(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "SubscriberProfile-preview";
+    String jobName = "SubscriberProfile-preview";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getBaseTimeZone(),
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
         subscriberProfileDatacube.preview();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -279,22 +289,22 @@ public class DatacubeManager
    * This will generated a datacube every day from the subscriberprofile snapshot index of the previous day.
    */
   private static long scheduleSubscriberProfileDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "SubscriberProfile-definitive";
+    String jobName = "SubscriberProfile-definitive";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getBaseTimeZone(),
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
         subscriberProfileDatacube.definitive();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -310,22 +320,22 @@ public class DatacubeManager
    * Those data are not definitive, the day is not ended yet, new ODR can still be added.
    */
   private static long scheduleODRPreview(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "ODR-preview";
+    String jobName = "ODR-preview";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getBaseTimeZone(),
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
         odrDatacube.preview();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -340,22 +350,22 @@ public class DatacubeManager
    * This will generated a datacube every day from the detailedrecords_offers-YYYY-MM-dd index of the previous day.
    */
   private static long scheduleODRDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "ODR-definitive";
+    String jobName = "ODR-definitive";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getBaseTimeZone(),
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
         odrDatacube.definitive();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -371,22 +381,22 @@ public class DatacubeManager
    * Those data are not definitive, the day is not ended yet, new BDR can still be added.
    */
   private static long scheduleBDRPreview(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "BDR-preview";
+    String jobName = "BDR-preview";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getBaseTimeZone(),
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
         bdrDatacube.preview();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -401,22 +411,22 @@ public class DatacubeManager
    * This will generated a datacube every day from the detailedrecords_bonuses-YYYY-MM-dd index of the previous day.
    */
   private static long scheduleBDRDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "BDR-definitive";
+    String jobName = "BDR-definitive";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getBaseTimeZone(),
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
         bdrDatacube.definitive();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -432,22 +442,22 @@ public class DatacubeManager
    * Those data are not definitive, the day is not ended yet, new MDR can still be added.
    */
   private static long scheduleMDRPreview(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "MDR-preview";
+    String jobName = "MDR-preview";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getBaseTimeZone(),
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
         mdrDatacube.preview();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -462,22 +472,22 @@ public class DatacubeManager
    * This will generated a datacube every day from the detailedrecords_messages-YYYY-MM-dd index of the previous day.
    */
   private static long scheduleMDRDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "MDR-definitive";
+    String jobName = "MDR-definitive";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getBaseTimeZone(),
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart())
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart())
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
         mdrDatacube.definitive();
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 
@@ -494,16 +504,16 @@ public class DatacubeManager
    * /!\ Do not configure a cron period lower than 1 hour (require code changes)
    */
   private static long scheduleJourneyDatacubeDefinitive(JobScheduler scheduler, long nextAvailableID) {
-    String datacubeName = "Journeys";
+    String jobName = "Journeys";
     
-    ScheduledJob job = new ScheduledJob(nextAvailableID,
-        datacubeName, 
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).getCronEntry(), 
+    AsyncScheduledJob job = new AsyncScheduledJob(nextAvailableID,
+        jobName, 
+        Deployment.getDatacubeJobsScheduling().get(jobName).getCronEntry(), 
         Deployment.getBaseTimeZone(),
-        Deployment.getDatacubeJobsScheduling().get(datacubeName).isScheduledAtRestart()) 
+        Deployment.getDatacubeJobsScheduling().get(jobName).isScheduledAtRestart()) 
     {
       @Override
-      protected void run()
+      protected void asyncRun()
       {
         // We need to push all journey datacubes at the same timestamp.
         // For the moment we truncate at the HOUR. 
@@ -521,7 +531,7 @@ public class DatacubeManager
       }
     };
     
-    if(Deployment.getDatacubeJobsScheduling().get(datacubeName).isEnabled() && job.isProperlyConfigured()) {
+    if(Deployment.getDatacubeJobsScheduling().get(jobName).isEnabled() && job.isProperlyConfigured()) {
       scheduler.schedule(job);
       return nextAvailableID + 1;
     } 

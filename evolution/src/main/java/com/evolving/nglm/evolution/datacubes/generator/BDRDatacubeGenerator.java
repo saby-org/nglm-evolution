@@ -27,6 +27,7 @@ import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.PaymentMeanService;
 import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.datacubes.DatacubeUtils;
+import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.DeliverablesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
@@ -52,8 +53,6 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
   private List<AggregationBuilder> metricAggregations;
   private OffersMap offersMap;
   private ModulesMap modulesMap;
-  private SalesChannelsMap salesChannelsMap;
-  private PaymentMeansMap paymentMeansMap;
   private LoyaltyProgramsMap loyaltyProgramsMap;
   private DeliverablesMap deliverablesMap;
   private JourneysMap journeysMap;
@@ -66,14 +65,12 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public BDRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService)  
+  public BDRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, OfferService offerService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService)  
   {
-    super(datacubeName, elasticsearch);
+    super(datacubeName, elasticsearch, datacubeWriter);
 
     this.offersMap = new OffersMap(offerService);
     this.modulesMap = new ModulesMap();
-    this.salesChannelsMap = new SalesChannelsMap(salesChannelService);
-    this.paymentMeansMap = new PaymentMeansMap(paymentMeanService);
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
     this.deliverablesMap = new DeliverablesMap();
     this.journeysMap = new JourneysMap(journeyService);
@@ -97,8 +94,7 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
     //
     this.metricAggregations = new ArrayList<AggregationBuilder>();
     
-    AggregationBuilder totalAmount = AggregationBuilders.sum(METRIC_TOTAL_QUANTITY)
-            .script(new Script(ScriptType.INLINE, "painless", "doc['deliverableQty'].value", Collections.emptyMap()));
+    AggregationBuilder totalAmount = AggregationBuilders.sum(METRIC_TOTAL_QUANTITY).field("deliverableQty");
     metricAggregations.add(totalAmount);
   }
 
@@ -127,8 +123,6 @@ public class BDRDatacubeGenerator extends SimpleDatacubeGenerator
     
     offersMap.update();
     modulesMap.updateFromElasticsearch(elasticsearch);
-    salesChannelsMap.update();
-    paymentMeansMap.update();
     loyaltyProgramsMap.update();
     deliverablesMap.updateFromElasticsearch(elasticsearch);
     journeysMap.update();

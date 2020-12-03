@@ -10,8 +10,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
@@ -34,15 +37,37 @@ public abstract class DatacubeGenerator
   * Static
   *
   *****************************************/
-  protected static final Logger log = LoggerFactory.getLogger(DatacubeGenerator.class);
+  private static final Logger logger = LoggerFactory.getLogger(DatacubeGenerator.class);
   
   protected static final String UNDEFINED_BUCKET_VALUE = "undefined";
+  
+  /*****************************************
+  *
+  * Logger
+  *
+  *****************************************/
+  public class DatacubeLogger 
+  {
+    DatacubeGenerator dg;
+    
+    public DatacubeLogger(DatacubeGenerator dg) {
+      this.dg = dg;
+    }
+    
+    public void error(String s) { logger.error("["+dg.getDatacubeName()+"]: " + s); }
+    public void warn(String s) { logger.warn("["+dg.getDatacubeName()+"]: " + s); }
+    public void info(String s) { logger.info("["+dg.getDatacubeName()+"]: " + s); }
+    public void debug(String s) { logger.debug("["+dg.getDatacubeName()+"]: " + s); }
+    public void trace(String s) { logger.trace("["+dg.getDatacubeName()+"]: " + s); }
+  }
+  protected DatacubeLogger log;
   
   /*****************************************
   *
   * Properties
   *
   *****************************************/
+  protected DatacubeWriter datacubeWriter;
   protected ElasticsearchClientAPI elasticsearch;
   protected String datacubeName;
   protected ByteBuffer tmpBuffer = null;
@@ -52,10 +77,13 @@ public abstract class DatacubeGenerator
   * Constructor
   *
   *****************************************/
-  public DatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch) 
+  public DatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter) 
   {
     this.datacubeName = datacubeName;
     this.elasticsearch = elasticsearch;
+    this.datacubeWriter = datacubeWriter;
+    
+    this.log = new DatacubeLogger(this);
   }
   
   /*****************************************
@@ -221,34 +249,13 @@ public abstract class DatacubeGenerator
   
   /*****************************************
   *
-  *  executeESSearchRequest
-  *
-  *****************************************/
-  private SearchResponse executeESSearchRequest(SearchRequest request) throws ElasticsearchException, IOException 
-  {
-    try 
-      {
-        SearchResponse searchResponse = this.elasticsearch.search(request, RequestOptions.DEFAULT);
-        return searchResponse;
-      } 
-    catch(ElasticsearchException e)
-      {
-        if (e.status() == RestStatus.NOT_FOUND) {
-          log.warn("[{}]: elasticsearch index {} does not exist", getDatacubeName(), request.indices());
-          return null;
-        } else {
-          throw e;
-        }
-      }
-  }
-  
-  /*****************************************
-  *
   *  pushDatacubeRows
   *
   *****************************************/
   private void pushDatacubeRows(List<Map<String,Object>> datacubeRows) throws ElasticsearchException, IOException 
   {
+    List<UpdateRequest> list = new LinkedList<UpdateRequest>();
+    
     for(Map<String,Object> datacubeRow: datacubeRows) {
       String documentID = (String) datacubeRow.remove("_id");
       
@@ -257,8 +264,75 @@ public abstract class DatacubeGenerator
       request.docAsUpsert(true);
       request.retryOnConflict(4);
       
-      this.elasticsearch.update(request, RequestOptions.DEFAULT);
+      list.add(request);
     }
+    
+    datacubeWriter.getDatacubeBulkProcessor().add(list);
+  }
+
+  /*****************************************
+  *
+  * Generate datacube
+  *
+  *****************************************/
+  private void generate(String timestamp, long period) 
+  {  
+    try 
+      {
+        //
+        // Pre-generation phase (for retrieving some mapping infos)
+        //
+        log.debug("Running pre-generation phase.");
+        boolean success = runPreGenerationPhase();
+        if(!success) {
+          log.info("Stopped in pre-generation phase.");
+          return;
+        }
+        
+        //
+        // Generate Elasticsearch request
+        //
+        SearchRequest request = getElasticsearchRequest();
+        log.info("Executing Elasticsearch request: "+request+"");
+        
+        //
+        // Send Elasticsearch request
+        //
+        SearchResponse response;
+        try 
+          {
+            response = this.elasticsearch.search(request, RequestOptions.DEFAULT);
+          } 
+        catch(ElasticsearchException e)
+          {
+            if (e.status() == RestStatus.NOT_FOUND) {
+              log.warn("Elasticsearch index ["+request.indices()[0] +"] does not exist. Datacube generation stop here.");
+              return;
+            } 
+            else {
+              throw e;
+            }
+          }
+        log.debug("Retrieving Elasticsearch response: "+response+"");
+        
+        //
+        // Extract datacube rows from JSON response
+        //
+        log.debug("Extracting data from ES response.");
+        List<Map<String,Object>> datacubeRows = extractDatacubeRows(response, timestamp, period);
+        
+        //
+        // Push datacube rows in Elasticsearch
+        //
+        log.info("Data were successfully aggregated in "+datacubeRows.size()+" row(s). They will be pushed in ["+this.getDatacubeESIndex()+"] index later.");
+        pushDatacubeRows(datacubeRows);
+      } 
+    catch(IOException|RuntimeException e)
+      {
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error("Generation failed: "+stackTraceWriter.toString()+"");
+      }
   }
 
   /*****************************************
@@ -267,52 +341,20 @@ public abstract class DatacubeGenerator
   *
   *****************************************/
   protected void run(String timestamp, long period) 
-  {  
-    try 
-      {
-        //
-        // Pre-generation phase (for retrieving some mapping infos)
-        //
-        log.debug("[{}]: running pre-generation phase.", getDatacubeName());
-        boolean success = runPreGenerationPhase();
-        if(!success) {
-          log.info("[{}]: stopped in pre-generation phase.", getDatacubeName());
-          return;
-        }
-        
-        //
-        // Generate Elasticsearch request
-        //
-        SearchRequest request = getElasticsearchRequest();
-        log.info("[{}]: executing ES request: {}", getDatacubeName(), request);
-        
-        //
-        // Execute Elasticsearch request
-        //
-        SearchResponse response = executeESSearchRequest(request);
-        if(response == null) {
-          log.warn("[{}]: cannot retrieve any ES response, datacube generation stop here.", getDatacubeName());
-          return;
-        }
-        log.debug("[{}]: retrieving ES response: {}", getDatacubeName(), response);
-        
-        //
-        // Extract datacube rows from JSON response
-        //
-        log.debug("[{}]: extracting data from ES response.", getDatacubeName());
-        List<Map<String,Object>> datacubeRows = extractDatacubeRows(response, timestamp, period);
-        
-        //
-        // Push datacube rows in Elasticsearch
-        //
-        log.info("[{}]: pushing {} datacube row(s) in ES index [{}].", getDatacubeName(), datacubeRows.size(), this.getDatacubeESIndex());
-        pushDatacubeRows(datacubeRows);
-      } 
-    catch(IOException|RuntimeException e)
-      {
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.error("[{}]: generation failed: {}", getDatacubeName(), stackTraceWriter.toString());
-      }
+  {
+    // 
+    // Prevent writing during the datacube generation
+    //
+    datacubeWriter.pause();
+    
+    //
+    // Generate aggregated data
+    //
+    generate(timestamp, period);
+    
+    //
+    // Restart writing if allowed
+    //
+    datacubeWriter.restart();
   }
 }

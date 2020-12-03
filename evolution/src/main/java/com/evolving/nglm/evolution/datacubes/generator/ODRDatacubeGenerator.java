@@ -28,6 +28,7 @@ import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.PaymentMeanService;
 import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.datacubes.DatacubeUtils;
+import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.DeliverablesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
@@ -69,9 +70,9 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public ODRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService)  
+  public ODRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService)  
   {
-    super(datacubeName, elasticsearch);
+    super(datacubeName, elasticsearch, datacubeWriter);
 
     this.offersMap = new OffersMap(offerService);
     this.modulesMap = new ModulesMap();

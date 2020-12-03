@@ -15,6 +15,7 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.JourneyStatisticESSinkConnector;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
+import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SegmentationDimensionsMap;
@@ -43,9 +44,9 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public JourneyTrafficDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService)  
+  public JourneyTrafficDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService)  
   {
-    super(datacubeName, elasticsearch);
+    super(datacubeName, elasticsearch, datacubeWriter);
 
     this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
     this.journeysMap = new JourneysMap(journeyService);

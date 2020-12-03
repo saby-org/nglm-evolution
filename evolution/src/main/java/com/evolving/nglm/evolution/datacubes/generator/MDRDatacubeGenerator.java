@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution.datacubes.generator;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -24,13 +25,13 @@ import com.evolving.nglm.evolution.PaymentMeanService;
 import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.SubscriberMessageTemplateService;
 import com.evolving.nglm.evolution.datacubes.DatacubeUtils;
+import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.DeliverablesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.ModulesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.OffersMap;
-import com.evolving.nglm.evolution.datacubes.mapping.PaymentMeansMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SalesChannelsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SubscriberMessageTemplatesMap;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
@@ -39,7 +40,6 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
 {
   private static final String DATACUBE_ES_INDEX = "datacube_messages";
   private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_messages-";
-  private static final String METRIC_TOTAL_AMOUNT = "totalAmount";
 
   /*****************************************
   *
@@ -47,11 +47,8 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   *
   *****************************************/
   private List<String> filterFields;
-  private List<AggregationBuilder> metricAggregations;
   private OffersMap offersMap;
   private ModulesMap modulesMap;
-  private SalesChannelsMap salesChannelsMap;
-  private PaymentMeansMap paymentMeansMap;
   private LoyaltyProgramsMap loyaltyProgramsMap;
   private DeliverablesMap deliverablesMap;
   private JourneysMap journeysMap;
@@ -65,14 +62,12 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public MDRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, OfferService offerService, SalesChannelService salesChannelService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService)  
+  public MDRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, OfferService offerService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService)  
   {
-    super(datacubeName, elasticsearch);
+    super(datacubeName, elasticsearch, datacubeWriter);
 
     this.offersMap = new OffersMap(offerService);
     this.modulesMap = new ModulesMap();
-    this.salesChannelsMap = new SalesChannelsMap(salesChannelService);
-    this.paymentMeansMap = new PaymentMeansMap(paymentMeanService);
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
     this.deliverablesMap = new DeliverablesMap();
     this.journeysMap = new JourneysMap(journeyService);
@@ -89,11 +84,6 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.filterFields.add("templateID");
     this.filterFields.add("returnCode");
     this.filterFields.add("channelID");
-    
-    //
-    // Data Aggregations
-    //
-    this.metricAggregations = new ArrayList<AggregationBuilder>();
   }
 
   /*****************************************
@@ -121,8 +111,6 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
     
     offersMap.update();
     modulesMap.updateFromElasticsearch(elasticsearch);
-    salesChannelsMap.update();
-    paymentMeansMap.update();
     loyaltyProgramsMap.update();
     deliverablesMap.updateFromElasticsearch(elasticsearch);
     journeysMap.update();
@@ -153,26 +141,8 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Metrics settings
   *
   *****************************************/
-  @Override protected List<AggregationBuilder> getMetricAggregations() { return this.metricAggregations; }
-    
-  @Override
-  protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException
-  {
-    HashMap<String, Object> metrics = new HashMap<String,Object>();
-    if (compositeBucket.getAggregations() == null) {
-      log.error("Unable to extract metrics, aggregation is missing.");
-      return metrics;
-    }
-    
-    ParsedSum dataTotalAmountBucket = compositeBucket.getAggregations().get(METRIC_TOTAL_AMOUNT);
-    if (dataTotalAmountBucket == null) {
-      log.error("Unable to extract totalAmount metric, aggregation is missing.");
-      return metrics;
-    }
-    metrics.put(METRIC_TOTAL_AMOUNT, (int) dataTotalAmountBucket.getValue());
-    
-    return metrics;
-  }
+  @Override protected List<AggregationBuilder> getMetricAggregations() { return Collections.emptyList(); }
+  @Override protected Map<String, Object> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException { return Collections.emptyMap(); }
   
   /*****************************************
   *

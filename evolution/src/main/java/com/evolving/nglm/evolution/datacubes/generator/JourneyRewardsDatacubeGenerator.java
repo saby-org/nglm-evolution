@@ -17,6 +17,7 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.JourneyStatisticESSinkConnector;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
+import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
 import com.evolving.nglm.evolution.datacubes.SimpleDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneyRewardsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
@@ -46,9 +47,9 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public JourneyRewardsDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService)
+  public JourneyRewardsDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService)
   {
-    super(datacubeName, elasticsearch);
+    super(datacubeName, elasticsearch, datacubeWriter);
 
     this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
     this.journeysMap = new JourneysMap(journeyService);
@@ -95,7 +96,7 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
     this.journeyRewardsList.update(this.journeyID, this.getDataESIndex());
     
     if(this.journeyRewardsList.getRewards().isEmpty()) {
-      log.info("No rewards found in " + this.journeyID + " journey statistics.");
+      log.info("No rewards found in JourneyID=" + this.journeyID + " journey statistics.");
       // It is useless to generate a rewards datacube if there is not any rewards.
       return false;
     }
