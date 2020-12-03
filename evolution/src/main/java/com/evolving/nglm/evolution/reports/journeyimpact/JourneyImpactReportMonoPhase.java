@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,18 +89,6 @@ public class JourneyImpactReportMonoPhase implements ReportCsvFactory
                   elasticsearchReaderClient = reportMonoPhase.getESClient(); // reportMonoPhase cannot be null here
                 }
               Map<String, Long> journeyStatusCount = elasticsearchReaderClient.getJourneyStatusCount(journeyID);
-              StringBuilder sbStatus = new StringBuilder();
-
-              for (SubscriberJourneyStatus states : SubscriberJourneyStatus.values())
-                {
-                  Long statusCount = journeyStatusCount.get(states.getDisplay());
-                  sbStatus.append(states.getDisplay()).append("=").append((statusCount==null) ? "0" : statusCount.toString()).append(",");
-                }
-
-              if (sbStatus.length() > 0)
-                {
-                  journeyStatus = sbStatus.toString().substring(0, sbStatus.toString().length() - 1);
-                }
 
               StringBuilder sbRewards = new StringBuilder();
               Map<String, Long> distributedRewards = elasticsearchReaderClient.getDistributedRewards(journeyID);
@@ -122,28 +111,37 @@ public class JourneyImpactReportMonoPhase implements ReportCsvFactory
                 {
                   journeyAbTesting = abTesting.toString().substring(0, abTesting.toString().length() - 1);
                 }
+              journeyInfo.put("abTesting", journeyAbTesting);
+              journeyInfo.put("rewards", journeyRewards);
+              journeyInfo.put("dateTime", ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
+              journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
+              journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
+
+              // TODO metrics need to be aggregated
+              for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
+                {
+                  journeyInfo.put(journeyMetricDeclaration.getESFieldPrior(), journeyMetric.get(journeyMetricDeclaration.getESFieldPrior()));
+                  journeyInfo.put(journeyMetricDeclaration.getESFieldDuring(), journeyMetric.get(journeyMetricDeclaration.getESFieldDuring()));
+                  journeyInfo.put(journeyMetricDeclaration.getESFieldPost(), journeyMetric.get(journeyMetricDeclaration.getESFieldPost()));
+                }
+
+              List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
+              for (Entry<String, Long> status : journeyStatusCount.entrySet())
+                {
+                  Map<String, Object> mapPerStatus = new LinkedHashMap<>();
+                  // TODO might need to revisit the order, based on the order expected in the report
+                  mapPerStatus.putAll(journeyInfo);
+                  mapPerStatus.put("customerStatus", status.getKey());
+                  mapPerStatus.put("qty_customers", status.getValue());
+                  elements.add(mapPerStatus);    
+                }
+
+              result.put(journey.getJourneyID(), elements);
             }
             catch (ElasticsearchClientException e)
               {
                 log.info("Exception processing "+journey.getGUIManagedObjectDisplay(), e);
               }
-            journeyInfo.put("abTesting", journeyAbTesting);
-            journeyInfo.put("customerStatuses", journeyStatus);
-            journeyInfo.put("rewards", journeyRewards);
-            journeyInfo.put("dateTime", ReportsCommonCode.getDateString(SystemTime.getCurrentTime()));
-            journeyInfo.put("startDate", ReportsCommonCode.getDateString(journey.getEffectiveStartDate()));
-            journeyInfo.put("endDate", ReportsCommonCode.getDateString(journey.getEffectiveEndDate()));
-            
-            for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricDeclarations().values())
-              {
-                journeyInfo.put(journeyMetricDeclaration.getESFieldPrior(), journeyMetric.get(journeyMetricDeclaration.getESFieldPrior()));
-                journeyInfo.put(journeyMetricDeclaration.getESFieldDuring(), journeyMetric.get(journeyMetricDeclaration.getESFieldDuring()));
-                journeyInfo.put(journeyMetricDeclaration.getESFieldPost(), journeyMetric.get(journeyMetricDeclaration.getESFieldPost()));
-              }
-            
-            List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
-            elements.add(journeyInfo);
-            result.put(journey.getJourneyID(), elements);
           }
       }
     return result;
