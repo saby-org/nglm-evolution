@@ -43,6 +43,7 @@ public class DeliveryManagerDeclaration
   private Topic[] responseTopics;
   private Topic routingTopic;
   private int deliveryRatePerMinute;
+  private int maxBufferedRequests;
   private int retries;
   private int correlatorUpdateTimeoutSeconds;
   private int correlatorCleanerFrequencySeconds;
@@ -60,6 +61,7 @@ public class DeliveryManagerDeclaration
   public String getDeliveryType() { return deliveryType; }
   public String getRequestClassName() { return requestClassName; }
   public int getDeliveryRatePerMinute() { return deliveryRatePerMinute; }
+  public int getMaxBufferedRequests() { return maxBufferedRequests; }
   public int getRetries() { return retries; }
   public int getCorrelatorUpdateTimeoutSeconds() { return correlatorUpdateTimeoutSeconds; }
   public int getCorrelatorCleanerFrequencyMilliSeconds() { return correlatorCleanerFrequencySeconds * 1000; }
@@ -174,6 +176,7 @@ public class DeliveryManagerDeclaration
     }
 
     this.deliveryRatePerMinute = JSONUtilities.decodeInteger(jsonRoot, "deliveryRatePerMinute", Integer.MAX_VALUE);
+    this.maxBufferedRequests = JSONUtilities.decodeInteger(jsonRoot, "maxBufferedRequests", -1);//by default it is the worker thread number, there only for high throughput needed and duplicating requests in case of issue is not critical
     this.retries = JSONUtilities.decodeInteger(jsonRoot, "retries", 0);
     this.correlatorUpdateTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "correlatorUpdateTimeoutSeconds", 86400);
     this.correlatorCleanerFrequencySeconds = JSONUtilities.decodeInteger(jsonRoot, "correlatorCleanerFrequencySeconds", 3600);

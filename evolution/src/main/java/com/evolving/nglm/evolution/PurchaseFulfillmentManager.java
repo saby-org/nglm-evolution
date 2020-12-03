@@ -128,9 +128,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   //
   //  variables
   //
-  
-  private int threadNumber = 5;   //TODO : make this configurable
-  
+
+  private static final int threadNumber = 1;   //TODO : make this configurable (would even be better if it is used)
+
   /*****************************************
   *
   *  data
@@ -167,7 +167,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //  superclass
     //
     
-    super("deliverymanager-purchasefulfillment", deliveryManagerKey, Deployment.getBrokerServers(), PurchaseFulfillmentRequest.serde(), Deployment.getDeliveryManagers().get(PURCHASEFULFILLMENT_DELIVERY_TYPE));
+    super("deliverymanager-purchasefulfillment", deliveryManagerKey, Deployment.getBrokerServers(), PurchaseFulfillmentRequest.serde(), Deployment.getDeliveryManagers().get(PURCHASEFULFILLMENT_DELIVERY_TYPE),threadNumber);
 
     //
     // variables
@@ -959,7 +959,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   public void run()
   {
     mainLoop://labeled loop to "continue" from nested ones
-    while (isProcessing())
+    while (true)
       {
         /*****************************************
         *

@@ -40,7 +40,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
   *
   *****************************************/
 
-  private int threadNumber = 5;   //TODO : make this configurable
+  private static final int threadNumber = 1;   //TODO : make this configurable (not even used)
   private SMSNotificationInterface smsNotification;
   private ArrayList<Thread> threads = new ArrayList<Thread>();
   private static String applicationID = "deliverymanager-notificationmanagersms";
@@ -71,7 +71,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     //  superclass
     //
     
-    super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), SMSNotificationManagerRequest.serde(), Deployment.getDeliveryManagers().get(pluginName));
+    super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), SMSNotificationManagerRequest.serde(), Deployment.getDeliveryManagers().get(pluginName), threadNumber);
     
     //
     //  plugin class
@@ -608,7 +608,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
 
   public void run()
   {
-    while (isProcessing())
+    while (true)
       {
         /*****************************************
         *

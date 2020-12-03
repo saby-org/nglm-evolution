@@ -14,6 +14,7 @@ import java.util.Date;
 import com.evolving.nglm.core.*;
 import com.evolving.nglm.evolution.retention.Cleanable;
 import com.evolving.nglm.evolution.retention.RetentionService;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.*;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -197,7 +198,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("delivery_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),10));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),11));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("deliveryRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequestSource", Schema.STRING_SCHEMA);
@@ -213,7 +214,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     schemaBuilder.field("eventID", Schema.STRING_SCHEMA);
     schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("deliveryPartition", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("retries", Schema.INT32_SCHEMA);
     schemaBuilder.field("timeout", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("correlator", Schema.OPTIONAL_STRING_SCHEMA);
@@ -277,7 +277,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   private String eventID;
   private String moduleID;
   private String featureID;
-  private Integer deliveryPartition; // internal to DeliveryManager
   private int retries;
   private Date timeout;
   private String correlator;
@@ -290,6 +289,9 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   private Date rescheduledDate;
   private MetricHistory notificationHistory;
   private Map<String,String> subscriberFields;
+
+  // internal, not stored
+  private TopicPartition topicPartition;
 
   /*****************************************
   *
@@ -308,7 +310,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public String getEventID() { return eventID; }
   public String getModuleID() { return moduleID; }
   public String getFeatureID() { return featureID; }
-  public Integer getDeliveryPartition() { return deliveryPartition; }
   public int getRetries() { return retries; }
   public Date getTimeout() { return timeout; }
   public String getCorrelator() { return correlator; }
@@ -324,6 +325,8 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public Date getRescheduledDate() { return rescheduledDate; }
   public MetricHistory getNotificationHistory(){ return notificationHistory; }
   public Map<String,String> getSubscriberFields(){return subscriberFields;}
+
+  public TopicPartition getTopicPartition(){return topicPartition;}
   //derived
   public Module getModule(){return Module.fromExternalRepresentation(getModuleID());}
 
@@ -336,7 +339,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public void setTargetedSubscriberID(String targetedSubscriberID) { this.targetedSubscriberID = targetedSubscriberID; };
   public void setControl(boolean control) { this.control = control; }
   public void setSubscriberID(String subscriberID) { this.subscriberID = subscriberID; }
-  public void setDeliveryPartition(int deliveryPartition) { this.deliveryPartition = deliveryPartition; }
   public void setRetries(int retries) { this.retries = retries; }
   public void setTimeout(Date timeout) { this.timeout = timeout; }
   public void setCorrelator(String correlator) { this.correlator = correlator; }
@@ -349,6 +351,8 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public void setRescheduledDate(Date rescheduledDate) { this.rescheduledDate = rescheduledDate; }
   public void setNotificationHistory(MetricHistory notificationHistory){ this.notificationHistory = notificationHistory; }
   public void setSubscriberFields(Map<String,String> subscriberFields){this.subscriberFields=subscriberFields;}
+
+  public void setTopicPartition(TopicPartition topicPartition){this.topicPartition=topicPartition;}
 
   /*****************************************
   *
@@ -448,7 +452,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.eventID = this.deliveryRequestID;
     this.moduleID = null;
     this.featureID = null;
-    this.deliveryPartition = null;
     this.retries = 0;
     this.timeout = null;
     this.correlator = null;
@@ -461,6 +464,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.rescheduledDate = null;
     this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
     this.subscriberFields = buildSubscriberFields(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader());
+    this.topicPartition = new TopicPartition("unknown",-1);
   }
   
   /*******************************************
@@ -488,7 +492,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.eventID = this.deliveryRequestID;
     this.moduleID = null;
     this.featureID = null;
-    this.deliveryPartition = null;
     this.retries = 0;
     this.timeout = null;
     this.correlator = null;
@@ -501,6 +504,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.rescheduledDate = null;
     this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
     this.subscriberFields = buildSubscriberFields(subscriberProfile,subscriberGroupEpochReader);
+    this.topicPartition = new TopicPartition("unknown",-1);
   }
 
   /*****************************************
@@ -523,7 +527,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.eventID = deliveryRequest.getEventID();
     this.moduleID = deliveryRequest.getModuleID();
     this.featureID = deliveryRequest.getFeatureID();
-    this.deliveryPartition = deliveryRequest.getDeliveryPartition();
     this.retries = deliveryRequest.getRetries();
     this.timeout = deliveryRequest.getTimeout();
     this.correlator = deliveryRequest.getCorrelator();
@@ -537,6 +540,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.notificationHistory = deliveryRequest.getNotificationHistory();
     this.subscriberFields = new LinkedHashMap<>();
     if(deliveryRequest.getSubscriberFields()!=null) subscriberFields.putAll(deliveryRequest.getSubscriberFields());
+    this.topicPartition = new TopicPartition(deliveryRequest.getTopicPartition().topic(),deliveryRequest.getTopicPartition().partition());
   }
 
   /*****************************************
@@ -563,7 +567,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.eventID = JSONUtilities.decodeString(jsonRoot, "eventID", true);
     this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", true);
     this.featureID = JSONUtilities.decodeString(jsonRoot, "featureID", true);
-    this.deliveryPartition = null;
     this.retries = 0;
     this.timeout = null;
     this.correlator = null;
@@ -576,6 +579,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.rescheduledDate = JSONUtilities.decodeDate(jsonRoot, "rescheduledDate", false);
     this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
     this.subscriberFields = buildSubscriberFields(subscriberProfile,subscriberGroupEpochReader);
+    this.topicPartition = new TopicPartition("unknown",-1);
   }
 
   /*****************************************
@@ -604,7 +608,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.eventID = JSONUtilities.decodeString(jsonRoot, "eventID", true);
     this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", true);
     this.featureID = JSONUtilities.decodeString(jsonRoot, "featureID", true);
-    this.deliveryPartition = null;
     this.retries = 0;
     this.timeout = null;
     this.correlator = null;
@@ -618,6 +621,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
     this.subscriberFields = new LinkedHashMap<>();
     if(originatingDeliveryRequest.getSubscriberFields()!=null) this.subscriberFields.putAll(originatingDeliveryRequest.getSubscriberFields());
+    this.topicPartition = new TopicPartition("unknown",-1);
   }
 
   /*****************************************
@@ -637,7 +641,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.eventID = null;
     this.moduleID = null;
     this.featureID = null;
-    this.deliveryPartition = null;
     this.retries = 0;
     this.timeout = null;
     this.correlator = null;
@@ -650,6 +653,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.rescheduledDate = null;
     this.notificationHistory = null;
     this.subscriberFields = null;
+    this.topicPartition = null;
   }
 
   /*****************************************
@@ -672,7 +676,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     struct.put("eventID", deliveryRequest.getEventID());
     struct.put("moduleID", deliveryRequest.getModuleID());
     struct.put("featureID", deliveryRequest.getFeatureID());
-    struct.put("deliveryPartition", deliveryRequest.getDeliveryPartition()); 
     struct.put("retries", deliveryRequest.getRetries()); 
     struct.put("timeout", deliveryRequest.getTimeout() != null ? deliveryRequest.getTimeout().getTime() : null); 
     struct.put("correlator", deliveryRequest.getCorrelator()); 
@@ -720,7 +723,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     String eventID = valueStruct.getString("eventID");
     String moduleID = valueStruct.getString("moduleID");
     String featureID = valueStruct.getString("featureID");
-    Integer deliveryPartition = valueStruct.getInt32("deliveryPartition");
     int retries = valueStruct.getInt32("retries");
     Date timeout = valueStruct.get("timeout") != null ? new Date(valueStruct.getInt64("timeout")) : null;
     String correlator = valueStruct.getString("correlator");
@@ -749,7 +751,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.eventID = eventID;
     this.moduleID = moduleID;
     this.featureID = featureID;
-    this.deliveryPartition = deliveryPartition;
     this.retries = retries;
     this.timeout = timeout;
     this.correlator = correlator;
@@ -762,6 +763,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.rescheduledDate = rescheduledDate;
     this.notificationHistory = notificationHistory;
     this.subscriberFields = subscriberFields;
+	this.topicPartition = new TopicPartition("unknown",-1);
   }
 
   /****************************************
@@ -945,7 +947,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     b.append("," + eventID);
     b.append("," + moduleID);
     b.append("," + featureID);
-    b.append("," + deliveryPartition);
     b.append("," + retries);
     b.append("," + timeout);
     b.append("," + correlator);
@@ -959,6 +960,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     b.append("," + originatingSubscriberID);
     b.append("," + targetedSubscriberID);
     b.append("," + subscriberFields);
+    if(topicPartition!=null) b.append("," + topicPartition);
     return b.toString();
   }
 

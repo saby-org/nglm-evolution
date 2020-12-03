@@ -192,7 +192,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
   private static StatBuilder<CounterStat> statsCounter;
   private static ZookeeperUniqueKeyServer zookeeperUniqueKeyServer;
 
-  private Map<String, KafkaProducer> providerRequestProducers = new HashMap<String/*providerID*/, KafkaProducer>();
+  private volatile boolean isRunning = true;
 
   /****************************************
   *
@@ -212,7 +212,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     //  superclass
     //
     
-    super(COMMODITY_DELIVERY_ID_VALUE, deliveryManagerInstanceKey, Deployment.getBrokerServers(), CommodityDeliveryRequest.serde(), Deployment.getDeliveryManagers().get(COMMODITY_DELIVERY_TYPE));
+    super(COMMODITY_DELIVERY_ID_VALUE, deliveryManagerInstanceKey, Deployment.getBrokerServers(), CommodityDeliveryRequest.serde(), Deployment.getDeliveryManagers().get(COMMODITY_DELIVERY_TYPE), 1);
     
     //
     // set up all the providers conf and flows
@@ -242,19 +242,6 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
         case EMPTY:
 
           log.info("CommodityDeliveryManager.getCommodityAndPaymentMeanFromDM() : get information from deliveryManager "+deliveryManager);
-
-          //
-          // update list (kafka) request producers
-          //
-
-          Properties kafkaProducerProperties = new Properties();
-          kafkaProducerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
-          kafkaProducerProperties.put("acks", "all");
-          kafkaProducerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-          kafkaProducerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-          KafkaProducer neWProducer = new KafkaProducer<byte[], byte[]>(kafkaProducerProperties);
-          providerRequestProducers.put(deliveryManager.getProviderID(), neWProducer);
-          log.info("CommodityDeliveryManager.getCommodityAndPaymentMeanFromDM() : added kafka producer for provider "+deliveryManager.getProviderName());
           
           //
           // update list of (kafka) response consumers
@@ -279,11 +266,11 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
                 consumer.subscribe(Arrays.asList(responseTopic));
                 log.info("CommodityDeliveryManager.getCommodityAndPaymentMeanFromDM() : added kafka consumer for provider "+deliveryManager.getProviderName()+" "+responseTopic);
 
-                while(isProcessing()){
+                while(isRunning){
 
                   // poll
 
-                  long lastPollTime=System.currentTimeMillis();// just to log if exception happened later, can be because of this, but most likely because of rebalance because of new consumer created
+                  long lastPollTime=System.currentTimeMillis();// to log poll processing time if exception happens later
                   ConsumerRecords<byte[], byte[]> fileRecords = consumer.poll(Duration.ofMillis(5000));
 
                   //  process records
@@ -293,23 +280,23 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
                       //  parse
                       DeliveryRequest response = deliveryManager.getRequestSerde().deserializer().deserialize(responseTopic, fileRecord.value());
                       if(response.getDiplomaticBriefcase() != null && response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_ID) != null && response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_ID).equals(COMMODITY_DELIVERY_ID_VALUE)){
-                        if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" CommodityDeliveryManager : reading response from "+commodityType+" "+responseTopic+" topic ...");
+                        if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager : reading response from "+commodityType+" "+responseTopic+" topic ...");
                         handleThirdPartyResponse(response);
-                        if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" CommodityDeliveryManager : reading response from "+commodityType+" "+responseTopic+" topic DONE");
+                        if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager : reading response from "+commodityType+" "+responseTopic+" topic DONE");
                       }
                     }
-                    consumer.commitSync();
+                    if(fileRecords.count()>0) consumer.commitSync();
 
                   }catch (CommitFailedException ex){
                     long lastPoll_ms=System.currentTimeMillis()-lastPollTime;
-                    log.info(Thread.currentThread().getId()+" CommodityDeliveryManager : CommitFailedException catched, can be normal rebalancing or poll time interval too long, last was "+lastPoll_ms+"ms ago");
+                    log.warn("CommodityDeliveryManager : CommitFailedException catched, last poll was "+lastPoll_ms+"ms ago");
                   }
 
                 }
 
                 // thread leaving the main loop !
                 consumer.close();
-                log.warn(Thread.currentThread().getId()+" CommodityDeliveryManager : STOPPING reading response from "+commodityType+" "+responseTopic);
+                log.warn("CommodityDeliveryManager : STOPPING reading response from "+commodityType+" "+responseTopic);
               }
             }, "consumer_"+prefix+"_"+deliveryManagerInstanceKey);
             consumerThread.start();
@@ -410,7 +397,6 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     //
 
     public String getProviderID() { return providerID; }
-    public String getProviderName() { return Deployment.getFulfillmentProviders().get(getProviderID()).getProviderName(); }
     public String getCommodityID() { return commodityID; }
     public String getCommodityName() { return commodityName; }
     public CommodityDeliveryOperation getOperation() { return operation; }
@@ -924,7 +910,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
             // poll
 
-            long lastPollTime=System.currentTimeMillis();// just to log if exception happened later, can be because of this, but most likely because of rebalance because of new consumer created
+            long lastPollTime=System.currentTimeMillis();// just to log if exception happens later
             ConsumerRecords<byte[], byte[]> fileRecords = consumer.poll(5000);
 
             //  process records
@@ -943,15 +929,15 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
               //  commit offsets
               //
 
-              consumer.commitSync();
+              if(fileRecords.count()>0) consumer.commitSync();
             }catch (CommitFailedException ex){
               long lastPoll_ms=System.currentTimeMillis()-lastPollTime;
-              log.info(Thread.currentThread().getId()+" CommodityDeliveryManager : CommitFailedException catched, can be normal rebalancing or poll time interval too long, last was "+lastPoll_ms+"ms ago");
+              log.info("CommodityDeliveryManager : CommitFailedException catched, last poll was "+lastPoll_ms+"ms ago");
             }
 
           }
           consumer.close();
-          log.warn(Thread.currentThread().getId()+" CommodityDeliveryManager.addCommodityDeliveryResponseConsumer : STOPPING reading response from "+responseTopic);
+          log.warn("CommodityDeliveryManager.addCommodityDeliveryResponseConsumer : STOPPING reading response from "+responseTopic);
         }
       }, "consumer_"+prefix);
       consumerThread.start();
@@ -972,7 +958,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     //
 
     if(response.getDiplomaticBriefcase() == null || response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_BRIEFCASE) == null || response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_BRIEFCASE).isEmpty()){
-      log.warn(Thread.currentThread().getId()+" - CommodityDeliveryManager.handleThirdPartirResponse(response) : can not get purchase status => ignore this response");
+      log.warn("CommodityDeliveryManager.handleThirdPartirResponse(response) : can not get purchase status => ignore this response");
       return;
     }
     JSONParser parser = new JSONParser();
@@ -983,10 +969,10 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
         commodityDeliveryRequest = new CommodityDeliveryRequest(response, requestStatusJSON, Deployment.getDeliveryManagers().get("commodityDelivery"));
       } catch (ParseException e)
       {
-        log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager.handleThirdPartirResponse(...) : ERROR while getting request status from '"+response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_BRIEFCASE)+"' => IGNORED");
+        log.error("CommodityDeliveryManager.handleThirdPartirResponse(...) : ERROR while getting request status from '"+response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_BRIEFCASE)+"' => IGNORED");
         return;
       }
-    if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.handleThirdPartirResponse(...) : getting commodity status DONE : "+commodityDeliveryRequest);
+    if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.handleThirdPartirResponse(...) : getting commodity status DONE : "+commodityDeliveryRequest);
 
     //
     // extract validityPeriod from response
@@ -1029,7 +1015,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
   @Override
   public void run()
   {
-    while (isProcessing())
+    while (true)
       {
         /*****************************************
         *
@@ -1039,7 +1025,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
         
         DeliveryRequest deliveryRequest = nextRequest();
         CommodityDeliveryRequest commodityDeliveryRequest = ((CommodityDeliveryRequest)deliveryRequest);
-        if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager : recieved new CommodityDeliveryRequest : "+commodityDeliveryRequest);
+        if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager : recieved new CommodityDeliveryRequest : "+commodityDeliveryRequest);
 
         /*****************************************
         *
@@ -1068,7 +1054,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
         //
         
         if(amount < 0){
-          log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : bad field value for amount");
+          log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : bad field value for amount");
           submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BAD_FIELD_VALUE, "bad field value for amount (must be greater or equal to 0, but recieved "+amount+")", null);
           continue;
         }
@@ -1078,7 +1064,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
         //
 
         if(subscriberID == null){
-          log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : bad field value for subscriberID");
+          log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : bad field value for subscriberID");
           submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.MISSING_PARAMETERS, "missing mandatoryfield (subscriberID)", null);
           continue;
         }
@@ -1100,14 +1086,14 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
           
           paymentMean = paymentMeanService.getActivePaymentMean(commodityID, SystemTime.getCurrentTime());
           if(paymentMean == null){
-            log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
+            log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
             submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "payment mean not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
             continue;
           }else{
             externalAccountID = paymentMean.getExternalAccountID();
             DeliveryManagerDeclaration provider = Deployment.getFulfillmentProviders().get(paymentMean.getFulfillmentProviderID());
             if(provider == null){
-              log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
+              log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
               submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "provider of payment mean not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
               continue;
             }else{
@@ -1124,14 +1110,14 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
           
           deliverable = deliverableService.getActiveDeliverable(commodityID, SystemTime.getCurrentTime());
           if(deliverable == null){
-            log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
+            log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
             submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "commodity not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
             continue;
           }else{
             externalAccountID = deliverable.getExternalAccountID();
             DeliveryManagerDeclaration provider = Deployment.getFulfillmentProviders().get(deliverable.getFulfillmentProviderID());
             if(provider == null){
-              log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
+              log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
               submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "provider of deliverable not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
               continue;
             }else{
@@ -1148,14 +1134,14 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
             
             deliverable = deliverableService.getActiveDeliverable(commodityID, SystemTime.getCurrentTime());
             if(deliverable == null){
-              log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
+              log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
               submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "commodity not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
               continue;
             }else{
               externalAccountID = deliverable.getExternalAccountID();
               DeliveryManagerDeclaration provider = Deployment.getFulfillmentProviders().get(deliverable.getFulfillmentProviderID());
               if(provider == null){
-                log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
+                log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
                 submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "provider of deliverable not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
                 continue;
               }else{
@@ -1172,14 +1158,14 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
             
             deliverable = deliverableService.getActiveDeliverable(commodityID, SystemTime.getCurrentTime());
             if(deliverable == null){
-              log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
+              log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
               submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "commodity not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
               continue;
             }else{
               externalAccountID = deliverable.getExternalAccountID();
               DeliveryManagerDeclaration provider = Deployment.getFulfillmentProviders().get(deliverable.getFulfillmentProviderID());
               if(provider == null){
-                log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
+                log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
                 submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "provider of deliverable not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
                 continue;
               }else{
@@ -1196,14 +1182,14 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
           
           deliverable = deliverableService.getActiveDeliverable(commodityID, SystemTime.getCurrentTime());
           if(deliverable == null){
-            log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
+            log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
             submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "commodity not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
             continue;
           }else{
             externalAccountID = deliverable.getExternalAccountID();
             DeliveryManagerDeclaration provider = Deployment.getFulfillmentProviders().get(deliverable.getFulfillmentProviderID());
             if(provider == null){
-              log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
+              log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
               submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "provider of deliverable not found (providerID "+providerID+" - commodityID "+commodityID+")", null);
               continue;
             }else{
@@ -1218,7 +1204,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
           // unknown operation => return an error
           //
           
-          log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : unknown operation");
+          log.error("CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : unknown operation");
           submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.SYSTEM_ERROR, "unknown operation", null);
           continue;
         }
@@ -1303,32 +1289,26 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
   @Override protected void shutdown()
   {
-    log.info(Thread.currentThread().getId()+" CommodityDeliveryManager: shutdown called");
+    log.info("CommodityDeliveryManager: shutdown called");
+
+    this.isRunning = false;
 
     synchronized (CommodityDeliveryManager.class){
       if(paymentMeanService!=null){
-        log.info(Thread.currentThread().getId()+" CommodityDeliveryManager: stopping paymentMeanService");
+        log.info("CommodityDeliveryManager: stopping paymentMeanService");
         paymentMeanService.stop();
         paymentMeanService=null;
       }
       if(deliverableService!=null){
-        log.info(Thread.currentThread().getId()+" CommodityDeliveryManager: stopping deliverableService");
+        log.info("CommodityDeliveryManager: stopping deliverableService");
         deliverableService.stop();
         deliverableService=null;
       }
       if(zookeeperUniqueKeyServer!=null){
-        log.info(Thread.currentThread().getId()+" CommodityDeliveryManager: stopping zookeeperUniqueKeyServer");
+        log.info("CommodityDeliveryManager: stopping zookeeperUniqueKeyServer");
         zookeeperUniqueKeyServer.close();
         zookeeperUniqueKeyServer=null;
       }
-    }
-
-    if(providerRequestProducers!=null && !providerRequestProducers.isEmpty()){
-      log.info(Thread.currentThread().getId()+" CommodityDeliveryManager: stopping all providerRequestProducers");
-      providerRequestProducers.forEach((providerName,kafkaProducer)->{
-        log.info(Thread.currentThread().getId()+" CommodityDeliveryManager: stopping producer for "+providerName);
-        kafkaProducer.close();
-      });
     }
 
     log.info("CommodityDeliveryManager: shutdown DONE");
@@ -1403,7 +1383,6 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     //
 
     while(true){
-      log.info("CommodityDeliveryManager: "+managers.stream().filter(manager->manager.isProcessing()).count()+" running managers over "+managers.size()+" ("+instancesNumber+" starting conf)");
       log.info("CommodityDeliveryManager: JVM approximate free memory "+FileUtils.byteCountToDisplaySize(Runtime.getRuntime().freeMemory())+", over "+FileUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory()));
       try{
         Thread.sleep(300*1000L);
@@ -1425,7 +1404,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
   private void proceedCommodityDeliveryRequest(CommodityDeliveryRequest commodityDeliveryRequest, CommodityType commodityType, String deliveryType, String externalAccountID, Deliverable deliverable){
 
-    if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+"CommodityDeliveryManager.proceedCommodityDeliveryRequest(..., "+commodityType+", "+deliveryType+") : method called ...");
+    if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(..., "+commodityType+", "+deliveryType+") : method called ...");
 
     //
     // add identifier in briefcase (used later to filter responses) 
@@ -1448,7 +1427,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     switch (commodityType) {
     case IN:
       
-      if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.IN+" request ...");
+      if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.IN+" request ...");
       
       DeliveryManagerDeclaration inManagerDeclaration = Deployment.getDeliveryManagers().get(deliveryType);
       String inRequestTopic = inManagerDeclaration.getRequestTopic(commodityDeliveryRequest.getDeliveryPriority());
@@ -1475,17 +1454,12 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       inRequestData.put("diplomaticBriefcase", diplomaticBriefcase);
       inRequestData.put("dateFormat", "yyyy-MM-dd'T'HH:mm:ss:XX");
 
-      if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.IN+" request DONE");
+      if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.IN+" request DONE");
       
       INFulfillmentRequest inRequest = new INFulfillmentRequest(commodityDeliveryRequest,JSONUtilities.encodeObject(inRequestData), Deployment.getDeliveryManagers().get(deliveryType));
-      KafkaProducer kafkaProducer = providerRequestProducers.get(commodityDeliveryRequest.getProviderID());
-      if(kafkaProducer != null){
-        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(inRequestTopic, StringKey.serde().serializer().serialize(inRequestTopic, new StringKey(inRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)inManagerDeclaration.getRequestSerde()).serializer().serialize(inRequestTopic, inRequest))); 
-      }else{
-        submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.SYSTEM_ERROR, "Could not send delivery request to provider (providerID = "+commodityDeliveryRequest.getProviderID()+")", null);
-      }
+      commodityDeliveryRequestProducer.send(new ProducerRecord<byte[], byte[]>(inRequestTopic, StringKey.serde().serializer().serialize(inRequestTopic, new StringKey(inRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)inManagerDeclaration.getRequestSerde()).serializer().serialize(inRequestTopic, inRequest)));
       
-      if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.IN+" request DONE");
+      if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.IN+" request DONE");
 
       break;
 
@@ -1513,17 +1487,12 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       pointRequestData.put("validityPeriodQuantity", validityPeriodQuantity);
       pointRequestData.put("diplomaticBriefcase", diplomaticBriefcase);
       
-      if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.POINT+" request DONE");
+      if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.POINT+" request DONE");
 
       PointFulfillmentRequest pointRequest = new PointFulfillmentRequest(commodityDeliveryRequest, JSONUtilities.encodeObject(pointRequestData), Deployment.getDeliveryManagers().get(deliveryType));
-      KafkaProducer pointProducer = providerRequestProducers.get(commodityDeliveryRequest.getProviderID());
-      if(pointProducer != null){
-        pointProducer.send(new ProducerRecord<byte[], byte[]>(pointRequestTopic, StringKey.serde().serializer().serialize(pointRequestTopic, new StringKey(pointRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)pointManagerDeclaration.getRequestSerde()).serializer().serialize(pointRequestTopic, pointRequest))); 
-      }else{
-        submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.SYSTEM_ERROR, "Could not send delivery request to provider (providerID = "+commodityDeliveryRequest.getProviderID()+")", null);
-      }
+      commodityDeliveryRequestProducer.send(new ProducerRecord<byte[], byte[]>(pointRequestTopic, StringKey.serde().serializer().serialize(pointRequestTopic, new StringKey(pointRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)pointManagerDeclaration.getRequestSerde()).serializer().serialize(pointRequestTopic, pointRequest)));
       
-      if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.POINT+" request DONE");
+      if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.POINT+" request DONE");
 
       break;
 
@@ -1558,17 +1527,12 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       //  send
       //
       
-      if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.REWARD+" request DONE");
+      if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.REWARD+" request DONE");
 
       RewardManagerRequest rewardRequest = new RewardManagerRequest(commodityDeliveryRequest,JSONUtilities.encodeObject(rewardRequestData), Deployment.getDeliveryManagers().get(deliveryType));
-      KafkaProducer rewardProducer = providerRequestProducers.get(commodityDeliveryRequest.getProviderID());
-      if(rewardProducer != null){
-        rewardProducer.send(new ProducerRecord<byte[], byte[]>(rewardRequestTopic, StringKey.serde().serializer().serialize(rewardRequestTopic, new StringKey(rewardRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)rewardManagerDeclaration.getRequestSerde()).serializer().serialize(rewardRequestTopic, rewardRequest))); 
-      }else{
-        submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.SYSTEM_ERROR, "Could not send delivery request to provider (providerID = "+commodityDeliveryRequest.getProviderID()+")", null);
-      }
+      commodityDeliveryRequestProducer.send(new ProducerRecord<byte[], byte[]>(rewardRequestTopic, StringKey.serde().serializer().serialize(rewardRequestTopic, new StringKey(rewardRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)rewardManagerDeclaration.getRequestSerde()).serializer().serialize(rewardRequestTopic, rewardRequest)));
       
-      if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.REWARD+" request DONE");
+      if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.REWARD+" request DONE");
 
       break;
 
@@ -1594,27 +1558,22 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       
       journeyRequestData.put("diplomaticBriefcase", diplomaticBriefcase);
       
-      if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.JOURNEY+" request DONE");
+      if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.JOURNEY+" request DONE");
 
       JourneyRequest journeyRequest = new JourneyRequest(commodityDeliveryRequest, JSONUtilities.encodeObject(journeyRequestData), Deployment.getDeliveryManagers().get(deliveryType));
-      KafkaProducer journeyProducer = providerRequestProducers.get(commodityDeliveryRequest.getProviderID());
-      if(journeyProducer != null){
-        journeyProducer.send(new ProducerRecord<byte[], byte[]>(journeyRequestTopic, StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest))); 
-      }else{
-        submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.SYSTEM_ERROR, "Could not send delivery request to provider (providerID = "+commodityDeliveryRequest.getProviderID()+")", null);
-      }
+      commodityDeliveryRequestProducer.send(new ProducerRecord<byte[], byte[]>(journeyRequestTopic, StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest)));
 
-      if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.JOURNEY+" request DONE");
+      if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.JOURNEY+" request DONE");
       
       break;
 
     default:
       submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.SUCCESS, "Success", null);
-      log.info(Thread.currentThread().getId()+"CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : "+commodityType+" (default statement) DONE");
+      log.info("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : "+commodityType+" (default statement) DONE");
       break;
     }
 
-    if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+"CommodityDeliveryManager.proceedCommodityDeliveryRequest(..., "+commodityType+", "+deliveryType+") : method DONE");
+    if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(..., "+commodityType+", "+deliveryType+") : method DONE");
   }
 
   /*****************************************

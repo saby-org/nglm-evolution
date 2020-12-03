@@ -108,7 +108,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
   //  number of threads
   //
   
-  private int threadNumber = 5;   //TODO : make this configurable
+  private static final int threadNumber = 1;   //TODO : make this configurable (would even be better if it is used)
   
   /*****************************************
   *
@@ -132,7 +132,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     //  superclass
     //
     
-    super("deliverymanager-infulfillment", deliveryManagerKey, Deployment.getBrokerServers(), INFulfillmentRequest.serde(), Deployment.getDeliveryManagers().get(pluginName));
+    super("deliverymanager-infulfillment", deliveryManagerKey, Deployment.getBrokerServers(), INFulfillmentRequest.serde(), Deployment.getDeliveryManagers().get(pluginName), threadNumber);
 
     //
     //  plugin instanciation
@@ -565,7 +565,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
   @Override
   public void run()
   {
-    while (isProcessing())
+    while (true)
       {
         /*****************************************
         *

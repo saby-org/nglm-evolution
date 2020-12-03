@@ -38,7 +38,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
   *
   *****************************************/
 
-  private int threadNumber = 5;   //TODO : make this configurable
+  private static final int threadNumber = 1;   //TODO : make this configurable (not even used)
   private ArrayList<Thread> threads = new ArrayList<Thread>();
   private PushNotificationInterface pushNotification;
   private NotificationStatistics stats = null;
@@ -69,7 +69,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     //  superclass
     //
 
-    super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), PushNotificationManagerRequest.serde, Deployment.getDeliveryManagers().get(pluginName));
+    super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), PushNotificationManagerRequest.serde, Deployment.getDeliveryManagers().get(pluginName), threadNumber);
 
     //
     //  manager
@@ -675,7 +675,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
 
   public void run()
   {
-    while (isProcessing())
+    while (true)
       {
         /*****************************************
          *

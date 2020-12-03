@@ -112,9 +112,9 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
     return ServicesSingletonHolder.sourceAddressService;
   }
 
-  protected DeliveryManagerForNotifications(String applicationID, String deliveryManagerKey, String bootstrapServers, ConnectSerde<? extends DeliveryRequest> requestSerde, DeliveryManagerDeclaration deliveryManagerDeclaration)
+  protected DeliveryManagerForNotifications(String applicationID, String deliveryManagerKey, String bootstrapServers, ConnectSerde<? extends DeliveryRequest> requestSerde, DeliveryManagerDeclaration deliveryManagerDeclaration, int workerThreadNumber)
     {
-      super(applicationID, deliveryManagerKey, bootstrapServers, requestSerde, deliveryManagerDeclaration);
+      super(applicationID, deliveryManagerKey, bootstrapServers, requestSerde, deliveryManagerDeclaration, workerThreadNumber);
     }
   
   /*****************************************

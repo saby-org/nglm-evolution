@@ -138,7 +138,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
     //  superclass
     //
     
-    super("deliverymanager-emptyfulfillment", deliveryManagerKey, Deployment.getBrokerServers(), EmptyFulfillmentRequest.serde(), Deployment.getDeliveryManagers().get(pluginName));
+    super("deliverymanager-emptyfulfillment", deliveryManagerKey, Deployment.getBrokerServers(), EmptyFulfillmentRequest.serde(), Deployment.getDeliveryManagers().get(pluginName), 1);
     
     //
     // statistics
@@ -558,7 +558,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
   @Override
   public void run()
   {
-    while (isProcessing())
+    while (true)
       {
         /*****************************************
         *

@@ -58,7 +58,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
   public NotificationManager(String deliveryManagerKey, CommunicationChannel cc, int threadNumber)
     {
 
-      super(applicationID+"-"+cc.getName(), deliveryManagerKey, Deployment.getBrokerServers(), cc.getDeliveryManagerDeclaration().getRequestSerde(), cc.getDeliveryManagerDeclaration());
+      super(applicationID+"-"+cc.getName(), deliveryManagerKey, Deployment.getBrokerServers(), cc.getDeliveryManagerDeclaration().getRequestSerde(), cc.getDeliveryManagerDeclaration(), threadNumber);
 
       // this channel's plugin must be initialized
       try {
@@ -870,7 +870,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
   public void run()
   {
-    while (isProcessing())
+    while (true)
       {
         /*****************************************
          *
