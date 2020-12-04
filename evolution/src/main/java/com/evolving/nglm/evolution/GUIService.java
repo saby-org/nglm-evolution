@@ -898,7 +898,7 @@ public class GUIService
 
   private void runScheduler()
   {
-	  log.info("starting service {}", this.getClass().getName());
+	  log.info("starting service new {}", this.getClass().getName());
     NGLMRuntime.registerSystemTimeDependency(this);
     while (!stopRequested)
       {
@@ -911,7 +911,7 @@ public class GUIService
             Date now = SystemTime.getCurrentTime();
             Date nextEvaluationDate = (schedule.size() > 0) ? schedule.first().getEvaluationDate() : NGLMRuntime.END_OF_TIME;
             long waitTime = nextEvaluationDate.getTime() - now.getTime();
-            log.info("nextEvaluationDate {} and waitTime {}", nextEvaluationDate , waitTime );
+            log.info("nextEvaluationDate {} and waitTime {} for this.getClass().getName()", nextEvaluationDate , waitTime );
             while (!stopRequested && waitTime > 0)
               {
                 try
