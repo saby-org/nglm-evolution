@@ -2,6 +2,7 @@ package com.evolving.nglm.evolution.complexobjects;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,8 +13,7 @@ import com.evolving.nglm.evolution.SubscriberProfile;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectException.ComplexObjectUtilsReturnCodes;
 
 public class ComplexObjectUtils
-{
-  
+{  
   private static ComplexObjectTypeService complexObjectTypeService;
   
   static
@@ -40,26 +40,27 @@ public class ComplexObjectUtils
         {
         case IntegerCriterion:
           // must be an Integer or a Long
-          
+          if(!(value instanceof Integer) && !(value instanceof Long)){ throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.UNKNOWN_COMPLEX_TYPE.BAD_SUBFIELD_TYPE, "Provided value " + value + " should be of type Integer or Long"); }
           break;
           
         case DateCriterion:
-          // must be an Integer or a Long
-          
-          
+          // must be of type Date
+          if(!(value instanceof Date)){ throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.UNKNOWN_COMPLEX_TYPE.BAD_SUBFIELD_TYPE, "Provided value " + value + " should be of type Date"); }
           break;
           
         case StringCriterion:
           // must be a String
+          if(!(value instanceof String)){ throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.UNKNOWN_COMPLEX_TYPE.BAD_SUBFIELD_TYPE, "Provided value " + value + " should be of type String"); }
           
           break;
         case BooleanCriterion:
           // must be a Boolean
+          if(!(value instanceof Boolean)){ throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.UNKNOWN_COMPLEX_TYPE.BAD_SUBFIELD_TYPE, "Provided value " + value + " should be of type Boolean"); }
           
           break;
         case StringSetCriterion:
           // must be a List<String>
-        
+          if(!(value instanceof List)){ throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.UNKNOWN_COMPLEX_TYPE.BAD_SUBFIELD_TYPE, "Provided value " + value + " should be of type List<String>"); }
         default:
           break;
         }
@@ -87,13 +88,62 @@ public class ComplexObjectUtils
       }
     else 
       {
-        ComplexObjectinstanceSubfieldValue valueSubField = new ComplexObjectinstanceSubfieldValue(subfieldType.getPrivateID(), value);
+        ComplexObjectinstanceSubfieldValue valueSubField = new ComplexObjectinstanceSubfieldValue(subfieldType.getSubfieldName(), subfieldType.getPrivateID(), value);
         if(valueSubFields == null) { valueSubFields = new HashMap<>(); instance.setFieldValues(valueSubFields); }
         valueSubFields.put(subfieldType.getSubfieldName(), valueSubField);
       }
   }
   
-  public static Object getComplexObjectValue(SubscriberProfile profile, String complexTypeName, String elementID, String subfieldName) throws ComplexObjectException
+  public static String getComplexObjectString(SubscriberProfile profile, String complexTypeName, String elementID, String subfieldName) throws ComplexObjectException
+  {
+    Object value = getComplexObjectValue(profile, complexTypeName, elementID, subfieldName);
+    if(value != null && !(value instanceof String)) { throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.BAD_SUBFIELD_TYPE, "complexTypeName:" + complexTypeName + " elementID:" + elementID + " subfieldName:" + subfieldName + " is not a String but " + value.getClass().getName());}
+    return (String)value;
+  }
+  
+  public static Boolean getComplexObjectBoolean(SubscriberProfile profile, String complexTypeName, String elementID, String subfieldName) throws ComplexObjectException
+  {
+    Object value = getComplexObjectValue(profile, complexTypeName, elementID, subfieldName);
+    if(value == null) { return null; }
+    if(value != null && !(value instanceof Boolean)) { throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.BAD_SUBFIELD_TYPE, "complexTypeName:" + complexTypeName + " elementID:" + elementID + " subfieldName:" + subfieldName + " is not a boolean but " + value.getClass().getName());}
+    return ((Boolean)value).booleanValue();
+  }
+  
+  public static Date getComplexObjectDate(SubscriberProfile profile, String complexTypeName, String elementID, String subfieldName) throws ComplexObjectException
+  {
+    Object value = getComplexObjectValue(profile, complexTypeName, elementID, subfieldName);
+    if(value != null && !(value instanceof Date)) { throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.BAD_SUBFIELD_TYPE, "complexTypeName:" + complexTypeName + " elementID:" + elementID + " subfieldName:" + subfieldName + " is not a Date but " + value.getClass().getName());}
+    return (Date)value;
+  }
+
+  public static Long getComplexObjectLong(SubscriberProfile profile, String complexTypeName, String elementID, String subfieldName) throws ComplexObjectException
+  {
+    Object value = getComplexObjectValue(profile, complexTypeName, elementID, subfieldName);
+    if(value == null) { return null; }
+    if(value != null && !(value instanceof Integer) && !(value instanceof Long)) { throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.BAD_SUBFIELD_TYPE, "complexTypeName:" + complexTypeName + " elementID:" + elementID + " subfieldName:" + subfieldName + " is not a long but " + value.getClass().getName());}
+    if(value instanceof Long) { return ((Long)value); }
+    if(value instanceof Integer) { return new Long((int)((Long)value).longValue()); }
+    return -1L; // should not happen...    
+  }
+  
+  public static Integer getComplexObjectInteger(SubscriberProfile profile, String complexTypeName, String elementID, String subfieldName) throws ComplexObjectException
+  {
+    Object value = getComplexObjectValue(profile, complexTypeName, elementID, subfieldName);
+    if(value == null) { return null; }
+    if(value != null && !(value instanceof Integer) && !(value instanceof Long)) { throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.BAD_SUBFIELD_TYPE, "complexTypeName:" + complexTypeName + " elementID:" + elementID + " subfieldName:" + subfieldName + " is not a long but " + value.getClass().getName());}
+    if(value instanceof Integer) { return ((Integer)value); }
+    if(value instanceof Long) { return (int)((Long)value).longValue(); }
+    return -1; // should not happen... 
+  }
+  
+  public static List<String> getComplexObjectStringSet(SubscriberProfile profile, String complexTypeName, String elementID, String subfieldName) throws ComplexObjectException
+  {
+    Object value = getComplexObjectValue(profile, complexTypeName, elementID, subfieldName);
+    if(value != null && !(value instanceof ArrayList)) { throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.BAD_SUBFIELD_TYPE, "complexTypeName:" + complexTypeName + " elementID:" + elementID + " subfieldName:" + subfieldName + " is not a StringSet but " + value.getClass().getName());}
+    return (List<String>) value; 
+  }
+  
+  private static Object getComplexObjectValue(SubscriberProfile profile, String complexTypeName, String elementID, String subfieldName) throws ComplexObjectException
   {
     Collection<ComplexObjectType> types = complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime());
     ComplexObjectType type = null;
@@ -116,7 +166,9 @@ public class ComplexObjectUtils
     if(instance == null) { return null; }
     Map<String, ComplexObjectinstanceSubfieldValue> values = instance.getFieldValues();
     if(values == null) { return null; }
-    return values.get(subfieldName);
+    ComplexObjectinstanceSubfieldValue value = values.get(subfieldName);
+    if(value == null) { return null; }    
+    return value.getValue();
   }
 
 }

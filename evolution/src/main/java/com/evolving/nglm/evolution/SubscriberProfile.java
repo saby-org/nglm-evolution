@@ -1828,6 +1828,7 @@ public abstract class SubscriberProfile
     this.subscriberHistory = subscriberProfile.getSubscriberHistory() != null ? new SubscriberHistory(subscriberProfile.getSubscriberHistory()) : null;
     this.exclusionInclusionTargets = new HashMap<String, Integer>(subscriberProfile.getExclusionInclusionTargets());
     this.subscriberHistory = subscriberProfile.getSubscriberHistory();
+    this.complexObjectInstances = subscriberProfile.getComplexObjectInstances();
     this.offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
     this.getUnknownRelationships().addAll(subscriberProfile.getUnknownRelationships());
   }
@@ -2024,6 +2025,7 @@ public abstract class SubscriberProfile
 
   private static Object packComplexObjectInstances(List<ComplexObjectInstance> complexObjectInstances)
   {
+    if(complexObjectInstances == null) { return null; }
     List<Object> result = new ArrayList<Object>();
     for (ComplexObjectInstance complexObjectInstance : complexObjectInstances)
       {

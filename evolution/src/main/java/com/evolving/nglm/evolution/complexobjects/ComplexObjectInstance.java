@@ -7,8 +7,10 @@
 package com.evolving.nglm.evolution.complexobjects;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.kafka.connect.data.Schema;
@@ -215,21 +217,28 @@ public class ComplexObjectInstance
                 result[2] = 0;
                 result[3] = (byte) (value != null ? 1 : 0);
                 result[4] = (byte) (value.booleanValue() ? 1 : 0);
-                resultByteBuffer.put(result, resultByteBuffer.position(), result.length);
+                resultByteBuffer.put(result, 0, result.length);
                 break;
                 
               case IntegerCriterion : /*Integer and Long are considered the same, all seen as Long */
               case DateCriterion : 
                 int size = 0;
                 byte[] tempByte = new byte[8];
-                long valueLong;
+                long valueLong = 0;
                 if(fieldType.getCriterionDataType().equals(CriterionDataType.DateCriterion))
                   {
                     valueLong = ((Date)fieldValue.getValue()).getTime();
                   }
                 else
                   {
-                    valueLong = ((Long)fieldValue.getValue()).longValue(); 
+                    if(fieldValue.getValue() instanceof Long)
+                      {
+                        valueLong = ((Long)fieldValue.getValue()).longValue();
+                      }
+                    else if(fieldValue.getValue() instanceof Integer)
+                      {
+                        valueLong = ((Integer)fieldValue.getValue()).intValue();
+                      }
                   }
                 byte b0 = (byte) (valueLong >> 56);
                 tempByte[0] = b0;
@@ -271,8 +280,8 @@ public class ComplexObjectInstance
                 resultLong[3] = (byte) size;
 
                 int resultIndex = 4;
-                for(int i = 8 - size; i < size; i++) {
-                  resultLong[resultIndex] = tempByte[i];
+                for(int i = 0; i < size; i++) {
+                  resultLong[resultIndex] = tempByte[8 - size + i];
                   resultIndex++;
                 }
                 resultByteBuffer.put(resultLong, 0, resultLong.length);
@@ -292,7 +301,37 @@ public class ComplexObjectInstance
                 resultByteBuffer.put(stringBytes, 0, stringBytes.length);
                 break;
               case StringSetCriterion :
-                // TODO
+                List<String> valueStringSet = (List<String>)fieldValue.getValue();
+                if(valueStringSet.size() == 0) { continue; } // no need to serialyse  
+                byte[] header = new byte[4];
+                int totalTLVLength = 0; // max 2 bytes to encode this
+                
+                List<byte[]> allStrings = new ArrayList<>();
+                for(String current : valueStringSet)
+                  {
+                    if(current == null) { continue; }
+                    int length = current.length();
+                    byte[] forThisString = new byte[length + 2]; // because of length coded into 2 bytes
+                    totalTLVLength = totalTLVLength + length + 2;
+                    forThisString[0] = (byte) ((length >> 8) & 0xFF);
+                    forThisString[1] = (byte) (length & 0xFF);
+                    for(int i = 0; i < length; i++)
+                      {
+                        forThisString[i+2] = current.getBytes()[i];
+                      }
+                    allStrings.add(forThisString);
+                  }
+                
+                header[0] = (byte) ((fieldType.getPrivateID() & 0xFF00) >> 8);
+                header[1] = (byte) (fieldType.getPrivateID() & 0xFF);
+                header[2] = (byte) ((totalTLVLength >> 8) & 0xFF);
+                header[3] = (byte) (totalTLVLength & 0xFF);
+                
+                resultByteBuffer.put(header, 0, header.length);
+                for(byte[] current : allStrings)
+                  {
+                    resultByteBuffer.put(current, 0, current.length);
+                  }          
                 break;
               default:
                 break;
@@ -351,12 +390,12 @@ public class ComplexObjectInstance
           case BooleanCriterion:
             if(value[0] == 0) 
               {
-                ComplexObjectinstanceSubfieldValue cofv = new ComplexObjectinstanceSubfieldValue(fieldID, Boolean.FALSE);
+                ComplexObjectinstanceSubfieldValue cofv = new ComplexObjectinstanceSubfieldValue(fieldType.getSubfieldName(), fieldID, Boolean.FALSE);
                 result.put(fieldType.getSubfieldName(), cofv);
               }
             else if(value[0] == 1)
               {
-                ComplexObjectinstanceSubfieldValue cofv = new ComplexObjectinstanceSubfieldValue(fieldID, Boolean.TRUE);
+                ComplexObjectinstanceSubfieldValue cofv = new ComplexObjectinstanceSubfieldValue(fieldType.getSubfieldName(), fieldID, Boolean.TRUE);
                 result.put(fieldType.getSubfieldName(), cofv);                
               }
             else 
@@ -367,23 +406,55 @@ public class ComplexObjectInstance
             break;
             
           case IntegerCriterion : /*Integer and Long are considered the same, all seen as Long */
-          case DateCriterion : 
             long valueLong = 0;
             for(int i = 0; i < size; i++)
               {
                 valueLong = (valueLong << 8) | (0xFF & value[i]);
               }
-            ComplexObjectinstanceSubfieldValue cofv = new ComplexObjectinstanceSubfieldValue(fieldID, valueLong);
+            ComplexObjectinstanceSubfieldValue cofv = new ComplexObjectinstanceSubfieldValue(fieldType.getSubfieldName(), fieldID, valueLong);
+            result.put(fieldType.getSubfieldName(), cofv);  
+            break;
+            
+          case DateCriterion : 
+            valueLong = 0;
+            for(int i = 0; i < size; i++)
+              {
+                valueLong = (valueLong << 8) | (0xFF & value[i]);
+              }
+            Date d = new Date(valueLong);
+            cofv = new ComplexObjectinstanceSubfieldValue(fieldType.getSubfieldName(), fieldID, d);
             result.put(fieldType.getSubfieldName(), cofv);  
            break;                
 
           case StringCriterion :
             String s = new String(value);
-            cofv = new ComplexObjectinstanceSubfieldValue(fieldID, s);
+            cofv = new ComplexObjectinstanceSubfieldValue(fieldType.getSubfieldName(), fieldID, s);
             result.put(fieldType.getSubfieldName(), cofv);  
             break;
+            
           case StringSetCriterion :
-            // TODO
+            int arrayPosition = 0;
+            List<String> stringSet = null;
+            
+            while(arrayPosition < value.length - 2)
+              {
+                int length = (value[arrayPosition] << 8) | (value[arrayPosition+1]);
+                arrayPosition = arrayPosition + 2;
+                byte[] stringBytes = new byte[length];
+                for(int i = 0; i < length; i++)
+                  {
+                    stringBytes[i] = value[arrayPosition];
+                    arrayPosition++;
+                    if(stringSet == null) { stringSet = new ArrayList<>(); }
+                    
+                  }
+                stringSet.add(new String(stringBytes));
+              }
+            if(stringSet != null) 
+              {
+                cofv = new ComplexObjectinstanceSubfieldValue(fieldType.getSubfieldName(), fieldID, stringSet);
+                result.put(fieldType.getSubfieldName(), cofv); 
+              }            
             break;
           default:
             break;
@@ -433,13 +504,13 @@ public class ComplexObjectInstance
     Map<String, ComplexObjectinstanceSubfieldValue> values = new HashMap<>();
     ComplexObjectInstance instance = new ComplexObjectInstance("AComplexObjectName", "element1");    
 
-    ComplexObjectinstanceSubfieldValue value = new ComplexObjectinstanceSubfieldValue(fieldTypeInteger.getPrivateID(), new Long(1556788992556635323L));
+    ComplexObjectinstanceSubfieldValue value = new ComplexObjectinstanceSubfieldValue(fieldTypeInteger.getSubfieldName(), fieldTypeInteger.getPrivateID(), new Long(1556788992556635323L));
     values.put(fieldTypeInteger.getSubfieldName(), value);
                                                                                                                    
-    value = new ComplexObjectinstanceSubfieldValue(fieldTypeString.getPrivateID(), "brown");
+    value = new ComplexObjectinstanceSubfieldValue(fieldTypeString.getSubfieldName(), fieldTypeString.getPrivateID(), "brown");
     values.put(fieldTypeString.getSubfieldName(), value);
 
-    value = new ComplexObjectinstanceSubfieldValue(fieldTypeDate.getPrivateID(), date);
+    value = new ComplexObjectinstanceSubfieldValue(fieldTypeString.getSubfieldName(), fieldTypeDate.getPrivateID(), date);
     values.put(fieldTypeDate.getSubfieldName(), value);
 
     instance.setFieldValues(values);

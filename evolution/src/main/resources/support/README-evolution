@@ -327,6 +327,13 @@ curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/s
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "base" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSegmentContactPolicy; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "base" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeSegmentContactPolicy; echo
 
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getComplexObjectTypeList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getComplexObjectTypeSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d "{ "id" : "EventCounter", "name" : "EventCounter", "display" : "Event Counter", "active" : true, "availableNames" : ["LifeCycle", "Recharge"], "subfields" : { "Nb" :  "integer", "Date" : "date"} , "apiVersion" : 1 }" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putComplexObjectType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "EventCounter" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getComplexObjectType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeComplexObjectType; echo
+
+
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "subscriberID":"001", "includeExtendedSubscribeProfile" : true, "includeHistory" : true }' http://<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINT_>/nglm-evolutionengine/getSubscriberProfile; echo
 --
 -- this one is for support only ! to get statestores value

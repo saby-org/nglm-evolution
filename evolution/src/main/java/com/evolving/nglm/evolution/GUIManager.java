@@ -1564,7 +1564,7 @@ public class GUIManager
     //
     //  complexObject
     //
-    if (complexObjectTypeService.getStoredComplexObjectTypes().size() == 0)
+    if (complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime()).size() == 0)
       {
         try
           {

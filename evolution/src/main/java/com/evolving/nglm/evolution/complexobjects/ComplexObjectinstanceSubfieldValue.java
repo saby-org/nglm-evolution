@@ -2,11 +2,13 @@ package com.evolving.nglm.evolution.complexobjects;
 
 public class ComplexObjectinstanceSubfieldValue
 {
+  private String subFieldName;
   private int privateSubfieldID;
   private Object value;
   
-  public ComplexObjectinstanceSubfieldValue(int privateSubfieldID, Object value)
+  public ComplexObjectinstanceSubfieldValue(String subFieldName, int privateSubfieldID, Object value)
   {
+    this.subFieldName = subFieldName;
     this.privateSubfieldID = privateSubfieldID;
     this.value = value;
   }

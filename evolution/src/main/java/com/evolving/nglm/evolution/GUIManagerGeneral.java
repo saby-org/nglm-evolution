@@ -2011,8 +2011,10 @@ public class GUIManagerGeneral extends GUIManager
         //
         // remove dynamic criterion fields
         //
-
-        dynamicCriterionFieldService.removeComplexObjectTypeCriterionFields(complexObjectType);
+        if(!(complexObjectType instanceof IncompleteObject))
+          {
+            dynamicCriterionFieldService.removeComplexObjectTypeCriterionFields(complexObjectType);
+          }
 
         //
         // revalidate
